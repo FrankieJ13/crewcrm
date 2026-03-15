@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<meta name="theme-color" content="#0d0d0d"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>CRM Dashboard</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script>
+// Сносим все старые Service Worker'ы немедленно
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => r.unregister());
+  });
+  caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+}
+</script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root {
+  --bg:      #0d0d0d;
+  --bg2:     #141414;
+  --bg3:     #1c1c1c;
+  --line:    #252525;
+  --line2:   #2e2e2e;
+  --txt:     #f0f0f0;
+  --txt2:    #888;
+  --txt3:    #444;
+  --acc:     #e8ff47;
+  --acc-bg:  rgba(232,255,71,.08);
+  --acc-bdr: rgba(232,255,71,.25);
+  --red:     #ff4757;
+  --grn:     #2ed573;
+  --blu:     #1e90ff;
+  --org:     #ffa502;
+  --r:       10px;
+  --r2:      14px;
+  --m4-bg:   #1c1c1c;
+}
+body.light {
+  --bg:      #f3f3ee;
+  --bg2:     #ffffff;
+  --bg3:     #eaeae5;
+  --line:    #e0e0da;
+  --line2:   #d0d0ca;
+  --txt:     #111;
+  --txt2:    #666;
+  --txt3:    #aaa;
+  --acc:     #c8e000;
+  --acc-bg:  rgba(200,224,0,.12);
+  --acc-bdr: rgba(200,224,0,.4);
+  --red:     #d93535;
+  --grn:     #1a9e50;
+  --blu:     #1060cc;
+  --org:     #c97800;
+  --m4-bg:   #8a8a8a;
+}
+body.light .m4 .ml { color:#fff }
+body.light .m4 .mv { color:#fff }
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0 }
+html,body {
+  height:100%;
+  background:var(--bg);
+  color:var(--txt);
+  font-family:'Golos Text',sans-serif;
+  font-size:14px;
+  line-height:1.5;
+  overflow-x:hidden;
+  transition:background .2s, color .2s;
+}
+::-webkit-scrollbar { width:3px; height:3px }
+::-webkit-scrollbar-track { background:transparent }
+::-webkit-scrollbar-thumb { background:var(--line2); border-radius:2px }
+
+/* ── LAYOUT ── */
+#app { display:flex; flex-direction:column; height:100vh }
+
+main { flex:1; overflow-y:auto }
+
+/* ── LAYOUT ── */
+#app { display:flex; flex-direction:column; height:100vh }
+
+/* общий контейнер ширины */
+.w {
+  width:100%;
+  max-width:1280px;
+  margin:0 auto;
+  padding:0 20px;
+  box-sizing:border-box;
+}
+
+main { flex:1; overflow-y:auto }
+.scr { display:none; padding:20px 0; animation:up .2s ease }
+.scr.on { display:block }
+.scr-inner { /* контент страниц тоже в .w */ }
+@keyframes up { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── HEADER ── */
+header {
+  background:var(--bg); border-bottom:1px solid var(--line);
+  position:sticky; top:0; z-index:100; flex-shrink:0;
+}
+.hdr-inner {
+  max-width:1280px;
+  margin:0 auto;
+  padding:0 20px;
+  height:52px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.hdr-left  { display:flex; align-items:center; gap:8px }
+.hdr-right { display:flex; align-items:center; gap:6px }
+.logo {
+  font-family:'Unbounded',sans-serif;
+  font-size:12px; font-weight:800; letter-spacing:.06em;
+  display:flex; align-items:center; gap:8px;
+}
+.logo-sq {
+  width:22px; height:22px; border-radius:5px;
+  background:var(--acc);
+  display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:4px;
+}
+.logo-sq span { background:#000; border-radius:1px }
+.logo-sq span:last-child { opacity:.4 }
+
+.hdr-right { display:flex; align-items:center; gap:6px }
+
+.badge-month {
+  font-size:11px; padding:3px 9px; border-radius:20px;
+  background:var(--bg3); border:1px solid var(--line2);
+  color:var(--txt2); font-weight:500;
+}
+
+/* icon buttons (theme + refresh) */
+.btn-icon {
+  width:30px; height:30px; border-radius:50%;
+  background:var(--bg3); border:1px solid var(--line2);
+  color:var(--txt2); cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:border-color .15s, color .15s; flex-shrink:0;
+}
+.btn-icon:hover { border-color:var(--acc); color:var(--acc) }
+.btn-icon svg { width:14px; height:14px; pointer-events:none }
+
+.btn-signin {
+  display:flex; align-items:center; gap:6px;
+  padding:6px 13px; border-radius:var(--r);
+  background:var(--acc); color:#000; border:none;
+  font-family:'Unbounded',sans-serif;
+  font-size:9px; font-weight:800; letter-spacing:.06em;
+  cursor:pointer; transition:opacity .15s; white-space:nowrap;
+}
+.btn-signin:hover { opacity:.85 }
+.btn-signin svg { width:13px; height:13px }
+
+#user-wrap { display:none; align-items:center; gap:7px; font-size:12px; color:var(--txt2) }
+#user-avatar { width:26px; height:26px; border-radius:50%; border:1.5px solid var(--line2) }
+
+.btn-out {
+  padding:5px 12px; border-radius:var(--r);
+  background:var(--bg3); border:1px solid var(--line2);
+  color:var(--txt2); font-family:'Golos Text',sans-serif;
+  font-size:12px; cursor:pointer; transition:all .15s;
+}
+.btn-out:hover { border-color:var(--red); color:var(--red) }
+
+/* ── NAV ── */
+nav {
+  background:var(--bg);
+  border-bottom:1px solid var(--line);
+  overflow-x:auto; flex-shrink:0;
+}
+nav::-webkit-scrollbar { height:0 }
+.nav-inner {
+  max-width:1280px;
+  margin:0 auto;
+  padding:0 20px;
+  display:flex;
+}
+.tab {
+  padding:11px 16px; white-space:nowrap;
+  font-family:'Unbounded',sans-serif;
+  font-size:9px; font-weight:800; letter-spacing:.1em;
+  color:var(--txt3); background:none; border:none;
+  border-bottom:2px solid transparent;
+  cursor:pointer; transition:color .15s, border-color .15s;
+  display:flex; align-items:center; gap:5px;
+}
+.tab:hover { color:var(--txt2) }
+.tab.on { color:var(--acc); border-bottom-color:var(--acc) }
+.tab-dot { width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.5 }
+
+/* ── NOT AUTH ── */
+.gate {
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:14px; min-height:65vh;
+  text-align:center; padding:40px 20px;
+}
+.gate-icon {
+  width:56px; height:56px; border-radius:50%;
+  background:var(--bg3); border:1px solid var(--line2);
+  display:flex; align-items:center; justify-content:center; color:var(--txt3);
+}
+.gate-icon svg { width:24px; height:24px }
+.gate h2 { font-family:'Unbounded',sans-serif; font-size:15px; font-weight:800 }
+.gate p  { font-size:13px; color:var(--txt2); line-height:1.7 }
+.gate strong { color:var(--acc) }
+
+/* ── SHARED ── */
+.sec-title {
+  font-family:'Unbounded',sans-serif;
+  font-size:10px; font-weight:800; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--txt2);
+  margin-bottom:12px;
+  display:flex; align-items:center; gap:8px;
+}
+.sec-title::after { content:''; flex:1; height:1px; background:var(--line) }
+
+.loader {
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:12px; padding:60px 20px;
+  color:var(--txt2); font-size:13px;
+}
+.spin {
+  width:28px; height:28px;
+  border:2px solid var(--line2); border-top-color:var(--acc);
+  border-radius:50%; animation:spin .7s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+.err {
+  background:rgba(255,71,87,.08); border:1px solid rgba(255,71,87,.25);
+  border-radius:var(--r2); padding:14px; color:var(--red);
+  font-size:13px; margin-bottom:12px;
+}
+.empty { text-align:center; padding:48px 20px; color:var(--txt3); font-size:13px }
+
+/* ── ОТЧЁТ: SUMMARY ── */
+.sum-grid {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:8px; margin-bottom:16px;
+}
+.sum-card {
+  background:var(--bg2); border:1px solid var(--line);
+  border-radius:var(--r2); padding:12px 14px;
+}
+.sum-card.hi { background:var(--acc-bg); border-color:var(--acc-bdr) }
+.sum-card .lbl { font-size:9px; text-transform:uppercase; letter-spacing:.07em; color:var(--txt2); margin-bottom:5px }
+.sum-card .val { font-family:'Unbounded',sans-serif; font-size:18px; font-weight:900; letter-spacing:-.02em }
+.sum-card.hi .val { color:var(--acc) }
+.sum-card .sub { font-size:10px; color:var(--txt2); margin-top:3px }
+
+/* ── ОТЧЁТ: MOP CARDS ── */
+.mops { display:flex; flex-direction:column; gap:8px }
+.mop {
+  background:var(--bg2); border:1px solid var(--line);
+  border-radius:var(--r2); padding:13px 14px;
+  position:relative; overflow:hidden;
+  transition:border-color .2s;
+}
+.mop::before {
+  content:''; position:absolute; inset:0;
+  opacity:0; pointer-events:none;
+  transition:opacity .2s;
+}
+.mop.rank-top { border-color:rgba(46,213,115,.35) }
+.mop.rank-top::before { background:var(--grn); opacity:.06 }
+.mop.rank-mid { border-color:rgba(255,165,2,.35) }
+.mop.rank-mid::before { background:var(--org); opacity:.06 }
+.mop.rank-bot { border-color:rgba(255,71,87,.35) }
+.mop.rank-bot::before { background:var(--red); opacity:.06 }
+
+.rank-badge {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:20px; height:20px; border-radius:50%;
+  font-family:'Unbounded',sans-serif; font-size:9px; font-weight:900;
+  flex-shrink:0;
+}
+.rank-badge.top { background:rgba(46,213,115,.18); color:var(--grn) }
+.rank-badge.mid { background:rgba(255,165,2,.18);  color:var(--org) }
+.rank-badge.bot { background:rgba(255,71,87,.18);  color:var(--red) }
+
+/* ЗП — ранги */
+.zp-row { position:relative; overflow:hidden }
+.zp-row::before { content:''; position:absolute; inset:0; opacity:0; pointer-events:none }
+.zp-row.rank-top { border-color:rgba(46,213,115,.35) }
+.zp-row.rank-top::before { background:var(--grn); opacity:.05 }
+.zp-row.rank-mid { border-color:rgba(255,165,2,.35) }
+.zp-row.rank-mid::before { background:var(--org); opacity:.05 }
+.zp-row.rank-bot { border-color:rgba(255,71,87,.35) }
+.zp-row.rank-bot::before { background:var(--red); opacity:.05 }
+.mop-top {
+  display:flex; align-items:center;
+  justify-content:space-between; margin-bottom:10px;
+}
+.mop-name { font-weight:600; font-size:14px }
+.mop-tags { display:flex; gap:5px }
+.tag { font-size:10px; font-weight:600; padding:2px 8px; border-radius:6px }
+.tag-800  { background:rgba(30,144,255,.15); color:var(--blu) }
+.tag-1200 { background:rgba(255,165,2,.15);  color:var(--org) }
+
+/* 4 stat boxes — фон задаётся через --m4-bg */
+.mop-grid4 {
+  display:grid; grid-template-columns:repeat(4,1fr);
+  gap:6px; margin-bottom:10px;
+}
+.m4 { background:var(--m4-bg); border-radius:8px; padding:7px; text-align:center }
+.m4 .ml { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px }
+.m4 .mv { font-family:'Unbounded',sans-serif; font-size:12px; font-weight:700 }
+
+.prog-row { display:flex; align-items:center; gap:8px; margin-bottom:10px }
+.prog-l { font-size:11px; color:var(--txt2); width:42px; text-align:right; flex-shrink:0 }
+.prog-track { flex:1; height:4px; background:var(--line); border-radius:2px; overflow:hidden }
+.prog-fill { height:100%; border-radius:2px; transition:width .6s ease }
+.prog-r { font-size:11px; font-weight:600; width:38px; text-align:right; flex-shrink:0 }
+
+/* chips — две строки */
+.chips-wrap { display:flex; flex-direction:column; gap:5px }
+.chips-row { display:flex; flex-wrap:wrap; gap:5px }
+.chip {
+  font-size:10px; padding:3px 8px; border-radius:6px;
+  background:var(--bg3); border:1px solid var(--line);
+  color:var(--txt2); display:flex; align-items:center; gap:3px;
+}
+.chip strong { color:var(--txt); font-size:11px }
+.chip.c800  { border-color:rgba(30,144,255,.3) }
+.chip.c1200 { border-color:rgba(255,165,2,.3)  }
+
+/* ── ИТОГИ ── */
+.totals-box {
+  background:var(--bg2); border:1px solid var(--line2);
+  border-radius:var(--r2); padding:13px 14px; margin-top:14px;
+}
+.totals-lbl {
+  font-family:'Unbounded',sans-serif;
+  font-size:9px; font-weight:800; letter-spacing:.08em;
+  color:var(--txt2); margin-bottom:8px;
+}
+.totals-row { display:flex; flex-wrap:wrap; gap:7px }
+.ti {
+  background:var(--bg3); border-radius:8px;
+  padding:7px 11px; min-width:75px;
+  display:flex; flex-direction:column; gap:2px;
+}
+.ti .tl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em }
+.ti .tv { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:700 }
+
+/* ── ЗП ── */
+.zp-banner {
+  background:var(--acc-bg); border:1px solid var(--acc-bdr);
+  border-radius:var(--r2); padding:18px;
+  text-align:center; margin-bottom:16px;
+}
+.zp-banner .zl { font-size:10px; color:var(--txt2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px }
+.zp-banner .zv { font-family:'Unbounded',sans-serif; font-size:30px; font-weight:900; color:var(--acc); letter-spacing:-.02em }
+.zp-list { display:flex; flex-direction:column; gap:7px }
+.zp-row {
+  display:flex; align-items:center; gap:8px;
+  background:var(--bg2); border:1px solid var(--line);
+  border-radius:var(--r); padding:12px 14px;
+  position:relative; overflow:hidden;
+  transition:border-color .2s;
+}
+.zp-n  { font-weight:500; font-size:14px; flex-shrink:0; min-width:80px }
+.zp-bg { flex:1; height:3px; background:var(--line); border-radius:2px; overflow:hidden }
+.zp-fill { height:100%; background:var(--grn); border-radius:2px; transition:width .7s ease }
+.zp-a {
+  font-family:'Unbounded',sans-serif;
+  font-size:13px; font-weight:700; color:var(--grn);
+  flex-shrink:0; text-align:right; min-width:90px;
+}
+
+/* ── ГРАФИК ── */
+.sched-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:var(--r2); margin-bottom:18px }
+.sched-tbl { border-collapse:collapse; white-space:nowrap; min-width:100%; font-size:11px }
+.sched-tbl th {
+  background:var(--bg3); padding:7px 5px; text-align:center;
+  font-family:'Unbounded',sans-serif; font-size:8px; font-weight:700;
+  letter-spacing:.05em; color:var(--txt2);
+  border-bottom:1px solid var(--line);
+  position:sticky; top:0;
+}
+.sched-tbl th.sth-name { text-align:left; padding-left:12px; min-width:100px; position:sticky; left:0; z-index:5 }
+.sched-tbl th.day-h { min-width:26px }
+.sched-tbl td {
+  padding:6px 4px; text-align:center;
+  border-bottom:1px solid rgba(37,37,37,.5);
+  border-right:1px solid rgba(37,37,37,.35);
+}
+.sched-tbl td.td-name {
+  text-align:left; padding-left:12px;
+  font-weight:500; background:var(--bg2);
+  position:sticky; left:0; z-index:2;
+}
+.sched-tbl td.td-stat { font-family:'Unbounded',sans-serif; font-size:10px; font-weight:700; background:var(--bg3) }
+.sched-tbl tr:last-child td { border-bottom:none }
+.sched-tbl tr:hover td { background:rgba(255,255,255,.02) }
+.sched-tbl tr:hover td.td-name { background:var(--bg2) }
+.dr  { background:rgba(46,213,115,.12); color:var(--grn); font-weight:600; border-radius:3px; padding:1px 3px }
+.dv  { background:rgba(255,71,87,.12);  color:var(--red); font-weight:600; border-radius:3px; padding:1px 3px }
+.dvs { background:rgba(130,130,130,.1); color:var(--txt3); border-radius:3px; padding:1px 3px }
+.d-today { outline:2px solid var(--acc); outline-offset:-1px; border-radius:3px }
+.col-today { background:rgba(232,255,71,.04) !important }
+
+/* ── ИНСТРУКЦИИ ── */
+.instr-block {
+  border:1px solid var(--line); border-radius:var(--r2);
+  overflow:hidden; margin-bottom:8px;
+}
+.instr-hdr {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 16px; background:var(--bg2);
+  cursor:pointer; user-select:none; gap:10px; transition:background .15s;
+}
+.instr-hdr:hover { background:var(--bg3) }
+.instr-hdr h3 { font-weight:600; font-size:13px; line-height:1.4; flex:1 }
+.instr-toggle {
+  width:24px; height:24px; border-radius:50%;
+  background:var(--bg3); border:1px solid var(--line2);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--txt2); font-size:14px; flex-shrink:0; transition:all .2s;
+}
+.instr-block.open > .instr-hdr .instr-toggle {
+  background:var(--acc-bg); border-color:var(--acc);
+  color:var(--acc); transform:rotate(45deg);
+}
+.instr-body {
+  display:none; border-top:1px solid var(--line);
+  background:var(--bg);
+}
+.instr-block.open > .instr-body { display:block }
+
+/* таблица внутри инструкции */
+.instr-table {
+  width:100%; border-collapse:collapse; font-size:13px;
+}
+.instr-table th {
+  background:var(--bg3);
+  padding:10px 14px; text-align:left;
+  font-family:'Unbounded',sans-serif; font-size:9px;
+  font-weight:800; letter-spacing:.06em; color:var(--txt2);
+  border-bottom:1px solid var(--line2);
+}
+.instr-table td {
+  padding:10px 14px; vertical-align:top;
+  border-bottom:1px solid var(--line);
+  line-height:1.6; color:var(--txt2);
+}
+.instr-table tr:last-child td { border-bottom:none }
+.instr-table tr:hover td { background:rgba(255,255,255,.02) }
+.instr-table td:first-child {
+  font-weight:600; color:var(--txt);
+  white-space:nowrap; width:200px;
+}
+.instr-table td:first-child { border-right:1px solid var(--line) }
+body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
+
+/* вложенный спойлер */
+.instr-sub {
+  border-top:1px solid var(--line);
+}
+.instr-sub:first-child { border-top:none }
+.instr-sub-hdr {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 16px; background:var(--bg2);
+  cursor:pointer; user-select:none; gap:8px; transition:background .15s;
+}
+.instr-sub-hdr:hover { background:var(--bg3) }
+.instr-sub-hdr span { font-weight:600; font-size:12px; flex:1; color:var(--txt) }
+.instr-sub-toggle {
+  width:20px; height:20px; border-radius:50%;
+  background:var(--bg3); border:1px solid var(--line2);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--txt2); font-size:12px; flex-shrink:0; transition:all .2s;
+}
+.instr-sub.open .instr-sub-toggle { color:var(--acc); border-color:var(--acc); transform:rotate(45deg) }
+.instr-sub-body { display:none }
+.instr-sub.open .instr-sub-body { display:block }
+
+/* ── TOAST ── */
+#toast {
+  position:fixed; bottom:20px; left:50%;
+  transform:translateX(-50%) translateY(16px);
+  padding:9px 16px; border-radius:var(--r);
+  font-size:13px; opacity:0; pointer-events:none;
+  transition:all .25s; z-index:999; white-space:nowrap;
+}
+#toast.on { opacity:1; transform:translateX(-50%) translateY(0) }
+#toast.s { background:rgba(46,213,115,.15); border:1px solid var(--grn); color:var(--grn) }
+#toast.e { background:rgba(255,71,87,.15);  border:1px solid var(--red); color:var(--red) }
+#toast.i { background:var(--bg3); border:1px solid var(--line2); color:var(--txt) }
+
+@media(max-width:480px) {
+  .sum-grid  { grid-template-columns:1fr 1fr }
+  .mop-grid4 { grid-template-columns:repeat(2,1fr) }
+  header     { padding:0 12px }
+  .scr       { padding:12px }
+  .tab       { padding:10px 12px; font-size:8px }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="hdr-inner">
+      <div class="hdr-left">
+        <div class="logo">
+          <div class="logo-sq"><span></span><span></span><span></span><span></span></div>
+          CRM
+        </div>
+      </div>
+      <div class="hdr-right">
+        <span class="badge-month" id="badge-month">—</span>
+        <button class="btn-icon" id="btn-refresh" title="Обновить">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/>
+            <path d="M21 3v5h-5"/>
+            <path d="M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16"/>
+            <path d="M8 16H3v5"/>
+          </svg>
+        </button>
+        <button class="btn-icon" id="btn-theme" title="Тема">
+          <svg id="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg id="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+        <button class="btn-signin" id="btn-login" style="display:none">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 11h8.533c.044.385.067.78.067 1.184 0 3.37-1.17 6.22-3.207 8.154C15.553 22.124 13.9 23 12 23A11 11 0 1 1 12 1c2.95 0 5.56 1.113 7.522 2.934l-3.076 3.042C15.197 5.79 13.68 5 12 5a7 7 0 1 0 0 14c3.205 0 5.542-1.916 6.27-4.987H12v-3z"/></svg>
+          Войти
+        </button>
+        <div id="user-wrap">
+          <img id="user-avatar" src="" alt=""/>
+          <span id="user-name"></span>
+        </div>
+        <button class="btn-out" id="btn-out" style="display:none">Выйти</button>
+      </div>
+    </div>
+  </header>
+
+  <nav id="main-nav" style="display:none">
+    <div class="nav-inner">
+      <button class="tab on" data-tab="otchet"><span class="tab-dot"></span>ОТЧЁТ</button>
+      <button class="tab" data-tab="zp"><span class="tab-dot"></span>ЗП</button>
+      <button class="tab" data-tab="grafik"><span class="tab-dot"></span>ГРАФИК</button>
+      <button class="tab" data-tab="instruktsii"><span class="tab-dot"></span>ИНСТРУКЦИИ</button>
+    </div>
+  </nav>
+
+  <main>
+    <div id="scr-login" class="scr">
+      <div class="gate">
+        <div class="gate-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <h2>Требуется вход</h2>
+        <p>Нажмите кнопку <strong>Войти</strong><br>в правом верхнем углу</p>
+      </div>
+    </div>
+    <div id="scr-otchet"      class="scr"><div class="w"><div id="c-otchet"></div></div></div>
+    <div id="scr-zp"          class="scr"><div class="w"><div id="c-zp"></div></div></div>
+    <div id="scr-grafik"      class="scr"><div class="w"><div id="c-grafik"></div></div></div>
+    <div id="scr-instruktsii" class="scr"><div class="w"><div id="c-instruktsii"></div></div></div>
+  </main>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ══ CONFIG ══ */
+const CFG = {
+  CLIENT_ID: '364532815329-0j1lkobb1v9vcserj6artf64nd95a0la.apps.googleusercontent.com',
+  SHEET_ID:  '1DeUsHB_O1SbIMR4p5yd64o_R0yllWvtnyNhjxjhipn8',
+};
+
+/* ══ MONTH ══ */
+const _now   = new Date();
+const SUFFIX = String(_now.getMonth()+1).padStart(2,'0') + String(_now.getFullYear()).slice(-2);
+const TODAY  = _now.getDate();
+const SHEETS = {
+  otchet:      'ОТЧЁТ'   + SUFFIX,
+  zp:          'ЗП'      + SUFFIX,
+  grafik:      'ГРАФИКИ' + SUFFIX,
+  instruktsii: 'ИНСТРУКЦИИ',
+};
+document.getElementById('badge-month').textContent =
+  _now.toLocaleString('ru', { month:'long', year:'numeric' });
+
+/* ══ STATE ══ */
+const S = { token:null, user:null, data:{ otchet:null, zp:null, grafik:null, instruktsii:null } };
+
+/* ══ THEME ══ */
+if (localStorage.getItem('crm_theme') === 'light') document.body.classList.add('light');
+
+function setTheme(light) {
+  document.body.classList.toggle('light', light);
+  document.getElementById('ico-moon').style.display = light ? 'none' : '';
+  document.getElementById('ico-sun').style.display  = light ? '' : 'none';
+  localStorage.setItem('crm_theme', light ? 'light' : 'dark');
+}
+function syncTheme() { setTheme(document.body.classList.contains('light')) }
+
+/* ══ TOAST ══ */
+let _tt;
+function toast(msg, type='i') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = type + ' on';
+  clearTimeout(_tt); _tt = setTimeout(() => el.className='', 2600);
+}
+
+/* ══ SCREENS ══ */
+function showScr(id) {
+  ['otchet','zp','grafik','instruktsii'].forEach(t =>
+    document.getElementById('scr-'+t).classList.remove('on')
+  );
+  document.getElementById('scr-'+id)?.classList.add('on');
+}
+
+/* ══ HELPERS ══ */
+function num(v) { return parseInt(v)||0 }
+function fmtRub(v) {
+  const n = parseFloat(String(v||'').replace(/[^\d.,-]/g,'').replace(',','.'));
+  return isNaN(n) ? (v||'—') : n.toLocaleString('ru') + ' ₽';
+}
+function pctClr(p) { return p>=100?'var(--grn)':p>=60?'var(--org)':'var(--red)' }
+function loader() { return `<div class="loader"><div class="spin"></div><span>Загружаем…</span></div>` }
+
+const ICON_REFRESH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>`;
+
+/* ══ AUTH ══ */
+let tokenClient;
+
+function initAuth() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CFG.CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+    callback: async (resp) => {
+      if (resp.error) { toast('Ошибка: '+resp.error, 'e'); return; }
+      S.token = resp.access_token;
+      sessionStorage.setItem('crm_tok', resp.access_token);
+      sessionStorage.setItem('crm_exp', Date.now()+(resp.expires_in-60)*1000);
+      await loadUser();
+      onLogin();
+    },
+  });
+}
+
+async function loadUser() {
+  try {
+    const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo',
+      { headers:{ Authorization:'Bearer '+S.token } });
+    S.user = await r.json();
+    sessionStorage.setItem('crm_user', JSON.stringify(S.user));
+    renderUser();
+  } catch(e) {}
+}
+
+function renderUser() {
+  if (!S.user) return;
+  if (S.user.picture) document.getElementById('user-avatar').src = S.user.picture;
+  if (S.user.name)    document.getElementById('user-name').textContent = S.user.name.split(' ')[0];
+  document.getElementById('user-wrap').style.display = 'flex';
+}
+
+function onLogin() {
+  document.getElementById('btn-login').style.display = 'none';
+  document.getElementById('btn-out').style.display   = '';
+  document.getElementById('main-nav').style.display  = 'flex';
+  const ls = document.getElementById('scr-login');
+  ls.classList.remove('on'); ls.style.display = 'none';
+  goTab('otchet');
+  toast('Добро пожаловать!', 's');
+}
+
+function onLogout() {
+  if (S.token) google.accounts.oauth2.revoke(S.token, ()=>{});
+  S.token=null; S.user=null;
+  S.data = { otchet:null, zp:null, grafik:null, instruktsii:null };
+  ['crm_tok','crm_exp','crm_user'].forEach(k => sessionStorage.removeItem(k));
+  document.getElementById('user-wrap').style.display = 'none';
+  document.getElementById('btn-out').style.display   = 'none';
+  document.getElementById('btn-login').style.display = '';
+  document.getElementById('main-nav').style.display  = 'none';
+  ['otchet','zp','grafik','instruktsii'].forEach(t => {
+    const s = document.getElementById('scr-'+t);
+    s.classList.remove('on'); s.style.display = '';
+  });
+  const ls = document.getElementById('scr-login');
+  ls.style.display=''; ls.classList.add('on');
+  toast('Вы вышли');
+}
+
+function tryRestore() {
+  const tok = sessionStorage.getItem('crm_tok');
+  const exp = parseInt(sessionStorage.getItem('crm_exp')||'0');
+  if (!tok || exp <= Date.now()) {
+    ['crm_tok','crm_exp','crm_user'].forEach(k => sessionStorage.removeItem(k));
+    return false;
+  }
+  S.token = tok;
+  const u = sessionStorage.getItem('crm_user');
+  if (u) { S.user = JSON.parse(u); renderUser(); }
+  onLogin();
+  return true;
+}
+
+/* ══ API ══ */
+async function api(sheet, range) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/`
+            + encodeURIComponent(sheet+'!'+range);
+  const r = await fetch(url, { headers:{ Authorization:'Bearer '+S.token } });
+  if (!r.ok) {
+    const e = await r.json();
+    const msg = e.error?.message || r.statusText;
+    if (r.status===401 || r.status===403 || msg.includes('insufficient')) {
+      ['crm_tok','crm_exp','crm_user'].forEach(k => sessionStorage.removeItem(k));
+      S.token=null; onLogout(); toast('Сессия истекла — войдите снова','e');
+      throw new Error('auth');
+    }
+    throw new Error(msg);
+  }
+  return (await r.json()).values || [];
+}
+
+/* ══ TABS ══ */
+function goTab(tab) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab===tab));
+  showScr(tab);
+  loadTab(tab);
+}
+
+async function loadTab(tab) {
+  if (S.data[tab]) return;
+  const el = document.getElementById('c-'+tab);
+  if (el) el.innerHTML = loader();
+  try {
+    if      (tab==='otchet')      S.data.otchet      = await api(SHEETS.otchet,      'A1:V15');
+    else if (tab==='zp')          S.data.zp           = await api(SHEETS.zp,          'A1:B13');
+    else if (tab==='grafik')      S.data.grafik       = await api(SHEETS.grafik,      'A1:AI25');
+    else if (tab==='instruktsii') S.data.instruktsii  = await api(SHEETS.instruktsii, 'A1:C200');
+    renderTab(tab);
+  } catch(e) {
+    if (e.message!=='auth' && el)
+      el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
+  }
+}
+
+function reloadCurrent() {
+  const tab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
+  S.data[tab] = null;
+  loadTab(tab).then(() => toast('Обновлено','s'));
+}
+
+function renderTab(tab) {
+  if      (tab==='otchet')      renderOtchet();
+  else if (tab==='zp')          renderZP();
+  else if (tab==='grafik')      renderGrafik();
+  else if (tab==='instruktsii') renderInstruktsii();
+}
+
+/* ══ RENDER: ОТЧЁТ ══ */
+function renderOtchet() {
+  const el  = document.getElementById('c-otchet');
+  const raw = S.data.otchet;
+  if (!raw || raw.length < 4) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
+
+  // Строки: 0=шапка, 1=месяц, 2=заголовки колонок, 3-11=менеджеры, 12=котёл, 13=пусто, 14=ВСЕГО
+  // Колонки: A(0)МОП B(1)виз800 C(2)виз1200 D(3)план E(4)ост F(5)% G(6)прогноз H(7)всеВиз
+  // I(8)Σ800 J(9)виз800_блок K(10)кред800 L(11)нал800 M(12)TD800 N(13)ком800
+  // O(14)Σ1200 P(15)виз1200_блок K1200=(10)? Q(16)задаток R(17)ТЛ S(18)салон T(19)дни U(20)дата
+
+  const mgrRows = raw.slice(3,12).filter(r => r[0]&&r[0].trim());
+  const totRow  = raw[14] || [];
+
+  // ВСЕ ВИЗИТЫ отдела = SUM(B4:B12) + SUM(C4:C12)
+  const vis800sum  = raw.slice(3,12).reduce((s,r) => s+num(r[1]), 0);
+  const vis1200sum = raw.slice(3,12).reduce((s,r) => s+num(r[2]), 0);
+  const allVis     = vis800sum + vis1200sum;
+
+  // ПЛАН отдела
+  const planTotal = num(totRow[3]);
+
+  // ПРОДАЖИ (кредит800 + кредит1200) = totRow[10] + totRow[16] — нет, по описанию I15+M15
+  const salesK800  = num(totRow[8]);
+  const salesK1200 = num(totRow[12]);
+  const sales      = salesK800 + salesK1200;
+
+  // ПРОГНОЗ ОТДЕЛА = allVis / ((planTotal / daysInMonth) * currentDay)
+  const mo  = parseInt(SUFFIX.slice(0,2));
+  const yr  = 2000 + parseInt(SUFFIX.slice(2,4));
+  const dim = new Date(yr, mo, 0).getDate();
+  const dp  = (_now.getFullYear()===yr && _now.getMonth()+1===mo) ? _now.getDate()
+            : _now > new Date(yr,mo-1,dim) ? dim : null;
+
+  let progOtdel = '—';
+  if (dp && planTotal > 0) {
+    const target = (planTotal / dim) * dp;
+    progOtdel = Math.round(allVis / target * 100) + '%';
+  }
+
+  const dpStr = dp || '—';
+
+  const sum = `<div class="sum-grid">
+    <div class="sum-card hi">
+      <div class="lbl">Все визиты</div>
+      <div class="val">${allVis||'—'}</div>
+      <div class="sub">За месяц</div>
+    </div>
+    <div class="sum-card">
+      <div class="lbl">План</div>
+      <div class="val">${planTotal||'—'}</div>
+      <div class="sub">Дней: ${dpStr} / ${dim}</div>
+    </div>
+    <div class="sum-card">
+      <div class="lbl">Продажи</div>
+      <div class="val">${sales||'—'}</div>
+      <div class="sub">800: ${salesK800} · 1200: ${salesK1200}</div>
+    </div>
+  </div>`;
+
+  const mops_html = (() => {
+    // Извлекаем числовой прогноз для сортировки
+    const withProg = mgrRows.map(r => {
+      const progStr = r[6]||'0%';
+      const progNum = parseFloat(progStr.replace('%','').replace(',','.')) || 0;
+      return { r, progNum };
+    });
+
+    // Сортируем по прогнозу — от лучшего к худшему
+    withProg.sort((a, b) => b.progNum - a.progNum);
+
+    const total = withProg.length;
+
+    return withProg.map(({ r, progNum }, idx) => {
+      const name   = r[0]||'—';
+      const v800   = r[1]||'0', v1200 = r[2]||'0';
+      const rplan  = r[3]||'0', ost   = r[4]||'0';
+      const prc    = r[5]||'0%', prog  = r[6]||'0%';
+      const allV   = r[7]||'0';
+      const sig800  = r[8]||'0';
+      const kred800 = r[10]||'0';
+      const nal800  = r[11]||'0';
+      const td800   = r[12]||'0';
+      const kom800  = r[13]||'0';
+      const sig1200  = r[14]||'0';
+      const kred1200 = r[15]||'0';
+      const nal1200  = r[16]||'0';
+      const td1200   = r[17]||'0';
+      const kom1200  = r[18]||'0';
+      const zadatok  = r[16]||'0';
+      const p = num(prc);
+
+      // Определяем ранг
+      let rankClass, rankBadgeClass, rankEmoji;
+      if (idx === 0) {
+        rankClass = 'rank-top'; rankBadgeClass = 'top'; rankEmoji = '🥇';
+      } else if (idx === total - 1) {
+        rankClass = 'rank-bot'; rankBadgeClass = 'bot'; rankEmoji = '🥉';
+      } else {
+        rankClass = 'rank-mid'; rankBadgeClass = 'mid'; rankEmoji = '🥈';
+      }
+
+      // Топ 1 — зелёный, последний — красный, остальные — жёлтый
+      // Если только 2 человека — нет среднего
+      if (total <= 2) {
+        if (idx === 0) { rankClass='rank-top'; rankBadgeClass='top'; rankEmoji='🥇'; }
+        else { rankClass='rank-bot'; rankBadgeClass='bot'; rankEmoji='🥉'; }
+      }
+
+      return `<div class="mop ${rankClass}">
+        <div class="mop-top">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="rank-badge ${rankBadgeClass}">${idx+1}</span>
+            <span class="mop-name">${name}</span>
+          </div>
+          <div class="mop-tags">
+            <span class="tag tag-800">800: ${v800}</span>
+            <span class="tag tag-1200">1200: ${v1200}</span>
+          </div>
+        </div>
+        <div class="mop-grid4">
+          <div class="m4"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
+          <div class="m4"><div class="ml">План</div><div class="mv">${rplan}</div></div>
+          <div class="m4"><div class="ml">Остаток</div><div class="mv" style="color:var(--org)">${ost}</div></div>
+          <div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(num(prog))}">${prog}</div></div>
+        </div>
+        <div class="prog-row">
+          <span class="prog-l">${prc}</span>
+          <div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${pctClr(p)}"></div></div>
+          <span class="prog-r" style="color:${pctClr(p)}">${p}%</span>
+        </div>
+        <div class="chips-wrap">
+          <div class="chips-row">
+            <span class="chip c800">💰 Σ800 <strong>${sig800}</strong></span>
+            <span class="chip c800">💳 Кред <strong>${kred800}</strong></span>
+            <span class="chip c800">💵 Нал <strong>${nal800}</strong></span>
+            <span class="chip c800">🔄 TD <strong>${td800}</strong></span>
+            <span class="chip c800">📋 Ком <strong>${kom800}</strong></span>
+            <span class="chip">🤝 Задаток <strong>${zadatok}</strong></span>
+          </div>
+          <div class="chips-row">
+            <span class="chip c1200">💰 Σ1200 <strong>${sig1200}</strong></span>
+            <span class="chip c1200">💳 Кред <strong>${kred1200}</strong></span>
+            <span class="chip c1200">💵 Нал <strong>${nal1200}</strong></span>
+            <span class="chip c1200">🔄 TD <strong>${td1200}</strong></span>
+            <span class="chip c1200">📋 Ком <strong>${kom1200}</strong></span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  })();
+
+  const tot = `<div class="totals-box">
+    <div class="totals-lbl">ИТОГО ПО ОТДЕЛУ</div>
+    <div class="totals-row">
+      <div class="ti"><span class="tl">Все визиты</span><span class="tv">${allVis||'—'}</span></div>
+      <div class="ti"><span class="tl">Визиты 800</span><span class="tv">${vis800sum||'—'}</span></div>
+      <div class="ti"><span class="tl">Визиты 1200</span><span class="tv">${vis1200sum||'—'}</span></div>
+      <div class="ti"><span class="tl">Продажи</span><span class="tv" style="color:var(--acc)">${sales||'—'}</span></div>
+      <div class="ti"><span class="tl">Прогноз</span><span class="tv" style="color:${pctClr(parseInt(progOtdel))}">${progOtdel}</span></div>
+    </div>
+  </div>`;
+
+  el.innerHTML = `${sum}<div class="sec-title">Менеджеры</div><div class="mops">${mops_html}</div>${tot}`;
+}
+
+/* ══ RENDER: ЗП ══ */
+function renderZP() {
+  const el  = document.getElementById('c-zp');
+  const raw = S.data.zp;
+  if (!raw || raw.length < 3) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
+
+  const mgrs   = raw.slice(2,12).filter(r => r[0]&&r[0].trim());
+  const totRow = raw[12] || [];
+
+  // Парсим суммы и сортируем от большей к меньшей
+  const parsed = mgrs.map(r => ({
+    name: r[0]||'—',
+    raw:  r[1]||'0',
+    n:    parseFloat(String(r[1]||'0').replace(/[^\d.]/g,''))||0,
+  }));
+  parsed.sort((a, b) => b.n - a.n);
+
+  const maxAmt = parsed[0]?.n || 0;
+  const total  = parsed.length;
+
+  const rows = parsed.map((item, idx) => {
+    const w = maxAmt ? Math.round(item.n / maxAmt * 100) : 0;
+
+    let rankClass, rankBadgeClass;
+    if (idx === 0) { rankClass='rank-top'; rankBadgeClass='top'; }
+    else if (idx === total-1) { rankClass='rank-bot'; rankBadgeClass='bot'; }
+    else { rankClass='rank-mid'; rankBadgeClass='mid'; }
+    if (total <= 2) {
+      rankClass    = idx===0 ? 'rank-top' : 'rank-bot';
+      rankBadgeClass = idx===0 ? 'top' : 'bot';
+    }
+
+    return `<div class="zp-row ${rankClass}">
+      <span class="rank-badge ${rankBadgeClass}">${idx+1}</span>
+      <span class="zp-n">${item.name}</span>
+      <div class="zp-bg"><div class="zp-fill" style="width:${w}%"></div></div>
+      <span class="zp-a">${fmtRub(item.raw)}</span>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="zp-banner">
+      <div class="zl">Фонд отдела за месяц</div>
+      <div class="zv">${fmtRub(totRow[1])}</div>
+    </div>
+    <div class="sec-title">Топ по зарплате</div>
+    <div class="zp-list">${rows}</div>`;
+}
+
+/* ══ RENDER: ГРАФИК ══ */
+function renderGrafik() {
+  const el  = document.getElementById('c-grafik');
+  const raw = S.data.grafik;
+  if (!raw || raw.length < 3) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
+
+  function buildGroup(rows, daysRowIdx, title) {
+    if (!rows.length) return '';
+    const dRow = raw[daysRowIdx]||[];
+    const days = Array.from({length:31}, (_,i) => dRow[i+1]||'');
+
+    const ths = days.map(d =>
+      `<th class="day-h${parseInt(d)===TODAY?' col-today':''}">${d}</th>`
+    ).join('');
+
+    const trs = rows.map(r => {
+      if (!r[0]||!r[0].trim()) return '';
+      const cells = days.map((d,i) => {
+        const val = r[i+1]||'';
+        const v   = val.toLowerCase().trim();
+        const cls = v==='р'?'dr':v==='в'?'dv':v==='вс'?'dvs':'';
+        const isT = parseInt(d)===TODAY;
+        return `<td class="${isT?'col-today':''}"><span class="${cls}${isT&&cls?' d-today':''}">${val}</span></td>`;
+      }).join('');
+      return `<tr>
+        <td class="td-name">${r[0]}</td>${cells}
+        <td class="td-stat">${r[33]||''}</td>
+        <td class="td-stat">${r[34]||''}</td>
+        <td class="td-stat">${r[35]||''}</td>
+      </tr>`;
+    }).filter(Boolean).join('');
+
+    return `<div class="sec-title" style="margin-bottom:8px">${title}</div>
+    <div class="sched-wrap">
+      <table class="sched-tbl">
+        <thead><tr>
+          <th class="sth-name">Сотрудник</th>${ths}
+          <th>ВХ</th><th>См</th><th>А</th>
+        </tr></thead>
+        <tbody>${trs}</tbody>
+      </table>
+    </div>`;
+  }
+
+  el.innerHTML =
+    buildGroup(raw.slice(3,13),  1,  raw[0]?.[0]||'Группа 1') +
+    buildGroup(raw.slice(19,25), 17, raw[16]?.[0]||'Группа 2');
+}
+
+/* ══ RENDER: ИНСТРУКЦИИ ══ */
+// Структура листа: строки сгруппированы кнопками +/-
+// Заголовок блока = строка с CAPS текстом в col A, col B пустая
+// Внутри блока: col A = Статус, col B = Критерии применения, col C = Обязательные действия
+// Для первого блока (РЕГЛАМЕНТ...) внутри могут быть вложенные подзаголовки
+
+function renderInstruktsii() {
+  const el  = document.getElementById('c-instruktsii');
+  const raw = S.data.instruktsii;
+  if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
+
+  // Парсим блоки
+  const blocks = [];
+  let cur = null;
+  raw.forEach(r => {
+    const a = (r[0]||'').trim();
+    const b = (r[1]||'').trim();
+    const c = (r[2]||'').trim();
+    if (!a && !b && !c) return;
+
+    // Заголовок блока: col A = CAPS, остальные пустые
+    if (a && !b && !c && a === a.toUpperCase() && a.length > 4) {
+      cur = { title:a, rows:[] };
+      blocks.push(cur);
+      return;
+    }
+    if (!cur) { cur = { title: a||'—', rows:[] }; blocks.push(cur); return; }
+    // строка данных
+    if (a || b || c) cur.rows.push({ status:a, criteria:b, action:c });
+  });
+
+  if (!blocks.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
+
+  // Определяем есть ли у блока 3 колонки или 2
+  function hasActions(blk) { return blk.rows.some(r => r.action) }
+
+  // Проверяем есть ли вложенные подзаголовки (CAPS строки без criteria/action внутри блока)
+  function hasSubs(blk) {
+    return blk.rows.some(r => r.status && !r.criteria && !r.action &&
+      r.status === r.status.toUpperCase() && r.status.length > 4);
+  }
+
+  function buildTable(rows, withActions) {
+    const cols = withActions
+      ? ['Статус','Критерии применения','Обязательные действия в CRM']
+      : ['Статус','Критерии применения'];
+    const ths = cols.map(c => `<th>${c}</th>`).join('');
+    const trs = rows.filter(r => r.status || r.criteria).map(r => {
+      if (withActions) {
+        return `<tr>
+          <td>${r.status||'—'}</td>
+          <td>${r.criteria||'—'}</td>
+          <td>${r.action||'—'}</td>
+        </tr>`;
+      }
+      return `<tr>
+        <td>${r.status||'—'}</td>
+        <td>${r.criteria||'—'}</td>
+      </tr>`;
+    }).join('');
+    return `<table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
+  }
+
+  function buildSubBlocks(blk) {
+    // разбиваем rows на подблоки по CAPS заголовкам
+    const subs = [];
+    let curSub = null;
+    blk.rows.forEach(r => {
+      if (r.status && !r.criteria && !r.action &&
+          r.status === r.status.toUpperCase() && r.status.length > 4) {
+        curSub = { title: r.status, rows:[] };
+        subs.push(curSub);
+      } else {
+        if (!curSub) { curSub = { title:'Содержание', rows:[] }; subs.push(curSub); }
+        curSub.rows.push(r);
+      }
+    });
+
+    return subs.map((s,si) => {
+      const sid = 'is-' + blk._id + '-' + si;
+      const withA = hasActions(s);
+      return `<div class="instr-sub" id="${sid}">
+        <div class="instr-sub-hdr" onclick="toggleSub('${sid}')">
+          <span>${s.title}</span>
+          <div class="instr-sub-toggle">+</div>
+        </div>
+        <div class="instr-sub-body">${buildTable(s.rows, withA)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  const html = blocks.map((b,i) => {
+    b._id = i;
+    const id = 'ib-'+i;
+    const nested = hasSubs(b);
+    const bodyContent = nested ? buildSubBlocks(b) : buildTable(b.rows, hasActions(b));
+
+    return `<div class="instr-block" id="${id}">
+      <div class="instr-hdr" onclick="toggleInstr('${id}')">
+        <h3>${b.title}</h3>
+        <div class="instr-toggle">+</div>
+      </div>
+      <div class="instr-body">${bodyContent}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="sec-title">Инструкции (${blocks.length})</div>${html}`;
+}
+
+function toggleInstr(id) { document.getElementById(id)?.classList.toggle('open') }
+function toggleSub(id)   { document.getElementById(id)?.classList.toggle('open') }
+
+/* ══ EVENTS ══ */
+document.getElementById('btn-theme').addEventListener('click',
+  () => setTheme(!document.body.classList.contains('light'))
+);
+document.getElementById('btn-refresh').addEventListener('click', reloadCurrent);
+document.getElementById('btn-login').addEventListener('click', () => {
+  if (!tokenClient) { toast('Загружается…','i'); return; }
+  tokenClient.requestAccessToken({ prompt:'consent' });
+});
+document.getElementById('btn-out').addEventListener('click', onLogout);
+document.querySelectorAll('.tab').forEach(b =>
+  b.addEventListener('click', () => goTab(b.dataset.tab))
+);
+/* ══ INIT ══ */
+function init() {
+  syncTheme();
+  function waitGoogle() {
+    if (typeof google !== 'undefined' && google.accounts) {
+      initAuth();
+      if (tryRestore()) {
+        document.getElementById('btn-login').style.display = 'none';
+      } else {
+        document.getElementById('btn-login').style.display = '';
+        document.getElementById('scr-login').classList.add('on');
+      }
+    } else {
+      setTimeout(waitGoogle, 100);
+    }
+  }
+  waitGoogle();
+}
+
+if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
+else init();
+</script>
+</body>
+</html>

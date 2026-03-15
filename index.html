@@ -897,15 +897,16 @@ function renderOtchet() {
 
   const dpStr = dp || '—';
 
-  // Диапазон строк для суммирования: менеджеры (3-11) + котёл (12)
-  const allRows = raw.slice(3,13); // строки 4-13 включая котёл
+  // Диапазон строк: i4:i12 = raw[3..11], i14 = raw[12] (котёл)
+  const mgr9 = raw.slice(3, 12); // строки 4-12 (9 менеджеров)
+  const kot  = raw[12] || [];    // строка 14 (котёл)
 
-  // Кредит = SUM(I4:I12+I14) + SUM(M4:M12+M14) = col8 + col12
-  const deptKred = allRows.reduce((s,r) => s + num(r[8])  + num(r[12]), 0);
-  // Наличка = SUM(J4:J12+J14) + SUM(N4:N12+N14) = col9 + col13
-  const deptNal  = allRows.reduce((s,r) => s + num(r[9])  + num(r[13]), 0);
-  // Комиссия = SUM(L4:L12+L14) + SUM(P4:P12+P14) = col11 + col15
-  const deptKom  = allRows.reduce((s,r) => s + num(r[11]) + num(r[15]), 0);
+  // Кредит = SUM(I4:I12)+I14 + SUM(M4:M12)+M14 = col8 + col12
+  const deptKred = mgr9.reduce((s,r) => s + num(r[8])  + num(r[12]), 0) + num(kot[8])  + num(kot[12]);
+  // Наличка = SUM(J4:J12)+J14 + SUM(N4:N12)+N14 = col9 + col13
+  const deptNal  = mgr9.reduce((s,r) => s + num(r[9])  + num(r[13]), 0) + num(kot[9])  + num(kot[13]);
+  // Комиссия = SUM(L4:L12)+L14 + SUM(P4:P12)+P14 = col11 + col15
+  const deptKom  = mgr9.reduce((s,r) => s + num(r[11]) + num(r[15]), 0) + num(kot[11]) + num(kot[15]);
 
   const deptCard = `
   <div class="sec-title">ОТДЕЛ CRM</div>

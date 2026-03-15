@@ -861,28 +861,25 @@ function renderOtchet() {
   const raw = S.data.otchet;
   if (!raw || raw.length < 4) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
 
-  // Строки: 0=шапка, 1=месяц, 2=заголовки колонок, 3-11=менеджеры, 12=котёл, 13=пусто, 14=ВСЕГО
-  // Колонки: A(0)МОП B(1)виз800 C(2)виз1200 D(3)план E(4)ост F(5)% G(6)прогноз H(7)всеВиз
-  // I(8)Σ800 J(9)виз800_блок K(10)кред800 L(11)нал800 M(12)TD800 N(13)ком800
-  // O(14)Σ1200 P(15)виз1200_блок K1200=(10)? Q(16)задаток R(17)ТЛ S(18)салон T(19)дни U(20)дата
+  // По скриншоту точная раскладка столбцов:
+  // A(0)МОП B(1)виз800 C(2)виз1200 D(3)план E(4)ост F(5)% G(6)прогноз H(7)все_виз
+  // 800:  I(8)=кредит  J(9)=наличка  K(10)=trade-in  L(11)=комиссия
+  // 1200: M(12)=кредит N(13)=наличка O(14)=trade-in  P(15)=комиссия
+  // Q(16)=задаток R(17)=луна S(18)=ТЛ T(19)=в_салоне U(20)=ДНИ V(21)=ДАТА
 
-  const mgrRows = raw.slice(3,12).filter(r => r[0]&&r[0].trim());
-  const totRow  = raw[14] || [];
+  const mgrRows = raw.slice(3, 12).filter(r => r[0] && r[0].trim()); // строки 4-12
+  const kot     = raw[13] || []; // строка 14 = КОТЕЛ
+  const totRow  = raw[14] || []; // строка 15 = ВСЕГО
 
-  // ВСЕ ВИЗИТЫ отдела = SUM(B4:B12) + SUM(C4:C12)
-  const vis800sum  = raw.slice(3,12).reduce((s,r) => s+num(r[1]), 0);
-  const vis1200sum = raw.slice(3,12).reduce((s,r) => s+num(r[2]), 0);
+  // ВИЗИТЫ = SUM(B4:C12) + (B14+C14) котёл
+  const vis800sum  = raw.slice(3,12).reduce((s,r) => s + num(r[1]), 0) + num(kot[1]);
+  const vis1200sum = raw.slice(3,12).reduce((s,r) => s + num(r[2]), 0) + num(kot[2]);
   const allVis     = vis800sum + vis1200sum;
 
   // ПЛАН отдела
   const planTotal = num(totRow[3]);
 
-  // ПРОДАЖИ (кредит800 + кредит1200) = totRow[10] + totRow[16] — нет, по описанию I15+M15
-  const salesK800  = num(totRow[8]);
-  const salesK1200 = num(totRow[12]);
-  const sales      = salesK800 + salesK1200;
-
-  // ПРОГНОЗ ОТДЕЛА = allVis / ((planTotal / daysInMonth) * currentDay)
+  // ПРОГНОЗ ОТДЕЛА
   const mo  = parseInt(SUFFIX.slice(0,2));
   const yr  = 2000 + parseInt(SUFFIX.slice(2,4));
   const dim = new Date(yr, mo, 0).getDate();
@@ -894,19 +891,15 @@ function renderOtchet() {
     const target = (planTotal / dim) * dp;
     progOtdel = Math.round(allVis / target * 100) + '%';
   }
-
   const dpStr = dp || '—';
 
-  // Диапазон строк: i4:i12 = raw[3..11], i14 = raw[12] (котёл)
-  const mgr9 = raw.slice(3, 12); // строки 4-12 (9 менеджеров)
-  const kot  = raw[12] || [];    // строка 14 (котёл)
-
-  // Кредит = SUM(I4:I12)+I14 + SUM(M4:M12)+M14 = col8 + col12
-  const deptKred = mgr9.reduce((s,r) => s + num(r[8])  + num(r[12]), 0) + num(kot[8])  + num(kot[12]);
-  // Наличка = SUM(J4:J12)+J14 + SUM(N4:N12)+N14 = col9 + col13
-  const deptNal  = mgr9.reduce((s,r) => s + num(r[9])  + num(r[13]), 0) + num(kot[9])  + num(kot[13]);
-  // Комиссия = SUM(L4:L12)+L14 + SUM(P4:P12)+P14 = col11 + col15
-  const deptKom  = mgr9.reduce((s,r) => s + num(r[11]) + num(r[15]), 0) + num(kot[11]) + num(kot[15]);
+  // КАРТОЧКА ОТДЕЛА
+  // Кредит   = SUM(I4:I12)+I14  + SUM(M4:M12)+M14  = col8  + col12
+  const deptKred = raw.slice(3,12).reduce((s,r) => s + num(r[8])  + num(r[12]), 0) + num(kot[8])  + num(kot[12]);
+  // Наличка  = SUM(J4:J12)+J14  + SUM(N4:N12)+N14  = col9  + col13
+  const deptNal  = raw.slice(3,12).reduce((s,r) => s + num(r[9])  + num(r[13]), 0) + num(kot[9])  + num(kot[13]);
+  // Комиссия = SUM(L4:L12)+L14  + SUM(P4:P12)+P14  = col11 + col15
+  const deptKom  = raw.slice(3,12).reduce((s,r) => s + num(r[11]) + num(r[15]), 0) + num(kot[11]) + num(kot[15]);
 
   const deptCard = `
   <div class="sec-title">ОТДЕЛ CRM</div>
@@ -967,17 +960,16 @@ function renderOtchet() {
       const rplan  = r[3]||'0', ost   = r[4]||'0';
       const prc    = r[5]||'0%', prog  = r[6]||'0%';
       const allV   = r[7]||'0';
-      const sig800  = r[8]||'0';
-      const kred800 = r[10]||'0';
-      const nal800  = r[11]||'0';
-      const td800   = r[12]||'0';
-      const kom800  = r[13]||'0';
-      const sig1200  = r[14]||'0';
-      const kred1200 = r[15]||'0';
-      const nal1200  = r[16]||'0';
-      const td1200   = r[17]||'0';
-      const kom1200  = r[18]||'0';
-      const zadatok  = r[16]||'0';
+      const sig800   = r[8]||'0';  // I = Σ800 (сумма)
+      const kred800  = r[8]||'0';  // I = кредит 800
+      const nal800   = r[9]||'0';  // J = наличка 800
+      const td800    = r[10]||'0'; // K = trade-in 800
+      const kom800   = r[11]||'0'; // L = комиссия 800
+      const kred1200 = r[12]||'0'; // M = кредит 1200
+      const nal1200  = r[13]||'0'; // N = наличка 1200
+      const td1200   = r[14]||'0'; // O = trade-in 1200
+      const kom1200  = r[15]||'0'; // P = комиссия 1200
+      const zadatok  = r[16]||'0'; // Q = задаток
       const p = num(prc);
 
       // Градиентный ранг
@@ -1008,19 +1000,17 @@ function renderOtchet() {
         </div>
         <div class="chips-wrap">
           <div class="chips-row">
-            <span class="chip c800">💰 Σ800 <strong>${sig800}</strong></span>
-            <span class="chip c800">💳 Кред <strong>${kred800}</strong></span>
-            <span class="chip c800">💵 Нал <strong>${nal800}</strong></span>
-            <span class="chip c800">🔄 TD <strong>${td800}</strong></span>
-            <span class="chip c800">📋 Ком <strong>${kom800}</strong></span>
-            <span class="chip">🤝 Задаток <strong>${zadatok}</strong></span>
+            <span class="chip c800">💳 Кред800 <strong>${kred800}</strong></span>
+            <span class="chip c800">💵 Нал800 <strong>${nal800}</strong></span>
+            <span class="chip c800">🔄 TD800 <strong>${td800}</strong></span>
+            <span class="chip c800">📋 Ком800 <strong>${kom800}</strong></span>
           </div>
           <div class="chips-row">
-            <span class="chip c1200">💰 Σ1200 <strong>${sig1200}</strong></span>
-            <span class="chip c1200">💳 Кред <strong>${kred1200}</strong></span>
-            <span class="chip c1200">💵 Нал <strong>${nal1200}</strong></span>
-            <span class="chip c1200">🔄 TD <strong>${td1200}</strong></span>
-            <span class="chip c1200">📋 Ком <strong>${kom1200}</strong></span>
+            <span class="chip c1200">💳 Кред1200 <strong>${kred1200}</strong></span>
+            <span class="chip c1200">💵 Нал1200 <strong>${nal1200}</strong></span>
+            <span class="chip c1200">🔄 TD1200 <strong>${td1200}</strong></span>
+            <span class="chip c1200">📋 Ком1200 <strong>${kom1200}</strong></span>
+            <span class="chip">🤝 Задаток <strong>${zadatok}</strong></span>
           </div>
         </div>
       </div>`;
@@ -1068,7 +1058,7 @@ function renderOtchet() {
       <div class="ti"><span class="tl">Все визиты</span><span class="tv">${allVis||'—'}</span></div>
       <div class="ti"><span class="tl">Визиты 800</span><span class="tv">${vis800sum||'—'}</span></div>
       <div class="ti"><span class="tl">Визиты 1200</span><span class="tv">${vis1200sum||'—'}</span></div>
-      <div class="ti"><span class="tl">Продажи</span><span class="tv" style="color:var(--acc)">${sales||'—'}</span></div>
+      <div class="ti"><span class="tl">Кредит</span><span class="tv" style="color:var(--acc)">${deptKred||'—'}</span></div>
       <div class="ti"><span class="tl">Прогноз</span><span class="tv" style="color:${pctClr(parseInt(progOtdel))}">${progOtdel}</span></div>
     </div>
   </div>`;

@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0"/>
 <meta name="theme-color" content="#0d0d0d"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<title>CRM Crew Dashboard</title>
+<title>CRM Dashboard</title>
 <link rel="manifest" href="manifest.json"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -897,21 +897,46 @@ function renderOtchet() {
 
   const dpStr = dp || '—';
 
-  const sum = `<div class="sum-grid">
-    <div class="sum-card hi">
-      <div class="lbl">Все визиты</div>
-      <div class="val">${allVis||'—'}</div>
-      <div class="sub">За месяц</div>
+  // Диапазон строк для суммирования: менеджеры (3-11) + котёл (12)
+  const allRows = raw.slice(3,13); // строки 4-13 включая котёл
+
+  // Кредит = SUM(I4:I12+I14) + SUM(M4:M12+M14) = col8 + col12
+  const deptKred = allRows.reduce((s,r) => s + num(r[8])  + num(r[12]), 0);
+  // Наличка = SUM(J4:J12+J14) + SUM(N4:N12+N14) = col9 + col13
+  const deptNal  = allRows.reduce((s,r) => s + num(r[9])  + num(r[13]), 0);
+  // Комиссия = SUM(L4:L12+L14) + SUM(P4:P12+P14) = col11 + col15
+  const deptKom  = allRows.reduce((s,r) => s + num(r[11]) + num(r[15]), 0);
+
+  const deptCard = `
+  <div class="sec-title">ОТДЕЛ CRM</div>
+  <div class="dept-card">
+    <div class="dept-row1">
+      <div class="dept-cell hi">
+        <div class="dc-lbl">Визиты</div>
+        <div class="dc-val">${allVis||'—'}</div>
+      </div>
+      <div class="dept-cell">
+        <div class="dc-lbl">План</div>
+        <div class="dc-val">${planTotal||'—'}</div>
+      </div>
+      <div class="dept-cell">
+        <div class="dc-lbl">Прогноз</div>
+        <div class="dc-val" style="color:${pctClr(parseInt(progOtdel))}">${progOtdel}</div>
+      </div>
     </div>
-    <div class="sum-card">
-      <div class="lbl">План</div>
-      <div class="val">${planTotal||'—'}</div>
-      <div class="sub">Дней: ${dpStr} / ${dim}</div>
-    </div>
-    <div class="sum-card">
-      <div class="lbl">Продажи</div>
-      <div class="val">${sales||'—'}</div>
-      <div class="sub">800: ${salesK800} · 1200: ${salesK1200}</div>
+    <div class="dept-row2">
+      <div class="dept-cell">
+        <div class="dc-lbl">Кредит</div>
+        <div class="dc-val">${deptKred||'—'}</div>
+      </div>
+      <div class="dept-cell">
+        <div class="dc-lbl">Наличка</div>
+        <div class="dc-val">${deptNal||'—'}</div>
+      </div>
+      <div class="dept-cell">
+        <div class="dc-lbl">Комиссия</div>
+        <div class="dc-val">${deptKom||'—'}</div>
+      </div>
     </div>
   </div>`;
 
@@ -1047,44 +1072,9 @@ function renderOtchet() {
     </div>
   </div>`;
 
-  // Суммарные показатели отдела для карточки
-  const deptKred = raw.slice(3,12).reduce((s,r) => s+num(r[10]), 0) + raw.slice(3,12).reduce((s,r) => s+num(r[16]), 0);
-  const deptNal  = raw.slice(3,12).reduce((s,r) => s+num(r[11]), 0) + raw.slice(3,12).reduce((s,r) => s+num(r[17]), 0);
-  const deptKom  = raw.slice(3,12).reduce((s,r) => s+num(r[13]), 0) + raw.slice(3,12).reduce((s,r) => s+num(r[18]), 0);
+  // Суммарные показатели отдела — удалены (теперь считаются выше)
 
-  const deptCard = `<div class="dept-card">
-    <div class="dept-title">ОТДЕЛ CRM</div>
-    <div class="dept-row1">
-      <div class="dept-cell hi">
-        <div class="dc-lbl">Визиты</div>
-        <div class="dc-val">${allVis||'—'}</div>
-      </div>
-      <div class="dept-cell">
-        <div class="dc-lbl">План</div>
-        <div class="dc-val">${planTotal||'—'}</div>
-      </div>
-      <div class="dept-cell">
-        <div class="dc-lbl">Прогноз</div>
-        <div class="dc-val" style="color:${pctClr(parseInt(progOtdel))}">${progOtdel}</div>
-      </div>
-    </div>
-    <div class="dept-row2">
-      <div class="dept-cell">
-        <div class="dc-lbl">Кредит</div>
-        <div class="dc-val">${deptKred||'—'}</div>
-      </div>
-      <div class="dept-cell">
-        <div class="dc-lbl">Наличка</div>
-        <div class="dc-val">${deptNal||'—'}</div>
-      </div>
-      <div class="dept-cell">
-        <div class="dc-lbl">Комиссия</div>
-        <div class="dc-val">${deptKom||'—'}</div>
-      </div>
-    </div>
-  </div>`;
-
-  el.innerHTML = `${sum}${deptCard}<div class="sec-title">Менеджеры</div><div class="mops">${mops_html}</div>${tot}`;
+  el.innerHTML = `${deptCard}<div class="sec-title">Менеджеры</div><div class="mops">${mops_html}</div>${tot}`;
 }
 
 /* ══ RENDER: ЗП ══ */

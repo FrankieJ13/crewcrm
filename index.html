@@ -177,6 +177,9 @@ nav {
   background:var(--bg);
   border-bottom:1px solid var(--line);
   overflow-x:auto; flex-shrink:0;
+  position:sticky;
+  top:52px; /* высота header */
+  z-index:99;
 }
 nav::-webkit-scrollbar { height:0 }
 .nav-inner {
@@ -337,7 +340,38 @@ body.light .zp-row {
 .prog-fill { height:100%; border-radius:2px; transition:width .6s ease }
 .prog-r { font-size:11px; font-weight:600; width:38px; text-align:right; flex-shrink:0 }
 
-/* chips — две строки */
+/* ── КАРТОЧКА ОТДЕЛА ── */
+.dept-card {
+  background:var(--bg2); border:1px solid var(--acc-bdr);
+  background: color-mix(in srgb, var(--acc) 5%, var(--bg2));
+  border-radius:var(--r2); padding:14px 16px;
+  margin-bottom:16px;
+}
+.dept-card .dept-title {
+  font-family:'Unbounded',sans-serif;
+  font-size:10px; font-weight:800; letter-spacing:.1em;
+  color:var(--acc); margin-bottom:12px;
+  display:flex; align-items:center; gap:8px;
+}
+.dept-card .dept-title::after { content:''; flex:1; height:1px; background:var(--acc-bdr) }
+.dept-row1, .dept-row2 {
+  display:grid; gap:8px; margin-bottom:8px;
+}
+.dept-row1 { grid-template-columns:repeat(3,1fr) }
+.dept-row2 { grid-template-columns:repeat(3,1fr); margin-bottom:0 }
+.dept-cell {
+  background:var(--bg3); border-radius:8px;
+  padding:10px 12px; text-align:center;
+}
+.dept-cell .dc-lbl {
+  font-size:9px; color:var(--txt2);
+  text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px;
+}
+.dept-cell .dc-val {
+  font-family:'Unbounded',sans-serif;
+  font-size:16px; font-weight:800; letter-spacing:-.02em;
+}
+.dept-cell.hi .dc-val { color:var(--acc) }
 .chips-wrap { display:flex; flex-direction:column; gap:5px }
 .chips-row { display:flex; flex-wrap:wrap; gap:5px }
 .chip {
@@ -1013,7 +1047,44 @@ function renderOtchet() {
     </div>
   </div>`;
 
-  el.innerHTML = `${sum}<div class="sec-title">Менеджеры</div><div class="mops">${mops_html}</div>${tot}`;
+  // Суммарные показатели отдела для карточки
+  const deptKred = raw.slice(3,12).reduce((s,r) => s+num(r[10]), 0) + raw.slice(3,12).reduce((s,r) => s+num(r[16]), 0);
+  const deptNal  = raw.slice(3,12).reduce((s,r) => s+num(r[11]), 0) + raw.slice(3,12).reduce((s,r) => s+num(r[17]), 0);
+  const deptKom  = raw.slice(3,12).reduce((s,r) => s+num(r[13]), 0) + raw.slice(3,12).reduce((s,r) => s+num(r[18]), 0);
+
+  const deptCard = `<div class="dept-card">
+    <div class="dept-title">ОТДЕЛ CRM</div>
+    <div class="dept-row1">
+      <div class="dept-cell hi">
+        <div class="dc-lbl">Визиты</div>
+        <div class="dc-val">${allVis||'—'}</div>
+      </div>
+      <div class="dept-cell">
+        <div class="dc-lbl">План</div>
+        <div class="dc-val">${planTotal||'—'}</div>
+      </div>
+      <div class="dept-cell">
+        <div class="dc-lbl">Прогноз</div>
+        <div class="dc-val" style="color:${pctClr(parseInt(progOtdel))}">${progOtdel}</div>
+      </div>
+    </div>
+    <div class="dept-row2">
+      <div class="dept-cell">
+        <div class="dc-lbl">Кредит</div>
+        <div class="dc-val">${deptKred||'—'}</div>
+      </div>
+      <div class="dept-cell">
+        <div class="dc-lbl">Наличка</div>
+        <div class="dc-val">${deptNal||'—'}</div>
+      </div>
+      <div class="dept-cell">
+        <div class="dc-lbl">Комиссия</div>
+        <div class="dc-val">${deptKom||'—'}</div>
+      </div>
+    </div>
+  </div>`;
+
+  el.innerHTML = `${sum}${deptCard}<div class="sec-title">Менеджеры</div><div class="mops">${mops_html}</div>${tot}`;
 }
 
 /* ══ RENDER: ЗП ══ */

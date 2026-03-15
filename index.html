@@ -265,30 +265,15 @@ nav::-webkit-scrollbar { height:0 }
 .mop {
   border:1px solid var(--line);
   border-radius:var(--r2); padding:13px 14px;
-  position:relative;
-  transition:border-color .2s;
-  /* фон карточки = смесь rank-color поверх bg2 */
+  position:relative; transition:border-color .2s;
   background: color-mix(in srgb, var(--rank-color, transparent) 10%, var(--bg2));
 }
-/* В браузерах без color-mix — фолбэк через псевдоэлемент только под отступами */
 @supports not (background: color-mix(in srgb, red 1%, blue)) {
   .mop { background: var(--bg2) }
-  .mop::before {
-    content:''; position:absolute; inset:0;
-    background:var(--rank-color, transparent);
-    opacity:.10; pointer-events:none; z-index:0;
-    border-radius:var(--r2);
-  }
 }
-
-/* ячейки поверх фона — перекрывают заливку */
-.mop-top, .mop-grid4, .prog-row, .chips-wrap { position:relative; z-index:1 }
-
-/* в светлом режиме чуть меньше насыщенность */
 body.light .mop {
   background: color-mix(in srgb, var(--rank-color, transparent) 8%, var(--bg2));
 }
-
 .rank-badge {
   display:inline-flex; align-items:center; justify-content:center;
   width:22px; height:22px; border-radius:50%;
@@ -296,49 +281,120 @@ body.light .mop {
   flex-shrink:0;
 }
 
-/* ЗП — градиентные ранги */
-.zp-row {
-  display:flex; align-items:center; gap:8px;
-  border:1px solid var(--line);
-  border-radius:var(--r); padding:12px 14px;
-  transition:border-color .2s;
-  background: color-mix(in srgb, var(--rank-color, transparent) 10%, var(--bg2));
-}
-body.light .zp-row {
-  background: color-mix(in srgb, var(--rank-color, transparent) 8%, var(--bg2));
-}
-@supports not (background: color-mix(in srgb, red 1%, blue)) {
-  .zp-row { background: var(--bg2); position:relative; overflow:hidden }
-  .zp-row::before {
-    content:''; position:absolute; inset:0;
-    background:var(--rank-color, transparent);
-    opacity:.10; pointer-events:none;
-  }
-}
-.mop-top {
+/* шапка мини-карточки */
+.mop-head {
   display:flex; align-items:center;
-  justify-content:space-between; margin-bottom:10px;
+  justify-content:space-between; margin-bottom:12px;
 }
+.mop-head-left { display:flex; align-items:center; gap:7px }
 .mop-name { font-weight:600; font-size:14px }
 .mop-tags { display:flex; gap:5px }
 .tag { font-size:10px; font-weight:600; padding:2px 8px; border-radius:6px }
 .tag-800  { background:rgba(30,144,255,.15); color:var(--blu) }
 .tag-1200 { background:rgba(255,165,2,.15);  color:var(--org) }
+/* кнопка i */
+.mop-info-btn {
+  width:22px; height:22px; border-radius:50%;
+  border:1px solid var(--line2); background:var(--bg3);
+  color:var(--txt2); font-size:11px; font-weight:700;
+  font-style:italic; font-family:Georgia,serif;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; transition:all .15s;
+}
+.mop-info-btn:hover { border-color:var(--acc); color:var(--acc) }
 
-/* 4 stat boxes — фон задаётся через --m4-bg */
+/* мини 3 ячейки */
+.mop-mini {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:6px; margin-bottom:12px;
+}
+.mm {
+  background:var(--m4-bg); border-radius:8px;
+  padding:8px; text-align:center;
+}
+.mm .ml { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px }
+.mm .mv { font-family:'Unbounded',sans-serif; font-size:14px; font-weight:800 }
+
+/* прогресс с градиентом */
+.mop-prog {
+  position:relative;
+}
+.mop-prog-labels {
+  display:flex; justify-content:space-between;
+  font-size:10px; margin-bottom:5px;
+}
+.mop-prog-labels .cur { font-weight:700; }
+.mop-prog-labels .end { color:var(--txt2) }
+.mop-prog-track {
+  height:7px; background:var(--line);
+  border-radius:4px; overflow:hidden;
+}
+.mop-prog-fill {
+  height:100%; border-radius:4px;
+  transition:width .7s ease;
+}
+
+/* ── МОДАЛКА МЕНЕДЖЕРА ── */
+.mop-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.75); backdrop-filter:blur(6px);
+  z-index:500; align-items:center; justify-content:center;
+  padding:16px;
+}
+.mop-overlay.open { display:flex; animation:mFade .2s ease }
+@keyframes mFade { from{opacity:0} to{opacity:1} }
+.mop-modal {
+  background:var(--bg2); border:1px solid var(--line2);
+  border-radius:var(--r2); width:100%; max-width:460px;
+  max-height:86vh; overflow-y:auto;
+  animation:mUp .22s ease;
+}
+@keyframes mUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+.mop-modal-hdr {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:13px 16px; border-bottom:1px solid var(--line);
+  position:sticky; top:0; background:var(--bg2); z-index:1;
+}
+.mop-modal-title {
+  display:flex; align-items:center; gap:8px;
+  font-family:'Unbounded',sans-serif; font-size:11px; font-weight:800;
+}
+.mop-modal-close {
+  width:28px; height:28px; border-radius:50%;
+  border:1px solid var(--line2); background:var(--bg3);
+  color:var(--txt2); font-size:18px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .15s; flex-shrink:0; line-height:1;
+}
+.mop-modal-close:hover { border-color:var(--red); color:var(--red) }
+.mop-modal-body { padding:14px 16px }
+
+/* 4 ячейки в модалке */
 .mop-grid4 {
   display:grid; grid-template-columns:repeat(4,1fr);
-  gap:6px; margin-bottom:10px;
+  gap:6px; margin-bottom:12px;
 }
 .m4 { background:var(--m4-bg); border-radius:8px; padding:7px; text-align:center }
 .m4 .ml { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px }
 .m4 .mv { font-family:'Unbounded',sans-serif; font-size:12px; font-weight:700 }
-
-.prog-row { display:flex; align-items:center; gap:8px; margin-bottom:10px }
+.prog-row { display:flex; align-items:center; gap:8px; margin-bottom:12px }
 .prog-l { font-size:11px; color:var(--txt2); width:42px; text-align:right; flex-shrink:0 }
 .prog-track { flex:1; height:4px; background:var(--line); border-radius:2px; overflow:hidden }
 .prog-fill { height:100%; border-radius:2px; transition:width .6s ease }
 .prog-r { font-size:11px; font-weight:600; width:38px; text-align:right; flex-shrink:0 }
+.chips-wrap { display:flex; flex-direction:column; gap:5px }
+.chips-row { display:flex; flex-wrap:wrap; gap:5px }
+.chip {
+  font-size:10px; padding:3px 8px; border-radius:6px;
+  background:var(--bg3); border:1px solid var(--line);
+  color:var(--txt2); display:flex; align-items:center; gap:3px;
+}
+.chip strong { color:var(--txt); font-size:11px }
+.chip.c800  { border-color:rgba(30,144,255,.3) }
+.chip.c1200 { border-color:rgba(255,165,2,.3) }
+@media(max-width:480px) {
+  .mop-grid4 { grid-template-columns:repeat(2,1fr) }
+}
 
 /* ── КАРТОЧКА ОТДЕЛА ── */
 .dept-card {
@@ -632,6 +688,17 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
     <div id="scr-grafik"      class="scr"><div class="w"><div id="c-grafik"></div></div></div>
     <div id="scr-instruktsii" class="scr"><div class="w"><div id="c-instruktsii"></div></div></div>
   </main>
+</div>
+
+<!-- МОДАЛКА МЕНЕДЖЕРА -->
+<div class="mop-overlay" id="mop-overlay" onclick="closeMopModal(event)">
+  <div class="mop-modal" id="mop-modal">
+    <div class="mop-modal-hdr">
+      <div class="mop-modal-title" id="mop-modal-title"></div>
+      <button class="mop-modal-close" onclick="closeMopModal()">×</button>
+    </div>
+    <div class="mop-modal-body" id="mop-modal-body"></div>
+  </div>
 </div>
 <div id="toast"></div>
 
@@ -955,62 +1022,62 @@ function renderOtchet() {
     const total = withProg.length;
 
     const ranked = withProg.map(({ r, progNum }, idx) => {
-      const name   = r[0]||'—';
-      const v800   = r[1]||'0', v1200 = r[2]||'0';
-      const rplan  = r[3]||'0', ost   = r[4]||'0';
-      const prc    = r[5]||'0%', prog  = r[6]||'0%';
-      const allV   = r[7]||'0';
-      const sig800   = r[8]||'0';  // I = Σ800 (сумма)
-      const kred800  = r[8]||'0';  // I = кредит 800
-      const nal800   = r[9]||'0';  // J = наличка 800
-      const td800    = r[10]||'0'; // K = trade-in 800
-      const kom800   = r[11]||'0'; // L = комиссия 800
-      const kred1200 = r[12]||'0'; // M = кредит 1200
-      const nal1200  = r[13]||'0'; // N = наличка 1200
-      const td1200   = r[14]||'0'; // O = trade-in 1200
-      const kom1200  = r[15]||'0'; // P = комиссия 1200
-      const zadatok  = r[16]||'0'; // Q = задаток
+      const name     = r[0]||'—';
+      const v800     = r[1]||'0', v1200  = r[2]||'0';
+      const rplan    = r[3]||'0', ost    = r[4]||'0';
+      const prc      = r[5]||'0%', prog   = r[6]||'0%';
+      const allV     = r[7]||'0';
+      const kred800  = r[8]||'0';
+      const nal800   = r[9]||'0';
+      const td800    = r[10]||'0';
+      const kom800   = r[11]||'0';
+      const kred1200 = r[12]||'0';
+      const nal1200  = r[13]||'0';
+      const td1200   = r[14]||'0';
+      const kom1200  = r[15]||'0';
+      const zadatok  = r[16]||'0';
       const p = num(prc);
 
-      // Градиентный ранг
-      const rs = rankStyles(idx, total);
-      const medal = idx===0 ? '🥇' : idx===1 ? '🥈' : idx===2 ? '🥉' : '';
+      const rs    = rankStyles(idx, total);
+      const medal = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'';
+
+      // Градиент полосы прогноза: от цвета ранга к насыщенному
+      const fillGrad = `linear-gradient(90deg, ${rs.color} 0%, ${rs.color} 100%)`;
+
+      // Данные для модалки сохраняем в data-атрибуте
+      const modalData = JSON.stringify({
+        name, v800, v1200, rplan, ost, prc, prog, allV,
+        kred800, nal800, td800, kom800,
+        kred1200, nal1200, td1200, kom1200,
+        zadatok, rs, medal, idx: idx+1
+      }).replace(/'/g,"&#39;");
 
       return `<div class="mop" style="--rank-color:${rs.color};border-color:${rs.border}">
-        <div class="mop-top">
-          <div style="display:flex;align-items:center;gap:6px">
+        <div class="mop-head">
+          <div class="mop-head-left">
             <span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span>
-            <span class="mop-name">${name}${medal ? ' '+medal : ''}</span>
+            <span class="mop-name">${name}${medal?' '+medal:''}</span>
           </div>
-          <div class="mop-tags">
-            <span class="tag tag-800">800: ${v800}</span>
-            <span class="tag tag-1200">1200: ${v1200}</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="mop-tags">
+              <span class="tag tag-800">800: ${v800}</span>
+              <span class="tag tag-1200">1200: ${v1200}</span>
+            </div>
+            <button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button>
           </div>
         </div>
-        <div class="mop-grid4">
-          <div class="m4"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
-          <div class="m4"><div class="ml">План</div><div class="mv">${rplan}</div></div>
-          <div class="m4"><div class="ml">Остаток</div><div class="mv" style="color:var(--org)">${ost}</div></div>
-          <div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(num(prog))}">${prog}</div></div>
+        <div class="mop-mini">
+          <div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
+          <div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div>
+          <div class="mm"><div class="ml">Остаток</div><div class="mv" style="color:var(--org)">${ost}</div></div>
         </div>
-        <div class="prog-row">
-          <span class="prog-l">${prc}</span>
-          <div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${pctClr(p)}"></div></div>
-          <span class="prog-r" style="color:${pctClr(p)}">${p}%</span>
-        </div>
-        <div class="chips-wrap">
-          <div class="chips-row">
-            <span class="chip c800">💳 Кред800 <strong>${kred800}</strong></span>
-            <span class="chip c800">💵 Нал800 <strong>${nal800}</strong></span>
-            <span class="chip c800">🔄 TD800 <strong>${td800}</strong></span>
-            <span class="chip c800">📋 Ком800 <strong>${kom800}</strong></span>
+        <div class="mop-prog">
+          <div class="mop-prog-labels">
+            <span class="cur" style="color:${rs.color}">${p}%</span>
+            <span class="end">100%</span>
           </div>
-          <div class="chips-row">
-            <span class="chip c1200">💳 Кред1200 <strong>${kred1200}</strong></span>
-            <span class="chip c1200">💵 Нал1200 <strong>${nal1200}</strong></span>
-            <span class="chip c1200">🔄 TD1200 <strong>${td1200}</strong></span>
-            <span class="chip c1200">📋 Ком1200 <strong>${kom1200}</strong></span>
-            <span class="chip">🤝 Задаток <strong>${zadatok}</strong></span>
+          <div class="mop-prog-track">
+            <div class="mop-prog-fill" style="width:${Math.min(p,100)}%;background:${fillGrad}"></div>
           </div>
         </div>
       </div>`;
@@ -1285,6 +1352,59 @@ function renderInstruktsii() {
 
 function toggleInstr(id) { document.getElementById(id)?.classList.toggle('open') }
 function toggleSub(id)   { document.getElementById(id)?.classList.toggle('open') }
+
+/* ══ МОДАЛКА МЕНЕДЖЕРА ══ */
+function openMopModal(dataStr) {
+  const d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"'));
+  const p = num(d.prc);
+  const rs = d.rs;
+
+  document.getElementById('mop-modal-title').innerHTML =
+    `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span>
+     ${d.name}${d.medal?' '+d.medal:''}`;
+
+  document.getElementById('mop-modal-body').innerHTML = `
+    <div class="mop-grid4" style="margin-bottom:12px">
+      <div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div>
+      <div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div>
+      <div class="m4"><div class="ml">Остаток</div><div class="mv" style="color:var(--org)">${d.ost}</div></div>
+      <div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(num(d.prog))}">${d.prog}</div></div>
+    </div>
+    <div class="prog-row">
+      <span class="prog-l">${d.prc}</span>
+      <div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${rs.color}"></div></div>
+      <span class="prog-r" style="color:${rs.color}">${p}%</span>
+    </div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:9px;color:var(--txt2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-family:'Unbounded',sans-serif;font-weight:700">
+        Визиты 800: ${d.v800} · 1200: ${d.v1200}
+      </div>
+    </div>
+    <div class="chips-wrap">
+      <div class="chips-row">
+        <span class="chip c800">💳 Кред800 <strong>${d.kred800}</strong></span>
+        <span class="chip c800">💵 Нал800 <strong>${d.nal800}</strong></span>
+        <span class="chip c800">🔄 TD800 <strong>${d.td800}</strong></span>
+        <span class="chip c800">📋 Ком800 <strong>${d.kom800}</strong></span>
+      </div>
+      <div class="chips-row">
+        <span class="chip c1200">💳 Кред1200 <strong>${d.kred1200}</strong></span>
+        <span class="chip c1200">💵 Нал1200 <strong>${d.nal1200}</strong></span>
+        <span class="chip c1200">🔄 TD1200 <strong>${d.td1200}</strong></span>
+        <span class="chip c1200">📋 Ком1200 <strong>${d.kom1200}</strong></span>
+        <span class="chip">🤝 Задаток <strong>${d.zadatok}</strong></span>
+      </div>
+    </div>`;
+
+  document.getElementById('mop-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMopModal(e) {
+  if (e && e.target !== document.getElementById('mop-overlay')) return;
+  document.getElementById('mop-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
 
 /* ══ EVENTS ══ */
 document.getElementById('btn-theme').addEventListener('click',

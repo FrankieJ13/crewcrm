@@ -266,35 +266,28 @@ nav::-webkit-scrollbar { height:0 }
 }
 .mop::before {
   content:''; position:absolute; inset:0;
-  opacity:0; pointer-events:none;
-  transition:opacity .2s;
+  background:var(--rank-color, transparent);
+  opacity:.12; pointer-events:none;
 }
-.mop.rank-top { border-color:rgba(46,213,115,.35) }
-.mop.rank-top::before { background:var(--grn); opacity:.06 }
-.mop.rank-mid { border-color:rgba(255,165,2,.35) }
-.mop.rank-mid::before { background:var(--org); opacity:.06 }
-.mop.rank-bot { border-color:rgba(255,71,87,.35) }
-.mop.rank-bot::before { background:var(--red); opacity:.06 }
+body.light .mop::before { opacity:.08 }
 
 .rank-badge {
   display:inline-flex; align-items:center; justify-content:center;
-  width:20px; height:20px; border-radius:50%;
+  width:22px; height:22px; border-radius:50%;
   font-family:'Unbounded',sans-serif; font-size:9px; font-weight:900;
   flex-shrink:0;
+  background:var(--rank-badge-bg, rgba(128,128,128,.15));
+  color:var(--rank-badge-color, #888);
 }
-.rank-badge.top { background:rgba(46,213,115,.18); color:var(--grn) }
-.rank-badge.mid { background:rgba(255,165,2,.18);  color:var(--org) }
-.rank-badge.bot { background:rgba(255,71,87,.18);  color:var(--red) }
 
-/* ЗП — ранги */
+/* ЗП — градиентные ранги */
 .zp-row { position:relative; overflow:hidden }
-.zp-row::before { content:''; position:absolute; inset:0; opacity:0; pointer-events:none }
-.zp-row.rank-top { border-color:rgba(46,213,115,.35) }
-.zp-row.rank-top::before { background:var(--grn); opacity:.05 }
-.zp-row.rank-mid { border-color:rgba(255,165,2,.35) }
-.zp-row.rank-mid::before { background:var(--org); opacity:.05 }
-.zp-row.rank-bot { border-color:rgba(255,71,87,.35) }
-.zp-row.rank-bot::before { background:var(--red); opacity:.05 }
+.zp-row::before {
+  content:''; position:absolute; inset:0;
+  background:var(--rank-color, transparent);
+  opacity:.10; pointer-events:none;
+}
+body.light .zp-row::before { opacity:.07 }
 .mop-top {
   display:flex; align-items:center;
   justify-content:space-between; margin-bottom:10px;
@@ -513,7 +506,7 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
       <div class="hdr-left">
         <div class="logo">
           <div class="logo-sq"><span></span><span></span><span></span><span></span></div>
-          CRM
+          CRM Crew
         </div>
       </div>
       <div class="hdr-right">
@@ -638,6 +631,35 @@ function fmtRub(v) {
   return isNaN(n) ? (v||'—') : n.toLocaleString('ru') + ' ₽';
 }
 function pctClr(p) { return p>=100?'var(--grn)':p>=60?'var(--org)':'var(--red)' }
+
+// Плавный градиент: 0=лучший(зелёный) → 1=худший(красный), яркие насыщенные цвета
+function rankColor(pos, total) {
+  if (total <= 1) return { r:0, g:230, b:90 };
+  const t = pos / (total - 1); // 0..1
+  let r, g, b;
+  if (t <= 0.5) {
+    // ярко-зелёный (#00e65a) → жёлтый (#ffe000)
+    const f = t * 2;
+    r = Math.round(0   + (255 - 0)   * f);
+    g = Math.round(230 + (224 - 230) * f);
+    b = Math.round(90  + (0   - 90)  * f);
+  } else {
+    // жёлтый (#ffe000) → ярко-красный (#ff2828)
+    const f = (t - 0.5) * 2;
+    r = Math.round(255 + (255 - 255) * f);
+    g = Math.round(224 + (40  - 224) * f);
+    b = Math.round(0   + (40  - 0)   * f);
+  }
+  return { r, g, b };
+}
+
+function rankStyles(pos, total) {
+  const { r, g, b } = rankColor(pos, total);
+  const color   = `rgb(${r},${g},${b})`;
+  const border  = `rgba(${r},${g},${b},.6)`;
+  const badgeBg = `rgba(${r},${g},${b},.25)`;
+  return { color, border, badgeBg };
+}
 function loader() { return `<div class="loader"><div class="spin"></div><span>Загружаем…</span></div>` }
 
 const ICON_REFRESH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>`;
@@ -834,8 +856,15 @@ function renderOtchet() {
   </div>`;
 
   const mops_html = (() => {
+    const KOTEL = ['котел','котёл','kotel'];
+    const isKotel = n => KOTEL.includes((n||'').toLowerCase().trim());
+
+    // Разделяем: обычные менеджеры и котёл
+    const rankRows  = mgrRows.filter(r => !isKotel(r[0]));
+    const kotelRows = mgrRows.filter(r =>  isKotel(r[0]));
+
     // Извлекаем числовой прогноз для сортировки
-    const withProg = mgrRows.map(r => {
+    const withProg = rankRows.map(r => {
       const progStr = r[6]||'0%';
       const progNum = parseFloat(progStr.replace('%','').replace(',','.')) || 0;
       return { r, progNum };
@@ -846,7 +875,7 @@ function renderOtchet() {
 
     const total = withProg.length;
 
-    return withProg.map(({ r, progNum }, idx) => {
+    const ranked = withProg.map(({ r, progNum }, idx) => {
       const name   = r[0]||'—';
       const v800   = r[1]||'0', v1200 = r[2]||'0';
       const rplan  = r[3]||'0', ost   = r[4]||'0';
@@ -865,28 +894,15 @@ function renderOtchet() {
       const zadatok  = r[16]||'0';
       const p = num(prc);
 
-      // Определяем ранг
-      let rankClass, rankBadgeClass, rankEmoji;
-      if (idx === 0) {
-        rankClass = 'rank-top'; rankBadgeClass = 'top'; rankEmoji = '🥇';
-      } else if (idx === total - 1) {
-        rankClass = 'rank-bot'; rankBadgeClass = 'bot'; rankEmoji = '🥉';
-      } else {
-        rankClass = 'rank-mid'; rankBadgeClass = 'mid'; rankEmoji = '🥈';
-      }
+      // Градиентный ранг
+      const rs = rankStyles(idx, total);
+      const medalEmoji = idx === 0 ? '🥇' : idx === total-1 ? '🥉' : idx === 1 ? '🥈' : '';
 
-      // Топ 1 — зелёный, последний — красный, остальные — жёлтый
-      // Если только 2 человека — нет среднего
-      if (total <= 2) {
-        if (idx === 0) { rankClass='rank-top'; rankBadgeClass='top'; rankEmoji='🥇'; }
-        else { rankClass='rank-bot'; rankBadgeClass='bot'; rankEmoji='🥉'; }
-      }
-
-      return `<div class="mop ${rankClass}">
+      return `<div class="mop" style="--rank-color:${rs.color};border-color:${rs.border}">
         <div class="mop-top">
           <div style="display:flex;align-items:center;gap:6px">
-            <span class="rank-badge ${rankBadgeClass}">${idx+1}</span>
-            <span class="mop-name">${name}</span>
+            <span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span>
+            <span class="mop-name">${name}${medalEmoji ? ' '+medalEmoji : ''}</span>
           </div>
           <div class="mop-tags">
             <span class="tag tag-800">800: ${v800}</span>
@@ -923,6 +939,41 @@ function renderOtchet() {
         </div>
       </div>`;
     }).join('');
+
+    // Котёл — показываем отдельно без ранга и цвета
+    const kotelHTML = kotelRows.map(r => {
+      const name  = r[0]||'—';
+      const v800  = r[1]||'0', v1200 = r[2]||'0';
+      const rplan = r[3]||'0', ost   = r[4]||'0';
+      const prc   = r[5]||'0%', prog  = r[6]||'0%';
+      const allV  = r[7]||'0';
+      const p = num(prc);
+      return `<div class="mop" style="opacity:.65">
+        <div class="mop-top">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="rank-badge" style="background:rgba(128,128,128,.15);color:var(--txt3)">—</span>
+            <span class="mop-name">${name}</span>
+          </div>
+          <div class="mop-tags">
+            <span class="tag tag-800">800: ${v800}</span>
+            <span class="tag tag-1200">1200: ${v1200}</span>
+          </div>
+        </div>
+        <div class="mop-grid4">
+          <div class="m4"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
+          <div class="m4"><div class="ml">План</div><div class="mv">${rplan}</div></div>
+          <div class="m4"><div class="ml">Остаток</div><div class="mv" style="color:var(--org)">${ost}</div></div>
+          <div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(num(prog))}">${prog}</div></div>
+        </div>
+        <div class="prog-row">
+          <span class="prog-l">${prc}</span>
+          <div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${pctClr(p)}"></div></div>
+          <span class="prog-r" style="color:${pctClr(p)}">${p}%</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    return ranked + kotelHTML;
   })();
 
   const tot = `<div class="totals-box">
@@ -948,8 +999,15 @@ function renderZP() {
   const mgrs   = raw.slice(2,12).filter(r => r[0]&&r[0].trim());
   const totRow = raw[12] || [];
 
+  // Котел — отображаем отдельно, не участвует в рейтинге
+  const KOTEL_NAMES = ['котел','котёл','kotel'];
+  const isKotel = (name) => KOTEL_NAMES.includes((name||'').toLowerCase().trim());
+
+  const kotelRow = mgrs.find(r => isKotel(r[0]));
+  const rankMgrs = mgrs.filter(r => !isKotel(r[0]));
+
   // Парсим суммы и сортируем от большей к меньшей
-  const parsed = mgrs.map(r => ({
+  const parsed = rankMgrs.map(r => ({
     name: r[0]||'—',
     raw:  r[1]||'0',
     n:    parseFloat(String(r[1]||'0').replace(/[^\d.]/g,''))||0,
@@ -961,23 +1019,24 @@ function renderZP() {
 
   const rows = parsed.map((item, idx) => {
     const w = maxAmt ? Math.round(item.n / maxAmt * 100) : 0;
+    const rs = rankStyles(idx, total);
+    const medal = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'';
 
-    let rankClass, rankBadgeClass;
-    if (idx === 0) { rankClass='rank-top'; rankBadgeClass='top'; }
-    else if (idx === total-1) { rankClass='rank-bot'; rankBadgeClass='bot'; }
-    else { rankClass='rank-mid'; rankBadgeClass='mid'; }
-    if (total <= 2) {
-      rankClass    = idx===0 ? 'rank-top' : 'rank-bot';
-      rankBadgeClass = idx===0 ? 'top' : 'bot';
-    }
-
-    return `<div class="zp-row ${rankClass}">
-      <span class="rank-badge ${rankBadgeClass}">${idx+1}</span>
-      <span class="zp-n">${item.name}</span>
-      <div class="zp-bg"><div class="zp-fill" style="width:${w}%"></div></div>
-      <span class="zp-a">${fmtRub(item.raw)}</span>
+    return `<div class="zp-row" style="--rank-color:${rs.color};border-color:${rs.border}">
+      <span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span>
+      <span class="zp-n">${item.name} ${medal}</span>
+      <div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div>
+      <span class="zp-a" style="color:${rs.color}">${fmtRub(item.raw)}</span>
     </div>`;
   }).join('');
+
+  // Котел отдельной строкой без ранга
+  const kotelHTML = kotelRow ? `
+    <div class="zp-row" style="opacity:.6;margin-top:8px">
+      <span class="zp-n" style="color:var(--txt2)">${kotelRow[0]}</span>
+      <div class="zp-bg"><div class="zp-fill" style="width:0%"></div></div>
+      <span class="zp-a" style="color:var(--txt2)">${fmtRub(kotelRow[1])}</span>
+    </div>` : '';
 
   el.innerHTML = `
     <div class="zp-banner">
@@ -985,7 +1044,7 @@ function renderZP() {
       <div class="zv">${fmtRub(totRow[1])}</div>
     </div>
     <div class="sec-title">Топ по зарплате</div>
-    <div class="zp-list">${rows}</div>`;
+    <div class="zp-list">${rows}${kotelHTML}</div>`;
 }
 
 /* ══ RENDER: ГРАФИК ══ */

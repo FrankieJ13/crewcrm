@@ -467,7 +467,7 @@ body.light .mop {
 }
 .zp-banner .zl { font-size:10px; color:var(--txt2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px }
 .zp-banner .zv { font-family:'Unbounded',sans-serif; font-size:30px; font-weight:900; color:var(--acc); letter-spacing:-.02em }
-.zp-list { display:flex; flex-direction:column; gap:0 }
+.zp-list { display:flex; flex-direction:column; gap:8px }
 .zp-n  {
   font-family:'Unbounded',sans-serif;
   font-weight:700; font-size:13px;
@@ -475,11 +475,23 @@ body.light .mop {
 }
 .zp-row {
   display:flex; flex-direction:column;
-  padding:12px 0;
-  border-bottom:1px solid var(--line);
-  transition:opacity .15s;
+  border:1px solid var(--line);
+  border-radius:var(--r2); padding:13px 16px;
+  transition:border-color .2s;
+  background: color-mix(in srgb, var(--rank-color, transparent) 10%, var(--bg2));
 }
-.zp-row:last-child { border-bottom:none }
+body.light .zp-row {
+  background: color-mix(in srgb, var(--rank-color, transparent) 8%, var(--bg2));
+}
+@supports not (background: color-mix(in srgb, red 1%, blue)) {
+  .zp-row { background:var(--bg2); position:relative; overflow:hidden }
+  .zp-row::before {
+    content:''; position:absolute; inset:0;
+    background:var(--rank-color, transparent);
+    opacity:.10; pointer-events:none;
+  }
+}
+.zp-row:last-child { border-bottom:1px solid var(--line) }
 .zp-top {
   display:flex; align-items:center;
   justify-content:space-between; margin-bottom:8px;
@@ -1211,7 +1223,7 @@ function renderZP() {
     const rs = rankStyles(idx, total);
     const medal = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'';
 
-    return `<div class="zp-row">
+    return `<div class="zp-row" style="--rank-color:${rs.color};border-color:${rs.border}">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span>
         <span class="zp-n" style="color:${rs.color}">${item.name}${medal?' <span style="cursor:pointer" onclick="burstConfetti(this)">'+medal+'</span>':''}</span>

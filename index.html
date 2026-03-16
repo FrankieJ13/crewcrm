@@ -472,13 +472,26 @@ body.light .mop {
   font-weight:700; font-size:13px;
   flex-shrink:0; min-width:80px;
 }
+.zp-row {
+  display:flex; flex-direction:column;
+  border:1px solid var(--line);
+  border-radius:var(--r); padding:12px 14px;
+  transition:border-color .2s;
+  background: color-mix(in srgb, var(--rank-color, transparent) 10%, var(--bg2));
+}
+body.light .zp-row {
+  background: color-mix(in srgb, var(--rank-color, transparent) 8%, var(--bg2));
+}
+.zp-top {
+  display:flex; align-items:center;
+  justify-content:space-between; margin-bottom:8px;
+}
 .zp-bg { flex:1; height:3px; background:var(--line); border-radius:2px; overflow:hidden }
 .zp-fill { height:100%; border-radius:2px; transition:width .7s ease }
 .zp-a {
   font-family:'Unbounded',sans-serif;
   font-size:13px; font-weight:700;
   flex-shrink:0; text-align:right;
-  min-width:90px; margin-left:auto;
 }
 
 /* ── ГРАФИК ── */
@@ -1185,10 +1198,14 @@ function renderZP() {
     const medal = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'';
 
     return `<div class="zp-row" style="--rank-color:${rs.color};border-color:${rs.border}">
-      <span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span>
-      <span class="zp-n">${item.name} ${medal}</span>
-      <div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div>
-      <span class="zp-a" style="color:${rs.color}">${fmtRub(item.raw)}</span>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span>
+        <span class="zp-n">${item.name}${medal?' <span style="cursor:pointer" onclick="burstConfetti(this)">'+medal+'</span>':''}</span>
+      </div>
+      <div class="zp-bg" style="margin-bottom:6px"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div>
+      <div style="text-align:right">
+        <span class="zp-a" style="color:${rs.color}">${fmtRub(item.raw)}</span>
+      </div>
     </div>`;
   }).join('');
 

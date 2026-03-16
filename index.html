@@ -467,13 +467,18 @@ body.light .mop {
 .zp-banner .zl { font-size:10px; color:var(--txt2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px }
 .zp-banner .zv { font-family:'Unbounded',sans-serif; font-size:30px; font-weight:900; color:var(--acc); letter-spacing:-.02em }
 .zp-list { display:flex; flex-direction:column; gap:7px }
-.zp-n  { font-weight:500; font-size:14px; flex-shrink:0; min-width:80px }
+.zp-n  {
+  font-family:'Unbounded',sans-serif;
+  font-weight:700; font-size:13px;
+  flex-shrink:0; min-width:80px;
+}
 .zp-bg { flex:1; height:3px; background:var(--line); border-radius:2px; overflow:hidden }
 .zp-fill { height:100%; border-radius:2px; transition:width .7s ease }
 .zp-a {
   font-family:'Unbounded',sans-serif;
   font-size:13px; font-weight:700;
-  flex-shrink:0; text-align:right; min-width:90px;
+  flex-shrink:0; text-align:right;
+  min-width:90px; margin-left:auto;
 }
 
 /* ── ГРАФИК ── */
@@ -583,7 +588,19 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
 .instr-sub-body { display:none }
 .instr-sub.open .instr-sub-body { display:block }
 
-/* ── TOAST ── */
+/* ── КОНФЕТТИ ── */
+.confetti-piece {
+  position:fixed;
+  width:8px; height:8px;
+  border-radius:2px;
+  pointer-events:none;
+  z-index:9999;
+  animation:confettiFly var(--dur, 1s) ease-out forwards;
+}
+@keyframes confettiFly {
+  0%   { transform:translate(0,0) rotate(0deg) scale(1); opacity:1 }
+  100% { transform:translate(var(--tx),var(--ty)) rotate(var(--rot)) scale(0.4); opacity:0 }
+}
 #toast {
   position:fixed; bottom:20px; left:50%;
   transform:translateX(-50%) translateY(16px);
@@ -1056,7 +1073,7 @@ function renderOtchet() {
         <div class="mop-head">
           <div class="mop-head-left">
             <span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span>
-            <span class="mop-name">${name}${medal?' '+medal:''}</span>
+            <span class="mop-name">${name}${medal ? ' <span style="cursor:pointer" onclick="burstConfetti(this)" title="🎉">'+medal+'</span>' : ''}</span>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             <div class="mop-tags">
@@ -1353,7 +1370,42 @@ function renderInstruktsii() {
 function toggleInstr(id) { document.getElementById(id)?.classList.toggle('open') }
 function toggleSub(id)   { document.getElementById(id)?.classList.toggle('open') }
 
-/* ══ МОДАЛКА МЕНЕДЖЕРА ══ */
+/* ══ КОНФЕТТИ ══ */
+function burstConfetti(el) {
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top  + rect.height / 2;
+  const colors = ['#e8ff47','#ff4757','#2ed573','#1e90ff','#ffa502','#ff6bcd','#ffffff','#a29bfe'];
+  const count = 60;
+
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+
+    const angle = (Math.random() * 360) * Math.PI / 180;
+    const dist  = 80 + Math.random() * 160;
+    const tx    = Math.cos(angle) * dist;
+    const ty    = Math.sin(angle) * dist - Math.random() * 80;
+    const rot   = (Math.random() - 0.5) * 720 + 'deg';
+    const dur   = (0.6 + Math.random() * 0.8).toFixed(2) + 's';
+    const size  = (5 + Math.random() * 7).toFixed(1) + 'px';
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const shape = Math.random() > 0.5 ? '50%' : '2px';
+
+    piece.style.cssText = `
+      left:${cx}px; top:${cy}px;
+      width:${size}; height:${size};
+      background:${color};
+      border-radius:${shape};
+      --tx:${tx.toFixed(0)}px;
+      --ty:${ty.toFixed(0)}px;
+      --rot:${rot};
+      --dur:${dur};
+    `;
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), parseFloat(dur) * 1000 + 100);
+  }
+}
 function openMopModal(dataStr) {
   const d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"'));
   const p = num(d.prc);

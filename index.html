@@ -60,7 +60,7 @@ body.light {
   --grn:     #1a9e50;
   --blu:     #1060cc;
   --org:     #c97800;
-  --m4-bg:   #d7d7d7;
+  --m4-bg:   #8a8a8a;
 }
 body.light .m4 .ml { color:#fff }
 body.light .m4 .mv { color:#fff }
@@ -335,7 +335,33 @@ body.light .mop {
   transition:width .7s ease;
 }
 
-/* ── МОДАЛКА МЕНЕДЖЕРА ── */
+/* секции в модалке */
+.modal-sec {
+  margin-bottom:14px;
+}
+.modal-sec-title {
+  font-family:'Unbounded',sans-serif;
+  font-size:9px; font-weight:800; letter-spacing:.1em;
+  color:var(--txt2); margin-bottom:8px;
+  display:flex; align-items:center; gap:8px;
+}
+.modal-sec-title::after { content:''; flex:1; height:1px; background:var(--line2) }
+.modal-grid {
+  display:grid; gap:6px;
+  grid-template-columns:repeat(auto-fill, minmax(72px, 1fr));
+}
+.modal-cell {
+  background:var(--bg3); border-radius:8px;
+  padding:8px 6px; text-align:center;
+}
+.modal-cell .mc-l {
+  font-size:9px; color:var(--txt2);
+  text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px;
+}
+.modal-cell .mc-v {
+  font-family:'Unbounded',sans-serif;
+  font-size:14px; font-weight:800; color:var(--txt);
+}
 .mop-overlay {
   display:none; position:fixed; inset:0;
   background:rgba(0,0,0,.75); backdrop-filter:blur(6px);
@@ -1017,7 +1043,7 @@ async function loadTab(tab) {
   const el = document.getElementById('c-'+tab);
   if (el) el.innerHTML = loader();
   try {
-    if      (tab==='otchet')      S.data.otchet      = await api(SHEETS.otchet,      'A1:V15');
+    if      (tab==='otchet')      S.data.otchet      = await api(SHEETS.otchet,      'A1:Z15');
     else if (tab==='zp')          S.data.zp           = await api(SHEETS.zp,          'A1:B13');
     else if (tab==='grafik')      S.data.grafik       = await api(SHEETS.grafik,      'A1:AI25');
     else if (tab==='instruktsii') S.data.instruktsii  = await api(SHEETS.instruktsii, 'A1:C200');
@@ -1158,18 +1184,23 @@ function renderOtchet() {
       const zadatok  = r[16]||'0';
       const p = num(prc);
 
+      // Новые поля: T(19)=в_салоне, W(22)=ксо, X(23)=фссп, Y(24)=в_банке, Z(25)=отказ
+      const vsalone  = r[19]||'0'; // T
+      const vkso     = r[22]||'0'; // W
+      const vfSSP    = r[23]||'0'; // X
+      const vbanke   = r[24]||'0'; // Y
+      const otkaz    = r[25]||'0'; // Z
+
       const rs    = rankStyles(idx, total);
       const medal = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'';
-
-      // Градиент полосы прогноза: от цвета ранга к насыщенному
       const fillGrad = `linear-gradient(90deg, ${rs.color} 0%, ${rs.color} 100%)`;
 
-      // Данные для модалки сохраняем в data-атрибуте
       const modalData = JSON.stringify({
         name, v800, v1200, rplan, ost, prc, prog, allV,
         kred800, nal800, td800, kom800,
         kred1200, nal1200, td1200, kom1200,
-        zadatok, rs, medal, idx: idx+1
+        zadatok, vsalone, vkso, vfSSP, vbanke, otkaz,
+        rs, medal, idx: idx+1
       }).replace(/'/g,"&#39;");
 
       return `<div class="mop" style="--rank-color:${rs.color};border-color:${rs.border}">
@@ -1595,38 +1626,52 @@ function openMopModal(dataStr) {
 
   document.getElementById('mop-modal-title').innerHTML =
     `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span>
-     ${d.name}${d.medal?' '+d.medal:''}`;
+     <span style="font-family:'Unbounded',sans-serif">${d.name}</span>${d.medal?' '+d.medal:''}`;
 
   document.getElementById('mop-modal-body').innerHTML = `
     <div class="mop-grid4" style="margin-bottom:12px">
       <div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div>
       <div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div>
       <div class="m4"><div class="ml">Остаток</div><div class="mv" style="color:var(--org)">${d.ost}</div></div>
-      <div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(num(d.prog))}">${d.prog}</div></div>
+      <div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div>
     </div>
-    <div class="prog-row">
+    <div class="prog-row" style="margin-bottom:16px">
       <span class="prog-l">${d.prc}</span>
       <div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${rs.color}"></div></div>
-      <span class="prog-r" style="color:${rs.color}">${p}%</span>
+      <span class="prog-r" style="color:${rs.color}">100%</span>
     </div>
-    <div style="margin-bottom:10px">
-      <div style="font-size:9px;color:var(--txt2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-family:'Unbounded',sans-serif;font-weight:700">
-        Визиты 800: ${d.v800} · 1200: ${d.v1200}
+
+    <div class="modal-sec">
+      <div class="modal-sec-title">CRM · 800</div>
+      <div class="modal-grid">
+        <div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div>
+        <div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div>
+        <div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div>
+        <div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td800}</div></div>
+        <div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div>
+        <div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div>
       </div>
     </div>
-    <div class="chips-wrap">
-      <div class="chips-row">
-        <span class="chip c800">💳 Кред800 <strong>${d.kred800}</strong></span>
-        <span class="chip c800">💵 Нал800 <strong>${d.nal800}</strong></span>
-        <span class="chip c800">🔄 TD800 <strong>${d.td800}</strong></span>
-        <span class="chip c800">📋 Ком800 <strong>${d.kom800}</strong></span>
+
+    <div class="modal-sec">
+      <div class="modal-sec-title">Тёплые лиды · 1200</div>
+      <div class="modal-grid">
+        <div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1200}</div></div>
+        <div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1200}</div></div>
+        <div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1200}</div></div>
+        <div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td1200}</div></div>
+        <div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1200}</div></div>
       </div>
-      <div class="chips-row">
-        <span class="chip c1200">💳 Кред1200 <strong>${d.kred1200}</strong></span>
-        <span class="chip c1200">💵 Нал1200 <strong>${d.nal1200}</strong></span>
-        <span class="chip c1200">🔄 TD1200 <strong>${d.td1200}</strong></span>
-        <span class="chip c1200">📋 Ком1200 <strong>${d.kom1200}</strong></span>
-        <span class="chip">🤝 Задаток <strong>${d.zadatok}</strong></span>
+    </div>
+
+    <div class="modal-sec">
+      <div class="modal-sec-title">Требует актуализации / Отказы</div>
+      <div class="modal-grid">
+        <div class="modal-cell"><div class="mc-l">В салоне</div><div class="mc-v">${d.vsalone}</div></div>
+        <div class="modal-cell"><div class="mc-l">В КСО</div><div class="mc-v">${d.vkso}</div></div>
+        <div class="modal-cell"><div class="mc-l">В банке</div><div class="mc-v">${d.vbanke}</div></div>
+        <div class="modal-cell"><div class="mc-l">ФССП</div><div class="mc-v">${d.vfSSP}</div></div>
+        <div class="modal-cell"><div class="mc-l">Отказ</div><div class="mc-v">${d.otkaz}</div></div>
       </div>
     </div>`;
 

@@ -504,37 +504,86 @@ body.light .zp-row {
   flex-shrink:0; text-align:right;
 }
 
-/* ── ГРАФИК ── */
-.sched-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:var(--r2); margin-bottom:18px }
-.sched-tbl { border-collapse:collapse; white-space:nowrap; min-width:100%; font-size:11px }
-.sched-tbl th {
-  background:var(--bg3); padding:7px 5px; text-align:center;
-  font-family:'Unbounded',sans-serif; font-size:8px; font-weight:700;
-  letter-spacing:.05em; color:var(--txt2);
+/* ── ГРАФИК — НЕДЕЛЬНЫЙ ВИД ── */
+.sched-nav {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:14px; gap:12px;
+}
+.sched-nav-title {
+  font-family:'Unbounded',sans-serif;
+  font-size:12px; font-weight:800; color:var(--txt);
+  text-align:center; flex:1;
+}
+.sched-nav-btn {
+  width:34px; height:34px; border-radius:50%;
+  background:var(--bg3); border:1px solid var(--line2);
+  color:var(--txt2); font-size:18px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .15s; flex-shrink:0; line-height:1;
+}
+.sched-nav-btn:hover { border-color:var(--acc); color:var(--acc) }
+.sched-nav-btn:disabled { opacity:.3; cursor:default }
+
+.sched-week {
+  display:grid; grid-template-columns:repeat(7,1fr);
+  gap:4px; margin-bottom:16px;
+}
+.sched-day-hdr {
+  text-align:center; padding:6px 2px;
+  background:var(--bg3); border-radius:8px;
+}
+.sched-day-hdr .sd-num {
+  font-family:'Unbounded',sans-serif;
+  font-size:13px; font-weight:800; line-height:1;
+}
+.sched-day-hdr .sd-dow {
+  font-size:9px; color:var(--txt2);
+  text-transform:uppercase; letter-spacing:.05em;
+  margin-top:2px;
+}
+.sched-day-hdr.today {
+  background:var(--acc-bg);
+  border:1px solid var(--acc-bdr);
+}
+.sched-day-hdr.today .sd-num { color:var(--acc) }
+.sched-day-hdr.today .sd-dow { color:var(--acc) }
+
+.sched-person {
+  background:var(--bg2); border:1px solid var(--line);
+  border-radius:var(--r2); margin-bottom:8px; overflow:hidden;
+}
+.sched-person-name {
+  font-family:'Unbounded',sans-serif;
+  font-size:11px; font-weight:700;
+  padding:10px 14px 8px;
   border-bottom:1px solid var(--line);
-  position:sticky; top:0;
+  color:var(--txt);
 }
-.sched-tbl th.sth-name { text-align:left; padding-left:12px; min-width:100px; position:sticky; left:0; z-index:5 }
-.sched-tbl th.day-h { min-width:26px }
-.sched-tbl td {
-  padding:6px 4px; text-align:center;
-  border-bottom:1px solid rgba(37,37,37,.5);
-  border-right:1px solid rgba(37,37,37,.35);
+.sched-cells {
+  display:grid; grid-template-columns:repeat(7,1fr);
+  gap:4px; padding:8px;
 }
-.sched-tbl td.td-name {
-  text-align:left; padding-left:12px;
-  font-weight:500; background:var(--bg2);
-  position:sticky; left:0; z-index:2;
+.sched-cell {
+  text-align:center; padding:8px 2px;
+  border-radius:6px; font-size:12px; font-weight:600;
+  min-height:36px; display:flex; align-items:center; justify-content:center;
 }
-.sched-tbl td.td-stat { font-family:'Unbounded',sans-serif; font-size:10px; font-weight:700; background:var(--bg3) }
-.sched-tbl tr:last-child td { border-bottom:none }
-.sched-tbl tr:hover td { background:rgba(255,255,255,.02) }
-.sched-tbl tr:hover td.td-name { background:var(--bg2) }
-.dr  { background:rgba(46,213,115,.12); color:var(--grn); font-weight:600; border-radius:3px; padding:1px 3px }
-.dv  { background:rgba(255,71,87,.12);  color:var(--red); font-weight:600; border-radius:3px; padding:1px 3px }
-.dvs { background:rgba(130,130,130,.1); color:var(--txt3); border-radius:3px; padding:1px 3px }
-.d-today { outline:2px solid var(--acc); outline-offset:-1px; border-radius:3px }
-.col-today { background:rgba(232,255,71,.04) !important }
+.sched-cell.dr { background:rgba(46,213,115,.12); color:var(--grn) }
+.sched-cell.dv { background:rgba(255,71,87,.12);  color:var(--red) }
+.sched-cell.dvs{ background:rgba(130,130,130,.1); color:var(--txt3) }
+.sched-cell.empty { color:var(--txt3); opacity:.4 }
+.sched-cell.today-col {
+  outline:2px solid var(--acc); outline-offset:-2px;
+  border-radius:6px;
+}
+
+.sched-group-title {
+  font-family:'Unbounded',sans-serif;
+  font-size:10px; font-weight:800; letter-spacing:.1em;
+  color:var(--txt2); margin-bottom:10px; margin-top:4px;
+  display:flex; align-items:center; gap:8px;
+}
+.sched-group-title::after { content:''; flex:1; height:1px; background:var(--line) }
 
 /* ── ИНСТРУКЦИИ ── */
 .instr-block {
@@ -967,6 +1016,7 @@ async function loadTab(tab) {
 
 function reloadCurrent() {
   const tab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
+  if (tab === 'grafik') _schedWeek = null;
   S.data[tab] = null;
   loadTab(tab).then(() => toast('Обновлено','s'));
 }
@@ -1253,52 +1303,118 @@ function renderZP() {
 }
 
 /* ══ RENDER: ГРАФИК ══ */
+const DOW = ['вс','пн','вт','ср','чт','пт','сб'];
+
+// Текущая неделя (0-based, 0=первая неделя месяца)
+let _schedWeek = null; // инициализируется при рендере
+
 function renderGrafik() {
   const el  = document.getElementById('c-grafik');
   const raw = S.data.grafik;
   if (!raw || raw.length < 3) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
 
-  function buildGroup(rows, daysRowIdx, title) {
-    if (!rows.length) return '';
+  // Определяем месяц из названия листа
+  const mo  = parseInt(SUFFIX.slice(0,2));
+  const yr  = 2000 + parseInt(SUFFIX.slice(2,4));
+  const dim = new Date(yr, mo, 0).getDate(); // кол-во дней в месяце
+
+  // Строим массив дней: [{day:1, dow:'пн'}, ...]
+  const allDays = Array.from({length:dim}, (_,i) => {
+    const d = i+1;
+    const date = new Date(yr, mo-1, d);
+    return { day:d, dow: DOW[date.getDay()] };
+  });
+
+  // Недели: разбиваем по 7
+  const weeks = [];
+  for (let i = 0; i < allDays.length; i += 7) weeks.push(allDays.slice(i, i+7));
+
+  // Текущая неделя по умолчанию
+  if (_schedWeek === null) {
+    const todayWeek = weeks.findIndex(w => w.some(d => d.day === TODAY));
+    _schedWeek = todayWeek >= 0 ? todayWeek : 0;
+  }
+  _schedWeek = Math.max(0, Math.min(_schedWeek, weeks.length-1));
+
+  const week     = weeks[_schedWeek];
+  const weekDays = week.map(d => d.day); // числа дней текущей недели
+
+  // Парсим строки групп
+  function parseGroup(rows, daysRowIdx) {
     const dRow = raw[daysRowIdx]||[];
-    const days = Array.from({length:31}, (_,i) => dRow[i+1]||'');
-
-    const ths = days.map(d =>
-      `<th class="day-h${parseInt(d)===TODAY?' col-today':''}">${d}</th>`
-    ).join('');
-
-    const trs = rows.map(r => {
-      if (!r[0]||!r[0].trim()) return '';
-      const cells = days.map((d,i) => {
-        const val = r[i+1]||'';
-        const v   = val.toLowerCase().trim();
-        const cls = v==='р'?'dr':v==='в'?'dv':v==='вс'?'dvs':'';
-        const isT = parseInt(d)===TODAY;
-        return `<td class="${isT?'col-today':''}"><span class="${cls}${isT&&cls?' d-today':''}">${val}</span></td>`;
-      }).join('');
-      return `<tr>
-        <td class="td-name">${r[0]}</td>${cells}
-        <td class="td-stat">${r[33]||''}</td>
-        <td class="td-stat">${r[34]||''}</td>
-        <td class="td-stat">${r[35]||''}</td>
-      </tr>`;
-    }).filter(Boolean).join('');
-
-    return `<div class="sec-title" style="margin-bottom:8px">${title}</div>
-    <div class="sched-wrap">
-      <table class="sched-tbl">
-        <thead><tr>
-          <th class="sth-name">Сотрудник</th>${ths}
-          <th>ВХ</th><th>См</th><th>А</th>
-        </tr></thead>
-        <tbody>${trs}</tbody>
-      </table>
-    </div>`;
+    // Строим map: день→колонка (1-based col в raw = день месяца)
+    // dRow[1]=1, dRow[2]=2 ... dRow[31]=31
+    return rows.filter(r => r[0]&&r[0].trim()).map(r => {
+      const name = r[0];
+      // Для каждого дня недели берём значение из нужной колонки
+      const cells = weekDays.map(dayNum => {
+        // Находим индекс в dRow где значение = dayNum
+        let colIdx = -1;
+        for (let c = 1; c <= 31; c++) {
+          if (parseInt(dRow[c]) === dayNum) { colIdx = c; break; }
+        }
+        return colIdx >= 0 ? (r[colIdx]||'') : '';
+      });
+      const vx = r[33]||'', sm = r[34]||'', a = r[35]||'';
+      return { name, cells, vx, sm, a };
+    });
   }
 
-  el.innerHTML =
-    buildGroup(raw.slice(3,13),  1,  raw[0]?.[0]||'Группа 1') +
-    buildGroup(raw.slice(19,25), 17, raw[16]?.[0]||'Группа 2');
+  function buildGroup(rows, daysRowIdx, title) {
+    const people = parseGroup(rows, daysRowIdx);
+    if (!people.length) return '';
+
+    const hdrs = week.map(d => {
+      const isT = d.day === TODAY;
+      return `<div class="sched-day-hdr${isT?' today':''}">
+        <div class="sd-num">${d.day}</div>
+        <div class="sd-dow">${d.dow}</div>
+      </div>`;
+    }).join('');
+
+    const cards = people.map(p => {
+      const cells = p.cells.map((val, wi) => {
+        const v   = val.toLowerCase().trim();
+        const cls = v==='р'?'dr':v==='в'?'dv':v==='вс'?'dvs': val?'':'empty';
+        const isT = week[wi]?.day === TODAY;
+        return `<div class="sched-cell ${cls}${isT?' today-col':''}">${val||'·'}</div>`;
+      }).join('');
+
+      return `<div class="sched-person">
+        <div class="sched-person-name">${p.name}</div>
+        <div class="sched-cells">${cells}</div>
+      </div>`;
+    }).join('');
+
+    return `<div class="sched-group-title">${title}</div>
+      <div class="sched-week">${hdrs}</div>
+      ${cards}`;
+  }
+
+  // Диапазон недели для отображения в заголовке
+  const wStart = week[0].day;
+  const wEnd   = week[week.length-1].day;
+  const monthName = _now.toLocaleString('ru',{month:'long'});
+  const weekLabel = `${wStart}–${wEnd} ${monthName}`;
+
+  const prevDisabled = _schedWeek === 0 ? 'disabled' : '';
+  const nextDisabled = _schedWeek === weeks.length-1 ? 'disabled' : '';
+
+  const g1 = buildGroup(raw.slice(3,13),  1,  raw[0]?.[0]||'Группа 1');
+  const g2 = buildGroup(raw.slice(19,25), 17, raw[16]?.[0]||'Группа 2');
+
+  el.innerHTML = `
+    <div class="sched-nav">
+      <button class="sched-nav-btn" onclick="schedNav(-1)" ${prevDisabled}>‹</button>
+      <div class="sched-nav-title">${weekLabel}</div>
+      <button class="sched-nav-btn" onclick="schedNav(1)"  ${nextDisabled}>›</button>
+    </div>
+    ${g1}${g2}`;
+}
+
+function schedNav(dir) {
+  _schedWeek = (_schedWeek||0) + dir;
+  S.data.grafik && renderGrafik();
 }
 
 /* ══ RENDER: ИНСТРУКЦИИ ══ */

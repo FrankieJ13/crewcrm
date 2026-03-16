@@ -505,9 +505,13 @@ body.light .zp-row {
 }
 
 /* ── ГРАФИК — НЕДЕЛЬНЫЙ ВИД ── */
+/* Экран графика без верхнего паддинга */
+#scr-grafik { padding-top:0 }
+#scr-grafik .w { padding-top:8px }
+/* nav переключатель */
 .sched-nav {
   display:flex; align-items:center; justify-content:space-between;
-  margin-bottom:14px; gap:12px;
+  padding-top:10px; margin-bottom:10px; gap:12px;
 }
 .sched-nav-title {
   font-family:'Unbounded',sans-serif;
@@ -522,11 +526,12 @@ body.light .zp-row {
   transition:all .15s; flex-shrink:0; line-height:1;
 }
 .sched-nav-btn:hover { border-color:var(--acc); color:var(--acc) }
-.sched-nav-btn:disabled { opacity:.3; cursor:default }
+.sched-nav-btn:disabled { opacity:.3; cursor:default; pointer-events:none }
 
+/* числа и дни недели — одна строка для обеих групп */
 .sched-week {
   display:grid; grid-template-columns:repeat(7,1fr);
-  gap:4px; margin-bottom:16px;
+  gap:4px;
 }
 .sched-day-hdr {
   text-align:center; padding:6px 2px;
@@ -542,11 +547,19 @@ body.light .zp-row {
   margin-top:2px;
 }
 .sched-day-hdr.today {
-  background:var(--acc-bg);
-  border:1px solid var(--acc-bdr);
+  background:var(--acc-bg); border:1px solid var(--acc-bdr);
 }
 .sched-day-hdr.today .sd-num { color:var(--acc) }
 .sched-day-hdr.today .sd-dow { color:var(--acc) }
+
+/* заголовок группы — ПОСЛЕ чисел, перед карточками */
+.sched-group-title {
+  font-family:'Unbounded',sans-serif;
+  font-size:10px; font-weight:800; letter-spacing:.1em;
+  color:var(--txt2); margin:14px 0 8px;
+  display:flex; align-items:center; gap:8px;
+}
+.sched-group-title::after { content:''; flex:1; height:1px; background:var(--line) }
 
 .sched-person {
   background:var(--bg2); border:1px solid var(--line);
@@ -568,22 +581,13 @@ body.light .zp-row {
   border-radius:6px; font-size:12px; font-weight:600;
   min-height:36px; display:flex; align-items:center; justify-content:center;
 }
-.sched-cell.dr { background:rgba(46,213,115,.12); color:var(--grn) }
-.sched-cell.dv { background:rgba(255,71,87,.12);  color:var(--red) }
-.sched-cell.dvs{ background:rgba(130,130,130,.1); color:var(--txt3) }
+.sched-cell.dr  { background:rgba(46,213,115,.12); color:var(--grn) }
+.sched-cell.dv  { background:rgba(255,71,87,.12);  color:var(--red) }
+.sched-cell.dvs { background:rgba(130,130,130,.1); color:var(--txt3) }
 .sched-cell.empty { color:var(--txt3); opacity:.4 }
 .sched-cell.today-col {
-  outline:2px solid var(--acc); outline-offset:-2px;
-  border-radius:6px;
+  outline:2px solid var(--acc); outline-offset:-2px; border-radius:6px;
 }
-
-.sched-group-title {
-  font-family:'Unbounded',sans-serif;
-  font-size:10px; font-weight:800; letter-spacing:.1em;
-  color:var(--txt2); margin-bottom:10px; margin-top:4px;
-  display:flex; align-items:center; gap:8px;
-}
-.sched-group-title::after { content:''; flex:1; height:1px; background:var(--line) }
 
 /* ── ИНСТРУКЦИИ ── */
 .instr-block {
@@ -775,6 +779,13 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
     </div>
   </nav>
 
+  <!-- Sticky шапка графика — вне main, прилипает под nav -->
+  <div id="grafik-sticky" style="display:none;background:var(--bg);border-bottom:1px solid var(--line);z-index:50;position:sticky;top:96px">
+    <div class="w" style="padding-top:10px;padding-bottom:10px">
+      <div id="grafik-sticky-inner"></div>
+    </div>
+  </div>
+
   <main>
     <div id="scr-login" class="scr">
       <div class="gate">
@@ -854,6 +865,9 @@ function showScr(id) {
     document.getElementById('scr-'+t).classList.remove('on')
   );
   document.getElementById('scr-'+id)?.classList.add('on');
+  // Показываем/скрываем sticky шапку графика
+  const gs = document.getElementById('grafik-sticky');
+  if (gs) gs.style.display = id === 'grafik' ? '' : 'none';
 }
 
 /* ══ HELPERS ══ */
@@ -1304,32 +1318,26 @@ function renderZP() {
 
 /* ══ RENDER: ГРАФИК ══ */
 const DOW = ['вс','пн','вт','ср','чт','пт','сб'];
-
-// Текущая неделя (0-based, 0=первая неделя месяца)
-let _schedWeek = null; // инициализируется при рендере
+let _schedWeek = null;
 
 function renderGrafik() {
   const el  = document.getElementById('c-grafik');
   const raw = S.data.grafik;
   if (!raw || raw.length < 3) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
 
-  // Определяем месяц из названия листа
   const mo  = parseInt(SUFFIX.slice(0,2));
   const yr  = 2000 + parseInt(SUFFIX.slice(2,4));
-  const dim = new Date(yr, mo, 0).getDate(); // кол-во дней в месяце
+  const dim = new Date(yr, mo, 0).getDate();
 
-  // Строим массив дней: [{day:1, dow:'пн'}, ...]
   const allDays = Array.from({length:dim}, (_,i) => {
-    const d = i+1;
+    const d    = i+1;
     const date = new Date(yr, mo-1, d);
     return { day:d, dow: DOW[date.getDay()] };
   });
 
-  // Недели: разбиваем по 7
   const weeks = [];
   for (let i = 0; i < allDays.length; i += 7) weeks.push(allDays.slice(i, i+7));
 
-  // Текущая неделя по умолчанию
   if (_schedWeek === null) {
     const todayWeek = weeks.findIndex(w => w.some(d => d.day === TODAY));
     _schedWeek = todayWeek >= 0 ? todayWeek : 0;
@@ -1337,84 +1345,99 @@ function renderGrafik() {
   _schedWeek = Math.max(0, Math.min(_schedWeek, weeks.length-1));
 
   const week     = weeks[_schedWeek];
-  const weekDays = week.map(d => d.day); // числа дней текущей недели
+  const weekDays = week.map(d => d.day);
 
-  // Парсим строки групп
+  // Шапка с числами и днями недели — одна на все группы
+  const hdrs = week.map(d => {
+    const isT = d.day === TODAY;
+    return `<div class="sched-day-hdr${isT?' today':''}">
+      <div class="sd-num">${d.day}</div>
+      <div class="sd-dow">${d.dow}</div>
+    </div>`;
+  }).join('');
+
+  const weekHeader = `<div class="sched-week">${hdrs}</div>`;
+
   function parseGroup(rows, daysRowIdx) {
     const dRow = raw[daysRowIdx]||[];
-    // Строим map: день→колонка (1-based col в raw = день месяца)
-    // dRow[1]=1, dRow[2]=2 ... dRow[31]=31
     return rows.filter(r => r[0]&&r[0].trim()).map(r => {
-      const name = r[0];
-      // Для каждого дня недели берём значение из нужной колонки
       const cells = weekDays.map(dayNum => {
-        // Находим индекс в dRow где значение = dayNum
         let colIdx = -1;
         for (let c = 1; c <= 31; c++) {
           if (parseInt(dRow[c]) === dayNum) { colIdx = c; break; }
         }
         return colIdx >= 0 ? (r[colIdx]||'') : '';
       });
-      const vx = r[33]||'', sm = r[34]||'', a = r[35]||'';
-      return { name, cells, vx, sm, a };
+      return { name: r[0], cells };
     });
   }
 
-  function buildGroup(rows, daysRowIdx, title) {
-    const people = parseGroup(rows, daysRowIdx);
-    if (!people.length) return '';
-
-    const hdrs = week.map(d => {
-      const isT = d.day === TODAY;
-      return `<div class="sched-day-hdr${isT?' today':''}">
-        <div class="sd-num">${d.day}</div>
-        <div class="sd-dow">${d.dow}</div>
-      </div>`;
-    }).join('');
-
-    const cards = people.map(p => {
+  function buildCards(people) {
+    return people.map(p => {
       const cells = p.cells.map((val, wi) => {
         const v   = val.toLowerCase().trim();
-        const cls = v==='р'?'dr':v==='в'?'dv':v==='вс'?'dvs': val?'':'empty';
+        const cls = v==='р'?'dr':v==='в'?'dv':v==='вс'?'dvs':val?'':'empty';
         const isT = week[wi]?.day === TODAY;
         return `<div class="sched-cell ${cls}${isT?' today-col':''}">${val||'·'}</div>`;
       }).join('');
-
       return `<div class="sched-person">
         <div class="sched-person-name">${p.name}</div>
         <div class="sched-cells">${cells}</div>
       </div>`;
     }).join('');
-
-    return `<div class="sched-group-title">${title}</div>
-      <div class="sched-week">${hdrs}</div>
-      ${cards}`;
   }
 
-  // Диапазон недели для отображения в заголовке
+  const g1title = raw[0]?.[0] || 'Группа 1';
+  const g2title = raw[16]?.[0] || 'Группа 2';
+  const g1 = parseGroup(raw.slice(3,13),  1);
+  const g2 = parseGroup(raw.slice(19,25), 17);
+
   const wStart = week[0].day;
   const wEnd   = week[week.length-1].day;
-  const monthName = _now.toLocaleString('ru',{month:'long'});
-  const weekLabel = `${wStart}–${wEnd} ${monthName}`;
+  const mName  = new Date(yr, mo-1, 1).toLocaleString('ru',{month:'long'});
 
-  const prevDisabled = _schedWeek === 0 ? 'disabled' : '';
-  const nextDisabled = _schedWeek === weeks.length-1 ? 'disabled' : '';
-
-  const g1 = buildGroup(raw.slice(3,13),  1,  raw[0]?.[0]||'Группа 1');
-  const g2 = buildGroup(raw.slice(19,25), 17, raw[16]?.[0]||'Группа 2');
+  const prevDis = _schedWeek === 0 ? 'disabled' : '';
+  const nextDis = _schedWeek === weeks.length-1 ? 'disabled' : '';
 
   el.innerHTML = `
-    <div class="sched-nav">
-      <button class="sched-nav-btn" onclick="schedNav(-1)" ${prevDisabled}>‹</button>
-      <div class="sched-nav-title">${weekLabel}</div>
-      <button class="sched-nav-btn" onclick="schedNav(1)"  ${nextDisabled}>›</button>
-    </div>
-    ${g1}${g2}`;
+    <div class="sched-group-title" style="margin-top:4px">${g1title}</div>
+    ${buildCards(g1)}
+    <div class="sched-group-title">${g2title}</div>
+    ${buildCards(g2)}`;
+
+  // Sticky шапка — вне main, не скроллится
+  const stickyEl = document.getElementById('grafik-sticky');
+  const stickyInner = document.getElementById('grafik-sticky-inner');
+  if (stickyEl && stickyInner) {
+    stickyEl.style.display = '';
+    stickyInner.innerHTML = `
+      <div class="sched-nav">
+        <button class="sched-nav-btn" onclick="schedNav(-1)" ${prevDis}>‹</button>
+        <div class="sched-nav-title">${wStart}–${wEnd} ${mName}</div>
+        <button class="sched-nav-btn" onclick="schedNav(1)"  ${nextDis}>›</button>
+      </div>
+      ${weekHeader}`;
+    // Точный top = header + nav
+    const hdr = document.querySelector('header');
+    const nav = document.getElementById('main-nav');
+    if (hdr && nav) stickyEl.style.top = (hdr.offsetHeight + nav.offsetHeight) + 'px';
+  }
 }
 
 function schedNav(dir) {
   _schedWeek = (_schedWeek||0) + dir;
-  S.data.grafik && renderGrafik();
+  if (S.data.grafik) renderGrafik();
+}
+
+// Динамически вычисляем top для sticky блока графика
+function updateSchedStickyTop() {
+  const hdr = document.querySelector('header');
+  const nav = document.getElementById('main-nav');
+  if (!hdr || !nav) return;
+  const top = hdr.offsetHeight + nav.offsetHeight;
+  document.querySelectorAll('.sched-sticky').forEach(el => {
+    el.style.top = top + 'px';
+  });
 }
 
 /* ══ RENDER: ИНСТРУКЦИИ ══ */

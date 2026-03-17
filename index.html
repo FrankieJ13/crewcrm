@@ -440,6 +440,75 @@ body.light .mop {
 .dept-row1, .dept-row2 {
   display:grid; gap:8px; margin-bottom:8px;
 }
+
+  /* === ВОДА В dept-card === */
+
+.dept-card {
+  position: relative;
+  overflow: hidden;
+}
+
+/* вода */
+.water-wrapper {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: var(--fill-level);
+  transition: height 1s ease;
+}
+
+/* тело */
+.water-body {
+  position: absolute;
+  inset: 0;
+}
+
+/* волны */
+.waves {
+  position: absolute;
+  top: -28px;
+  width: 100%;
+  height: 30px;
+}
+
+/* движение */
+.wave-layers > use {
+  animation: move-wave 10s infinite;
+}
+
+.wave-layers > use:nth-child(1) { animation-duration: 4s; }
+.wave-layers > use:nth-child(2) { animation-duration: 7s; }
+.wave-layers > use:nth-child(3) { animation-duration: 10s; }
+
+@keyframes move-wave {
+  0% { transform: translateX(-90px); }
+  100% { transform: translateX(85px); }
+}
+
+/* СВЕТЛАЯ */
+body.light .water-wrapper {
+  background: rgba(0,150,255,0.2);
+}
+body.light .wave1 { fill: rgba(0,150,255,0.3); }
+body.light .wave2 { fill: rgba(0,150,255,0.5); }
+body.light .wave3 { fill: rgba(0,150,255,0.9); }
+
+/* ТЕМНАЯ */
+body.dark .water-wrapper {
+  background: rgba(0,200,255,0.15);
+}
+body.dark .wave1 { fill: rgba(0,200,255,0.2); }
+body.dark .wave2 { fill: rgba(0,200,255,0.4); }
+body.dark .wave3 { fill: rgba(0,200,255,0.9); }
+
+/* блик */
+.water-body::after {
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(to bottom, rgba(255,255,255,0.2), transparent);
+}
 .dept-row1 { grid-template-columns:repeat(3,1fr) }
 .dept-row2 { grid-template-columns:repeat(3,1fr); margin-bottom:0 }
 .dept-cell {
@@ -1190,6 +1259,21 @@ function renderOtchet() {
   const deptCard = `
   <div class="sec-title">ОТДЕЛ CRM</div>
   <div class="dept-card">
+  <div class="water-wrapper" style="--fill-level:${progOtdel !== '—' ? parseInt(progOtdel) : 0}%;">
+  <div class="water-body">
+    <svg class="waves" viewBox="0 24 150 28" preserveAspectRatio="none">
+      <defs>
+        <path id="wave-path"
+          d="M-160 44c30 0 58-18 88-18s58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
+      </defs>
+      <g class="wave-layers">
+        <use href="#wave-path" x="48" y="0" class="wave1"/>
+        <use href="#wave-path" x="48" y="3" class="wave2"/>
+        <use href="#wave-path" x="48" y="7" class="wave3"/>
+      </g>
+    </svg>
+  </div>
+</div>
     <div class="dept-row1">
       <div class="dept-cell hi">
         <div class="dc-lbl">Визиты</div>

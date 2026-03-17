@@ -86,6 +86,9 @@ transition:background .2s, color .2s;
 
 main { flex:1; overflow-y:auto }
 
+/* ── LAYOUT ── */
+#app { display:flex; flex-direction:column; height:100vh }
+
 /* общий контейнер ширины */
 .w {
 width:100%;
@@ -98,6 +101,7 @@ box-sizing:border-box;
 main { flex:1; overflow-y:auto }
 .scr { display:none; padding:20px 0; animation:up .2s ease }
 .scr.on { display:block }
+.scr-inner { /* контент страниц тоже в .w */ }
 @keyframes up { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 
 /* ── HEADER ── */
@@ -126,6 +130,8 @@ display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:4px;
 }
 .logo-sq span { background:#000; border-radius:1px }
 .logo-sq span:last-child { opacity:.4 }
+
+.hdr-right { display:flex; align-items:center; gap:6px }
 
 .badge-month {
 font-size:11px; padding:3px 9px; border-radius:20px;
@@ -174,7 +180,7 @@ background:var(–bg);
 border-bottom:1px solid var(–line);
 overflow-x:auto; flex-shrink:0;
 position:sticky;
-top:52px;
+top:52px; /* высота header */
 z-index:99;
 }
 nav::-webkit-scrollbar { height:0 }
@@ -196,27 +202,6 @@ display:flex; align-items:center; gap:5px;
 .tab:hover { color:var(–txt2) }
 .tab.on { color:var(–acc); border-bottom-color:var(–acc) }
 .tab-dot { width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.5 }
-
-/* ── SUB-TABS (под-вкладки) ── */
-.sub-tabs {
-display:flex; gap:0; margin-bottom:16px;
-border:1px solid var(–line); border-radius:var(–r2);
-overflow:hidden; background:var(–bg2);
-}
-.sub-tab {
-flex:1; padding:9px 12px; text-align:center;
-font-family:‘Unbounded’,sans-serif;
-font-size:10px; font-weight:800; letter-spacing:.06em;
-color:var(–txt3); background:none; border:none;
-cursor:pointer; transition:all .15s;
-border-right:1px solid var(–line);
-white-space:nowrap;
-}
-.sub-tab:last-child { border-right:none }
-.sub-tab:hover { color:var(–txt2); background:var(–bg3) }
-.sub-tab.on { color:var(–acc); background:var(–acc-bg) }
-.sub-pane { display:none; animation:up .2s ease }
-.sub-pane.on { display:block }
 
 /* ── NOT AUTH ── */
 .gate {
@@ -386,12 +371,31 @@ padding:16px;
 }
 .mop-overlay.open { display:flex; animation:mFade .2s ease }
 @keyframes mFade { from{opacity:0} to{opacity:1} }
+
+/* === LIQUID GLASS MODAL === */
 .mop-modal {
-background:var(–bg2); border:1px solid var(–line2);
-border-radius:var(–r2); width:100%; max-width:460px;
+position:relative;
+border-radius:var(–r2);
+width:100%; max-width:460px;
 max-height:86vh; overflow-y:auto;
 animation:mUp .22s ease;
+backdrop-filter: blur(25px) saturate(180%);
+-webkit-backdrop-filter: blur(25px) saturate(180%);
+border:1px solid rgba(255,255,255,0.18);
+box-shadow: 0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
 }
+body.light .mop-modal {
+background: rgba(255,255,255,0.6);
+}
+body:not(.light) .mop-modal {
+background: rgba(18,18,18,0.6);
+}
+.mop-modal::before {
+content:’’; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+background: linear-gradient(120deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.1) 40%, transparent 100%);
+}
+.mop-modal-hdr { background:transparent; backdrop-filter:blur(10px); }
+
 @keyframes mUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
 .mop-modal-hdr {
 display:flex; align-items:center; justify-content:space-between;
@@ -439,6 +443,23 @@ color:var(–txt2); display:flex; align-items:center; gap:3px;
 .mop-grid4 { grid-template-columns:repeat(2,1fr) }
 }
 
+/* ── ПОДВКЛАДКИ ОТЧЁТА ── */
+.subtabs {
+display:flex; gap:0; margin-bottom:16px;
+border-bottom:1px solid var(–line);
+}
+.subtab {
+padding:9px 18px; font-family:‘Unbounded’,sans-serif;
+font-size:11px; font-weight:700; letter-spacing:.04em;
+color:var(–txt3); background:none; border:none;
+border-bottom:2px solid transparent; margin-bottom:-1px;
+cursor:pointer; transition:color .15s, border-color .15s;
+}
+.subtab:hover { color:var(–txt2) }
+.subtab.on { color:var(–acc); border-bottom-color:var(–acc) }
+.subpanel { display:none }
+.subpanel.on { display:block }
+
 /* ── КАРТОЧКА ОТДЕЛА ── */
 .dept-card {
 background:var(–bg2); border:1px solid var(–acc-bdr);
@@ -471,6 +492,16 @@ font-family:‘Unbounded’,sans-serif;
 font-size:16px; font-weight:800; letter-spacing:-.02em;
 }
 .dept-cell.hi .dc-val { color:var(–acc) }
+.chips-wrap { display:flex; flex-direction:column; gap:5px }
+.chips-row { display:flex; flex-wrap:wrap; gap:5px }
+.chip {
+font-size:10px; padding:3px 8px; border-radius:6px;
+background:var(–bg3); border:1px solid var(–line);
+color:var(–txt2); display:flex; align-items:center; gap:3px;
+}
+.chip strong { color:var(–txt); font-size:11px }
+.chip.c800  { border-color:rgba(30,144,255,.3) }
+.chip.c1200 { border-color:rgba(255,165,2,.3)  }
 
 /* ── ИТОГИ ── */
 .totals-box {
@@ -537,8 +568,10 @@ flex-shrink:0; text-align:right;
 }
 
 /* ── ГРАФИК — НЕДЕЛЬНЫЙ ВИД ── */
+/* Экран графика без верхнего паддинга */
 #scr-grafik { padding-top:0 }
 #scr-grafik .w { padding-top:8px }
+/* nav переключатель */
 .sched-nav {
 display:flex; align-items:center; justify-content:space-between;
 padding-top:10px; margin-bottom:10px; gap:12px;
@@ -558,6 +591,7 @@ transition:all .15s; flex-shrink:0; line-height:1;
 .sched-nav-btn:hover { border-color:var(–acc); color:var(–acc) }
 .sched-nav-btn:disabled { opacity:.3; cursor:default; pointer-events:none }
 
+/* числа и дни недели — одна строка для обеих групп */
 .sched-week {
 display:grid; grid-template-columns:repeat(7,1fr);
 gap:4px;
@@ -581,6 +615,7 @@ background:var(–acc-bg); border:1px solid var(–acc-bdr);
 .sched-day-hdr.today .sd-num { color:var(–acc) }
 .sched-day-hdr.today .sd-dow { color:var(–acc) }
 
+/* заголовок группы — ПОСЛЕ чисел, перед карточками */
 .sched-group-title {
 font-family:‘Unbounded’,sans-serif;
 font-size:10px; font-weight:800; letter-spacing:.1em;
@@ -645,15 +680,9 @@ background:var(–bg);
 }
 .instr-block.open > .instr-body { display:block }
 
-/* таблица внутри инструкции — горизонтальный скролл на мобильных */
-.instr-table-wrap {
-width:100%;
-overflow-x:auto;
--webkit-overflow-scrolling:touch;
-}
+/* таблица внутри инструкции */
 .instr-table {
 width:100%; border-collapse:collapse; font-size:13px;
-min-width:420px;
 }
 .instr-table th {
 background:var(–bg3);
@@ -675,6 +704,9 @@ white-space:nowrap; width:200px;
 }
 .instr-table td:first-child { border-right:1px solid var(–line) }
 body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
+
+/* FAQ таблица — горизонтальный скролл внутри блока */
+.instr-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
 
 /* вложенный спойлер */
 .instr-sub {
@@ -715,6 +747,34 @@ color:var(–txt3);
 font-family:‘Golos Text’,sans-serif;
 letter-spacing:.04em;
 }
+
+/* ── ПОДВКЛАДКИ ОТЧЁТЫ ── */
+.subnav {
+display:none; background:var(–bg2);
+border-bottom:1px solid var(–line);
+overflow-x:auto; flex-shrink:0;
+}
+.subnav.on { display:flex }
+.subnav::-webkit-scrollbar { height:0 }
+.subnav-inner {
+max-width:720px; margin:0 auto;
+padding:0 16px; display:flex;
+}
+.subtab {
+padding:8px 14px; white-space:nowrap;
+font-family:‘Unbounded’,sans-serif;
+font-size:11px; font-weight:700; letter-spacing:.04em;
+color:var(–txt3); background:none; border:none;
+border-bottom:2px solid transparent;
+cursor:pointer; transition:color .15s, border-color .15s;
+}
+.subtab:hover { color:var(–txt2) }
+.subtab.on { color:var(–acc); border-bottom-color:var(–acc) }
+
+/* fix FAQ table overflow on mobile */
+.instr-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; width:100% }
+.instr-table { min-width:480px; width:100% }
+
 .confetti-piece {
 position:fixed;
 width:8px; height:8px;
@@ -722,6 +782,13 @@ border-radius:2px;
 pointer-events:none;
 z-index:9999;
 animation:confettiFly var(–dur, 1s) ease-out forwards;
+}
+@keyframes firework {
+to { transform: translate(var(–tx), var(–ty)) scale(0.6); opacity: 0; }
+}
+@keyframes flash {
+0% { transform:translate(-50%,-50%) scale(0.5); opacity:1; }
+100% { transform:translate(-50%,-50%) scale(4); opacity:0; }
 }
 @keyframes confettiFly {
 0%   { transform:translate(0,0) rotate(0deg) scale(1); opacity:1 }
@@ -746,77 +813,8 @@ header     { padding:0 12px }
 .scr       { padding:12px }
 .tab       { padding:10px 14px; font-size:13px; letter-spacing:.02em }
 }
-
-@keyframes firework {
-to {
-transform: translate(var(–tx), var(–ty)) scale(0.6);
-opacity: 0;
-}
-}
-
-@keyframes flash {
-0% { transform:translate(-50%,-50%) scale(0.5); opacity:1; }
-100% { transform:translate(-50%,-50%) scale(4); opacity:0; }
-}
-
-/* === LIQUID GLASS MODAL UPGRADE === */
-.mop-modal {
-position:relative;
-border-radius:var(–r2);
-width:100%;
-max-width:460px;
-max-height:86vh;
-overflow:hidden;
-animation:mUp .22s ease;
-backdrop-filter: blur(25px) saturate(180%);
--webkit-backdrop-filter: blur(25px) saturate(180%);
-border:1px solid rgba(255,255,255,0.2);
-box-shadow:
-0 20px 60px rgba(0,0,0,0.35),
-inset 0 1px 0 rgba(255,255,255,0.25);
-}
-
-body.light .mop-modal {
-background: rgba(255,255,255,0.55);
-}
-
-body:not(.light) .mop-modal {
-background: rgba(18,18,18,0.55);
-}
-
-.mop-modal::before {
-content:’’;
-position:absolute;
-inset:0;
-border-radius:inherit;
-background: linear-gradient(
-120deg,
-rgba(255,255,255,0.35) 0%,
-rgba(255,255,255,0.15) 30%,
-rgba(255,255,255,0.05) 60%,
-transparent 100%
-);
-pointer-events:none;
-}
-
-.mop-modal::after {
-content:’’;
-position:absolute;
-inset:0;
-border-radius:inherit;
-background:
-radial-gradient(circle at 20% 10%, rgba(255,255,255,0.25), transparent 40%),
-radial-gradient(circle at 80% 90%, rgba(255,255,255,0.15), transparent 50%);
-pointer-events:none;
-opacity:.6;
-}
-
-.mop-modal-hdr {
-background:transparent;
-backdrop-filter: blur(10px);
-}
-
 </style>
+
 </head>
 <body>
 <div id="app">
@@ -876,12 +874,22 @@ backdrop-filter: blur(10px);
 
   <nav id="main-nav" style="display:none">
     <div class="nav-inner">
-      <button class="tab on" data-tab="otchet"><span class="tab-dot"></span>ОТЧЁТ</button>
+      <button class="tab on" data-tab="otchet"><span class="tab-dot"></span>ОТЧЁТЫ</button>
       <button class="tab" data-tab="zp"><span class="tab-dot"></span>ЗП</button>
       <button class="tab" data-tab="grafik"><span class="tab-dot"></span>ГРАФИК</button>
       <button class="tab" data-tab="instruktsii"><span class="tab-dot"></span>FAQ</button>
     </div>
   </nav>
+
+  <!-- Подвкладки ОТЧЁТЫ -->
+
+  <div class="subnav" id="subnav-otchet">
+    <div class="subnav-inner">
+      <button class="subtab on" data-sub="otdel" onclick="goSubTab('otdel')">ОТДЕЛ</button>
+      <button class="subtab" data-sub="managers" onclick="goSubTab('managers')">МЕНЕДЖЕРЫ</button>
+      <button class="subtab" data-sub="dozim" onclick="goSubTab('dozim')">ДОЖИМ</button>
+    </div>
+  </div>
 
   <!-- Sticky шапка графика — вне main, прилипает под nav -->
 
@@ -971,6 +979,9 @@ function showScr(id) {
     document.getElementById('scr-'+t).classList.remove('on')
   );
   document.getElementById('scr-'+id)?.classList.add('on');
+  // Подвкладки отчётов
+  document.getElementById('subnav-otchet').classList.toggle('on', id === 'otchet');
+  // Sticky шапка графика
   const gs = document.getElementById('grafik-sticky');
   if (gs) gs.style.display = id === 'grafik' ? '' : 'none';
 }
@@ -983,19 +994,19 @@ function fmtRub(v) {
 }
 function pctClr(p) { return p>=100?'var(--grn)':p>=60?'var(--org)':'var(--red)' }
 
-/* Uppercase для имён менеджеров */
-function U(name) { return (name||'—').toUpperCase(); }
-
+// Плавный градиент: 0=лучший(зелёный) → 1=худший(красный), яркие насыщенные цвета
 function rankColor(pos, total) {
   if (total <= 1) return { r:0, g:230, b:90 };
-  const t = pos / (total - 1);
+  const t = pos / (total - 1); // 0..1
   let r, g, b;
   if (t <= 0.5) {
+    // ярко-зелёный (#00e65a) → жёлтый (#ffe000)
     const f = t * 2;
     r = Math.round(0   + (255 - 0)   * f);
     g = Math.round(230 + (224 - 230) * f);
     b = Math.round(90  + (0   - 90)  * f);
   } else {
+    // жёлтый (#ffe000) → ярко-красный (#ff2828)
     const f = (t - 0.5) * 2;
     r = Math.round(255 + (255 - 255) * f);
     g = Math.round(224 + (40  - 224) * f);
@@ -1012,6 +1023,8 @@ function rankStyles(pos, total) {
   return { color, border, badgeBg };
 }
 function loader() { return `<div class="loader"><div class="spin"></div><span>Загружаем…</span></div>` }
+
+const ICON_REFRESH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>`;
 
 /* ══ AUTH ══ */
 let tokenClient;
@@ -1145,35 +1158,31 @@ function renderTab(tab) {
   else if (tab==='instruktsii') renderInstruktsii();
 }
 
-/* ══ SUB-TAB для ОТЧЁТ ══ */
-let _otchetSubTab = 'otdel';
-
-function goSubTab(sub) {
-  _otchetSubTab = sub;
-  document.querySelectorAll('.sub-tab[data-sub]').forEach(b =>
-    b.classList.toggle('on', b.dataset.sub === sub)
-  );
-  document.querySelectorAll('.sub-pane[data-sub]').forEach(p =>
-    p.classList.toggle('on', p.dataset.sub === sub)
-  );
-}
-
 /* ══ RENDER: ОТЧЁТ ══ */
 function renderOtchet() {
   const el  = document.getElementById('c-otchet');
   const raw = S.data.otchet;
   if (!raw || raw.length < 4) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
 
-  const mgrRows = raw.slice(3, 12).filter(r => r[0] && r[0].trim());
-  const kot     = raw[13] || [];
-  const totRow  = raw[14] || [];
+  // По скриншоту точная раскладка столбцов:
+  // A(0)МОП B(1)виз800 C(2)виз1200 D(3)план E(4)ост F(5)% G(6)прогноз H(7)все_виз
+  // 800:  I(8)=кредит  J(9)=наличка  K(10)=trade-in  L(11)=комиссия
+  // 1200: M(12)=кредит N(13)=наличка O(14)=trade-in  P(15)=комиссия
+  // Q(16)=задаток R(17)=луна S(18)=ТЛ T(19)=в_салоне U(20)=ДНИ V(21)=ДАТА
 
+  const mgrRows = raw.slice(3, 12).filter(r => r[0] && r[0].trim()); // строки 4-12
+  const kot     = raw[13] || []; // строка 14 = КОТЕЛ
+  const totRow  = raw[14] || []; // строка 15 = ВСЕГО
+
+  // ВИЗИТЫ = SUM(B4:C12) + (B14+C14) котёл
   const vis800sum  = raw.slice(3,12).reduce((s,r) => s + num(r[1]), 0) + num(kot[1]);
   const vis1200sum = raw.slice(3,12).reduce((s,r) => s + num(r[2]), 0) + num(kot[2]);
   const allVis     = vis800sum + vis1200sum;
 
+  // ПЛАН отдела
   const planTotal = num(totRow[3]);
 
+  // ПРОГНОЗ ОТДЕЛА
   const mo  = parseInt(SUFFIX.slice(0,2));
   const yr  = 2000 + parseInt(SUFFIX.slice(2,4));
   const dim = new Date(yr, mo, 0).getDate();
@@ -1185,12 +1194,16 @@ function renderOtchet() {
     const target = (planTotal / dim) * dp;
     progOtdel = Math.round(allVis / target * 100) + '%';
   }
+  const dpStr = dp || '—';
 
+  // КАРТОЧКА ОТДЕЛА
+  // Кредит   = SUM(I4:I12)+I14  + SUM(M4:M12)+M14  = col8  + col12
   const deptKred = raw.slice(3,12).reduce((s,r) => s + num(r[8])  + num(r[12]), 0) + num(kot[8])  + num(kot[12]);
+  // Наличка  = SUM(J4:J12)+J14  + SUM(N4:N12)+N14  = col9  + col13
   const deptNal  = raw.slice(3,12).reduce((s,r) => s + num(r[9])  + num(r[13]), 0) + num(kot[9])  + num(kot[13]);
+  // Комиссия = SUM(L4:L12)+L14  + SUM(P4:P12)+P14  = col11 + col15
   const deptKom  = raw.slice(3,12).reduce((s,r) => s + num(r[11]) + num(r[15]), 0) + num(kot[11]) + num(kot[15]);
 
-  /* ── Карточка отдела (под-вкладка ОТДЕЛ) ── */
   const deptCard = `
   <div class="sec-title">ОТДЕЛ CRM</div>
   <div class="dept-card">
@@ -1222,38 +1235,30 @@ function renderOtchet() {
         <div class="dc-val">${deptKom||'—'}</div>
       </div>
     </div>
-  </div>
-  <div class="totals-box">
-    <div class="totals-lbl">ИТОГО ПО ОТДЕЛУ</div>
-    <div class="totals-row">
-      <div class="ti"><span class="tl">Все визиты</span><span class="tv">${allVis||'—'}</span></div>
-      <div class="ti"><span class="tl">Визиты 800</span><span class="tv">${vis800sum||'—'}</span></div>
-      <div class="ti"><span class="tl">Визиты 1200</span><span class="tv">${vis1200sum||'—'}</span></div>
-      <div class="ti"><span class="tl">Кредит</span><span class="tv" style="color:var(--acc)">${deptKred||'—'}</span></div>
-      <div class="ti"><span class="tl">Прогноз</span><span class="tv" style="color:${pctClr(parseInt(progOtdel))}">${progOtdel}</span></div>
-    </div>
   </div>`;
 
-  /* ── Карточки менеджеров (под-вкладка МЕНЕДЖЕРЫ) ── */
   const mops_html = (() => {
     const KOTEL = ['котел','котёл','kotel'];
     const isKotel = n => KOTEL.includes((n||'').toLowerCase().trim());
 
+    // Разделяем: обычные менеджеры и котёл
     const rankRows  = mgrRows.filter(r => !isKotel(r[0]));
     const kotelRows = mgrRows.filter(r =>  isKotel(r[0]));
 
+    // Извлекаем числовой прогноз для сортировки
     const withProg = rankRows.map(r => {
       const progStr = r[6]||'0%';
       const progNum = parseFloat(progStr.replace('%','').replace(',','.')) || 0;
       return { r, progNum };
     });
 
+    // Сортируем по прогнозу — от лучшего к худшему
     withProg.sort((a, b) => b.progNum - a.progNum);
 
     const total = withProg.length;
 
     const ranked = withProg.map(({ r, progNum }, idx) => {
-      const name     = U(r[0]);
+      const name     = (r[0]||'—').toUpperCase();
       const v800     = r[1]||'0', v1200  = r[2]||'0';
       const rplan    = r[3]||'0', ost    = r[4]||'0';
       const prc      = r[5]||'0%', prog   = r[6]||'0%';
@@ -1269,11 +1274,12 @@ function renderOtchet() {
       const zadatok  = r[16]||'0';
       const p = num(prc);
 
-      const vsalone  = r[19]||'0';
-      const vkso     = r[22]||'0';
-      const vfSSP    = r[23]||'0';
-      const vbanke   = r[24]||'0';
-      const otkaz    = r[25]||'0';
+      // Новые поля: T(19)=в_салоне, W(22)=ксо, X(23)=фссп, Y(24)=в_банке, Z(25)=отказ
+      const vsalone  = r[19]||'0'; // T
+      const vkso     = r[22]||'0'; // W
+      const vfSSP    = r[23]||'0'; // X
+      const vbanke   = r[24]||'0'; // Y
+      const otkaz    = r[25]||'0'; // Z
 
       const rs    = rankStyles(idx, total);
       const medal = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'';
@@ -1291,11 +1297,9 @@ function renderOtchet() {
         <div class="mop-head">
           <div class="mop-head-left">
             <span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span>
-            <span class="mop-name">${name}${medal ? ' <span style="cursor:pointer" onclick="burstConfetti(this)" title="🎉">'+medal+'</span>' : ''}</span>
+            <span class="mop-name">${name}${medal ? ' <span style="cursor:pointer" onclick="burstConfetti(this,${idx})" title="🎉">'+medal+'</span>' : ''}</span>
           </div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button>
-          </div>
+          <button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button>
         </div>
         <div class="mop-mini">
           <div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
@@ -1314,8 +1318,9 @@ function renderOtchet() {
       </div>`;
     }).join('');
 
+    // Котёл — показываем отдельно без ранга и цвета
     const kotelHTML = kotelRows.map(r => {
-      const name  = U(r[0]);
+      const name  = (r[0]||'—').toUpperCase();
       const v800  = r[1]||'0', v1200 = r[2]||'0';
       const rplan = r[3]||'0', ost   = r[4]||'0';
       const prc   = r[5]||'0%', prog  = r[6]||'0%';
@@ -1331,7 +1336,7 @@ function renderOtchet() {
         <div class="mop-grid4">
           <div class="m4"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
           <div class="m4"><div class="ml">План</div><div class="mv">${rplan}</div></div>
-          <div class="m4"><div class="ml">Остаток</div><div class="mv">${ost}</div></div>
+          <div class="m4"><div class="ml">Остаток</div><div class="mv" style="color:var(--org)">${ost}</div></div>
           <div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(num(prog))}">${prog}</div></div>
         </div>
         <div class="prog-row">
@@ -1345,27 +1350,24 @@ function renderOtchet() {
     return ranked + kotelHTML;
   })();
 
-  /* ── Сборка с под-вкладками ── */
-  const activeOtdel = _otchetSubTab === 'otdel' ? ' on' : '';
-  const activeMgr   = _otchetSubTab === 'managers' ? ' on' : '';
-  const activeDojim = _otchetSubTab === 'dojim' ? ' on' : '';
+  const tot = `<div class="totals-box">
+    <div class="totals-lbl">ИТОГО ПО ОТДЕЛУ</div>
+    <div class="totals-row">
+      <div class="ti"><span class="tl">Все визиты</span><span class="tv">${allVis||'—'}</span></div>
+      <div class="ti"><span class="tl">Визиты 800</span><span class="tv">${vis800sum||'—'}</span></div>
+      <div class="ti"><span class="tl">Визиты 1200</span><span class="tv">${vis1200sum||'—'}</span></div>
+      <div class="ti"><span class="tl">Кредит</span><span class="tv" style="color:var(--acc)">${deptKred||'—'}</span></div>
+      <div class="ti"><span class="tl">Прогноз</span><span class="tv" style="color:${pctClr(parseInt(progOtdel))}">${progOtdel}</span></div>
+    </div>
+  </div>`;
+
+  // Суммарные показатели отдела — удалены (теперь считаются выше)
 
   el.innerHTML = `
-    <div class="sub-tabs">
-      <button class="sub-tab${activeOtdel}" data-sub="otdel" onclick="goSubTab('otdel')">ОТДЕЛ</button>
-      <button class="sub-tab${activeMgr}" data-sub="managers" onclick="goSubTab('managers')">МЕНЕДЖЕРЫ</button>
-      <button class="sub-tab${activeDojim}" data-sub="dojim" onclick="goSubTab('dojim')">ДОЖИМ</button>
-    </div>
-    <div class="sub-pane${activeOtdel}" data-sub="otdel">
-      ${deptCard}
-    </div>
-    <div class="sub-pane${activeMgr}" data-sub="managers">
-      <div class="sec-title">Менеджеры</div>
-      <div class="mops">${mops_html}</div>
-    </div>
-    <div class="sub-pane${activeDojim}" data-sub="dojim">
-      <div class="empty">Раздел «Дожим» скоро будет доступен</div>
-    </div>`;
+    <div class="subpanel on" id="sub-otdel">${deptCard}${tot}</div>
+    <div class="subpanel" id="sub-managers"><div class="sec-title">Менеджеры</div><div class="mops">${mops_html}</div></div>
+    <div class="subpanel" id="sub-dozim"><div class="empty" style="padding:48px 0;text-align:center;color:var(--txt3)">Скоро здесь появится раздел Дожим</div></div>
+  `;
 }
 
 /* ══ RENDER: ЗП ══ */
@@ -1377,14 +1379,16 @@ function renderZP() {
   const mgrs   = raw.slice(2,12).filter(r => r[0]&&r[0].trim());
   const totRow = raw[12] || [];
 
+  // Котел — отображаем отдельно, не участвует в рейтинге
   const KOTEL_NAMES = ['котел','котёл','kotel'];
   const isKotel = (name) => KOTEL_NAMES.includes((name||'').toLowerCase().trim());
 
   const kotelRow = mgrs.find(r => isKotel(r[0]));
   const rankMgrs = mgrs.filter(r => !isKotel(r[0]));
 
+  // Парсим суммы и сортируем от большей к меньшей
   const parsed = rankMgrs.map(r => ({
-    name: U(r[0]),
+    name: (r[0]||'—').toUpperCase(),
     raw:  r[1]||'0',
     n:    parseFloat(String(r[1]||'0').replace(/[^\d.]/g,''))||0,
   }));
@@ -1401,7 +1405,7 @@ function renderZP() {
     return `<div class="zp-row" style="--rank-color:${rs.color};border-color:${rs.border}">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span>
-        <span class="zp-n" style="color:${rs.color}">${item.name}${medal ? ' <span style="cursor:pointer" onclick="burstConfetti(this,'+idx+')">'+medal+'</span>' : ''}</span>
+        <span class="zp-n" style="color:${rs.color}">${item.name}${medal?' <span style="cursor:pointer" onclick="burstConfetti(this)">'+medal+'</span>':''}</span>
       </div>
       <div class="zp-bg" style="margin-bottom:6px"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div>
       <div style="text-align:right">
@@ -1410,9 +1414,10 @@ function renderZP() {
     </div>`;
   }).join('');
 
+  // Котел отдельной строкой без ранга
   const kotelHTML = kotelRow ? `
     <div class="zp-row" style="opacity:.6;margin-top:8px">
-      <span class="zp-n" style="color:var(--txt2)">${U(kotelRow[0])}</span>
+      <span class="zp-n" style="color:var(--txt2)">${kotelRow[0]}</span>
       <div class="zp-bg"><div class="zp-fill" style="width:0%"></div></div>
       <span class="zp-a" style="color:var(--txt2)">${fmtRub(kotelRow[1])}</span>
     </div>` : '';
@@ -1457,6 +1462,7 @@ function renderGrafik() {
   const week     = weeks[_schedWeek];
   const weekDays = week.map(d => d.day);
 
+  // Шапка с числами и днями недели — одна на все группы
   const hdrs = week.map(d => {
     const isT = d.day === TODAY;
     return `<div class="sched-day-hdr${isT?' today':''}">
@@ -1477,7 +1483,7 @@ function renderGrafik() {
         }
         return colIdx >= 0 ? (r[colIdx]||'') : '';
       });
-      return { name: U(r[0]), cells };
+      return { name: r[0], cells };
     });
   }
 
@@ -1514,6 +1520,7 @@ function renderGrafik() {
     <div class="sched-group-title">${g2title}</div>
     ${buildCards(g2)}`;
 
+  // Sticky шапка — вне main, не скроллится
   const stickyEl = document.getElementById('grafik-sticky');
   const stickyInner = document.getElementById('grafik-sticky-inner');
   if (stickyEl && stickyInner) {
@@ -1525,6 +1532,7 @@ function renderGrafik() {
         <button class="sched-nav-btn" onclick="schedNav(1)"  ${nextDis}>›</button>
       </div>
       ${weekHeader}`;
+    // Точный top = header + nav
     const hdr = document.querySelector('header');
     const nav = document.getElementById('main-nav');
     if (hdr && nav) stickyEl.style.top = (hdr.offsetHeight + nav.offsetHeight) + 'px';
@@ -1536,13 +1544,29 @@ function schedNav(dir) {
   if (S.data.grafik) renderGrafik();
 }
 
+// Динамически вычисляем top для sticky блока графика
+function updateSchedStickyTop() {
+  const hdr = document.querySelector('header');
+  const nav = document.getElementById('main-nav');
+  if (!hdr || !nav) return;
+  const top = hdr.offsetHeight + nav.offsetHeight;
+  document.querySelectorAll('.sched-sticky').forEach(el => {
+    el.style.top = top + 'px';
+  });
+}
+
 /* ══ RENDER: ИНСТРУКЦИИ ══ */
+// Структура листа: строки сгруппированы кнопками +/-
+// Заголовок блока = строка с CAPS текстом в col A, col B пустая
+// Внутри блока: col A = Статус, col B = Критерии применения, col C = Обязательные действия
+// Для первого блока (РЕГЛАМЕНТ...) внутри могут быть вложенные подзаголовки
+
 function renderInstruktsii() {
   const el  = document.getElementById('c-instruktsii');
   const raw = S.data.instruktsii;
   if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
 
-  // Парсим блоки — CAPS заголовки разделяют блоки верхнего уровня
+  // Парсим блоки
   const blocks = [];
   let cur = null;
   raw.forEach(r => {
@@ -1551,19 +1575,20 @@ function renderInstruktsii() {
     const c = (r[2]||'').trim();
     if (!a && !b && !c) return;
 
-    // Заголовок блока верхнего уровня: CAPS, col B и C пустые
-    if (a && !b && !c && a === a.toUpperCase() && a.length > 4) {
-      // Проверяем: является ли это вложенным подзаголовком?
-      // Если cur уже есть и в нём уже были данные — это вложенный подзаголовок
-      // Если cur пустой или нет cur — это новый блок
-      if (cur && cur.rows.length > 0) {
-        // Проверяем — может это подзаголовок внутри текущего блока
-        // Эвристика: если первый заголовок уже был, считаем подзаголовком
-        cur.rows.push({ status:a, criteria:'', action:'', _isSubHeader:true });
-      } else {
-        cur = { title:a, rows:[] };
-        blocks.push(cur);
+    // Заголовок блока верхнего уровня: col A = CAPS, B и C пусты
+    // Считаем его новым блоком только если:
+    // — ещё нет cur, ИЛИ у cur уже есть данные, ИЛИ cur уже имеет подзаголовки внутри
+    const isCapsTitle = a && !b && !c && a === a.toUpperCase() && a.length > 4 && /[А-ЯA-Z]/.test(a);
+
+    if (isCapsTitle) {
+      // Если текущий блок ещё не имеет строк данных — это подзаголовок внутри cur
+      if (cur && cur.rows.length === 0 && blocks.length > 0) {
+        // добавляем как подзаголовок-строку в текущий блок
+        cur.rows.push({ status:a, criteria:'', action:'' });
+        return;
       }
+      cur = { title:a, rows:[] };
+      blocks.push(cur);
       return;
     }
     if (!cur) { cur = { title: a||'—', rows:[] }; blocks.push(cur); return; }
@@ -1572,20 +1597,22 @@ function renderInstruktsii() {
 
   if (!blocks.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
 
-  function hasActions(rows) { return rows.some(r => r.action && !r._isSubHeader) }
+  // Определяем есть ли у блока 3 колонки или 2
+  function hasActions(blk) { return blk.rows.some(r => r.action) }
 
-  // Проверяем есть ли вложенные подзаголовки
+  // Проверяем есть ли вложенные подзаголовки (CAPS строки без criteria/action внутри блока)
   function hasSubs(blk) {
-    return blk.rows.some(r => r._isSubHeader);
+    return blk.rows.some(r => r.status && !r.criteria && !r.action &&
+      r.status === r.status.toUpperCase() && r.status.length > 4 &&
+      /[А-ЯA-Z]/.test(r.status));
   }
 
   function buildTable(rows, withActions) {
-    const filteredRows = rows.filter(r => !r._isSubHeader && (r.status || r.criteria));
     const cols = withActions
       ? ['Статус','Критерии применения','Обязательные действия в CRM']
       : ['Статус','Критерии применения'];
     const ths = cols.map(c => `<th>${c}</th>`).join('');
-    const trs = filteredRows.map(r => {
+    const trs = rows.filter(r => r.status || r.criteria).map(r => {
       if (withActions) {
         return `<tr>
           <td>${r.status||'—'}</td>
@@ -1602,10 +1629,12 @@ function renderInstruktsii() {
   }
 
   function buildSubBlocks(blk) {
+    // разбиваем rows на подблоки по CAPS заголовкам
     const subs = [];
     let curSub = null;
     blk.rows.forEach(r => {
-      if (r._isSubHeader) {
+      if (r.status && !r.criteria && !r.action &&
+          r.status === r.status.toUpperCase() && r.status.length > 4) {
         curSub = { title: r.status, rows:[] };
         subs.push(curSub);
       } else {
@@ -1616,7 +1645,7 @@ function renderInstruktsii() {
 
     return subs.map((s,si) => {
       const sid = 'is-' + blk._id + '-' + si;
-      const withA = hasActions(s.rows);
+      const withA = hasActions(s);
       return `<div class="instr-sub" id="${sid}">
         <div class="instr-sub-hdr" onclick="toggleSub('${sid}')">
           <span>${s.title}</span>
@@ -1631,7 +1660,7 @@ function renderInstruktsii() {
     b._id = i;
     const id = 'ib-'+i;
     const nested = hasSubs(b);
-    const bodyContent = nested ? buildSubBlocks(b) : buildTable(b.rows, hasActions(b.rows));
+    const bodyContent = nested ? buildSubBlocks(b) : buildTable(b.rows, hasActions(b));
 
     return `<div class="instr-block" id="${id}">
       <div class="instr-hdr" onclick="toggleInstr('${id}')">
@@ -1645,81 +1674,69 @@ function renderInstruktsii() {
   el.innerHTML = `<div class="sec-title">Инструкции (${blocks.length})</div>${html}`;
 }
 
+function goSubTab(sub) {
+  // Обновляем кнопки в subnav
+  document.querySelectorAll('#subnav-otchet .subtab').forEach(b =>
+    b.classList.toggle('on', b.dataset.sub === sub)
+  );
+  // Переключаем панели
+  document.querySelectorAll('#c-otchet .subpanel').forEach(p => p.classList.remove('on'));
+  document.getElementById('sub-' + sub)?.classList.add('on');
+}
+
+// Оставляем goSub для обратной совместимости
+function goSub(btn, tab) {
+  const sub = btn.dataset.sub;
+  goSubTab(sub);
+}
+
 function toggleInstr(id) { document.getElementById(id)?.classList.toggle('open') }
 function toggleSub(id)   { document.getElementById(id)?.classList.toggle('open') }
 
 /* ══ КОНФЕТТИ ══ */
 function burstConfetti(el, idx) {
+  if (idx === undefined) idx = 99;
   const isGold = idx === 0;
   const rect = el.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
   const cy = rect.top  + rect.height / 2;
 
   if (isGold) {
-    const audio = new Audio('https://actions.google.com/sounds/v1/fireworks/firework_burst.ogg');
-    audio.volume = 0.25;
-    audio.play().catch(()=>{});
-  }
-
-  if (isGold) {
     const flash = document.createElement('div');
-    flash.style.cssText = `
-      position:fixed;
-      left:${cx}px;
-      top:${cy}px;
-      width:20px;
-      height:20px;
-      border-radius:50%;
-      background:radial-gradient(circle,#fff,#ffd700,#ffae00,transparent);
-      transform:translate(-50%,-50%);
-      pointer-events:none;
-      z-index:9999;
-      animation: flash 0.4s ease-out forwards;
-    `;
+    flash.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;width:20px;height:20px;
+      border-radius:50%;background:radial-gradient(circle,#fff,#ffd700,#ffae00,transparent);
+      transform:translate(-50%,-50%);pointer-events:none;z-index:9999;
+      animation:flash 0.4s ease-out forwards;`;
     document.body.appendChild(flash);
     setTimeout(()=>flash.remove(),400);
   }
 
   const colors = isGold
     ? ['#FFD700','#FFC300','#FFDF00','#FFF8DC','#FFFFFF']
-    : ['#e8ff47','#ff4757','#2ed573','#1e90ff','#1e90ff','#ffa502'];
-
+    : ['#e8ff47','#ff4757','#2ed573','#1e90ff','#ffa502','#ff6bcd'];
   const count  = isGold ? 140 : 60;
   const radius = isGold ? 280 : 140;
 
   for (let i = 0; i < count; i++) {
     const piece = document.createElement('div');
     const angle = (i / count) * 2 * Math.PI;
-    const dist = radius + (Math.random() - 0.5) * (isGold ? 40 : 20);
-    const tx = Math.cos(angle) * dist;
-    const ty = Math.sin(angle) * dist;
-    const size = isGold ? (6 + Math.random()*10) : (4 + Math.random()*6);
-    const dur  = isGold ? (0.8 + Math.random()*0.8) : (0.6 + Math.random()*0.6);
-
-    piece.style.cssText = `
-      position:fixed;
-      left:${cx}px;
-      top:${cy}px;
-      width:${size}px;
-      height:${size}px;
+    const dist  = radius + (Math.random() - 0.5) * (isGold ? 40 : 20);
+    const tx    = Math.cos(angle) * dist;
+    const ty    = Math.sin(angle) * dist;
+    const size  = isGold ? (6 + Math.random()*10) : (4 + Math.random()*6);
+    const dur   = isGold ? (0.8 + Math.random()*0.8) : (0.6 + Math.random()*0.6);
+    piece.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;
+      width:${size}px;height:${size}px;
       background:${colors[Math.floor(Math.random()*colors.length)]};
       border-radius:${Math.random()>0.5?'50%':'2px'};
-      pointer-events:none;
-      z-index:9999;
-      transform:translate(0,0);
-      animation: firework ${dur}s ease-out forwards;
-      --tx:${tx}px;
-      --ty:${ty}px;
-    `;
+      pointer-events:none;z-index:9999;
+      animation:firework ${dur}s ease-out forwards;
+      --tx:${tx.toFixed(0)}px;--ty:${ty.toFixed(0)}px;`;
     document.body.appendChild(piece);
-    setTimeout(()=>piece.remove(), dur*1000);
+    setTimeout(()=>piece.remove(), dur*1000+100);
   }
-
-  if (isGold) {
-    setTimeout(() => burstConfetti(el, 99), 120);
-  }
+  if (isGold) setTimeout(() => burstConfetti(el, 99), 120);
 }
-
 function openMopModal(dataStr) {
   const d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"'));
   const p = num(d.prc);
@@ -1733,7 +1750,7 @@ function openMopModal(dataStr) {
     <div class="mop-grid4" style="margin-bottom:12px">
       <div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div>
       <div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div>
-      <div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div>
+      <div class="m4"><div class="ml">Остаток</div><div class="mv" style="color:var(--org)">${d.ost}</div></div>
       <div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div>
     </div>
     <div class="prog-row" style="margin-bottom:16px">
@@ -1743,7 +1760,7 @@ function openMopModal(dataStr) {
     </div>
 
     <div class="modal-sec">
-      <div class="modal-sec-title">CRM</div>
+      <div class="modal-sec-title">CRM · 800</div>
       <div class="modal-grid">
         <div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div>
         <div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div>
@@ -1755,7 +1772,7 @@ function openMopModal(dataStr) {
     </div>
 
     <div class="modal-sec">
-      <div class="modal-sec-title">ТЁПЛЫЕ ЛИДЫ</div>
+      <div class="modal-sec-title">Тёплые лиды · 1200</div>
       <div class="modal-grid">
         <div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1200}</div></div>
         <div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1200}</div></div>
@@ -1766,7 +1783,7 @@ function openMopModal(dataStr) {
     </div>
 
     <div class="modal-sec">
-      <div class="modal-sec-title">ТРЕБУЮТ АКТУАЛИЗАЦИИ / ОТКАЗЫ</div>
+      <div class="modal-sec-title">Требует актуализации / Отказы</div>
       <div class="modal-grid">
         <div class="modal-cell"><div class="mc-l">В салоне</div><div class="mc-v">${d.vsalone}</div></div>
         <div class="modal-cell"><div class="mc-l">В КСО</div><div class="mc-v">${d.vkso}</div></div>
@@ -1799,7 +1816,6 @@ document.getElementById('btn-out').addEventListener('click', onLogout);
 document.querySelectorAll('.tab').forEach(b =>
   b.addEventListener('click', () => goTab(b.dataset.tab))
 );
-
 /* ══ INIT ══ */
 function init() {
   syncTheme();

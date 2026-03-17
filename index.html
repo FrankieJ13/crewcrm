@@ -15,6 +15,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&display=swap" rel="stylesheet"/>
 <script>
+// Сносим все старые Service Worker'ы немедленно
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
     regs.forEach(r => r.unregister());
@@ -80,9 +81,15 @@ transition:background .2s, color .2s;
 ::-webkit-scrollbar-track { background:transparent }
 ::-webkit-scrollbar-thumb { background:var(–line2); border-radius:2px }
 
+/* ── LAYOUT ── */
 #app { display:flex; flex-direction:column; height:100vh }
+
 main { flex:1; overflow-y:auto }
 
+/* ── LAYOUT ── */
+#app { display:flex; flex-direction:column; height:100vh }
+
+/* общий контейнер ширины */
 .w {
 width:100%;
 max-width:720px;
@@ -91,8 +98,10 @@ padding:0 16px;
 box-sizing:border-box;
 }
 
+main { flex:1; overflow-y:auto }
 .scr { display:none; padding:20px 0; animation:up .2s ease }
 .scr.on { display:block }
+.scr-inner { /* контент страниц тоже в .w */ }
 @keyframes up { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 
 /* ── HEADER ── */
@@ -122,12 +131,15 @@ display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:4px;
 .logo-sq span { background:#000; border-radius:1px }
 .logo-sq span:last-child { opacity:.4 }
 
+.hdr-right { display:flex; align-items:center; gap:6px }
+
 .badge-month {
 font-size:11px; padding:3px 9px; border-radius:20px;
 background:var(–bg3); border:1px solid var(–line2);
 color:var(–txt2); font-weight:500;
 }
 
+/* icon buttons (theme + refresh) */
 .btn-icon {
 width:30px; height:30px; border-radius:50%;
 background:var(–bg3); border:1px solid var(–line2);
@@ -168,7 +180,7 @@ background:var(–bg);
 border-bottom:1px solid var(–line);
 overflow-x:auto; flex-shrink:0;
 position:sticky;
-top:52px;
+top:52px; /* высота header */
 z-index:99;
 }
 nav::-webkit-scrollbar { height:0 }
@@ -191,36 +203,43 @@ display:flex; align-items:center; gap:5px;
 .tab.on { color:var(–acc); border-bottom-color:var(–acc) }
 .tab-dot { width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.5 }
 
-/* ── SUB-TABS (ОТЧЁТ) ── */
-.sub-nav {
-background:var(–bg2);
+/* ── SUBNAV (под вкладки ОТЧЁТ) ── */
+.subnav {
+background:var(–bg);
 border-bottom:1px solid var(–line);
-overflow-x:auto;
-flex-shrink:0;
+overflow-x:auto; flex-shrink:0;
+position:sticky;
+top:96px;
+z-index:98;
 }
-.sub-nav::-webkit-scrollbar { height:0 }
-.sub-nav-inner {
+.subnav::-webkit-scrollbar { height:0 }
+.subnav-inner {
 max-width:720px;
 margin:0 auto;
 padding:0 20px;
 display:flex;
-gap:4px;
-padding-top:8px;
-padding-bottom:0;
 }
-.sub-tab {
-padding:7px 14px; white-space:nowrap;
+.subtab {
+padding:8px 14px; white-space:nowrap;
 font-family:‘Unbounded’,sans-serif;
 font-size:10px; font-weight:800; letter-spacing:.06em;
 color:var(–txt3); background:none; border:none;
 border-bottom:2px solid transparent;
 cursor:pointer; transition:color .15s, border-color .15s;
 }
-.sub-tab:hover { color:var(–txt2) }
-.sub-tab.on { color:var(–acc); border-bottom-color:var(–acc) }
+.subtab:hover { color:var(–txt2) }
+.subtab.on { color:var(–acc); border-bottom-color:var(–acc) }
+.subscr { display:none }
+.subscr.on { display:block }
 
-.sub-scr { display:none }
-.sub-scr.on { display:block }
+/* ── ДОЖИМ stub ── */
+.dozim-stub {
+display:flex; flex-direction:column; align-items:center;
+justify-content:center; gap:14px; min-height:50vh;
+text-align:center; padding:40px 20px;
+}
+.dozim-stub svg { width:40px; height:40px; color:var(–txt3) }
+.dozim-stub p { font-size:13px; color:var(–txt3); line-height:1.7 }
 
 /* ── NOT AUTH ── */
 .gate {
@@ -302,13 +321,17 @@ font-family:‘Unbounded’,sans-serif; font-size:9px; font-weight:900;
 flex-shrink:0;
 }
 
+/* шапка мини-карточки */
 .mop-head {
 display:flex; align-items:center;
 justify-content:space-between; margin-bottom:12px;
 }
 .mop-head-left { display:flex; align-items:center; gap:7px }
 .mop-name { font-weight:600; font-size:14px }
-
+.mop-tags { display:flex; gap:5px }
+.tag { font-size:10px; font-weight:600; padding:2px 8px; border-radius:6px }
+.tag-800  { background:rgba(30,144,255,.15); color:var(–blu) }
+.tag-1200 { background:rgba(255,165,2,.15);  color:var(–org) }
 /* кнопка i */
 .mop-info-btn {
 width:22px; height:22px; border-radius:50%;
@@ -332,8 +355,10 @@ padding:8px; text-align:center;
 .mm .ml { font-size:9px; color:var(–txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px }
 .mm .mv { font-family:‘Unbounded’,sans-serif; font-size:14px; font-weight:800 }
 
-/* прогресс */
-.mop-prog { position:relative }
+/* прогресс с градиентом */
+.mop-prog {
+position:relative;
+}
 .mop-prog-labels {
 display:flex; justify-content:space-between;
 font-size:10px; margin-bottom:5px;
@@ -350,7 +375,9 @@ transition:width .7s ease;
 }
 
 /* секции в модалке */
-.modal-sec { margin-bottom:14px }
+.modal-sec {
+margin-bottom:14px;
+}
 .modal-sec-title {
 font-family:‘Unbounded’,sans-serif;
 font-size:9px; font-weight:800; letter-spacing:.1em;
@@ -408,6 +435,7 @@ transition:all .15s; flex-shrink:0; line-height:1;
 .mop-modal-close:hover { border-color:var(–red); color:var(–red) }
 .mop-modal-body { padding:14px 16px }
 
+/* 4 ячейки в модалке */
 .mop-grid4 {
 display:grid; grid-template-columns:repeat(4,1fr);
 gap:6px; margin-bottom:12px;
@@ -466,6 +494,16 @@ font-family:‘Unbounded’,sans-serif;
 font-size:16px; font-weight:800; letter-spacing:-.02em;
 }
 .dept-cell.hi .dc-val { color:var(–acc) }
+.chips-wrap { display:flex; flex-direction:column; gap:5px }
+.chips-row { display:flex; flex-wrap:wrap; gap:5px }
+.chip {
+font-size:10px; padding:3px 8px; border-radius:6px;
+background:var(–bg3); border:1px solid var(–line);
+color:var(–txt2); display:flex; align-items:center; gap:3px;
+}
+.chip strong { color:var(–txt); font-size:11px }
+.chip.c800  { border-color:rgba(30,144,255,.3) }
+.chip.c1200 { border-color:rgba(255,165,2,.3)  }
 
 /* ── ИТОГИ ── */
 .totals-box {
@@ -531,7 +569,7 @@ font-size:13px; font-weight:700;
 flex-shrink:0; text-align:right;
 }
 
-/* ── ГРАФИК ── */
+/* ── ГРАФИК — НЕДЕЛЬНЫЙ ВИД ── */
 #scr-grafik { padding-top:0 }
 #scr-grafik .w { padding-top:8px }
 .sched-nav {
@@ -612,7 +650,7 @@ min-height:36px; display:flex; align-items:center; justify-content:center;
 outline:2px solid var(–acc); outline-offset:-2px; border-radius:6px;
 }
 
-/* ── ИНСТРУКЦИИ — FIX горизонтальный скролл на мобильных ── */
+/* ── ИНСТРУКЦИИ ── */
 .instr-block {
 border:1px solid var(–line); border-radius:var(–r2);
 overflow:hidden; margin-bottom:8px;
@@ -640,17 +678,14 @@ background:var(–bg);
 }
 .instr-block.open > .instr-body { display:block }
 
-/* Обёртка таблицы — горизонтальный скролл на мобильных */
+/* ИЗМЕНЕНИЕ: таблица обёрнута в scrollable-div для мобильных */
 .instr-table-wrap {
 width:100%;
 overflow-x:auto;
 -webkit-overflow-scrolling:touch;
 }
-
 .instr-table {
-width:100%;
-min-width:480px; /* не сжимается меньше */
-border-collapse:collapse; font-size:13px;
+width:100%; min-width:480px; border-collapse:collapse; font-size:13px;
 }
 .instr-table th {
 background:var(–bg3);
@@ -695,13 +730,13 @@ color:var(–txt2); font-size:12px; flex-shrink:0; transition:all .2s;
 .instr-sub-body { display:none }
 .instr-sub.open .instr-sub-body { display:block }
 
-/* имена менеджеров — Unbounded */
+/* имена менеджеров везде — Unbounded */
 .mop-name, .zp-n { font-family:‘Unbounded’,sans-serif; font-weight:700 }
 
-/* цифры в отчёте */
+/* цифры в отчёте — нейтральный цвет (txt) */
 .mm .mv, .m4 .mv, .mop-prog-labels .cur { color:var(–txt) }
 
-/* footer */
+/* футер авторства */
 .page-footer {
 text-align:center;
 padding:24px 0 16px;
@@ -712,8 +747,6 @@ color:var(–txt3);
 font-family:‘Golos Text’,sans-serif;
 letter-spacing:.04em;
 }
-
-/* confetti */
 .confetti-piece {
 position:fixed;
 width:8px; height:8px;
@@ -758,7 +791,7 @@ opacity: 0;
 100% { transform:translate(-50%,-50%) scale(4); opacity:0; }
 }
 
-/* === LIQUID GLASS MODAL === */
+/* === LIQUID GLASS MODAL UPGRADE === */
 .mop-modal {
 position:relative;
 border-radius:var(–r2);
@@ -767,39 +800,58 @@ max-width:460px;
 max-height:86vh;
 overflow:hidden;
 animation:mUp .22s ease;
+
 backdrop-filter: blur(25px) saturate(180%);
 -webkit-backdrop-filter: blur(25px) saturate(180%);
+
 border:1px solid rgba(255,255,255,0.2);
+
 box-shadow:
 0 20px 60px rgba(0,0,0,0.35),
 inset 0 1px 0 rgba(255,255,255,0.25);
 }
-body.light .mop-modal { background: rgba(255,255,255,0.55); }
-body.dark .mop-modal  { background: rgba(18,18,18,0.55); }
+
+body.light .mop-modal {
+background: rgba(255,255,255,0.55);
+}
+
+body:not(.light) .mop-modal {
+background: rgba(18,18,18,0.55);
+}
+
 .mop-modal::before {
-content:’’; position:absolute; inset:0; border-radius:inherit;
-background: linear-gradient(120deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.15) 30%, rgba(255,255,255,0.05) 60%, transparent 100%);
+content:’’;
+position:absolute;
+inset:0;
+border-radius:inherit;
+background: linear-gradient(
+120deg,
+rgba(255,255,255,0.35) 0%,
+rgba(255,255,255,0.15) 30%,
+rgba(255,255,255,0.05) 60%,
+transparent 100%
+);
 pointer-events:none;
 }
+
 .mop-modal::after {
-content:’’; position:absolute; inset:0; border-radius:inherit;
+content:’’;
+position:absolute;
+inset:0;
+border-radius:inherit;
 background:
 radial-gradient(circle at 20% 10%, rgba(255,255,255,0.25), transparent 40%),
 radial-gradient(circle at 80% 90%, rgba(255,255,255,0.15), transparent 50%);
-pointer-events:none; opacity:.6;
+pointer-events:none;
+opacity:.6;
 }
-.mop-modal-hdr { background:transparent; backdrop-filter:blur(10px); }
 
-/* ── ДОЖИМ (пустой раздел) ── */
-.dozim-empty {
-display:flex; flex-direction:column; align-items:center;
-justify-content:center; gap:14px; min-height:50vh;
-text-align:center; padding:40px 20px; color:var(–txt3);
+.mop-modal-hdr {
+background:transparent;
+backdrop-filter: blur(10px);
 }
-.dozim-empty svg { width:40px; height:40px; opacity:.3 }
-.dozim-empty p { font-size:13px; color:var(–txt3); line-height:1.7 }
+
 </style>
-
 </head>
 <body>
 <div id="app">
@@ -862,17 +914,17 @@ text-align:center; padding:40px 20px; color:var(–txt3);
     </div>
   </nav>
 
-  <!-- Sub-nav для ОТЧЁТ -->
+  <!-- Под-вкладки ОТЧЁТ -->
 
-  <div id="otchet-subnav" style="display:none" class="sub-nav">
-    <div class="sub-nav-inner">
-      <button class="sub-tab on" data-sub="otdel">ОТДЕЛ</button>
-      <button class="sub-tab" data-sub="managers">МЕНЕДЖЕРЫ</button>
-      <button class="sub-tab" data-sub="dozim">ДОЖИМ</button>
+  <div id="otchet-subnav" class="subnav" style="display:none">
+    <div class="subnav-inner">
+      <button class="subtab on" data-subtab="otdel">ОТДЕЛ</button>
+      <button class="subtab" data-subtab="managers">МЕНЕДЖЕРЫ</button>
+      <button class="subtab" data-subtab="dozim">ДОЖИМ</button>
     </div>
   </div>
 
-  <!-- Sticky шапка графика -->
+  <!-- Sticky шапка графика — вне main, прилипает под nav -->
 
   <div id="grafik-sticky" style="display:none;background:var(--bg);border-bottom:1px solid var(--line);z-index:50;position:sticky;top:96px">
     <div class="w" style="padding-top:10px;padding-bottom:10px">
@@ -893,40 +945,30 @@ text-align:center; padding:40px 20px; color:var(–txt3);
         <p>Нажмите кнопку <strong>Войти</strong><br>в правом верхнем углу</p>
       </div>
     </div>
-
-```
-<!-- ОТЧЁТ: sub-screens -->
-<div id="scr-otchet" class="scr">
-  <div class="w">
-    <!-- ОТДЕЛ -->
-    <div id="sub-otdel" class="sub-scr on">
-      <div id="c-otdel"></div>
-      <div class="page-footer">© Бочаров Ю.С., 2026</div>
-    </div>
-    <!-- МЕНЕДЖЕРЫ -->
-    <div id="sub-managers" class="sub-scr">
-      <div id="c-managers"></div>
-      <div class="page-footer">© Бочаров Ю.С., 2026</div>
-    </div>
-    <!-- ДОЖИМ -->
-    <div id="sub-dozim" class="sub-scr">
-      <div class="dozim-empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 8v4l3 3"/>
-        </svg>
-        <p>Раздел в разработке.<br>Скоро здесь будут данные по дожиму.</p>
+    <div id="scr-otchet" class="scr">
+      <div class="w">
+        <div id="subscr-otdel" class="subscr on">
+          <div id="c-otdel"></div>
+          <div class="page-footer">&copy; Бочаров Ю.С., 2026</div>
+        </div>
+        <div id="subscr-managers" class="subscr">
+          <div id="c-managers"></div>
+          <div class="page-footer">&copy; Бочаров Ю.С., 2026</div>
+        </div>
+        <div id="subscr-dozim" class="subscr">
+          <div class="dozim-stub">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+            </svg>
+            <p>Раздел в разработке.<br>Скоро здесь появятся данные по дожиму.</p>
+          </div>
+          <div class="page-footer">&copy; Бочаров Ю.С., 2026</div>
+        </div>
       </div>
-      <div class="page-footer">© Бочаров Ю.С., 2026</div>
     </div>
-  </div>
-</div>
-
-<div id="scr-zp"          class="scr"><div class="w"><div id="c-zp"></div><div class="page-footer">© Бочаров Ю.С., 2026</div></div></div>
-<div id="scr-grafik"      class="scr"><div class="w"><div id="c-grafik"></div><div class="page-footer">© Бочаров Ю.С., 2026</div></div></div>
-<div id="scr-instruktsii" class="scr"><div class="w"><div id="c-instruktsii"></div><div class="page-footer">© Бочаров Ю.С., 2026</div></div></div>
-```
-
+    <div id="scr-zp"          class="scr"><div class="w"><div id="c-zp"></div><div class="page-footer">&copy; Бочаров Ю.С., 2026</div></div></div>
+    <div id="scr-grafik"      class="scr"><div class="w"><div id="c-grafik"></div><div class="page-footer">&copy; Бочаров Ю.С., 2026</div></div></div>
+    <div id="scr-instruktsii" class="scr"><div class="w"><div id="c-instruktsii"></div><div class="page-footer">&copy; Бочаров Ю.С., 2026</div></div></div>
   </main>
 </div>
 
@@ -936,7 +978,7 @@ text-align:center; padding:40px 20px; color:var(–txt3);
   <div class="mop-modal" id="mop-modal">
     <div class="mop-modal-hdr">
       <div class="mop-modal-title" id="mop-modal-title"></div>
-      <button class="mop-modal-close" onclick="closeMopModal()">×</button>
+      <button class="mop-modal-close" onclick="closeMopModal()">&times;</button>
     </div>
     <div class="mop-modal-body" id="mop-modal-body"></div>
   </div>
@@ -955,10 +997,10 @@ const _now   = new Date();
 const SUFFIX = String(_now.getMonth()+1).padStart(2,'0') + String(_now.getFullYear()).slice(-2);
 const TODAY  = _now.getDate();
 const SHEETS = {
-  otchet:      'ОТЧЁТ'   + SUFFIX,
-  zp:          'ЗП'      + SUFFIX,
-  grafik:      'ГРАФИКИ' + SUFFIX,
-  instruktsii: 'ИНСТРУКЦИИ',
+  otchet:      '\u041e\u0422\u0427\u0401\u0422'   + SUFFIX,
+  zp:          '\u0417\u041f'      + SUFFIX,
+  grafik:      '\u0413\u0420\u0410\u0424\u0418\u041a\u0418' + SUFFIX,
+  instruktsii: '\u0418\u041d\u0421\u0422\u0420\u0423\u041a\u0426\u0418\u0418',
 };
 document.getElementById('badge-month').textContent = SUFFIX.slice(0,2) + '/' + SUFFIX.slice(2);
 
@@ -992,23 +1034,20 @@ function showScr(id) {
   document.getElementById('scr-'+id)?.classList.add('on');
   const gs = document.getElementById('grafik-sticky');
   if (gs) gs.style.display = id === 'grafik' ? '' : 'none';
-
-  // Sub-nav для отчёта
-  const subNav = document.getElementById('otchet-subnav');
-  if (subNav) subNav.style.display = id === 'otchet' ? '' : 'none';
+  /* показываем/скрываем под-вкладки отчёта */
+  const sn = document.getElementById('otchet-subnav');
+  if (sn) sn.style.display = id === 'otchet' ? '' : 'none';
 }
 
 /* ══ SUB-TABS ══ */
-let _currentSub = 'otdel';
-function goSubTab(sub) {
-  _currentSub = sub;
-  document.querySelectorAll('.sub-tab').forEach(b =>
-    b.classList.toggle('on', b.dataset.sub === sub)
+function goSubTab(name) {
+  document.querySelectorAll('.subtab').forEach(b =>
+    b.classList.toggle('on', b.dataset.subtab === name)
   );
-  document.querySelectorAll('.sub-scr').forEach(s =>
-    s.classList.remove('on')
-  );
-  document.getElementById('sub-'+sub)?.classList.add('on');
+  ['otdel','managers','dozim'].forEach(s => {
+    const el = document.getElementById('subscr-'+s);
+    if (el) el.classList.toggle('on', s === name);
+  });
 }
 
 /* ══ HELPERS ══ */
@@ -1018,11 +1057,6 @@ function fmtRub(v) {
   return isNaN(n) ? (v||'—') : n.toLocaleString('ru') + ' ₽';
 }
 function pctClr(p) { return p>=100?'var(--grn)':p>=60?'var(--org)':'var(--red)' }
-
-// Имя заглавными буквами
-function upperName(name) {
-  return (name||'').toUpperCase();
-}
 
 function rankColor(pos, total) {
   if (total <= 1) return { r:0, g:230, b:90 };
@@ -1050,6 +1084,8 @@ function rankStyles(pos, total) {
   return { color, border, badgeBg };
 }
 function loader() { return `<div class="loader"><div class="spin"></div><span>Загружаем…</span></div>` }
+
+const ICON_REFRESH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>`;
 
 /* ══ AUTH ══ */
 let tokenClient;
@@ -1156,12 +1192,11 @@ function goTab(tab) {
 
 async function loadTab(tab) {
   if (S.data[tab]) return;
-  // Показываем лоадер в нужных местах
   if (tab === 'otchet') {
-    const elOtdel    = document.getElementById('c-otdel');
-    const elManagers = document.getElementById('c-managers');
-    if (elOtdel)    elOtdel.innerHTML    = loader();
-    if (elManagers) elManagers.innerHTML = loader();
+    const elO = document.getElementById('c-otdel');
+    const elM = document.getElementById('c-managers');
+    if (elO) elO.innerHTML = loader();
+    if (elM) elM.innerHTML = loader();
   } else {
     const el = document.getElementById('c-'+tab);
     if (el) el.innerHTML = loader();
@@ -1173,10 +1208,10 @@ async function loadTab(tab) {
     else if (tab==='instruktsii') S.data.instruktsii  = await api(SHEETS.instruktsii, 'A1:C200');
     renderTab(tab);
   } catch(e) {
-    if (e.message !== 'auth') {
+    if (e.message!=='auth') {
       if (tab === 'otchet') {
-        const elOtdel = document.getElementById('c-otdel');
-        if (elOtdel) elOtdel.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
+        const elO = document.getElementById('c-otdel');
+        if (elO) elO.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
       } else {
         const el = document.getElementById('c-'+tab);
         if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
@@ -1199,24 +1234,23 @@ function renderTab(tab) {
   else if (tab==='instruktsii') renderInstruktsii();
 }
 
-/* ══ RENDER: ОТЧЁТ ══ */
+/* ══ RENDER: ОТЧЁТ ══
+ * ИЗМЕНЕНИЯ:
+ * - Карточка отдела → c-otdel (subscr-otdel)
+ * - Карточки менеджеров → c-managers (subscr-managers)
+ * - Имена менеджеров — toUpperCase()
+ * - Бейджи 800/1200 убраны с карточек
+ * - Остаток: color:var(--txt) вместо var(--org)
+ */
 function renderOtchet() {
-  const raw = S.data.otchet;
   const elOtdel    = document.getElementById('c-otdel');
   const elManagers = document.getElementById('c-managers');
-
+  const raw = S.data.otchet;
   if (!raw || raw.length < 4) {
     if (elOtdel)    elOtdel.innerHTML    = '<div class="empty">Нет данных</div>';
     if (elManagers) elManagers.innerHTML = '<div class="empty">Нет данных</div>';
     return;
   }
-
-  // Колонки:
-  // A(0)МОП B(1)виз800 C(2)виз1200 D(3)план E(4)ост F(5)% G(6)прогноз H(7)все_виз
-  // 800:  I(8)=кредит J(9)=наличка K(10)=trade-in L(11)=комиссия
-  // 1200: M(12)=кредит N(13)=наличка O(14)=trade-in P(15)=комиссия
-  // Q(16)=задаток R(17)=луна S(18)=ТЛ T(19)=в_салоне U(20)=ДНИ V(21)=ДАТА
-  // W(22)=ксо X(23)=фссп Y(24)=в_банке Z(25)=отказ
 
   const mgrRows = raw.slice(3, 12).filter(r => r[0] && r[0].trim());
   const kot     = raw[13] || [];
@@ -1225,8 +1259,7 @@ function renderOtchet() {
   const vis800sum  = raw.slice(3,12).reduce((s,r) => s + num(r[1]), 0) + num(kot[1]);
   const vis1200sum = raw.slice(3,12).reduce((s,r) => s + num(r[2]), 0) + num(kot[2]);
   const allVis     = vis800sum + vis1200sum;
-
-  const planTotal = num(totRow[3]);
+  const planTotal  = num(totRow[3]);
 
   const mo  = parseInt(SUFFIX.slice(0,2));
   const yr  = 2000 + parseInt(SUFFIX.slice(2,4));
@@ -1244,7 +1277,7 @@ function renderOtchet() {
   const deptNal  = raw.slice(3,12).reduce((s,r) => s + num(r[9])  + num(r[13]), 0) + num(kot[9])  + num(kot[13]);
   const deptKom  = raw.slice(3,12).reduce((s,r) => s + num(r[11]) + num(r[15]), 0) + num(kot[11]) + num(kot[15]);
 
-  /* ── КАРТОЧКА ОТДЕЛА ── */
+  /* ── ОТДЕЛ ── */
   const deptCard = `
   <div class="sec-title">ОТДЕЛ CRM</div>
   <div class="dept-card">
@@ -1291,7 +1324,7 @@ function renderOtchet() {
 
   if (elOtdel) elOtdel.innerHTML = deptCard + tot;
 
-  /* ── КАРТОЧКИ МЕНЕДЖЕРОВ ── */
+  /* ── МЕНЕДЖЕРЫ ── */
   const mops_html = (() => {
     const KOTEL = ['котел','котёл','kotel'];
     const isKotel = n => KOTEL.includes((n||'').toLowerCase().trim());
@@ -1304,30 +1337,22 @@ function renderOtchet() {
       const progNum = parseFloat(progStr.replace('%','').replace(',','.')) || 0;
       return { r, progNum };
     });
-
     withProg.sort((a, b) => b.progNum - a.progNum);
-
     const total = withProg.length;
 
     const ranked = withProg.map(({ r, progNum }, idx) => {
-      const name     = upperName(r[0]||'—');
+      const name     = (r[0]||'—').toUpperCase();
       const v800     = r[1]||'0', v1200  = r[2]||'0';
       const rplan    = r[3]||'0', ost    = r[4]||'0';
       const prc      = r[5]||'0%', prog   = r[6]||'0%';
       const allV     = r[7]||'0';
-      const kred800  = r[8]||'0';
-      const nal800   = r[9]||'0';
-      const td800    = r[10]||'0';
-      const kom800   = r[11]||'0';
-      const kred1200 = r[12]||'0';
-      const nal1200  = r[13]||'0';
-      const td1200   = r[14]||'0';
-      const kom1200  = r[15]||'0';
+      const kred800  = r[8]||'0', nal800   = r[9]||'0';
+      const td800    = r[10]||'0', kom800  = r[11]||'0';
+      const kred1200 = r[12]||'0', nal1200 = r[13]||'0';
+      const td1200   = r[14]||'0', kom1200 = r[15]||'0';
       const zadatok  = r[16]||'0';
-      const vsalone  = r[19]||'0';
-      const vkso     = r[22]||'0';
-      const vfSSP    = r[23]||'0';
-      const vbanke   = r[24]||'0';
+      const vsalone  = r[19]||'0', vkso   = r[22]||'0';
+      const vfSSP    = r[23]||'0', vbanke = r[24]||'0';
       const otkaz    = r[25]||'0';
       const p = num(prc);
 
@@ -1369,7 +1394,7 @@ function renderOtchet() {
     }).join('');
 
     const kotelHTML = kotelRows.map(r => {
-      const name  = upperName(r[0]||'—');
+      const name  = (r[0]||'—').toUpperCase();
       const v800  = r[1]||'0', v1200 = r[2]||'0';
       const rplan = r[3]||'0', ost   = r[4]||'0';
       const prc   = r[5]||'0%', prog  = r[6]||'0%';
@@ -1421,7 +1446,7 @@ function renderZP() {
   const rankMgrs = mgrs.filter(r => !isKotel(r[0]));
 
   const parsed = rankMgrs.map(r => ({
-    name: upperName(r[0]||'—'),
+    name: (r[0]||'—').toUpperCase(),
     raw:  r[1]||'0',
     n:    parseFloat(String(r[1]||'0').replace(/[^\d.]/g,''))||0,
   }));
@@ -1449,7 +1474,7 @@ function renderZP() {
 
   const kotelHTML = kotelRow ? `
     <div class="zp-row" style="opacity:.6;margin-top:8px">
-      <span class="zp-n" style="color:var(--txt2)">${upperName(kotelRow[0])}</span>
+      <span class="zp-n" style="color:var(--txt2)">${(kotelRow[0]||'').toUpperCase()}</span>
       <div class="zp-bg"><div class="zp-fill" style="width:0%"></div></div>
       <span class="zp-a" style="color:var(--txt2)">${fmtRub(kotelRow[1])}</span>
     </div>` : '';
@@ -1514,7 +1539,7 @@ function renderGrafik() {
         }
         return colIdx >= 0 ? (r[colIdx]||'') : '';
       });
-      return { name: upperName(r[0]), cells };
+      return { name: (r[0]||'').toUpperCase(), cells };
     });
   }
 
@@ -1573,68 +1598,59 @@ function schedNav(dir) {
   if (S.data.grafik) renderGrafik();
 }
 
+function updateSchedStickyTop() {
+  const hdr = document.querySelector('header');
+  const nav = document.getElementById('main-nav');
+  if (!hdr || !nav) return;
+  const top = hdr.offsetHeight + nav.offsetHeight;
+  document.querySelectorAll('.sched-sticky').forEach(el => {
+    el.style.top = top + 'px';
+  });
+}
+
 /* ══ RENDER: ИНСТРУКЦИИ ══
- * Структура листа:
- *   Строка с CAPS текстом в col A, col B и C пустые → ЗАГОЛОВОК БЛОКА
- *   Строки внутри блока с col A (CAPS) без B,C → ПОДЗАГОЛОВОК (вложенный спойлер)
- *   Остальные строки — данные
- *
- * Первая встреченная CAPS-строка (например РЕГЛАМЕНТ…) является заголовком блока.
- * Внутри этого блока следующие CAPS-строки (СТАТУСЫ ПЕРВИЧНОГО…) — вложенные подблоки.
+ * ИЗМЕНЕНИЯ:
+ * 1. Правильная иерархия: CAPS-строка = заголовок блока верхнего уровня.
+ *    CAPS-строки ВНУТРИ блока = вложенные подзаголовки (instr-sub).
+ * 2. Таблица обёрнута в .instr-table-wrap для горизонтального скролла на мобильных.
  */
 function renderInstruktsii() {
   const el  = document.getElementById('c-instruktsii');
   const raw = S.data.instruktsii;
   if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
 
-  // Шаг 1: выявляем строки-заголовки верхнего уровня
-  // Заголовок верхнего уровня: col A CAPS, col B пустая, col C пустая
-  function isTopHeader(r) {
+  function isCapsRow(r) {
     const a = (r[0]||'').trim();
     const b = (r[1]||'').trim();
     const c = (r[2]||'').trim();
     return a && !b && !c && a === a.toUpperCase() && a.length > 4;
   }
 
-  // Шаг 2: парсим блоки верхнего уровня
+  /* Шаг 1: разбиваем на блоки верхнего уровня */
   const blocks = [];
   let cur = null;
-
   raw.forEach(r => {
     const a = (r[0]||'').trim();
     const b = (r[1]||'').trim();
     const c = (r[2]||'').trim();
-    if (!a && !b && !c) return; // пустая строка
-
-    if (isTopHeader(r)) {
+    if (!a && !b && !c) return;
+    if (isCapsRow(r)) {
       cur = { title: a, rows: [] };
       blocks.push(cur);
       return;
     }
-    if (!cur) {
-      cur = { title: '—', rows: [] };
-      blocks.push(cur);
-    }
+    if (!cur) { cur = { title: '—', rows: [] }; blocks.push(cur); }
     cur.rows.push({ status: a, criteria: b, action: c });
   });
 
   if (!blocks.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
 
-  // Шаг 3: определяем, есть ли вложенные подзаголовки внутри блока
-  // Подзаголовок: status CAPS, criteria и action пустые
   function isSubHeader(row) {
-    return row.status &&
-           !row.criteria &&
-           !row.action &&
-           row.status === row.status.toUpperCase() &&
-           row.status.length > 4;
+    return row.status && !row.criteria && !row.action &&
+           row.status === row.status.toUpperCase() && row.status.length > 4;
   }
-  function hasSubs(blk) {
-    return blk.rows.some(r => isSubHeader(r));
-  }
-  function hasActions(rows) {
-    return rows.some(r => r.action);
-  }
+  function hasSubs(blk) { return blk.rows.some(r => isSubHeader(r)); }
+  function hasActions(rows) { return rows.some(r => r.action); }
 
   function buildTable(rows, withActions) {
     const filtered = rows.filter(r => r.status || r.criteria);
@@ -1659,7 +1675,7 @@ function renderInstruktsii() {
     return `<div class="instr-table-wrap"><table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
   }
 
-  function buildSubBlocks(blk, blkId) {
+  function buildSubBlocks(blk, blkIdx) {
     const subs = [];
     let curSub = null;
     blk.rows.forEach(r => {
@@ -1667,16 +1683,12 @@ function renderInstruktsii() {
         curSub = { title: r.status, rows: [] };
         subs.push(curSub);
       } else {
-        if (!curSub) {
-          curSub = { title: 'Содержание', rows: [] };
-          subs.push(curSub);
-        }
+        if (!curSub) { curSub = { title: 'Содержание', rows: [] }; subs.push(curSub); }
         curSub.rows.push(r);
       }
     });
-
     return subs.map((s, si) => {
-      const sid = 'is-' + blkId + '-' + si;
+      const sid = 'is-' + blkIdx + '-' + si;
       const withA = hasActions(s.rows);
       return `<div class="instr-sub" id="${sid}">
         <div class="instr-sub-hdr" onclick="toggleSub('${sid}')">
@@ -1689,12 +1701,9 @@ function renderInstruktsii() {
   }
 
   const html = blocks.map((b, i) => {
-    const id = 'ib-' + i;
+    const id = 'ib-'+i;
     const nested = hasSubs(b);
-    const bodyContent = nested
-      ? buildSubBlocks(b, i)
-      : buildTable(b.rows, hasActions(b.rows));
-
+    const bodyContent = nested ? buildSubBlocks(b, i) : buildTable(b.rows, hasActions(b.rows));
     return `<div class="instr-block" id="${id}">
       <div class="instr-hdr" onclick="toggleInstr('${id}')">
         <h3>${b.title}</h3>
@@ -1726,10 +1735,18 @@ function burstConfetti(el, idx) {
   if (isGold) {
     const flash = document.createElement('div');
     flash.style.cssText = `
-      position:fixed;left:${cx}px;top:${cy}px;width:20px;height:20px;
-      border-radius:50%;background:radial-gradient(circle,#fff,#ffd700,#ffae00,transparent);
-      transform:translate(-50%,-50%);pointer-events:none;z-index:9999;
-      animation:flash 0.4s ease-out forwards;`;
+      position:fixed;
+      left:${cx}px;
+      top:${cy}px;
+      width:20px;
+      height:20px;
+      border-radius:50%;
+      background:radial-gradient(circle,#fff,#ffd700,#ffae00,transparent);
+      transform:translate(-50%,-50%);
+      pointer-events:none;
+      z-index:9999;
+      animation: flash 0.4s ease-out forwards;
+    `;
     document.body.appendChild(flash);
     setTimeout(()=>flash.remove(),400);
   }
@@ -1749,16 +1766,21 @@ function burstConfetti(el, idx) {
     const ty = Math.sin(angle) * dist;
     const size = isGold ? (6 + Math.random()*10) : (4 + Math.random()*6);
     const dur  = isGold ? (0.8 + Math.random()*0.8) : (0.6 + Math.random()*0.6);
-
     piece.style.cssText = `
-      position:fixed;left:${cx}px;top:${cy}px;
-      width:${size}px;height:${size}px;
+      position:fixed;
+      left:${cx}px;
+      top:${cy}px;
+      width:${size}px;
+      height:${size}px;
       background:${colors[Math.floor(Math.random()*colors.length)]};
       border-radius:${Math.random()>0.5?'50%':'2px'};
-      pointer-events:none;z-index:9999;
+      pointer-events:none;
+      z-index:9999;
       transform:translate(0,0);
-      animation:firework ${dur}s ease-out forwards;
-      --tx:${tx}px;--ty:${ty}px;`;
+      animation: firework ${dur}s ease-out forwards;
+      --tx:${tx}px;
+      --ty:${ty}px;
+    `;
     document.body.appendChild(piece);
     setTimeout(()=>piece.remove(), dur*1000);
   }
@@ -1781,7 +1803,7 @@ function openMopModal(dataStr) {
     <div class="mop-grid4" style="margin-bottom:12px">
       <div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div>
       <div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div>
-      <div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div>
+      <div class="m4"><div class="ml">Остаток</div><div class="mv" style="color:var(--org)">${d.ost}</div></div>
       <div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div>
     </div>
     <div class="prog-row" style="margin-bottom:16px">
@@ -1847,10 +1869,9 @@ document.getElementById('btn-out').addEventListener('click', onLogout);
 document.querySelectorAll('.tab').forEach(b =>
   b.addEventListener('click', () => goTab(b.dataset.tab))
 );
-document.querySelectorAll('.sub-tab').forEach(b =>
-  b.addEventListener('click', () => goSubTab(b.dataset.sub))
+document.querySelectorAll('.subtab').forEach(b =>
+  b.addEventListener('click', () => goSubTab(b.dataset.subtab))
 );
-
 /* ══ INIT ══ */
 function init() {
   syncTheme();

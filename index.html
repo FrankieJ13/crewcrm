@@ -85,7 +85,6 @@ html,body {
 
 main { flex:1; overflow-y:auto }
 
-/* общий контейнер ширины */
 .w {
   width:100%;
   max-width:720px;
@@ -457,7 +456,7 @@ body.light .mop {
 
 /* ── КАРТОЧКА СВОДНОЙ ПО МЕНЕДЖЕРАМ (спидометры) ── */
 .speedo-grid {
-  display:grid; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr));
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(82px, 1fr));
   gap:16px; margin-top:10px;
 }
 .speedo-item {
@@ -466,7 +465,7 @@ body.light .mop {
 .speedo-svg-container {
   position:relative;
   width:100%;
-  max-width:110px;
+  max-width:82px;
   margin:0 auto;
 }
 .speedo-svg-container svg {
@@ -480,14 +479,14 @@ body.light .mop {
   left:50%;
   transform:translate(-50%, -40%);
   font-family:'Unbounded',sans-serif;
-  font-size:20px;
+  font-size:16px;
   font-weight:900;
   color:var(--txt);
   line-height:1;
 }
 .speedo-name {
   font-family:'Unbounded',sans-serif;
-  font-size:10px;
+  font-size:9px;
   font-weight:700;
   margin-top:4px;
   text-transform:uppercase;
@@ -562,7 +561,7 @@ body.light .zp-row {
   }
 }
 .zp-row:last-child { border-bottom:1px solid var(--line) }
-.zp-bg { flex:1; height:3px; background:var(--line); border-radius:2px; overflow:hidden }
+.zp-bg { flex:1; height:3px; background:var(--line); border-radius:2px; overflow:hidden; margin:8px 0 4px; }
 .zp-fill { height:100%; border-radius:2px; transition:width .7s ease }
 .zp-a {
   font-family:'Unbounded',sans-serif;
@@ -880,7 +879,7 @@ body.dark .mop-modal { background: rgba(18,18,18,0.55); }
     </div>
   </nav>
 
-  <!-- Sticky шапка графика — вне main, прилипает под nav -->
+  <!-- Sticky шапка графика -->
   <div id="grafik-sticky" style="display:none;background:var(--bg);border-bottom:1px solid var(--line);z-index:50;position:sticky;top:96px">
     <div class="w" style="padding-top:10px;padding-bottom:10px">
       <div id="grafik-sticky-inner"></div>
@@ -1208,8 +1207,8 @@ function renderOtchet() {
   </div>`;
 
   const dozhimCard = `
+    <div class="sec-title">ОТДЕЛ ДОЖИМ</div>
     <div class="dept-card" style="opacity:0.7">
-      <div class="dept-title">ОТДЕЛ ДОЖИМ</div>
       <div class="dept-row1">
         <div class="dept-cell"><div class="dc-lbl">Визиты</div><div class="dc-val">—</div></div>
         <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">—</div></div>
@@ -1224,25 +1223,24 @@ function renderOtchet() {
 
   const KOTEL = ['котел','котёл','kotel'];
   const isKotel = n => KOTEL.includes((n||'').toLowerCase().trim());
-  const allMgrs = mgrRows.filter(r => !isKotel(r[0]));
-  const kotelRows = mgrRows.filter(r => isKotel(r[0]));
 
-  const speedoItems = allMgrs.map(r => {
+  // Подготовка данных для сводной по менеджерам (все, включая котёл, с прогнозом)
+  const allManagerRows = mgrRows.filter(r => !isKotel(r[0])).concat(mgrRows.filter(r => isKotel(r[0])));
+  const managerStats = allManagerRows.map(r => {
     const name = (r[0]||'—').toUpperCase();
-    const visits = num(r[7]) || 0;
-    const plan = num(r[3]) || 1;
-    const percent = Math.min(visits / plan, 1);
-    return { name, visits, plan, percent };
-  }).concat(kotelRows.map(r => {
-    const name = (r[0]||'—').toUpperCase();
-    const visits = num(r[7]) || 0;
-    const plan = num(r[3]) || 1;
-    const percent = Math.min(visits / plan, 1);
-    return { name, visits, plan, percent };
-  }));
+    const visits = num(r[7]) || 0;           // все визиты
+    const plan = num(r[3]) || 1;              // план
+    const progStr = r[6] || '0%';              // прогноз (столбец G)
+    const progNum = parseFloat(progStr.replace('%','').replace(',','.')) || 0;
+    return { name, visits, plan, progNum };
+  });
 
-  const speedoHTML = speedoItems.map((item, idx) => {
+  // Сортировка по убыванию прогноза
+  managerStats.sort((a, b) => b.progNum - a.progNum);
+
+  const speedoHTML = managerStats.map((item, idx) => {
     const progressId = `progress-${idx}`;
+    const percent = Math.min(item.visits / item.plan, 1); // для дуги используем выполнение плана (факт/план), но можно и прогноз, если нужно. Оставим факт/план, как в примере.
     return `
       <div class="speedo-item">
         <div class="speedo-svg-container">
@@ -1264,11 +1262,12 @@ function renderOtchet() {
   }).join('');
 
   const speedoCard = `
-    <div class="dept-card" style="margin-top:16px;">
-      <div class="dept-title">СВОДНАЯ ПО МЕНЕДЖЕРАМ</div>
+    <div class="sec-title">СВОДНАЯ ПО МЕНЕДЖЕРАМ</div>
+    <div class="dept-card" style="margin-top:0;">
       <div class="speedo-grid">${speedoHTML}</div>
     </div>`;
 
+  // Карточки менеджеров для подвкладки "МЕНЕДЖЕРЫ"
   const mops_html = (() => {
     const rankRows  = mgrRows.filter(r => !isKotel(r[0]));
     const kotelRows = mgrRows.filter(r => isKotel(r[0]));
@@ -1286,7 +1285,7 @@ function renderOtchet() {
       const rplan    = r[3]||'0', ost    = r[4]||'0';
       const prc      = r[5]||'0%', prog   = r[6]||'0%';
       const allV     = r[7]||'0';
-      const p = num(prc);
+      const p = progNum; // используем прогноз для заполнения шкалы
       const rs    = rankStyles(idx, total);
       const medal = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'';
       const fillGrad = `linear-gradient(90deg, ${rs.color} 0%, ${rs.color} 100%)`;
@@ -1331,7 +1330,7 @@ function renderOtchet() {
       const rplan = r[3]||'0', ost   = r[4]||'0';
       const prc   = r[5]||'0%', prog  = r[6]||'0%';
       const allV  = r[7]||'0';
-      const p = num(prc);
+      const p = parseFloat(prog.replace('%','').replace(',','.')) || 0;
       return `<div class="mop" style="opacity:.65">
         <div class="mop-top">
           <div style="display:flex;align-items:center;gap:6px">
@@ -1343,7 +1342,7 @@ function renderOtchet() {
           <div class="m4"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
           <div class="m4"><div class="ml">План</div><div class="mv">${rplan}</div></div>
           <div class="m4"><div class="ml">Остаток</div><div class="mv">${ost}</div></div>
-          <div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(num(prog))}">${prog}</div></div>
+          <div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${prog}</div></div>
         </div>
         <div class="prog-row">
           <span class="prog-l">${prc}</span>
@@ -1382,15 +1381,15 @@ function renderOtchet() {
     content = `<div class="empty">Раздел скоро появится</div>`;
   }
 
-  el.innerHTML = subtabs + content;
+  el.innerHTML = subtabs + content + tot; // итоги пока оставим внизу для всех подвкладок
 
   // Анимация спидометров
   if (S.reportTab === 'dept') {
-    speedoItems.forEach((item, idx) => {
+    managerStats.forEach((item, idx) => {
       const progressPath = document.getElementById(`progress-${idx}`);
       if (!progressPath) return;
       const length = progressPath.getTotalLength();
-      const targetPercent = item.percent;
+      const targetPercent = Math.min(item.visits / item.plan, 1);
       progressPath.style.strokeDasharray = `0, ${length}`;
       let start = null;
       function animate(ts) {
@@ -1447,7 +1446,7 @@ function renderZP() {
         <span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span>
         <span class="zp-n" style="color:${rs.color}">${item.name}${medal ? ' <span style="cursor:pointer" onclick="burstConfetti(this,'+idx+')">'+medal+'</span>' : ''}</span>
       </div>
-      <div class="zp-bg" style="margin-bottom:6px"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div>
+      <div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div>
       <div style="text-align:right">
         <span class="zp-a" style="color:${rs.color}">${fmtRub(item.raw)}</span>
       </div>
@@ -1470,7 +1469,7 @@ function renderZP() {
     <div class="zp-list">${rows}${kotelHTML}</div>`;
 }
 
-/* ══ RENDER: ГРАФИК ══ */
+/* ══ RENDER: ГРАФИК (без изменений) ══ */
 const DOW = ['вс','пн','вт','ср','чт','пт','сб'];
 let _schedWeek = null;
 
@@ -1580,7 +1579,7 @@ function schedNav(dir) {
   if (S.data.grafik) renderGrafik();
 }
 
-/* ══ RENDER: ИНСТРУКЦИИ с вложенностью и горизонтальным скроллом ══ */
+/* ══ RENDER: ИНСТРУКЦИИ (без изменений) ══ */
 function renderInstruktsii() {
   const el  = document.getElementById('c-instruktsii');
   const raw = S.data.instruktsii;

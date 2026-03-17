@@ -738,6 +738,18 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
   .scr       { padding:12px }
   .tab       { padding:10px 14px; font-size:13px; letter-spacing:.02em }
 }
+
+@keyframes firework {
+  to {
+    transform: translate(var(--tx), var(--ty)) scale(0.6);
+    opacity: 0;
+  }
+}
+
+@keyframes flash {
+  0% { transform:translate(-50%,-50%) scale(0.5); opacity:1; }
+  100% { transform:translate(-50%,-50%) scale(4); opacity:0; }
+} 
 </style>
 </head>
 <body>
@@ -1321,7 +1333,7 @@ function renderZP() {
     return `<div class="zp-row" style="--rank-color:${rs.color};border-color:${rs.border}">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span>
-        <span class="zp-n" style="color:${rs.color}">${item.name}${medal?' <span style="cursor:pointer" onclick="burstConfetti(this,'+(idx===0?"'gold'":"'normal'")+')">'+medal+'</span>':''}</span>
+        <span class="zp-n" style="color:${rs.color}">${item.name}${medal ? ' <span style="cursor:pointer" onclick="burstConfetti(this,'+idx+')">'+medal+'</span>' : ''}</span>
       </div>
       <div class="zp-bg" style="margin-bottom:6px"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div>
       <div style="text-align:right">
@@ -1584,54 +1596,85 @@ function toggleInstr(id) { document.getElementById(id)?.classList.toggle('open')
 function toggleSub(id)   { document.getElementById(id)?.classList.toggle('open') }
 
 /* ══ КОНФЕТТИ ══ */
-function burstConfetti(el, type='normal') {
+function burstConfetti(el, idx) {
+
+  const isGold = idx === 0;
+
   const rect = el.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
   const cy = rect.top  + rect.height / 2;
 
-  const colors = ['#e8ff47','#ff4757','#2ed573','#1e90ff','#ffa502','#ff6bcd','#ffffff','#a29bfe'];
+  if (isGold) {
+    const audio = new Audio('https://actions.google.com/sounds/v1/fireworks/firework_burst.ogg');
+    audio.volume = 0.25;
+    audio.play().catch(()=>{});
+  }
 
-  const count   = type === 'gold' ? 120 : 60;
-  const maxDist = type === 'gold' ? 320 : 160;
-  const height  = type === 'gold' ? 120 : 80;
-  const durMax  = type === 'gold' ? 1.2 : 0.8;
+  if (isGold) {
+    const flash = document.createElement('div');
+    flash.style.cssText = `
+      position:fixed;
+      left:${cx}px;
+      top:${cy}px;
+      width:20px;
+      height:20px;
+      border-radius:50%;
+      background:radial-gradient(circle,#fff,#ffd700,#ffae00,transparent);
+      transform:translate(-50%,-50%);
+      pointer-events:none;
+      z-index:9999;
+      animation: flash 0.4s ease-out forwards;
+    `;
+    document.body.appendChild(flash);
+    setTimeout(()=>flash.remove(),400);
+  }
+
+  const colors = isGold
+    ? ['#FFD700','#FFC300','#FFDF00','#FFF8DC','#FFFFFF']
+    : ['#e8ff47','#ff4757','#2ed573','#1e90ff','#1e90ff','#ffa502'];
+
+  const count  = isGold ? 140 : 60;
+  const radius = isGold ? 280 : 140;
 
   for (let i = 0; i < count; i++) {
 
     const piece = document.createElement('div');
-    piece.className = 'confetti-piece';
 
-    const angle = (Math.random() * 360) * Math.PI / 180;
-    const dist  = 80 + Math.random() * maxDist;
+    const angle = (i / count) * 2 * Math.PI;
+    const dist = radius + (Math.random() - 0.5) * (isGold ? 40 : 20);
 
     const tx = Math.cos(angle) * dist;
-    const ty = Math.sin(angle) * dist - Math.random() * height;
+    const ty = Math.sin(angle) * dist;
 
-    const rot = (Math.random() - 0.5) * 720 + 'deg';
-    const dur = (0.6 + Math.random() * durMax).toFixed(2) + 's';
-
-    const size  = (5 + Math.random() * 9).toFixed(1) + 'px';
-    const color = colors[Math.floor(Math.random() * colors.length)];
-    const shape = Math.random() > 0.5 ? '50%' : '2px';
+    const size = isGold ? (6 + Math.random()*10) : (4 + Math.random()*6);
+    const dur  = isGold ? (0.8 + Math.random()*0.8) : (0.6 + Math.random()*0.6);
 
     piece.style.cssText = `
+      position:fixed;
       left:${cx}px;
       top:${cy}px;
-      width:${size};
-      height:${size};
-      background:${color};
-      border-radius:${shape};
-      --tx:${tx.toFixed(0)}px;
-      --ty:${ty.toFixed(0)}px;
-      --rot:${rot};
-      --dur:${dur};
+      width:${size}px;
+      height:${size}px;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      border-radius:${Math.random()>0.5?'50%':'2px'};
+      pointer-events:none;
+      z-index:9999;
+      transform:translate(0,0);
+      animation: firework ${dur}s ease-out forwards;
+      --tx:${tx}px;
+      --ty:${ty}px;
     `;
 
     document.body.appendChild(piece);
+    setTimeout(()=>piece.remove(), dur*1000);
+  }
 
-    setTimeout(() => piece.remove(), parseFloat(dur) * 1000 + 200);
+  // двойной взрыв только для 🥇
+  if (isGold) {
+    setTimeout(() => burstConfetti(el, 99), 120);
   }
 }
+  
 function openMopModal(dataStr) {
   const d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"'));
   const p = num(d.prc);

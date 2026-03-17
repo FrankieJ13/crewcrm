@@ -371,24 +371,16 @@ body.light .mop {
 .mop-overlay.open { display:flex; animation:mFade .2s ease }
 @keyframes mFade { from{opacity:0} to{opacity:1} }
 .mop-modal {
-  border-radius:var(--r2);
-  width:100%;
-  max-width:460px;
-  max-height:86vh;
-  overflow-y:auto;
+  background:var(--bg2); border:1px solid var(--line2);
+  border-radius:var(--r2); width:100%; max-width:460px;
+  max-height:86vh; overflow-y:auto;
   animation:mUp .22s ease;
-
-  /* 💎 GLASS */
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-
-  border:1px solid rgba(255,255,255,0.15);
 }
 @keyframes mUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
 .mop-modal-hdr {
   display:flex; align-items:center; justify-content:space-between;
   padding:13px 16px; border-bottom:1px solid var(--line);
-  position:sticky; top:0; background:transparent; backdrop-filter: blur(10px); z-index:1;
+  position:sticky; top:0; background:var(--bg2); z-index:1;
 }
 .mop-modal-title {
   display:flex; align-items:center; gap:8px;
@@ -403,12 +395,6 @@ body.light .mop {
 }
 .mop-modal-close:hover { border-color:var(--red); color:var(--red) }
 .mop-modal-body { padding:14px 16px }
-
- .mop-modal {
-  box-shadow:
-    0 10px 40px rgba(0,0,0,0.3),
-    inset 0 1px 0 rgba(255,255,255,0.2);
-} 
 
 /* 4 ячейки в модалке */
 .mop-grid4 {
@@ -764,16 +750,67 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
   0% { transform:translate(-50%,-50%) scale(0.5); opacity:1; }
   100% { transform:translate(-50%,-50%) scale(4); opacity:0; }
 } 
+
+/* === LIQUID GLASS MODAL UPGRADE === */
+.mop-modal {
+  position:relative;
+  border-radius:var(--r2);
+  width:100%;
+  max-width:460px;
+  max-height:86vh;
+  overflow:hidden;
+  animation:mUp .22s ease;
+
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+
+  border:1px solid rgba(255,255,255,0.2);
+
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.25);
+}
+
 body.light .mop-modal {
   background: rgba(255,255,255,0.55);
-  border:1px solid rgba(255,255,255,0.4);
 }
-  
-  body.dark .mop-modal {
-  background: rgba(20,20,20,0.55);
-  border:1px solid rgba(255,255,255,0.08);
+
+body.dark .mop-modal {
+  background: rgba(18,18,18,0.55);
 }
-  
+
+.mop-modal::before {
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background: linear-gradient(
+    120deg,
+    rgba(255,255,255,0.35) 0%,
+    rgba(255,255,255,0.15) 30%,
+    rgba(255,255,255,0.05) 60%,
+    transparent 100%
+  );
+  pointer-events:none;
+}
+
+.mop-modal::after {
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(255,255,255,0.25), transparent 40%),
+    radial-gradient(circle at 80% 90%, rgba(255,255,255,0.15), transparent 50%);
+  pointer-events:none;
+  opacity:.6;
+}
+
+.mop-modal-hdr {
+  background:transparent;
+  backdrop-filter: blur(10px);
+}
+
 </style>
 </head>
 <body>

@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="ru">
 <head>
 <meta charset="UTF-8"/>
@@ -14,7 +15,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&display=swap" rel="stylesheet"/>
 <script>
-// Сносим все старые Service Worker'ы немедленно
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
     regs.forEach(r => r.unregister());
@@ -67,751 +67,739 @@ body.light .m4 .mv { color:#fff }
 
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0 }
 html,body {
-  height:100%;
-  background:var(--bg);
-  color:var(--txt);
-  font-family:'Golos Text',sans-serif;
-  font-size:14px;
-  line-height:1.5;
-  overflow-x:hidden;
-  transition:background .2s, color .2s;
+height:100%;
+background:var(–bg);
+color:var(–txt);
+font-family:‘Golos Text’,sans-serif;
+font-size:14px;
+line-height:1.5;
+overflow-x:hidden;
+transition:background .2s, color .2s;
 }
 ::-webkit-scrollbar { width:3px; height:3px }
 ::-webkit-scrollbar-track { background:transparent }
-::-webkit-scrollbar-thumb { background:var(--line2); border-radius:2px }
+::-webkit-scrollbar-thumb { background:var(–line2); border-radius:2px }
 
-/* ── LAYOUT ── */
 #app { display:flex; flex-direction:column; height:100vh }
-
 main { flex:1; overflow-y:auto }
 
-/* ── LAYOUT ── */
-#app { display:flex; flex-direction:column; height:100vh }
-
-/* общий контейнер ширины */
 .w {
-  width:100%;
-  max-width:720px;
-  margin:0 auto;
-  padding:0 16px;
-  box-sizing:border-box;
+width:100%;
+max-width:720px;
+margin:0 auto;
+padding:0 16px;
+box-sizing:border-box;
 }
 
-main { flex:1; overflow-y:auto }
 .scr { display:none; padding:20px 0; animation:up .2s ease }
 .scr.on { display:block }
-.scr-inner { /* контент страниц тоже в .w */ }
 @keyframes up { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 
 /* ── HEADER ── */
 header {
-  background:var(--bg); border-bottom:1px solid var(--line);
-  position:sticky; top:0; z-index:100; flex-shrink:0;
+background:var(–bg); border-bottom:1px solid var(–line);
+position:sticky; top:0; z-index:100; flex-shrink:0;
 }
 .hdr-inner {
-  max-width:720px;
-  margin:0 auto;
-  padding:0 20px;
-  height:52px;
-  display:flex; align-items:center; justify-content:space-between;
+max-width:720px;
+margin:0 auto;
+padding:0 20px;
+height:52px;
+display:flex; align-items:center; justify-content:space-between;
 }
 .hdr-left  { display:flex; align-items:center; gap:8px }
 .hdr-right { display:flex; align-items:center; gap:6px }
 .logo {
-  font-family:'Unbounded',sans-serif;
-  font-size:12px; font-weight:800; letter-spacing:.06em;
-  display:flex; align-items:center; gap:8px;
+font-family:‘Unbounded’,sans-serif;
+font-size:12px; font-weight:800; letter-spacing:.06em;
+display:flex; align-items:center; gap:8px;
 }
 .logo-sq {
-  width:22px; height:22px; border-radius:5px;
-  background:var(--acc);
-  display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:4px;
+width:22px; height:22px; border-radius:5px;
+background:var(–acc);
+display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:4px;
 }
 .logo-sq span { background:#000; border-radius:1px }
 .logo-sq span:last-child { opacity:.4 }
 
-.hdr-right { display:flex; align-items:center; gap:6px }
-
 .badge-month {
-  font-size:11px; padding:3px 9px; border-radius:20px;
-  background:var(--bg3); border:1px solid var(--line2);
-  color:var(--txt2); font-weight:500;
+font-size:11px; padding:3px 9px; border-radius:20px;
+background:var(–bg3); border:1px solid var(–line2);
+color:var(–txt2); font-weight:500;
 }
 
-/* icon buttons (theme + refresh) */
 .btn-icon {
-  width:30px; height:30px; border-radius:50%;
-  background:var(--bg3); border:1px solid var(--line2);
-  color:var(--txt2); cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  transition:border-color .15s, color .15s; flex-shrink:0;
+width:30px; height:30px; border-radius:50%;
+background:var(–bg3); border:1px solid var(–line2);
+color:var(–txt2); cursor:pointer;
+display:flex; align-items:center; justify-content:center;
+transition:border-color .15s, color .15s; flex-shrink:0;
 }
-.btn-icon:hover { border-color:var(--acc); color:var(--acc) }
+.btn-icon:hover { border-color:var(–acc); color:var(–acc) }
 .btn-icon svg { width:14px; height:14px; pointer-events:none }
-#btn-out:hover { border-color:var(--red); color:var(--red) }
+#btn-out:hover { border-color:var(–red); color:var(–red) }
 
 .btn-signin {
-  display:flex; align-items:center; gap:6px;
-  padding:6px 13px; border-radius:var(--r);
-  background:var(--acc); color:#000; border:none;
-  font-family:'Unbounded',sans-serif;
-  font-size:9px; font-weight:800; letter-spacing:.06em;
-  cursor:pointer; transition:opacity .15s; white-space:nowrap;
+display:flex; align-items:center; gap:6px;
+padding:6px 13px; border-radius:var(–r);
+background:var(–acc); color:#000; border:none;
+font-family:‘Unbounded’,sans-serif;
+font-size:9px; font-weight:800; letter-spacing:.06em;
+cursor:pointer; transition:opacity .15s; white-space:nowrap;
 }
 .btn-signin:hover { opacity:.85 }
 .btn-signin svg { width:13px; height:13px }
 
-#user-wrap { display:none; align-items:center; gap:7px; font-size:12px; color:var(--txt2) }
-#user-avatar { width:28px; height:28px; border-radius:50%; border:1.5px solid var(--line2) }
+#user-wrap { display:none; align-items:center; gap:7px; font-size:12px; color:var(–txt2) }
+#user-avatar { width:28px; height:28px; border-radius:50%; border:1.5px solid var(–line2) }
 #user-name { display:none }
 
 .btn-out {
-  padding:5px 12px; border-radius:var(--r);
-  background:var(--bg3); border:1px solid var(--line2);
-  color:var(--txt2); font-family:'Golos Text',sans-serif;
-  font-size:12px; cursor:pointer; transition:all .15s;
+padding:5px 12px; border-radius:var(–r);
+background:var(–bg3); border:1px solid var(–line2);
+color:var(–txt2); font-family:‘Golos Text’,sans-serif;
+font-size:12px; cursor:pointer; transition:all .15s;
 }
-.btn-out:hover { border-color:var(--red); color:var(--red) }
+.btn-out:hover { border-color:var(–red); color:var(–red) }
 
 /* ── NAV ── */
 nav {
-  background:var(--bg);
-  border-bottom:1px solid var(--line);
-  overflow-x:auto; flex-shrink:0;
-  position:sticky;
-  top:52px; /* высота header */
-  z-index:99;
+background:var(–bg);
+border-bottom:1px solid var(–line);
+overflow-x:auto; flex-shrink:0;
+position:sticky;
+top:52px;
+z-index:99;
 }
 nav::-webkit-scrollbar { height:0 }
 .nav-inner {
-  max-width:720px;
-  margin:0 auto;
-  padding:0 20px;
-  display:flex;
+max-width:720px;
+margin:0 auto;
+padding:0 20px;
+display:flex;
 }
 .tab {
-  padding:11px 16px; white-space:nowrap;
-  font-family:'Unbounded',sans-serif;
-  font-size:15px; font-weight:800; letter-spacing:.03em;
-  color:var(--txt3); background:none; border:none;
-  border-bottom:2px solid transparent;
-  cursor:pointer; transition:color .15s, border-color .15s;
-  display:flex; align-items:center; gap:5px;
+padding:11px 16px; white-space:nowrap;
+font-family:‘Unbounded’,sans-serif;
+font-size:15px; font-weight:800; letter-spacing:.03em;
+color:var(–txt3); background:none; border:none;
+border-bottom:2px solid transparent;
+cursor:pointer; transition:color .15s, border-color .15s;
+display:flex; align-items:center; gap:5px;
 }
-.tab:hover { color:var(--txt2) }
-.tab.on { color:var(--acc); border-bottom-color:var(--acc) }
+.tab:hover { color:var(–txt2) }
+.tab.on { color:var(–acc); border-bottom-color:var(–acc) }
 .tab-dot { width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.5 }
+
+/* ── SUB-TABS (ОТЧЁТ) ── */
+.sub-nav {
+background:var(–bg2);
+border-bottom:1px solid var(–line);
+overflow-x:auto;
+flex-shrink:0;
+}
+.sub-nav::-webkit-scrollbar { height:0 }
+.sub-nav-inner {
+max-width:720px;
+margin:0 auto;
+padding:0 20px;
+display:flex;
+gap:4px;
+padding-top:8px;
+padding-bottom:0;
+}
+.sub-tab {
+padding:7px 14px; white-space:nowrap;
+font-family:‘Unbounded’,sans-serif;
+font-size:10px; font-weight:800; letter-spacing:.06em;
+color:var(–txt3); background:none; border:none;
+border-bottom:2px solid transparent;
+cursor:pointer; transition:color .15s, border-color .15s;
+}
+.sub-tab:hover { color:var(–txt2) }
+.sub-tab.on { color:var(–acc); border-bottom-color:var(–acc) }
+
+.sub-scr { display:none }
+.sub-scr.on { display:block }
 
 /* ── NOT AUTH ── */
 .gate {
-  display:flex; flex-direction:column; align-items:center;
-  justify-content:center; gap:14px; min-height:65vh;
-  text-align:center; padding:40px 20px;
+display:flex; flex-direction:column; align-items:center;
+justify-content:center; gap:14px; min-height:65vh;
+text-align:center; padding:40px 20px;
 }
 .gate-icon {
-  width:56px; height:56px; border-radius:50%;
-  background:var(--bg3); border:1px solid var(--line2);
-  display:flex; align-items:center; justify-content:center; color:var(--txt3);
+width:56px; height:56px; border-radius:50%;
+background:var(–bg3); border:1px solid var(–line2);
+display:flex; align-items:center; justify-content:center; color:var(–txt3);
 }
 .gate-icon svg { width:24px; height:24px }
-.gate h2 { font-family:'Unbounded',sans-serif; font-size:15px; font-weight:800 }
-.gate p  { font-size:13px; color:var(--txt2); line-height:1.7 }
-.gate strong { color:var(--acc) }
+.gate h2 { font-family:‘Unbounded’,sans-serif; font-size:15px; font-weight:800 }
+.gate p  { font-size:13px; color:var(–txt2); line-height:1.7 }
+.gate strong { color:var(–acc) }
 
 /* ── SHARED ── */
 .sec-title {
-  font-family:'Unbounded',sans-serif;
-  font-size:10px; font-weight:800; letter-spacing:.1em;
-  text-transform:uppercase; color:var(--txt2);
-  margin-bottom:12px;
-  display:flex; align-items:center; gap:8px;
+font-family:‘Unbounded’,sans-serif;
+font-size:10px; font-weight:800; letter-spacing:.1em;
+text-transform:uppercase; color:var(–txt2);
+margin-bottom:12px;
+display:flex; align-items:center; gap:8px;
 }
-.sec-title::after { content:''; flex:1; height:1px; background:var(--line) }
+.sec-title::after { content:’’; flex:1; height:1px; background:var(–line) }
 
 .loader {
-  display:flex; flex-direction:column; align-items:center;
-  justify-content:center; gap:12px; padding:60px 20px;
-  color:var(--txt2); font-size:13px;
+display:flex; flex-direction:column; align-items:center;
+justify-content:center; gap:12px; padding:60px 20px;
+color:var(–txt2); font-size:13px;
 }
 .spin {
-  width:28px; height:28px;
-  border:2px solid var(--line2); border-top-color:var(--acc);
-  border-radius:50%; animation:spin .7s linear infinite;
+width:28px; height:28px;
+border:2px solid var(–line2); border-top-color:var(–acc);
+border-radius:50%; animation:spin .7s linear infinite;
 }
 @keyframes spin { to{transform:rotate(360deg)} }
 .err {
-  background:rgba(255,71,87,.08); border:1px solid rgba(255,71,87,.25);
-  border-radius:var(--r2); padding:14px; color:var(--red);
-  font-size:13px; margin-bottom:12px;
+background:rgba(255,71,87,.08); border:1px solid rgba(255,71,87,.25);
+border-radius:var(–r2); padding:14px; color:var(–red);
+font-size:13px; margin-bottom:12px;
 }
-.empty { text-align:center; padding:48px 20px; color:var(--txt3); font-size:13px }
+.empty { text-align:center; padding:48px 20px; color:var(–txt3); font-size:13px }
 
 /* ── ОТЧЁТ: SUMMARY ── */
 .sum-grid {
-  display:grid; grid-template-columns:repeat(3,1fr);
-  gap:8px; margin-bottom:16px;
+display:grid; grid-template-columns:repeat(3,1fr);
+gap:8px; margin-bottom:16px;
 }
 .sum-card {
-  background:var(--bg2); border:1px solid var(--line);
-  border-radius:var(--r2); padding:12px 14px;
+background:var(–bg2); border:1px solid var(–line);
+border-radius:var(–r2); padding:12px 14px;
 }
-.sum-card.hi { background:var(--acc-bg); border-color:var(--acc-bdr) }
-.sum-card .lbl { font-size:9px; text-transform:uppercase; letter-spacing:.07em; color:var(--txt2); margin-bottom:5px }
-.sum-card .val { font-family:'Unbounded',sans-serif; font-size:18px; font-weight:900; letter-spacing:-.02em }
-.sum-card.hi .val { color:var(--acc) }
-.sum-card .sub { font-size:10px; color:var(--txt2); margin-top:3px }
+.sum-card.hi { background:var(–acc-bg); border-color:var(–acc-bdr) }
+.sum-card .lbl { font-size:9px; text-transform:uppercase; letter-spacing:.07em; color:var(–txt2); margin-bottom:5px }
+.sum-card .val { font-family:‘Unbounded’,sans-serif; font-size:18px; font-weight:900; letter-spacing:-.02em }
+.sum-card.hi .val { color:var(–acc) }
+.sum-card .sub { font-size:10px; color:var(–txt2); margin-top:3px }
 
 /* ── ОТЧЁТ: MOP CARDS ── */
 .mops { display:flex; flex-direction:column; gap:8px }
 .mop {
-  border:1px solid var(--line);
-  border-radius:var(--r2); padding:13px 14px;
-  position:relative; transition:border-color .2s;
-  background: color-mix(in srgb, var(--rank-color, transparent) 10%, var(--bg2));
+border:1px solid var(–line);
+border-radius:var(–r2); padding:13px 14px;
+position:relative; transition:border-color .2s;
+background: color-mix(in srgb, var(–rank-color, transparent) 10%, var(–bg2));
 }
 @supports not (background: color-mix(in srgb, red 1%, blue)) {
-  .mop { background: var(--bg2) }
+.mop { background: var(–bg2) }
 }
 body.light .mop {
-  background: color-mix(in srgb, var(--rank-color, transparent) 8%, var(--bg2));
+background: color-mix(in srgb, var(–rank-color, transparent) 8%, var(–bg2));
 }
 .rank-badge {
-  display:inline-flex; align-items:center; justify-content:center;
-  width:22px; height:22px; border-radius:50%;
-  font-family:'Unbounded',sans-serif; font-size:9px; font-weight:900;
-  flex-shrink:0;
+display:inline-flex; align-items:center; justify-content:center;
+width:22px; height:22px; border-radius:50%;
+font-family:‘Unbounded’,sans-serif; font-size:9px; font-weight:900;
+flex-shrink:0;
 }
 
-/* шапка мини-карточки */
 .mop-head {
-  display:flex; align-items:center;
-  justify-content:space-between; margin-bottom:12px;
+display:flex; align-items:center;
+justify-content:space-between; margin-bottom:12px;
 }
 .mop-head-left { display:flex; align-items:center; gap:7px }
 .mop-name { font-weight:600; font-size:14px }
-.mop-tags { display:flex; gap:5px }
-.tag { font-size:10px; font-weight:600; padding:2px 8px; border-radius:6px }
-.tag-800  { background:rgba(30,144,255,.15); color:var(--blu) }
-.tag-1200 { background:rgba(255,165,2,.15);  color:var(--org) }
+
 /* кнопка i */
 .mop-info-btn {
-  width:22px; height:22px; border-radius:50%;
-  border:1px solid var(--line2); background:var(--bg3);
-  color:var(--txt2); font-size:11px; font-weight:700;
-  font-style:italic; font-family:Georgia,serif;
-  cursor:pointer; display:flex; align-items:center; justify-content:center;
-  flex-shrink:0; transition:all .15s;
+width:22px; height:22px; border-radius:50%;
+border:1px solid var(–line2); background:var(–bg3);
+color:var(–txt2); font-size:11px; font-weight:700;
+font-style:italic; font-family:Georgia,serif;
+cursor:pointer; display:flex; align-items:center; justify-content:center;
+flex-shrink:0; transition:all .15s;
 }
-.mop-info-btn:hover { border-color:var(--acc); color:var(--acc) }
+.mop-info-btn:hover { border-color:var(–acc); color:var(–acc) }
 
 /* мини 3 ячейки */
 .mop-mini {
-  display:grid; grid-template-columns:repeat(3,1fr);
-  gap:6px; margin-bottom:12px;
+display:grid; grid-template-columns:repeat(3,1fr);
+gap:6px; margin-bottom:12px;
 }
 .mm {
-  background:var(--m4-bg); border-radius:8px;
-  padding:8px; text-align:center;
+background:var(–m4-bg); border-radius:8px;
+padding:8px; text-align:center;
 }
-.mm .ml { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px }
-.mm .mv { font-family:'Unbounded',sans-serif; font-size:14px; font-weight:800 }
+.mm .ml { font-size:9px; color:var(–txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px }
+.mm .mv { font-family:‘Unbounded’,sans-serif; font-size:14px; font-weight:800 }
 
-/* прогресс с градиентом */
-.mop-prog {
-  position:relative;
-}
+/* прогресс */
+.mop-prog { position:relative }
 .mop-prog-labels {
-  display:flex; justify-content:space-between;
-  font-size:10px; margin-bottom:5px;
+display:flex; justify-content:space-between;
+font-size:10px; margin-bottom:5px;
 }
 .mop-prog-labels .cur { font-weight:700; }
-.mop-prog-labels .end { color:var(--txt2) }
+.mop-prog-labels .end { color:var(–txt2) }
 .mop-prog-track {
-  height:7px; background:var(--line);
-  border-radius:4px; overflow:hidden;
+height:7px; background:var(–line);
+border-radius:4px; overflow:hidden;
 }
 .mop-prog-fill {
-  height:100%; border-radius:4px;
-  transition:width .7s ease;
+height:100%; border-radius:4px;
+transition:width .7s ease;
 }
 
 /* секции в модалке */
-.modal-sec {
-  margin-bottom:14px;
-}
+.modal-sec { margin-bottom:14px }
 .modal-sec-title {
-  font-family:'Unbounded',sans-serif;
-  font-size:9px; font-weight:800; letter-spacing:.1em;
-  color:var(--txt2); margin-bottom:8px;
-  display:flex; align-items:center; gap:8px;
+font-family:‘Unbounded’,sans-serif;
+font-size:9px; font-weight:800; letter-spacing:.1em;
+color:var(–txt2); margin-bottom:8px;
+display:flex; align-items:center; gap:8px;
 }
-.modal-sec-title::after { content:''; flex:1; height:1px; background:var(--line2) }
+.modal-sec-title::after { content:’’; flex:1; height:1px; background:var(–line2) }
 .modal-grid {
-  display:grid; gap:6px;
-  grid-template-columns:repeat(auto-fill, minmax(72px, 1fr));
+display:grid; gap:6px;
+grid-template-columns:repeat(auto-fill, minmax(72px, 1fr));
 }
 .modal-cell {
-  background:var(--bg3); border-radius:8px;
-  padding:8px 6px; text-align:center;
+background:var(–bg3); border-radius:8px;
+padding:8px 6px; text-align:center;
 }
 .modal-cell .mc-l {
-  font-size:9px; color:var(--txt2);
-  text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px;
+font-size:9px; color:var(–txt2);
+text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px;
 }
 .modal-cell .mc-v {
-  font-family:'Unbounded',sans-serif;
-  font-size:14px; font-weight:800; color:var(--txt);
+font-family:‘Unbounded’,sans-serif;
+font-size:14px; font-weight:800; color:var(–txt);
 }
 .mop-overlay {
-  display:none; position:fixed; inset:0;
-  background:rgba(0,0,0,.75); backdrop-filter:blur(6px);
-  z-index:500; align-items:center; justify-content:center;
-  padding:16px;
+display:none; position:fixed; inset:0;
+background:rgba(0,0,0,.75); backdrop-filter:blur(6px);
+z-index:500; align-items:center; justify-content:center;
+padding:16px;
 }
 .mop-overlay.open { display:flex; animation:mFade .2s ease }
 @keyframes mFade { from{opacity:0} to{opacity:1} }
 .mop-modal {
-  background:var(--bg2); border:1px solid var(--line2);
-  border-radius:var(--r2); width:100%; max-width:460px;
-  max-height:86vh; overflow-y:auto;
-  animation:mUp .22s ease;
+background:var(–bg2); border:1px solid var(–line2);
+border-radius:var(–r2); width:100%; max-width:460px;
+max-height:86vh; overflow-y:auto;
+animation:mUp .22s ease;
 }
 @keyframes mUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
 .mop-modal-hdr {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:13px 16px; border-bottom:1px solid var(--line);
-  position:sticky; top:0; background:var(--bg2); z-index:1;
+display:flex; align-items:center; justify-content:space-between;
+padding:13px 16px; border-bottom:1px solid var(–line);
+position:sticky; top:0; background:var(–bg2); z-index:1;
 }
 .mop-modal-title {
-  display:flex; align-items:center; gap:8px;
-  font-family:'Unbounded',sans-serif; font-size:11px; font-weight:800;
+display:flex; align-items:center; gap:8px;
+font-family:‘Unbounded’,sans-serif; font-size:11px; font-weight:800;
 }
 .mop-modal-close {
-  width:28px; height:28px; border-radius:50%;
-  border:1px solid var(--line2); background:var(--bg3);
-  color:var(--txt2); font-size:18px; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  transition:all .15s; flex-shrink:0; line-height:1;
+width:28px; height:28px; border-radius:50%;
+border:1px solid var(–line2); background:var(–bg3);
+color:var(–txt2); font-size:18px; cursor:pointer;
+display:flex; align-items:center; justify-content:center;
+transition:all .15s; flex-shrink:0; line-height:1;
 }
-.mop-modal-close:hover { border-color:var(--red); color:var(--red) }
+.mop-modal-close:hover { border-color:var(–red); color:var(–red) }
 .mop-modal-body { padding:14px 16px }
 
-/* 4 ячейки в модалке */
 .mop-grid4 {
-  display:grid; grid-template-columns:repeat(4,1fr);
-  gap:6px; margin-bottom:12px;
+display:grid; grid-template-columns:repeat(4,1fr);
+gap:6px; margin-bottom:12px;
 }
-.m4 { background:var(--m4-bg); border-radius:8px; padding:7px; text-align:center }
-.m4 .ml { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px }
-.m4 .mv { font-family:'Unbounded',sans-serif; font-size:12px; font-weight:700 }
+.m4 { background:var(–m4-bg); border-radius:8px; padding:7px; text-align:center }
+.m4 .ml { font-size:9px; color:var(–txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px }
+.m4 .mv { font-family:‘Unbounded’,sans-serif; font-size:12px; font-weight:700 }
 .prog-row { display:flex; align-items:center; gap:8px; margin-bottom:12px }
-.prog-l { font-size:11px; color:var(--txt2); width:42px; text-align:right; flex-shrink:0 }
-.prog-track { flex:1; height:4px; background:var(--line); border-radius:2px; overflow:hidden }
+.prog-l { font-size:11px; color:var(–txt2); width:42px; text-align:right; flex-shrink:0 }
+.prog-track { flex:1; height:4px; background:var(–line); border-radius:2px; overflow:hidden }
 .prog-fill { height:100%; border-radius:2px; transition:width .6s ease }
 .prog-r { font-size:11px; font-weight:600; width:38px; text-align:right; flex-shrink:0 }
 .chips-wrap { display:flex; flex-direction:column; gap:5px }
 .chips-row { display:flex; flex-wrap:wrap; gap:5px }
 .chip {
-  font-size:10px; padding:3px 8px; border-radius:6px;
-  background:var(--bg3); border:1px solid var(--line);
-  color:var(--txt2); display:flex; align-items:center; gap:3px;
+font-size:10px; padding:3px 8px; border-radius:6px;
+background:var(–bg3); border:1px solid var(–line);
+color:var(–txt2); display:flex; align-items:center; gap:3px;
 }
-.chip strong { color:var(--txt); font-size:11px }
+.chip strong { color:var(–txt); font-size:11px }
 .chip.c800  { border-color:rgba(30,144,255,.3) }
 .chip.c1200 { border-color:rgba(255,165,2,.3) }
 @media(max-width:480px) {
-  .mop-grid4 { grid-template-columns:repeat(2,1fr) }
+.mop-grid4 { grid-template-columns:repeat(2,1fr) }
 }
 
 /* ── КАРТОЧКА ОТДЕЛА ── */
 .dept-card {
-  background:var(--bg2); border:1px solid var(--acc-bdr);
-  background: color-mix(in srgb, var(--acc) 5%, var(--bg2));
-  border-radius:var(--r2); padding:14px 16px;
-  margin-bottom:16px;
+background:var(–bg2); border:1px solid var(–acc-bdr);
+background: color-mix(in srgb, var(–acc) 5%, var(–bg2));
+border-radius:var(–r2); padding:14px 16px;
+margin-bottom:16px;
 }
 .dept-card .dept-title {
-  font-family:'Unbounded',sans-serif;
-  font-size:10px; font-weight:800; letter-spacing:.1em;
-  color:var(--acc); margin-bottom:12px;
-  display:flex; align-items:center; gap:8px;
+font-family:‘Unbounded’,sans-serif;
+font-size:10px; font-weight:800; letter-spacing:.1em;
+color:var(–acc); margin-bottom:12px;
+display:flex; align-items:center; gap:8px;
 }
-.dept-card .dept-title::after { content:''; flex:1; height:1px; background:var(--acc-bdr) }
+.dept-card .dept-title::after { content:’’; flex:1; height:1px; background:var(–acc-bdr) }
 .dept-row1, .dept-row2 {
-  display:grid; gap:8px; margin-bottom:8px;
+display:grid; gap:8px; margin-bottom:8px;
 }
 .dept-row1 { grid-template-columns:repeat(3,1fr) }
 .dept-row2 { grid-template-columns:repeat(3,1fr); margin-bottom:0 }
 .dept-cell {
-  background:var(--bg3); border-radius:8px;
-  padding:10px 12px; text-align:center;
+background:var(–bg3); border-radius:8px;
+padding:10px 12px; text-align:center;
 }
 .dept-cell .dc-lbl {
-  font-size:9px; color:var(--txt2);
-  text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px;
+font-size:9px; color:var(–txt2);
+text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px;
 }
 .dept-cell .dc-val {
-  font-family:'Unbounded',sans-serif;
-  font-size:16px; font-weight:800; letter-spacing:-.02em;
+font-family:‘Unbounded’,sans-serif;
+font-size:16px; font-weight:800; letter-spacing:-.02em;
 }
-.dept-cell.hi .dc-val { color:var(--acc) }
-.chips-wrap { display:flex; flex-direction:column; gap:5px }
-.chips-row { display:flex; flex-wrap:wrap; gap:5px }
-.chip {
-  font-size:10px; padding:3px 8px; border-radius:6px;
-  background:var(--bg3); border:1px solid var(--line);
-  color:var(--txt2); display:flex; align-items:center; gap:3px;
-}
-.chip strong { color:var(--txt); font-size:11px }
-.chip.c800  { border-color:rgba(30,144,255,.3) }
-.chip.c1200 { border-color:rgba(255,165,2,.3)  }
+.dept-cell.hi .dc-val { color:var(–acc) }
 
 /* ── ИТОГИ ── */
 .totals-box {
-  background:var(--bg2); border:1px solid var(--line2);
-  border-radius:var(--r2); padding:13px 14px; margin-top:14px;
+background:var(–bg2); border:1px solid var(–line2);
+border-radius:var(–r2); padding:13px 14px; margin-top:14px;
 }
 .totals-lbl {
-  font-family:'Unbounded',sans-serif;
-  font-size:9px; font-weight:800; letter-spacing:.08em;
-  color:var(--txt2); margin-bottom:8px;
+font-family:‘Unbounded’,sans-serif;
+font-size:9px; font-weight:800; letter-spacing:.08em;
+color:var(–txt2); margin-bottom:8px;
 }
 .totals-row { display:flex; flex-wrap:wrap; gap:7px }
 .ti {
-  background:var(--bg3); border-radius:8px;
-  padding:7px 11px; min-width:75px;
-  display:flex; flex-direction:column; gap:2px;
+background:var(–bg3); border-radius:8px;
+padding:7px 11px; min-width:75px;
+display:flex; flex-direction:column; gap:2px;
 }
-.ti .tl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em }
-.ti .tv { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:700 }
+.ti .tl { font-size:9px; color:var(–txt2); text-transform:uppercase; letter-spacing:.04em }
+.ti .tv { font-family:‘Unbounded’,sans-serif; font-size:13px; font-weight:700 }
 
 /* ── ЗП ── */
 .zp-banner {
-  background:var(--acc-bg); border:1px solid var(--acc-bdr);
-  border-radius:var(--r2); padding:18px;
-  text-align:center; margin-bottom:16px;
+background:var(–acc-bg); border:1px solid var(–acc-bdr);
+border-radius:var(–r2); padding:18px;
+text-align:center; margin-bottom:16px;
 }
-.zp-banner .zl { font-size:10px; color:var(--txt2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px }
-.zp-banner .zv { font-family:'Unbounded',sans-serif; font-size:30px; font-weight:900; color:var(--acc); letter-spacing:-.02em }
+.zp-banner .zl { font-size:10px; color:var(–txt2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px }
+.zp-banner .zv { font-family:‘Unbounded’,sans-serif; font-size:30px; font-weight:900; color:var(–acc); letter-spacing:-.02em }
 .zp-list { display:flex; flex-direction:column; gap:8px }
 .zp-n  {
-  font-family:'Unbounded',sans-serif;
-  font-weight:700; font-size:13px;
-  flex-shrink:0; min-width:80px;
+font-family:‘Unbounded’,sans-serif;
+font-weight:700; font-size:13px;
+flex-shrink:0; min-width:80px;
 }
 .zp-row {
-  display:flex; flex-direction:column;
-  border:1px solid var(--line);
-  border-radius:var(--r2); padding:13px 16px;
-  transition:border-color .2s;
-  background: color-mix(in srgb, var(--rank-color, transparent) 10%, var(--bg2));
+display:flex; flex-direction:column;
+border:1px solid var(–line);
+border-radius:var(–r2); padding:13px 16px;
+transition:border-color .2s;
+background: color-mix(in srgb, var(–rank-color, transparent) 10%, var(–bg2));
 }
 body.light .zp-row {
-  background: color-mix(in srgb, var(--rank-color, transparent) 8%, var(--bg2));
+background: color-mix(in srgb, var(–rank-color, transparent) 8%, var(–bg2));
 }
 @supports not (background: color-mix(in srgb, red 1%, blue)) {
-  .zp-row { background:var(--bg2); position:relative; overflow:hidden }
-  .zp-row::before {
-    content:''; position:absolute; inset:0;
-    background:var(--rank-color, transparent);
-    opacity:.10; pointer-events:none;
-  }
+.zp-row { background:var(–bg2); position:relative; overflow:hidden }
+.zp-row::before {
+content:’’; position:absolute; inset:0;
+background:var(–rank-color, transparent);
+opacity:.10; pointer-events:none;
 }
-.zp-row:last-child { border-bottom:1px solid var(--line) }
+}
+.zp-row:last-child { border-bottom:1px solid var(–line) }
 .zp-top {
-  display:flex; align-items:center;
-  justify-content:space-between; margin-bottom:8px;
+display:flex; align-items:center;
+justify-content:space-between; margin-bottom:8px;
 }
-.zp-bg { flex:1; height:3px; background:var(--line); border-radius:2px; overflow:hidden }
+.zp-bg { flex:1; height:3px; background:var(–line); border-radius:2px; overflow:hidden }
 .zp-fill { height:100%; border-radius:2px; transition:width .7s ease }
 .zp-a {
-  font-family:'Unbounded',sans-serif;
-  font-size:13px; font-weight:700;
-  flex-shrink:0; text-align:right;
+font-family:‘Unbounded’,sans-serif;
+font-size:13px; font-weight:700;
+flex-shrink:0; text-align:right;
 }
 
-/* ── ГРАФИК — НЕДЕЛЬНЫЙ ВИД ── */
-/* Экран графика без верхнего паддинга */
+/* ── ГРАФИК ── */
 #scr-grafik { padding-top:0 }
 #scr-grafik .w { padding-top:8px }
-/* nav переключатель */
 .sched-nav {
-  display:flex; align-items:center; justify-content:space-between;
-  padding-top:10px; margin-bottom:10px; gap:12px;
+display:flex; align-items:center; justify-content:space-between;
+padding-top:10px; margin-bottom:10px; gap:12px;
 }
 .sched-nav-title {
-  font-family:'Unbounded',sans-serif;
-  font-size:12px; font-weight:800; color:var(--txt);
-  text-align:center; flex:1;
+font-family:‘Unbounded’,sans-serif;
+font-size:12px; font-weight:800; color:var(–txt);
+text-align:center; flex:1;
 }
 .sched-nav-btn {
-  width:34px; height:34px; border-radius:50%;
-  background:var(--bg3); border:1px solid var(--line2);
-  color:var(--txt2); font-size:18px; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  transition:all .15s; flex-shrink:0; line-height:1;
+width:34px; height:34px; border-radius:50%;
+background:var(–bg3); border:1px solid var(–line2);
+color:var(–txt2); font-size:18px; cursor:pointer;
+display:flex; align-items:center; justify-content:center;
+transition:all .15s; flex-shrink:0; line-height:1;
 }
-.sched-nav-btn:hover { border-color:var(--acc); color:var(--acc) }
+.sched-nav-btn:hover { border-color:var(–acc); color:var(–acc) }
 .sched-nav-btn:disabled { opacity:.3; cursor:default; pointer-events:none }
 
-/* числа и дни недели — одна строка для обеих групп */
 .sched-week {
-  display:grid; grid-template-columns:repeat(7,1fr);
-  gap:4px;
+display:grid; grid-template-columns:repeat(7,1fr);
+gap:4px;
 }
 .sched-day-hdr {
-  text-align:center; padding:6px 2px;
-  background:var(--bg3); border-radius:8px;
+text-align:center; padding:6px 2px;
+background:var(–bg3); border-radius:8px;
 }
 .sched-day-hdr .sd-num {
-  font-family:'Unbounded',sans-serif;
-  font-size:13px; font-weight:800; line-height:1;
+font-family:‘Unbounded’,sans-serif;
+font-size:13px; font-weight:800; line-height:1;
 }
 .sched-day-hdr .sd-dow {
-  font-size:9px; color:var(--txt2);
-  text-transform:uppercase; letter-spacing:.05em;
-  margin-top:2px;
+font-size:9px; color:var(–txt2);
+text-transform:uppercase; letter-spacing:.05em;
+margin-top:2px;
 }
 .sched-day-hdr.today {
-  background:var(--acc-bg); border:1px solid var(--acc-bdr);
+background:var(–acc-bg); border:1px solid var(–acc-bdr);
 }
-.sched-day-hdr.today .sd-num { color:var(--acc) }
-.sched-day-hdr.today .sd-dow { color:var(--acc) }
+.sched-day-hdr.today .sd-num { color:var(–acc) }
+.sched-day-hdr.today .sd-dow { color:var(–acc) }
 
-/* заголовок группы — ПОСЛЕ чисел, перед карточками */
 .sched-group-title {
-  font-family:'Unbounded',sans-serif;
-  font-size:10px; font-weight:800; letter-spacing:.1em;
-  color:var(--txt2); margin:14px 0 8px;
-  display:flex; align-items:center; gap:8px;
+font-family:‘Unbounded’,sans-serif;
+font-size:10px; font-weight:800; letter-spacing:.1em;
+color:var(–txt2); margin:14px 0 8px;
+display:flex; align-items:center; gap:8px;
 }
-.sched-group-title::after { content:''; flex:1; height:1px; background:var(--line) }
+.sched-group-title::after { content:’’; flex:1; height:1px; background:var(–line) }
 
 .sched-person {
-  background:var(--bg2); border:1px solid var(--line);
-  border-radius:var(--r2); margin-bottom:8px; overflow:hidden;
+background:var(–bg2); border:1px solid var(–line);
+border-radius:var(–r2); margin-bottom:8px; overflow:hidden;
 }
 .sched-person-name {
-  font-family:'Unbounded',sans-serif;
-  font-size:11px; font-weight:700;
-  padding:10px 14px 8px;
-  border-bottom:1px solid var(--line);
-  color:var(--txt);
+font-family:‘Unbounded’,sans-serif;
+font-size:11px; font-weight:700;
+padding:10px 14px 8px;
+border-bottom:1px solid var(–line);
+color:var(–txt);
 }
 .sched-cells {
-  display:grid; grid-template-columns:repeat(7,1fr);
-  gap:4px; padding:8px;
+display:grid; grid-template-columns:repeat(7,1fr);
+gap:4px; padding:8px;
 }
 .sched-cell {
-  text-align:center; padding:8px 2px;
-  border-radius:6px; font-size:12px; font-weight:600;
-  min-height:36px; display:flex; align-items:center; justify-content:center;
+text-align:center; padding:8px 2px;
+border-radius:6px; font-size:12px; font-weight:600;
+min-height:36px; display:flex; align-items:center; justify-content:center;
 }
-.sched-cell.dr  { background:rgba(46,213,115,.12); color:var(--grn) }
-.sched-cell.dv  { background:rgba(255,71,87,.12);  color:var(--red) }
-.sched-cell.dvs { background:rgba(130,130,130,.1); color:var(--txt3) }
-.sched-cell.empty { color:var(--txt3); opacity:.4 }
+.sched-cell.dr  { background:rgba(46,213,115,.12); color:var(–grn) }
+.sched-cell.dv  { background:rgba(255,71,87,.12);  color:var(–red) }
+.sched-cell.dvs { background:rgba(130,130,130,.1); color:var(–txt3) }
+.sched-cell.empty { color:var(–txt3); opacity:.4 }
 .sched-cell.today-col {
-  outline:2px solid var(--acc); outline-offset:-2px; border-radius:6px;
+outline:2px solid var(–acc); outline-offset:-2px; border-radius:6px;
 }
 
-/* ── ИНСТРУКЦИИ ── */
+/* ── ИНСТРУКЦИИ — FIX горизонтальный скролл на мобильных ── */
 .instr-block {
-  border:1px solid var(--line); border-radius:var(--r2);
-  overflow:hidden; margin-bottom:8px;
+border:1px solid var(–line); border-radius:var(–r2);
+overflow:hidden; margin-bottom:8px;
 }
 .instr-hdr {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:14px 16px; background:var(--bg2);
-  cursor:pointer; user-select:none; gap:10px; transition:background .15s;
+display:flex; align-items:center; justify-content:space-between;
+padding:14px 16px; background:var(–bg2);
+cursor:pointer; user-select:none; gap:10px; transition:background .15s;
 }
-.instr-hdr:hover { background:var(--bg3) }
+.instr-hdr:hover { background:var(–bg3) }
 .instr-hdr h3 { font-weight:600; font-size:13px; line-height:1.4; flex:1 }
 .instr-toggle {
-  width:24px; height:24px; border-radius:50%;
-  background:var(--bg3); border:1px solid var(--line2);
-  display:flex; align-items:center; justify-content:center;
-  color:var(--txt2); font-size:14px; flex-shrink:0; transition:all .2s;
+width:24px; height:24px; border-radius:50%;
+background:var(–bg3); border:1px solid var(–line2);
+display:flex; align-items:center; justify-content:center;
+color:var(–txt2); font-size:14px; flex-shrink:0; transition:all .2s;
 }
 .instr-block.open > .instr-hdr .instr-toggle {
-  background:var(--acc-bg); border-color:var(--acc);
-  color:var(--acc); transform:rotate(45deg);
+background:var(–acc-bg); border-color:var(–acc);
+color:var(–acc); transform:rotate(45deg);
 }
 .instr-body {
-  display:none; border-top:1px solid var(--line);
-  background:var(--bg);
+display:none; border-top:1px solid var(–line);
+background:var(–bg);
 }
 .instr-block.open > .instr-body { display:block }
 
-/* таблица внутри инструкции */
+/* Обёртка таблицы — горизонтальный скролл на мобильных */
+.instr-table-wrap {
+width:100%;
+overflow-x:auto;
+-webkit-overflow-scrolling:touch;
+}
+
 .instr-table {
-  width:100%; border-collapse:collapse; font-size:13px;
+width:100%;
+min-width:480px; /* не сжимается меньше */
+border-collapse:collapse; font-size:13px;
 }
 .instr-table th {
-  background:var(--bg3);
-  padding:10px 14px; text-align:left;
-  font-family:'Unbounded',sans-serif; font-size:9px;
-  font-weight:800; letter-spacing:.06em; color:var(--txt2);
-  border-bottom:1px solid var(--line2);
+background:var(–bg3);
+padding:10px 14px; text-align:left;
+font-family:‘Unbounded’,sans-serif; font-size:9px;
+font-weight:800; letter-spacing:.06em; color:var(–txt2);
+border-bottom:1px solid var(–line2);
 }
 .instr-table td {
-  padding:10px 14px; vertical-align:top;
-  border-bottom:1px solid var(--line);
-  line-height:1.6; color:var(--txt2);
+padding:10px 14px; vertical-align:top;
+border-bottom:1px solid var(–line);
+line-height:1.6; color:var(–txt2);
 }
 .instr-table tr:last-child td { border-bottom:none }
 .instr-table tr:hover td { background:rgba(255,255,255,.02) }
 .instr-table td:first-child {
-  font-weight:600; color:var(--txt);
-  white-space:nowrap; width:200px;
+font-weight:600; color:var(–txt);
+white-space:nowrap; width:200px;
 }
-.instr-table td:first-child { border-right:1px solid var(--line) }
+.instr-table td:first-child { border-right:1px solid var(–line) }
 body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
 
 /* вложенный спойлер */
 .instr-sub {
-  border-top:1px solid var(--line);
+border-top:1px solid var(–line);
 }
 .instr-sub:first-child { border-top:none }
 .instr-sub-hdr {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:12px 16px; background:var(--bg2);
-  cursor:pointer; user-select:none; gap:8px; transition:background .15s;
+display:flex; align-items:center; justify-content:space-between;
+padding:12px 16px; background:var(–bg2);
+cursor:pointer; user-select:none; gap:8px; transition:background .15s;
 }
-.instr-sub-hdr:hover { background:var(--bg3) }
-.instr-sub-hdr span { font-weight:600; font-size:12px; flex:1; color:var(--txt) }
+.instr-sub-hdr:hover { background:var(–bg3) }
+.instr-sub-hdr span { font-weight:600; font-size:12px; flex:1; color:var(–txt) }
 .instr-sub-toggle {
-  width:20px; height:20px; border-radius:50%;
-  background:var(--bg3); border:1px solid var(--line2);
-  display:flex; align-items:center; justify-content:center;
-  color:var(--txt2); font-size:12px; flex-shrink:0; transition:all .2s;
+width:20px; height:20px; border-radius:50%;
+background:var(–bg3); border:1px solid var(–line2);
+display:flex; align-items:center; justify-content:center;
+color:var(–txt2); font-size:12px; flex-shrink:0; transition:all .2s;
 }
-.instr-sub.open .instr-sub-toggle { color:var(--acc); border-color:var(--acc); transform:rotate(45deg) }
+.instr-sub.open .instr-sub-toggle { color:var(–acc); border-color:var(–acc); transform:rotate(45deg) }
 .instr-sub-body { display:none }
 .instr-sub.open .instr-sub-body { display:block }
 
-/* имена менеджеров везде — Unbounded */
-.mop-name, .zp-n { font-family:'Unbounded',sans-serif; font-weight:700 }
+/* имена менеджеров — Unbounded */
+.mop-name, .zp-n { font-family:‘Unbounded’,sans-serif; font-weight:700 }
 
-/* цифры в отчёте — нейтральный цвет (txt) */
-.mm .mv, .m4 .mv, .mop-prog-labels .cur { color:var(--txt) }
+/* цифры в отчёте */
+.mm .mv, .m4 .mv, .mop-prog-labels .cur { color:var(–txt) }
 
-/* футер авторства */
+/* footer */
 .page-footer {
-  text-align:center;
-  padding:24px 0 16px;
-  margin-top:32px;
-  border-top:1px solid var(--line);
-  font-size:11px;
-  color:var(--txt3);
-  font-family:'Golos Text',sans-serif;
-  letter-spacing:.04em;
+text-align:center;
+padding:24px 0 16px;
+margin-top:32px;
+border-top:1px solid var(–line);
+font-size:11px;
+color:var(–txt3);
+font-family:‘Golos Text’,sans-serif;
+letter-spacing:.04em;
 }
+
+/* confetti */
 .confetti-piece {
-  position:fixed;
-  width:8px; height:8px;
-  border-radius:2px;
-  pointer-events:none;
-  z-index:9999;
-  animation:confettiFly var(--dur, 1s) ease-out forwards;
+position:fixed;
+width:8px; height:8px;
+border-radius:2px;
+pointer-events:none;
+z-index:9999;
+animation:confettiFly var(–dur, 1s) ease-out forwards;
 }
 @keyframes confettiFly {
-  0%   { transform:translate(0,0) rotate(0deg) scale(1); opacity:1 }
-  100% { transform:translate(var(--tx),var(--ty)) rotate(var(--rot)) scale(0.4); opacity:0 }
+0%   { transform:translate(0,0) rotate(0deg) scale(1); opacity:1 }
+100% { transform:translate(var(–tx),var(–ty)) rotate(var(–rot)) scale(0.4); opacity:0 }
 }
 #toast {
-  position:fixed; bottom:20px; left:50%;
-  transform:translateX(-50%) translateY(16px);
-  padding:9px 16px; border-radius:var(--r);
-  font-size:13px; opacity:0; pointer-events:none;
-  transition:all .25s; z-index:999; white-space:nowrap;
+position:fixed; bottom:20px; left:50%;
+transform:translateX(-50%) translateY(16px);
+padding:9px 16px; border-radius:var(–r);
+font-size:13px; opacity:0; pointer-events:none;
+transition:all .25s; z-index:999; white-space:nowrap;
 }
 #toast.on { opacity:1; transform:translateX(-50%) translateY(0) }
-#toast.s { background:rgba(46,213,115,.15); border:1px solid var(--grn); color:var(--grn) }
-#toast.e { background:rgba(255,71,87,.15);  border:1px solid var(--red); color:var(--red) }
-#toast.i { background:var(--bg3); border:1px solid var(--line2); color:var(--txt) }
+#toast.s { background:rgba(46,213,115,.15); border:1px solid var(–grn); color:var(–grn) }
+#toast.e { background:rgba(255,71,87,.15);  border:1px solid var(–red); color:var(–red) }
+#toast.i { background:var(–bg3); border:1px solid var(–line2); color:var(–txt) }
 
 @media(max-width:480px) {
-  .sum-grid  { grid-template-columns:1fr 1fr }
-  .mop-grid4 { grid-template-columns:repeat(2,1fr) }
-  header     { padding:0 12px }
-  .scr       { padding:12px }
-  .tab       { padding:10px 14px; font-size:13px; letter-spacing:.02em }
+.sum-grid  { grid-template-columns:1fr 1fr }
+.mop-grid4 { grid-template-columns:repeat(2,1fr) }
+header     { padding:0 12px }
+.scr       { padding:12px }
+.tab       { padding:10px 14px; font-size:13px; letter-spacing:.02em }
 }
 
 @keyframes firework {
-  to {
-    transform: translate(var(--tx), var(--ty)) scale(0.6);
-    opacity: 0;
-  }
+to {
+transform: translate(var(–tx), var(–ty)) scale(0.6);
+opacity: 0;
+}
 }
 
 @keyframes flash {
-  0% { transform:translate(-50%,-50%) scale(0.5); opacity:1; }
-  100% { transform:translate(-50%,-50%) scale(4); opacity:0; }
-} 
+0% { transform:translate(-50%,-50%) scale(0.5); opacity:1; }
+100% { transform:translate(-50%,-50%) scale(4); opacity:0; }
+}
 
-/* === LIQUID GLASS MODAL UPGRADE === */
+/* === LIQUID GLASS MODAL === */
 .mop-modal {
-  position:relative;
-  border-radius:var(--r2);
-  width:100%;
-  max-width:460px;
-  max-height:86vh;
-  overflow:hidden;
-  animation:mUp .22s ease;
-
-  backdrop-filter: blur(25px) saturate(180%);
-  -webkit-backdrop-filter: blur(25px) saturate(180%);
-
-  border:1px solid rgba(255,255,255,0.2);
-
-  box-shadow:
-    0 20px 60px rgba(0,0,0,0.35),
-    inset 0 1px 0 rgba(255,255,255,0.25);
+position:relative;
+border-radius:var(–r2);
+width:100%;
+max-width:460px;
+max-height:86vh;
+overflow:hidden;
+animation:mUp .22s ease;
+backdrop-filter: blur(25px) saturate(180%);
+-webkit-backdrop-filter: blur(25px) saturate(180%);
+border:1px solid rgba(255,255,255,0.2);
+box-shadow:
+0 20px 60px rgba(0,0,0,0.35),
+inset 0 1px 0 rgba(255,255,255,0.25);
 }
-
-body.light .mop-modal {
-  background: rgba(255,255,255,0.55);
-}
-
-body.dark .mop-modal {
-  background: rgba(18,18,18,0.55);
-}
-
+body.light .mop-modal { background: rgba(255,255,255,0.55); }
+body.dark .mop-modal  { background: rgba(18,18,18,0.55); }
 .mop-modal::before {
-  content:'';
-  position:absolute;
-  inset:0;
-  border-radius:inherit;
-  background: linear-gradient(
-    120deg,
-    rgba(255,255,255,0.35) 0%,
-    rgba(255,255,255,0.15) 30%,
-    rgba(255,255,255,0.05) 60%,
-    transparent 100%
-  );
-  pointer-events:none;
+content:’’; position:absolute; inset:0; border-radius:inherit;
+background: linear-gradient(120deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.15) 30%, rgba(255,255,255,0.05) 60%, transparent 100%);
+pointer-events:none;
 }
-
 .mop-modal::after {
-  content:'';
-  position:absolute;
-  inset:0;
-  border-radius:inherit;
-  background:
-    radial-gradient(circle at 20% 10%, rgba(255,255,255,0.25), transparent 40%),
-    radial-gradient(circle at 80% 90%, rgba(255,255,255,0.15), transparent 50%);
-  pointer-events:none;
-  opacity:.6;
+content:’’; position:absolute; inset:0; border-radius:inherit;
+background:
+radial-gradient(circle at 20% 10%, rgba(255,255,255,0.25), transparent 40%),
+radial-gradient(circle at 80% 90%, rgba(255,255,255,0.15), transparent 50%);
+pointer-events:none; opacity:.6;
 }
+.mop-modal-hdr { background:transparent; backdrop-filter:blur(10px); }
 
-.mop-modal-hdr {
-  background:transparent;
-  backdrop-filter: blur(10px);
+/* ── ДОЖИМ (пустой раздел) ── */
+.dozim-empty {
+display:flex; flex-direction:column; align-items:center;
+justify-content:center; gap:14px; min-height:50vh;
+text-align:center; padding:40px 20px; color:var(–txt3);
 }
-
+.dozim-empty svg { width:40px; height:40px; opacity:.3 }
+.dozim-empty p { font-size:13px; color:var(–txt3); line-height:1.7 }
 </style>
+
 </head>
 <body>
 <div id="app">
@@ -826,7 +814,6 @@ body.dark .mop-modal {
       </div>
       <div class="hdr-right">
         <span class="badge-month" id="badge-month">—</span>
-        <!-- аккаунт -->
         <button class="btn-signin" id="btn-login" style="display:none">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 11h8.533c.044.385.067.78.067 1.184 0 3.37-1.17 6.22-3.207 8.154C15.553 22.124 13.9 23 12 23A11 11 0 1 1 12 1c2.95 0 5.56 1.113 7.522 2.934l-3.076 3.042C15.197 5.79 13.68 5 12 5a7 7 0 1 0 0 14c3.205 0 5.542-1.916 6.27-4.987H12v-3z"/></svg>
           Войти
@@ -835,7 +822,6 @@ body.dark .mop-modal {
           <img id="user-avatar" src="" alt=""/>
           <span id="user-name"></span>
         </div>
-        <!-- обновить -->
         <button class="btn-icon" id="btn-refresh" title="Обновить">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/>
@@ -844,7 +830,6 @@ body.dark .mop-modal {
             <path d="M8 16H3v5"/>
           </svg>
         </button>
-        <!-- тема -->
         <button class="btn-icon" id="btn-theme" title="Тема">
           <svg id="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
@@ -857,7 +842,6 @@ body.dark .mop-modal {
             <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
           </svg>
         </button>
-        <!-- выход -->
         <button class="btn-icon" id="btn-out" style="display:none" title="Выйти">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -878,7 +862,18 @@ body.dark .mop-modal {
     </div>
   </nav>
 
-  <!-- Sticky шапка графика — вне main, прилипает под nav -->
+  <!-- Sub-nav для ОТЧЁТ -->
+
+  <div id="otchet-subnav" style="display:none" class="sub-nav">
+    <div class="sub-nav-inner">
+      <button class="sub-tab on" data-sub="otdel">ОТДЕЛ</button>
+      <button class="sub-tab" data-sub="managers">МЕНЕДЖЕРЫ</button>
+      <button class="sub-tab" data-sub="dozim">ДОЖИМ</button>
+    </div>
+  </div>
+
+  <!-- Sticky шапка графика -->
+
   <div id="grafik-sticky" style="display:none;background:var(--bg);border-bottom:1px solid var(--line);z-index:50;position:sticky;top:96px">
     <div class="w" style="padding-top:10px;padding-bottom:10px">
       <div id="grafik-sticky-inner"></div>
@@ -898,14 +893,45 @@ body.dark .mop-modal {
         <p>Нажмите кнопку <strong>Войти</strong><br>в правом верхнем углу</p>
       </div>
     </div>
-    <div id="scr-otchet"      class="scr"><div class="w"><div id="c-otchet"></div><div class="page-footer">© Бочаров Ю.С., 2026</div></div></div>
-    <div id="scr-zp"          class="scr"><div class="w"><div id="c-zp"></div><div class="page-footer">© Бочаров Ю.С., 2026</div></div></div>
-    <div id="scr-grafik"      class="scr"><div class="w"><div id="c-grafik"></div><div class="page-footer">© Бочаров Ю.С., 2026</div></div></div>
-    <div id="scr-instruktsii" class="scr"><div class="w"><div id="c-instruktsii"></div><div class="page-footer">© Бочаров Ю.С., 2026</div></div></div>
+
+```
+<!-- ОТЧЁТ: sub-screens -->
+<div id="scr-otchet" class="scr">
+  <div class="w">
+    <!-- ОТДЕЛ -->
+    <div id="sub-otdel" class="sub-scr on">
+      <div id="c-otdel"></div>
+      <div class="page-footer">© Бочаров Ю.С., 2026</div>
+    </div>
+    <!-- МЕНЕДЖЕРЫ -->
+    <div id="sub-managers" class="sub-scr">
+      <div id="c-managers"></div>
+      <div class="page-footer">© Бочаров Ю.С., 2026</div>
+    </div>
+    <!-- ДОЖИМ -->
+    <div id="sub-dozim" class="sub-scr">
+      <div class="dozim-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 8v4l3 3"/>
+        </svg>
+        <p>Раздел в разработке.<br>Скоро здесь будут данные по дожиму.</p>
+      </div>
+      <div class="page-footer">© Бочаров Ю.С., 2026</div>
+    </div>
+  </div>
+</div>
+
+<div id="scr-zp"          class="scr"><div class="w"><div id="c-zp"></div><div class="page-footer">© Бочаров Ю.С., 2026</div></div></div>
+<div id="scr-grafik"      class="scr"><div class="w"><div id="c-grafik"></div><div class="page-footer">© Бочаров Ю.С., 2026</div></div></div>
+<div id="scr-instruktsii" class="scr"><div class="w"><div id="c-instruktsii"></div><div class="page-footer">© Бочаров Ю.С., 2026</div></div></div>
+```
+
   </main>
 </div>
 
 <!-- МОДАЛКА МЕНЕДЖЕРА -->
+
 <div class="mop-overlay" id="mop-overlay" onclick="closeMopModal(event)">
   <div class="mop-modal" id="mop-modal">
     <div class="mop-modal-hdr">
@@ -964,9 +990,25 @@ function showScr(id) {
     document.getElementById('scr-'+t).classList.remove('on')
   );
   document.getElementById('scr-'+id)?.classList.add('on');
-  // Показываем/скрываем sticky шапку графика
   const gs = document.getElementById('grafik-sticky');
   if (gs) gs.style.display = id === 'grafik' ? '' : 'none';
+
+  // Sub-nav для отчёта
+  const subNav = document.getElementById('otchet-subnav');
+  if (subNav) subNav.style.display = id === 'otchet' ? '' : 'none';
+}
+
+/* ══ SUB-TABS ══ */
+let _currentSub = 'otdel';
+function goSubTab(sub) {
+  _currentSub = sub;
+  document.querySelectorAll('.sub-tab').forEach(b =>
+    b.classList.toggle('on', b.dataset.sub === sub)
+  );
+  document.querySelectorAll('.sub-scr').forEach(s =>
+    s.classList.remove('on')
+  );
+  document.getElementById('sub-'+sub)?.classList.add('on');
 }
 
 /* ══ HELPERS ══ */
@@ -977,19 +1019,21 @@ function fmtRub(v) {
 }
 function pctClr(p) { return p>=100?'var(--grn)':p>=60?'var(--org)':'var(--red)' }
 
-// Плавный градиент: 0=лучший(зелёный) → 1=худший(красный), яркие насыщенные цвета
+// Имя заглавными буквами
+function upperName(name) {
+  return (name||'').toUpperCase();
+}
+
 function rankColor(pos, total) {
   if (total <= 1) return { r:0, g:230, b:90 };
-  const t = pos / (total - 1); // 0..1
+  const t = pos / (total - 1);
   let r, g, b;
   if (t <= 0.5) {
-    // ярко-зелёный (#00e65a) → жёлтый (#ffe000)
     const f = t * 2;
     r = Math.round(0   + (255 - 0)   * f);
     g = Math.round(230 + (224 - 230) * f);
     b = Math.round(90  + (0   - 90)  * f);
   } else {
-    // жёлтый (#ffe000) → ярко-красный (#ff2828)
     const f = (t - 0.5) * 2;
     r = Math.round(255 + (255 - 255) * f);
     g = Math.round(224 + (40  - 224) * f);
@@ -1006,8 +1050,6 @@ function rankStyles(pos, total) {
   return { color, border, badgeBg };
 }
 function loader() { return `<div class="loader"><div class="spin"></div><span>Загружаем…</span></div>` }
-
-const ICON_REFRESH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>`;
 
 /* ══ AUTH ══ */
 let tokenClient;
@@ -1063,6 +1105,7 @@ function onLogout() {
   document.getElementById('btn-out').style.display   = 'none';
   document.getElementById('btn-login').style.display = '';
   document.getElementById('main-nav').style.display  = 'none';
+  document.getElementById('otchet-subnav').style.display = 'none';
   ['otchet','zp','grafik','instruktsii'].forEach(t => {
     const s = document.getElementById('scr-'+t);
     s.classList.remove('on'); s.style.display = '';
@@ -1113,8 +1156,16 @@ function goTab(tab) {
 
 async function loadTab(tab) {
   if (S.data[tab]) return;
-  const el = document.getElementById('c-'+tab);
-  if (el) el.innerHTML = loader();
+  // Показываем лоадер в нужных местах
+  if (tab === 'otchet') {
+    const elOtdel    = document.getElementById('c-otdel');
+    const elManagers = document.getElementById('c-managers');
+    if (elOtdel)    elOtdel.innerHTML    = loader();
+    if (elManagers) elManagers.innerHTML = loader();
+  } else {
+    const el = document.getElementById('c-'+tab);
+    if (el) el.innerHTML = loader();
+  }
   try {
     if      (tab==='otchet')      S.data.otchet      = await api(SHEETS.otchet,      'A1:Z15');
     else if (tab==='zp')          S.data.zp           = await api(SHEETS.zp,          'A1:B13');
@@ -1122,8 +1173,15 @@ async function loadTab(tab) {
     else if (tab==='instruktsii') S.data.instruktsii  = await api(SHEETS.instruktsii, 'A1:C200');
     renderTab(tab);
   } catch(e) {
-    if (e.message!=='auth' && el)
-      el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
+    if (e.message !== 'auth') {
+      if (tab === 'otchet') {
+        const elOtdel = document.getElementById('c-otdel');
+        if (elOtdel) elOtdel.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
+      } else {
+        const el = document.getElementById('c-'+tab);
+        if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
+      }
+    }
   }
 }
 
@@ -1143,29 +1201,33 @@ function renderTab(tab) {
 
 /* ══ RENDER: ОТЧЁТ ══ */
 function renderOtchet() {
-  const el  = document.getElementById('c-otchet');
   const raw = S.data.otchet;
-  if (!raw || raw.length < 4) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
+  const elOtdel    = document.getElementById('c-otdel');
+  const elManagers = document.getElementById('c-managers');
 
-  // По скриншоту точная раскладка столбцов:
+  if (!raw || raw.length < 4) {
+    if (elOtdel)    elOtdel.innerHTML    = '<div class="empty">Нет данных</div>';
+    if (elManagers) elManagers.innerHTML = '<div class="empty">Нет данных</div>';
+    return;
+  }
+
+  // Колонки:
   // A(0)МОП B(1)виз800 C(2)виз1200 D(3)план E(4)ост F(5)% G(6)прогноз H(7)все_виз
-  // 800:  I(8)=кредит  J(9)=наличка  K(10)=trade-in  L(11)=комиссия
-  // 1200: M(12)=кредит N(13)=наличка O(14)=trade-in  P(15)=комиссия
+  // 800:  I(8)=кредит J(9)=наличка K(10)=trade-in L(11)=комиссия
+  // 1200: M(12)=кредит N(13)=наличка O(14)=trade-in P(15)=комиссия
   // Q(16)=задаток R(17)=луна S(18)=ТЛ T(19)=в_салоне U(20)=ДНИ V(21)=ДАТА
+  // W(22)=ксо X(23)=фссп Y(24)=в_банке Z(25)=отказ
 
-  const mgrRows = raw.slice(3, 12).filter(r => r[0] && r[0].trim()); // строки 4-12
-  const kot     = raw[13] || []; // строка 14 = КОТЕЛ
-  const totRow  = raw[14] || []; // строка 15 = ВСЕГО
+  const mgrRows = raw.slice(3, 12).filter(r => r[0] && r[0].trim());
+  const kot     = raw[13] || [];
+  const totRow  = raw[14] || [];
 
-  // ВИЗИТЫ = SUM(B4:C12) + (B14+C14) котёл
   const vis800sum  = raw.slice(3,12).reduce((s,r) => s + num(r[1]), 0) + num(kot[1]);
   const vis1200sum = raw.slice(3,12).reduce((s,r) => s + num(r[2]), 0) + num(kot[2]);
   const allVis     = vis800sum + vis1200sum;
 
-  // ПЛАН отдела
   const planTotal = num(totRow[3]);
 
-  // ПРОГНОЗ ОТДЕЛА
   const mo  = parseInt(SUFFIX.slice(0,2));
   const yr  = 2000 + parseInt(SUFFIX.slice(2,4));
   const dim = new Date(yr, mo, 0).getDate();
@@ -1177,16 +1239,12 @@ function renderOtchet() {
     const target = (planTotal / dim) * dp;
     progOtdel = Math.round(allVis / target * 100) + '%';
   }
-  const dpStr = dp || '—';
 
-  // КАРТОЧКА ОТДЕЛА
-  // Кредит   = SUM(I4:I12)+I14  + SUM(M4:M12)+M14  = col8  + col12
   const deptKred = raw.slice(3,12).reduce((s,r) => s + num(r[8])  + num(r[12]), 0) + num(kot[8])  + num(kot[12]);
-  // Наличка  = SUM(J4:J12)+J14  + SUM(N4:N12)+N14  = col9  + col13
   const deptNal  = raw.slice(3,12).reduce((s,r) => s + num(r[9])  + num(r[13]), 0) + num(kot[9])  + num(kot[13]);
-  // Комиссия = SUM(L4:L12)+L14  + SUM(P4:P12)+P14  = col11 + col15
   const deptKom  = raw.slice(3,12).reduce((s,r) => s + num(r[11]) + num(r[15]), 0) + num(kot[11]) + num(kot[15]);
 
+  /* ── КАРТОЧКА ОТДЕЛА ── */
   const deptCard = `
   <div class="sec-title">ОТДЕЛ CRM</div>
   <div class="dept-card">
@@ -1220,28 +1278,39 @@ function renderOtchet() {
     </div>
   </div>`;
 
+  const tot = `<div class="totals-box">
+    <div class="totals-lbl">ИТОГО ПО ОТДЕЛУ</div>
+    <div class="totals-row">
+      <div class="ti"><span class="tl">Все визиты</span><span class="tv">${allVis||'—'}</span></div>
+      <div class="ti"><span class="tl">Визиты 800</span><span class="tv">${vis800sum||'—'}</span></div>
+      <div class="ti"><span class="tl">Визиты 1200</span><span class="tv">${vis1200sum||'—'}</span></div>
+      <div class="ti"><span class="tl">Кредит</span><span class="tv" style="color:var(--acc)">${deptKred||'—'}</span></div>
+      <div class="ti"><span class="tl">Прогноз</span><span class="tv" style="color:${pctClr(parseInt(progOtdel))}">${progOtdel}</span></div>
+    </div>
+  </div>`;
+
+  if (elOtdel) elOtdel.innerHTML = deptCard + tot;
+
+  /* ── КАРТОЧКИ МЕНЕДЖЕРОВ ── */
   const mops_html = (() => {
     const KOTEL = ['котел','котёл','kotel'];
     const isKotel = n => KOTEL.includes((n||'').toLowerCase().trim());
 
-    // Разделяем: обычные менеджеры и котёл
     const rankRows  = mgrRows.filter(r => !isKotel(r[0]));
     const kotelRows = mgrRows.filter(r =>  isKotel(r[0]));
 
-    // Извлекаем числовой прогноз для сортировки
     const withProg = rankRows.map(r => {
       const progStr = r[6]||'0%';
       const progNum = parseFloat(progStr.replace('%','').replace(',','.')) || 0;
       return { r, progNum };
     });
 
-    // Сортируем по прогнозу — от лучшего к худшему
     withProg.sort((a, b) => b.progNum - a.progNum);
 
     const total = withProg.length;
 
     const ranked = withProg.map(({ r, progNum }, idx) => {
-      const name     = r[0]||'—';
+      const name     = upperName(r[0]||'—');
       const v800     = r[1]||'0', v1200  = r[2]||'0';
       const rplan    = r[3]||'0', ost    = r[4]||'0';
       const prc      = r[5]||'0%', prog   = r[6]||'0%';
@@ -1255,14 +1324,12 @@ function renderOtchet() {
       const td1200   = r[14]||'0';
       const kom1200  = r[15]||'0';
       const zadatok  = r[16]||'0';
+      const vsalone  = r[19]||'0';
+      const vkso     = r[22]||'0';
+      const vfSSP    = r[23]||'0';
+      const vbanke   = r[24]||'0';
+      const otkaz    = r[25]||'0';
       const p = num(prc);
-
-      // Новые поля: T(19)=в_салоне, W(22)=ксо, X(23)=фссп, Y(24)=в_банке, Z(25)=отказ
-      const vsalone  = r[19]||'0'; // T
-      const vkso     = r[22]||'0'; // W
-      const vfSSP    = r[23]||'0'; // X
-      const vbanke   = r[24]||'0'; // Y
-      const otkaz    = r[25]||'0'; // Z
 
       const rs    = rankStyles(idx, total);
       const medal = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'';
@@ -1280,20 +1347,14 @@ function renderOtchet() {
         <div class="mop-head">
           <div class="mop-head-left">
             <span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span>
-            <span class="mop-name">${name}${medal ? ' <span style="cursor:pointer" onclick="burstConfetti(this)" title="🎉">'+medal+'</span>' : ''}</span>
+            <span class="mop-name">${name}${medal ? ' <span style="cursor:pointer" onclick="burstConfetti(this,'+idx+')" title="🎉">'+medal+'</span>' : ''}</span>
           </div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <div class="mop-tags">
-              <span class="tag tag-800">800: ${v800}</span>
-              <span class="tag tag-1200">1200: ${v1200}</span>
-            </div>
-            <button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button>
-          </div>
+          <button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button>
         </div>
         <div class="mop-mini">
           <div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
           <div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div>
-          <div class="mm"><div class="ml">Остаток</div><div class="mv" style="color:var(--org)">${ost}</div></div>
+          <div class="mm"><div class="ml">Остаток</div><div class="mv" style="color:var(--txt)">${ost}</div></div>
         </div>
         <div class="mop-prog">
           <div class="mop-prog-labels">
@@ -1307,35 +1368,33 @@ function renderOtchet() {
       </div>`;
     }).join('');
 
-    // Котёл — показываем отдельно без ранга и цвета
     const kotelHTML = kotelRows.map(r => {
-      const name  = r[0]||'—';
+      const name  = upperName(r[0]||'—');
       const v800  = r[1]||'0', v1200 = r[2]||'0';
       const rplan = r[3]||'0', ost   = r[4]||'0';
       const prc   = r[5]||'0%', prog  = r[6]||'0%';
       const allV  = r[7]||'0';
       const p = num(prc);
       return `<div class="mop" style="opacity:.65">
-        <div class="mop-top">
-          <div style="display:flex;align-items:center;gap:6px">
+        <div class="mop-head">
+          <div class="mop-head-left">
             <span class="rank-badge" style="background:rgba(128,128,128,.15);color:var(--txt3)">—</span>
             <span class="mop-name">${name}</span>
           </div>
-          <div class="mop-tags">
-            <span class="tag tag-800">800: ${v800}</span>
-            <span class="tag tag-1200">1200: ${v1200}</span>
+        </div>
+        <div class="mop-mini">
+          <div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
+          <div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div>
+          <div class="mm"><div class="ml">Остаток</div><div class="mv" style="color:var(--txt)">${ost}</div></div>
+        </div>
+        <div class="mop-prog">
+          <div class="mop-prog-labels">
+            <span class="cur">${p}%</span>
+            <span class="end">100%</span>
           </div>
-        </div>
-        <div class="mop-grid4">
-          <div class="m4"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
-          <div class="m4"><div class="ml">План</div><div class="mv">${rplan}</div></div>
-          <div class="m4"><div class="ml">Остаток</div><div class="mv" style="color:var(--org)">${ost}</div></div>
-          <div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(num(prog))}">${prog}</div></div>
-        </div>
-        <div class="prog-row">
-          <span class="prog-l">${prc}</span>
-          <div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${pctClr(p)}"></div></div>
-          <span class="prog-r" style="color:${pctClr(p)}">${p}%</span>
+          <div class="mop-prog-track">
+            <div class="mop-prog-fill" style="width:${Math.min(p,100)}%;background:${pctClr(p)}"></div>
+          </div>
         </div>
       </div>`;
     }).join('');
@@ -1343,20 +1402,7 @@ function renderOtchet() {
     return ranked + kotelHTML;
   })();
 
-  const tot = `<div class="totals-box">
-    <div class="totals-lbl">ИТОГО ПО ОТДЕЛУ</div>
-    <div class="totals-row">
-      <div class="ti"><span class="tl">Все визиты</span><span class="tv">${allVis||'—'}</span></div>
-      <div class="ti"><span class="tl">Визиты 800</span><span class="tv">${vis800sum||'—'}</span></div>
-      <div class="ti"><span class="tl">Визиты 1200</span><span class="tv">${vis1200sum||'—'}</span></div>
-      <div class="ti"><span class="tl">Кредит</span><span class="tv" style="color:var(--acc)">${deptKred||'—'}</span></div>
-      <div class="ti"><span class="tl">Прогноз</span><span class="tv" style="color:${pctClr(parseInt(progOtdel))}">${progOtdel}</span></div>
-    </div>
-  </div>`;
-
-  // Суммарные показатели отдела — удалены (теперь считаются выше)
-
-  el.innerHTML = `${deptCard}<div class="sec-title">Менеджеры</div><div class="mops">${mops_html}</div>${tot}`;
+  if (elManagers) elManagers.innerHTML = `<div class="sec-title">Менеджеры</div><div class="mops">${mops_html}</div>`;
 }
 
 /* ══ RENDER: ЗП ══ */
@@ -1368,16 +1414,14 @@ function renderZP() {
   const mgrs   = raw.slice(2,12).filter(r => r[0]&&r[0].trim());
   const totRow = raw[12] || [];
 
-  // Котел — отображаем отдельно, не участвует в рейтинге
   const KOTEL_NAMES = ['котел','котёл','kotel'];
   const isKotel = (name) => KOTEL_NAMES.includes((name||'').toLowerCase().trim());
 
   const kotelRow = mgrs.find(r => isKotel(r[0]));
   const rankMgrs = mgrs.filter(r => !isKotel(r[0]));
 
-  // Парсим суммы и сортируем от большей к меньшей
   const parsed = rankMgrs.map(r => ({
-    name: r[0]||'—',
+    name: upperName(r[0]||'—'),
     raw:  r[1]||'0',
     n:    parseFloat(String(r[1]||'0').replace(/[^\d.]/g,''))||0,
   }));
@@ -1403,10 +1447,9 @@ function renderZP() {
     </div>`;
   }).join('');
 
-  // Котел отдельной строкой без ранга
   const kotelHTML = kotelRow ? `
     <div class="zp-row" style="opacity:.6;margin-top:8px">
-      <span class="zp-n" style="color:var(--txt2)">${kotelRow[0]}</span>
+      <span class="zp-n" style="color:var(--txt2)">${upperName(kotelRow[0])}</span>
       <div class="zp-bg"><div class="zp-fill" style="width:0%"></div></div>
       <span class="zp-a" style="color:var(--txt2)">${fmtRub(kotelRow[1])}</span>
     </div>` : '';
@@ -1451,7 +1494,6 @@ function renderGrafik() {
   const week     = weeks[_schedWeek];
   const weekDays = week.map(d => d.day);
 
-  // Шапка с числами и днями недели — одна на все группы
   const hdrs = week.map(d => {
     const isT = d.day === TODAY;
     return `<div class="sched-day-hdr${isT?' today':''}">
@@ -1472,7 +1514,7 @@ function renderGrafik() {
         }
         return colIdx >= 0 ? (r[colIdx]||'') : '';
       });
-      return { name: r[0], cells };
+      return { name: upperName(r[0]), cells };
     });
   }
 
@@ -1509,7 +1551,6 @@ function renderGrafik() {
     <div class="sched-group-title">${g2title}</div>
     ${buildCards(g2)}`;
 
-  // Sticky шапка — вне main, не скроллится
   const stickyEl = document.getElementById('grafik-sticky');
   const stickyInner = document.getElementById('grafik-sticky-inner');
   if (stickyEl && stickyInner) {
@@ -1521,7 +1562,6 @@ function renderGrafik() {
         <button class="sched-nav-btn" onclick="schedNav(1)"  ${nextDis}>›</button>
       </div>
       ${weekHeader}`;
-    // Точный top = header + nav
     const hdr = document.querySelector('header');
     const nav = document.getElementById('main-nav');
     if (hdr && nav) stickyEl.style.top = (hdr.offsetHeight + nav.offsetHeight) + 'px';
@@ -1533,65 +1573,77 @@ function schedNav(dir) {
   if (S.data.grafik) renderGrafik();
 }
 
-// Динамически вычисляем top для sticky блока графика
-function updateSchedStickyTop() {
-  const hdr = document.querySelector('header');
-  const nav = document.getElementById('main-nav');
-  if (!hdr || !nav) return;
-  const top = hdr.offsetHeight + nav.offsetHeight;
-  document.querySelectorAll('.sched-sticky').forEach(el => {
-    el.style.top = top + 'px';
-  });
-}
-
-/* ══ RENDER: ИНСТРУКЦИИ ══ */
-// Структура листа: строки сгруппированы кнопками +/-
-// Заголовок блока = строка с CAPS текстом в col A, col B пустая
-// Внутри блока: col A = Статус, col B = Критерии применения, col C = Обязательные действия
-// Для первого блока (РЕГЛАМЕНТ...) внутри могут быть вложенные подзаголовки
-
+/* ══ RENDER: ИНСТРУКЦИИ ══
+ * Структура листа:
+ *   Строка с CAPS текстом в col A, col B и C пустые → ЗАГОЛОВОК БЛОКА
+ *   Строки внутри блока с col A (CAPS) без B,C → ПОДЗАГОЛОВОК (вложенный спойлер)
+ *   Остальные строки — данные
+ *
+ * Первая встреченная CAPS-строка (например РЕГЛАМЕНТ…) является заголовком блока.
+ * Внутри этого блока следующие CAPS-строки (СТАТУСЫ ПЕРВИЧНОГО…) — вложенные подблоки.
+ */
 function renderInstruktsii() {
   const el  = document.getElementById('c-instruktsii');
   const raw = S.data.instruktsii;
   if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
 
-  // Парсим блоки
+  // Шаг 1: выявляем строки-заголовки верхнего уровня
+  // Заголовок верхнего уровня: col A CAPS, col B пустая, col C пустая
+  function isTopHeader(r) {
+    const a = (r[0]||'').trim();
+    const b = (r[1]||'').trim();
+    const c = (r[2]||'').trim();
+    return a && !b && !c && a === a.toUpperCase() && a.length > 4;
+  }
+
+  // Шаг 2: парсим блоки верхнего уровня
   const blocks = [];
   let cur = null;
+
   raw.forEach(r => {
     const a = (r[0]||'').trim();
     const b = (r[1]||'').trim();
     const c = (r[2]||'').trim();
-    if (!a && !b && !c) return;
+    if (!a && !b && !c) return; // пустая строка
 
-    // Заголовок блока: col A = CAPS, остальные пустые
-    if (a && !b && !c && a === a.toUpperCase() && a.length > 4) {
-      cur = { title:a, rows:[] };
+    if (isTopHeader(r)) {
+      cur = { title: a, rows: [] };
       blocks.push(cur);
       return;
     }
-    if (!cur) { cur = { title: a||'—', rows:[] }; blocks.push(cur); return; }
-    // строка данных
-    if (a || b || c) cur.rows.push({ status:a, criteria:b, action:c });
+    if (!cur) {
+      cur = { title: '—', rows: [] };
+      blocks.push(cur);
+    }
+    cur.rows.push({ status: a, criteria: b, action: c });
   });
 
   if (!blocks.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
 
-  // Определяем есть ли у блока 3 колонки или 2
-  function hasActions(blk) { return blk.rows.some(r => r.action) }
-
-  // Проверяем есть ли вложенные подзаголовки (CAPS строки без criteria/action внутри блока)
+  // Шаг 3: определяем, есть ли вложенные подзаголовки внутри блока
+  // Подзаголовок: status CAPS, criteria и action пустые
+  function isSubHeader(row) {
+    return row.status &&
+           !row.criteria &&
+           !row.action &&
+           row.status === row.status.toUpperCase() &&
+           row.status.length > 4;
+  }
   function hasSubs(blk) {
-    return blk.rows.some(r => r.status && !r.criteria && !r.action &&
-      r.status === r.status.toUpperCase() && r.status.length > 4);
+    return blk.rows.some(r => isSubHeader(r));
+  }
+  function hasActions(rows) {
+    return rows.some(r => r.action);
   }
 
   function buildTable(rows, withActions) {
+    const filtered = rows.filter(r => r.status || r.criteria);
+    if (!filtered.length) return '';
     const cols = withActions
       ? ['Статус','Критерии применения','Обязательные действия в CRM']
       : ['Статус','Критерии применения'];
     const ths = cols.map(c => `<th>${c}</th>`).join('');
-    const trs = rows.filter(r => r.status || r.criteria).map(r => {
+    const trs = filtered.map(r => {
       if (withActions) {
         return `<tr>
           <td>${r.status||'—'}</td>
@@ -1604,27 +1656,28 @@ function renderInstruktsii() {
         <td>${r.criteria||'—'}</td>
       </tr>`;
     }).join('');
-    return `<table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
+    return `<div class="instr-table-wrap"><table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
   }
 
-  function buildSubBlocks(blk) {
-    // разбиваем rows на подблоки по CAPS заголовкам
+  function buildSubBlocks(blk, blkId) {
     const subs = [];
     let curSub = null;
     blk.rows.forEach(r => {
-      if (r.status && !r.criteria && !r.action &&
-          r.status === r.status.toUpperCase() && r.status.length > 4) {
-        curSub = { title: r.status, rows:[] };
+      if (isSubHeader(r)) {
+        curSub = { title: r.status, rows: [] };
         subs.push(curSub);
       } else {
-        if (!curSub) { curSub = { title:'Содержание', rows:[] }; subs.push(curSub); }
+        if (!curSub) {
+          curSub = { title: 'Содержание', rows: [] };
+          subs.push(curSub);
+        }
         curSub.rows.push(r);
       }
     });
 
-    return subs.map((s,si) => {
-      const sid = 'is-' + blk._id + '-' + si;
-      const withA = hasActions(s);
+    return subs.map((s, si) => {
+      const sid = 'is-' + blkId + '-' + si;
+      const withA = hasActions(s.rows);
       return `<div class="instr-sub" id="${sid}">
         <div class="instr-sub-hdr" onclick="toggleSub('${sid}')">
           <span>${s.title}</span>
@@ -1635,11 +1688,12 @@ function renderInstruktsii() {
     }).join('');
   }
 
-  const html = blocks.map((b,i) => {
-    b._id = i;
-    const id = 'ib-'+i;
+  const html = blocks.map((b, i) => {
+    const id = 'ib-' + i;
     const nested = hasSubs(b);
-    const bodyContent = nested ? buildSubBlocks(b) : buildTable(b.rows, hasActions(b));
+    const bodyContent = nested
+      ? buildSubBlocks(b, i)
+      : buildTable(b.rows, hasActions(b.rows));
 
     return `<div class="instr-block" id="${id}">
       <div class="instr-hdr" onclick="toggleInstr('${id}')">
@@ -1658,9 +1712,7 @@ function toggleSub(id)   { document.getElementById(id)?.classList.toggle('open')
 
 /* ══ КОНФЕТТИ ══ */
 function burstConfetti(el, idx) {
-
   const isGold = idx === 0;
-
   const rect = el.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
   const cy = rect.top  + rect.height / 2;
@@ -1674,18 +1726,10 @@ function burstConfetti(el, idx) {
   if (isGold) {
     const flash = document.createElement('div');
     flash.style.cssText = `
-      position:fixed;
-      left:${cx}px;
-      top:${cy}px;
-      width:20px;
-      height:20px;
-      border-radius:50%;
-      background:radial-gradient(circle,#fff,#ffd700,#ffae00,transparent);
-      transform:translate(-50%,-50%);
-      pointer-events:none;
-      z-index:9999;
-      animation: flash 0.4s ease-out forwards;
-    `;
+      position:fixed;left:${cx}px;top:${cy}px;width:20px;height:20px;
+      border-radius:50%;background:radial-gradient(circle,#fff,#ffd700,#ffae00,transparent);
+      transform:translate(-50%,-50%);pointer-events:none;z-index:9999;
+      animation:flash 0.4s ease-out forwards;`;
     document.body.appendChild(flash);
     setTimeout(()=>flash.remove(),400);
   }
@@ -1698,44 +1742,32 @@ function burstConfetti(el, idx) {
   const radius = isGold ? 280 : 140;
 
   for (let i = 0; i < count; i++) {
-
     const piece = document.createElement('div');
-
     const angle = (i / count) * 2 * Math.PI;
     const dist = radius + (Math.random() - 0.5) * (isGold ? 40 : 20);
-
     const tx = Math.cos(angle) * dist;
     const ty = Math.sin(angle) * dist;
-
     const size = isGold ? (6 + Math.random()*10) : (4 + Math.random()*6);
     const dur  = isGold ? (0.8 + Math.random()*0.8) : (0.6 + Math.random()*0.6);
 
     piece.style.cssText = `
-      position:fixed;
-      left:${cx}px;
-      top:${cy}px;
-      width:${size}px;
-      height:${size}px;
+      position:fixed;left:${cx}px;top:${cy}px;
+      width:${size}px;height:${size}px;
       background:${colors[Math.floor(Math.random()*colors.length)]};
       border-radius:${Math.random()>0.5?'50%':'2px'};
-      pointer-events:none;
-      z-index:9999;
+      pointer-events:none;z-index:9999;
       transform:translate(0,0);
-      animation: firework ${dur}s ease-out forwards;
-      --tx:${tx}px;
-      --ty:${ty}px;
-    `;
-
+      animation:firework ${dur}s ease-out forwards;
+      --tx:${tx}px;--ty:${ty}px;`;
     document.body.appendChild(piece);
     setTimeout(()=>piece.remove(), dur*1000);
   }
 
-  // двойной взрыв только для 🥇
   if (isGold) {
     setTimeout(() => burstConfetti(el, 99), 120);
   }
 }
-  
+
 function openMopModal(dataStr) {
   const d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"'));
   const p = num(d.prc);
@@ -1749,7 +1781,7 @@ function openMopModal(dataStr) {
     <div class="mop-grid4" style="margin-bottom:12px">
       <div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div>
       <div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div>
-      <div class="m4"><div class="ml">Остаток</div><div class="mv" style="color:var(--org)">${d.ost}</div></div>
+      <div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div>
       <div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div>
     </div>
     <div class="prog-row" style="margin-bottom:16px">
@@ -1815,6 +1847,10 @@ document.getElementById('btn-out').addEventListener('click', onLogout);
 document.querySelectorAll('.tab').forEach(b =>
   b.addEventListener('click', () => goTab(b.dataset.tab))
 );
+document.querySelectorAll('.sub-tab').forEach(b =>
+  b.addEventListener('click', () => goSubTab(b.dataset.sub))
+);
+
 /* ══ INIT ══ */
 function init() {
   syncTheme();
@@ -1837,5 +1873,6 @@ function init() {
 if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
 else init();
 </script>
+
 </body>
 </html>

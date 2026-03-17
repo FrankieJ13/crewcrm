@@ -85,9 +85,6 @@ html,body {
 
 main { flex:1; overflow-y:auto }
 
-/* ── LAYOUT ── */
-#app { display:flex; flex-direction:column; height:100vh }
-
 /* общий контейнер ширины */
 .w {
   width:100%;
@@ -97,10 +94,8 @@ main { flex:1; overflow-y:auto }
   box-sizing:border-box;
 }
 
-main { flex:1; overflow-y:auto }
 .scr { display:none; padding:20px 0; animation:up .2s ease }
 .scr.on { display:block }
-.scr-inner { /* контент страниц тоже в .w */ }
 @keyframes up { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 
 /* ── HEADER ── */
@@ -130,15 +125,12 @@ header {
 .logo-sq span { background:#000; border-radius:1px }
 .logo-sq span:last-child { opacity:.4 }
 
-.hdr-right { display:flex; align-items:center; gap:6px }
-
 .badge-month {
   font-size:11px; padding:3px 9px; border-radius:20px;
   background:var(--bg3); border:1px solid var(--line2);
   color:var(--txt2); font-weight:500;
 }
 
-/* icon buttons (theme + refresh) */
 .btn-icon {
   width:30px; height:30px; border-radius:50%;
   background:var(--bg3); border:1px solid var(--line2);
@@ -179,7 +171,7 @@ nav {
   border-bottom:1px solid var(--line);
   overflow-x:auto; flex-shrink:0;
   position:sticky;
-  top:52px; /* высота header */
+  top:52px;
   z-index:99;
 }
 nav::-webkit-scrollbar { height:0 }
@@ -246,19 +238,21 @@ nav::-webkit-scrollbar { height:0 }
 }
 .empty { text-align:center; padding:48px 20px; color:var(--txt3); font-size:13px }
 
-/* ── ПОДВКЛАДКИ ОТЧЁТА ── */
+/* ── ПОДВКЛАДКИ ОТЧЁТА (в стиле основных вкладок) ── */
 .report-subtabs {
-  display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid var(--line); padding-bottom:8px;
+  display:flex; justify-content:center; gap:16px; margin-bottom:20px; border-bottom:1px solid var(--line); padding-bottom:4px;
 }
 .report-subtab {
-  padding:6px 14px; border-radius:20px; background:var(--bg3); border:1px solid var(--line2);
-  font-family:'Unbounded',sans-serif; font-size:10px; font-weight:800; letter-spacing:.04em;
-  color:var(--txt2); cursor:pointer; transition:all .15s;
+  padding:8px 0; white-space:nowrap;
+  font-family:'Unbounded',sans-serif;
+  font-size:13px; font-weight:800; letter-spacing:.03em;
+  color:var(--txt3); background:none; border:none;
+  border-bottom:2px solid transparent;
+  cursor:pointer; transition:color .15s, border-color .15s;
 }
 .report-subtab.active {
-  background:var(--acc-bg); border-color:var(--acc); color:var(--acc);
+  color:var(--acc); border-bottom-color:var(--acc);
 }
-.report-subtab:hover { border-color:var(--acc); color:var(--acc); }
 
 /* ── ОТЧЁТ: SUMMARY ── */
 .sum-grid {
@@ -296,14 +290,12 @@ body.light .mop {
   flex-shrink:0;
 }
 
-/* шапка мини-карточки */
 .mop-head {
   display:flex; align-items:center;
   justify-content:space-between; margin-bottom:12px;
 }
 .mop-head-left { display:flex; align-items:center; gap:7px }
 .mop-name { font-weight:600; font-size:14px; text-transform:uppercase; }
-/* кнопка i */
 .mop-info-btn {
   width:22px; height:22px; border-radius:50%;
   border:1px solid var(--line2); background:var(--bg3);
@@ -314,7 +306,6 @@ body.light .mop {
 }
 .mop-info-btn:hover { border-color:var(--acc); color:var(--acc) }
 
-/* мини 3 ячейки */
 .mop-mini {
   display:grid; grid-template-columns:repeat(3,1fr);
   gap:6px; margin-bottom:12px;
@@ -326,7 +317,6 @@ body.light .mop {
 .mm .ml { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px }
 .mm .mv { font-family:'Unbounded',sans-serif; font-size:14px; font-weight:800 }
 
-/* прогресс с градиентом */
 .mop-prog {
   position:relative;
 }
@@ -406,7 +396,6 @@ body.light .mop {
 .mop-modal-close:hover { border-color:var(--red); color:var(--red) }
 .mop-modal-body { padding:14px 16px }
 
-/* 4 ячейки в модалке */
 .mop-grid4 {
   display:grid; grid-template-columns:repeat(4,1fr);
   gap:6px; margin-bottom:12px;
@@ -465,16 +454,60 @@ body.light .mop {
   font-size:16px; font-weight:800; letter-spacing:-.02em;
 }
 .dept-cell.hi .dc-val { color:var(--acc) }
-.chips-wrap { display:flex; flex-direction:column; gap:5px }
-.chips-row { display:flex; flex-wrap:wrap; gap:5px }
-.chip {
-  font-size:10px; padding:3px 8px; border-radius:6px;
-  background:var(--bg3); border:1px solid var(--line);
-  color:var(--txt2); display:flex; align-items:center; gap:3px;
+
+/* ── КАРТОЧКА СВОДНОЙ ПО МЕНЕДЖЕРАМ (спидометры) ── */
+.speedo-grid {
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr));
+  gap:16px; margin-top:10px;
 }
-.chip strong { color:var(--txt); font-size:11px }
-.chip.c800  { border-color:rgba(30,144,255,.3) }
-.chip.c1200 { border-color:rgba(255,165,2,.3)  }
+.speedo-item {
+  text-align:center;
+}
+.speedo-svg-container {
+  position:relative;
+  width:100%;
+  max-width:110px;
+  margin:0 auto;
+}
+.speedo-svg-container svg {
+  width:100%;
+  height:auto;
+  display:block;
+}
+.speedo-value {
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -40%);
+  font-family:'Unbounded',sans-serif;
+  font-size:20px;
+  font-weight:900;
+  color:var(--txt);
+  line-height:1;
+}
+.speedo-name {
+  font-family:'Unbounded',sans-serif;
+  font-size:10px;
+  font-weight:700;
+  margin-top:4px;
+  text-transform:uppercase;
+  color:var(--txt2);
+}
+.base-path {
+  fill:none;
+  stroke:var(--line2);
+  stroke-width:20;
+  stroke-linecap:round;
+}
+.progress-path {
+  fill:none;
+  stroke-width:20;
+  stroke-linecap:round;
+  stroke:url(#speedGradient);
+}
+@media(max-width:480px) {
+  .speedo-grid { grid-template-columns:repeat(2,1fr); }
+}
 
 /* ── ИТОГИ ── */
 .totals-box {
@@ -529,10 +562,6 @@ body.light .zp-row {
   }
 }
 .zp-row:last-child { border-bottom:1px solid var(--line) }
-.zp-top {
-  display:flex; align-items:center;
-  justify-content:space-between; margin-bottom:8px;
-}
 .zp-bg { flex:1; height:3px; background:var(--line); border-radius:2px; overflow:hidden }
 .zp-fill { height:100%; border-radius:2px; transition:width .7s ease }
 .zp-a {
@@ -542,10 +571,8 @@ body.light .zp-row {
 }
 
 /* ── ГРАФИК — НЕДЕЛЬНЫЙ ВИД ── */
-/* Экран графика без верхнего паддинга */
 #scr-grafik { padding-top:0 }
 #scr-grafik .w { padding-top:8px }
-/* nav переключатель */
 .sched-nav {
   display:flex; align-items:center; justify-content:space-between;
   padding-top:10px; margin-bottom:10px; gap:12px;
@@ -565,7 +592,6 @@ body.light .zp-row {
 .sched-nav-btn:hover { border-color:var(--acc); color:var(--acc) }
 .sched-nav-btn:disabled { opacity:.3; cursor:default; pointer-events:none }
 
-/* числа и дни недели — одна строка для обеих групп */
 .sched-week {
   display:grid; grid-template-columns:repeat(7,1fr);
   gap:4px;
@@ -589,7 +615,6 @@ body.light .zp-row {
 .sched-day-hdr.today .sd-num { color:var(--acc) }
 .sched-day-hdr.today .sd-dow { color:var(--acc) }
 
-/* заголовок группы — ПОСЛЕ чисел, перед карточками */
 .sched-group-title {
   font-family:'Unbounded',sans-serif;
   font-size:10px; font-weight:800; letter-spacing:.1em;
@@ -654,7 +679,6 @@ body.light .zp-row {
 }
 .instr-block.open > .instr-body { display:block }
 
-/* таблица внутри инструкции с горизонтальным скроллом */
 .table-scroll { overflow-x: auto; margin:0 -1px; }
 .instr-table {
   width:100%; border-collapse:collapse; font-size:13px; min-width:600px;
@@ -676,11 +700,10 @@ body.light .zp-row {
 .instr-table td:first-child {
   font-weight:600; color:var(--txt);
   white-space:nowrap; width:200px;
+  border-right:1px solid var(--line);
 }
-.instr-table td:first-child { border-right:1px solid var(--line) }
 body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
 
-/* вложенный спойлер */
 .instr-sub {
   border-top:1px solid var(--line);
 }
@@ -702,13 +725,6 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
 .instr-sub-body { display:none }
 .instr-sub.open .instr-sub-body { display:block }
 
-/* имена менеджеров везде — Unbounded */
-.mop-name, .zp-n { font-family:'Unbounded',sans-serif; font-weight:700 }
-
-/* цифры в отчёте — нейтральный цвет (txt) */
-.mm .mv, .m4 .mv, .mop-prog-labels .cur { color:var(--txt) }
-
-/* футер авторства */
 .page-footer {
   text-align:center;
   padding:24px 0 16px;
@@ -757,11 +773,10 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
     opacity: 0;
   }
 }
-
 @keyframes flash {
   0% { transform:translate(-50%,-50%) scale(0.5); opacity:1; }
   100% { transform:translate(-50%,-50%) scale(4); opacity:0; }
-} 
+}
 
 /* === LIQUID GLASS MODAL UPGRADE === */
 .mop-modal {
@@ -772,57 +787,32 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
   max-height:86vh;
   overflow:hidden;
   animation:mUp .22s ease;
-
   backdrop-filter: blur(25px) saturate(180%);
   -webkit-backdrop-filter: blur(25px) saturate(180%);
-
   border:1px solid rgba(255,255,255,0.2);
-
-  box-shadow:
-    0 20px 60px rgba(0,0,0,0.35),
-    inset 0 1px 0 rgba(255,255,255,0.25);
+  box-shadow:0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
 }
-
-body.light .mop-modal {
-  background: rgba(255,255,255,0.55);
-}
-
-body.dark .mop-modal {
-  background: rgba(18,18,18,0.55);
-}
-
+body.light .mop-modal { background: rgba(255,255,255,0.55); }
+body.dark .mop-modal { background: rgba(18,18,18,0.55); }
 .mop-modal::before {
   content:'';
   position:absolute;
   inset:0;
   border-radius:inherit;
-  background: linear-gradient(
-    120deg,
-    rgba(255,255,255,0.35) 0%,
-    rgba(255,255,255,0.15) 30%,
-    rgba(255,255,255,0.05) 60%,
-    transparent 100%
-  );
+  background: linear-gradient(120deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.15) 30%, rgba(255,255,255,0.05) 60%, transparent 100%);
   pointer-events:none;
 }
-
 .mop-modal::after {
   content:'';
   position:absolute;
   inset:0;
   border-radius:inherit;
-  background:
-    radial-gradient(circle at 20% 10%, rgba(255,255,255,0.25), transparent 40%),
-    radial-gradient(circle at 80% 90%, rgba(255,255,255,0.15), transparent 50%);
+  background: radial-gradient(circle at 20% 10%, rgba(255,255,255,0.25), transparent 40%),
+              radial-gradient(circle at 80% 90%, rgba(255,255,255,0.15), transparent 50%);
   pointer-events:none;
   opacity:.6;
 }
-
-.mop-modal-hdr {
-  background:transparent;
-  backdrop-filter: blur(10px);
-}
-
+.mop-modal-hdr { background:transparent; backdrop-filter: blur(10px); }
 </style>
 </head>
 <body>
@@ -883,7 +873,7 @@ body.dark .mop-modal {
 
   <nav id="main-nav" style="display:none">
     <div class="nav-inner">
-      <button class="tab on" data-tab="otchet"><span class="tab-dot"></span>ОТЧЁТЫ</button>
+      <button class="tab on" data-tab="otchet"><span class="tab-dot"></span>ОТЧЁТ</button>
       <button class="tab" data-tab="zp"><span class="tab-dot"></span>ЗП</button>
       <button class="tab" data-tab="grafik"><span class="tab-dot"></span>ГРАФИК</button>
       <button class="tab" data-tab="instruktsii"><span class="tab-dot"></span>FAQ</button>
@@ -981,7 +971,6 @@ function showScr(id) {
     document.getElementById('scr-'+t).classList.remove('on')
   );
   document.getElementById('scr-'+id)?.classList.add('on');
-  // Показываем/скрываем sticky шапку графика
   const gs = document.getElementById('grafik-sticky');
   if (gs) gs.style.display = id === 'grafik' ? '' : 'none';
 }
@@ -994,19 +983,16 @@ function fmtRub(v) {
 }
 function pctClr(p) { return p>=100?'var(--grn)':p>=60?'var(--org)':'var(--red)' }
 
-// Плавный градиент: 0=лучший(зелёный) → 1=худший(красный), яркие насыщенные цвета
 function rankColor(pos, total) {
   if (total <= 1) return { r:0, g:230, b:90 };
-  const t = pos / (total - 1); // 0..1
+  const t = pos / (total - 1);
   let r, g, b;
   if (t <= 0.5) {
-    // ярко-зелёный (#00e65a) → жёлтый (#ffe000)
     const f = t * 2;
     r = Math.round(0   + (255 - 0)   * f);
     g = Math.round(230 + (224 - 230) * f);
     b = Math.round(90  + (0   - 90)  * f);
   } else {
-    // жёлтый (#ffe000) → ярко-красный (#ff2828)
     const f = (t - 0.5) * 2;
     r = Math.round(255 + (255 - 255) * f);
     g = Math.round(224 + (40  - 224) * f);
@@ -1023,8 +1009,6 @@ function rankStyles(pos, total) {
   return { color, border, badgeBg };
 }
 function loader() { return `<div class="loader"><div class="spin"></div><span>Загружаем…</span></div>` }
-
-const ICON_REFRESH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>`;
 
 /* ══ AUTH ══ */
 let tokenClient;
@@ -1158,31 +1142,22 @@ function renderTab(tab) {
   else if (tab==='instruktsii') renderInstruktsii();
 }
 
-/* ══ RENDER: ОТЧЁТ с подвкладками ══ */
+/* ══ RENDER: ОТЧЁТ с подвкладками и новыми карточками ══ */
 function renderOtchet() {
   const el  = document.getElementById('c-otchet');
   const raw = S.data.otchet;
   if (!raw || raw.length < 4) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
 
-  // По скриншоту точная раскладка столбцов:
-  // A(0)МОП B(1)виз800 C(2)виз1200 D(3)план E(4)ост F(5)% G(6)прогноз H(7)все_виз
-  // 800:  I(8)=кредит  J(9)=наличка  K(10)=trade-in  L(11)=комиссия
-  // 1200: M(12)=кредит N(13)=наличка O(14)=trade-in  P(15)=комиссия
-  // Q(16)=задаток R(17)=луна S(18)=ТЛ T(19)=в_салоне U(20)=ДНИ V(21)=ДАТА
+  const mgrRows = raw.slice(3, 12).filter(r => r[0] && r[0].trim());
+  const kot     = raw[13] || [];
+  const totRow  = raw[14] || [];
 
-  const mgrRows = raw.slice(3, 12).filter(r => r[0] && r[0].trim()); // строки 4-12
-  const kot     = raw[13] || []; // строка 14 = КОТЕЛ
-  const totRow  = raw[14] || []; // строка 15 = ВСЕГО
-
-  // ВИЗИТЫ = SUM(B4:C12) + (B14+C14) котёл
   const vis800sum  = raw.slice(3,12).reduce((s,r) => s + num(r[1]), 0) + num(kot[1]);
   const vis1200sum = raw.slice(3,12).reduce((s,r) => s + num(r[2]), 0) + num(kot[2]);
   const allVis     = vis800sum + vis1200sum;
 
-  // ПЛАН отдела
   const planTotal = num(totRow[3]);
 
-  // ПРОГНОЗ ОТДЕЛА
   const mo  = parseInt(SUFFIX.slice(0,2));
   const yr  = 2000 + parseInt(SUFFIX.slice(2,4));
   const dim = new Date(yr, mo, 0).getDate();
@@ -1194,14 +1169,9 @@ function renderOtchet() {
     const target = (planTotal / dim) * dp;
     progOtdel = Math.round(allVis / target * 100) + '%';
   }
-  const dpStr = dp || '—';
 
-  // КАРТОЧКА ОТДЕЛА
-  // Кредит   = SUM(I4:I12)+I14  + SUM(M4:M12)+M14  = col8  + col12
   const deptKred = raw.slice(3,12).reduce((s,r) => s + num(r[8])  + num(r[12]), 0) + num(kot[8])  + num(kot[12]);
-  // Наличка  = SUM(J4:J12)+J14  + SUM(N4:N12)+N14  = col9  + col13
   const deptNal  = raw.slice(3,12).reduce((s,r) => s + num(r[9])  + num(r[13]), 0) + num(kot[9])  + num(kot[13]);
-  // Комиссия = SUM(L4:L12)+L14  + SUM(P4:P12)+P14  = col11 + col15
   const deptKom  = raw.slice(3,12).reduce((s,r) => s + num(r[11]) + num(r[15]), 0) + num(kot[11]) + num(kot[15]);
 
   const deptCard = `
@@ -1237,59 +1207,95 @@ function renderOtchet() {
     </div>
   </div>`;
 
+  const dozhimCard = `
+    <div class="dept-card" style="opacity:0.7">
+      <div class="dept-title">ОТДЕЛ ДОЖИМ</div>
+      <div class="dept-row1">
+        <div class="dept-cell"><div class="dc-lbl">Визиты</div><div class="dc-val">—</div></div>
+        <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">—</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val">—</div></div>
+      </div>
+      <div class="dept-row2">
+        <div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">—</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">—</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Комиссия</div><div class="dc-val">—</div></div>
+      </div>
+    </div>`;
+
+  const KOTEL = ['котел','котёл','kotel'];
+  const isKotel = n => KOTEL.includes((n||'').toLowerCase().trim());
+  const allMgrs = mgrRows.filter(r => !isKotel(r[0]));
+  const kotelRows = mgrRows.filter(r => isKotel(r[0]));
+
+  const speedoItems = allMgrs.map(r => {
+    const name = (r[0]||'—').toUpperCase();
+    const visits = num(r[7]) || 0;
+    const plan = num(r[3]) || 1;
+    const percent = Math.min(visits / plan, 1);
+    return { name, visits, plan, percent };
+  }).concat(kotelRows.map(r => {
+    const name = (r[0]||'—').toUpperCase();
+    const visits = num(r[7]) || 0;
+    const plan = num(r[3]) || 1;
+    const percent = Math.min(visits / plan, 1);
+    return { name, visits, plan, percent };
+  }));
+
+  const speedoHTML = speedoItems.map((item, idx) => {
+    const progressId = `progress-${idx}`;
+    return `
+      <div class="speedo-item">
+        <div class="speedo-svg-container">
+          <svg viewBox="0 0 200 200">
+            <defs>
+              <linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#eb4d4b" />
+                <stop offset="50%" stop-color="#fbad33" />
+                <stop offset="100%" stop-color="#27ae60" />
+              </linearGradient>
+            </defs>
+            <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160" />
+            <path id="${progressId}" class="progress-path" stroke="url(#speedGradient)" d="M 40 160 A 85 85 0 1 1 160 160" />
+          </svg>
+          <div class="speedo-value">${item.visits}</div>
+        </div>
+        <div class="speedo-name">${item.name}</div>
+      </div>`;
+  }).join('');
+
+  const speedoCard = `
+    <div class="dept-card" style="margin-top:16px;">
+      <div class="dept-title">СВОДНАЯ ПО МЕНЕДЖЕРАМ</div>
+      <div class="speedo-grid">${speedoHTML}</div>
+    </div>`;
+
   const mops_html = (() => {
-    const KOTEL = ['котел','котёл','kotel'];
-    const isKotel = n => KOTEL.includes((n||'').toLowerCase().trim());
-
-    // Разделяем: обычные менеджеры и котёл
     const rankRows  = mgrRows.filter(r => !isKotel(r[0]));
-    const kotelRows = mgrRows.filter(r =>  isKotel(r[0]));
+    const kotelRows = mgrRows.filter(r => isKotel(r[0]));
 
-    // Извлекаем числовой прогноз для сортировки
     const withProg = rankRows.map(r => {
       const progStr = r[6]||'0%';
       const progNum = parseFloat(progStr.replace('%','').replace(',','.')) || 0;
       return { r, progNum };
     });
-
-    // Сортируем по прогнозу — от лучшего к худшему
     withProg.sort((a, b) => b.progNum - a.progNum);
-
     const total = withProg.length;
 
     const ranked = withProg.map(({ r, progNum }, idx) => {
       const name     = (r[0]||'—').toUpperCase();
-      const v800     = r[1]||'0', v1200  = r[2]||'0';
       const rplan    = r[3]||'0', ost    = r[4]||'0';
       const prc      = r[5]||'0%', prog   = r[6]||'0%';
       const allV     = r[7]||'0';
-      const kred800  = r[8]||'0';
-      const nal800   = r[9]||'0';
-      const td800    = r[10]||'0';
-      const kom800   = r[11]||'0';
-      const kred1200 = r[12]||'0';
-      const nal1200  = r[13]||'0';
-      const td1200   = r[14]||'0';
-      const kom1200  = r[15]||'0';
-      const zadatok  = r[16]||'0';
       const p = num(prc);
-
-      // Новые поля: T(19)=в_салоне, W(22)=ксо, X(23)=фссп, Y(24)=в_банке, Z(25)=отказ
-      const vsalone  = r[19]||'0'; // T
-      const vkso     = r[22]||'0'; // W
-      const vfSSP    = r[23]||'0'; // X
-      const vbanke   = r[24]||'0'; // Y
-      const otkaz    = r[25]||'0'; // Z
-
       const rs    = rankStyles(idx, total);
       const medal = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'';
       const fillGrad = `linear-gradient(90deg, ${rs.color} 0%, ${rs.color} 100%)`;
 
       const modalData = JSON.stringify({
-        name, v800, v1200, rplan, ost, prc, prog, allV,
-        kred800, nal800, td800, kom800,
-        kred1200, nal1200, td1200, kom1200,
-        zadatok, vsalone, vkso, vfSSP, vbanke, otkaz,
+        name, v800:r[1], v1200:r[2], rplan, ost, prc, prog, allV,
+        kred800:r[8], nal800:r[9], td800:r[10], kom800:r[11],
+        kred1200:r[12], nal1200:r[13], td1200:r[14], kom1200:r[15],
+        zadatok:r[16], vsalone:r[19], vkso:r[22], vfSSP:r[23], vbanke:r[24], otkaz:r[25],
         rs, medal, idx: idx+1
       }).replace(/'/g,"&#39;");
 
@@ -1320,10 +1326,8 @@ function renderOtchet() {
       </div>`;
     }).join('');
 
-    // Котёл — показываем отдельно без ранга и цвета
     const kotelHTML = kotelRows.map(r => {
       const name  = (r[0]||'—').toUpperCase();
-      const v800  = r[1]||'0', v1200 = r[2]||'0';
       const rplan = r[3]||'0', ost   = r[4]||'0';
       const prc   = r[5]||'0%', prog  = r[6]||'0%';
       const allV  = r[7]||'0';
@@ -1348,7 +1352,6 @@ function renderOtchet() {
         </div>
       </div>`;
     }).join('');
-
     return ranked + kotelHTML;
   })();
 
@@ -1363,18 +1366,16 @@ function renderOtchet() {
     </div>
   </div>`;
 
-  // Подвкладки
   const subtabs = `
     <div class="report-subtabs">
       <span class="report-subtab ${S.reportTab==='dept'?'active':''}" onclick="setReportTab('dept')">ОТДЕЛ</span>
       <span class="report-subtab ${S.reportTab==='mgr'?'active':''}" onclick="setReportTab('mgr')">МЕНЕДЖЕРЫ</span>
       <span class="report-subtab ${S.reportTab==='dozhim'?'active':''}" onclick="setReportTab('dozhim')">ДОЖИМ</span>
-    </div>
-  `;
+    </div>`;
 
   let content = '';
   if (S.reportTab === 'dept') {
-    content = deptCard + tot;
+    content = deptCard + dozhimCard + speedoCard;
   } else if (S.reportTab === 'mgr') {
     content = `<div class="sec-title">Менеджеры</div><div class="mops">${mops_html}</div>`;
   } else {
@@ -1382,6 +1383,28 @@ function renderOtchet() {
   }
 
   el.innerHTML = subtabs + content;
+
+  // Анимация спидометров
+  if (S.reportTab === 'dept') {
+    speedoItems.forEach((item, idx) => {
+      const progressPath = document.getElementById(`progress-${idx}`);
+      if (!progressPath) return;
+      const length = progressPath.getTotalLength();
+      const targetPercent = item.percent;
+      progressPath.style.strokeDasharray = `0, ${length}`;
+      let start = null;
+      function animate(ts) {
+        if (!start) start = ts;
+        const elapsed = ts - start;
+        const progress = Math.min(elapsed / 2000, 1);
+        const ease = 1 - Math.pow(1 - progress, 4);
+        const currentStroke = ease * (length * targetPercent);
+        progressPath.style.strokeDasharray = `${currentStroke}, ${length}`;
+        if (progress < 1) requestAnimationFrame(animate);
+      }
+      requestAnimationFrame(animate);
+    });
+  }
 }
 
 function setReportTab(tab) {
@@ -1398,14 +1421,12 @@ function renderZP() {
   const mgrs   = raw.slice(2,12).filter(r => r[0]&&r[0].trim());
   const totRow = raw[12] || [];
 
-  // Котел — отображаем отдельно, не участвует в рейтинге
   const KOTEL_NAMES = ['котел','котёл','kotel'];
   const isKotel = (name) => KOTEL_NAMES.includes((name||'').toLowerCase().trim());
 
   const kotelRow = mgrs.find(r => isKotel(r[0]));
   const rankMgrs = mgrs.filter(r => !isKotel(r[0]));
 
-  // Парсим суммы и сортируем от большей к меньшей
   const parsed = rankMgrs.map(r => ({
     name: (r[0]||'—').toUpperCase(),
     raw:  r[1]||'0',
@@ -1433,7 +1454,6 @@ function renderZP() {
     </div>`;
   }).join('');
 
-  // Котел отдельной строкой без ранга
   const kotelHTML = kotelRow ? `
     <div class="zp-row" style="opacity:.6;margin-top:8px">
       <span class="zp-n" style="color:var(--txt2)">${(kotelRow[0]||'').toUpperCase()}</span>
@@ -1481,7 +1501,6 @@ function renderGrafik() {
   const week     = weeks[_schedWeek];
   const weekDays = week.map(d => d.day);
 
-  // Шапка с числами и днями недели — одна на все группы
   const hdrs = week.map(d => {
     const isT = d.day === TODAY;
     return `<div class="sched-day-hdr${isT?' today':''}">
@@ -1539,7 +1558,6 @@ function renderGrafik() {
     <div class="sched-group-title">${g2title}</div>
     ${buildCards(g2)}`;
 
-  // Sticky шапка — вне main, не скроллится
   const stickyEl = document.getElementById('grafik-sticky');
   const stickyInner = document.getElementById('grafik-sticky-inner');
   if (stickyEl && stickyInner) {
@@ -1551,7 +1569,6 @@ function renderGrafik() {
         <button class="sched-nav-btn" onclick="schedNav(1)"  ${nextDis}>›</button>
       </div>
       ${weekHeader}`;
-    // Точный top = header + nav
     const hdr = document.querySelector('header');
     const nav = document.getElementById('main-nav');
     if (hdr && nav) stickyEl.style.top = (hdr.offsetHeight + nav.offsetHeight) + 'px';
@@ -1563,24 +1580,12 @@ function schedNav(dir) {
   if (S.data.grafik) renderGrafik();
 }
 
-// Динамически вычисляем top для sticky блока графика
-function updateSchedStickyTop() {
-  const hdr = document.querySelector('header');
-  const nav = document.getElementById('main-nav');
-  if (!hdr || !nav) return;
-  const top = hdr.offsetHeight + nav.offsetHeight;
-  document.querySelectorAll('.sched-sticky').forEach(el => {
-    el.style.top = top + 'px';
-  });
-}
-
 /* ══ RENDER: ИНСТРУКЦИИ с вложенностью и горизонтальным скроллом ══ */
 function renderInstruktsii() {
   const el  = document.getElementById('c-instruktsii');
   const raw = S.data.instruktsii;
   if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
 
-  // Парсим блоки с поддержкой вложенных подзаголовков
   const blocks = [];
   let currentBlock = null;
   let currentSub = null;
@@ -1591,7 +1596,6 @@ function renderInstruktsii() {
     const c = (r[2]||'').trim();
     if (!a && !b && !c) return;
 
-    // Заголовок верхнего уровня: колонка A не пустая, B и C пустые, текст в верхнем регистре (длина >4)
     if (a && !b && !c && a === a.toUpperCase() && a.length > 4) {
       currentBlock = { title: a, subs: [], rows: [] };
       blocks.push(currentBlock);
@@ -1599,20 +1603,17 @@ function renderInstruktsii() {
       return;
     }
 
-    // Если это подзаголовок (верхний регистр, пустые B/C) и есть текущий блок
     if (a && !b && !c && a === a.toUpperCase() && a.length > 4 && currentBlock) {
       currentSub = { title: a, rows: [] };
       currentBlock.subs.push(currentSub);
       return;
     }
 
-    // Обычная строка данных
     if (currentSub) {
       currentSub.rows.push({ status: a, criteria: b, action: c });
     } else if (currentBlock) {
       currentBlock.rows.push({ status: a, criteria: b, action: c });
     } else {
-      // Если блок ещё не начат, создаём анонимный
       currentBlock = { title: a||'—', subs: [], rows: [] };
       blocks.push(currentBlock);
       currentBlock.rows.push({ status: a, criteria: b, action: c });
@@ -1684,9 +1685,7 @@ function toggleSub(id)   { document.getElementById(id)?.classList.toggle('open')
 
 /* ══ КОНФЕТТИ ══ */
 function burstConfetti(el, idx) {
-
   const isGold = idx === 0;
-
   const rect = el.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
   const cy = rect.top  + rect.height / 2;
@@ -1724,15 +1723,11 @@ function burstConfetti(el, idx) {
   const radius = isGold ? 280 : 140;
 
   for (let i = 0; i < count; i++) {
-
     const piece = document.createElement('div');
-
     const angle = (i / count) * 2 * Math.PI;
     const dist = radius + (Math.random() - 0.5) * (isGold ? 40 : 20);
-
     const tx = Math.cos(angle) * dist;
     const ty = Math.sin(angle) * dist;
-
     const size = isGold ? (6 + Math.random()*10) : (4 + Math.random()*6);
     const dur  = isGold ? (0.8 + Math.random()*0.8) : (0.6 + Math.random()*0.6);
 
@@ -1751,12 +1746,10 @@ function burstConfetti(el, idx) {
       --tx:${tx}px;
       --ty:${ty}px;
     `;
-
     document.body.appendChild(piece);
     setTimeout(()=>piece.remove(), dur*1000);
   }
 
-  // двойной взрыв только для 🥇
   if (isGold) {
     setTimeout(() => burstConfetti(el, 99), 120);
   }

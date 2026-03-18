@@ -31,7 +31,7 @@ if ('serviceWorker' in navigator) {
   --line:    #252525;
   --line2:   #2e2e2e;
   --txt:     #f0f0f0;
-  --txt2:    #aaa;        /* более светлый для тёмной темы */
+  --txt2:    #aaa;
   --txt3:    #444;
   --acc:     #e8ff47;
   --acc-bg:  rgba(232,255,71,.08);
@@ -53,7 +53,7 @@ body.light {
   --txt:     #111;
   --txt2:    #666;
   --txt3:    #aaa;
-  --acc:     #5137dd;      /* новый цвет для светлой темы */
+  --acc:     #5137dd;
   --acc-bg:  rgba(81,55,221,.12);
   --acc-bdr: rgba(81,55,221,.4);
   --red:     #d93535;
@@ -119,7 +119,7 @@ header {
   font-family:'Unbounded',sans-serif;
   font-size:12px; font-weight:800; letter-spacing:.06em;
   display:flex; align-items:center; gap:8px;
-  cursor:pointer;  /* кликабельный */
+  cursor:pointer;
 }
 .logo-sq {
   width:22px; height:22px; border-radius:5px;
@@ -218,7 +218,8 @@ nav::-webkit-scrollbar { height:0 }
 .sec-title {
   font-family:'Unbounded',sans-serif;
   font-size:10px; font-weight:800; letter-spacing:.1em;
-  text-transform:uppercase; color:var(--txt2);
+  text-transform:uppercase;
+  color:var(--acc);
   margin-bottom:12px;
   display:flex; align-items:center; gap:8px;
 }
@@ -244,14 +245,13 @@ nav::-webkit-scrollbar { height:0 }
 
 /* ── ПОДВКЛАДКИ ОТЧЁТА (sticky) ── */
 .report-subtabs {
-  display:flex; justify-content:center; gap:16px; margin-bottom:20px; border-bottom:1px solid var(--line); padding-bottom:4px;
+  display:flex; justify-content:center; gap:16px; margin-bottom:10px; border-bottom:1px solid var(--line); padding-bottom:4px;
   position:sticky; top:0; background:var(--bg); z-index:10;
 }
 .report-subtab {
   padding:6px 0; white-space:nowrap;
   font-family:'Unbounded',sans-serif;
-  font-size:12px;    /* уменьшен с 13px */
-  font-weight:800; letter-spacing:.03em;
+  font-size:12px; font-weight:800; letter-spacing:.03em;
   color:var(--txt3); background:none; border:none;
   border-bottom:2px solid transparent;
   cursor:pointer; transition:color .15s, border-color .15s;
@@ -361,14 +361,15 @@ body.light .mm { background:rgba(0,0,0,0.03); }
   transition:width .7s ease;
 }
 
-/* секции в модалке (без изменений) */
+/* секции в модалке */
 .modal-sec {
   margin-bottom:14px;
 }
 .modal-sec-title {
   font-family:'Unbounded',sans-serif;
   font-size:9px; font-weight:800; letter-spacing:.1em;
-  color:var(--txt2); margin-bottom:8px;
+  color:var(--acc);
+  margin-bottom:8px;
   display:flex; align-items:center; gap:8px;
 }
 .modal-sec-title::after { content:''; flex:1; height:1px; background:var(--line2) }
@@ -473,18 +474,19 @@ body.light .mop-modal { background: rgba(255,255,255,0.55); }
 
 /* ── КАРТОЧКА ОТДЕЛА ── */
 .dept-card {
-  background: rgba(var(--acc-r), var(--acc-g), var(--acc-b), 0.08); /* будет заменяться скриптом, но пока оставим */
+  background: rgba(var(--acc-r), var(--acc-g), var(--acc-b), 0.08);
   border:1px solid var(--acc-bdr);
   border-radius:var(--r2); padding:14px 16px;
   margin-bottom:16px;
 }
-.dept-card .dept-title {
+.dept-title {
   font-family:'Unbounded',sans-serif;
   font-size:10px; font-weight:800; letter-spacing:.1em;
-  color:var(--acc); margin-bottom:12px;
+  color:var(--acc);
+  margin-bottom:12px;
   display:flex; align-items:center; gap:8px;
 }
-.dept-card .dept-title::after { content:''; flex:1; height:1px; background:var(--acc-bdr) }
+.dept-title::after { content:''; flex:1; height:1px; background:var(--acc-bdr) }
 .dept-row1, .dept-row2 {
   display:grid; gap:8px; margin-bottom:8px;
 }
@@ -505,12 +507,11 @@ body.light .dept-cell { background:rgba(0,0,0,0.02); }
   font-size:16px; font-weight:800; letter-spacing:-.02em;
   color:var(--txt);
 }
-/* убираем цветной класс, если он есть */
 .dept-cell.hi .dc-val { color:var(--txt); }
 
 /* ── КАРТОЧКА ПРОГНОЗОВ ПО МЕНЕДЖЕРАМ (спидометры) ── */
 .speedo-grid {
-  display:grid; grid-template-columns:repeat(auto-fill, minmax(70px, 1fr));
+  display:grid; grid-template-columns:repeat(3, 1fr);
   gap:16px; margin-top:10px;
 }
 .speedo-item {
@@ -521,13 +522,12 @@ body.light .dept-cell { background:rgba(0,0,0,0.02); }
   width:100%;
   max-width:70px;
   margin:0 auto;
-  /* фон убран полностью */
   background: transparent;
   backdrop-filter: none;
 }
 .speedo-svg-container::before,
 .speedo-svg-container::after {
-  display: none; /* отключаем псевдоэлементы */
+  display: none;
 }
 .speedo-svg-container svg {
   width:100%;
@@ -541,7 +541,7 @@ body.light .dept-cell { background:rgba(0,0,0,0.02); }
   left:50%;
   transform:translate(-50%, -50%);
   font-family:'Unbounded',sans-serif;
-  font-size:13px;   /* уменьшено с 16px */
+  font-size:12px;
   font-weight:900;
   color:var(--txt);
   line-height:1;
@@ -552,7 +552,7 @@ body.light .dept-cell { background:rgba(0,0,0,0.02); }
   left:50%;
   transform:translate(-50%, -50%);
   font-family:'Golos Text',sans-serif;
-  font-size:10px;   /* увеличено с 8px */
+  font-size:10px;
   font-weight:500;
   color:var(--txt2);
   white-space:nowrap;
@@ -578,7 +578,7 @@ body.light .dept-cell { background:rgba(0,0,0,0.02); }
   stroke:url(#speedGradient);
 }
 @media(max-width:480px) {
-  .speedo-grid { grid-template-columns:repeat(3,1fr); }
+  .speedo-grid { grid-template-columns:repeat(2,1fr); }
 }
 
 /* ── ИТОГИ ── */
@@ -602,7 +602,7 @@ body.light .dept-cell { background:rgba(0,0,0,0.02); }
 .ti .tl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em }
 .ti .tv { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:700 }
 
-/* ── ДОХОД (бывшая ЗП) ── */
+/* ── ДОХОД ── */
 .zp-banner {
   background:rgba(var(--acc-r), var(--acc-g), var(--acc-b), 0.15); border:1px solid var(--acc-bdr);
   border-radius:var(--r2); padding:18px;
@@ -635,7 +635,7 @@ body.light .zp-row {
   flex-shrink:0; text-align:right;
 }
 
-/* ── ГРАФИК — НЕДЕЛЬНЫЙ ВИД ── */
+/* ── ГРАФИК ── */
 #scr-grafik { padding-top:0 }
 #scr-grafik .w { padding-top:8px }
 .sched-nav {
@@ -683,7 +683,8 @@ body.light .zp-row {
 .sched-group-title {
   font-family:'Unbounded',sans-serif;
   font-size:10px; font-weight:800; letter-spacing:.1em;
-  color:var(--txt2); margin:14px 0 8px;
+  color:var(--acc);
+  margin:14px 0 8px;
   display:flex; align-items:center; gap:8px;
 }
 .sched-group-title::after { content:''; flex:1; height:1px; background:var(--line) }
@@ -727,7 +728,10 @@ body.light .zp-row {
   cursor:pointer; user-select:none; gap:10px; transition:background .15s;
 }
 .instr-hdr:hover { background:var(--bg3) }
-.instr-hdr h3 { font-weight:600; font-size:13px; line-height:1.4; flex:1 }
+.instr-hdr h3 {
+  font-weight:600; font-size:13px; line-height:1.4; flex:1;
+  color:var(--acc);
+}
 .instr-toggle {
   width:24px; height:24px; border-radius:50%;
   background:var(--bg3); border:1px solid var(--line2);
@@ -779,7 +783,7 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
   cursor:pointer; user-select:none; gap:8px; transition:background .15s;
 }
 .instr-sub-hdr:hover { background:var(--bg3) }
-.instr-sub-hdr span { font-weight:600; font-size:12px; flex:1; color:var(--txt) }
+.instr-sub-hdr span { font-weight:600; font-size:12px; flex:1; color:var(--acc) }
 .instr-sub-toggle {
   width:20px; height:20px; border-radius:50%;
   background:var(--bg3); border:1px solid var(--line2);
@@ -857,7 +861,6 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
       </div>
       <div class="hdr-right">
         <span class="badge-month" id="badge-month">—</span>
-        <!-- аккаунт -->
         <button class="btn-signin" id="btn-login" style="display:none">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 11h8.533c.044.385.067.78.067 1.184 0 3.37-1.17 6.22-3.207 8.154C15.553 22.124 13.9 23 12 23A11 11 0 1 1 12 1c2.95 0 5.56 1.113 7.522 2.934l-3.076 3.042C15.197 5.79 13.68 5 12 5a7 7 0 1 0 0 14c3.205 0 5.542-1.916 6.27-4.987H12v-3z"/></svg>
           Войти
@@ -866,7 +869,6 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
           <img id="user-avatar" src="" alt=""/>
           <span id="user-name"></span>
         </div>
-        <!-- обновить -->
         <button class="btn-icon" id="btn-refresh" title="Обновить">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/>
@@ -875,7 +877,6 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
             <path d="M8 16H3v5"/>
           </svg>
         </button>
-        <!-- тема -->
         <button class="btn-icon" id="btn-theme" title="Тема">
           <svg id="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
@@ -888,7 +889,6 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
             <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
           </svg>
         </button>
-        <!-- выход -->
         <button class="btn-icon" id="btn-out" style="display:none" title="Выйти">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -909,7 +909,6 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
     </div>
   </nav>
 
-  <!-- Sticky шапка графика -->
   <div id="grafik-sticky" style="display:none;background:var(--bg);border-bottom:1px solid var(--line);z-index:50;position:sticky;top:96px">
     <div class="w" style="padding-top:10px;padding-bottom:10px">
       <div id="grafik-sticky-inner"></div>
@@ -936,7 +935,6 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
   </main>
 </div>
 
-<!-- МОДАЛКА МЕНЕДЖЕРА -->
 <div class="mop-overlay" id="mop-overlay" onclick="closeMopModal(event)">
   <div class="mop-modal" id="mop-modal">
     <div class="mop-modal-hdr">
@@ -961,7 +959,7 @@ const SUFFIX = String(_now.getMonth()+1).padStart(2,'0') + String(_now.getFullYe
 const TODAY  = _now.getDate();
 const SHEETS = {
   otchet:      'ОТЧЁТ'   + SUFFIX,
-  dohod:       'ЗП'      + SUFFIX,      // лист по-прежнему называется "ЗП" + суффикс
+  dohod:       'ЗП'      + SUFFIX,
   grafik:      'ГРАФИКИ' + SUFFIX,
   instruktsii: 'ИНСТРУКЦИИ',
 };
@@ -972,7 +970,7 @@ const S = {
   token:null, 
   user:null, 
   data:{ otchet:null, dohod:null, grafik:null, instruktsii:null },
-  reportTab: 'dept' // 'dept', 'mgr', 'dozhim'
+  reportTab: 'dept'
 };
 
 /* ══ THEME ══ */
@@ -986,7 +984,6 @@ function setTheme(light) {
 }
 function syncTheme() { setTheme(document.body.classList.contains('light')) }
 
-/* ══ TOAST ══ */
 let _tt;
 function toast(msg, type='i') {
   const el = document.getElementById('toast');
@@ -994,7 +991,6 @@ function toast(msg, type='i') {
   clearTimeout(_tt); _tt = setTimeout(() => el.className='', 2600);
 }
 
-/* ══ SCREENS ══ */
 function showScr(id) {
   ['otchet','dohod','grafik','instruktsii'].forEach(t =>
     document.getElementById('scr-'+t).classList.remove('on')
@@ -1004,7 +1000,6 @@ function showScr(id) {
   if (gs) gs.style.display = id === 'grafik' ? '' : 'none';
 }
 
-/* ══ HELPERS ══ */
 function num(v) { return parseInt(v)||0 }
 function fmtRub(v) {
   const n = parseFloat(String(v||'').replace(/[^\d.,-]/g,'').replace(',','.'));
@@ -1039,7 +1034,6 @@ function rankStyles(pos, total) {
 }
 function loader() { return `<div class="loader"><div class="spin"></div><span>Загружаем…</span></div>` }
 
-/* ══ AUTH ══ */
 let tokenClient;
 
 function initAuth() {
@@ -1116,7 +1110,6 @@ function tryRestore() {
   return true;
 }
 
-/* ══ API ══ */
 async function api(sheet, range) {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/`
             + encodeURIComponent(sheet+'!'+range);
@@ -1134,7 +1127,6 @@ async function api(sheet, range) {
   return (await r.json()).values || [];
 }
 
-/* ══ TABS ══ */
 function goTab(tab) {
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab===tab));
   showScr(tab);
@@ -1171,7 +1163,6 @@ function renderTab(tab) {
   else if (tab==='instruktsii') renderInstruktsii();
 }
 
-/* ══ RENDER: ОТЧЁТ с подвкладками и новыми карточками ══ */
 function renderOtchet() {
   const el  = document.getElementById('c-otchet');
   const raw = S.data.otchet;
@@ -1203,11 +1194,10 @@ function renderOtchet() {
   const deptNal  = raw.slice(3,12).reduce((s,r) => s + num(r[9])  + num(r[13]), 0) + num(kot[9])  + num(kot[13]);
   const deptKom  = raw.slice(3,12).reduce((s,r) => s + num(r[11]) + num(r[15]), 0) + num(kot[11]) + num(kot[15]);
 
-  // Получаем rgb для акцентного цвета
   const accColor = getComputedStyle(document.body).getPropertyValue('--acc').trim();
-  let accR = 232, accG = 255, accB = 71; // значения по умолчанию для тёмной темы
+  let accR = 232, accG = 255, accB = 71;
   if (document.body.classList.contains('light')) {
-    accR = 81; accG = 55; accB = 221; // #5137dd
+    accR = 81; accG = 55; accB = 221;
   }
 
   const deptCard = `
@@ -1261,23 +1251,21 @@ function renderOtchet() {
   const KOTEL = ['котел','котёл','kotel'];
   const isKotel = n => KOTEL.includes((n||'').toLowerCase().trim());
 
-  // Подготовка данных для прогнозов по менеджерам (все, включая котёл)
   const allManagerRows = mgrRows.filter(r => !isKotel(r[0])).concat(mgrRows.filter(r => isKotel(r[0])));
   const managerStats = allManagerRows.map(r => {
     const name = (r[0]||'—').toUpperCase();
-    const visits = num(r[7]) || 0;           // все визиты
-    const plan = num(r[3]) || 1;              // план
-    const progStr = r[6] || '0%';              // прогноз (столбец G)
+    const visits = num(r[7]) || 0;
+    const plan = num(r[3]) || 1;
+    const progStr = r[6] || '0%';
     const progNum = parseFloat(progStr.replace('%','').replace(',','.')) || 0;
     return { name, visits, plan, progNum };
   });
 
-  // Сортировка по убыванию прогноза
   managerStats.sort((a, b) => b.progNum - a.progNum);
 
   const speedoHTML = managerStats.map((item, idx) => {
     const progressId = `progress-${idx}`;
-    const percent = Math.min(item.visits / item.plan, 1); // для дуги
+    const percent = Math.min(item.visits / item.plan, 1);
     return `
       <div class="speedo-item">
         <div class="speedo-svg-container">
@@ -1305,7 +1293,6 @@ function renderOtchet() {
       <div class="speedo-grid">${speedoHTML}</div>
     </div>`;
 
-  // Карточки менеджеров для подвкладки "МЕНЕДЖЕРЫ"
   const mops_html = (() => {
     const rankRows  = mgrRows.filter(r => !isKotel(r[0]));
     const kotelRows = mgrRows.filter(r => isKotel(r[0]));
@@ -1323,7 +1310,7 @@ function renderOtchet() {
       const rplan    = r[3]||'0', ost    = r[4]||'0';
       const prc      = r[5]||'0%', prog   = r[6]||'0%';
       const allV     = r[7]||'0';
-      const p = progNum; // используем прогноз для заполнения шкалы
+      const p = progNum;
       const rs    = rankStyles(idx, total);
       const medal = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'';
       const fillGrad = `linear-gradient(90deg, ${rs.color} 0%, ${rs.color} 100%)`;
@@ -1419,9 +1406,8 @@ function renderOtchet() {
     content = `<div class="empty">Раздел скоро появится</div>`;
   }
 
-  el.innerHTML = subtabs + content + tot; // итоги внизу для всех подвкладок
+  el.innerHTML = subtabs + content + tot;
 
-  // Анимация спидометров
   if (S.reportTab === 'dept') {
     managerStats.forEach((item, idx) => {
       const progressPath = document.getElementById(`progress-${idx}`);
@@ -1449,18 +1435,13 @@ function setReportTab(tab) {
   renderOtchet();
 }
 
-/* ══ Функция возврата на главную (клик по лого) ══ */
 function goHome() {
-  // Переключаемся на вкладку "ОТЧЁТ"
   const tabBtn = document.querySelector('.tab[data-tab="otchet"]');
   if (tabBtn) tabBtn.click();
-  // Сбрасываем подвкладку на "ОТДЕЛ"
   S.reportTab = 'dept';
-  // Если данные уже загружены, перерисовать
   if (S.data.otchet) renderOtchet();
 }
 
-/* ══ RENDER: ДОХОД (бывшая ЗП) ══ */
 function renderDohod() {
   const el  = document.getElementById('c-dohod');
   const raw = S.data.dohod;
@@ -1518,7 +1499,6 @@ function renderDohod() {
     <div class="zp-list">${rows}${kotelHTML}</div>`;
 }
 
-/* ══ RENDER: ГРАФИК (без изменений) ══ */
 const DOW = ['вс','пн','вт','ср','чт','пт','сб'];
 let _schedWeek = null;
 
@@ -1628,7 +1608,6 @@ function schedNav(dir) {
   if (S.data.grafik) renderGrafik();
 }
 
-/* ══ RENDER: ИНСТРУКЦИИ (исправленная иерархия) ══ */
 function renderInstruktsii() {
   const el = document.getElementById('c-instruktsii');
   const raw = S.data.instruktsii;
@@ -1647,10 +1626,9 @@ function renderInstruktsii() {
     const b = (r[1] || '').trim();
     const c = (r[2] || '').trim();
 
-    // Пропускаем полностью пустые строки
     if (!a && !b && !c) continue;
 
-    // Заголовок верхнего уровня: колонка A не пустая, B и C пустые, текст в верхнем регистре, длина > 4
+    // Заголовок верхнего уровня: A не пустая, B и C пустые, A в верхнем регистре, длина > 4
     if (a && !b && !c && a === a.toUpperCase() && a.length > 4) {
       currentBlock = { title: a, subs: [], rows: [] };
       blocks.push(currentBlock);
@@ -1658,7 +1636,7 @@ function renderInstruktsii() {
       continue;
     }
 
-    // Подзаголовок: колонка A в верхнем регистре, B и C пустые, и есть текущий блок
+    // Подзаголовок: A в верхнем регистре, B и C пустые, и есть текущий блок
     if (a && !b && !c && a === a.toUpperCase() && a.length > 4 && currentBlock) {
       currentSub = { title: a, rows: [] };
       currentBlock.subs.push(currentSub);
@@ -1757,7 +1735,6 @@ function toggleSub(id) {
   document.getElementById(id)?.classList.toggle('open');
 }
 
-/* ══ КОНФЕТТИ (золотой для лидера) ══ */
 function burstConfetti(el, idx) {
   const isGold = idx === 0;
   const rect = el.getBoundingClientRect();
@@ -1895,7 +1872,6 @@ function closeMopModal(e) {
   document.body.style.overflow = '';
 }
 
-/* ══ EVENTS ══ */
 document.getElementById('btn-theme').addEventListener('click', () =>
   setTheme(!document.body.classList.contains('light'))
 );
@@ -1910,7 +1886,6 @@ document.getElementById('btn-login').addEventListener('click', () => {
 document.getElementById('btn-out').addEventListener('click', onLogout);
 document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => goTab(b.dataset.tab)));
 
-/* ══ INIT ══ */
 function init() {
   syncTheme();
   function waitGoogle() {

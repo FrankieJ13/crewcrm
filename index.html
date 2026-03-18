@@ -64,7 +64,14 @@ body.light {
 body.light .m4 .ml { color:#fff }
 body.light .m4 .mv { color:#fff }
 
-/* ── ТЕНЬ ТЕКСТА ── */
+/* ── ТЕНЬ ТЕКСТА ТОЛЬКО ДЛЯ СВЕТЛОЙ ТЕМЫ (для имён и сумм) ── */
+body.light .zp-n,
+body.light .zp-a,
+body.light .zp-banner .zv {
+  text-shadow: 0 2px 5px rgba(0,0,0,0.6);
+}
+
+/* ── ТЕНЬ ТЕКСТА (общая) ── */
 body {
 text-shadow: 0 1px 3px rgba(0,0,0,0.25);
 }
@@ -101,7 +108,7 @@ transition:background .2s, color .2s;
   position: relative;
   z-index: 10;
 }
-main { flex:1; overflow-y:auto; position: relative; } /* важно для sticky потомков */
+main { flex:1; overflow-y:auto; position: relative; }
 .w {
 width:100%;
 max-width:720px;
@@ -145,7 +152,7 @@ display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:4px;
 font-size:11px; padding:3px 9px; border-radius:20px;
 background:var(--bg3); border:1px solid var(--line2);
 color:var(--txt2); font-weight:500;
-font-family: 'Unbounded', sans-serif; /* FIX: шрифт */
+font-family: 'Unbounded', sans-serif;
 }
 .btn-icon {
 width:30px; height:30px; border-radius:50%;
@@ -255,11 +262,11 @@ font-size:13px; margin-bottom:12px;
 }
 .empty { text-align:center; padding:48px 20px; color:var(--txt3); font-size:13px }
 
-/* ── ПОДВКЛАДКИ ОТЧЁТА (sticky) — теперь вне scr-otchet, закреплены под nav ── */
+/* ── ПЛАВАЮЩИЕ ПОДВКЛАДКИ ДЛЯ ОТЧЁТА (sticky) ── */
 #floating-subtabs {
-  display: none; /* по умолчанию скрыты */
+  display: none;
   position: sticky;
-  top: 96px; /* header 52px + nav ~44px (высота может варьироваться, подберите точно) */
+  top: 96px;
   background: var(--bg);
   border-bottom: 1px solid var(--line);
   z-index: 90;
@@ -582,7 +589,7 @@ backdrop-filter:blur(4px);
 .ti .tl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em }
 .ti .tv { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:700 }
 
-/* ── ДОХОД ── */
+/* ── ДОХОД ── (тень убрана из общих правил) */
 .zp-banner {
 border-radius:var(--r2); padding:18px;
 text-align:center; margin-bottom:16px;
@@ -596,7 +603,6 @@ border:1px solid var(--acc-bdr);
   font-weight:900; 
   color:var(--acc); 
   letter-spacing:-.02em;
-  text-shadow: 0 2px 5px rgba(0,0,0,0.6);
 }
 .zp-list { display:flex; flex-direction:column; gap:8px }
 .zp-n  {
@@ -604,7 +610,6 @@ font-family:'Unbounded',sans-serif;
 font-weight:700; font-size:13px;
 flex-shrink:0; min-width:80px;
 text-transform:uppercase;
-text-shadow: 0 2px 5px rgba(0,0,0,0.6); /* FIX: тень для имён */
 }
 .zp-row {
 display:flex; flex-direction:column;
@@ -621,16 +626,15 @@ background: rgba(var(--rank-r), var(--rank-g), var(--rank-b), 0.1);
 font-family:'Unbounded',sans-serif;
 font-size:13px; font-weight:700;
 flex-shrink:0; text-align:right;
-text-shadow: 0 2px 5px rgba(0,0,0,0.6);
 }
 
 /* ── МЕДАЛЬ — кнопка ── */
 .medal-btn {
-background:none; border:none; padding:0; /* убрали лишний отступ */
+background:none; border:none; padding:0;
 cursor:pointer; font-size:inherit; line-height:1;
 display:inline-flex; align-items:center;
 transition:transform .15s;
-margin-left: 2px; /* небольшой отступ, чтобы не слипалось */
+margin-left: 2px;
 }
 .medal-btn:hover { transform:scale(1.25); }
 
@@ -839,7 +843,7 @@ transition:all .25s; z-index:999; white-space:nowrap;
 .sum-grid  { grid-template-columns:1fr 1fr }
 .mop-grid4 { grid-template-columns:repeat(2,1fr) }
 header     { padding:0 12px }
-.scr       { padding:12px; } /* для мобильных оставляем отступы */
+.scr       { padding:12px; }
 .tab       { padding:10px 14px; font-size:13px; letter-spacing:.02em }
 }
 
@@ -949,7 +953,6 @@ body.light .glass {
     </div>
   </div>
 
-  <!-- Плавающая панель подвкладок для отчёта (появляется только при активной вкладке) -->
   <div id="floating-subtabs" class="report-subtabs" style="display:none;"></div>
 
   <main>
@@ -966,7 +969,6 @@ body.light .glass {
       </div>
     </div>
 
-    <!-- Вкладка ОТЧЁТ (без внутреннего контейнера для подвкладок) -->
     <div id="scr-otchet" class="scr">
       <div class="w">
         <div id="c-otchet"></div>
@@ -992,7 +994,6 @@ body.light .glass {
     </div>
   </main>
 
-  <!-- Общий футер для всех страниц -->
   <div class="page-footer">
     <div class="glitch" id="author" data-text="© Бочаров Ю.С., 2026">
         © Бочаров Ю.С., 2026
@@ -1064,14 +1065,9 @@ function showScr(id) {
   const gs = document.getElementById('grafik-sticky');
   if (gs) gs.style.display = id === 'grafik' ? '' : 'none';
 
-  // Управляем плавающей панелью подвкладок (только для отчёта)
   const floating = document.getElementById('floating-subtabs');
   if (floating) {
-    if (id === 'otchet') {
-      floating.style.display = 'flex'; // или 'block', но .report-subtabs уже flex
-    } else {
-      floating.style.display = 'none';
-    }
+    floating.style.display = id === 'otchet' ? 'flex' : 'none';
   }
 }
 
@@ -1109,9 +1105,6 @@ function rankStyles(pos, total) {
 }
 function loader() { return `<div class="loader"><div class="spin"></div><span>Загружаем…</span></div>` }
 
-/* ══ МЕДАЛИ ══
-   Функция возвращает HTML кнопки медали.
-   idx передаётся напрямую как число — никакого ${} внутри строк. */
 function medalBtn(idx) {
   const emoji = idx===0 ? '🥇' : idx===1 ? '🥈' : idx===2 ? '🥉' : '';
   if (!emoji) return '';
@@ -1247,14 +1240,12 @@ function renderTab(tab) {
   else if (tab==='instruktsii') renderInstruktsii();
 }
 
-/* ══ RENDER: ОТЧЁТ ══ */
 function renderOtchet() {
-  // Подвкладки теперь в отдельном плавающем контейнере
   const floating = document.getElementById('floating-subtabs');
   const el  = document.getElementById('c-otchet');
   const raw = S.data.otchet;
   if (!raw || raw.length < 4) { 
-    if (floating) floating.innerHTML = ''; // очищаем подвкладки
+    if (floating) floating.innerHTML = '';
     el.innerHTML = '<div class="empty">Нет данных</div>'; 
     return; 
   }
@@ -1379,7 +1370,6 @@ function renderOtchet() {
       <div class="speedo-grid">${speedoHTML}</div>
     </div>`;
 
-  /* ── Карточки МОПов ── */
   const rankRows  = mgrRows.filter(r => !isKotel(r[0]));
   const kotelRows = mgrRows.filter(r =>  isKotel(r[0]));
 
@@ -1479,7 +1469,6 @@ function renderOtchet() {
     <span class="report-subtab ${S.reportTab==='dozhim'?'active':''}" onclick="setReportTab('dozhim')">ДОЖИМ</span>
   `;
 
-  // Вставляем подвкладки в плавающий контейнер
   if (floating) floating.innerHTML = subtabs;
 
   let content = '';
@@ -1493,7 +1482,6 @@ function renderOtchet() {
 
   el.innerHTML = content + tot;
 
-  /* Анимация спидометров */
   if (S.reportTab === 'dept') {
     managerStats.forEach((item, idx) => {
       const progressPath = document.getElementById(`progress-${idx}`);
@@ -1525,7 +1513,6 @@ function goHome() {
   if (S.data.otchet) renderOtchet();
 }
 
-/* ══ RENDER: ДОХОД ══ */
 function renderDohod() {
   const el  = document.getElementById('c-dohod');
   const raw = S.data.dohod;
@@ -1584,7 +1571,6 @@ function renderDohod() {
     <div class="zp-list">${rows}${kotelHTML}</div>`;
 }
 
-/* ══ RENDER: ГРАФИК ══ */
 const DOW = ['вс','пн','вт','ср','чт','пт','сб'];
 let _schedWeek = null;
 
@@ -1691,7 +1677,6 @@ function schedNav(dir) {
   if (S.data.grafik) renderGrafik();
 }
 
-/* ══ RENDER: ИНСТРУКЦИИ ══ */
 function renderInstruktsii() {
   const el  = document.getElementById('c-instruktsii');
   const raw = S.data.instruktsii;
@@ -1754,7 +1739,7 @@ function renderInstruktsii() {
           return `<div class="instr-sub" id="${sid}">
             <div class="instr-sub-hdr" onclick="toggleSub('${sid}')">
               <span>${s.title}</span>
-              <div class="instr-sub-toggle">[+]</div> <!-- начальное состояние закрыто -->
+              <div class="instr-sub-toggle">[+]</div>
             </div>
             <div class="instr-sub-body">${buildTable(s.rows)}</div>
           </div>`;
@@ -1764,7 +1749,7 @@ function renderInstruktsii() {
     return `<div class="instr-block" id="${id}">
       <div class="instr-hdr" onclick="toggleInstr('${id}')">
         <h3>${b.title}</h3>
-        <div class="instr-toggle">[+/-]</div> <!-- начальное состояние закрыто -->
+        <div class="instr-toggle">[+/-]</div>
       </div>
       <div class="instr-body">${bodyContent}</div>
     </div>`;
@@ -1790,7 +1775,6 @@ function toggleSub(id) {
   }
 }
 
-/* ══ КОНФЕТТИ ══ */
 function burstConfetti(el, idx) {
   const isGold   = (idx === 0);
   const isSilver = (idx === 1);
@@ -1803,7 +1787,6 @@ function burstConfetti(el, idx) {
     audio.volume = 0.25;
     audio.play().catch(()=>{});
 
-    /* Вспышка только для 1-го места */
     const flash = document.createElement('div');
     flash.style.cssText = `
       position:fixed; left:${cx}px; top:${cy}px;
@@ -1821,7 +1804,6 @@ function burstConfetti(el, idx) {
       ? ['#C0C0C0','#D8D8D8','#A8A8A8','#E8E8E8','#FFFFFF']
       : ['#e8ff47','#ff4757','#2ed573','#1e90ff','#ffa502'];
 
-  /* 1-е место: большой взрыв; 2-е: средний; 3-е: маленький */
   const count  = isGold ? 140 : isSilver ? 80 : 55;
   const radius = isGold ? 280 : isSilver ? 180 : 130;
 
@@ -1846,13 +1828,11 @@ function burstConfetti(el, idx) {
     setTimeout(() => piece.remove(), dur * 1000);
   }
 
-  /* Двойной залп только для 🥇 */
   if (isGold) {
     setTimeout(() => burstConfetti(el, 99), 140);
   }
 }
 
-/* ══ МОДАЛКА МЕНЕДЖЕРА ══ */
 function openMopModal(dataStr) {
   const d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"'));
   const p = num(d.prc);
@@ -1916,7 +1896,6 @@ function closeMopModal(e) {
   document.body.style.overflow = '';
 }
 
-/* ══ EVENTS ══ */
 document.getElementById('btn-theme').addEventListener('click',
   () => setTheme(!document.body.classList.contains('light'))
 );
@@ -1930,7 +1909,6 @@ document.querySelectorAll('.tab').forEach(b =>
   b.addEventListener('click', () => goTab(b.dataset.tab))
 );
 
-/* ══ INIT ══ */
 function init() {
   syncTheme();
   function waitGoogle() {
@@ -1952,7 +1930,7 @@ function init() {
 if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
 else init();
 
-/* ===== ФОНОВЫЕ ОРБЫ (GLASS EFFECT) ===== */
+/* ===== ФОНОВЫЕ ОРБЫ ===== */
 (function() {
   const canvas = document.getElementById('bg-canvas');
   if (!canvas) return;
@@ -1976,11 +1954,9 @@ else init();
     reset() {
       this.x = Math.random() * canvas.width;
       this.y = Math.random() * canvas.height;
-
       this.baseRadius = 60 + Math.random() * 120;
-      this.radius = 0; // начинаем с нуля
-      this.alpha = 0; // прозрачность
-
+      this.radius = 0;
+      this.alpha = 0;
       this.vx = (Math.random() - 0.5) * 0.5;
       this.vy = (Math.random() - 0.5) * 0.5;
     }
@@ -1988,13 +1964,10 @@ else init();
     update() {
       this.x += this.vx;
       this.y += this.vy;
-
-      // плавное появление
       if (this.alpha < 1) this.alpha += 0.01;
       if (this.radius < this.baseRadius) {
         this.radius += this.baseRadius * 0.02;
       }
-
       if (this.x < -500 || this.x > canvas.width + 500 ||
           this.y < -500 || this.y > canvas.height + 500) {
         this.reset();
@@ -2003,17 +1976,13 @@ else init();
 
     draw() {
       const isLight = document.body.classList.contains('light');
-      // Светлая тема — жёлто-зелёный (#e8ff47), тёмная — фиолетовый (#320055)
       let color = isLight ? "232, 255, 71" : "50, 0, 85";
-
       const gradient = ctx.createRadialGradient(
         this.x, this.y, 0,
         this.x, this.y, this.radius
       );
-
       gradient.addColorStop(0, `rgba(${color}, ${0.35 * this.alpha})`);
       gradient.addColorStop(1, `rgba(${color}, 0)`);
-
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
@@ -2027,27 +1996,20 @@ else init();
 
   function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    orbs.forEach(o => {
-      o.update();
-      o.draw();
-    });
-
+    orbs.forEach(o => { o.update(); o.draw(); });
     requestAnimationFrame(animate);
   }
   animate();
 })();
 
-/* ===== ГЛЮК-АНИМАЦИЯ ДЛЯ КОПИРАЙТА ===== */
+/* ===== ГЛЮК-АНИМАЦИЯ ===== */
 (function() {
   const el = document.getElementById('author');
   if (!el) return;
 
   function triggerGlitch() {
     const mode = Math.random();
-
     el.classList.add('active');
-
     if (mode < 0.33) {
       el.classList.add('shake');
     } else if (mode < 0.66) {
@@ -2055,7 +2017,6 @@ else init();
     } else {
       el.style.color = Math.random() > 0.5 ? '#ff0040' : '#00eaff';
     }
-
     setTimeout(() => {
       el.classList.remove('active', 'shake', 'flash');
       el.style.color = '';
@@ -2067,7 +2028,6 @@ else init();
     const next = 6000 + Math.random() * 4000;
     setTimeout(loop, next);
   }
-
   setTimeout(loop, 3000);
 })();
 </script>

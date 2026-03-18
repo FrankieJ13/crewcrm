@@ -1846,41 +1846,51 @@ else init();
     }
 
     reset() {
-      this.x = Math.random() * canvas.width;
-      this.y = Math.random() * canvas.height;
-      this.radius = 120 + Math.random() * 220;
-      this.vx = (Math.random() - 0.5) * 0.5;
-      this.vy = (Math.random() - 0.5) * 0.5;
-    }
+    this.x = Math.random() * canvas.width;
+    this.y = Math.random() * canvas.height;
+
+    this.baseRadius = 60 + Math.random() * 120;
+    this.radius = 0; // начинаем с нуля
+
+    this.alpha = 0; // прозрачность
+
+    this.vx = (Math.random() - 0.5) * 0.5;
+    this.vy = (Math.random() - 0.5) * 0.5;
+}
 
     update() {
-      this.x += this.vx;
-      this.y += this.vy;
+    this.x += this.vx;
+    this.y += this.vy;
 
-      if (this.x < -200 || this.x > canvas.width + 200 ||
-          this.y < -200 || this.y > canvas.height + 200) {
-        this.reset();
-      }
+    // плавное появление
+    if (this.alpha < 1) this.alpha += 0.01;
+    if (this.radius < this.baseRadius) {
+        this.radius += this.baseRadius * 0.02;
     }
 
-    draw() {
-      const isLight = document.body.classList.contains('light');
-      // Цвет для тёмной темы: фиолетовый (150,0,255), для светлой: жёлто-зелёный (232,255,71)
-      const color = isLight ? "232, 255, 71" : "50, 0, 85";
+    if (this.x < -500 || this.x > canvas.width + 500 ||
+        this.y < -500 || this.y > canvas.height + 500) {
+        this.reset();
+    }
+}
 
-      const gradient = ctx.createRadialGradient(
+draw() {
+    const theme = document.body.classList.contains("dark");
+    let color = theme ? "50, 0, 85" : "232, 255, 71";
+
+    const gradient = ctx.createRadialGradient(
         this.x, this.y, 0,
         this.x, this.y, this.radius
-      );
+    );
 
-      gradient.addColorStop(0, `rgba(${color}, 0.35)`);
-      gradient.addColorStop(1, `rgba(${color}, 0)`);
+    gradient.addColorStop(0, `rgba(${color}, ${0.35 * this.alpha})`);
+    gradient.addColorStop(1, `rgba(${color}, 0)`);
 
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+}
   }
 
   for (let i = 0; i < ORB_COUNT; i++) {

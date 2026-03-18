@@ -101,7 +101,7 @@ transition:background .2s, color .2s;
   position: relative;
   z-index: 10;
 }
-main { flex:1; overflow-y:auto }
+main { flex:1; overflow-y:auto; position: relative; } /* важно для sticky потомков */
 .w {
 width:100%;
 max-width:720px;
@@ -145,6 +145,7 @@ display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:4px;
 font-size:11px; padding:3px 9px; border-radius:20px;
 background:var(--bg3); border:1px solid var(--line2);
 color:var(--txt2); font-weight:500;
+font-family: 'Unbounded', sans-serif; /* FIX: шрифт */
 }
 .btn-icon {
 width:30px; height:30px; border-radius:50%;
@@ -254,19 +255,19 @@ font-size:13px; margin-bottom:12px;
 }
 .empty { text-align:center; padding:48px 20px; color:var(--txt3); font-size:13px }
 
-/* ── ПОДВКЛАДКИ ОТЧЁТА (sticky) — теперь прилипают сразу под nav ── */
-#scr-otchet {
-  position: relative;
+/* ── ПОДВКЛАДКИ ОТЧЁТА (sticky) — теперь вне scr-otchet, закреплены под nav ── */
+#floating-subtabs {
+  display: none; /* по умолчанию скрыты */
+  position: sticky;
+  top: 96px; /* header 52px + nav ~44px (высота может варьироваться, подберите точно) */
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  z-index: 90;
+  width: 100%;
 }
 .report-subtabs {
 display:flex; justify-content:center; gap:16px; 
-border-bottom:1px solid var(--line); 
 padding:0 0 4px 0;
-position:sticky; 
-top:0; /* прилипаем к верху main (сразу под nav) */
-background:var(--bg); 
-z-index:90; 
-width:100%;
 }
 .report-subtab {
 padding:6px 0; white-space:nowrap;
@@ -595,7 +596,6 @@ border:1px solid var(--acc-bdr);
   font-weight:900; 
   color:var(--acc); 
   letter-spacing:-.02em;
-  /* убрали обводку, добавили тень */
   text-shadow: 0 2px 5px rgba(0,0,0,0.6);
 }
 .zp-list { display:flex; flex-direction:column; gap:8px }
@@ -604,6 +604,7 @@ font-family:'Unbounded',sans-serif;
 font-weight:700; font-size:13px;
 flex-shrink:0; min-width:80px;
 text-transform:uppercase;
+text-shadow: 0 2px 5px rgba(0,0,0,0.6); /* FIX: тень для имён */
 }
 .zp-row {
 display:flex; flex-direction:column;
@@ -620,16 +621,16 @@ background: rgba(var(--rank-r), var(--rank-g), var(--rank-b), 0.1);
 font-family:'Unbounded',sans-serif;
 font-size:13px; font-weight:700;
 flex-shrink:0; text-align:right;
-/* убрали обводку, добавили тень */
 text-shadow: 0 2px 5px rgba(0,0,0,0.6);
 }
 
 /* ── МЕДАЛЬ — кнопка ── */
 .medal-btn {
-background:none; border:none; padding:0 0 0 4px;
+background:none; border:none; padding:0; /* убрали лишний отступ */
 cursor:pointer; font-size:inherit; line-height:1;
 display:inline-flex; align-items:center;
 transition:transform .15s;
+margin-left: 2px; /* небольшой отступ, чтобы не слипалось */
 }
 .medal-btn:hover { transform:scale(1.25); }
 
@@ -948,6 +949,9 @@ body.light .glass {
     </div>
   </div>
 
+  <!-- Плавающая панель подвкладок для отчёта (появляется только при активной вкладке) -->
+  <div id="floating-subtabs" class="report-subtabs" style="display:none;"></div>
+
   <main>
     <div id="scr-login" class="scr">
       <div class="gate">
@@ -962,9 +966,8 @@ body.light .glass {
       </div>
     </div>
 
-    <!-- Вкладка ОТЧЁТ с подвкладками на всю ширину -->
+    <!-- Вкладка ОТЧЁТ (без внутреннего контейнера для подвкладок) -->
     <div id="scr-otchet" class="scr">
-      <div id="otchet-subtabs-container"></div>
       <div class="w">
         <div id="c-otchet"></div>
       </div>
@@ -1060,6 +1063,16 @@ function showScr(id) {
   document.getElementById('scr-'+id)?.classList.add('on');
   const gs = document.getElementById('grafik-sticky');
   if (gs) gs.style.display = id === 'grafik' ? '' : 'none';
+
+  // Управляем плавающей панелью подвкладок (только для отчёта)
+  const floating = document.getElementById('floating-subtabs');
+  if (floating) {
+    if (id === 'otchet') {
+      floating.style.display = 'flex'; // или 'block', но .report-subtabs уже flex
+    } else {
+      floating.style.display = 'none';
+    }
+  }
 }
 
 function num(v) { return parseInt(v)||0 }
@@ -1236,12 +1249,12 @@ function renderTab(tab) {
 
 /* ══ RENDER: ОТЧЁТ ══ */
 function renderOtchet() {
-  // Подвкладки теперь в отдельном контейнере, чтобы фон был на всю ширину
-  const subtabsContainer = document.getElementById('otchet-subtabs-container');
+  // Подвкладки теперь в отдельном плавающем контейнере
+  const floating = document.getElementById('floating-subtabs');
   const el  = document.getElementById('c-otchet');
   const raw = S.data.otchet;
   if (!raw || raw.length < 4) { 
-    if (subtabsContainer) subtabsContainer.innerHTML = ''; // очищаем подвкладки
+    if (floating) floating.innerHTML = ''; // очищаем подвкладки
     el.innerHTML = '<div class="empty">Нет данных</div>'; 
     return; 
   }
@@ -1461,14 +1474,13 @@ function renderOtchet() {
   </div>`;
 
   const subtabs = `
-    <div class="report-subtabs">
-      <span class="report-subtab ${S.reportTab==='dept'?'active':''}" onclick="setReportTab('dept')">ОТДЕЛ</span>
-      <span class="report-subtab ${S.reportTab==='mgr'?'active':''}" onclick="setReportTab('mgr')">МЕНЕДЖЕРЫ</span>
-      <span class="report-subtab ${S.reportTab==='dozhim'?'active':''}" onclick="setReportTab('dozhim')">ДОЖИМ</span>
-    </div>`;
+    <span class="report-subtab ${S.reportTab==='dept'?'active':''}" onclick="setReportTab('dept')">ОТДЕЛ</span>
+    <span class="report-subtab ${S.reportTab==='mgr'?'active':''}" onclick="setReportTab('mgr')">МЕНЕДЖЕРЫ</span>
+    <span class="report-subtab ${S.reportTab==='dozhim'?'active':''}" onclick="setReportTab('dozhim')">ДОЖИМ</span>
+  `;
 
-  // Вставляем подвкладки в отдельный контейнер (на всю ширину)
-  if (subtabsContainer) subtabsContainer.innerHTML = subtabs;
+  // Вставляем подвкладки в плавающий контейнер
+  if (floating) floating.innerHTML = subtabs;
 
   let content = '';
   if (S.reportTab === 'dept') {

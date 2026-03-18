@@ -79,6 +79,8 @@ text-shadow: none;
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0 }
 html,body {
 height:100%;
+margin:0;
+padding:0;
 background:var(--bg);
 color:var(--txt);
 font-family:'Golos Text',sans-serif;
@@ -107,7 +109,7 @@ margin:0 auto;
 padding:0 16px;
 box-sizing:border-box;
 }
-.scr { display:none; padding:10px 0; animation:up .2s ease }
+.scr { display:none; padding:0 0 10px 0; animation:up .2s ease }
 .scr.on { display:block }
 @keyframes up { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 
@@ -252,10 +254,13 @@ font-size:13px; margin-bottom:12px;
 }
 .empty { text-align:center; padding:48px 20px; color:var(--txt3); font-size:13px }
 
-/* ── ПОДВКЛАДКИ ОТЧЁТА (sticky) ── */
+/* ── ПОДВКЛАДКИ ОТЧЁТА (sticky) — теперь на всю ширину ── */
 .report-subtabs {
-display:flex; justify-content:center; gap:16px; margin-bottom:10px; border-bottom:1px solid var(--line); padding-bottom:4px;
+display:flex; justify-content:center; gap:16px; 
+border-bottom:1px solid var(--line); 
+padding:0 0 4px 0;
 position:sticky; top:0; background:var(--bg); z-index:10;
+width:100%;
 }
 .report-subtab {
 padding:6px 0; white-space:nowrap;
@@ -774,7 +779,7 @@ transition:all .25s; z-index:999; white-space:nowrap;
 .sum-grid  { grid-template-columns:1fr 1fr }
 .mop-grid4 { grid-template-columns:repeat(2,1fr) }
 header     { padding:0 12px }
-.scr       { padding:12px }
+.scr       { padding:12px; } /* для мобильных оставляем отступы */
 .tab       { padding:10px 14px; font-size:13px; letter-spacing:.02em }
 }
 
@@ -897,10 +902,36 @@ body.light .glass {
         <p>Нажмите кнопку <strong>Войти</strong><br>в правом верхнем углу</p>
       </div>
     </div>
-    <div id="scr-otchet"      class="scr"><div class="w"><div id="c-otchet"></div><div class="page-footer">© Бочаров Ю.С., 2026</div></div></div>
-    <div id="scr-dohod"       class="scr"><div class="w"><div id="c-dohod"></div><div class="page-footer">© Бочаров Ю.С., 2026</div></div></div>
-    <div id="scr-grafik"      class="scr"><div class="w"><div id="c-grafik"></div><div class="page-footer">© Бочаров Ю.С., 2026</div></div></div>
-    <div id="scr-instruktsii" class="scr"><div class="w"><div id="c-instruktsii"></div><div class="page-footer">© Бочаров Ю.С., 2026</div></div></div>
+
+    <!-- Вкладка ОТЧЁТ с подвкладками на всю ширину -->
+    <div id="scr-otchet" class="scr">
+      <div id="otchet-subtabs-container"></div>
+      <div class="w">
+        <div id="c-otchet"></div>
+        <div class="page-footer">© Бочаров Ю.С., 2026</div>
+      </div>
+    </div>
+
+    <div id="scr-dohod" class="scr">
+      <div class="w">
+        <div id="c-dohod"></div>
+        <div class="page-footer">© Бочаров Ю.С., 2026</div>
+      </div>
+    </div>
+
+    <div id="scr-grafik" class="scr">
+      <div class="w">
+        <div id="c-grafik"></div>
+        <div class="page-footer">© Бочаров Ю.С., 2026</div>
+      </div>
+    </div>
+
+    <div id="scr-instruktsii" class="scr">
+      <div class="w">
+        <div id="c-instruktsii"></div>
+        <div class="page-footer">© Бочаров Ю.С., 2026</div>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -1143,9 +1174,15 @@ function renderTab(tab) {
 
 /* ══ RENDER: ОТЧЁТ ══ */
 function renderOtchet() {
+  // Подвкладки теперь в отдельном контейнере, чтобы фон был на всю ширину
+  const subtabsContainer = document.getElementById('otchet-subtabs-container');
   const el  = document.getElementById('c-otchet');
   const raw = S.data.otchet;
-  if (!raw || raw.length < 4) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
+  if (!raw || raw.length < 4) { 
+    if (subtabsContainer) subtabsContainer.innerHTML = ''; // очищаем подвкладки
+    el.innerHTML = '<div class="empty">Нет данных</div>'; 
+    return; 
+  }
 
   const mgrRows = raw.slice(3, 12).filter(r => r[0] && r[0].trim());
   const kot     = raw[13] || [];
@@ -1368,6 +1405,9 @@ function renderOtchet() {
       <span class="report-subtab ${S.reportTab==='dozhim'?'active':''}" onclick="setReportTab('dozhim')">ДОЖИМ</span>
     </div>`;
 
+  // Вставляем подвкладки в отдельный контейнер (на всю ширину)
+  if (subtabsContainer) subtabsContainer.innerHTML = subtabs;
+
   let content = '';
   if (S.reportTab === 'dept') {
     content = deptCard + dozhimCard + speedoCard;
@@ -1377,7 +1417,7 @@ function renderOtchet() {
     content = `<div class="empty">Раздел скоро появится</div>`;
   }
 
-  el.innerHTML = subtabs + content + tot;
+  el.innerHTML = content + tot;
 
   /* Анимация спидометров */
   if (S.reportTab === 'dept') {
@@ -1876,7 +1916,7 @@ else init();
 
 draw() {
     const theme = document.body.classList.contains("dark");
-    let color = theme ? "50, 0, 85" : "232, 255, 71";
+    let color = theme ? "232, 255, 71": "50, 0, 85" ;
 
     const gradient = ctx.createRadialGradient(
         this.x, this.y, 0,

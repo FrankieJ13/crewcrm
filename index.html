@@ -31,7 +31,7 @@ if ('serviceWorker' in navigator) {
   --line:    #252525;
   --line2:   #2e2e2e;
   --txt:     #f0f0f0;
-  --txt2:    #888;
+  --txt2:    #aaa;        /* более светлый для тёмной темы */
   --txt3:    #444;
   --acc:     #e8ff47;
   --acc-bg:  rgba(232,255,71,.08);
@@ -53,9 +53,9 @@ body.light {
   --txt:     #111;
   --txt2:    #666;
   --txt3:    #aaa;
-  --acc:     #c8e000;
-  --acc-bg:  rgba(200,224,0,.12);
-  --acc-bdr: rgba(200,224,0,.4);
+  --acc:     #5137dd;      /* новый цвет для светлой темы */
+  --acc-bg:  rgba(81,55,221,.12);
+  --acc-bdr: rgba(81,55,221,.4);
   --red:     #d93535;
   --grn:     #1a9e50;
   --blu:     #1060cc;
@@ -119,6 +119,7 @@ header {
   font-family:'Unbounded',sans-serif;
   font-size:12px; font-weight:800; letter-spacing:.06em;
   display:flex; align-items:center; gap:8px;
+  cursor:pointer;  /* кликабельный */
 }
 .logo-sq {
   width:22px; height:22px; border-radius:5px;
@@ -247,9 +248,10 @@ nav::-webkit-scrollbar { height:0 }
   position:sticky; top:0; background:var(--bg); z-index:10;
 }
 .report-subtab {
-  padding:8px 0; white-space:nowrap;
+  padding:6px 0; white-space:nowrap;
   font-family:'Unbounded',sans-serif;
-  font-size:13px; font-weight:800; letter-spacing:.03em;
+  font-size:12px;    /* уменьшен с 13px */
+  font-weight:800; letter-spacing:.03em;
   color:var(--txt3); background:none; border:none;
   border-bottom:2px solid transparent;
   cursor:pointer; transition:color .15s, border-color .15s;
@@ -259,7 +261,7 @@ nav::-webkit-scrollbar { height:0 }
 }
 
 /* ── ОБЩИЕ СТИЛИ ДЛЯ КАРТОЧЕК (Liquid Glass) ── */
-.dept-card, .mop, .zp-row, .speedo-item .speedo-svg-container {
+.dept-card, .mop, .zp-row {
   position:relative;
   backdrop-filter: blur(12px) saturate(180%);
   -webkit-backdrop-filter: blur(12px) saturate(180%);
@@ -269,13 +271,12 @@ nav::-webkit-scrollbar { height:0 }
 }
 body.light .dept-card,
 body.light .mop,
-body.light .zp-row,
-body.light .speedo-item .speedo-svg-container {
+body.light .zp-row {
   border-color:rgba(0,0,0,0.1);
   box-shadow:0 10px 30px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.8);
 }
 
-.dept-card::before, .mop::before, .zp-row::before, .speedo-item .speedo-svg-container::before {
+.dept-card::before, .mop::before, .zp-row::before {
   content:'';
   position:absolute;
   inset:0;
@@ -283,7 +284,7 @@ body.light .speedo-item .speedo-svg-container {
   background: linear-gradient(120deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 30%, transparent 70%);
   pointer-events:none;
 }
-.dept-card::after, .mop::after, .zp-row::after, .speedo-item .speedo-svg-container::after {
+.dept-card::after, .mop::after, .zp-row::after {
   content:'';
   position:absolute;
   inset:0;
@@ -472,7 +473,8 @@ body.light .mop-modal { background: rgba(255,255,255,0.55); }
 
 /* ── КАРТОЧКА ОТДЕЛА ── */
 .dept-card {
-  background: rgba(232,255,71,0.08); border:1px solid rgba(232,255,71,0.25);
+  background: rgba(var(--acc-r), var(--acc-g), var(--acc-b), 0.08); /* будет заменяться скриптом, но пока оставим */
+  border:1px solid var(--acc-bdr);
   border-radius:var(--r2); padding:14px 16px;
   margin-bottom:16px;
 }
@@ -508,7 +510,7 @@ body.light .dept-cell { background:rgba(0,0,0,0.02); }
 
 /* ── КАРТОЧКА ПРОГНОЗОВ ПО МЕНЕДЖЕРАМ (спидометры) ── */
 .speedo-grid {
-  display:grid; grid-template-columns:repeat(auto-fill, minmax(82px, 1fr));
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(70px, 1fr));
   gap:16px; margin-top:10px;
 }
 .speedo-item {
@@ -517,10 +519,15 @@ body.light .dept-cell { background:rgba(0,0,0,0.02); }
 .speedo-svg-container {
   position:relative;
   width:100%;
-  max-width:82px;
+  max-width:70px;
   margin:0 auto;
-  border-radius:50% 50% 0 0;
-  background: rgba(255,255,255,0.05);
+  /* фон убран полностью */
+  background: transparent;
+  backdrop-filter: none;
+}
+.speedo-svg-container::before,
+.speedo-svg-container::after {
+  display: none; /* отключаем псевдоэлементы */
 }
 .speedo-svg-container svg {
   width:100%;
@@ -534,7 +541,7 @@ body.light .dept-cell { background:rgba(0,0,0,0.02); }
   left:50%;
   transform:translate(-50%, -50%);
   font-family:'Unbounded',sans-serif;
-  font-size:16px;
+  font-size:13px;   /* уменьшено с 16px */
   font-weight:900;
   color:var(--txt);
   line-height:1;
@@ -545,7 +552,7 @@ body.light .dept-cell { background:rgba(0,0,0,0.02); }
   left:50%;
   transform:translate(-50%, -50%);
   font-family:'Golos Text',sans-serif;
-  font-size:8px;
+  font-size:10px;   /* увеличено с 8px */
   font-weight:500;
   color:var(--txt2);
   white-space:nowrap;
@@ -597,7 +604,7 @@ body.light .dept-cell { background:rgba(0,0,0,0.02); }
 
 /* ── ДОХОД (бывшая ЗП) ── */
 .zp-banner {
-  background:rgba(200,224,0,0.15); border:1px solid var(--acc-bdr);
+  background:rgba(var(--acc-r), var(--acc-g), var(--acc-b), 0.15); border:1px solid var(--acc-bdr);
   border-radius:var(--r2); padding:18px;
   text-align:center; margin-bottom:16px;
   backdrop-filter:blur(8px);
@@ -628,7 +635,7 @@ body.light .zp-row {
   flex-shrink:0; text-align:right;
 }
 
-/* ── ГРАФИК — НЕДЕЛЬНЫЙ ВИД (без изменений, но для полноты оставим) ── */
+/* ── ГРАФИК — НЕДЕЛЬНЫЙ ВИД ── */
 #scr-grafik { padding-top:0 }
 #scr-grafik .w { padding-top:8px }
 .sched-nav {
@@ -709,7 +716,7 @@ body.light .zp-row {
   outline:2px solid var(--acc); outline-offset:-2px; border-radius:6px;
 }
 
-/* ── ИНСТРУКЦИИ (с вложенностью и горизонтальным скроллом) ── */
+/* ── ИНСТРУКЦИИ (исправленная иерархия) ── */
 .instr-block {
   border:1px solid var(--line); border-radius:var(--r2);
   overflow:hidden; margin-bottom:8px;
@@ -843,7 +850,7 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
   <header>
     <div class="hdr-inner">
       <div class="hdr-left">
-        <div class="logo">
+        <div class="logo" onclick="goHome()">
           <div class="logo-sq"><span></span><span></span><span></span><span></span></div>
           CRM
         </div>
@@ -1196,9 +1203,16 @@ function renderOtchet() {
   const deptNal  = raw.slice(3,12).reduce((s,r) => s + num(r[9])  + num(r[13]), 0) + num(kot[9])  + num(kot[13]);
   const deptKom  = raw.slice(3,12).reduce((s,r) => s + num(r[11]) + num(r[15]), 0) + num(kot[11]) + num(kot[15]);
 
+  // Получаем rgb для акцентного цвета
+  const accColor = getComputedStyle(document.body).getPropertyValue('--acc').trim();
+  let accR = 232, accG = 255, accB = 71; // значения по умолчанию для тёмной темы
+  if (document.body.classList.contains('light')) {
+    accR = 81; accG = 55; accB = 221; // #5137dd
+  }
+
   const deptCard = `
   <div class="sec-title">ОТДЕЛ CRM</div>
-  <div class="dept-card">
+  <div class="dept-card" style="background: rgba(${accR}, ${accG}, ${accB}, 0.08);">
     <div class="dept-row1">
       <div class="dept-cell hi">
         <div class="dc-lbl">Визиты</div>
@@ -1231,7 +1245,7 @@ function renderOtchet() {
 
   const dozhimCard = `
     <div class="sec-title">ОТДЕЛ ДОЖИМ</div>
-    <div class="dept-card" style="opacity:0.7">
+    <div class="dept-card" style="opacity:0.7; background: rgba(${accR}, ${accG}, ${accB}, 0.08);">
       <div class="dept-row1">
         <div class="dept-cell"><div class="dc-lbl">Визиты</div><div class="dc-val">—</div></div>
         <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">—</div></div>
@@ -1287,7 +1301,7 @@ function renderOtchet() {
 
   const speedoCard = `
     <div class="sec-title">ПРОГНОЗЫ ПО МЕНЕДЖЕРАМ</div>
-    <div class="dept-card" style="margin-top:0;">
+    <div class="dept-card" style="margin-top:0; background: rgba(${accR}, ${accG}, ${accB}, 0.08);">
       <div class="speedo-grid">${speedoHTML}</div>
     </div>`;
 
@@ -1435,6 +1449,17 @@ function setReportTab(tab) {
   renderOtchet();
 }
 
+/* ══ Функция возврата на главную (клик по лого) ══ */
+function goHome() {
+  // Переключаемся на вкладку "ОТЧЁТ"
+  const tabBtn = document.querySelector('.tab[data-tab="otchet"]');
+  if (tabBtn) tabBtn.click();
+  // Сбрасываем подвкладку на "ОТДЕЛ"
+  S.reportTab = 'dept';
+  // Если данные уже загружены, перерисовать
+  if (S.data.otchet) renderOtchet();
+}
+
 /* ══ RENDER: ДОХОД (бывшая ЗП) ══ */
 function renderDohod() {
   const el  = document.getElementById('c-dohod');
@@ -1485,7 +1510,7 @@ function renderDohod() {
     </div>` : '';
 
   el.innerHTML = `
-    <div class="zp-banner">
+    <div class="zp-banner" style="background: rgba(81,55,221,0.15);">
       <div class="zl">Фонд отдела за месяц</div>
       <div class="zv">${fmtRub(totRow[1])}</div>
     </div>
@@ -1603,120 +1628,146 @@ function schedNav(dir) {
   if (S.data.grafik) renderGrafik();
 }
 
-/* ══ RENDER: ИНСТРУКЦИИ (без изменений) ══ */
+/* ══ RENDER: ИНСТРУКЦИИ (исправленная иерархия) ══ */
 function renderInstruktsii() {
-  const el  = document.getElementById('c-instruktsii');
+  const el = document.getElementById('c-instruktsii');
   const raw = S.data.instruktsii;
-  if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
+  if (!raw || !raw.length) {
+    el.innerHTML = '<div class="empty">Нет инструкций</div>';
+    return;
+  }
 
   const blocks = [];
   let currentBlock = null;
   let currentSub = null;
 
-  raw.forEach(r => {
-    const a = (r[0]||'').trim();
-    const b = (r[1]||'').trim();
-    const c = (r[2]||'').trim();
-    if (!a && !b && !c) return;
+  for (let i = 0; i < raw.length; i++) {
+    const r = raw[i];
+    const a = (r[0] || '').trim();
+    const b = (r[1] || '').trim();
+    const c = (r[2] || '').trim();
 
+    // Пропускаем полностью пустые строки
+    if (!a && !b && !c) continue;
+
+    // Заголовок верхнего уровня: колонка A не пустая, B и C пустые, текст в верхнем регистре, длина > 4
     if (a && !b && !c && a === a.toUpperCase() && a.length > 4) {
       currentBlock = { title: a, subs: [], rows: [] };
       blocks.push(currentBlock);
       currentSub = null;
-      return;
+      continue;
     }
 
+    // Подзаголовок: колонка A в верхнем регистре, B и C пустые, и есть текущий блок
     if (a && !b && !c && a === a.toUpperCase() && a.length > 4 && currentBlock) {
       currentSub = { title: a, rows: [] };
       currentBlock.subs.push(currentSub);
-      return;
+      continue;
     }
 
+    // Обычная строка данных
     if (currentSub) {
       currentSub.rows.push({ status: a, criteria: b, action: c });
     } else if (currentBlock) {
       currentBlock.rows.push({ status: a, criteria: b, action: c });
     } else {
-      currentBlock = { title: a||'—', subs: [], rows: [] };
+      // Если блок ещё не начат, создаём анонимный
+      currentBlock = { title: a || '—', subs: [], rows: [] };
       blocks.push(currentBlock);
       currentBlock.rows.push({ status: a, criteria: b, action: c });
     }
-  });
+  }
 
-  if (!blocks.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
+  if (!blocks.length) {
+    el.innerHTML = '<div class="empty">Нет инструкций</div>';
+    return;
+  }
 
-  function hasActions(rows) { return rows.some(r => r.action) }
+  function hasActions(rows) {
+    return rows.some(r => r.action);
+  }
 
   function buildTable(rows) {
     const withActions = hasActions(rows);
     const cols = withActions
-      ? ['Статус','Критерии применения','Обязательные действия в CRM']
-      : ['Статус','Критерии применения'];
+      ? ['Статус', 'Критерии применения', 'Обязательные действия в CRM']
+      : ['Статус', 'Критерии применения'];
     const ths = cols.map(c => `<th>${c}</th>`).join('');
-    const trs = rows.filter(r => r.status || r.criteria).map(r => {
-      if (withActions) {
+    const trs = rows
+      .filter(r => r.status || r.criteria)
+      .map(r => {
+        if (withActions) {
+          return `<tr>
+            <td>${r.status || '—'}</td>
+            <td>${r.criteria || '—'}</td>
+            <td>${r.action || '—'}</td>
+          </tr>`;
+        }
         return `<tr>
-          <td>${r.status||'—'}</td>
-          <td>${r.criteria||'—'}</td>
-          <td>${r.action||'—'}</td>
+          <td>${r.status || '—'}</td>
+          <td>${r.criteria || '—'}</td>
         </tr>`;
-      }
-      return `<tr>
-        <td>${r.status||'—'}</td>
-        <td>${r.criteria||'—'}</td>
-      </tr>`;
-    }).join('');
+      })
+      .join('');
     return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
   }
 
   function buildSubBlocks(subs) {
-    return subs.map((s, si) => {
-      const sid = 'is-' + si + '-' + Date.now() + '-' + Math.random();
-      return `<div class="instr-sub" id="${sid}">
-        <div class="instr-sub-hdr" onclick="toggleSub('${sid}')">
-          <span>${s.title}</span>
-          <div class="instr-sub-toggle">+</div>
-        </div>
-        <div class="instr-sub-body">${buildTable(s.rows)}</div>
-      </div>`;
-    }).join('');
+    return subs
+      .map((s, si) => {
+        const sid = 'is-' + si + '-' + Date.now() + '-' + Math.random();
+        return `<div class="instr-sub" id="${sid}">
+          <div class="instr-sub-hdr" onclick="toggleSub('${sid}')">
+            <span>${s.title}</span>
+            <div class="instr-sub-toggle">+</div>
+          </div>
+          <div class="instr-sub-body">${buildTable(s.rows)}</div>
+        </div>`;
+      })
+      .join('');
   }
 
-  const html = blocks.map((b, i) => {
-    const id = 'ib-'+i;
-    let bodyContent = '';
-    if (b.subs.length > 0) {
-      bodyContent = buildSubBlocks(b.subs);
-    } else {
-      bodyContent = buildTable(b.rows);
-    }
+  const html = blocks
+    .map((b, i) => {
+      const id = 'ib-' + i;
+      let bodyContent = '';
+      if (b.subs.length > 0) {
+        bodyContent = buildSubBlocks(b.subs);
+      } else {
+        bodyContent = buildTable(b.rows);
+      }
 
-    return `<div class="instr-block" id="${id}">
-      <div class="instr-hdr" onclick="toggleInstr('${id}')">
-        <h3>${b.title}</h3>
-        <div class="instr-toggle">+</div>
-      </div>
-      <div class="instr-body">${bodyContent}</div>
-    </div>`;
-  }).join('');
+      return `<div class="instr-block" id="${id}">
+        <div class="instr-hdr" onclick="toggleInstr('${id}')">
+          <h3>${b.title}</h3>
+          <div class="instr-toggle">+</div>
+        </div>
+        <div class="instr-body">${bodyContent}</div>
+      </div>`;
+    })
+    .join('');
 
   el.innerHTML = `<div class="sec-title">Инструкции (${blocks.length})</div>${html}`;
 }
 
-function toggleInstr(id) { document.getElementById(id)?.classList.toggle('open') }
-function toggleSub(id)   { document.getElementById(id)?.classList.toggle('open') }
+function toggleInstr(id) {
+  document.getElementById(id)?.classList.toggle('open');
+}
+function toggleSub(id) {
+  document.getElementById(id)?.classList.toggle('open');
+}
 
 /* ══ КОНФЕТТИ (золотой для лидера) ══ */
 function burstConfetti(el, idx) {
   const isGold = idx === 0;
   const rect = el.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
-  const cy = rect.top  + rect.height / 2;
+  const cy = rect.top + rect.height / 2;
 
   if (isGold) {
     const audio = new Audio('https://actions.google.com/sounds/v1/fireworks/firework_burst.ogg');
     audio.volume = 0.25;
-    audio.play().catch(()=>{});
+    audio.play().catch(() => {});
   }
 
   if (isGold) {
@@ -1735,14 +1786,14 @@ function burstConfetti(el, idx) {
       animation: flash 0.4s ease-out forwards;
     `;
     document.body.appendChild(flash);
-    setTimeout(()=>flash.remove(),400);
+    setTimeout(() => flash.remove(), 400);
   }
 
   const colors = isGold
-    ? ['#FFD700','#FFC300','#FFDF00','#FFF8DC','#FFFFFF']
-    : ['#e8ff47','#ff4757','#2ed573','#1e90ff','#1e90ff','#ffa502'];
+    ? ['#FFD700', '#FFC300', '#FFDF00', '#FFF8DC', '#FFFFFF']
+    : ['#e8ff47', '#ff4757', '#2ed573', '#1e90ff', '#1e90ff', '#ffa502'];
 
-  const count  = isGold ? 140 : 60;
+  const count = isGold ? 140 : 60;
   const radius = isGold ? 280 : 140;
 
   for (let i = 0; i < count; i++) {
@@ -1751,8 +1802,8 @@ function burstConfetti(el, idx) {
     const dist = radius + (Math.random() - 0.5) * (isGold ? 40 : 20);
     const tx = Math.cos(angle) * dist;
     const ty = Math.sin(angle) * dist;
-    const size = isGold ? (6 + Math.random()*10) : (4 + Math.random()*6);
-    const dur  = isGold ? (0.8 + Math.random()*0.8) : (0.6 + Math.random()*0.6);
+    const size = isGold ? 6 + Math.random() * 10 : 4 + Math.random() * 6;
+    const dur = isGold ? 0.8 + Math.random() * 0.8 : 0.6 + Math.random() * 0.6;
 
     piece.style.cssText = `
       position:fixed;
@@ -1760,8 +1811,8 @@ function burstConfetti(el, idx) {
       top:${cy}px;
       width:${size}px;
       height:${size}px;
-      background:${colors[Math.floor(Math.random()*colors.length)]};
-      border-radius:${Math.random()>0.5?'50%':'2px'};
+      background:${colors[Math.floor(Math.random() * colors.length)]};
+      border-radius:${Math.random() > 0.5 ? '50%' : '2px'};
       pointer-events:none;
       z-index:9999;
       transform:translate(0,0);
@@ -1770,22 +1821,22 @@ function burstConfetti(el, idx) {
       --ty:${ty}px;
     `;
     document.body.appendChild(piece);
-    setTimeout(()=>piece.remove(), dur*1000);
+    setTimeout(() => piece.remove(), dur * 1000);
   }
 
   if (isGold) {
     setTimeout(() => burstConfetti(el, 99), 120);
   }
 }
-  
+
 function openMopModal(dataStr) {
-  const d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"'));
+  const d = JSON.parse(dataStr.replace(/&#39;/g, "'").replace(/&quot;/g, '"'));
   const p = num(d.prc);
   const rs = d.rs;
 
   document.getElementById('mop-modal-title').innerHTML =
     `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span>
-     <span style="font-family:'Unbounded',sans-serif">${d.name}</span>${d.medal?' '+d.medal:''}`;
+     <span style="font-family:'Unbounded',sans-serif">${d.name}</span>${d.medal ? ' ' + d.medal : ''}`;
 
   document.getElementById('mop-modal-body').innerHTML = `
     <div class="mop-grid4" style="margin-bottom:12px">
@@ -1796,7 +1847,7 @@ function openMopModal(dataStr) {
     </div>
     <div class="prog-row" style="margin-bottom:16px">
       <span class="prog-l">${d.prc}</span>
-      <div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${rs.color}"></div></div>
+      <div class="prog-track"><div class="prog-fill" style="width:${Math.min(p, 100)}%;background:${rs.color}"></div></div>
       <span class="prog-r" style="color:${rs.color}">100%</span>
     </div>
 
@@ -1845,18 +1896,20 @@ function closeMopModal(e) {
 }
 
 /* ══ EVENTS ══ */
-document.getElementById('btn-theme').addEventListener('click',
-  () => setTheme(!document.body.classList.contains('light'))
+document.getElementById('btn-theme').addEventListener('click', () =>
+  setTheme(!document.body.classList.contains('light'))
 );
 document.getElementById('btn-refresh').addEventListener('click', reloadCurrent);
 document.getElementById('btn-login').addEventListener('click', () => {
-  if (!tokenClient) { toast('Загружается…','i'); return; }
-  tokenClient.requestAccessToken({ prompt:'consent' });
+  if (!tokenClient) {
+    toast('Загружается…', 'i');
+    return;
+  }
+  tokenClient.requestAccessToken({ prompt: 'consent' });
 });
 document.getElementById('btn-out').addEventListener('click', onLogout);
-document.querySelectorAll('.tab').forEach(b =>
-  b.addEventListener('click', () => goTab(b.dataset.tab))
-);
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => goTab(b.dataset.tab)));
+
 /* ══ INIT ══ */
 function init() {
   syncTheme();
@@ -1876,7 +1929,7 @@ function init() {
   waitGoogle();
 }
 
-if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
 </script>
 </body>

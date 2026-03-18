@@ -254,12 +254,18 @@ font-size:13px; margin-bottom:12px;
 }
 .empty { text-align:center; padding:48px 20px; color:var(--txt3); font-size:13px }
 
-/* ── ПОДВКЛАДКИ ОТЧЁТА (sticky) — теперь на всю ширину ── */
+/* ── ПОДВКЛАДКИ ОТЧЁТА (sticky) — теперь на всю ширину, закреплены под nav ── */
+#scr-otchet {
+  position: relative;
+}
 .report-subtabs {
 display:flex; justify-content:center; gap:16px; 
 border-bottom:1px solid var(--line); 
 padding:0 0 4px 0;
-position:sticky; top:0; background:var(--bg); z-index:10;
+position:sticky; 
+top:96px; /* высота header(52) + nav(44) = 96px */
+background:var(--bg); 
+z-index:90; 
 width:100%;
 }
 .report-subtab {
@@ -583,7 +589,15 @@ backdrop-filter:blur(8px);
 border:1px solid var(--acc-bdr);
 }
 .zp-banner .zl { font-size:10px; color:var(--txt2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px }
-.zp-banner .zv { font-family:'Unbounded',sans-serif; font-size:30px; font-weight:900; color:var(--acc); letter-spacing:-.02em }
+.zp-banner .zv { 
+  font-family:'Unbounded',sans-serif; 
+  font-size:30px; 
+  font-weight:900; 
+  color:var(--acc); 
+  letter-spacing:-.02em;
+  -webkit-text-stroke: 1px #424242; /* обводка для светлой темы */
+  text-stroke: 1px #424242;
+}
 .zp-list { display:flex; flex-direction:column; gap:8px }
 .zp-n  {
 font-family:'Unbounded',sans-serif;
@@ -606,6 +620,8 @@ background: rgba(var(--rank-r), var(--rank-g), var(--rank-b), 0.1);
 font-family:'Unbounded',sans-serif;
 font-size:13px; font-weight:700;
 flex-shrink:0; text-align:right;
+-webkit-text-stroke: 1px #424242; /* обводка для светлой темы */
+text-stroke: 1px #424242;
 }
 
 /* ── МЕДАЛЬ — кнопка ── */
@@ -711,7 +727,7 @@ color:var(--txt2); font-size:14px; flex-shrink:0; transition:all .2s;
 }
 .instr-block.open > .instr-hdr .instr-toggle {
 background:var(--acc-bg); border-color:var(--acc);
-color:var(--acc); transform:rotate(45deg);
+color:var(--acc); 
 }
 .instr-body { display:none; border-top:1px solid var(--line); background:var(--bg); }
 .instr-block.open > .instr-body { display:block }
@@ -754,7 +770,7 @@ background:var(--bg3); border:1px solid var(--line2);
 display:flex; align-items:center; justify-content:center;
 color:var(--txt2); font-size:12px; flex-shrink:0; transition:all .2s;
 }
-.instr-sub.open .instr-sub-toggle { color:var(--acc); border-color:var(--acc); transform:rotate(45deg) }
+.instr-sub.open .instr-sub-toggle { color:var(--acc); border-color:var(--acc); }
 .instr-sub-body { display:none }
 .instr-sub.open .instr-sub-body { display:block }
 
@@ -1680,7 +1696,7 @@ function renderInstruktsii() {
           return `<div class="instr-sub" id="${sid}">
             <div class="instr-sub-hdr" onclick="toggleSub('${sid}')">
               <span>${s.title}</span>
-              <div class="instr-sub-toggle">+</div>
+              <div class="instr-sub-toggle">[+]</div> <!-- начальное состояние закрыто -->
             </div>
             <div class="instr-sub-body">${buildTable(s.rows)}</div>
           </div>`;
@@ -1690,7 +1706,7 @@ function renderInstruktsii() {
     return `<div class="instr-block" id="${id}">
       <div class="instr-hdr" onclick="toggleInstr('${id}')">
         <h3>${b.title}</h3>
-        <div class="instr-toggle">+</div>
+        <div class="instr-toggle">[+/-]</div> <!-- начальное состояние закрыто -->
       </div>
       <div class="instr-body">${bodyContent}</div>
     </div>`;
@@ -1699,8 +1715,22 @@ function renderInstruktsii() {
   el.innerHTML = `<div class="sec-title">Инструкции (${blocks.length})</div>${html}`;
 }
 
-function toggleInstr(id) { document.getElementById(id)?.classList.toggle('open') }
-function toggleSub(id)   { document.getElementById(id)?.classList.toggle('open') }
+function toggleInstr(id) {
+  const block = document.getElementById(id);
+  block.classList.toggle('open');
+  const btn = block.querySelector('.instr-toggle');
+  if (btn) {
+    btn.textContent = block.classList.contains('open') ? '[-/+]' : '[+/-]';
+  }
+}
+function toggleSub(id) {
+  const sub = document.getElementById(id);
+  sub.classList.toggle('open');
+  const btn = sub.querySelector('.instr-sub-toggle');
+  if (btn) {
+    btn.textContent = sub.classList.contains('open') ? '[-]' : '[+]';
+  }
+}
 
 /* ══ КОНФЕТТИ ══ */
 function burstConfetti(el, idx) {
@@ -1886,51 +1916,51 @@ else init();
     }
 
     reset() {
-    this.x = Math.random() * canvas.width;
-    this.y = Math.random() * canvas.height;
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
 
-    this.baseRadius = 60 + Math.random() * 120;
-    this.radius = 0; // начинаем с нуля
+      this.baseRadius = 60 + Math.random() * 120;
+      this.radius = 0; // начинаем с нуля
+      this.alpha = 0; // прозрачность
 
-    this.alpha = 0; // прозрачность
-
-    this.vx = (Math.random() - 0.5) * 0.5;
-    this.vy = (Math.random() - 0.5) * 0.5;
-}
+      this.vx = (Math.random() - 0.5) * 0.5;
+      this.vy = (Math.random() - 0.5) * 0.5;
+    }
 
     update() {
-    this.x += this.vx;
-    this.y += this.vy;
+      this.x += this.vx;
+      this.y += this.vy;
 
-    // плавное появление
-    if (this.alpha < 1) this.alpha += 0.01;
-    if (this.radius < this.baseRadius) {
+      // плавное появление
+      if (this.alpha < 1) this.alpha += 0.01;
+      if (this.radius < this.baseRadius) {
         this.radius += this.baseRadius * 0.02;
-    }
+      }
 
-    if (this.x < -500 || this.x > canvas.width + 500 ||
-        this.y < -500 || this.y > canvas.height + 500) {
+      if (this.x < -500 || this.x > canvas.width + 500 ||
+          this.y < -500 || this.y > canvas.height + 500) {
         this.reset();
+      }
     }
-}
 
-draw() {
-    const theme = document.body.classList.contains("dark");
-    let color = theme ? "232, 255, 71": "50, 0, 85" ;
+    draw() {
+      const isLight = document.body.classList.contains('light');
+      // Светлая тема — жёлто-зелёный (#e8ff47), тёмная — фиолетовый (#320055)
+      let color = isLight ? "232, 255, 71" : "50, 0, 85";
 
-    const gradient = ctx.createRadialGradient(
+      const gradient = ctx.createRadialGradient(
         this.x, this.y, 0,
         this.x, this.y, this.radius
-    );
+      );
 
-    gradient.addColorStop(0, `rgba(${color}, ${0.35 * this.alpha})`);
-    gradient.addColorStop(1, `rgba(${color}, 0)`);
+      gradient.addColorStop(0, `rgba(${color}, ${0.35 * this.alpha})`);
+      gradient.addColorStop(1, `rgba(${color}, 0)`);
 
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fill();
-}
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   for (let i = 0; i < ORB_COUNT; i++) {

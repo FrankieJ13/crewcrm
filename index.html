@@ -254,7 +254,7 @@ font-size:13px; margin-bottom:12px;
 }
 .empty { text-align:center; padding:48px 20px; color:var(--txt3); font-size:13px }
 
-/* ── ПОДВКЛАДКИ ОТЧЁТА (sticky) — теперь на всю ширину, закреплены под nav ── */
+/* ── ПОДВКЛАДКИ ОТЧЁТА (sticky) — теперь прилипают сразу под nav ── */
 #scr-otchet {
   position: relative;
 }
@@ -263,7 +263,7 @@ display:flex; justify-content:center; gap:16px;
 border-bottom:1px solid var(--line); 
 padding:0 0 4px 0;
 position:sticky; 
-top:96px; /* высота header(52) + nav(44) = 96px */
+top:0; /* прилипаем к верху main (сразу под nav) */
 background:var(--bg); 
 z-index:90; 
 width:100%;
@@ -595,7 +595,7 @@ border:1px solid var(--acc-bdr);
   font-weight:900; 
   color:var(--acc); 
   letter-spacing:-.02em;
-  -webkit-text-stroke: 1px #424242; /* обводка для светлой темы */
+  -webkit-text-stroke: 1px #424242;
   text-stroke: 1px #424242;
 }
 .zp-list { display:flex; flex-direction:column; gap:8px }
@@ -620,7 +620,7 @@ background: rgba(var(--rank-r), var(--rank-g), var(--rank-b), 0.1);
 font-family:'Unbounded',sans-serif;
 font-size:13px; font-weight:700;
 flex-shrink:0; text-align:right;
--webkit-text-stroke: 1px #424242; /* обводка для светлой темы */
+-webkit-text-stroke: 1px #424242;
 text-stroke: 1px #424242;
 }
 
@@ -774,10 +774,53 @@ color:var(--txt2); font-size:12px; flex-shrink:0; transition:all .2s;
 .instr-sub-body { display:none }
 .instr-sub.open .instr-sub-body { display:block }
 
+/* ── ФУТЕР (общий для всех страниц) ── */
 .page-footer {
-text-align:center; padding:24px 0 16px; margin-top:32px;
-border-top:1px solid var(--line); font-size:11px;
-color:var(--txt3); font-family:'Golos Text',sans-serif; letter-spacing:.04em;
+text-align:center; 
+padding:24px 0 16px; 
+margin-top:32px;
+border-top:1px solid var(--line); 
+font-size:11px;
+color:var(--txt3); 
+font-family:'Golos Text',sans-serif; 
+letter-spacing:.04em;
+}
+/* Анимация глюка */
+.glitch {
+  position: relative;
+  display: inline-block;
+}
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+}
+.glitch::before { color: red; }
+.glitch::after  { color: cyan; }
+.glitch.active::before {
+  opacity: 0.8;
+  transform: translate(-2px, 1px);
+}
+.glitch.active::after {
+  opacity: 0.8;
+  transform: translate(2px, -1px);
+}
+.shake { animation: shake 0.2s infinite; }
+@keyframes shake {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(1px, -1px); }
+  50% { transform: translate(-1px, 1px); }
+  75% { transform: translate(1px, 1px); }
+  100% { transform: translate(0, 0); }
+}
+.flash { animation: flash 0.3s; }
+@keyframes flash {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0.8; }
 }
 #toast {
 position:fixed; bottom:20px; left:50%;
@@ -924,31 +967,34 @@ body.light .glass {
       <div id="otchet-subtabs-container"></div>
       <div class="w">
         <div id="c-otchet"></div>
-        <div class="page-footer">© Бочаров Ю.С., 2026</div>
       </div>
     </div>
 
     <div id="scr-dohod" class="scr">
       <div class="w">
         <div id="c-dohod"></div>
-        <div class="page-footer">© Бочаров Ю.С., 2026</div>
       </div>
     </div>
 
     <div id="scr-grafik" class="scr">
       <div class="w">
         <div id="c-grafik"></div>
-        <div class="page-footer">© Бочаров Ю.С., 2026</div>
       </div>
     </div>
 
     <div id="scr-instruktsii" class="scr">
       <div class="w">
         <div id="c-instruktsii"></div>
-        <div class="page-footer">© Бочаров Ю.С., 2026</div>
       </div>
     </div>
   </main>
+
+  <!-- Общий футер для всех страниц -->
+  <div class="page-footer">
+    <div class="glitch" id="author" data-text="© Бочаров Ю.С., 2026">
+        © Бочаров Ю.С., 2026
+    </div>
+  </div>
 </div>
 
 <div class="mop-overlay" id="mop-overlay" onclick="closeMopModal(event)">
@@ -1978,6 +2024,39 @@ else init();
     requestAnimationFrame(animate);
   }
   animate();
+})();
+
+/* ===== ГЛЮК-АНИМАЦИЯ ДЛЯ КОПИРАЙТА ===== */
+(function() {
+  const el = document.getElementById('author');
+  if (!el) return;
+
+  function triggerGlitch() {
+    const mode = Math.random();
+
+    el.classList.add('active');
+
+    if (mode < 0.33) {
+      el.classList.add('shake');
+    } else if (mode < 0.66) {
+      el.classList.add('flash');
+    } else {
+      el.style.color = Math.random() > 0.5 ? '#ff0040' : '#00eaff';
+    }
+
+    setTimeout(() => {
+      el.classList.remove('active', 'shake', 'flash');
+      el.style.color = '';
+    }, 300 + Math.random() * 500);
+  }
+
+  function loop() {
+    triggerGlitch();
+    const next = 6000 + Math.random() * 4000;
+    setTimeout(loop, next);
+  }
+
+  setTimeout(loop, 3000);
 })();
 </script>
 

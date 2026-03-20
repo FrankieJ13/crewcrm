@@ -64,21 +64,18 @@ body.light {
 body.light .m4 .ml { color:#fff }
 body.light .m4 .mv { color:#fff }
 
-/* ── ТЕНЬ ТЕКСТА ТОЛЬКО ДЛЯ СВЕТЛОЙ ТЕМЫ (для имён и сумм) ── */
 body.light .zp-n,
 body.light .zp-a,
 body.light .zp-banner .zv {
   text-shadow: 0 2px 5px rgba(255,255,255,0.6);
 }
 
-/* ── ТЕНЬ ТЕКСТА (общая) ── */
 body {
 text-shadow: 0 1px 3px rgba(0,0,0,0.25);
 }
 body.light {
 text-shadow: 0 1px 2px rgba(0,0,0,0.07);
 }
-/* Убираем тень там, где она мешает */
 input, button, svg, img, .logo-sq {
 text-shadow: none;
 }
@@ -100,7 +97,6 @@ transition:background .2s, color .2s;
 ::-webkit-scrollbar-track { background:transparent }
 ::-webkit-scrollbar-thumb { background:var(--line2); border-radius:2px }
 
-/* ── LAYOUT ── */
 #app { 
   display:flex; 
   flex-direction:column; 
@@ -120,7 +116,6 @@ box-sizing:border-box;
 .scr.on { display:block }
 @keyframes up { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 
-/* ── HEADER ── */
 header {
 background:var(--bg); border-bottom:1px solid var(--line);
 position:sticky; top:0; z-index:100; flex-shrink:0;
@@ -188,7 +183,6 @@ font-size:12px; cursor:pointer; transition:all .15s;
 }
 .btn-out:hover { border-color:var(--red); color:var(--red) }
 
-/* ── NAV ── */
 nav {
 background:var(--bg);
 border-bottom:1px solid var(--line);
@@ -217,7 +211,6 @@ display:flex; align-items:center; gap:5px;
 .tab.on { color:var(--acc); border-bottom-color:var(--acc) }
 .tab-dot { width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.5 }
 
-/* ── NOT AUTH ── */
 .gate {
 display:flex; flex-direction:column; align-items:center;
 justify-content:center; gap:14px; min-height:65vh;
@@ -233,7 +226,6 @@ display:flex; align-items:center; justify-content:center; color:var(--txt3);
 .gate p  { font-size:13px; color:var(--txt2); line-height:1.7 }
 .gate strong { color:var(--acc) }
 
-/* ── SHARED ── */
 .sec-title {
 font-family:'Unbounded',sans-serif;
 font-size:10px; font-weight:800; letter-spacing:.1em;
@@ -262,7 +254,6 @@ font-size:13px; margin-bottom:12px;
 }
 .empty { text-align:center; padding:48px 20px; color:var(--txt3); font-size:13px }
 
-/* ── ПЛАВАЮЩИЕ ПОДВКЛАДКИ ДЛЯ ОТЧЁТА (sticky) ── */
 #floating-subtabs {
   display: none;
   position: sticky;
@@ -272,11 +263,19 @@ font-size:13px; margin-bottom:12px;
   z-index: 90;
   width: 100%;
 }
-.report-subtabs {
+#dohod-subtabs {
+  display: none;
+  justify-content: center;
+  gap: 16px;
+  padding: 0 0 12px 0;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 12px;
+}
+.report-subtabs, .dohod-subtabs {
 display:flex; justify-content:center; gap:16px; 
 padding:0 0 0px 0;
 }
-.report-subtab {
+.report-subtab, .dohod-subtab {
 padding:6px 0; white-space:nowrap;
 font-family:'Unbounded',sans-serif;
 font-size:12px; font-weight:800; letter-spacing:.03em;
@@ -284,11 +283,10 @@ color:var(--txt3); background:none; border:none;
 border-bottom:2px solid transparent;
 cursor:pointer; transition:color .15s, border-color .15s;
 }
-.report-subtab.active {
+.report-subtab.active, .dohod-subtab.active {
 color:var(--acc); border-bottom-color:var(--acc);
 }
 
-/* ── LIQUID GLASS КАРТОЧКИ ── */
 .dept-card, .mop, .zp-row {
 position:relative;
 backdrop-filter: blur(12px) saturate(180%);
@@ -322,7 +320,6 @@ pointer-events:none;
 opacity:0.6;
 }
 
-/* ── ОТЧЁТ: MOP CARDS ── */
 .mops { display:flex; flex-direction:column; gap:8px }
 .mop {
 border-radius:var(--r2); padding:13px 14px;
@@ -384,7 +381,6 @@ height:100%; border-radius:4px;
 transition:width .7s ease;
 }
 
-/* секции в модалке */
 .modal-sec { margin-bottom:14px; }
 .modal-sec-title {
 font-family:'Unbounded',sans-serif;
@@ -474,21 +470,10 @@ gap:6px; margin-bottom:12px;
 .prog-track { flex:1; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden }
 .prog-fill { height:100%; border-radius:2px; transition:width .6s ease }
 .prog-r { font-size:11px; font-weight:600; width:38px; text-align:right; flex-shrink:0 }
-.chips-wrap { display:flex; flex-direction:column; gap:5px }
-.chips-row { display:flex; flex-wrap:wrap; gap:5px }
-.chip {
-font-size:10px; padding:3px 8px; border-radius:6px;
-background:rgba(255,255,255,0.05); border:1px solid var(--line);
-color:var(--txt2); display:flex; align-items:center; gap:3px;
-}
-.chip strong { color:var(--txt); font-size:11px }
-.chip.c800  { border-color:rgba(30,144,255,.3) }
-.chip.c1200 { border-color:rgba(255,165,2,.3) }
 @media(max-width:480px) {
 .mop-grid4 { grid-template-columns:repeat(2,1fr) }
 }
 
-/* ── КАРТОЧКА ОТДЕЛА ── */
 .dept-card {
 background: rgba(var(--acc-r), var(--acc-g), var(--acc-b), 0.08);
 border:1px solid var(--acc-bdr);
@@ -525,7 +510,6 @@ color:var(--txt);
 }
 .dept-cell.hi .dc-val { color:var(--txt); }
 
-/* ── СПИДОМЕТРЫ ── */
 .speedo-grid {
 display:grid; grid-template-columns:repeat(3, 1fr);
 gap:10px; margin-top:5px;
@@ -539,8 +523,6 @@ margin:0 auto;
 background: transparent;
 backdrop-filter: none;
 }
-.speedo-svg-container::before,
-.speedo-svg-container::after { display: none; }
 .speedo-svg-container svg {
 width:100%; height:auto; display:block;
 filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
@@ -568,7 +550,6 @@ margin-top:0px; text-transform:uppercase; color:var(--txt2);
 .speedo-grid { grid-template-columns:repeat(3,1fr); }
 }
 
-/* ── ИТОГИ ── */
 .totals-box {
 background:rgba(255,255,255,0.05); border:1px solid var(--line2);
 border-radius:var(--r2); padding:13px 14px; margin-top:14px;
@@ -589,7 +570,6 @@ backdrop-filter:blur(4px);
 .ti .tl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em }
 .ti .tv { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:700 }
 
-/* ── ДОХОД ── (тень убрана из общих правил) */
 .zp-banner {
 border-radius:var(--r2); padding:18px;
 text-align:center; margin-bottom:16px;
@@ -628,7 +608,6 @@ font-size:13px; font-weight:700;
 flex-shrink:0; text-align:right;
 }
 
-/* ── МЕДАЛЬ — кнопка ── */
 .medal-btn {
 background:none; border:none; padding:0;
 cursor:pointer; font-size:inherit; line-height:1;
@@ -638,7 +617,6 @@ margin-left: 2px;
 }
 .medal-btn:hover { transform:scale(1.25); }
 
-/* ── ГРАФИК ── */
 #scr-grafik { padding-top:0 }
 #scr-grafik .w { padding-top:8px }
 .sched-nav {
@@ -712,7 +690,6 @@ min-height:36px; display:flex; align-items:center; justify-content:center;
 .sched-cell.empty { color:var(--txt3); opacity:.4 }
 .sched-cell.today-col { outline:2px solid var(--acc); outline-offset:-2px; border-radius:6px; }
 
-/* ── ИНСТРУКЦИИ ── */
 .instr-block {
 border:1px solid var(--line); border-radius:var(--r2);
 overflow:hidden; margin-bottom:8px;
@@ -779,7 +756,6 @@ color:var(--txt2); font-size:12px; flex-shrink:0; transition:all .2s;
 .instr-sub-body { display:none }
 .instr-sub.open .instr-sub-body { display:block }
 
-/* ── ФУТЕР (общий для всех страниц) ── */
 .page-footer {
 text-align:center; 
 padding:8px 0 8px; 
@@ -790,7 +766,6 @@ color:var(--txt3);
 font-family:'Golos Text',sans-serif; 
 letter-spacing:.04em;
 }
-/* Анимация глюка */
 .glitch {
   position: relative;
   display: inline-block;
@@ -855,7 +830,6 @@ to { transform: translate(var(--tx), var(--ty)) scale(0.6); opacity: 0; }
 100% { transform:translate(-50%,-50%) scale(4); opacity:0; }
 }
 
-/* ===== ФОНОВЫЕ ЭФФЕКТЫ (GLASS + ORBS) ===== */
 canvas#bg-canvas {
   position: fixed;
   top: 0;
@@ -880,15 +854,12 @@ body.light .glass {
   background: rgba(255, 255, 255, 0.25);
 }
 </style>
-
 </head>
 <body>
-<!-- Фоновый слой с орбами и стеклом -->
 <canvas id="bg-canvas"></canvas>
 <div class="glass"></div>
 
 <div id="app">
-
   <header>
     <div class="hdr-inner">
       <div class="hdr-left">
@@ -977,6 +948,7 @@ body.light .glass {
 
     <div id="scr-dohod" class="scr">
       <div class="w">
+        <div id="dohod-subtabs"></div>
         <div id="c-dohod"></div>
       </div>
     </div>
@@ -1028,6 +1000,8 @@ const SHEETS = {
   dohod:       'ЗП'      + SUFFIX,
   grafik:      'ГРАФИКИ' + SUFFIX,
   instruktsii: 'ИНСТРУКЦИИ',
+  dozhimOtch:  'Д_ОТЧЁТ' + SUFFIX,
+  dozhimZp:    'ЗП_Д'    + SUFFIX,
 };
 document.getElementById('badge-month').textContent = SUFFIX.slice(0,2) + '/' + SUFFIX.slice(2);
 
@@ -1035,8 +1009,9 @@ document.getElementById('badge-month').textContent = SUFFIX.slice(0,2) + '/' + S
 const S = {
   token:null,
   user:null,
-  data:{ otchet:null, dohod:null, grafik:null, instruktsii:null },
-  reportTab: 'dept'
+  data:{ otchet:null, dohod:null, grafik:null, instruktsii:null, dozhimOtch:null, dozhimZp:null },
+  reportTab: 'dept',
+  dohodTab: 'crm'
 };
 
 /* ══ THEME ══ */
@@ -1064,11 +1039,10 @@ function showScr(id) {
   document.getElementById('scr-'+id)?.classList.add('on');
   const gs = document.getElementById('grafik-sticky');
   if (gs) gs.style.display = id === 'grafik' ? '' : 'none';
-
   const floating = document.getElementById('floating-subtabs');
-  if (floating) {
-    floating.style.display = id === 'otchet' ? 'flex' : 'none';
-  }
+  if (floating) floating.style.display = id === 'otchet' ? 'flex' : 'none';
+  const dohodSubtabs = document.getElementById('dohod-subtabs');
+  if (dohodSubtabs) dohodSubtabs.style.display = id === 'dohod' ? 'flex' : 'none';
 }
 
 function num(v) { return parseInt(v)||0 }
@@ -1158,7 +1132,7 @@ function onLogin() {
 function onLogout() {
   if (S.token) google.accounts.oauth2.revoke(S.token, ()=>{});
   S.token=null; S.user=null;
-  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null };
+  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, dozhimOtch:null, dozhimZp:null };
   ['crm_tok','crm_exp','crm_user'].forEach(k => sessionStorage.removeItem(k));
   document.getElementById('user-wrap').style.display = 'none';
   document.getElementById('btn-out').style.display   = 'none';
@@ -1211,18 +1185,45 @@ function goTab(tab) {
 }
 
 async function loadTab(tab) {
-  if (S.data[tab]) return;
-  const el = document.getElementById('c-'+tab);
-  if (el) el.innerHTML = loader();
-  try {
-    if      (tab==='otchet')      S.data.otchet      = await api(SHEETS.otchet,      'A1:Z15');
-    else if (tab==='dohod')       S.data.dohod        = await api(SHEETS.dohod,        'A1:B13');
-    else if (tab==='grafik')      S.data.grafik       = await api(SHEETS.grafik,      'A1:AI25');
-    else if (tab==='instruktsii') S.data.instruktsii  = await api(SHEETS.instruktsii, 'A1:C200');
-    renderTab(tab);
-  } catch(e) {
-    if (e.message!=='auth' && el)
-      el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
+  if (tab === 'otchet') {
+    if (!S.data.otchet) {
+      const el = document.getElementById('c-otchet');
+      if (el) el.innerHTML = loader();
+      try {
+        S.data.otchet = await api(SHEETS.otchet, 'A1:Z15');
+        renderTab('otchet');
+      } catch(e) { if (e.message!=='auth' && el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`; }
+    } else renderTab('otchet');
+  } 
+  else if (tab === 'dohod') {
+    if (!S.data.dohod) {
+      const el = document.getElementById('c-dohod');
+      if (el) el.innerHTML = loader();
+      try {
+        S.data.dohod = await api(SHEETS.dohod, 'A1:B13');
+        renderTab('dohod');
+      } catch(e) { if (e.message!=='auth' && el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`; }
+    } else renderTab('dohod');
+  }
+  else if (tab === 'grafik') {
+    if (!S.data.grafik) {
+      const el = document.getElementById('c-grafik');
+      if (el) el.innerHTML = loader();
+      try {
+        S.data.grafik = await api(SHEETS.grafik, 'A1:AI25');
+        renderTab('grafik');
+      } catch(e) { if (e.message!=='auth' && el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`; }
+    } else renderTab('grafik');
+  }
+  else if (tab === 'instruktsii') {
+    if (!S.data.instruktsii) {
+      const el = document.getElementById('c-instruktsii');
+      if (el) el.innerHTML = loader();
+      try {
+        S.data.instruktsii = await api(SHEETS.instruktsii, 'A1:C200');
+        renderTab('instruktsii');
+      } catch(e) { if (e.message!=='auth' && el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`; }
+    } else renderTab('instruktsii');
   }
 }
 
@@ -1230,6 +1231,8 @@ function reloadCurrent() {
   const tab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
   if (tab === 'grafik') _schedWeek = null;
   S.data[tab] = null;
+  if (tab === 'otchet') S.data.dozhimOtch = null;
+  if (tab === 'dohod') S.data.dozhimZp = null;
   loadTab(tab).then(() => toast('Обновлено','s'));
 }
 
@@ -1240,15 +1243,58 @@ function renderTab(tab) {
   else if (tab==='instruktsii') renderInstruktsii();
 }
 
+async function loadDozhimOtch() {
+  if (!S.data.dozhimOtch) {
+    const el = document.getElementById('c-otchet');
+    if (el && S.reportTab === 'dozhim') el.innerHTML = loader();
+    try {
+      S.data.dozhimOtch = await api(SHEETS.dozhimOtch, 'A1:Z30');
+      renderOtchet();
+    } catch(e) { if (el && S.reportTab === 'dozhim') el.innerHTML = `<div class="err">Ошибка загрузки ДОЖИМ: ${e.message}</div>`; }
+  } else renderOtchet();
+}
+
+async function loadDozhimZp() {
+  if (!S.data.dozhimZp) {
+    const el = document.getElementById('c-dohod');
+    if (el && S.dohodTab === 'dozhim') el.innerHTML = loader();
+    try {
+      S.data.dozhimZp = await api(SHEETS.dozhimZp, 'A1:B20');
+      renderDohod();
+    } catch(e) { if (el && S.dohodTab === 'dozhim') el.innerHTML = `<div class="err">Ошибка загрузки зарплаты ДОЖИМ: ${e.message}</div>`; }
+  } else renderDohod();
+}
+
+function setReportTab(tab) {
+  S.reportTab = tab;
+  if (tab === 'dozhim') loadDozhimOtch();
+  else renderOtchet();
+}
+
+function setDohodTab(tab) {
+  S.dohodTab = tab;
+  if (tab === 'dozhim') loadDozhimZp();
+  else renderDohod();
+}
+
 function renderOtchet() {
   const floating = document.getElementById('floating-subtabs');
-  const el  = document.getElementById('c-otchet');
-  const raw = S.data.otchet;
-  if (!raw || raw.length < 4) { 
-    if (floating) floating.innerHTML = '';
-    el.innerHTML = '<div class="empty">Нет данных</div>'; 
-    return; 
+  if (floating) {
+    floating.innerHTML = `
+      <span class="report-subtab ${S.reportTab==='dept'?'active':''}" onclick="setReportTab('dept')">ОТДЕЛ</span>
+      <span class="report-subtab ${S.reportTab==='mgr'?'active':''}" onclick="setReportTab('mgr')">МЕНЕДЖЕРЫ</span>
+      <span class="report-subtab ${S.reportTab==='dozhim'?'active':''}" onclick="setReportTab('dozhim')">ДОЖИМ</span>
+    `;
   }
+
+  if (S.reportTab === 'dozhim') {
+    renderDozhimReport();
+    return;
+  }
+
+  // CRM рендер
+  const raw = S.data.otchet;
+  if (!raw || raw.length < 4) { document.getElementById('c-otchet').innerHTML = '<div class="empty">Нет данных CRM</div>'; return; }
 
   const mgrRows = raw.slice(3, 12).filter(r => r[0] && r[0].trim());
   const kot     = raw[13] || [];
@@ -1280,297 +1326,190 @@ function renderOtchet() {
   const accG = isLight ? 55  : 255;
   const accB = isLight ? 221 : 71;
 
-  const deptCard = `
-  <div class="sec-title">ОТДЕЛ CRM</div>
-  <div class="dept-card" style="background:rgba(${accR},${accG},${accB},0.08)">
-    <div class="dept-row1">
-      <div class="dept-cell hi">
-        <div class="dc-lbl">Визиты</div>
-        <div class="dc-val">${allVis||'—'}</div>
-      </div>
-      <div class="dept-cell">
-        <div class="dc-lbl">План</div>
-        <div class="dc-val">${planTotal||'—'}</div>
-      </div>
-      <div class="dept-cell">
-        <div class="dc-lbl">Прогноз</div>
-        <div class="dc-val" style="color:${pctClr(parseInt(progOtdel))}">${progOtdel}</div>
-      </div>
-    </div>
-    <div class="dept-row2">
-      <div class="dept-cell">
-        <div class="dc-lbl">Кредит</div>
-        <div class="dc-val">${deptKred||'—'}</div>
-      </div>
-      <div class="dept-cell">
-        <div class="dc-lbl">Наличка</div>
-        <div class="dc-val">${deptNal||'—'}</div>
-      </div>
-      <div class="dept-cell">
-        <div class="dc-lbl">Комиссия</div>
-        <div class="dc-val">${deptKom||'—'}</div>
-      </div>
-    </div>
-  </div>`;
+  const deptCard = `<div class="sec-title">ОТДЕЛ CRM</div><div class="dept-card" style="background:rgba(${accR},${accG},${accB},0.08)">
+    <div class="dept-row1"><div class="dept-cell hi"><div class="dc-lbl">Визиты</div><div class="dc-val">${allVis||'—'}</div></div>
+    <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">${planTotal||'—'}</div></div>
+    <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val" style="color:${pctClr(parseInt(progOtdel))}">${progOtdel}</div></div></div>
+    <div class="dept-row2"><div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">${deptKred||'—'}</div></div>
+    <div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">${deptNal||'—'}</div></div>
+    <div class="dept-cell"><div class="dc-lbl">Комиссия</div><div class="dc-val">${deptKom||'—'}</div></div></div></div>`;
 
-  const dozhimCard = `
-    <div class="sec-title">ОТДЕЛ ДОЖИМ</div>
-    <div class="dept-card" style="opacity:0.7;background:rgba(${accR},${accG},${accB},0.08)">
-      <div class="dept-row1">
-        <div class="dept-cell"><div class="dc-lbl">Визиты</div><div class="dc-val">—</div></div>
-        <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">—</div></div>
-        <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val">—</div></div>
-      </div>
-      <div class="dept-row2">
-        <div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">—</div></div>
-        <div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">—</div></div>
-        <div class="dept-cell"><div class="dc-lbl">Комиссия</div><div class="dc-val">—</div></div>
-      </div>
-    </div>`;
+  const dozhimCard = `<div class="sec-title">ОТДЕЛ ДОЖИМ</div><div class="dept-card" style="opacity:0.7;background:rgba(${accR},${accG},${accB},0.08)">
+    <div class="dept-row1"><div class="dept-cell"><div class="dc-lbl">Визиты</div><div class="dc-val">—</div></div>
+    <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">—</div></div>
+    <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val">—</div></div></div>
+    <div class="dept-row2"><div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">—</div></div>
+    <div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">—</div></div>
+    <div class="dept-cell"><div class="dc-lbl">Комиссия</div><div class="dc-val">—</div></div></div></div>`;
 
-  const KOTEL = ['котел','котёл','kotel'];
-  const isKotel = n => KOTEL.includes((n||'').toLowerCase().trim());
+  const managerStats = mgrRows.filter(r => !['котел','котёл','kotel'].includes((r[0]||'').toLowerCase().trim())).map(r => ({
+    name: (r[0]||'—').toUpperCase(), visits: num(r[7]), plan: num(r[3]) || 1, progNum: parseFloat((r[6]||'0%').replace('%','').replace(',','.')) || 0,
+  })).sort((a,b)=>b.progNum - a.progNum);
+  const speedoHTML = managerStats.map((item, idx) => `<div class="speedo-item"><div class="speedo-svg-container"><svg viewBox="0 0 200 200"><defs><linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#eb4d4b"/><stop offset="50%" stop-color="#fbad33"/><stop offset="100%" stop-color="#27ae60"/></linearGradient></defs><path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/><path id="progress-${idx}" class="progress-path" stroke="url(#speedGradient)" d="M 40 160 A 85 85 0 1 1 160 160"/></svg><div class="speedo-value">${Math.round(item.progNum)}%</div><div class="speedo-visits">${item.visits}</div></div><div class="speedo-name">${item.name}</div></div>`).join('');
+  const speedoCard = `<div class="sec-title">ПРОГНОЗЫ ПО МЕНЕДЖЕРАМ</div><div class="dept-card" style="margin-top:0;background:rgba(${accR},${accG},${accB},0.08)"><div class="speedo-grid">${speedoHTML}</div></div>`;
 
-  const managerStats = mgrRows
-    .filter(r => !isKotel(r[0]))
-    .map(r => ({
-      name:    (r[0]||'—').toUpperCase(),
-      visits:  num(r[7]),
-      plan:    num(r[3]) || 1,
-      progNum: parseFloat((r[6]||'0%').replace('%','').replace(',','.')) || 0,
-    }));
-  managerStats.sort((a, b) => b.progNum - a.progNum);
-
-  const speedoHTML = managerStats.map((item, idx) => {
-    const progressId = `progress-${idx}`;
-    return `
-      <div class="speedo-item">
-        <div class="speedo-svg-container">
-          <svg viewBox="0 0 200 200">
-            <defs>
-              <linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#eb4d4b"/>
-                <stop offset="50%" stop-color="#fbad33"/>
-                <stop offset="100%" stop-color="#27ae60"/>
-              </linearGradient>
-            </defs>
-            <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/>
-            <path id="${progressId}" class="progress-path" stroke="url(#speedGradient)" d="M 40 160 A 85 85 0 1 1 160 160"/>
-          </svg>
-          <div class="speedo-value">${Math.round(item.progNum)}%</div>
-          <div class="speedo-visits">${item.visits}</div>
-        </div>
-        <div class="speedo-name">${item.name}</div>
-      </div>`;
+  const rankRows = mgrRows.filter(r => !['котел','котёл','kotel'].includes((r[0]||'').toLowerCase().trim()));
+  const withProg = rankRows.map(r => ({ r, progNum: parseFloat((r[6]||'0%').replace('%','').replace(',','.')) || 0 })).sort((a,b)=>b.progNum - a.progNum);
+  const total = withProg.length;
+  const ranked = withProg.map(({ r, progNum }, idx) => {
+    const name = (r[0]||'—').toUpperCase(), allV = r[7]||'0', rplan = r[3]||'0', ost = r[4]||'0', prog = r[6]||'0%';
+    const rs = rankStyles(idx, total);
+    const fillGrad = `linear-gradient(90deg,${rs.color},${rs.color})`;
+    const modalData = JSON.stringify({ name, v800:r[1], v1200:r[2], rplan, ost, prc:r[5], prog, allV, kred800:r[8], nal800:r[9], td800:r[10], kom800:r[11], kred1200:r[12], nal1200:r[13], td1200:r[14], kom1200:r[15], zadatok:r[16], vsalone:r[19], vkso:r[22], vfSSP:r[23], vbanke:r[24], otkaz:r[25], rs, medal: idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'', idx: idx+1 }).replace(/'/g,"&#39;");
+    return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}"><div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${medalBtn(idx)}</div><button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div><div class="mop-mini"><div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div><div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div><div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div></div><div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:${rs.color}">${progNum}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(progNum,100)}%;background:${fillGrad}"></div></div></div></div>`;
   }).join('');
 
-  const speedoCard = `
-    <div class="sec-title">ПРОГНОЗЫ ПО МЕНЕДЖЕРАМ</div>
-    <div class="dept-card" style="margin-top:0;background:rgba(${accR},${accG},${accB},0.08)">
-      <div class="speedo-grid">${speedoHTML}</div>
-    </div>`;
+  const tot = `<div class="totals-box"><div class="totals-lbl">ИТОГО ПО ОТДЕЛУ</div><div class="totals-row"><div class="ti"><span class="tl">Все визиты</span><span class="tv">${allVis||'—'}</span></div><div class="ti"><span class="tl">Визиты 800</span><span class="tv">${vis800sum||'—'}</span></div><div class="ti"><span class="tl">Визиты 1200</span><span class="tv">${vis1200sum||'—'}</span></div><div class="ti"><span class="tl">Кредит</span><span class="tv" style="color:var(--acc)">${deptKred||'—'}</span></div><div class="ti"><span class="tl">Прогноз</span><span class="tv" style="color:${pctClr(parseInt(progOtdel))}">${progOtdel}</span></div></div></div>`;
 
-  const rankRows  = mgrRows.filter(r => !isKotel(r[0]));
-  const kotelRows = mgrRows.filter(r =>  isKotel(r[0]));
+  let content = '';
+  if (S.reportTab === 'dept') content = deptCard + dozhimCard + speedoCard;
+  else if (S.reportTab === 'mgr') content = `<div class="sec-title">Менеджеры</div><div class="mops">${ranked}</div>`;
+  document.getElementById('c-otchet').innerHTML = content + tot;
+  if (S.reportTab === 'dept') managerStats.forEach((_, idx) => { const p = document.getElementById(`progress-${idx}`); if(p) p.style.strokeDasharray = `0,${p.getTotalLength()}`; setTimeout(()=>{if(p){const l=p.getTotalLength(), targ=Math.min(managerStats[idx].visits/managerStats[idx].plan,1); p.style.strokeDasharray = `${l*targ},${l}`;}},50); });
+}
 
-  const withProg = rankRows.map(r => {
-    const progNum = parseFloat((r[6]||'0%').replace('%','').replace(',','.')) || 0;
-    return { r, progNum };
-  });
-  withProg.sort((a, b) => b.progNum - a.progNum);
-  const total = withProg.length;
+function renderDozhimReport() {
+  const raw = S.data.dozhimOtch;
+  const container = document.getElementById('c-otchet');
+  if (!raw || raw.length < 2) { container.innerHTML = '<div class="empty">Нет данных по отделу ДОЖИМ</div>'; return; }
 
-  const ranked = withProg.map(({ r, progNum }, idx) => {
-    const name  = (r[0]||'—').toUpperCase();
-    const rplan = r[3]||'0', ost = r[4]||'0';
-    const prc   = r[5]||'0%', prog = r[6]||'0%';
-    const allV  = r[7]||'0';
-    const rs    = rankStyles(idx, total);
-    const fillGrad = `linear-gradient(90deg,${rs.color},${rs.color})`;
+  const rows = raw.slice(2).filter(r => r[0] && r[0].trim() && !r[0].toLowerCase().includes('итого'));
+  if (!rows.length) { container.innerHTML = '<div class="empty">Нет менеджеров ДОЖИМ</div>'; return; }
 
-    const modalData = JSON.stringify({
-      name, v800:r[1], v1200:r[2], rplan, ost, prc, prog, allV,
-      kred800:r[8], nal800:r[9], td800:r[10], kom800:r[11],
-      kred1200:r[12], nal1200:r[13], td1200:r[14], kom1200:r[15],
-      zadatok:r[16], vsalone:r[19], vkso:r[22], vfSSP:r[23], vbanke:r[24], otkaz:r[25],
-      rs, medal: idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'', idx: idx+1
-    }).replace(/'/g,"&#39;");
-
-    return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
+  const cards = rows.map((r, idx) => {
+    const name = (r[0]||'—').toUpperCase();
+    const allV = r[6] || r[1] || '0';
+    const plan = r[2] || '0';
+    const ost  = r[3] || '0';
+    const progRaw = r[5] || (r[4] ? r[4] : '0%');
+    const progNum = parseFloat(String(progRaw).replace('%','').replace(',','.')) || 0;
+    const v800 = r[1]||'0', v1200 = r[10]||'0';
+    const kred800 = r[7]||'0', nal800 = r[8]||'0', kom800 = r[9]||'0';
+    const kred1200 = r[11]||'0', nal1200 = r[12]||'0', kom1200 = r[13]||'0';
+    const zadatok = r[14]||'0';
+    const modalData = JSON.stringify({ name, v800, v1200, rplan:plan, ost, prc:progRaw, prog:progRaw, allV, kred800, nal800, kom800, kred1200, nal1200, kom1200, zadatok, idx: idx+1 }).replace(/'/g,"&#39;");
+    return `<div class="mop" style="background:rgba(255,255,255,0.05);border-color:var(--line2)">
       <div class="mop-head">
         <div class="mop-head-left">
-          <span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span>
+          <span class="rank-badge" style="background:var(--bg3);color:var(--txt2)">${idx+1}</span>
           <span class="mop-name">${name}</span>
-          ${medalBtn(idx)}
         </div>
-        <button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button>
+        <button class="mop-info-btn" onclick="openDozhimModal('${modalData.replace(/"/g,"&quot;")}')">i</button>
       </div>
       <div class="mop-mini">
         <div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
-        <div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div>
+        <div class="mm"><div class="ml">План</div><div class="mv">${plan}</div></div>
         <div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div>
       </div>
       <div class="mop-prog">
         <div class="mop-prog-labels">
-          <span class="cur" style="color:${rs.color}">${progNum}%</span>
+          <span class="cur">${progNum}%</span>
           <span class="end">100%</span>
         </div>
         <div class="mop-prog-track">
-          <div class="mop-prog-fill" style="width:${Math.min(progNum,100)}%;background:${fillGrad}"></div>
+          <div class="mop-prog-fill" style="width:${Math.min(progNum,100)}%;background:var(--acc)"></div>
         </div>
       </div>
     </div>`;
   }).join('');
 
-  const kotelHTML = kotelRows.map(r => {
-    const name = (r[0]||'—').toUpperCase();
-    const prog = r[6]||'0%';
-    const p = parseFloat(prog.replace('%','').replace(',','.')) || 0;
-    return `<div class="mop" style="opacity:.65">
-      <div class="mop-head">
-        <div class="mop-head-left">
-          <span class="rank-badge" style="background:rgba(128,128,128,.15);color:var(--txt3)">—</span>
-          <span class="mop-name">${name}</span>
-        </div>
-      </div>
-      <div class="mop-mini">
-        <div class="mm"><div class="ml">Визиты</div><div class="mv">${r[7]||'0'}</div></div>
-        <div class="mm"><div class="ml">План</div><div class="mv">${r[3]||'0'}</div></div>
-        <div class="mm"><div class="ml">Остаток</div><div class="mv">${r[4]||'0'}</div></div>
-      </div>
-      <div class="mop-prog">
-        <div class="mop-prog-labels">
-          <span class="cur" style="color:var(--txt2)">${p}%</span>
-          <span class="end">100%</span>
-        </div>
-        <div class="mop-prog-track">
-          <div class="mop-prog-fill" style="width:${Math.min(p,100)}%;background:var(--txt3)"></div>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-
-  const mops_html = ranked + kotelHTML;
-
-  const tot = `<div class="totals-box">
-    <div class="totals-lbl">ИТОГО ПО ОТДЕЛУ</div>
-    <div class="totals-row">
-      <div class="ti"><span class="tl">Все визиты</span><span class="tv">${allVis||'—'}</span></div>
-      <div class="ti"><span class="tl">Визиты 800</span><span class="tv">${vis800sum||'—'}</span></div>
-      <div class="ti"><span class="tl">Визиты 1200</span><span class="tv">${vis1200sum||'—'}</span></div>
-      <div class="ti"><span class="tl">Кредит</span><span class="tv" style="color:var(--acc)">${deptKred||'—'}</span></div>
-      <div class="ti"><span class="tl">Прогноз</span><span class="tv" style="color:${pctClr(parseInt(progOtdel))}">${progOtdel}</span></div>
-    </div>
-  </div>`;
-
-  const subtabs = `
-    <span class="report-subtab ${S.reportTab==='dept'?'active':''}" onclick="setReportTab('dept')">ОТДЕЛ</span>
-    <span class="report-subtab ${S.reportTab==='mgr'?'active':''}" onclick="setReportTab('mgr')">МЕНЕДЖЕРЫ</span>
-    <span class="report-subtab ${S.reportTab==='dozhim'?'active':''}" onclick="setReportTab('dozhim')">ДОЖИМ</span>
-  `;
-
-  if (floating) floating.innerHTML = subtabs;
-
-  let content = '';
-  if (S.reportTab === 'dept') {
-    content = deptCard + dozhimCard + speedoCard;
-  } else if (S.reportTab === 'mgr') {
-    content = `<div class="sec-title">Менеджеры</div><div class="mops">${mops_html}</div>`;
-  } else {
-    content = `<div class="empty">Раздел скоро появится</div>`;
-  }
-
-  el.innerHTML = content + tot;
-
-  if (S.reportTab === 'dept') {
-    managerStats.forEach((item, idx) => {
-      const progressPath = document.getElementById(`progress-${idx}`);
-      if (!progressPath) return;
-      const length = progressPath.getTotalLength();
-      const targetPct = Math.min(item.visits / item.plan, 1);
-      progressPath.style.strokeDasharray = `0,${length}`;
-      let start = null;
-      function animate(ts) {
-        if (!start) start = ts;
-        const ease = 1 - Math.pow(1 - Math.min((ts - start) / 2000, 1), 4);
-        progressPath.style.strokeDasharray = `${ease * length * targetPct},${length}`;
-        if (ease < 1) requestAnimationFrame(animate);
-      }
-      requestAnimationFrame(animate);
-    });
-  }
-}
-
-function setReportTab(tab) {
-  S.reportTab = tab;
-  renderOtchet();
-}
-
-function goHome() {
-  const tabBtn = document.querySelector('.tab[data-tab="otchet"]');
-  if (tabBtn) tabBtn.click();
-  S.reportTab = 'dept';
-  if (S.data.otchet) renderOtchet();
+  container.innerHTML = `<div class="sec-title">ДОЖИМ — МЕНЕДЖЕРЫ</div><div class="mops">${cards}</div>`;
 }
 
 function renderDohod() {
-  const el  = document.getElementById('c-dohod');
+  const subtabsDiv = document.getElementById('dohod-subtabs');
+  if (subtabsDiv) {
+    subtabsDiv.style.display = 'flex';
+    subtabsDiv.innerHTML = `
+      <span class="dohod-subtab ${S.dohodTab==='crm'?'active':''}" onclick="setDohodTab('crm')">CRM</span>
+      <span class="dohod-subtab ${S.dohodTab==='dozhim'?'active':''}" onclick="setDohodTab('dozhim')">ДОЖИМ</span>
+    `;
+  }
+
+  if (S.dohodTab === 'dozhim') {
+    renderDozhimSalary();
+    return;
+  }
+
   const raw = S.data.dohod;
-  if (!raw || raw.length < 3) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
+  const container = document.getElementById('c-dohod');
+  if (!raw || raw.length < 3) { container.innerHTML = '<div class="empty">Нет данных зарплаты CRM</div>'; return; }
 
   const mgrs   = raw.slice(2,12).filter(r => r[0]&&r[0].trim());
   const totRow = raw[12] || [];
-
   const KOTEL_NAMES = ['котел','котёл','kotel'];
   const isKotel = name => KOTEL_NAMES.includes((name||'').toLowerCase().trim());
-
   const kotelRow = mgrs.find(r => isKotel(r[0]));
   const rankMgrs = mgrs.filter(r => !isKotel(r[0]));
-
-  const parsed = rankMgrs.map(r => ({
-    name: (r[0]||'—').toUpperCase(),
-    raw:  r[1]||'0',
-    n:    parseFloat(String(r[1]||'0').replace(/[^\d.]/g,''))||0,
-  }));
-  parsed.sort((a, b) => b.n - a.n);
-
+  const parsed = rankMgrs.map(r => ({ name: (r[0]||'—').toUpperCase(), raw: r[1]||'0', n: parseFloat(String(r[1]||'0').replace(/[^\d.]/g,''))||0 })).sort((a,b)=>b.n - a.n);
   const maxAmt = parsed[0]?.n || 0;
-  const total  = parsed.length;
-  const isLight = document.body.classList.contains('light');
-  const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
-
+  const total = parsed.length;
   const rows = parsed.map((item, idx) => {
-    const w  = maxAmt ? Math.round(item.n / maxAmt * 100) : 0;
+    const w = maxAmt ? Math.round(item.n / maxAmt * 100) : 0;
     const rs = rankStyles(idx, total);
     return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span>
-        <span class="zp-n" style="color:${rs.color}">${item.name}</span>
-        ${medalBtn(idx)}
+        <span class="zp-n" style="color:${rs.color}">${item.name}</span>${medalBtn(idx)}
       </div>
       <div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div>
-      <div style="text-align:right">
-        <span class="zp-a" style="color:${rs.color}">${fmtRub(item.raw)}</span>
-      </div>
+      <div style="text-align:right"><span class="zp-a" style="color:${rs.color}">${fmtRub(item.raw)}</span></div>
     </div>`;
   }).join('');
-
-  const kotelHTML = kotelRow ? `
-    <div class="zp-row" style="opacity:.6;margin-top:8px">
-      <span class="zp-n" style="color:var(--txt2)">${(kotelRow[0]||'').toUpperCase()}</span>
-      <div class="zp-bg"><div class="zp-fill" style="width:0%"></div></div>
-      <span class="zp-a" style="color:var(--txt2)">${fmtRub(kotelRow[1])}</span>
-    </div>` : '';
-
-  el.innerHTML = `
-    <div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)">
-      <div class="zl">Фонд отдела за месяц</div>
-      <div class="zv">${fmtRub(totRow[1])}</div>
-    </div>
-    <div class="sec-title">Топ по доходу</div>
-    <div class="zp-list">${rows}${kotelHTML}</div>`;
+  const kotelHTML = kotelRow ? `<div class="zp-row" style="opacity:.6;margin-top:8px"><span class="zp-n" style="color:var(--txt2)">${(kotelRow[0]||'').toUpperCase()}</span><div class="zp-bg"><div class="zp-fill" style="width:0%"></div></div><span class="zp-a" style="color:var(--txt2)">${fmtRub(kotelRow[1])}</span></div>` : '';
+  const isLight = document.body.classList.contains('light');
+  const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
+  container.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Фонд отдела за месяц</div><div class="zv">${fmtRub(totRow[1])}</div></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}${kotelHTML}</div>`;
 }
 
+function renderDozhimSalary() {
+  const raw = S.data.dozhimZp;
+  const container = document.getElementById('c-dohod');
+  if (!raw || raw.length < 2) { container.innerHTML = '<div class="empty">Нет данных зарплаты ДОЖИМ</div>'; return; }
+
+  const rows = raw.slice(1).filter(r => r[0] && r[0].trim() && !r[0].toLowerCase().includes('итого'));
+  if (!rows.length) { container.innerHTML = '<div class="empty">Нет менеджеров ДОЖИМ</div>'; return; }
+
+  const items = rows.map(r => ({ name: (r[0]||'—').toUpperCase(), raw: r[1]||'0', n: parseFloat(String(r[1]||'0').replace(/[^\d.]/g,''))||0 }));
+  const totalFund = items.reduce((s,it) => s + it.n, 0);
+  const isLight = document.body.classList.contains('light');
+  const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
+
+  const cards = items.map((item, idx) => `<div class="zp-row" style="background:rgba(255,255,255,0.05);border-color:var(--line2)">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <span class="rank-badge" style="background:var(--bg3);color:var(--txt2)">${idx+1}</span>
+      <span class="zp-n">${item.name}</span>
+    </div>
+    <div class="zp-bg"><div class="zp-fill" style="width:${Math.min(100, Math.round(item.n / (totalFund||1) * 100))}%;background:var(--acc)"></div></div>
+    <div style="text-align:right"><span class="zp-a">${fmtRub(item.raw)}</span></div>
+  </div>`).join('');
+
+  container.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Фонд ДОЖИМ за месяц</div><div class="zv">${fmtRub(totalFund)}</div></div><div class="sec-title">Зарплата менеджеров</div><div class="zp-list">${cards}</div>`;
+}
+
+function openDozhimModal(dataStr) {
+  const d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"'));
+  document.getElementById('mop-modal-title').innerHTML = `<span class="rank-badge" style="background:var(--bg3);color:var(--acc)">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>`;
+  document.getElementById('mop-modal-body').innerHTML = `
+    <div class="mop-grid4"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv">${d.prog}</div></div></div>
+    <div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${Math.min(parseFloat(String(d.prc).replace('%','')),100)}%;background:var(--acc)"></div></div><span class="prog-r">100%</span></div>
+    <div class="modal-sec"><div class="modal-sec-title">CRM 800</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div></div></div>
+    <div class="modal-sec"><div class="modal-sec-title">ТЁПЛЫЕ ЛИДЫ 1200</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1200}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1200}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1200}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1200}</div></div></div></div>
+    <div class="modal-sec"><div class="modal-sec-title">ЗАДАТКИ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div></div></div>`;
+  document.getElementById('mop-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+window.openMopModal = openMopModal;
+window.openDozhimModal = openDozhimModal;
+
+function closeMopModal(e) {
+  if (e && e.target !== document.getElementById('mop-overlay')) return;
+  document.getElementById('mop-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ГРАФИК
 const DOW = ['вс','пн','вт','ср','чт','пт','сб'];
 let _schedWeek = null;
 
@@ -1677,6 +1616,7 @@ function schedNav(dir) {
   if (S.data.grafik) renderGrafik();
 }
 
+// ИНСТРУКЦИИ
 function renderInstruktsii() {
   const el  = document.getElementById('c-instruktsii');
   const raw = S.data.instruktsii;
@@ -1725,10 +1665,10 @@ function renderInstruktsii() {
     const ths = cols.map(c => `<th>${c}</th>`).join('');
     const trs = rows.filter(r => r.status||r.criteria).map(r =>
       withA
-        ? `<tr><td>${r.status||'—'}</td><td>${r.criteria||'—'}</td><td>${r.action||'—'}</td></tr>`
-        : `<tr><td>${r.status||'—'}</td><td>${r.criteria||'—'}</td></tr>`
+        ? `<td><td>${r.status||'—'}<\/td><td>${r.criteria||'—'}<\/td><td>${r.action||'—'}<\/td>\\`
+        : `}<td>${r.status||'—'}<\/td><td>${r.criteria||'—'}<\/td>`
     ).join('');
-    return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
+    return `<div class="table-scroll"><table class="instr-table"><thead>${ths}</thead><tbody>${trs}</tbody></table></div>`;
   }
 
   const html = blocks.map((b, i) => {
@@ -1762,17 +1702,13 @@ function toggleInstr(id) {
   const block = document.getElementById(id);
   block.classList.toggle('open');
   const btn = block.querySelector('.instr-toggle');
-  if (btn) {
-    btn.textContent = block.classList.contains('open') ? '[-/+]' : '[+/-]';
-  }
+  if (btn) btn.textContent = block.classList.contains('open') ? '[-/+]' : '[+/-]';
 }
 function toggleSub(id) {
   const sub = document.getElementById(id);
   sub.classList.toggle('open');
   const btn = sub.querySelector('.instr-sub-toggle');
-  if (btn) {
-    btn.textContent = sub.classList.contains('open') ? '[-]' : '[+]';
-  }
+  if (btn) btn.textContent = sub.classList.contains('open') ? '[-]' : '[+]';
 }
 
 function burstConfetti(el, idx) {
@@ -1786,7 +1722,6 @@ function burstConfetti(el, idx) {
     const audio = new Audio('https://actions.google.com/sounds/v1/fireworks/firework_burst.ogg');
     audio.volume = 0.25;
     audio.play().catch(()=>{});
-
     const flash = document.createElement('div');
     flash.style.cssText = `
       position:fixed; left:${cx}px; top:${cy}px;
@@ -1828,86 +1763,24 @@ function burstConfetti(el, idx) {
     setTimeout(() => piece.remove(), dur * 1000);
   }
 
-  if (isGold) {
-    setTimeout(() => burstConfetti(el, 99), 140);
-  }
+  if (isGold) setTimeout(() => burstConfetti(el, 99), 140);
 }
 
-function openMopModal(dataStr) {
-  const d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"'));
-  const p = num(d.prc);
-  const rs = d.rs;
-
-  document.getElementById('mop-modal-title').innerHTML =
-    `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span>
-     <span style="font-family:'Unbounded',sans-serif">${d.name}</span>${d.medal?' '+d.medal:''}`;
-
-  document.getElementById('mop-modal-body').innerHTML = `
-    <div class="mop-grid4" style="margin-bottom:12px">
-      <div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div>
-      <div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div>
-      <div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div>
-      <div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div>
-    </div>
-    <div class="prog-row" style="margin-bottom:16px">
-      <span class="prog-l">${d.prc}</span>
-      <div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${rs.color}"></div></div>
-      <span class="prog-r" style="color:${rs.color}">100%</span>
-    </div>
-    <div class="modal-sec">
-      <div class="modal-sec-title">CRM</div>
-      <div class="modal-grid">
-        <div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div>
-        <div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div>
-        <div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div>
-        <div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td800}</div></div>
-        <div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div>
-        <div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div>
-      </div>
-    </div>
-    <div class="modal-sec">
-      <div class="modal-sec-title">ТЁПЛЫЕ ЛИДЫ</div>
-      <div class="modal-grid">
-        <div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1200}</div></div>
-        <div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1200}</div></div>
-        <div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1200}</div></div>
-        <div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td1200}</div></div>
-        <div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1200}</div></div>
-      </div>
-    </div>
-    <div class="modal-sec">
-      <div class="modal-sec-title">ТРЕБУЮТ АКТУАЛИЗАЦИИ / ОТКАЗЫ</div>
-      <div class="modal-grid">
-        <div class="modal-cell"><div class="mc-l">В салоне</div><div class="mc-v">${d.vsalone}</div></div>
-        <div class="modal-cell"><div class="mc-l">В КСО</div><div class="mc-v">${d.vkso}</div></div>
-        <div class="modal-cell"><div class="mc-l">В банке</div><div class="mc-v">${d.vbanke}</div></div>
-        <div class="modal-cell"><div class="mc-l">ФССП</div><div class="mc-v">${d.vfSSP}</div></div>
-        <div class="modal-cell"><div class="mc-l">Отказ</div><div class="mc-v">${d.otkaz}</div></div>
-      </div>
-    </div>`;
-
-  document.getElementById('mop-overlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
+function goHome() {
+  const tabBtn = document.querySelector('.tab[data-tab="otchet"]');
+  if (tabBtn) tabBtn.click();
+  S.reportTab = 'dept';
+  if (S.data.otchet) renderOtchet();
 }
 
-function closeMopModal(e) {
-  if (e && e.target !== document.getElementById('mop-overlay')) return;
-  document.getElementById('mop-overlay').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-document.getElementById('btn-theme').addEventListener('click',
-  () => setTheme(!document.body.classList.contains('light'))
-);
+document.getElementById('btn-theme').addEventListener('click', () => setTheme(!document.body.classList.contains('light')));
 document.getElementById('btn-refresh').addEventListener('click', reloadCurrent);
 document.getElementById('btn-login').addEventListener('click', () => {
   if (!tokenClient) { toast('Загружается…','i'); return; }
   tokenClient.requestAccessToken({ prompt:'consent' });
 });
 document.getElementById('btn-out').addEventListener('click', onLogout);
-document.querySelectorAll('.tab').forEach(b =>
-  b.addEventListener('click', () => goTab(b.dataset.tab))
-);
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => goTab(b.dataset.tab)));
 
 function init() {
   syncTheme();
@@ -1947,10 +1820,7 @@ else init();
   window.addEventListener('resize', resize);
 
   class Orb {
-    constructor() {
-      this.reset();
-    }
-
+    constructor() { this.reset(); }
     reset() {
       this.x = Math.random() * canvas.width;
       this.y = Math.random() * canvas.height;
@@ -1960,27 +1830,18 @@ else init();
       this.vx = (Math.random() - 0.5) * 0.5;
       this.vy = (Math.random() - 0.5) * 0.5;
     }
-
     update() {
       this.x += this.vx;
       this.y += this.vy;
       if (this.alpha < 1) this.alpha += 0.01;
-      if (this.radius < this.baseRadius) {
-        this.radius += this.baseRadius * 0.02;
-      }
+      if (this.radius < this.baseRadius) this.radius += this.baseRadius * 0.02;
       if (this.x < -500 || this.x > canvas.width + 500 ||
-          this.y < -500 || this.y > canvas.height + 500) {
-        this.reset();
-      }
+          this.y < -500 || this.y > canvas.height + 500) this.reset();
     }
-
     draw() {
       const isLight = document.body.classList.contains('light');
       let color = isLight ? "232, 255, 71" : "50, 0, 85";
-      const gradient = ctx.createRadialGradient(
-        this.x, this.y, 0,
-        this.x, this.y, this.radius
-      );
+      const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
       gradient.addColorStop(0, `rgba(${color}, ${0.35 * this.alpha})`);
       gradient.addColorStop(1, `rgba(${color}, 0)`);
       ctx.fillStyle = gradient;
@@ -1990,9 +1851,7 @@ else init();
     }
   }
 
-  for (let i = 0; i < ORB_COUNT; i++) {
-    orbs.push(new Orb());
-  }
+  for (let i = 0; i < ORB_COUNT; i++) orbs.push(new Orb());
 
   function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -2010,13 +1869,9 @@ else init();
   function triggerGlitch() {
     const mode = Math.random();
     el.classList.add('active');
-    if (mode < 0.33) {
-      el.classList.add('shake');
-    } else if (mode < 0.66) {
-      el.classList.add('flash');
-    } else {
-      el.style.color = Math.random() > 0.5 ? '#ff0040' : '#00eaff';
-    }
+    if (mode < 0.33) el.classList.add('shake');
+    else if (mode < 0.66) el.classList.add('flash');
+    else el.style.color = Math.random() > 0.5 ? '#ff0040' : '#00eaff';
     setTimeout(() => {
       el.classList.remove('active', 'shake', 'flash');
       el.style.color = '';
@@ -2031,6 +1886,5 @@ else init();
   setTimeout(loop, 3000);
 })();
 </script>
-
 </body>
 </html>

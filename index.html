@@ -14,7 +14,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&display=swap" rel="stylesheet"/>
 <script>
-// Сносим все старые Service Worker'ы немедленно
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
     regs.forEach(r => r.unregister());
@@ -94,7 +93,6 @@ main { flex:1; overflow-y:auto }
 .scr.on { display:block }
 @keyframes up { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 
-/* HEADER */
 header {
   background:var(--bg); border-bottom:1px solid var(--line);
   position:sticky; top:0; z-index:100; flex-shrink:0;
@@ -157,7 +155,6 @@ header {
 }
 .btn-out:hover { border-color:var(--red); color:var(--red) }
 
-/* NAV */
 nav {
   background:var(--bg);
   border-bottom:1px solid var(--line);
@@ -186,7 +183,6 @@ nav::-webkit-scrollbar { height:0 }
 .tab.on { color:var(--acc); border-bottom-color:var(--acc) }
 .tab-dot { width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.5 }
 
-/* NOT AUTH */
 .gate {
   display:flex; flex-direction:column; align-items:center;
   justify-content:center; gap:14px; min-height:65vh;
@@ -202,7 +198,6 @@ nav::-webkit-scrollbar { height:0 }
 .gate p  { font-size:13px; color:var(--txt2); line-height:1.7 }
 .gate strong { color:var(--acc) }
 
-/* SHARED */
 .sec-title {
   font-family:'Unbounded',sans-serif;
   font-size:10px; font-weight:800; letter-spacing:.1em;
@@ -231,7 +226,6 @@ nav::-webkit-scrollbar { height:0 }
 }
 .empty { text-align:center; padding:48px 20px; color:var(--txt3); font-size:13px }
 
-/* ПОДВКЛАДКИ ОТЧЁТА (sticky) */
 .report-subtabs {
   display:flex; justify-content:center; gap:16px; margin-bottom:10px; border-bottom:1px solid var(--line); padding-bottom:4px;
   position:sticky; top:0; background:var(--bg); z-index:10;
@@ -248,7 +242,6 @@ nav::-webkit-scrollbar { height:0 }
   color:var(--acc); border-bottom-color:var(--acc);
 }
 
-/* ПОДВКЛАДКИ ДОХОДА */
 .dohod-subtabs {
   display:flex; justify-content:center; gap:16px; margin-bottom:20px; border-bottom:1px solid var(--line); padding-bottom:4px;
   position:sticky; top:0; background:var(--bg); z-index:10;
@@ -265,7 +258,6 @@ nav::-webkit-scrollbar { height:0 }
   color:var(--acc); border-bottom-color:var(--acc);
 }
 
-/* ОБЩИЕ СТИЛИ ДЛЯ КАРТОЧЕК (Liquid Glass) */
 .dept-card, .mop, .zp-row, .d-mop, .d-zp-row {
   position:relative;
   backdrop-filter: blur(12px) saturate(180%);
@@ -303,7 +295,6 @@ body.light .d-zp-row {
   opacity:0.6;
 }
 
-/* КАРТОЧКИ МЕНЕДЖЕРОВ (ОСНОВНЫЕ) */
 .mops { display:flex; flex-direction:column; gap:8px }
 .mop {
   border-radius:var(--r2); padding:13px 14px;
@@ -363,7 +354,6 @@ body.light .mm { background:rgba(0,0,0,0.03); }
   transition:width .7s ease;
 }
 
-/* КАРТОЧКИ ДОЖИМ (без градиента) */
 .d-mops { display:flex; flex-direction:column; gap:8px }
 .d-mop {
   border-radius:var(--r2); padding:13px 14px;
@@ -371,7 +361,6 @@ body.light .mm { background:rgba(0,0,0,0.03); }
 }
 body.light .d-mop { background: rgba(0,0,0,0.03); }
 
-/* ДОХОД */
 .zp-banner {
   background:rgba(var(--acc-r), var(--acc-g), var(--acc-b), 0.15);
   border:1px solid var(--acc-bdr);
@@ -401,7 +390,6 @@ body.light .zp-row { background: rgba(var(--rank-r), var(--rank-g), var(--rank-b
   font-size:13px; font-weight:700;
   flex-shrink:0; text-align:right;
 }
-/* Доход ДОЖИМ – без градиента */
 .d-zp-row {
   display:flex; flex-direction:column;
   border-radius:var(--r2); padding:13px 16px;
@@ -409,7 +397,6 @@ body.light .zp-row { background: rgba(var(--rank-r), var(--rank-g), var(--rank-b
 }
 body.light .d-zp-row { background: rgba(0,0,0,0.03); }
 
-/* ГРАФИК */
 #scr-grafik { padding-top:0 }
 #scr-grafik .w { padding-top:8px }
 .sched-nav {
@@ -488,7 +475,6 @@ body.light .d-zp-row { background: rgba(0,0,0,0.03); }
   outline:2px solid var(--acc); outline-offset:-2px; border-radius:6px;
 }
 
-/* ИНСТРУКЦИИ (с вложенностью и горизонтальным скроллом) */
 .instr-block {
   border:1px solid var(--line); border-radius:var(--r2);
   overflow:hidden; margin-bottom:8px;
@@ -712,9 +698,6 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
 <div id="toast"></div>
 
 <script>
-/* ═══════════════════════════════════════════════════════════════ */
-/*                         CONFIG & STATE                          */
-/* ═══════════════════════════════════════════════════════════════ */
 const CFG = {
   CLIENT_ID: '364532815329-0j1lkobb1v9vcserj6artf64nd95a0la.apps.googleusercontent.com',
   SHEET_ID:  '1DeUsHB_O1SbIMR4p5yd64o_R0yllWvtnyNhjxjhipn8',
@@ -737,13 +720,10 @@ const S = {
   token:null, 
   user:null, 
   data:{ otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_zp:null },
-  reportTab: 'dept',      // для основной вкладки ОТЧЁТ
-  dohodTab:  'crm'        // 'crm' или 'dozhim'
+  reportTab: 'dept',
+  dohodTab:  'crm'
 };
 
-/* ═══════════════════════════════════════════════════════════════ */
-/*                         THEME & HELPERS                         */
-/* ═══════════════════════════════════════════════════════════════ */
 if (localStorage.getItem('crm_theme') === 'light') document.body.classList.add('light');
 
 function setTheme(light) {
@@ -804,9 +784,6 @@ function rankStyles(pos, total) {
 }
 function loader() { return `<div class="loader"><div class="spin"></div><span>Загружаем…</span></div>` }
 
-/* ═══════════════════════════════════════════════════════════════ */
-/*                         GOOGLE AUTH                            */
-/* ═══════════════════════════════════════════════════════════════ */
 let tokenClient;
 
 function initAuth() {
@@ -900,9 +877,6 @@ async function api(sheet, range) {
   return (await r.json()).values || [];
 }
 
-/* ═══════════════════════════════════════════════════════════════ */
-/*                         TAB NAVIGATION                          */
-/* ═══════════════════════════════════════════════════════════════ */
 function goTab(tab) {
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab===tab));
   showScr(tab);
@@ -981,9 +955,7 @@ function renderTab(tab) {
   else if (tab==='instruktsii') renderInstruktsii();
 }
 
-/* ═══════════════════════════════════════════════════════════════ */
-/*                    RENDER: ОТЧЁТ (основной)                    */
-/* ═══════════════════════════════════════════════════════════════ */
+/* ========== ОСНОВНОЙ ОТЧЁТ ========== */
 function renderOtchet() {
   const el = document.getElementById('c-otchet');
   if (S.reportTab === 'dozhim') {
@@ -1031,32 +1003,14 @@ function renderOtchet() {
   <div class="sec-title">ОТДЕЛ CRM</div>
   <div class="dept-card" style="background: rgba(${accR}, ${accG}, ${accB}, 0.08);">
     <div class="dept-row1">
-      <div class="dept-cell hi">
-        <div class="dc-lbl">Визиты</div>
-        <div class="dc-val">${allVis||'—'}</div>
-      </div>
-      <div class="dept-cell">
-        <div class="dc-lbl">План</div>
-        <div class="dc-val">${planTotal||'—'}</div>
-      </div>
-      <div class="dept-cell">
-        <div class="dc-lbl">Прогноз</div>
-        <div class="dc-val" style="color:${pctClr(parseInt(progOtdel))}">${progOtdel}</div>
-      </div>
+      <div class="dept-cell hi"><div class="dc-lbl">Визиты</div><div class="dc-val">${allVis||'—'}</div></div>
+      <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">${planTotal||'—'}</div></div>
+      <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val" style="color:${pctClr(parseInt(progOtdel))}">${progOtdel}</div></div>
     </div>
     <div class="dept-row2">
-      <div class="dept-cell">
-        <div class="dc-lbl">Кредит</div>
-        <div class="dc-val">${deptKred||'—'}</div>
-      </div>
-      <div class="dept-cell">
-        <div class="dc-lbl">Наличка</div>
-        <div class="dc-val">${deptNal||'—'}</div>
-      </div>
-      <div class="dept-cell">
-        <div class="dc-lbl">Комиссия</div>
-        <div class="dc-val">${deptKom||'—'}</div>
-      </div>
+      <div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">${deptKred||'—'}</div></div>
+      <div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">${deptNal||'—'}</div></div>
+      <div class="dept-cell"><div class="dc-lbl">Комиссия</div><div class="dc-val">${deptKom||'—'}</div></div>
     </div>
   </div>`;
 
@@ -1385,9 +1339,6 @@ function setReportTab(tab) {
   else renderOtchet();
 }
 
-/* ═══════════════════════════════════════════════════════════════ */
-/*                    RENDER: ДОХОД (с подвкладками)               */
-/* ═══════════════════════════════════════════════════════════════ */
 function renderDohod() {
   const el = document.getElementById('c-dohod');
   const subtabs = `
@@ -1463,9 +1414,6 @@ function setDohodTab(tab) {
   renderDohod();
 }
 
-/* ═══════════════════════════════════════════════════════════════ */
-/*                      RENDER: ГРАФИК                            */
-/* ═══════════════════════════════════════════════════════════════ */
 const DOW = ['вс','пн','вт','ср','чт','пт','сб'];
 let _schedWeek = null;
 
@@ -1575,9 +1523,6 @@ function schedNav(dir) {
   if (S.data.grafik) renderGrafik();
 }
 
-/* ═══════════════════════════════════════════════════════════════ */
-/*                    RENDER: ИНСТРУКЦИИ                          */
-/* ═══════════════════════════════════════════════════════════════ */
 function renderInstruktsii() {
   const el = document.getElementById('c-instruktsii');
   const raw = S.data.instruktsii;
@@ -1699,9 +1644,6 @@ function toggleSub(id) {
   document.getElementById(id)?.classList.toggle('open');
 }
 
-/* ═══════════════════════════════════════════════════════════════ */
-/*                         КОНФЕТТИ (рабочий)                     */
-/* ═══════════════════════════════════════════════════════════════ */
 function burstConfetti(el, idx) {
   const isGold = idx === 0;
   const rect = el.getBoundingClientRect();
@@ -1800,9 +1742,6 @@ function closeMopModal(e) {
   document.body.style.overflow = '';
 }
 
-/* ═══════════════════════════════════════════════════════════════ */
-/*                           INIT                                 */
-/* ═══════════════════════════════════════════════════════════════ */
 document.getElementById('btn-theme').addEventListener('click', () => setTheme(!document.body.classList.contains('light')));
 document.getElementById('btn-refresh').addEventListener('click', reloadCurrent);
 document.getElementById('btn-login').addEventListener('click', () => { if (!tokenClient) { toast('Загружается…','i'); return; } tokenClient.requestAccessToken({ prompt:'consent' }); });

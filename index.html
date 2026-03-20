@@ -64,18 +64,21 @@ body.light {
 body.light .m4 .ml { color:#fff }
 body.light .m4 .mv { color:#fff }
 
+/* ── ТЕНЬ ТЕКСТА ТОЛЬКО ДЛЯ СВЕТЛОЙ ТЕМЫ (для имён и сумм) ── */
 body.light .zp-n,
 body.light .zp-a,
 body.light .zp-banner .zv {
   text-shadow: 0 2px 5px rgba(255,255,255,0.6);
 }
 
+/* ── ТЕНЬ ТЕКСТА (общая) ── */
 body {
 text-shadow: 0 1px 3px rgba(0,0,0,0.25);
 }
 body.light {
 text-shadow: 0 1px 2px rgba(0,0,0,0.07);
 }
+/* Убираем тень там, где она мешает */
 input, button, svg, img, .logo-sq {
 text-shadow: none;
 }
@@ -97,6 +100,7 @@ transition:background .2s, color .2s;
 ::-webkit-scrollbar-track { background:transparent }
 ::-webkit-scrollbar-thumb { background:var(--line2); border-radius:2px }
 
+/* ── LAYOUT ── */
 #app { 
   display:flex; 
   flex-direction:column; 
@@ -116,6 +120,7 @@ box-sizing:border-box;
 .scr.on { display:block }
 @keyframes up { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 
+/* ── HEADER ── */
 header {
 background:var(--bg); border-bottom:1px solid var(--line);
 position:sticky; top:0; z-index:100; flex-shrink:0;
@@ -183,6 +188,7 @@ font-size:12px; cursor:pointer; transition:all .15s;
 }
 .btn-out:hover { border-color:var(--red); color:var(--red) }
 
+/* ── NAV ── */
 nav {
 background:var(--bg);
 border-bottom:1px solid var(--line);
@@ -211,6 +217,7 @@ display:flex; align-items:center; gap:5px;
 .tab.on { color:var(--acc); border-bottom-color:var(--acc) }
 .tab-dot { width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.5 }
 
+/* ── NOT AUTH ── */
 .gate {
 display:flex; flex-direction:column; align-items:center;
 justify-content:center; gap:14px; min-height:65vh;
@@ -226,6 +233,7 @@ display:flex; align-items:center; justify-content:center; color:var(--txt3);
 .gate p  { font-size:13px; color:var(--txt2); line-height:1.7 }
 .gate strong { color:var(--acc) }
 
+/* ── SHARED ── */
 .sec-title {
 font-family:'Unbounded',sans-serif;
 font-size:10px; font-weight:800; letter-spacing:.1em;
@@ -254,6 +262,7 @@ font-size:13px; margin-bottom:12px;
 }
 .empty { text-align:center; padding:48px 20px; color:var(--txt3); font-size:13px }
 
+/* ── ПЛАВАЮЩИЕ ПОДВКЛАДКИ ДЛЯ ОТЧЁТА И ДОХОДА ── */
 #floating-subtabs {
   display: none;
   position: sticky;
@@ -287,6 +296,7 @@ cursor:pointer; transition:color .15s, border-color .15s;
 color:var(--acc); border-bottom-color:var(--acc);
 }
 
+/* ── LIQUID GLASS КАРТОЧКИ ── */
 .dept-card, .mop, .zp-row {
 position:relative;
 backdrop-filter: blur(12px) saturate(180%);
@@ -320,6 +330,7 @@ pointer-events:none;
 opacity:0.6;
 }
 
+/* ── ОТЧЁТ: MOP CARDS ── */
 .mops { display:flex; flex-direction:column; gap:8px }
 .mop {
 border-radius:var(--r2); padding:13px 14px;
@@ -381,6 +392,7 @@ height:100%; border-radius:4px;
 transition:width .7s ease;
 }
 
+/* секции в модалке */
 .modal-sec { margin-bottom:14px; }
 .modal-sec-title {
 font-family:'Unbounded',sans-serif;
@@ -470,10 +482,21 @@ gap:6px; margin-bottom:12px;
 .prog-track { flex:1; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden }
 .prog-fill { height:100%; border-radius:2px; transition:width .6s ease }
 .prog-r { font-size:11px; font-weight:600; width:38px; text-align:right; flex-shrink:0 }
+.chips-wrap { display:flex; flex-direction:column; gap:5px }
+.chips-row { display:flex; flex-wrap:wrap; gap:5px }
+.chip {
+font-size:10px; padding:3px 8px; border-radius:6px;
+background:rgba(255,255,255,0.05); border:1px solid var(--line);
+color:var(--txt2); display:flex; align-items:center; gap:3px;
+}
+.chip strong { color:var(--txt); font-size:11px }
+.chip.c800  { border-color:rgba(30,144,255,.3) }
+.chip.c1200 { border-color:rgba(255,165,2,.3) }
 @media(max-width:480px) {
 .mop-grid4 { grid-template-columns:repeat(2,1fr) }
 }
 
+/* ── КАРТОЧКА ОТДЕЛА ── */
 .dept-card {
 background: rgba(var(--acc-r), var(--acc-g), var(--acc-b), 0.08);
 border:1px solid var(--acc-bdr);
@@ -510,6 +533,7 @@ color:var(--txt);
 }
 .dept-cell.hi .dc-val { color:var(--txt); }
 
+/* ── СПИДОМЕТРЫ ── */
 .speedo-grid {
 display:grid; grid-template-columns:repeat(3, 1fr);
 gap:10px; margin-top:5px;
@@ -550,6 +574,7 @@ margin-top:0px; text-transform:uppercase; color:var(--txt2);
 .speedo-grid { grid-template-columns:repeat(3,1fr); }
 }
 
+/* ── ИТОГИ ── */
 .totals-box {
 background:rgba(255,255,255,0.05); border:1px solid var(--line2);
 border-radius:var(--r2); padding:13px 14px; margin-top:14px;
@@ -570,6 +595,7 @@ backdrop-filter:blur(4px);
 .ti .tl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em }
 .ti .tv { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:700 }
 
+/* ── ДОХОД ── (тень убрана из общих правил) */
 .zp-banner {
 border-radius:var(--r2); padding:18px;
 text-align:center; margin-bottom:16px;
@@ -608,6 +634,7 @@ font-size:13px; font-weight:700;
 flex-shrink:0; text-align:right;
 }
 
+/* ── МЕДАЛЬ — кнопка ── */
 .medal-btn {
 background:none; border:none; padding:0;
 cursor:pointer; font-size:inherit; line-height:1;
@@ -617,6 +644,7 @@ margin-left: 2px;
 }
 .medal-btn:hover { transform:scale(1.25); }
 
+/* ── ГРАФИК ── */
 #scr-grafik { padding-top:0 }
 #scr-grafik .w { padding-top:8px }
 .sched-nav {
@@ -690,6 +718,7 @@ min-height:36px; display:flex; align-items:center; justify-content:center;
 .sched-cell.empty { color:var(--txt3); opacity:.4 }
 .sched-cell.today-col { outline:2px solid var(--acc); outline-offset:-2px; border-radius:6px; }
 
+/* ── ИНСТРУКЦИИ ── */
 .instr-block {
 border:1px solid var(--line); border-radius:var(--r2);
 overflow:hidden; margin-bottom:8px;
@@ -756,6 +785,7 @@ color:var(--txt2); font-size:12px; flex-shrink:0; transition:all .2s;
 .instr-sub-body { display:none }
 .instr-sub.open .instr-sub-body { display:block }
 
+/* ── ФУТЕР (общий для всех страниц) ── */
 .page-footer {
 text-align:center; 
 padding:8px 0 8px; 
@@ -766,6 +796,7 @@ color:var(--txt3);
 font-family:'Golos Text',sans-serif; 
 letter-spacing:.04em;
 }
+/* Анимация глюка */
 .glitch {
   position: relative;
   display: inline-block;
@@ -830,6 +861,7 @@ to { transform: translate(var(--tx), var(--ty)) scale(0.6); opacity: 0; }
 100% { transform:translate(-50%,-50%) scale(4); opacity:0; }
 }
 
+/* ===== ФОНОВЫЕ ЭФФЕКТЫ (GLASS + ORBS) ===== */
 canvas#bg-canvas {
   position: fixed;
   top: 0;
@@ -856,10 +888,12 @@ body.light .glass {
 </style>
 </head>
 <body>
+<!-- Фоновый слой с орбами и стеклом -->
 <canvas id="bg-canvas"></canvas>
 <div class="glass"></div>
 
 <div id="app">
+
   <header>
     <div class="hdr-inner">
       <div class="hdr-left">
@@ -1039,8 +1073,10 @@ function showScr(id) {
   document.getElementById('scr-'+id)?.classList.add('on');
   const gs = document.getElementById('grafik-sticky');
   if (gs) gs.style.display = id === 'grafik' ? '' : 'none';
+
   const floating = document.getElementById('floating-subtabs');
   if (floating) floating.style.display = id === 'otchet' ? 'flex' : 'none';
+
   const dohodSubtabs = document.getElementById('dohod-subtabs');
   if (dohodSubtabs) dohodSubtabs.style.display = id === 'dohod' ? 'flex' : 'none';
 }
@@ -1292,7 +1328,7 @@ function renderOtchet() {
     return;
   }
 
-  // CRM рендер
+  // CRM рендер (полностью сохранён)
   const raw = S.data.otchet;
   if (!raw || raw.length < 4) { document.getElementById('c-otchet').innerHTML = '<div class="empty">Нет данных CRM</div>'; return; }
 
@@ -1431,6 +1467,7 @@ function renderDohod() {
     return;
   }
 
+  // CRM зарплата (оригинал)
   const raw = S.data.dohod;
   const container = document.getElementById('c-dohod');
   if (!raw || raw.length < 3) { container.innerHTML = '<div class="empty">Нет данных зарплаты CRM</div>'; return; }
@@ -1500,7 +1537,7 @@ function openDozhimModal(dataStr) {
   document.body.style.overflow = 'hidden';
 }
 
-window.openMopModal = openMopModal;
+window.openMopModal = openMopModal; // для CRM
 window.openDozhimModal = openDozhimModal;
 
 function closeMopModal(e) {
@@ -1509,7 +1546,7 @@ function closeMopModal(e) {
   document.body.style.overflow = '';
 }
 
-// ГРАФИК
+// ГРАФИК (без изменений)
 const DOW = ['вс','пн','вт','ср','чт','пт','сб'];
 let _schedWeek = null;
 
@@ -1616,7 +1653,7 @@ function schedNav(dir) {
   if (S.data.grafik) renderGrafik();
 }
 
-// ИНСТРУКЦИИ
+// ИНСТРУКЦИИ (без изменений)
 function renderInstruktsii() {
   const el  = document.getElementById('c-instruktsii');
   const raw = S.data.instruktsii;
@@ -1665,8 +1702,8 @@ function renderInstruktsii() {
     const ths = cols.map(c => `<th>${c}</th>`).join('');
     const trs = rows.filter(r => r.status||r.criteria).map(r =>
       withA
-        ? `<td><td>${r.status||'—'}<\/td><td>${r.criteria||'—'}<\/td><td>${r.action||'—'}<\/td>\\`
-        : `}<td>${r.status||'—'}<\/td><td>${r.criteria||'—'}<\/td>`
+        ? `}<td>${r.status||'—'}</td><td>${r.criteria||'—'}</td><td>${r.action||'—'}</td>`
+        : `<td>${r.status||'—'}</td><td>${r.criteria||'—'}</td>`
     ).join('');
     return `<div class="table-scroll"><table class="instr-table"><thead>${ths}</thead><tbody>${trs}</tbody></table></div>`;
   }

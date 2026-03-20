@@ -697,6 +697,14 @@ font-family:'Unbounded',sans-serif;
 font-size:11px; font-weight:700;
 padding:10px 14px 8px;
 border-bottom:1px solid var(--line); color:var(--txt);
+display: flex;
+justify-content: space-between;
+align-items: baseline;
+}
+.sched-person-name .shifts-count {
+  font-size: 10px;
+  font-weight: normal;
+  color: var(--txt2);
 }
 .sched-cells {
 display:grid; grid-template-columns:repeat(7,1fr);
@@ -1856,6 +1864,27 @@ function setDohodTab(tab) {
 const DOW = ['вс','пн','вт','ср','чт','пт','сб'];
 let _schedWeek = null;
 
+/* Новая функция подсчёта смен */
+function countShifts(row, daysRow, today) {
+  let shifts = 0;
+  // daysRow — массив, в котором для каждого столбца от 1 до 31 хранится номер дня
+  for (let day = 1; day <= today; day++) {
+    // Находим индекс столбца, где в daysRow указан день day
+    let colIdx = -1;
+    for (let c = 1; c <= 31; c++) {
+      if (parseInt(daysRow[c]) === day) {
+        colIdx = c;
+        break;
+      }
+    }
+    if (colIdx !== -1) {
+      const val = (row[colIdx] || '').toLowerCase();
+      if (val === 'р') shifts++;
+    }
+  }
+  return shifts;
+}
+
 function renderGrafik() {
   const el  = document.getElementById('c-grafik');
   const raw = S.data.grafik;
@@ -1891,9 +1920,10 @@ function renderGrafik() {
   }).join('');
   const weekHeader = `<div class="sched-week">${hdrs}</div>`;
 
-  function parseGroup(rows, daysRowIdx) {
-    const dRow = raw[daysRowIdx]||[];
-    return rows.filter(r => r[0]&&r[0].trim()).map(r => {
+  // Изменённая функция parseGroup: возвращает массив объектов { name, cells, row, shifts }
+  function parseGroup(rows, daysRow, today) {
+    const dRow = daysRow || [];
+    return rows.filter(r => r[0] && r[0].trim()).map(r => {
       const cells = weekDays.map(dayNum => {
         let colIdx = -1;
         for (let c = 1; c <= 31; c++) {
@@ -1901,7 +1931,8 @@ function renderGrafik() {
         }
         return colIdx >= 0 ? (r[colIdx]||'') : '';
       });
-      return { name: r[0], cells };
+      const shifts = countShifts(r, dRow, today);
+      return { name: r[0], cells, shifts };
     });
   }
 
@@ -1914,7 +1945,10 @@ function renderGrafik() {
         return `<div class="sched-cell ${cls}${isT?' today-col':''}">${val||'·'}</div>`;
       }).join('');
       return `<div class="sched-person">
-        <div class="sched-person-name">${p.name}</div>
+        <div class="sched-person-name">
+          <span>${p.name}</span>
+          <span class="shifts-count">Смен: ${p.shifts}</span>
+        </div>
         <div class="sched-cells">${cells}</div>
       </div>`;
     }).join('');
@@ -1922,8 +1956,8 @@ function renderGrafik() {
 
   const g1title = raw[0]?.[0] || 'Группа 1';
   const g2title = raw[16]?.[0] || 'Группа 2';
-  const g1 = parseGroup(raw.slice(3,13),  1);
-  const g2 = parseGroup(raw.slice(19,25), 17);
+  const g1 = parseGroup(raw.slice(3,13),  raw[1],  TODAY);
+  const g2 = parseGroup(raw.slice(19,25), raw[17], TODAY);
 
   const wStart = week[0].day;
   const wEnd   = week[week.length-1].day;
@@ -2007,10 +2041,10 @@ function renderInstruktsii() {
     const ths = cols.map(c => `<th>${c}</th>`).join('');
     const trs = rows.filter(r => r.status||r.criteria).map(r =>
       withA
-        ? `<tr><td>${r.status||'—'}</td><td>${r.criteria||'—'}</td><td>${r.action||'—'}</td></tr>`
-        : `<tr><td>${r.status||'—'}</td><td>${r.criteria||'—'}</td></tr>`
+        ? `<td><td>${r.status||'—'}<\/td><td>${r.criteria||'—'}<\/td><td>${r.action||'—'}<\/td><\/tr>`
+        : `}<td>${r.status||'—'}<\/td><td>${r.criteria||'—'}<\/td><\/tr>`
     ).join('');
-    return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
+    return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}<\/thead><tbody>${trs}<\/tbody><\/table><\/div>`;
   }
 
   const html = blocks.map((b, i) => {

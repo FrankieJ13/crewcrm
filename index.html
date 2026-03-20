@@ -104,7 +104,7 @@ transition:background .2s, color .2s;
 #app {
   display:flex;
   flex-direction:column;
-  height:100vh;
+  min-height:100vh;
   position: relative;
   z-index: 10;
 }
@@ -262,8 +262,9 @@ font-size:13px; margin-bottom:12px;
 }
 .empty { text-align:center; padding:48px 20px; color:var(--txt3); font-size:13px }
 
-/* ── ПЛАВАЮЩИЕ ПОДВКЛАДКИ ДЛЯ ОТЧЁТА (sticky) ── */
-#floating-subtabs {
+/* ── ПЛАВАЮЩИЕ ПОДВКЛАДКИ ── */
+#floating-subtabs,
+#floating-dohod-subtabs {
   display: none;
   position: sticky;
   top: 92px;
@@ -783,7 +784,7 @@ color:var(--txt2); font-size:12px; flex-shrink:0; transition:all .2s;
 .page-footer {
 text-align:center; 
 padding:8px 0 8px; 
-margin-top:0px;
+margin-top:auto;
 border-top:1px solid var(--line); 
 font-size:11px;
 color:var(--txt3); 
@@ -954,6 +955,7 @@ body.light .glass {
   </div>
 
   <div id="floating-subtabs" class="report-subtabs" style="display:none;"></div>
+  <div id="floating-dohod-subtabs" class="report-subtabs" style="display:none;"></div>
 
   <main>
     <div id="scr-login" class="scr">
@@ -1069,9 +1071,9 @@ function showScr(id) {
   if (gs) gs.style.display = id === 'grafik' ? '' : 'none';
 
   const floating = document.getElementById('floating-subtabs');
-  if (floating) {
-    floating.style.display = id === 'otchet' ? 'flex' : 'none';
-  }
+  if (floating) floating.style.display = id === 'otchet' ? 'flex' : 'none';
+  const floatingDohod = document.getElementById('floating-dohod-subtabs');
+  if (floatingDohod) floatingDohod.style.display = id === 'dohod' ? 'flex' : 'none';
 }
 
 function num(v) { return parseInt(v)||0 }
@@ -1557,12 +1559,14 @@ function renderOtchet() {
   if (S.reportTab === 'dept') {
     content = deptCard + dozhimDeptCard + speedoCard;
   } else if (S.reportTab === 'mgr') {
-    content = `<div class="sec-title">Менеджеры</div><div class="mops">${mops_html}</div>`;
+    content = `<div class="sec-title">Менеджеры CRM</div><div class="mops">${mops_html}</div>`;
   } else if (S.reportTab === 'dozhim') {
     content = renderDozhimCards();
   }
 
-  el.innerHTML = content + tot;
+  // добавляем итоги только для вкладки ОТДЕЛ
+  const finalHtml = content + (S.reportTab === 'dept' ? tot : '');
+  el.innerHTML = finalHtml;
 
   if (S.reportTab === 'dept') {
     managerStats.forEach((item, idx) => {
@@ -1714,23 +1718,24 @@ function goHome() {
 
 /* ── ДОХОД ── */
 function renderDohod() {
-  const el  = document.getElementById('c-dohod');
+  const el = document.getElementById('c-dohod');
+  const floating = document.getElementById('floating-dohod-subtabs');
 
-  /* Subtabs for ДОХОД */
-  const dohodSubtabs = `
-    <div class="report-subtabs" style="display:flex;justify-content:center;gap:16px;margin-bottom:12px;">
-      <span class="report-subtab ${S.dohodTab!=='dozhim'?'active':''}" onclick="setDohodTab('crm')">CRM</span>
-      <span class="report-subtab ${S.dohodTab==='dozhim'?'active':''}" onclick="setDohodTab('dozhim')">ДОЖИМ</span>
-    </div>`;
+  // формируем подтабы
+  const subtabs = `
+    <span class="report-subtab ${S.dohodTab !== 'dozhim' ? 'active' : ''}" onclick="setDohodTab('crm')">CRM</span>
+    <span class="report-subtab ${S.dohodTab === 'dozhim' ? 'active' : ''}" onclick="setDohodTab('dozhim')">ДОЖИМ</span>
+  `;
+  if (floating) floating.innerHTML = subtabs;
 
   if (S.dohodTab === 'dozhim') {
-    renderDohodDozhim(el, dohodSubtabs);
+    renderDohodDozhim(el);
     return;
   }
 
   /* CRM (original) */
   const raw = S.data.dohod;
-  if (!raw || raw.length < 3) { el.innerHTML = dohodSubtabs + '<div class="empty">Нет данных</div>'; return; }
+  if (!raw || raw.length < 3) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
 
   const mgrs   = raw.slice(2,12).filter(r => r[0]&&r[0].trim());
   const totRow = raw[12] || [];
@@ -1776,7 +1781,7 @@ function renderDohod() {
       <span class="zp-a" style="color:var(--txt2)">${fmtRub(kotelRow[1])}</span>
     </div>` : '';
 
-  el.innerHTML = dohodSubtabs + `
+  el.innerHTML = `
     <div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)">
       <div class="zl">Фонд отдела за месяц</div>
       <div class="zv">${fmtRub(totRow[1])}</div>
@@ -1785,15 +1790,15 @@ function renderDohod() {
     <div class="zp-list">${rows}${kotelHTML}</div>`;
 }
 
-function renderDohodDozhim(el, dohodSubtabs) {
+function renderDohodDozhim(el) {
   const raw = S.data.d_dohod;
   if (!raw || raw.length < 3) {
-    el.innerHTML = dohodSubtabs + '<div class="empty">Нет данных по дожиму</div>';
+    el.innerHTML = '<div class="empty">Нет данных по дожиму</div>';
     return;
   }
 
   const mgrs = raw.slice(2, 20).filter(r => r[0] && r[0].trim());
-  if (!mgrs.length) { el.innerHTML = dohodSubtabs + '<div class="empty">Нет данных</div>'; return; }
+  if (!mgrs.length) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
 
   const parsed = mgrs.map(r => ({
     name: (r[0]||'—').toUpperCase(),
@@ -1822,7 +1827,7 @@ function renderDohodDozhim(el, dohodSubtabs) {
     </div>`;
   }).join('');
 
-  el.innerHTML = dohodSubtabs + `
+  el.innerHTML = `
     <div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)">
       <div class="zl">Фонд дожима за месяц</div>
       <div class="zv">${fmtRub(totalSum)}</div>

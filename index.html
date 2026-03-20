@@ -955,7 +955,7 @@ function renderTab(tab) {
   else if (tab==='instruktsii') renderInstruktsii();
 }
 
-/* ========== ОСНОВНОЙ ОТЧЁТ ========== */
+/* ========== ОСНОВНОЙ ОТЧЁТ (рабочая версия) ========== */
 function renderOtchet() {
   const el = document.getElementById('c-otchet');
   if (S.reportTab === 'dozhim') {
@@ -1588,7 +1588,7 @@ function renderInstruktsii() {
         if (withActions) {
           return `<tr>
             <td>${r.status || '—'}${'</td><td>'}${r.criteria || '—'}${'</td><td>'}${r.action || '—'}${'</td>'}
-           </tr>`;
+            </tr>`;
         }
         return `<tr>
           <td>${r.status || '—'}</td>
@@ -1596,7 +1596,7 @@ function renderInstruktsii() {
         </tr>`;
       })
       .join('');
-    return `<div class="table-scroll"><table class="instr-table"><thead>${'<tr>' + ths + '</tr>'}</thead><tbody>${trs}</tbody></table></div>`;
+    return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
   }
 
   function buildSubBlocks(subs) {

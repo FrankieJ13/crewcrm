@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="ru">
 <head>
 <meta charset="UTF-8"/>
@@ -68,7 +69,7 @@ body.light .m4 .mv { color:#fff }
 body.light .zp-n,
 body.light .zp-a,
 body.light .zp-banner .zv {
-  text-shadow: 0 2px 5px rgba(255,255,255,0.6);
+text-shadow: 0 2px 5px rgba(255,255,255,0.6);
 }
 
 /* ── ТЕНЬ ТЕКСТА (общая) ── */
@@ -88,9 +89,9 @@ html,body {
 height:100%;
 margin:0;
 padding:0;
-background:var(--bg);
-color:var(--txt);
-font-family:'Golos Text',sans-serif;
+background:var(–bg);
+color:var(–txt);
+font-family:‘Golos Text’,sans-serif;
 font-size:14px;
 line-height:1.5;
 overflow-x:hidden;
@@ -98,15 +99,15 @@ transition:background .2s, color .2s;
 }
 ::-webkit-scrollbar { width:3px; height:3px }
 ::-webkit-scrollbar-track { background:transparent }
-::-webkit-scrollbar-thumb { background:var(--line2); border-radius:2px }
+::-webkit-scrollbar-thumb { background:var(–line2); border-radius:2px }
 
 /* ── LAYOUT ── */
 #app {
-  display:flex;
-  flex-direction:column;
-  min-height:100vh;
-  position: relative;
-  z-index: 10;
+display:flex;
+flex-direction:column;
+min-height:100vh;
+position: relative;
+z-index: 10;
 }
 main { flex:1; overflow-y:auto; position: relative; }
 .w {
@@ -122,7 +123,7 @@ box-sizing:border-box;
 
 /* ── HEADER ── */
 header {
-background:var(--bg); border-bottom:1px solid var(--line);
+background:var(–bg); border-bottom:1px solid var(–line);
 position:sticky; top:0; z-index:100; flex-shrink:0;
 }
 .hdr-inner {
@@ -135,14 +136,14 @@ display:flex; align-items:center; justify-content:space-between;
 .hdr-left  { display:flex; align-items:center; gap:8px }
 .hdr-right { display:flex; align-items:center; gap:6px }
 .logo {
-font-family:'Unbounded',sans-serif;
+font-family:‘Unbounded’,sans-serif;
 font-size:12px; font-weight:800; letter-spacing:.06em;
 display:flex; align-items:center; gap:8px;
 cursor:pointer;
 }
 .logo-sq {
 width:22px; height:22px; border-radius:5px;
-background:var(--acc);
+background:var(–acc);
 display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:4px;
 }
 .logo-sq span { background:#000; border-radius:1px }
@@ -150,48 +151,48 @@ display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:4px;
 
 .badge-month {
 font-size:11px; padding:3px 9px; border-radius:20px;
-background:var(--bg3); border:1px solid var(--line2);
-color:var(--txt2); font-weight:500;
-font-family: 'Unbounded', sans-serif;
+background:var(–bg3); border:1px solid var(–line2);
+color:var(–txt2); font-weight:500;
+font-family: ‘Unbounded’, sans-serif;
 }
 .btn-icon {
 width:30px; height:30px; border-radius:50%;
-background:var(--bg3); border:1px solid var(--line2);
-color:var(--txt2); cursor:pointer;
+background:var(–bg3); border:1px solid var(–line2);
+color:var(–txt2); cursor:pointer;
 display:flex; align-items:center; justify-content:center;
 transition:border-color .15s, color .15s; flex-shrink:0;
 }
-.btn-icon:hover { border-color:var(--acc); color:var(--acc) }
+.btn-icon:hover { border-color:var(–acc); color:var(–acc) }
 .btn-icon svg { width:14px; height:14px; pointer-events:none }
-#btn-out:hover { border-color:var(--red); color:var(--red) }
+#btn-out:hover { border-color:var(–red); color:var(–red) }
 
 .btn-signin {
 display:flex; align-items:center; gap:6px;
-padding:6px 13px; border-radius:var(--r);
-background:var(--acc); color:#000; border:none;
-font-family:'Unbounded',sans-serif;
+padding:6px 13px; border-radius:var(–r);
+background:var(–acc); color:#000; border:none;
+font-family:‘Unbounded’,sans-serif;
 font-size:9px; font-weight:800; letter-spacing:.06em;
 cursor:pointer; transition:opacity .15s; white-space:nowrap;
 }
 .btn-signin:hover { opacity:.85 }
 .btn-signin svg { width:13px; height:13px }
 
-#user-wrap { display:none; align-items:center; gap:7px; font-size:12px; color:var(--txt2) }
-#user-avatar { width:28px; height:28px; border-radius:50%; border:1.5px solid var(--line2) }
+#user-wrap { display:none; align-items:center; gap:7px; font-size:12px; color:var(–txt2) }
+#user-avatar { width:28px; height:28px; border-radius:50%; border:1.5px solid var(–line2) }
 #user-name { display:none }
 
 .btn-out {
-padding:5px 12px; border-radius:var(--r);
-background:var(--bg3); border:1px solid var(--line2);
-color:var(--txt2); font-family:'Golos Text',sans-serif;
+padding:5px 12px; border-radius:var(–r);
+background:var(–bg3); border:1px solid var(–line2);
+color:var(–txt2); font-family:‘Golos Text’,sans-serif;
 font-size:12px; cursor:pointer; transition:all .15s;
 }
-.btn-out:hover { border-color:var(--red); color:var(--red) }
+.btn-out:hover { border-color:var(–red); color:var(–red) }
 
 /* ── NAV ── */
 nav {
-background:var(--bg);
-border-bottom:1px solid var(--line);
+background:var(–bg);
+border-bottom:1px solid var(–line);
 overflow-x:auto; flex-shrink:0;
 position:sticky;
 top:52px;
@@ -206,15 +207,15 @@ display:flex;
 }
 .tab {
 padding:11px 16px; white-space:nowrap;
-font-family:'Unbounded',sans-serif;
+font-family:‘Unbounded’,sans-serif;
 font-size:15px; font-weight:800; letter-spacing:.03em;
-color:var(--txt3); background:none; border:none;
+color:var(–txt3); background:none; border:none;
 border-bottom:2px solid transparent;
 cursor:pointer; transition:color .15s, border-color .15s;
 display:flex; align-items:center; gap:5px;
 }
-.tab:hover { color:var(--txt2) }
-.tab.on { color:var(--acc); border-bottom-color:var(--acc) }
+.tab:hover { color:var(–txt2) }
+.tab.on { color:var(–acc); border-bottom-color:var(–acc) }
 .tab-dot { width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.5 }
 
 /* ── NOT AUTH ── */
@@ -225,68 +226,68 @@ text-align:center; padding:40px 20px;
 }
 .gate-icon {
 width:56px; height:56px; border-radius:50%;
-background:var(--bg3); border:1px solid var(--line2);
-display:flex; align-items:center; justify-content:center; color:var(--txt3);
+background:var(–bg3); border:1px solid var(–line2);
+display:flex; align-items:center; justify-content:center; color:var(–txt3);
 }
 .gate-icon svg { width:24px; height:24px }
-.gate h2 { font-family:'Unbounded',sans-serif; font-size:15px; font-weight:800 }
-.gate p  { font-size:13px; color:var(--txt2); line-height:1.7 }
-.gate strong { color:var(--acc) }
+.gate h2 { font-family:‘Unbounded’,sans-serif; font-size:15px; font-weight:800 }
+.gate p  { font-size:13px; color:var(–txt2); line-height:1.7 }
+.gate strong { color:var(–acc) }
 
 /* ── SHARED ── */
 .sec-title {
-font-family:'Unbounded',sans-serif;
+font-family:‘Unbounded’,sans-serif;
 font-size:10px; font-weight:800; letter-spacing:.1em;
 text-transform:uppercase;
-color:var(--acc);
+color:var(–acc);
 margin-bottom:12px;
 display:flex; align-items:center; gap:8px;
 }
-.sec-title::after { content:''; flex:1; height:1px; background:var(--line) }
+.sec-title::after { content:’’; flex:1; height:1px; background:var(–line) }
 
 .loader {
 display:flex; flex-direction:column; align-items:center;
 justify-content:center; gap:12px; padding:60px 20px;
-color:var(--txt2); font-size:13px;
+color:var(–txt2); font-size:13px;
 }
 .spin {
 width:28px; height:28px;
-border:2px solid var(--line2); border-top-color:var(--acc);
+border:2px solid var(–line2); border-top-color:var(–acc);
 border-radius:50%; animation:spin .7s linear infinite;
 }
 @keyframes spin { to{transform:rotate(360deg)} }
 .err {
 background:rgba(255,71,87,.08); border:1px solid rgba(255,71,87,.25);
-border-radius:var(--r2); padding:14px; color:var(--red);
+border-radius:var(–r2); padding:14px; color:var(–red);
 font-size:13px; margin-bottom:12px;
 }
-.empty { text-align:center; padding:48px 20px; color:var(--txt3); font-size:13px }
+.empty { text-align:center; padding:48px 20px; color:var(–txt3); font-size:13px }
 
 /* ── ПЛАВАЮЩИЕ ПОДВКЛАДКИ ── */
 #floating-subtabs,
 #floating-dohod-subtabs {
-  display: none;
-  position: sticky;
-  top: 92px;
-  background: var(--bg);
-  border-bottom: 1px solid var(--line);
-  z-index: 90;
-  width: 100%;
+display: none;
+position: sticky;
+top: 92px;
+background: var(–bg);
+border-bottom: 1px solid var(–line);
+z-index: 90;
+width: 100%;
 }
 .report-subtabs {
-display:flex; justify-content:center; gap:16px; 
+display:flex; justify-content:center; gap:16px;
 padding:0 0 0px 0;
 }
 .report-subtab {
 padding:6px 0; white-space:nowrap;
-font-family:'Unbounded',sans-serif;
+font-family:‘Unbounded’,sans-serif;
 font-size:12px; font-weight:800; letter-spacing:.03em;
-color:var(--txt3); background:none; border:none;
+color:var(–txt3); background:none; border:none;
 border-bottom:2px solid transparent;
 cursor:pointer; transition:color .15s, border-color .15s;
 }
 .report-subtab.active {
-color:var(--acc); border-bottom-color:var(--acc);
+color:var(–acc); border-bottom-color:var(–acc);
 }
 
 /* ── LIQUID GLASS КАРТОЧКИ ── */
@@ -305,7 +306,7 @@ border-color:rgba(0,0,0,0.1);
 box-shadow:0 10px 30px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.8);
 }
 .dept-card::before, .mop::before, .zp-row::before {
-content:'';
+content:’’;
 position:absolute;
 inset:0;
 border-radius:inherit;
@@ -313,7 +314,7 @@ background: linear-gradient(120deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0
 pointer-events:none;
 }
 .dept-card::after, .mop::after, .zp-row::after {
-content:'';
+content:’’;
 position:absolute;
 inset:0;
 border-radius:inherit;
@@ -326,16 +327,16 @@ opacity:0.6;
 /* ── ОТЧЁТ: MOP CARDS ── */
 .mops { display:flex; flex-direction:column; gap:8px }
 .mop {
-border-radius:var(--r2); padding:13px 14px;
-background: rgba(var(--rank-r), var(--rank-g), var(--rank-b), 0.15);
+border-radius:var(–r2); padding:13px 14px;
+background: rgba(var(–rank-r), var(–rank-g), var(–rank-b), 0.15);
 }
 body.light .mop {
-background: rgba(var(--rank-r), var(--rank-g), var(--rank-b), 0.1);
+background: rgba(var(–rank-r), var(–rank-g), var(–rank-b), 0.1);
 }
 .rank-badge {
 display:inline-flex; align-items:center; justify-content:center;
 width:22px; height:22px; border-radius:50%;
-font-family:'Unbounded',sans-serif; font-size:9px; font-weight:900;
+font-family:‘Unbounded’,sans-serif; font-size:9px; font-weight:900;
 flex-shrink:0;
 }
 .mop-head {
@@ -344,18 +345,18 @@ justify-content:space-between; margin-bottom:12px;
 }
 .mop-head-left { display:flex; align-items:center; gap:7px }
 .mop-name {
-font-family:'Unbounded',sans-serif;
+font-family:‘Unbounded’,sans-serif;
 font-weight:700; font-size:14px; text-transform:uppercase;
 }
 .mop-info-btn {
 width:22px; height:22px; border-radius:50%;
-border:1px solid var(--line2); background:var(--bg3);
-color:var(--txt2); font-size:11px; font-weight:700;
+border:1px solid var(–line2); background:var(–bg3);
+color:var(–txt2); font-size:11px; font-weight:700;
 font-style:italic; font-family:Georgia,serif;
 cursor:pointer; display:flex; align-items:center; justify-content:center;
 flex-shrink:0; transition:all .15s;
 }
-.mop-info-btn:hover { border-color:var(--acc); color:var(--acc) }
+.mop-info-btn:hover { border-color:var(–acc); color:var(–acc) }
 
 .mop-mini {
 display:grid; grid-template-columns:repeat(3,1fr);
@@ -367,8 +368,8 @@ padding:8px; text-align:center;
 backdrop-filter:blur(4px);
 }
 body.light .mm { background:rgba(0,0,0,0.03); }
-.mm .ml { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px }
-.mm .mv { font-family:'Unbounded',sans-serif; font-size:14px; font-weight:800; color:var(--txt); }
+.mm .ml { font-size:9px; color:var(–txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px }
+.mm .mv { font-family:‘Unbounded’,sans-serif; font-size:14px; font-weight:800; color:var(–txt); }
 
 .mop-prog { position:relative; }
 .mop-prog-labels {
@@ -376,7 +377,7 @@ display:flex; justify-content:space-between;
 font-size:10px; margin-bottom:5px;
 }
 .mop-prog-labels .cur { font-weight:700; }
-.mop-prog-labels .end { color:var(--txt2) }
+.mop-prog-labels .end { color:var(–txt2) }
 .mop-prog-track {
 height:7px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;
 }
@@ -388,13 +389,13 @@ transition:width .7s ease;
 /* секции в модалке */
 .modal-sec { margin-bottom:14px; }
 .modal-sec-title {
-font-family:'Unbounded',sans-serif;
+font-family:‘Unbounded’,sans-serif;
 font-size:9px; font-weight:800; letter-spacing:.1em;
-color:var(--acc);
+color:var(–acc);
 margin-bottom:8px;
 display:flex; align-items:center; gap:8px;
 }
-.modal-sec-title::after { content:''; flex:1; height:1px; background:var(--line2) }
+.modal-sec-title::after { content:’’; flex:1; height:1px; background:var(–line2) }
 .modal-grid {
 display:grid; gap:6px;
 grid-template-columns:repeat(auto-fill, minmax(72px, 1fr));
@@ -406,12 +407,12 @@ backdrop-filter:blur(4px);
 }
 body.light .modal-cell { background:rgba(0,0,0,0.03); }
 .modal-cell .mc-l {
-font-size:9px; color:var(--txt2);
+font-size:9px; color:var(–txt2);
 text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px;
 }
 .modal-cell .mc-v {
-font-family:'Unbounded',sans-serif;
-font-size:14px; font-weight:800; color:var(--txt);
+font-family:‘Unbounded’,sans-serif;
+font-size:14px; font-weight:800; color:var(–txt);
 }
 .mop-overlay {
 display:none; position:fixed; inset:0;
@@ -423,24 +424,22 @@ padding:16px;
 @keyframes mFade { from{opacity:0} to{opacity:1} }
 .mop-modal {
 background:rgba(18,18,18,0.55); border:1px solid rgba(255,255,255,0.2);
-border-radius:var(--r2); width:100%; max-width:460px;
-max-height:86vh;
+border-radius:var(–r2); width:100%; max-width:460px;
+max-height:86vh; overflow-y:auto;
 animation:mUp .22s ease;
 backdrop-filter: blur(25px) saturate(180%);
 box-shadow:0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
 position:relative;
-display:flex;
-flex-direction:column;
 }
 @keyframes mUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
 body.light .mop-modal { background: rgba(255,255,255,0.55); }
 .mop-modal::before {
-content:''; position:absolute; inset:0; border-radius:inherit;
+content:’’; position:absolute; inset:0; border-radius:inherit;
 background: linear-gradient(120deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.15) 30%, rgba(255,255,255,0.05) 60%, transparent 100%);
 pointer-events:none;
 }
 .mop-modal::after {
-content:''; position:absolute; inset:0; border-radius:inherit;
+content:’’; position:absolute; inset:0; border-radius:inherit;
 background: radial-gradient(circle at 20% 10%, rgba(255,255,255,0.25), transparent 40%),
 radial-gradient(circle at 80% 90%, rgba(255,255,255,0.15), transparent 50%);
 pointer-events:none; opacity:.6;
@@ -448,37 +447,32 @@ pointer-events:none; opacity:.6;
 .mop-modal-hdr {
 background:transparent; backdrop-filter: blur(10px);
 display:flex; align-items:center; justify-content:space-between;
-padding:13px 16px; border-bottom:1px solid var(--line);
+padding:13px 16px; border-bottom:1px solid var(–line);
 position:sticky; top:0; z-index:1;
-flex-shrink:0;
 }
 .mop-modal-title {
 display:flex; align-items:center; gap:8px;
-font-family:'Unbounded',sans-serif; font-size:11px; font-weight:800;
+font-family:‘Unbounded’,sans-serif; font-size:11px; font-weight:800;
 }
 .mop-modal-close {
 width:28px; height:28px; border-radius:50%;
-border:1px solid var(--line2); background:var(--bg3);
-color:var(--txt2); font-size:18px; cursor:pointer;
+border:1px solid var(–line2); background:var(–bg3);
+color:var(–txt2); font-size:18px; cursor:pointer;
 display:flex; align-items:center; justify-content:center;
 transition:all .15s; flex-shrink:0; line-height:1;
 }
-.mop-modal-close:hover { border-color:var(--red); color:var(--red) }
-.mop-modal-body { 
-padding:14px 16px; 
-overflow-y: auto; 
-flex:1;
-}
+.mop-modal-close:hover { border-color:var(–red); color:var(–red) }
+.mop-modal-body { padding:14px 16px }
 
 .mop-grid4 {
 display:grid; grid-template-columns:repeat(4,1fr);
 gap:6px; margin-bottom:12px;
 }
 .m4 { background:rgba(255,255,255,0.05); border-radius:8px; padding:7px; text-align:center }
-.m4 .ml { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px }
-.m4 .mv { font-family:'Unbounded',sans-serif; font-size:12px; font-weight:700 }
+.m4 .ml { font-size:9px; color:var(–txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px }
+.m4 .mv { font-family:‘Unbounded’,sans-serif; font-size:12px; font-weight:700 }
 .prog-row { display:flex; align-items:center; gap:8px; margin-bottom:12px }
-.prog-l { font-size:11px; color:var(--txt2); width:42px; text-align:right; flex-shrink:0 }
+.prog-l { font-size:11px; color:var(–txt2); width:42px; text-align:right; flex-shrink:0 }
 .prog-track { flex:1; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden }
 .prog-fill { height:100%; border-radius:2px; transition:width .6s ease }
 .prog-r { font-size:11px; font-weight:600; width:38px; text-align:right; flex-shrink:0 }
@@ -486,10 +480,10 @@ gap:6px; margin-bottom:12px;
 .chips-row { display:flex; flex-wrap:wrap; gap:5px }
 .chip {
 font-size:10px; padding:3px 8px; border-radius:6px;
-background:rgba(255,255,255,0.05); border:1px solid var(--line);
-color:var(--txt2); display:flex; align-items:center; gap:3px;
+background:rgba(255,255,255,0.05); border:1px solid var(–line);
+color:var(–txt2); display:flex; align-items:center; gap:3px;
 }
-.chip strong { color:var(--txt); font-size:11px }
+.chip strong { color:var(–txt); font-size:11px }
 .chip.c800  { border-color:rgba(30,144,255,.3) }
 .chip.c1200 { border-color:rgba(255,165,2,.3) }
 @media(max-width:480px) {
@@ -498,19 +492,19 @@ color:var(--txt2); display:flex; align-items:center; gap:3px;
 
 /* ── КАРТОЧКА ОТДЕЛА ── */
 .dept-card {
-background: rgba(var(--acc-r), var(--acc-g), var(--acc-b), 0.08);
-border:1px solid var(--acc-bdr);
-border-radius:var(--r2); padding:14px 16px;
+background: rgba(var(–acc-r), var(–acc-g), var(–acc-b), 0.08);
+border:1px solid var(–acc-bdr);
+border-radius:var(–r2); padding:14px 16px;
 margin-bottom:16px;
 }
 .dept-title {
-font-family:'Unbounded',sans-serif;
+font-family:‘Unbounded’,sans-serif;
 font-size:10px; font-weight:800; letter-spacing:.1em;
-color:var(--acc);
+color:var(–acc);
 margin-bottom:12px;
 display:flex; align-items:center; gap:8px;
 }
-.dept-title::after { content:''; flex:1; height:1px; background:var(--acc-bdr) }
+.dept-title::after { content:’’; flex:1; height:1px; background:var(–acc-bdr) }
 .dept-row1, .dept-row2 {
 display:grid; gap:8px; margin-bottom:8px;
 }
@@ -523,15 +517,15 @@ backdrop-filter:blur(4px);
 }
 body.light .dept-cell { background:rgba(0,0,0,0.02); }
 .dept-cell .dc-lbl {
-font-size:9px; color:var(--txt2);
+font-size:9px; color:var(–txt2);
 text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px;
 }
 .dept-cell .dc-val {
-font-family:'Unbounded',sans-serif;
+font-family:‘Unbounded’,sans-serif;
 font-size:16px; font-weight:800; letter-spacing:-.02em;
-color:var(--txt);
+color:var(–txt);
 }
-.dept-cell.hi .dc-val { color:var(--txt); }
+.dept-cell.hi .dc-val { color:var(–txt); }
 
 /* ── СПИДОМЕТРЫ ── */
 .speedo-grid {
@@ -542,7 +536,7 @@ gap:10px; margin-top:5px;
 .speedo-svg-container {
 position:relative;
 width:100%;
-max-width:70px;
+max-width:85px;
 margin:0 auto;
 background: transparent;
 backdrop-filter: none;
@@ -554,38 +548,48 @@ width:100%; height:auto; display:block;
 filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
 }
 .speedo-value {
-position:absolute; top:45%; left:50%;
+position:absolute; top:38%; left:50%;
 transform:translate(-50%, -50%);
-font-family:'Unbounded',sans-serif;
-font-size:12px; font-weight:900; color:var(--txt); line-height:1;
+font-family:‘Unbounded’,sans-serif;
+font-size:12px; font-weight:900; color:var(–txt); line-height:1;
 }
 .speedo-visits {
-position:absolute; top:70%; left:50%;
+position:absolute; top:72%; left:50%;
 transform:translate(-50%, -50%);
-font-family:'Unbounded',sans-serif;
-font-size:10px; font-weight:500; color:var(--txt2); white-space:nowrap;
+font-family:‘Unbounded’,sans-serif;
+font-size:14px; font-weight:800; color:var(–txt); white-space:nowrap;
 }
+.speedo-conv {
+position:absolute; top:56%; left:50%;
+transform:translate(-50%, -50%);
+font-family:‘Unbounded’,sans-serif;
+font-size:9px; font-weight:600; color:var(–txt2); white-space:nowrap;
+}
+.inner-base-path { fill:none; stroke:rgba(255,255,255,0.12); stroke-width:14; stroke-linecap:round; }
+.inner-progress-path { fill:none; stroke-width:14; stroke-linecap:round; stroke:url(#speedGradient); }
 .speedo-name {
-font-family:'Unbounded',sans-serif;
+font-family:‘Unbounded’,sans-serif;
 font-size:9px; font-weight:700;
-margin-top:0px; text-transform:uppercase; color:var(--txt2);
+margin-top:0px; text-transform:uppercase; color:var(–txt2);
 }
 .base-path { fill:none; stroke:rgba(255,255,255,0.15); stroke-width:20; stroke-linecap:round; }
 .progress-path { fill:none; stroke-width:20; stroke-linecap:round; stroke:url(#speedGradient); }
+body.light .base-path { stroke:rgba(0,0,0,0.1); }
+body.light .inner-base-path { stroke:rgba(0,0,0,0.08); }
 @media(max-width:480px) {
 .speedo-grid { grid-template-columns:repeat(3,1fr); }
 }
 
 /* ── ИТОГИ ── */
 .totals-box {
-background:rgba(255,255,255,0.05); border:1px solid var(--line2);
-border-radius:var(--r2); padding:13px 14px; margin-top:14px;
+background:rgba(255,255,255,0.05); border:1px solid var(–line2);
+border-radius:var(–r2); padding:13px 14px; margin-top:14px;
 backdrop-filter:blur(8px);
 }
 .totals-lbl {
-font-family:'Unbounded',sans-serif;
+font-family:‘Unbounded’,sans-serif;
 font-size:9px; font-weight:800; letter-spacing:.08em;
-color:var(--txt2); margin-bottom:8px;
+color:var(–txt2); margin-bottom:8px;
 }
 .totals-row { display:flex; flex-wrap:wrap; gap:7px }
 .ti {
@@ -594,44 +598,44 @@ padding:7px 11px; min-width:75px;
 display:flex; flex-direction:column; gap:2px;
 backdrop-filter:blur(4px);
 }
-.ti .tl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em }
-.ti .tv { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:700 }
+.ti .tl { font-size:9px; color:var(–txt2); text-transform:uppercase; letter-spacing:.04em }
+.ti .tv { font-family:‘Unbounded’,sans-serif; font-size:13px; font-weight:700 }
 
 /* ── ДОХОД ── (тень убрана из общих правил) */
 .zp-banner {
-border-radius:var(--r2); padding:18px;
+border-radius:var(–r2); padding:18px;
 text-align:center; margin-bottom:16px;
 backdrop-filter:blur(8px);
-border:1px solid var(--acc-bdr);
+border:1px solid var(–acc-bdr);
 }
-.zp-banner .zl { font-size:10px; color:var(--txt2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px }
-.zp-banner .zv { 
-  font-family:'Unbounded',sans-serif; 
-  font-size:30px; 
-  font-weight:900; 
-  color:var(--acc); 
-  letter-spacing:-.02em;
+.zp-banner .zl { font-size:10px; color:var(–txt2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px }
+.zp-banner .zv {
+font-family:‘Unbounded’,sans-serif;
+font-size:30px;
+font-weight:900;
+color:var(–acc);
+letter-spacing:-.02em;
 }
 .zp-list { display:flex; flex-direction:column; gap:8px }
 .zp-n  {
-font-family:'Unbounded',sans-serif;
+font-family:‘Unbounded’,sans-serif;
 font-weight:700; font-size:13px;
 flex-shrink:0; min-width:80px;
 text-transform:uppercase;
 }
 .zp-row {
 display:flex; flex-direction:column;
-border-radius:var(--r2); padding:13px 16px;
-background: rgba(var(--rank-r), var(--rank-g), var(--rank-b), 0.15);
+border-radius:var(–r2); padding:13px 16px;
+background: rgba(var(–rank-r), var(–rank-g), var(–rank-b), 0.15);
 }
 body.light .zp-row {
-background: rgba(var(--rank-r), var(--rank-g), var(--rank-b), 0.1);
+background: rgba(var(–rank-r), var(–rank-g), var(–rank-b), 0.1);
 }
-.zp-row:last-child { border-bottom:1px solid var(--line) }
+.zp-row:last-child { border-bottom:1px solid var(–line) }
 .zp-bg { flex:1; height:3px; background:rgba(255,255,255,0.2); border-radius:2px; overflow:hidden; margin:8px 0 4px; }
 .zp-fill { height:100%; border-radius:2px; transition:width .7s ease; }
 .zp-a {
-font-family:'Unbounded',sans-serif;
+font-family:‘Unbounded’,sans-serif;
 font-size:13px; font-weight:700;
 flex-shrink:0; text-align:right;
 }
@@ -654,18 +658,18 @@ display:flex; align-items:center; justify-content:space-between;
 padding-top:10px; margin-bottom:10px; gap:12px;
 }
 .sched-nav-title {
-font-family:'Unbounded',sans-serif;
-font-size:12px; font-weight:800; color:var(--txt);
+font-family:‘Unbounded’,sans-serif;
+font-size:12px; font-weight:800; color:var(–txt);
 text-align:center; flex:1;
 }
 .sched-nav-btn {
 width:34px; height:34px; border-radius:50%;
-background:var(--bg3); border:1px solid var(--line2);
-color:var(--txt2); font-size:18px; cursor:pointer;
+background:var(–bg3); border:1px solid var(–line2);
+color:var(–txt2); font-size:18px; cursor:pointer;
 display:flex; align-items:center; justify-content:center;
 transition:all .15s; flex-shrink:0; line-height:1;
 }
-.sched-nav-btn:hover { border-color:var(--acc); color:var(--acc) }
+.sched-nav-btn:hover { border-color:var(–acc); color:var(–acc) }
 .sched-nav-btn:disabled { opacity:.3; cursor:default; pointer-events:none }
 
 .sched-week {
@@ -673,49 +677,52 @@ display:grid; grid-template-columns:repeat(7,1fr); gap:4px;
 }
 .sched-day-hdr {
 text-align:center; padding:6px 2px;
-background:var(--bg3); border-radius:8px;
+background:var(–bg3); border-radius:8px;
 }
 .sched-day-hdr .sd-num {
-font-family:'Unbounded',sans-serif;
+font-family:‘Unbounded’,sans-serif;
 font-size:13px; font-weight:800; line-height:1;
 }
 .sched-day-hdr .sd-dow {
-font-size:9px; color:var(--txt2);
+font-size:9px; color:var(–txt2);
 text-transform:uppercase; letter-spacing:.05em; margin-top:2px;
 }
-.sched-day-hdr .sd-count {
-font-size:9px; color:var(--acc);
-margin-top:3px; font-weight:600;
+.sd-workers {
+font-family:‘Unbounded’,sans-serif;
+font-size:10px; font-weight:700; color:var(–acc);
+margin-top:3px; border-top:1px solid var(–line);
+padding-top:3px;
 }
-.sched-day-hdr.today { background:var(--acc-bg); border:1px solid var(--acc-bdr); }
-.sched-day-hdr.today .sd-num { color:var(--acc) }
-.sched-day-hdr.today .sd-dow { color:var(--acc) }
+.sched-day-hdr.today { background:var(–acc-bg); border:1px solid var(–acc-bdr); }
+.sched-day-hdr.today .sd-num { color:var(–acc) }
+.sched-day-hdr.today .sd-dow { color:var(–acc) }
+.sched-day-hdr.today .sd-workers { color:var(–acc) }
 
 .sched-group-title {
-font-family:'Unbounded',sans-serif;
+font-family:‘Unbounded’,sans-serif;
 font-size:10px; font-weight:800; letter-spacing:.1em;
-color:var(--acc); margin:14px 0 8px;
+color:var(–acc); margin:14px 0 8px;
 display:flex; align-items:center; gap:8px;
 }
-.sched-group-title::after { content:''; flex:1; height:1px; background:var(--line) }
+.sched-group-title::after { content:’’; flex:1; height:1px; background:var(–line) }
 
 .sched-person {
-background:var(--bg2); border:1px solid var(--line);
-border-radius:var(--r2); margin-bottom:8px; overflow:hidden;
+background:var(–bg2); border:1px solid var(–line);
+border-radius:var(–r2); margin-bottom:8px; overflow:hidden;
 }
 .sched-person-name {
-font-family:'Unbounded',sans-serif;
+font-family:‘Unbounded’,sans-serif;
 font-size:11px; font-weight:700;
 padding:10px 14px 8px;
-border-bottom:1px solid var(--line); color:var(--txt);
+border-bottom:1px solid var(–line); color:var(–txt);
 display: flex;
 justify-content: space-between;
 align-items: baseline;
 }
 .sched-person-name .shifts-count {
-  font-size: 10px;
-  font-weight: normal;
-  color: var(--txt2);
+font-size: 10px;
+font-weight: normal;
+color: var(–txt2);
 }
 .sched-cells {
 display:grid; grid-template-columns:repeat(7,1fr);
@@ -726,138 +733,138 @@ text-align:center; padding:8px 2px;
 border-radius:6px; font-size:12px; font-weight:600;
 min-height:36px; display:flex; align-items:center; justify-content:center;
 }
-.sched-cell.dr  { background:rgba(46,213,115,.12); color:var(--grn) }
-.sched-cell.dv  { background:rgba(255,71,87,.12);  color:var(--red) }
-.sched-cell.dvs { background:rgba(130,130,130,.1); color:var(--txt3) }
-.sched-cell.empty { color:var(--txt3); opacity:.4 }
-.sched-cell.today-col { outline:2px solid var(--acc); outline-offset:-2px; border-radius:6px; }
+.sched-cell.dr  { background:rgba(46,213,115,.12); color:var(–grn) }
+.sched-cell.dv  { background:rgba(255,71,87,.12);  color:var(–red) }
+.sched-cell.dvs { background:rgba(130,130,130,.1); color:var(–txt3) }
+.sched-cell.empty { color:var(–txt3); opacity:.4 }
+.sched-cell.today-col { outline:2px solid var(–acc); outline-offset:-2px; border-radius:6px; }
 
 /* ── ИНСТРУКЦИИ ── */
 .instr-block {
-border:1px solid var(--line); border-radius:var(--r2);
+border:1px solid var(–line); border-radius:var(–r2);
 overflow:hidden; margin-bottom:8px;
 }
 .instr-hdr {
 display:flex; align-items:center; justify-content:space-between;
-padding:14px 16px; background:var(--bg2);
+padding:14px 16px; background:var(–bg2);
 cursor:pointer; user-select:none; gap:10px; transition:background .15s;
 }
-.instr-hdr:hover { background:var(--bg3) }
-.instr-hdr h3 { font-weight:600; font-size:13px; line-height:1.4; flex:1; color:var(--acc); }
+.instr-hdr:hover { background:var(–bg3) }
+.instr-hdr h3 { font-weight:600; font-size:13px; line-height:1.4; flex:1; color:var(–acc); }
 .instr-toggle {
 width:24px; height:24px; border-radius:50%;
-background:var(--bg3); border:1px solid var(--line2);
+background:var(–bg3); border:1px solid var(–line2);
 display:flex; align-items:center; justify-content:center;
-color:var(--txt2); font-size:14px; flex-shrink:0; transition:all .2s;
+color:var(–txt2); font-size:14px; flex-shrink:0; transition:all .2s;
 }
 .instr-block.open > .instr-hdr .instr-toggle {
-background:var(--acc-bg); border-color:var(--acc);
-color:var(--acc); 
+background:var(–acc-bg); border-color:var(–acc);
+color:var(–acc);
 }
-.instr-body { display:none; border-top:1px solid var(--line); background:var(--bg); }
+.instr-body { display:none; border-top:1px solid var(–line); background:var(–bg); }
 .instr-block.open > .instr-body { display:block }
 
 .table-scroll { overflow-x: auto; margin:0 -1px; }
 .instr-table { width:100%; border-collapse:collapse; font-size:13px; min-width:600px; }
 .instr-table th {
-background:var(--bg3);
+background:var(–bg3);
 padding:10px 14px; text-align:left;
-font-family:'Unbounded',sans-serif; font-size:9px;
-font-weight:800; letter-spacing:.06em; color:var(--txt2);
-border-bottom:1px solid var(--line2);
+font-family:‘Unbounded’,sans-serif; font-size:9px;
+font-weight:800; letter-spacing:.06em; color:var(–txt2);
+border-bottom:1px solid var(–line2);
 }
 .instr-table td {
 padding:10px 14px; vertical-align:top;
-border-bottom:1px solid var(--line);
-line-height:1.6; color:var(--txt2);
+border-bottom:1px solid var(–line);
+line-height:1.6; color:var(–txt2);
 }
 .instr-table tr:last-child td { border-bottom:none }
 .instr-table tr:hover td { background:rgba(255,255,255,.02) }
 .instr-table td:first-child {
-font-weight:600; color:var(--txt);
+font-weight:600; color:var(–txt);
 white-space:nowrap; width:200px;
-border-right:1px solid var(--line);
+border-right:1px solid var(–line);
 }
 body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
 
-.instr-sub { border-top:1px solid var(--line); }
+.instr-sub { border-top:1px solid var(–line); }
 .instr-sub:first-child { border-top:none }
 .instr-sub-hdr {
 display:flex; align-items:center; justify-content:space-between;
-padding:12px 16px; background:var(--bg2);
+padding:12px 16px; background:var(–bg2);
 cursor:pointer; user-select:none; gap:8px; transition:background .15s;
 }
-.instr-sub-hdr:hover { background:var(--bg3) }
-.instr-sub-hdr span { font-weight:600; font-size:12px; flex:1; color:var(--acc) }
+.instr-sub-hdr:hover { background:var(–bg3) }
+.instr-sub-hdr span { font-weight:600; font-size:12px; flex:1; color:var(–acc) }
 .instr-sub-toggle {
 width:20px; height:20px; border-radius:50%;
-background:var(--bg3); border:1px solid var(--line2);
+background:var(–bg3); border:1px solid var(–line2);
 display:flex; align-items:center; justify-content:center;
-color:var(--txt2); font-size:12px; flex-shrink:0; transition:all .2s;
+color:var(–txt2); font-size:12px; flex-shrink:0; transition:all .2s;
 }
-.instr-sub.open .instr-sub-toggle { color:var(--acc); border-color:var(--acc); }
+.instr-sub.open .instr-sub-toggle { color:var(–acc); border-color:var(–acc); }
 .instr-sub-body { display:none }
 .instr-sub.open .instr-sub-body { display:block }
 
 /* ── ФУТЕР (общий для всех страниц) ── */
 .page-footer {
-text-align:center; 
-padding:8px 0 8px; 
+text-align:center;
+padding:8px 0 8px;
 margin-top:auto;
-border-top:1px solid var(--line); 
+border-top:1px solid var(–line);
 font-size:11px;
-color:var(--txt3); 
-font-family:'Golos Text',sans-serif; 
+color:var(–txt3);
+font-family:‘Golos Text’,sans-serif;
 letter-spacing:.04em;
 }
 /* Анимация глюка */
 .glitch {
-  position: relative;
-  display: inline-block;
+position: relative;
+display: inline-block;
 }
 .glitch::before,
 .glitch::after {
-  content: attr(data-text);
-  position: absolute;
-  left: 0;
-  top: 0;
-  opacity: 0;
+content: attr(data-text);
+position: absolute;
+left: 0;
+top: 0;
+opacity: 0;
 }
 .glitch::before { color: red; }
 .glitch::after  { color: cyan; }
 .glitch.active::before {
-  opacity: 0.8;
-  transform: translate(-2px, 1px);
+opacity: 0.8;
+transform: translate(-2px, 1px);
 }
 .glitch.active::after {
-  opacity: 0.8;
-  transform: translate(2px, -1px);
+opacity: 0.8;
+transform: translate(2px, -1px);
 }
 .shake { animation: shake 0.2s infinite; }
 @keyframes shake {
-  0% { transform: translate(0, 0); }
-  25% { transform: translate(1px, -1px); }
-  50% { transform: translate(-1px, 1px); }
-  75% { transform: translate(1px, 1px); }
-  100% { transform: translate(0, 0); }
+0% { transform: translate(0, 0); }
+25% { transform: translate(1px, -1px); }
+50% { transform: translate(-1px, 1px); }
+75% { transform: translate(1px, 1px); }
+100% { transform: translate(0, 0); }
 }
 .flash { animation: flash 0.3s; }
 @keyframes flash {
-  0% { opacity: 0; }
-  50% { opacity: 1; }
-  100% { opacity: 0.8; }
+0% { opacity: 0; }
+50% { opacity: 1; }
+100% { opacity: 0.8; }
 }
 #toast {
 position:fixed; bottom:20px; left:50%;
 transform:translateX(-50%) translateY(16px);
-padding:9px 16px; border-radius:var(--r);
+padding:9px 16px; border-radius:var(–r);
 font-size:13px; opacity:0; pointer-events:none;
 transition:all .25s; z-index:999; white-space:nowrap;
 }
 #toast.on { opacity:1; transform:translateX(-50%) translateY(0) }
-#toast.s { background:rgba(46,213,115,.15); border:1px solid var(--grn); color:var(--grn) }
-#toast.e { background:rgba(255,71,87,.15);  border:1px solid var(--red); color:var(--red) }
-#toast.i { background:var(--bg3); border:1px solid var(--line2); color:var(--txt) }
+#toast.s { background:rgba(46,213,115,.15); border:1px solid var(–grn); color:var(–grn) }
+#toast.e { background:rgba(255,71,87,.15);  border:1px solid var(–red); color:var(–red) }
+#toast.i { background:var(–bg3); border:1px solid var(–line2); color:var(–txt) }
 
 @media(max-width:480px) {
 .sum-grid  { grid-template-columns:1fr 1fr }
@@ -868,7 +875,7 @@ header     { padding:0 12px }
 }
 
 @keyframes firework {
-to { transform: translate(var(--tx), var(--ty)) scale(0.6); opacity: 0; }
+to { transform: translate(var(–tx), var(–ty)) scale(0.6); opacity: 0; }
 }
 @keyframes flash {
 0% { transform:translate(-50%,-50%) scale(0.5); opacity:1; }
@@ -877,27 +884,27 @@ to { transform: translate(var(--tx), var(--ty)) scale(0.6); opacity: 0; }
 
 /* ===== ФОНОВЫЕ ЭФФЕКТЫ (GLASS + ORBS) ===== */
 canvas#bg-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+pointer-events: none;
+z-index: 1;
 }
 
 .glass {
-  position: fixed;
-  inset: 0;
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-  z-index: 2;
-  pointer-events: none;
-  background: rgba(20, 20, 30, 0.25);
+position: fixed;
+inset: 0;
+backdrop-filter: blur(40px);
+-webkit-backdrop-filter: blur(40px);
+z-index: 2;
+pointer-events: none;
+background: rgba(20, 20, 30, 0.25);
 }
 
 body.light .glass {
-  background: rgba(255, 255, 255, 0.25);
+background: rgba(255, 255, 255, 0.25);
 }
 </style>
 
@@ -990,29 +997,32 @@ body.light .glass {
       </div>
     </div>
 
-    <div id="scr-otchet" class="scr">
-      <div class="w">
-        <div id="c-otchet"></div>
-      </div>
-    </div>
+```
+<div id="scr-otchet" class="scr">
+  <div class="w">
+    <div id="c-otchet"></div>
+  </div>
+</div>
 
-    <div id="scr-dohod" class="scr">
-      <div class="w">
-        <div id="c-dohod"></div>
-      </div>
-    </div>
+<div id="scr-dohod" class="scr">
+  <div class="w">
+    <div id="c-dohod"></div>
+  </div>
+</div>
 
-    <div id="scr-grafik" class="scr">
-      <div class="w">
-        <div id="c-grafik"></div>
-      </div>
-    </div>
+<div id="scr-grafik" class="scr">
+  <div class="w">
+    <div id="c-grafik"></div>
+  </div>
+</div>
 
-    <div id="scr-instruktsii" class="scr">
-      <div class="w">
-        <div id="c-instruktsii"></div>
-      </div>
-    </div>
+<div id="scr-instruktsii" class="scr">
+  <div class="w">
+    <div id="c-instruktsii"></div>
+  </div>
+</div>
+```
+
   </main>
 
   <div class="page-footer">
@@ -1051,7 +1061,7 @@ const SHEETS = {
   d_dohod:     'Д_ЗП'    + SUFFIX,
   grafik:      'ГРАФИКИ' + SUFFIX,
   instruktsii: 'ИНСТРУКЦИИ',
-  cnvrs:       'CNVRS'   + SUFFIX,
+  cnvrs:        'CNVRS' + SUFFIX,
 };
 document.getElementById('badge-month').textContent = SUFFIX.slice(0,2) + '/' + SUFFIX.slice(2);
 
@@ -1260,6 +1270,12 @@ async function loadTab(tab) {
         if (S.reportTab === 'dept') renderOtchet();
       }).catch(() => { S.data.d_otchet = []; });
     }
+    if (!S.data.cnvrs) {
+      api(SHEETS.cnvrs, 'A1:N40').then(data => {
+        S.data.cnvrs = data;
+        renderTab('otchet');
+      }).catch(() => { S.data.cnvrs = []; });
+    }
     renderTab('otchet');
     return;
   }
@@ -1284,21 +1300,6 @@ async function loadTab(tab) {
     renderTab('dohod');
     return;
   }
-  if (tab === 'grafik' && !S.data.grafik) {
-    try {
-      S.data.grafik = await api(SHEETS.grafik, 'A1:AI25');
-    } catch(e) { /* */ }
-  }
-  if (tab === 'instruktsii' && !S.data.instruktsii) {
-    try {
-      S.data.instruktsii = await api(SHEETS.instruktsii, 'A1:C200');
-    } catch(e) { /* */ }
-  }
-  if (tab === 'grafik' && !S.data.cnvrs) {
-    try {
-      S.data.cnvrs = await api(SHEETS.cnvrs, 'A1:Z100');
-    } catch(e) { S.data.cnvrs = []; }
-  }
   if (S.data[tab]) { renderTab(tab); return; }
   const el = document.getElementById('c-'+tab);
   if (el) el.innerHTML = loader();
@@ -1316,9 +1317,8 @@ function reloadCurrent() {
   const tab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
   if (tab === 'grafik') _schedWeek = null;
   S.data[tab] = null;
-  if (tab === 'otchet') S.data.d_otchet = null;
+  if (tab === 'otchet') { S.data.d_otchet = null; S.data.cnvrs = null; }
   if (tab === 'dohod') S.data.d_dohod = null;
-  if (tab === 'grafik') S.data.cnvrs = null;
   loadTab(tab).then(() => toast('Обновлено','s'));
 }
 
@@ -1451,18 +1451,36 @@ function renderOtchet() {
   const KOTEL = ['котел','котёл','kotel'];
   const isKotel = n => KOTEL.includes((n||'').toLowerCase().trim());
 
+  const cnvrsData = S.data.cnvrs || [];
+  function getCnvrsRow(name, section) {
+    const n = (name||'').toLowerCase().trim();
+    let rows;
+    if (section === 'crm') rows = cnvrsData.slice(2, 11);
+    else if (section === 'warm') rows = cnvrsData.slice(16, 25);
+    else rows = cnvrsData.slice(30, 39);
+    return rows.find(r => (r[0]||'').toLowerCase().trim() === n) || [];
+  }
+
   const managerStats = mgrRows
     .filter(r => !isKotel(r[0]))
-    .map(r => ({
-      name:    (r[0]||'—').toUpperCase(),
-      visits:  num(r[7]),
-      plan:    num(r[3]) || 1,
-      progNum: parseFloat((r[6]||'0%').replace('%','').replace(',','.')) || 0,
-    }));
+    .map(r => {
+      const mName = (r[0]||'—').trim();
+      const genRow = getCnvrsRow(mName, 'general');
+      const convStr = (genRow[6]||'0%').replace('%','').replace(',','.');
+      return {
+        name:    mName.toUpperCase(),
+        visits:  num(r[7]),
+        plan:    num(r[3]) || 1,
+        progNum: parseFloat((r[6]||'0%').replace('%','').replace(',','.')) || 0,
+        convPct: parseFloat(convStr) || 0,
+      };
+    });
   managerStats.sort((a, b) => b.progNum - a.progNum);
 
   const speedoHTML = managerStats.map((item, idx) => {
     const progressId = `progress-${idx}`;
+    const innerProgressId = `inner-progress-${idx}`;
+    const convPct = item.convPct || 0;
     return `
       <div class="speedo-item">
         <div class="speedo-svg-container">
@@ -1476,8 +1494,11 @@ function renderOtchet() {
             </defs>
             <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/>
             <path id="${progressId}" class="progress-path" stroke="url(#speedGradient)" d="M 40 160 A 85 85 0 1 1 160 160"/>
+            <path class="inner-base-path" d="M 61 139 A 55 55 0 1 1 139 139"/>
+            <path id="${innerProgressId}" class="inner-progress-path" stroke="url(#speedGradient)" d="M 61 139 A 55 55 0 1 1 139 139"/>
           </svg>
           <div class="speedo-value">${Math.round(item.progNum)}%</div>
+          <div class="speedo-conv">${convPct}%</div>
           <div class="speedo-visits">${item.visits}</div>
         </div>
         <div class="speedo-name">${item.name}</div>
@@ -1508,11 +1529,17 @@ function renderOtchet() {
     const rs    = rankStyles(idx, total);
     const fillGrad = `linear-gradient(90deg,${rs.color},${rs.color})`;
 
+    const crmCnvrs = getCnvrsRow(name, 'crm');
+    const warmCnvrs = getCnvrsRow(name, 'warm');
     const modalData = JSON.stringify({
       name, v800:r[1], v1200:r[2], rplan, ost, prc, prog, allV,
       kred800:r[8], nal800:r[9], td800:r[10], kom800:r[11],
       kred1200:r[12], nal1200:r[13], td1200:r[14], kom1200:r[15],
       zadatok:r[16], vsalone:r[19], vkso:r[22], vfSSP:r[23], vbanke:r[24], otkaz:r[25],
+      crmConVis:crmCnvrs[6]||'—', crmConKred:crmCnvrs[7]||'—',
+      crmDolya:crmCnvrs[8]||'—', crmKoef:crmCnvrs[12]||'—',
+      warmConVis:warmCnvrs[6]||'—', warmConKred:warmCnvrs[7]||'—',
+      warmDolya:warmCnvrs[8]||'—', warmKoef:warmCnvrs[12]||'—',
       rs, medal: idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'', idx: idx+1
     }).replace(/'/g,"&#39;");
 
@@ -1600,21 +1627,27 @@ function renderOtchet() {
     content = renderDozhimCards();
   }
 
+  // добавляем итоги только для вкладки ОТДЕЛ
   const finalHtml = content + (S.reportTab === 'dept' ? tot : '');
   el.innerHTML = finalHtml;
 
   if (S.reportTab === 'dept') {
     managerStats.forEach((item, idx) => {
       const progressPath = document.getElementById(`progress-${idx}`);
+      const innerPath = document.getElementById(`inner-progress-${idx}`);
       if (!progressPath) return;
       const length = progressPath.getTotalLength();
       const targetPct = Math.min(item.visits / item.plan, 1);
       progressPath.style.strokeDasharray = `0,${length}`;
+      const innerLen = innerPath ? innerPath.getTotalLength() : 0;
+      const innerTarget = Math.min((item.convPct || 0) / 100, 1);
+      if (innerPath) innerPath.style.strokeDasharray = `0,${innerLen}`;
       let start = null;
       function animate(ts) {
         if (!start) start = ts;
         const ease = 1 - Math.pow(1 - Math.min((ts - start) / 2000, 1), 4);
         progressPath.style.strokeDasharray = `${ease * length * targetPct},${length}`;
+        if (innerPath) innerPath.style.strokeDasharray = `${ease * innerLen * innerTarget},${innerLen}`;
         if (ease < 1) requestAnimationFrame(animate);
       }
       requestAnimationFrame(animate);
@@ -1756,6 +1789,7 @@ function renderDohod() {
   const el = document.getElementById('c-dohod');
   const floating = document.getElementById('floating-dohod-subtabs');
 
+  // формируем подтабы
   const subtabs = `
     <span class="report-subtab ${S.dohodTab !== 'dozhim' ? 'active' : ''}" onclick="setDohodTab('crm')">CRM</span>
     <span class="report-subtab ${S.dohodTab === 'dozhim' ? 'active' : ''}" onclick="setDohodTab('dozhim')">ДОЖИМ</span>
@@ -1767,6 +1801,7 @@ function renderDohod() {
     return;
   }
 
+  /* CRM (original) */
   const raw = S.data.dohod;
   if (!raw || raw.length < 3) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
 
@@ -1889,9 +1924,12 @@ function setDohodTab(tab) {
 const DOW = ['вс','пн','вт','ср','чт','пт','сб'];
 let _schedWeek = null;
 
+/* Новая функция подсчёта смен */
 function countShifts(row, daysRow, today) {
   let shifts = 0;
+  // daysRow — массив, в котором для каждого столбца от 1 до 31 хранится номер дня
   for (let day = 1; day <= today; day++) {
+    // Находим индекс столбца, где в daysRow указан день day
     let colIdx = -1;
     for (let c = 1; c <= 31; c++) {
       if (parseInt(daysRow[c]) === day) {
@@ -1933,44 +1971,28 @@ function renderGrafik() {
   const week     = weeks[_schedWeek];
   const weekDays = week.map(d => d.day);
 
-  function getAllPeople() {
-    const g1rows = raw.slice(3,13).filter(r => r[0] && r[0].trim());
-    const g2rows = raw.slice(19,25).filter(r => r[0] && r[0].trim());
-    const daysRow1 = raw[1] || [];
-    const daysRow2 = raw[17] || [];
-    return [...g1rows.map(r => ({ row: r, daysRow: daysRow1 })), ...g2rows.map(r => ({ row: r, daysRow: daysRow2 }))];
-  }
-  const allPeople = getAllPeople();
-
-  const shiftCounts = weekDays.map(dayNum => {
-    let cnt = 0;
-    for (const p of allPeople) {
-      let colIdx = -1;
-      for (let c = 1; c <= 31; c++) {
-        if (parseInt(p.daysRow[c]) === dayNum) {
-          colIdx = c;
-          break;
-        }
-      }
-      if (colIdx !== -1) {
-        const val = (p.row[colIdx] || '').toLowerCase();
-        if (val === 'р') cnt++;
-      }
-    }
-    return cnt;
+  const g1pre = parseGroup(raw.slice(3,13),  raw[1],  TODAY);
+  const g2pre = parseGroup(raw.slice(19,25), raw[17], TODAY);
+  const allPeople = [...g1pre, ...g2pre];
+  const workerCounts = weekDays.map((_, wi) => {
+    let count = 0;
+    allPeople.forEach(p => {
+      if ((p.cells[wi]||'').toLowerCase().trim() === 'р') count++;
+    });
+    return count;
   });
 
-  const hdrs = week.map((d, idx) => {
+  const hdrs = week.map((d, wi) => {
     const isT = d.day === TODAY;
-    const cnt = shiftCounts[idx];
     return `<div class="sched-day-hdr${isT?' today':''}">
       <div class="sd-num">${d.day}</div>
       <div class="sd-dow">${d.dow}</div>
-      <div class="sd-count">${cnt} чел.</div>
+      <div class="sd-workers">${workerCounts[wi]}</div>
     </div>`;
   }).join('');
   const weekHeader = `<div class="sched-week">${hdrs}</div>`;
 
+  // Изменённая функция parseGroup: возвращает массив объектов { name, cells, row, shifts }
   function parseGroup(rows, daysRow, today) {
     const dRow = daysRow || [];
     return rows.filter(r => r[0] && r[0].trim()).map(r => {
@@ -1997,7 +2019,6 @@ function renderGrafik() {
       return `<div class="sched-person">
         <div class="sched-person-name">
           <span>${p.name}</span>
-          <span class="shifts-count">Смен: ${p.shifts}</span>
         </div>
         <div class="sched-cells">${cells}</div>
       </div>`;
@@ -2006,8 +2027,8 @@ function renderGrafik() {
 
   const g1title = raw[0]?.[0] || 'Группа 1';
   const g2title = raw[16]?.[0] || 'Группа 2';
-  const g1 = parseGroup(raw.slice(3,13),  raw[1],  TODAY);
-  const g2 = parseGroup(raw.slice(19,25), raw[17], TODAY);
+  const g1 = g1pre;
+  const g2 = g2pre;
 
   const wStart = week[0].day;
   const wEnd   = week[week.length-1].day;
@@ -2091,20 +2112,10 @@ function renderInstruktsii() {
     const ths = cols.map(c => `<th>${c}</th>`).join('');
     const trs = rows.filter(r => r.status||r.criteria).map(r =>
       withA
-        ? `}   
-
-         
-         
-        <td>${r.status||'—'}</td>
-         
-        <td>${r.criteria||'—'}</td>
-         
-        <td>${r.action||'—'}</td>
-       
-      `
-        : `}<td>${r.status||'—'}</td><td>${r.criteria||'—'}</td></tr>`
+        ? `<td><td>${r.status||'—'}<\/td><td>${r.criteria||'—'}<\/td><td>${r.action||'—'}<\/td><\/tr>`
+        : `}<td>${r.status||'—'}<\/td><td>${r.criteria||'—'}<\/td><\/tr>`
     ).join('');
-    return `<div class="table-scroll"><table class="instr-table"><thead>${ths}</thead><tbody>${trs}</tbody></table></div>`;
+    return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}<\/thead><tbody>${trs}<\/tbody><\/table><\/div>`;
   }
 
   const html = blocks.map((b, i) => {
@@ -2214,21 +2225,6 @@ function openMopModal(dataStr) {
   const p = num(d.prc);
   const rs = d.rs;
 
-  let convCRM = { conVisits: '—', conCredits: '—', pctTarget: '—', kCoef: '—' };
-  if (S.data.cnvrs && S.data.cnvrs.length) {
-    const nameNorm = d.name.trim().toLowerCase();
-    const row = S.data.cnvrs.find(r => r[0] && r[0].trim().toLowerCase() === nameNorm);
-    if (row) {
-      convCRM = {
-        conVisits: row[6] || '—',
-        conCredits: row[7] || '—',
-        pctTarget: row[8] || '—',
-        kCoef: row[12] || '—'
-      };
-    }
-  }
-  const convWarm = { conVisits: '—', conCredits: '—', pctTarget: '—', kCoef: '—' };
-
   document.getElementById('mop-modal-title').innerHTML =
     `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span>
      <span style="font-family:'Unbounded',sans-serif">${d.name}</span>${d.medal?' '+d.medal:''}`;
@@ -2245,8 +2241,6 @@ function openMopModal(dataStr) {
       <div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${rs.color}"></div></div>
       <span class="prog-r" style="color:${rs.color}">100%</span>
     </div>
-
-    <!-- CRM -->
     <div class="modal-sec">
       <div class="modal-sec-title">CRM</div>
       <div class="modal-grid">
@@ -2256,10 +2250,12 @@ function openMopModal(dataStr) {
         <div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td800}</div></div>
         <div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div>
         <div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div>
+        <div class="modal-cell"><div class="mc-l">(Con) визиты</div><div class="mc-v">${d.crmConVis}</div></div>
+        <div class="modal-cell"><div class="mc-l">(Con) кредиты</div><div class="mc-v">${d.crmConKred}</div></div>
+        <div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.crmDolya}</div></div>
+        <div class="modal-cell"><div class="mc-l">K-коэффициент</div><div class="mc-v">${d.crmKoef}</div></div>
       </div>
     </div>
-
-    <!-- ТЁПЛЫЕ ЛИДЫ -->
     <div class="modal-sec">
       <div class="modal-sec-title">ТЁПЛЫЕ ЛИДЫ</div>
       <div class="modal-grid">
@@ -2268,32 +2264,12 @@ function openMopModal(dataStr) {
         <div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1200}</div></div>
         <div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td1200}</div></div>
         <div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1200}</div></div>
+        <div class="modal-cell"><div class="mc-l">(Con) визиты</div><div class="mc-v">${d.warmConVis}</div></div>
+        <div class="modal-cell"><div class="mc-l">(Con) кредиты</div><div class="mc-v">${d.warmConKred}</div></div>
+        <div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.warmDolya}</div></div>
+        <div class="modal-cell"><div class="mc-l">K-коэффициент</div><div class="mc-v">${d.warmKoef}</div></div>
       </div>
     </div>
-
-    <!-- Конверсия CRM -->
-    <div class="modal-sec">
-      <div class="modal-sec-title">Конверсия CRM</div>
-      <div class="modal-grid">
-        <div class="modal-cell"><div class="mc-l">(Con) визиты</div><div class="mc-v">${convCRM.conVisits}</div></div>
-        <div class="modal-cell"><div class="mc-l">(Con) кредиты</div><div class="mc-v">${convCRM.conCredits}</div></div>
-        <div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${convCRM.pctTarget}</div></div>
-        <div class="modal-cell"><div class="mc-l">Коэффициент</div><div class="mc-v">${convCRM.kCoef}</div></div>
-      </div>
-    </div>
-
-    <!-- Конверсия Тёплые лиды -->
-    <div class="modal-sec">
-      <div class="modal-sec-title">Конверсия Тёплые лиды</div>
-      <div class="modal-grid">
-        <div class="modal-cell"><div class="mc-l">(Con) визиты</div><div class="mc-v">${convWarm.conVisits}</div></div>
-        <div class="modal-cell"><div class="mc-l">(Con) кредиты</div><div class="mc-v">${convWarm.conCredits}</div></div>
-        <div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${convWarm.pctTarget}</div></div>
-        <div class="modal-cell"><div class="mc-l">Коэффициент</div><div class="mc-v">${convWarm.kCoef}</div></div>
-      </div>
-    </div>
-
-    <!-- ТРЕБУЮТ АКТУАЛИЗАЦИИ / ОТКАЗЫ -->
     <div class="modal-sec">
       <div class="modal-sec-title">ТРЕБУЮТ АКТУАЛИЗАЦИИ / ОТКАЗЫ</div>
       <div class="modal-grid">

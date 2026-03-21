@@ -1473,49 +1473,56 @@ function renderOtchet() {
         <div class="dc-val">${deptKom||'—'}</div>
       </div>
     </div>
-    <div class="dept-sec-lbl">Конверсии — Общее</div>
+    <div class="dept-sec-lbl">Конверсии</div>
     <div class="dept-row3">
       <div class="dept-cell">
         <div class="dc-lbl">Конв. визиты</div>
-        <div class="dc-val">${cnvrsTotGen[6]||'—'}</div>
+        <div class="dc-val" style="font-size:11px">${cnvrsTotGen[6]||'—'}</div>
+        <div class="dc-lbl" style="margin-top:4px;margin-bottom:0">общее</div>
       </div>
       <div class="dept-cell">
-        <div class="dc-lbl">Конв. кредиты</div>
-        <div class="dc-val">${cnvrsTotGen[7]||'—'}</div>
+        <div class="dc-lbl">Конв. визиты</div>
+        <div class="dc-val" style="font-size:11px">${cnvrsTotCrm[6]||'—'}</div>
+        <div class="dc-lbl" style="margin-top:4px;margin-bottom:0">crm</div>
       </div>
       <div class="dept-cell">
-        <div class="dc-lbl">Доля нецелевых</div>
-        <div class="dc-val">${cnvrsTotGen[9]||'—'}</div>
+        <div class="dc-lbl">Конв. визиты</div>
+        <div class="dc-val" style="font-size:11px">${cnvrsTotWarm[6]||'—'}</div>
+        <div class="dc-lbl" style="margin-top:4px;margin-bottom:0">тёплые лиды</div>
       </div>
     </div>
-    <div class="dept-sec-lbl">Конверсии — CRM</div>
-    <div class="dept-row3">
+    <div class="dept-row3" style="margin-top:8px">
       <div class="dept-cell">
-        <div class="dc-lbl">Конв. визиты</div>
-        <div class="dc-val">${cnvrsTotCrm[6]||'—'}</div>
+        <div class="dc-lbl">Конв. кредиты</div>
+        <div class="dc-val" style="font-size:11px">${cnvrsTotGen[7]||'—'}</div>
+        <div class="dc-lbl" style="margin-top:4px;margin-bottom:0">общее</div>
       </div>
       <div class="dept-cell">
         <div class="dc-lbl">Конв. кредиты</div>
-        <div class="dc-val">${cnvrsTotCrm[7]||'—'}</div>
+        <div class="dc-val" style="font-size:11px">${cnvrsTotCrm[7]||'—'}</div>
+        <div class="dc-lbl" style="margin-top:4px;margin-bottom:0">crm</div>
       </div>
       <div class="dept-cell">
-        <div class="dc-lbl">Доля нецелевых</div>
-        <div class="dc-val">${cnvrsTotCrm[9]||'—'}</div>
+        <div class="dc-lbl">Конв. кредиты</div>
+        <div class="dc-val" style="font-size:11px">${cnvrsTotWarm[7]||'—'}</div>
+        <div class="dc-lbl" style="margin-top:4px;margin-bottom:0">тёплые лиды</div>
       </div>
     </div>
-    <div class="dept-sec-lbl">Конверсии — Тёплые лиды</div>
-    <div class="dept-row3">
+    <div class="dept-row3" style="margin-top:8px">
       <div class="dept-cell">
-        <div class="dc-lbl">Конв. визиты</div>
-        <div class="dc-val">${cnvrsTotWarm[6]||'—'}</div>
-      </div>
-      <div class="dept-cell">
-        <div class="dc-lbl">Конв. кредиты</div>
-        <div class="dc-val">${cnvrsTotWarm[7]||'—'}</div>
+        <div class="dc-lbl">Доля нецелевых</div>
+        <div class="dc-val" style="font-size:11px">${cnvrsTotGen[9]||'—'}</div>
+        <div class="dc-lbl" style="margin-top:4px;margin-bottom:0">общее</div>
       </div>
       <div class="dept-cell">
         <div class="dc-lbl">Доля нецелевых</div>
-        <div class="dc-val">${cnvrsTotWarm[9]||'—'}</div>
+        <div class="dc-val" style="font-size:11px">${cnvrsTotCrm[9]||'—'}</div>
+        <div class="dc-lbl" style="margin-top:4px;margin-bottom:0">crm</div>
+      </div>
+      <div class="dept-cell">
+        <div class="dc-lbl">Доля нецелевых</div>
+        <div class="dc-val" style="font-size:11px">${cnvrsTotWarm[9]||'—'}</div>
+        <div class="dc-lbl" style="margin-top:4px;margin-bottom:0">тёплые лиды</div>
       </div>
     </div>
   </div>`;

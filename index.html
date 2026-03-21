@@ -510,6 +510,55 @@ display:grid; gap:8px; margin-bottom:8px;
 }
 .dept-row1 { grid-template-columns:repeat(3,1fr) }
 .dept-row2 { grid-template-columns:repeat(3,1fr); margin-bottom:0 }
+.dept-row3 { grid-template-columns:repeat(3,1fr); margin-bottom:0 }
+.dept-sec-lbl {
+font-family:‘Unbounded’,sans-serif;
+font-size:8px; font-weight:800; letter-spacing:.08em;
+color:var(–acc); text-transform:uppercase;
+margin:10px 0 6px; padding-left:2px;
+}
+.mango-table {
+width:100%; border-collapse:collapse; font-size:13px;
+}
+.mango-table th {
+background:var(–acc); color:#000;
+padding:10px 14px; text-align:left;
+font-family:‘Unbounded’,sans-serif; font-size:10px;
+font-weight:800; letter-spacing:.06em;
+}
+.mango-table td {
+padding:10px 14px; border-bottom:1px solid var(–line);
+color:var(–txt);
+}
+.mango-table tr:nth-child(even) td { background:var(–bg3) }
+.mango-table tr:nth-child(odd) td { background:var(–bg2) }
+.mango-table tr:last-child td { border-bottom:none }
+.mango-table td:last-child {
+font-family:‘Unbounded’,sans-serif; font-weight:700;
+color:var(–acc);
+}
+.mango-wrap {
+border:1px solid var(–line); border-radius:var(–r2);
+overflow:hidden;
+}
+.faq-subtabs {
+display:flex; justify-content:center; gap:16px; padding:0;
+position:sticky; top:92px; background:var(–bg);
+border-bottom:1px solid var(–line); z-index:90; width:100%;
+}
+.faq-subtab {
+padding:6px 0; white-space:nowrap;
+font-family:‘Unbounded’,sans-serif;
+font-size:12px; font-weight:800; letter-spacing:.03em;
+color:var(–txt3); background:none; border:none;
+border-bottom:2px solid transparent;
+cursor:pointer; transition:color .15s, border-color .15s;
+}
+.faq-subtab.active { color:var(–acc); border-bottom-color:var(–acc) }
+.links-placeholder {
+text-align:center; padding:48px 20px;
+color:var(–txt3); font-size:13px;
+}
 .dept-cell {
 background:rgba(255,255,255,0.05); border-radius:8px;
 padding:10px 12px; text-align:center;
@@ -548,19 +597,19 @@ width:100%; height:auto; display:block;
 filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
 }
 .speedo-value {
-position:absolute; top:38%; left:50%;
+position:absolute; top:50%; left:50%;
 transform:translate(-50%, -50%);
 font-family:‘Unbounded’,sans-serif;
 font-size:12px; font-weight:900; color:var(–txt); line-height:1;
 }
 .speedo-visits {
-position:absolute; top:72%; left:50%;
+position:absolute; top:85%; left:50%;
 transform:translate(-50%, -50%);
 font-family:‘Unbounded’,sans-serif;
 font-size:14px; font-weight:800; color:var(–txt); white-space:nowrap;
 }
 .speedo-conv {
-position:absolute; top:56%; left:50%;
+position:absolute; top:66%; left:50%;
 transform:translate(-50%, -50%);
 font-family:‘Unbounded’,sans-serif;
 font-size:9px; font-weight:600; color:var(–txt2); white-space:nowrap;
@@ -982,6 +1031,7 @@ background: rgba(255, 255, 255, 0.25);
 
   <div id="floating-subtabs" class="report-subtabs" style="display:none;"></div>
   <div id="floating-dohod-subtabs" class="report-subtabs" style="display:none;"></div>
+  <div id="floating-faq-subtabs" class="faq-subtabs" style="display:none;"></div>
 
   <main>
     <div id="scr-login" class="scr">
@@ -1071,7 +1121,8 @@ const S = {
   user:null,
   data:{ otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null },
   reportTab: 'dept',
-  dohodTab: 'crm'
+  dohodTab: 'crm',
+  faqTab: 'instr'
 };
 
 /* ══ THEME ══ */
@@ -1104,6 +1155,8 @@ function showScr(id) {
   if (floating) floating.style.display = id === 'otchet' ? 'flex' : 'none';
   const floatingDohod = document.getElementById('floating-dohod-subtabs');
   if (floatingDohod) floatingDohod.style.display = id === 'dohod' ? 'flex' : 'none';
+  const floatingFaq = document.getElementById('floating-faq-subtabs');
+  if (floatingFaq) floatingFaq.style.display = id === 'instruktsii' ? 'flex' : 'none';
 }
 
 function num(v) { return parseInt(v)||0 }
@@ -1369,6 +1422,12 @@ function renderOtchet() {
   const accG = isLight ? 55  : 255;
   const accB = isLight ? 221 : 71;
 
+  const ostPlan = Math.max(0, planTotal - allVis);
+  const cnvrsData = S.data.cnvrs || [];
+  const cnvrsTotCrm  = cnvrsData[11] || [];
+  const cnvrsTotWarm = cnvrsData[25] || [];
+  const cnvrsTotGen  = cnvrsData[39] || [];
+
   const deptCard = `
   <div class="sec-title">ОТДЕЛ CRM</div>
   <div class="dept-card" style="background:rgba(${accR},${accG},${accB},0.08)">
@@ -1378,15 +1437,29 @@ function renderOtchet() {
         <div class="dc-val">${allVis||'—'}</div>
       </div>
       <div class="dept-cell">
+        <div class="dc-lbl">Визиты CRM</div>
+        <div class="dc-val">${vis800sum||'—'}</div>
+      </div>
+      <div class="dept-cell">
+        <div class="dc-lbl">Визиты ТЛ</div>
+        <div class="dc-val">${vis1200sum||'—'}</div>
+      </div>
+    </div>
+    <div class="dept-row1" style="margin-bottom:8px">
+      <div class="dept-cell">
         <div class="dc-lbl">План</div>
         <div class="dc-val">${planTotal||'—'}</div>
+      </div>
+      <div class="dept-cell">
+        <div class="dc-lbl">Остаток</div>
+        <div class="dc-val">${ostPlan||'—'}</div>
       </div>
       <div class="dept-cell">
         <div class="dc-lbl">Прогноз</div>
         <div class="dc-val" style="color:${pctClr(parseInt(progOtdel))}">${progOtdel}</div>
       </div>
     </div>
-    <div class="dept-row2">
+    <div class="dept-row2" style="margin-bottom:8px">
       <div class="dept-cell">
         <div class="dc-lbl">Кредит</div>
         <div class="dc-val">${deptKred||'—'}</div>
@@ -1398,6 +1471,51 @@ function renderOtchet() {
       <div class="dept-cell">
         <div class="dc-lbl">Комиссия</div>
         <div class="dc-val">${deptKom||'—'}</div>
+      </div>
+    </div>
+    <div class="dept-sec-lbl">Конверсии — Общее</div>
+    <div class="dept-row3">
+      <div class="dept-cell">
+        <div class="dc-lbl">Конв. визиты</div>
+        <div class="dc-val">${cnvrsTotGen[6]||'—'}</div>
+      </div>
+      <div class="dept-cell">
+        <div class="dc-lbl">Конв. кредиты</div>
+        <div class="dc-val">${cnvrsTotGen[7]||'—'}</div>
+      </div>
+      <div class="dept-cell">
+        <div class="dc-lbl">Доля нецелевых</div>
+        <div class="dc-val">${cnvrsTotGen[9]||'—'}</div>
+      </div>
+    </div>
+    <div class="dept-sec-lbl">Конверсии — CRM</div>
+    <div class="dept-row3">
+      <div class="dept-cell">
+        <div class="dc-lbl">Конв. визиты</div>
+        <div class="dc-val">${cnvrsTotCrm[6]||'—'}</div>
+      </div>
+      <div class="dept-cell">
+        <div class="dc-lbl">Конв. кредиты</div>
+        <div class="dc-val">${cnvrsTotCrm[7]||'—'}</div>
+      </div>
+      <div class="dept-cell">
+        <div class="dc-lbl">Доля нецелевых</div>
+        <div class="dc-val">${cnvrsTotCrm[9]||'—'}</div>
+      </div>
+    </div>
+    <div class="dept-sec-lbl">Конверсии — Тёплые лиды</div>
+    <div class="dept-row3">
+      <div class="dept-cell">
+        <div class="dc-lbl">Конв. визиты</div>
+        <div class="dc-val">${cnvrsTotWarm[6]||'—'}</div>
+      </div>
+      <div class="dept-cell">
+        <div class="dc-lbl">Конв. кредиты</div>
+        <div class="dc-val">${cnvrsTotWarm[7]||'—'}</div>
+      </div>
+      <div class="dept-cell">
+        <div class="dc-lbl">Доля нецелевых</div>
+        <div class="dc-val">${cnvrsTotWarm[9]||'—'}</div>
       </div>
     </div>
   </div>`;
@@ -1451,7 +1569,6 @@ function renderOtchet() {
   const KOTEL = ['котел','котёл','kotel'];
   const isKotel = n => KOTEL.includes((n||'').toLowerCase().trim());
 
-  const cnvrsData = S.data.cnvrs || [];
   function getCnvrsRow(name, section) {
     const n = (name||'').toLowerCase().trim();
     let rows;
@@ -1973,10 +2090,10 @@ function renderGrafik() {
 
   const g1pre = parseGroup(raw.slice(3,13),  raw[1],  TODAY);
   const g2pre = parseGroup(raw.slice(19,25), raw[17], TODAY);
-  const allPeople = [...g1pre, ...g2pre];
+  const crmPeople = g1pre;
   const workerCounts = weekDays.map((_, wi) => {
     let count = 0;
-    allPeople.forEach(p => {
+    crmPeople.forEach(p => {
       if ((p.cells[wi]||'').toLowerCase().trim() === 'р') count++;
     });
     return count;
@@ -2066,6 +2183,24 @@ function schedNav(dir) {
 
 function renderInstruktsii() {
   const el  = document.getElementById('c-instruktsii');
+  const floatingFaq = document.getElementById('floating-faq-subtabs');
+
+  const subtabs = `
+    <span class="faq-subtab ${S.faqTab==='instr'?'active':''}" onclick="setFaqTab('instr')">ИНСТРУКЦИИ</span>
+    <span class="faq-subtab ${S.faqTab==='mango'?'active':''}" onclick="setFaqTab('mango')">MANGO</span>
+    <span class="faq-subtab ${S.faqTab==='links'?'active':''}" onclick="setFaqTab('links')">ССЫЛКИ</span>
+  `;
+  if (floatingFaq) floatingFaq.innerHTML = subtabs;
+
+  if (S.faqTab === 'mango') {
+    el.innerHTML = renderMangoTab();
+    return;
+  }
+  if (S.faqTab === 'links') {
+    el.innerHTML = '<div class="links-placeholder">Список ссылок будет добавлен позднее</div>';
+    return;
+  }
+
   const raw = S.data.instruktsii;
   if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
 
@@ -2283,6 +2418,40 @@ function openMopModal(dataStr) {
 
   document.getElementById('mop-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
+}
+
+function setFaqTab(tab) {
+  S.faqTab = tab;
+  renderInstruktsii();
+}
+
+function renderMangoTab() {
+  const mangoData = [
+    ['Барнаул','#9913'],
+    ['Красноярск','#1118'],
+    ['Кемерово','#1478'],
+    ['Новокузнецк','#1213'],
+    ['Новосибирск','#1516'],
+    ['Омск','#108'],
+    ['Оренбург','#11444'],
+    ['Пермь','#974'],
+    ['Сургут','#1811'],
+    ['Томск','#1417'],
+    ['Тюмень','#1512'],
+    ['Челябинск','#1612'],
+    ['АСЦ Пермь','239-26-26'],
+  ];
+  const rows = mangoData.map(([city, num]) =>
+    `<tr><td>${city}</td><td>${num}</td></tr>`
+  ).join('');
+  return `
+    <div class="sec-title">Добавочные номера Mango</div>
+    <div class="mango-wrap">
+      <table class="mango-table">
+        <thead><tr><th>Город</th><th>Доб.№</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
 }
 
 function closeMopModal(e) {

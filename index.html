@@ -264,7 +264,8 @@ nav::-webkit-scrollbar { height:0 }
 
 /* ── ПЛАВАЮЩИЕ ПОДВКЛАДКИ ── */
 #floating-subtabs,
-#floating-dohod-subtabs {
+#floating-dohod-subtabs,
+#floating-faq-subtabs {
   display: none;
   position: sticky;
   top: 92px;
@@ -273,11 +274,11 @@ nav::-webkit-scrollbar { height:0 }
   z-index: 90;
   width: 100%;
 }
-.report-subtabs {
+.report-subtabs, .faq-subtabs {
   display:flex; justify-content:center; gap:16px;
   padding:0 0 0px 0;
 }
-.report-subtab {
+.report-subtab, .faq-subtab {
   padding:6px 0; white-space:nowrap;
   font-family:'Unbounded',sans-serif;
   font-size:12px; font-weight:800; letter-spacing:.03em;
@@ -285,7 +286,7 @@ nav::-webkit-scrollbar { height:0 }
   border-bottom:2px solid transparent;
   cursor:pointer; transition:color .15s, border-color .15s;
 }
-.report-subtab.active {
+.report-subtab.active, .faq-subtab.active {
   color:var(--acc); border-bottom-color:var(--acc);
 }
 
@@ -748,14 +749,6 @@ body.light .zp-row {
   font-size:11px; font-weight:700;
   padding:10px 14px 8px;
   border-bottom:1px solid var(--line); color:var(--txt);
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-.sched-person-name .shifts-count {
-  font-size: 10px;
-  font-weight: normal;
-  color: var(--txt2);
 }
 .sched-cells {
   display:grid; grid-template-columns:repeat(7,1fr);
@@ -1221,7 +1214,7 @@ function onLogin() {
   const ls = document.getElementById('scr-login');
   ls.classList.remove('on'); ls.style.display = 'none';
   goTab('otchet');
-  toast('Приветствую, коллега!', 's');
+  toast('Здарова, заебал!', 's');
 }
 
 function onLogout() {
@@ -1454,7 +1447,7 @@ function renderOtchet() {
         <div class="dc-val">${deptKom||'—'}</div>
       </div>
     </div>
-    <div class="dept-sec-lbl">Конверсии / Доли</div>
+    <div class="dept-sec-lbl">Конверсии / % нецелевых</div>
     <div class="dept-sec-lbl" style="font-size:7px;color:var(--txt2);margin:4px 0 6px">Конверсия общая</div>
     <div class="dept-row3">
       <div class="dept-cell">
@@ -1468,7 +1461,7 @@ function renderOtchet() {
         <div class="dc-lbl" style="margin-top:3px;margin-bottom:0">кредиты</div>
       </div>
       <div class="dept-cell">
-        <div class="dc-lbl">Доля нецелевых</div>
+        <div class="dc-lbl">% нецелевых</div>
         <div class="dc-val">${cnvrsTotGen[9]||'—'}</div>
         <div class="dc-lbl" style="margin-top:3px;margin-bottom:0">сделок</div>
       </div>
@@ -1486,7 +1479,7 @@ function renderOtchet() {
         <div class="dc-lbl" style="margin-top:3px;margin-bottom:0">кредиты</div>
       </div>
       <div class="dept-cell">
-        <div class="dc-lbl">Доля нецелевых</div>
+        <div class="dc-lbl">% нецелевых</div>
         <div class="dc-val">${cnvrsTotCrm[9]||'—'}</div>
         <div class="dc-lbl" style="margin-top:3px;margin-bottom:0">сделок</div>
       </div>
@@ -1504,7 +1497,7 @@ function renderOtchet() {
         <div class="dc-lbl" style="margin-top:3px;margin-bottom:0">кредиты</div>
       </div>
       <div class="dept-cell">
-        <div class="dc-lbl">Доля нецелевых</div>
+        <div class="dc-lbl">% нецелевых</div>
         <div class="dc-val">${cnvrsTotWarm[9]||'—'}</div>
         <div class="dc-lbl" style="margin-top:3px;margin-bottom:0">сделок</div>
       </div>
@@ -2127,7 +2120,6 @@ function renderGrafik() {
       return `<div class="sched-person">
         <div class="sched-person-name">
           <span>${p.name}</span>
-          <span class="shifts-count">Смен: ${p.shifts}</span>
         </div>
         <div class="sched-cells">${cells}</div>
       </div>`;
@@ -2200,9 +2192,9 @@ function renderInstruktsii() {
   function buildStatusTable(rows) {
     const ths = '<th>Статус</th><th>Критерии применения</th><th>Обязательные действия в CRM</th>';
     const trs = rows.filter(r => (r[0]||'').trim() || (r[1]||'').trim()).map(r =>
-      `<tr><td>${r[0]||'—'}</td><td>${r[1]||'—'}</td><td>${r[2]||'—'}</td></tr>`
+      `<tr><td>${r[0]||'—'}</td><td>${r[1]||'—'}</td><td>${r[2]||'—'}</td> </tr>`
     ).join('');
-    return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
+    return `<div class="table-scroll"><table class="instr-table"><thead> <tr>${ths}</tr> </thead><tbody>${trs}</tbody> </table></div>`;
   }
 
   /* ── Блок РЕГЛАМЕНТ ── */
@@ -2432,15 +2424,15 @@ function renderMangoTab() {
     ['АСЦ Пермь','239-26-26'],
   ];
   const rows = mangoData.map(([city, num]) =>
-    `<tr><td>${city}</td><td>${num}</td> </tr>`
+    `<tr><td>${city}</td><td>${num}</td></tr>`
   ).join('');
   return `
     <div class="sec-title">Добавочные номера Mango</div>
     <div class="mango-wrap">
       <table class="mango-table">
-        <thead> <tr><th>Город</th><th>Доб.№</th></tr> </thead>
+        <thead><tr><th>Город</th><th>Доб.№</th></tr></thead>
         <tbody>${rows}</tbody>
-       </table>
+      </table>
     </div>`;
 }
 

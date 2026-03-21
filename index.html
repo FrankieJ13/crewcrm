@@ -505,7 +505,7 @@ margin-bottom:12px;
 display:flex; align-items:center; gap:8px;
 }
 .dept-title::after { content:’’; flex:1; height:1px; background:var(–acc-bdr) }
-.dept-row1, .dept-row2 {
+.dept-row1, .dept-row2, .dept-row3 {
 display:grid; gap:8px; margin-bottom:8px;
 }
 .dept-row1 { grid-template-columns:repeat(3,1fr) }
@@ -1755,7 +1755,7 @@ function renderOtchet() {
   }
 
   // добавляем итоги только для вкладки ОТДЕЛ
-  const finalHtml = content + (S.reportTab === 'dept' ? tot : '');
+  const finalHtml = content;
   el.innerHTML = finalHtml;
 
   if (S.reportTab === 'dept') {

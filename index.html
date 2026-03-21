@@ -422,33 +422,51 @@ body.light .modal-cell { background:rgba(0,0,0,0.03); }
 }
 .mop-overlay.open { display:flex; animation:mFade .2s ease }
 @keyframes mFade { from{opacity:0} to{opacity:1} }
+
+/* === МОДАЛЬНОЕ ОКНО – исправленный фон === */
 .mop-modal {
-  background:rgba(18,18,18,0.55); border:1px solid rgba(255,255,255,0.2);
-  border-radius:var(--r2); width:100%; max-width:460px;
-  max-height:86vh; overflow-y:auto;
+  background: transparent;
+  border:1px solid rgba(255,255,255,0.2);
+  border-radius:var(--r2);
+  width:100%; max-width:460px;
+  display: flex;
+  flex-direction: column;
   animation:mUp .22s ease;
-  backdrop-filter: blur(25px) saturate(180%);
-  box-shadow:0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
   position:relative;
 }
-@keyframes mUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
-body.light .mop-modal { background: rgba(255,255,255,0.55); }
-.mop-modal::before {
+body.light .mop-modal {
+  border-color: rgba(0,0,0,0.2);
+}
+.mop-modal-body {
+  background:rgba(18,18,18,0.55);
+  backdrop-filter: blur(25px) saturate(180%);
+  border-radius:inherit;
+  overflow-y: auto;
+  max-height: 86vh;
+  position: relative;
+  box-shadow:0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.mop-modal-body::before {
   content:''; position:absolute; inset:0; border-radius:inherit;
   background: linear-gradient(120deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.15) 30%, rgba(255,255,255,0.05) 60%, transparent 100%);
   pointer-events:none;
 }
-.mop-modal::after {
+.mop-modal-body::after {
   content:''; position:absolute; inset:0; border-radius:inherit;
   background: radial-gradient(circle at 20% 10%, rgba(255,255,255,0.25), transparent 40%),
               radial-gradient(circle at 80% 90%, rgba(255,255,255,0.15), transparent 50%);
   pointer-events:none; opacity:.6;
 }
+body.light .mop-modal-body {
+  background: rgba(255,255,255,0.55);
+}
+@keyframes mUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
 .mop-modal-hdr {
   background:transparent; backdrop-filter: blur(10px);
   display:flex; align-items:center; justify-content:space-between;
   padding:13px 16px; border-bottom:1px solid var(--line);
-  position:sticky; top:0; z-index:1;
+  position:sticky; top:0; z-index:2;
 }
 .mop-modal-title {
   display:flex; align-items:center; gap:8px;
@@ -462,7 +480,7 @@ body.light .mop-modal { background: rgba(255,255,255,0.55); }
   transition:all .15s; flex-shrink:0; line-height:1;
 }
 .mop-modal-close:hover { border-color:var(--red); color:var(--red) }
-.mop-modal-body { padding:14px 16px }
+.mop-modal-body { padding:14px 16px; }
 
 .mop-grid4 {
   display:grid; grid-template-columns:repeat(4,1fr);
@@ -585,7 +603,7 @@ body.light .dept-cell { background:rgba(0,0,0,0.02); }
   position:absolute; top:50%; left:50%;
   transform:translate(-50%, -50%);
   font-family:'Unbounded',sans-serif;
-  font-size:11px; font-weight:900; color:var(--txt); line-height:1;
+  font-size:12px; font-weight:900; color:var(--txt); line-height:1;
 }
 .speedo-visits {
   position:absolute; top:85%; left:50%;
@@ -1214,7 +1232,7 @@ function onLogin() {
   const ls = document.getElementById('scr-login');
   ls.classList.remove('on'); ls.style.display = 'none';
   goTab('otchet');
-  toast('Приветствую, коллега!', 's');
+  toast('Приветствую. коллега!', 's');
 }
 
 function onLogout() {
@@ -2104,8 +2122,8 @@ function renderGrafik() {
         }
         return colIdx >= 0 ? (r[colIdx]||'') : '';
       });
-      const shifts = countShifts(r, dRow, today);
-      return { name: r[0], cells, shifts };
+      // счётчик смен не используется, но оставляем для обратной совместимости
+      return { name: r[0], cells };
     });
   }
 
@@ -2192,9 +2210,9 @@ function renderInstruktsii() {
   function buildStatusTable(rows) {
     const ths = '<th>Статус</th><th>Критерии применения</th><th>Обязательные действия в CRM</th>';
     const trs = rows.filter(r => (r[0]||'').trim() || (r[1]||'').trim()).map(r =>
-      `<tr><td>${r[0]||'—'}</td><td>${r[1]||'—'}</td><td>${r[2]||'—'}</td> </tr>`
+      ` <tr><td>${r[0]||'—'}</td><td>${r[1]||'—'}</td><td>${r[2]||'—'}</td></tr>`
     ).join('');
-    return `<div class="table-scroll"><table class="instr-table"><thead> <tr>${ths}</tr> </thead><tbody>${trs}</tbody> </table></div>`;
+    return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
   }
 
   /* ── Блок РЕГЛАМЕНТ ── */

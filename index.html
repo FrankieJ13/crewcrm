@@ -2043,25 +2043,48 @@ function setDohodTab(tab) {
 const DOW = ['вс','пн','вт','ср','чт','пт','сб'];
 let _schedWeek = null;
 
-/* Новая функция подсчёта смен */
-function countShifts(row, daysRow, today) {
-  let shifts = 0;
-  // daysRow — массив, в котором для каждого столбца от 1 до 31 хранится номер дня
-  for (let day = 1; day <= today; day++) {
-    // Находим индекс столбца, где в daysRow указан день day
-    let colIdx = -1;
-    for (let c = 1; c <= 31; c++) {
-      if (parseInt(daysRow[c]) === day) {
-        colIdx = c;
-        break;
-      }
+/* Новая функция разбиения на календарные недели */
+function getWeeksForMonth(year, month) {
+  const dim = new Date(year, month + 1, 0).getDate();
+  const days = [];
+  for (let d = 1; d <= dim; d++) {
+    const dow = new Date(year, month, d).getDay();
+    days.push({ day: d, dow });
+  }
+  const weeks = [];
+  let i = 0;
+  while (i < days.length) {
+    let end = i;
+    while (end < days.length && days[end].dow !== 0) {
+      end++;
     }
-    if (colIdx !== -1) {
-      const val = (row[colIdx] || '').toLowerCase();
-      if (val === 'р') shifts++;
+    if (end < days.length) {
+      weeks.push(days.slice(i, end + 1));
+      i = end + 1;
+    } else {
+      weeks.push(days.slice(i));
+      break;
     }
   }
-  return shifts;
+  return weeks;
+}
+
+/* Обновлённая parseGroup принимает weekDays (массив номеров дней) */
+function parseGroup(rows, daysRow, weekDays) {
+  const dRow = daysRow || [];
+  return rows.filter(r => r[0] && r[0].trim()).map(r => {
+    const cells = weekDays.map(dayNum => {
+      let colIdx = -1;
+      for (let c = 1; c <= 31; c++) {
+        if (parseInt(dRow[c]) === dayNum) {
+          colIdx = c;
+          break;
+        }
+      }
+      return colIdx >= 0 ? (r[colIdx] || '') : '';
+    });
+    return { name: r[0], cells };
+  });
 }
 
 function renderGrafik() {
@@ -2071,15 +2094,7 @@ function renderGrafik() {
 
   const mo  = parseInt(SUFFIX.slice(0,2));
   const yr  = 2000 + parseInt(SUFFIX.slice(2,4));
-  const dim = new Date(yr, mo, 0).getDate();
-
-  const allDays = Array.from({length:dim}, (_,i) => {
-    const d = i+1;
-    return { day:d, dow: DOW[new Date(yr, mo-1, d).getDay()] };
-  });
-
-  const weeks = [];
-  for (let i = 0; i < allDays.length; i += 7) weeks.push(allDays.slice(i, i+7));
+  const weeks = getWeeksForMonth(yr, mo - 1); // month 0‑based
 
   if (_schedWeek === null) {
     const todayWeek = weeks.findIndex(w => w.some(d => d.day === TODAY));
@@ -2090,9 +2105,12 @@ function renderGrafik() {
   const week     = weeks[_schedWeek];
   const weekDays = week.map(d => d.day);
 
-  const g1pre = parseGroup(raw.slice(3,13),  raw[1],  TODAY);
-  const g2pre = parseGroup(raw.slice(19,25), raw[17], TODAY);
+  // группа 1 (CRM) и группа 2 (другая)
+  const g1pre = parseGroup(raw.slice(3,13),  raw[1],  weekDays);
+  const g2pre = parseGroup(raw.slice(19,25), raw[17], weekDays);
   const crmPeople = g1pre;
+
+  // подсчёт количества работающих в каждый день
   const workerCounts = weekDays.map((_, wi) => {
     let count = 0;
     crmPeople.forEach(p => {
@@ -2105,27 +2123,11 @@ function renderGrafik() {
     const isT = d.day === TODAY;
     return `<div class="sched-day-hdr${isT?' today':''}">
       <div class="sd-num">${d.day}</div>
-      <div class="sd-dow">${d.dow}</div>
+      <div class="sd-dow">${DOW[d.dow]}</div>
       <div class="sd-workers">${workerCounts[wi]}</div>
     </div>`;
   }).join('');
   const weekHeader = `<div class="sched-week">${hdrs}</div>`;
-
-  // Изменённая функция parseGroup: возвращает массив объектов { name, cells, row, shifts }
-  function parseGroup(rows, daysRow, today) {
-    const dRow = daysRow || [];
-    return rows.filter(r => r[0] && r[0].trim()).map(r => {
-      const cells = weekDays.map(dayNum => {
-        let colIdx = -1;
-        for (let c = 1; c <= 31; c++) {
-          if (parseInt(dRow[c]) === dayNum) { colIdx = c; break; }
-        }
-        return colIdx >= 0 ? (r[colIdx]||'') : '';
-      });
-      // счётчик смен не используется, но оставляем для обратной совместимости
-      return { name: r[0], cells };
-    });
-  }
 
   function buildCards(people) {
     return people.map(p => {
@@ -2146,25 +2148,23 @@ function renderGrafik() {
 
   const g1title = raw[0]?.[0] || 'Группа 1';
   const g2title = raw[16]?.[0] || 'Группа 2';
-  const g1 = g1pre;
-  const g2 = g2pre;
-
-  const wStart = week[0].day;
-  const wEnd   = week[week.length-1].day;
-  const mName  = new Date(yr, mo-1, 1).toLocaleString('ru',{month:'long'});
-  const prevDis = _schedWeek === 0 ? 'disabled' : '';
-  const nextDis = _schedWeek === weeks.length-1 ? 'disabled' : '';
 
   el.innerHTML = `
     <div class="sched-group-title" style="margin-top:4px">${g1title}</div>
-    ${buildCards(g1)}
+    ${buildCards(g1pre)}
     <div class="sched-group-title">${g2title}</div>
-    ${buildCards(g2)}`;
+    ${buildCards(g2pre)}`;
 
   const stickyEl    = document.getElementById('grafik-sticky');
   const stickyInner = document.getElementById('grafik-sticky-inner');
   if (stickyEl && stickyInner) {
     stickyEl.style.display = '';
+    const wStart = week[0].day;
+    const wEnd   = week[week.length-1].day;
+    const mName  = new Date(yr, mo-1, 1).toLocaleString('ru',{month:'long'});
+    const prevDis = _schedWeek === 0 ? 'disabled' : '';
+    const nextDis = _schedWeek === weeks.length-1 ? 'disabled' : '';
+
     stickyInner.innerHTML = `
       <div class="sched-nav">
         <button class="sched-nav-btn" onclick="schedNav(-1)" ${prevDis}>‹</button>
@@ -2210,7 +2210,7 @@ function renderInstruktsii() {
   function buildStatusTable(rows) {
     const ths = '<th>Статус</th><th>Критерии применения</th><th>Обязательные действия в CRM</th>';
     const trs = rows.filter(r => (r[0]||'').trim() || (r[1]||'').trim()).map(r =>
-      ` <tr><td>${r[0]||'—'}</td><td>${r[1]||'—'}</td><td>${r[2]||'—'}</td></tr>`
+      `  <tr><td>${r[0]||'—'}</td><td>${r[1]||'—'}</td><td>${r[2]||'—'}</td></tr>`
     ).join('');
     return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
   }
@@ -2244,18 +2244,18 @@ function renderInstruktsii() {
     const text = b ? `${a} ${b}`.trim() : a;
     const aUp = a.toUpperCase();
     if (aUp.startsWith('ЕСЛИ') && aUp.includes('ЗАЯВКА')) {
-      return `<tr class="ndz-sub-hdr"><td>${text}</td></tr>`;
+      return `<tr class="ndz-sub-hdr"><td colspan="2">${text}</td></tr>`;
     }
     if (aUp.startsWith('НО!') || aUp.startsWith('ЛЮБЫЕ')) {
-      return `<tr class="ndz-highlight"><td>${text}</td></tr>`;
+      return `<tr class="ndz-highlight"><td colspan="2">${text}</td></tr>`;
     }
     if (aUp.startsWith('АЛГОРИТМ ЗВОНКОВ')) {
-      return `<tr class="ndz-highlight"><td>${text}</td></tr>`;
+      return `<tr class="ndz-highlight"><td colspan="2">${text}</td></tr>`;
     }
     if (aUp.startsWith('ЕСЛИ')) {
-      return `<tr class="ndz-sub-hdr"><td>${text}</td></tr>`;
+      return `<tr class="ndz-sub-hdr"><td colspan="2">${text}</td></tr>`;
     }
-    return `<tr><td>${text}</td></tr>`;
+    return `<tr><td colspan="2">${text}</td></tr>`;
   }).filter(Boolean).join('');
 
   const ndzBody = `<div class="mango-wrap"><table class="ndz-table"><tbody>${ndzHTML}</tbody></table></div>`;
@@ -2442,7 +2442,7 @@ function renderMangoTab() {
     ['АСЦ Пермь','239-26-26'],
   ];
   const rows = mangoData.map(([city, num]) =>
-    `<tr><td>${city}</td><td>${num}</td></tr>`
+    `<tr><td>${city}</td><td>${num}</td> </tr>`
   ).join('');
   return `
     <div class="sec-title">Добавочные номера Mango</div>

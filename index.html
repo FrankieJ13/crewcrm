@@ -2091,8 +2091,16 @@ function renderInstruktsii() {
     const ths = cols.map(c => `<th>${c}</th>`).join('');
     const trs = rows.filter(r => r.status||r.criteria).map(r =>
       withA
-        ? `}<td>${r.status||'—'}</td><td>${r.criteria||'—'}</td><td>${r.action||'—'}</td></tr>`
-        : `<td>${r.status||'—'}</td><td>${r.criteria||'—'}</td></tr>`
+        ? `}   
+
+        <td>${r.status||'—'}</td>
+        <td>${r.criteria||'—'}</td>
+        <td>${r.action||'—'}</td>
+      </tr>`
+        : `<tr>
+        <td>${r.status||'—'}</td>
+        <td>${r.criteria||'—'}</td>
+      </tr>`
     ).join('');
     return `<div class="table-scroll"><table class="instr-table"><thead>${ths}</thead><tbody>${trs}</tbody></table></div>`;
   }
@@ -2205,32 +2213,25 @@ function openMopModal(dataStr) {
   const rs = d.rs;
 
   // подгружаем данные конверсии из листа CNVRS
+  // структура: колонка A — МОП (имя), G — (Con) визиты, H — (Con) кредиты, I — % целевых, M — K-коэффициент
+  // для тёплых лидов пока нет данных, оставляем прочерки
   let convCRM = { conVisits: '—', conCredits: '—', pctTarget: '—', kCoef: '—' };
-  let convWarm = { conVisits: '—', conCredits: '—', pctTarget: '—', kCoef: '—' };
   if (S.data.cnvrs && S.data.cnvrs.length) {
     const nameNorm = d.name.trim().toLowerCase();
-    const header = S.data.cnvrs[0];
-    // ищем строку с менеджером
+    // ищем строку, где в первой колонке имя менеджера (без учёта регистра)
     const row = S.data.cnvrs.find(r => r[0] && r[0].trim().toLowerCase() === nameNorm);
     if (row) {
-      // предполагаем структуру: [менеджер, ...показатели CRM..., ...показатели тёплые...]
-      // по скриншоту: для CRM: (Con) визиты, (Con) кредиты, % целевых, K-коэффициент
-      // для тёплых: аналогичные 4 показателя
-      // индексы: 1-4 CRM, 5-8 тёплые
+      // G (индекс 6), H (7), I (8), M (12)
       convCRM = {
-        conVisits: row[1] || '—',
-        conCredits: row[2] || '—',
-        pctTarget: row[3] || '—',
-        kCoef: row[4] || '—'
-      };
-      convWarm = {
-        conVisits: row[5] || '—',
-        conCredits: row[6] || '—',
-        pctTarget: row[7] || '—',
-        kCoef: row[8] || '—'
+        conVisits: row[6] || '—',
+        conCredits: row[7] || '—',
+        pctTarget: row[8] || '—',
+        kCoef: row[12] || '—'
       };
     }
   }
+  // для тёплых лидов пока нет данных — оставляем прочерки
+  const convWarm = { conVisits: '—', conCredits: '—', pctTarget: '—', kCoef: '—' };
 
   document.getElementById('mop-modal-title').innerHTML =
     `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span>
@@ -2249,28 +2250,7 @@ function openMopModal(dataStr) {
       <span class="prog-r" style="color:${rs.color}">100%</span>
     </div>
 
-    <!-- Блок конверсии CRM -->
-    <div class="modal-sec">
-      <div class="modal-sec-title">Конверсия CRM</div>
-      <div class="modal-grid">
-        <div class="modal-cell"><div class="mc-l">(Con) визиты</div><div class="mc-v">${convCRM.conVisits}</div></div>
-        <div class="modal-cell"><div class="mc-l">(Con) кредиты</div><div class="mc-v">${convCRM.conCredits}</div></div>
-        <div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${convCRM.pctTarget}</div></div>
-        <div class="modal-cell"><div class="mc-l">K-коэффициент</div><div class="mc-v">${convCRM.kCoef}</div></div>
-      </div>
-    </div>
-
-    <!-- Блок конверсии Тёплые лиды -->
-    <div class="modal-sec">
-      <div class="modal-sec-title">Конверсия Тёплые лиды</div>
-      <div class="modal-grid">
-        <div class="modal-cell"><div class="mc-l">(Con) визиты</div><div class="mc-v">${convWarm.conVisits}</div></div>
-        <div class="modal-cell"><div class="mc-l">(Con) кредиты</div><div class="mc-v">${convWarm.conCredits}</div></div>
-        <div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${convWarm.pctTarget}</div></div>
-        <div class="modal-cell"><div class="mc-l">K-коэффициент</div><div class="mc-v">${convWarm.kCoef}</div></div>
-      </div>
-    </div>
-
+    <!-- CRM -->
     <div class="modal-sec">
       <div class="modal-sec-title">CRM</div>
       <div class="modal-grid">
@@ -2282,6 +2262,8 @@ function openMopModal(dataStr) {
         <div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div>
       </div>
     </div>
+
+    <!-- ТЁПЛЫЕ ЛИДЫ -->
     <div class="modal-sec">
       <div class="modal-sec-title">ТЁПЛЫЕ ЛИДЫ</div>
       <div class="modal-grid">
@@ -2292,6 +2274,30 @@ function openMopModal(dataStr) {
         <div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1200}</div></div>
       </div>
     </div>
+
+    <!-- Конверсия CRM -->
+    <div class="modal-sec">
+      <div class="modal-sec-title">Конверсия CRM</div>
+      <div class="modal-grid">
+        <div class="modal-cell"><div class="mc-l">(Con) визиты</div><div class="mc-v">${convCRM.conVisits}</div></div>
+        <div class="modal-cell"><div class="mc-l">(Con) кредиты</div><div class="mc-v">${convCRM.conCredits}</div></div>
+        <div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${convCRM.pctTarget}</div></div>
+        <div class="modal-cell"><div class="mc-l">Коэффициент</div><div class="mc-v">${convCRM.kCoef}</div></div>
+      </div>
+    </div>
+
+    <!-- Конверсия Тёплые лиды -->
+    <div class="modal-sec">
+      <div class="modal-sec-title">Конверсия Тёплые лиды</div>
+      <div class="modal-grid">
+        <div class="modal-cell"><div class="mc-l">(Con) визиты</div><div class="mc-v">${convWarm.conVisits}</div></div>
+        <div class="modal-cell"><div class="mc-l">(Con) кредиты</div><div class="mc-v">${convWarm.conCredits}</div></div>
+        <div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${convWarm.pctTarget}</div></div>
+        <div class="modal-cell"><div class="mc-l">Коэффициент</div><div class="mc-v">${convWarm.kCoef}</div></div>
+      </div>
+    </div>
+
+    <!-- ТРЕБУЮТ АКТУАЛИЗАЦИИ / ОТКАЗЫ -->
     <div class="modal-sec">
       <div class="modal-sec-title">ТРЕБУЮТ АКТУАЛИЗАЦИИ / ОТКАЗЫ</div>
       <div class="modal-grid">

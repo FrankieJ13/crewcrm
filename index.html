@@ -676,6 +676,10 @@ font-size:13px; font-weight:800; line-height:1;
 font-size:9px; color:var(--txt2);
 text-transform:uppercase; letter-spacing:.05em; margin-top:2px;
 }
+.sched-day-hdr .sd-count {
+font-size:9px; color:var(--acc);
+margin-top:3px; font-weight:600;
+}
 .sched-day-hdr.today { background:var(--acc-bg); border:1px solid var(--acc-bdr); }
 .sched-day-hdr.today .sd-num { color:var(--acc) }
 .sched-day-hdr.today .sd-dow { color:var(--acc) }
@@ -1040,6 +1044,7 @@ const SHEETS = {
   d_dohod:     'Д_ЗП'    + SUFFIX,
   grafik:      'ГРАФИКИ' + SUFFIX,
   instruktsii: 'ИНСТРУКЦИИ',
+  cnvrs:       'CNVRS'   + SUFFIX,
 };
 document.getElementById('badge-month').textContent = SUFFIX.slice(0,2) + '/' + SUFFIX.slice(2);
 
@@ -1047,7 +1052,7 @@ document.getElementById('badge-month').textContent = SUFFIX.slice(0,2) + '/' + S
 const S = {
   token:null,
   user:null,
-  data:{ otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null },
+  data:{ otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null },
   reportTab: 'dept',
   dohodTab: 'crm'
 };
@@ -1171,7 +1176,7 @@ function onLogin() {
 function onLogout() {
   if (S.token) google.accounts.oauth2.revoke(S.token, ()=>{});
   S.token=null; S.user=null;
-  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null };
+  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null };
   ['crm_tok','crm_exp','crm_user'].forEach(k => sessionStorage.removeItem(k));
   document.getElementById('user-wrap').style.display = 'none';
   document.getElementById('btn-out').style.display   = 'none';
@@ -1272,6 +1277,22 @@ async function loadTab(tab) {
     renderTab('dohod');
     return;
   }
+  if (tab === 'grafik' && !S.data.grafik) {
+    try {
+      S.data.grafik = await api(SHEETS.grafik, 'A1:AI25');
+    } catch(e) { /* */ }
+  }
+  if (tab === 'instruktsii' && !S.data.instruktsii) {
+    try {
+      S.data.instruktsii = await api(SHEETS.instruktsii, 'A1:C200');
+    } catch(e) { /* */ }
+  }
+  if (tab === 'grafik' && !S.data.cnvrs) {
+    // загружаем лист конверсии (нужен для модалок)
+    try {
+      S.data.cnvrs = await api(SHEETS.cnvrs, 'A1:Z100');
+    } catch(e) { S.data.cnvrs = []; }
+  }
   if (S.data[tab]) { renderTab(tab); return; }
   const el = document.getElementById('c-'+tab);
   if (el) el.innerHTML = loader();
@@ -1291,6 +1312,7 @@ function reloadCurrent() {
   S.data[tab] = null;
   if (tab === 'otchet') S.data.d_otchet = null;
   if (tab === 'dohod') S.data.d_dohod = null;
+  if (tab === 'grafik') S.data.cnvrs = null;
   loadTab(tab).then(() => toast('Обновлено','s'));
 }
 
@@ -1867,9 +1889,7 @@ let _schedWeek = null;
 /* Новая функция подсчёта смен */
 function countShifts(row, daysRow, today) {
   let shifts = 0;
-  // daysRow — массив, в котором для каждого столбца от 1 до 31 хранится номер дня
   for (let day = 1; day <= today; day++) {
-    // Находим индекс столбца, где в daysRow указан день day
     let colIdx = -1;
     for (let c = 1; c <= 31; c++) {
       if (parseInt(daysRow[c]) === day) {
@@ -1911,16 +1931,46 @@ function renderGrafik() {
   const week     = weeks[_schedWeek];
   const weekDays = week.map(d => d.day);
 
-  const hdrs = week.map(d => {
+  // Получаем всех людей из обеих групп для подсчёта количества смен в день
+  function getAllPeople() {
+    const g1rows = raw.slice(3,13).filter(r => r[0] && r[0].trim());
+    const g2rows = raw.slice(19,25).filter(r => r[0] && r[0].trim());
+    const daysRow1 = raw[1] || [];
+    const daysRow2 = raw[17] || [];
+    return [...g1rows.map(r => ({ row: r, daysRow: daysRow1 })), ...g2rows.map(r => ({ row: r, daysRow: daysRow2 }))];
+  }
+  const allPeople = getAllPeople();
+
+  // для каждого дня недели считаем количество "р"
+  const shiftCounts = weekDays.map(dayNum => {
+    let cnt = 0;
+    for (const p of allPeople) {
+      let colIdx = -1;
+      for (let c = 1; c <= 31; c++) {
+        if (parseInt(p.daysRow[c]) === dayNum) {
+          colIdx = c;
+          break;
+        }
+      }
+      if (colIdx !== -1) {
+        const val = (p.row[colIdx] || '').toLowerCase();
+        if (val === 'р') cnt++;
+      }
+    }
+    return cnt;
+  });
+
+  const hdrs = week.map((d, idx) => {
     const isT = d.day === TODAY;
+    const cnt = shiftCounts[idx];
     return `<div class="sched-day-hdr${isT?' today':''}">
       <div class="sd-num">${d.day}</div>
       <div class="sd-dow">${d.dow}</div>
+      <div class="sd-count">${cnt} чел.</div>
     </div>`;
   }).join('');
   const weekHeader = `<div class="sched-week">${hdrs}</div>`;
 
-  // Изменённая функция parseGroup: возвращает массив объектов { name, cells, row, shifts }
   function parseGroup(rows, daysRow, today) {
     const dRow = daysRow || [];
     return rows.filter(r => r[0] && r[0].trim()).map(r => {
@@ -2041,10 +2091,10 @@ function renderInstruktsii() {
     const ths = cols.map(c => `<th>${c}</th>`).join('');
     const trs = rows.filter(r => r.status||r.criteria).map(r =>
       withA
-        ? `<td><td>${r.status||'—'}<\/td><td>${r.criteria||'—'}<\/td><td>${r.action||'—'}<\/td><\/tr>`
-        : `}<td>${r.status||'—'}<\/td><td>${r.criteria||'—'}<\/td><\/tr>`
+        ? `}<td>${r.status||'—'}</td><td>${r.criteria||'—'}</td><td>${r.action||'—'}</td></tr>`
+        : `<td>${r.status||'—'}</td><td>${r.criteria||'—'}</td></tr>`
     ).join('');
-    return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}<\/thead><tbody>${trs}<\/tbody><\/table><\/div>`;
+    return `<div class="table-scroll"><table class="instr-table"><thead>${ths}</thead><tbody>${trs}</tbody></table></div>`;
   }
 
   const html = blocks.map((b, i) => {
@@ -2154,6 +2204,34 @@ function openMopModal(dataStr) {
   const p = num(d.prc);
   const rs = d.rs;
 
+  // подгружаем данные конверсии из листа CNVRS
+  let convCRM = { conVisits: '—', conCredits: '—', pctTarget: '—', kCoef: '—' };
+  let convWarm = { conVisits: '—', conCredits: '—', pctTarget: '—', kCoef: '—' };
+  if (S.data.cnvrs && S.data.cnvrs.length) {
+    const nameNorm = d.name.trim().toLowerCase();
+    const header = S.data.cnvrs[0];
+    // ищем строку с менеджером
+    const row = S.data.cnvrs.find(r => r[0] && r[0].trim().toLowerCase() === nameNorm);
+    if (row) {
+      // предполагаем структуру: [менеджер, ...показатели CRM..., ...показатели тёплые...]
+      // по скриншоту: для CRM: (Con) визиты, (Con) кредиты, % целевых, K-коэффициент
+      // для тёплых: аналогичные 4 показателя
+      // индексы: 1-4 CRM, 5-8 тёплые
+      convCRM = {
+        conVisits: row[1] || '—',
+        conCredits: row[2] || '—',
+        pctTarget: row[3] || '—',
+        kCoef: row[4] || '—'
+      };
+      convWarm = {
+        conVisits: row[5] || '—',
+        conCredits: row[6] || '—',
+        pctTarget: row[7] || '—',
+        kCoef: row[8] || '—'
+      };
+    }
+  }
+
   document.getElementById('mop-modal-title').innerHTML =
     `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span>
      <span style="font-family:'Unbounded',sans-serif">${d.name}</span>${d.medal?' '+d.medal:''}`;
@@ -2170,6 +2248,29 @@ function openMopModal(dataStr) {
       <div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${rs.color}"></div></div>
       <span class="prog-r" style="color:${rs.color}">100%</span>
     </div>
+
+    <!-- Блок конверсии CRM -->
+    <div class="modal-sec">
+      <div class="modal-sec-title">Конверсия CRM</div>
+      <div class="modal-grid">
+        <div class="modal-cell"><div class="mc-l">(Con) визиты</div><div class="mc-v">${convCRM.conVisits}</div></div>
+        <div class="modal-cell"><div class="mc-l">(Con) кредиты</div><div class="mc-v">${convCRM.conCredits}</div></div>
+        <div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${convCRM.pctTarget}</div></div>
+        <div class="modal-cell"><div class="mc-l">K-коэффициент</div><div class="mc-v">${convCRM.kCoef}</div></div>
+      </div>
+    </div>
+
+    <!-- Блок конверсии Тёплые лиды -->
+    <div class="modal-sec">
+      <div class="modal-sec-title">Конверсия Тёплые лиды</div>
+      <div class="modal-grid">
+        <div class="modal-cell"><div class="mc-l">(Con) визиты</div><div class="mc-v">${convWarm.conVisits}</div></div>
+        <div class="modal-cell"><div class="mc-l">(Con) кредиты</div><div class="mc-v">${convWarm.conCredits}</div></div>
+        <div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${convWarm.pctTarget}</div></div>
+        <div class="modal-cell"><div class="mc-l">K-коэффициент</div><div class="mc-v">${convWarm.kCoef}</div></div>
+      </div>
+    </div>
+
     <div class="modal-sec">
       <div class="modal-sec-title">CRM</div>
       <div class="modal-grid">

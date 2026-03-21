@@ -559,6 +559,53 @@ cursor:pointer; transition:color .15s, border-color .15s;
 text-align:center; padding:48px 20px;
 color:var(–txt3); font-size:13px;
 }
+.ndz-card {
+border:1px solid var(–line); border-radius:var(–r2);
+overflow:hidden; margin-bottom:10px;
+}
+.ndz-header {
+background:var(–acc); color:#000; padding:10px 14px;
+font-family:‘Unbounded’,sans-serif; font-size:10px;
+font-weight:800; letter-spacing:.04em;
+}
+.ndz-body { padding:12px 14px; background:var(–bg2); }
+.ndz-body p {
+font-size:13px; line-height:1.7; color:var(–txt2);
+margin-bottom:8px;
+}
+.ndz-body p:last-child { margin-bottom:0 }
+.ndz-body strong { color:var(–txt); }
+.ndz-warn {
+background:rgba(255,71,87,.08); border:1px solid rgba(255,71,87,.25);
+border-radius:8px; padding:10px 14px; margin-bottom:10px;
+font-size:13px; line-height:1.7; color:var(–red);
+}
+.ndz-note {
+background:var(–acc-bg); border:1px solid var(–acc-bdr);
+border-radius:8px; padding:10px 14px; margin-bottom:10px;
+font-size:13px; line-height:1.7; color:var(–acc);
+font-weight:600;
+}
+.ndz-table {
+width:100%; border-collapse:collapse; font-size:13px;
+}
+.ndz-table td {
+padding:8px 12px; border-bottom:1px solid var(–line);
+color:var(–txt2); line-height:1.6;
+}
+.ndz-table tr:last-child td { border-bottom:none }
+.ndz-table tr:nth-child(even) td { background:var(–bg3) }
+.ndz-table tr:nth-child(odd) td { background:var(–bg2) }
+.ndz-sub-hdr td {
+background:var(–acc-bg) !important;
+color:var(–acc); font-weight:700;
+font-family:‘Unbounded’,sans-serif; font-size:10px;
+letter-spacing:.04em; border-bottom:1px solid var(–acc-bdr) !important;
+}
+.ndz-highlight td {
+background:rgba(255,165,2,.08) !important;
+color:var(–org); font-weight:600;
+}
 .dept-cell {
 background:rgba(255,255,255,0.05); border-radius:8px;
 padding:10px 12px; text-align:center;
@@ -2214,80 +2261,78 @@ function renderInstruktsii() {
   const raw = S.data.instruktsii;
   if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
 
-  const blocks = [];
-  let currentBlock = null;
-  let currentSub   = null;
+  /* ── Таблица статусов ── */
+  function buildStatusTable(rows) {
+    const ths = '<th>Статус</th><th>Критерии применения</th><th>Обязательные действия в CRM</th>';
+    const trs = rows.filter(r => (r[0]||'').trim() || (r[1]||'').trim()).map(r =>
+      `<tr><td>${r[0]||'—'}</td><td>${r[1]||'—'}</td><td>${r[2]||'—'}</td></tr>`
+    ).join('');
+    return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
+  }
 
-  for (const r of raw) {
+  /* ── Блок РЕГЛАМЕНТ ── */
+  const primaryRows   = raw.slice(2, 18);
+  const secondaryRows = raw.slice(20, 40);
+
+  const reglamentBody = `
+    <div class="instr-sub" id="is-primary">
+      <div class="instr-sub-hdr" onclick="toggleSub('is-primary')">
+        <span>СТАТУСЫ ПЕРВИЧНОГО КОНТАКТА</span>
+        <div class="instr-sub-toggle">[+]</div>
+      </div>
+      <div class="instr-sub-body">${buildStatusTable(primaryRows)}</div>
+    </div>
+    <div class="instr-sub" id="is-secondary">
+      <div class="instr-sub-hdr" onclick="toggleSub('is-secondary')">
+        <span>СТАТУСЫ ВТОРИЧНОГО КОНТАКТА</span>
+        <div class="instr-sub-toggle">[+]</div>
+      </div>
+      <div class="instr-sub-body">${buildStatusTable(secondaryRows)}</div>
+    </div>`;
+
+  /* ── Блок АЛГОРИТМ НЕДОЗВОНОВ ── */
+  const ndzRows = raw.slice(41, 57);
+  const ndzHTML = ndzRows.map(r => {
     const a = (r[0]||'').trim();
     const b = (r[1]||'').trim();
-    const c = (r[2]||'').trim();
-    if (!a && !b && !c) continue;
-
-    if (a && !b && !c && a === a.toUpperCase() && a.length > 4) {
-      if (currentBlock && !currentSub) {
-        currentSub = { title: a, rows: [] };
-        currentBlock.subs.push(currentSub);
-      } else {
-        currentBlock = { title: a, subs: [], rows: [] };
-        blocks.push(currentBlock);
-        currentSub = null;
-      }
-      continue;
+    if (!a && !b) return '';
+    const text = b ? `${a} ${b}`.trim() : a;
+    const aUp = a.toUpperCase();
+    if (aUp.startsWith('ЕСЛИ') && aUp.includes('ЗАЯВКА')) {
+      return `<tr class="ndz-sub-hdr"><td>${text}</td></tr>`;
     }
-
-    if (currentSub) {
-      currentSub.rows.push({ status:a, criteria:b, action:c });
-    } else if (currentBlock) {
-      currentBlock.rows.push({ status:a, criteria:b, action:c });
-    } else {
-      currentBlock = { title: a||'—', subs:[], rows:[] };
-      blocks.push(currentBlock);
-      currentBlock.rows.push({ status:a, criteria:b, action:c });
+    if (aUp.startsWith('НО!') || aUp.startsWith('ЛЮБЫЕ')) {
+      return `<tr class="ndz-highlight"><td>${text}</td></tr>`;
     }
-  }
+    if (aUp.startsWith('АЛГОРИТМ ЗВОНКОВ')) {
+      return `<tr class="ndz-highlight"><td>${text}</td></tr>`;
+    }
+    if (aUp.startsWith('ЕСЛИ')) {
+      return `<tr class="ndz-sub-hdr"><td>${text}</td></tr>`;
+    }
+    return `<tr><td>${text}</td></tr>`;
+  }).filter(Boolean).join('');
 
-  if (!blocks.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
+  const ndzBody = `<div class="mango-wrap"><table class="ndz-table"><tbody>${ndzHTML}</tbody></table></div>`;
 
-  function buildTable(rows) {
-    const withA = rows.some(r => r.action);
-    const cols = withA
-      ? ['Статус','Критерии применения','Обязательные действия в CRM']
-      : ['Статус','Критерии применения'];
-    const ths = cols.map(c => `<th>${c}</th>`).join('');
-    const trs = rows.filter(r => r.status||r.criteria).map(r =>
-      withA
-        ? `<td><td>${r.status||'—'}<\/td><td>${r.criteria||'—'}<\/td><td>${r.action||'—'}<\/td><\/tr>`
-        : `}<td>${r.status||'—'}<\/td><td>${r.criteria||'—'}<\/td><\/tr>`
-    ).join('');
-    return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}<\/thead><tbody>${trs}<\/tbody><\/table><\/div>`;
-  }
-
-  const html = blocks.map((b, i) => {
-    const id = `ib-${i}`;
-    const bodyContent = b.subs.length
-      ? b.subs.map((s, si) => {
-          const sid = `is-${i}-${si}`;
-          return `<div class="instr-sub" id="${sid}">
-            <div class="instr-sub-hdr" onclick="toggleSub('${sid}')">
-              <span>${s.title}</span>
-              <div class="instr-sub-toggle">[+]</div>
-            </div>
-            <div class="instr-sub-body">${buildTable(s.rows)}</div>
-          </div>`;
-        }).join('')
-      : buildTable(b.rows);
-
-    return `<div class="instr-block" id="${id}">
-      <div class="instr-hdr" onclick="toggleInstr('${id}')">
-        <h3>${b.title}</h3>
+  const html = `
+    <div class="sec-title">Инструкции</div>
+    <div class="instr-block" id="ib-reglament">
+      <div class="instr-hdr" onclick="toggleInstr('ib-reglament')">
+        <h3>РЕГЛАМЕНТ КОРРЕКТНОГО ЗАКРЫТИЯ CRM ЗАЯВОК (ЛИДОВ)</h3>
         <div class="instr-toggle">[+/-]</div>
       </div>
-      <div class="instr-body">${bodyContent}</div>
+      <div class="instr-body">${reglamentBody}</div>
+    </div>
+    <div class="instr-block" id="ib-ndz">
+      <div class="instr-hdr" onclick="toggleInstr('ib-ndz')">
+        <h3>АЛГОРИТМ РАБОТЫ С НЕДОЗВОНАМИ</h3>
+        <div class="instr-toggle">[+/-]</div>
+      </div>
+      <div class="instr-body" style="padding:12px 14px">${ndzBody}</div>
     </div>`;
-  }).join('');
 
-  el.innerHTML = `<div class="sec-title">Инструкции (${blocks.length})</div>${html}`;
+  el.innerHTML = html;
 }
 
 function toggleInstr(id) {

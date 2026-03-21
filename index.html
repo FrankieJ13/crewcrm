@@ -2215,23 +2215,21 @@ function openMopModal(dataStr) {
   // подгружаем данные конверсии из листа CNVRS
   // структура: колонка A — МОП (имя), G — (Con) визиты, H — (Con) кредиты, I — % целевых, M — K-коэффициент
   // для тёплых лидов пока нет данных, оставляем прочерки
-  let convCRM = { conVisits: '—', conCredits: '—', pctTarget: '—', kCoef: '—' };
-  if (S.data.cnvrs && S.data.cnvrs.length) {
+  let convCRM  = { conVisits: '—', conCredits: '—', pctTarget: '—', kCoef: '—' };
+let convWarm = { conVisits: '—', conCredits: '—', pctTarget: '—', kCoef: '—' };
+if (S.data.cnvrs && S.data.cnvrs.length) {
     const nameNorm = d.name.trim().toLowerCase();
-    // ищем строку, где в первой колонке имя менеджера (без учёта регистра)
-    const row = S.data.cnvrs.find(r => r[0] && r[0].trim().toLowerCase() === nameNorm);
-    if (row) {
-      // G (индекс 6), H (7), I (8), M (12)
-      convCRM = {
-        conVisits: row[6] || '—',
-        conCredits: row[7] || '—',
-        pctTarget: row[8] || '—',
-        kCoef: row[12] || '—'
-      };
+    // В листе два раздела: сначала ТЁПЛЫЕ ЛИДЫ, потом CRM — имена повторяются
+    const allMatches = S.data.cnvrs.filter(r => r[0] && r[0].trim().toLowerCase() === nameNorm);
+    if (allMatches[0]) {
+      const wr = allMatches[0]; // первое вхождение — ТЁПЛЫЕ ЛИДЫ
+      convWarm = { conVisits: wr[6]||'—', conCredits: wr[7]||'—', pctTarget: wr[8]||'—', kCoef: wr[12]||'—' };
+    }
+    if (allMatches[1]) {
+      const cr = allMatches[1]; // второе вхождение — CRM
+      convCRM = { conVisits: cr[6]||'—', conCredits: cr[7]||'—', pctTarget: cr[8]||'—', kCoef: cr[12]||'—' };
     }
   }
-  // для тёплых лидов пока нет данных — оставляем прочерки
-  const convWarm = { conVisits: '—', conCredits: '—', pctTarget: '—', kCoef: '—' };
 
   document.getElementById('mop-modal-title').innerHTML =
     `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span>

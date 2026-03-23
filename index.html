@@ -25,7 +25,7 @@ if ('serviceWorker' in navigator) {
 <style>
 /* Запрет масштабирования через touch-жесты */
 html, body {
-  touch-action: pan-x pan-y; /* разрешает прокрутку, но не масштабирование */
+  touch-action: pan-x pan-y;
 }
 
 :root {
@@ -206,27 +206,66 @@ header {
 .btn-icon svg { width:14px; height:14px; pointer-events:none }
 #btn-out:hover { border-color:var(--red); color:var(--red) }
 
-/* центральная кнопка входа на гейте */
+/* центральная кнопка входа на гейте (пульсирующая) */
 .center-login-btn {
-  margin-top: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 20px;
-  border-radius: var(--r);
+  padding: 12px 28px;
+  font-size: 14px;
+  font-weight: 800;
+  font-family: 'Unbounded', sans-serif;
+  letter-spacing: .06em;
   background: var(--acc);
   color: #000;
   border: none;
-  font-family: 'Unbounded', sans-serif;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .06em;
+  border-radius: 12px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   transition: opacity .15s;
   white-space: nowrap;
 }
 .center-login-btn:hover { opacity: .85; }
-.center-login-btn svg { width: 16px; height: 16px; }
+.center-login-btn svg { width: 18px; height: 18px; }
+
+/* Обёртка для пульсации */
+.pulse-wrapper {
+  position: relative;
+  display: inline-block;
+}
+.pulse-wrapper .center-login-btn {
+  position: relative;
+  z-index: 2;
+}
+.pulse-wrapper::before,
+.pulse-wrapper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  border: 2px solid var(--acc);
+  opacity: 0;
+  pointer-events: none;
+}
+.pulse-wrapper::before {
+  animation: pulse 2s infinite;
+}
+.pulse-wrapper::after {
+  animation: pulse 2s infinite;
+  animation-delay: 1s;
+}
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
 
 #user-wrap { display:none; align-items:center; gap:7px; font-size:12px; color:var(--txt2) }
 #user-avatar { width:28px; height:28px; border-radius:50%; border:1.5px solid var(--line2) }
@@ -1080,10 +1119,13 @@ body.light .glass {
           </svg>
         </div>
         <h2>Требуется вход</h2>
-        <button class="center-login-btn" id="center-login-btn">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 11h8.533c.044.385.067.78.067 1.184 0 3.37-1.17 6.22-3.207 8.154C15.553 22.124 13.9 23 12 23A11 11 0 1 1 12 1c2.95 0 5.56 1.113 7.522 2.934l-3.076 3.042C15.197 5.79 13.68 5 12 5a7 7 0 1 0 0 14c3.205 0 5.542-1.916 6.27-4.987H12v-3z"/></svg>
-          Войти
-        </button>
+        <!-- Обёртка с пульсацией -->
+        <div class="pulse-wrapper">
+          <button class="center-login-btn" id="center-login-btn">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 11h8.533c.044.385.067.78.067 1.184 0 3.37-1.17 6.22-3.207 8.154C15.553 22.124 13.9 23 12 23A11 11 0 1 1 12 1c2.95 0 5.56 1.113 7.522 2.934l-3.076 3.042C15.197 5.79 13.68 5 12 5a7 7 0 1 0 0 14c3.205 0 5.542-1.916 6.27-4.987H12v-3z"/></svg>
+            Войти
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1955,7 +1997,7 @@ function renderInstruktsii() {
   function buildStatusTable(rows) {
     const ths = '<th>Статус</th><th>Критерии применения</th><th>Обязательные действия в CRM</th>';
     const trs = rows.filter(r => (r[0]||'').trim() || (r[1]||'').trim()).map(r => `更<th>${r[0]||'—'}</th><th>${r[1]||'—'}</th><th>${r[2]||'—'}</th>`).join('');
-    return `<div class="table-scroll"><table class="instr-table"><thead> <tr>${ths}</tr> </thead><tbody>${trs}</tbody> </table></div>`;
+    return `<div class="table-scroll"><table class="instr-table"><thead> 更${ths}更 </thead><tbody>${trs}</tbody> 礼</div>`;
   }
   const primaryRows   = raw.slice(2, 18);
   const secondaryRows = raw.slice(20, 40);
@@ -2035,8 +2077,8 @@ function setFaqTab(tab) {
 
 function renderMangoTab() {
   const mangoData = [['Барнаул','#9913'],['Красноярск','#1118'],['Кемерово','#1478'],['Новокузнецк','#1213'],['Новосибирск','#1516'],['Омск','#108'],['Оренбург','#11444'],['Пермь','#974'],['Сургут','#1811'],['Томск','#1417'],['Тюмень','#1512'],['Челябинск','#1612'],['АСЦ Пермь','239-26-26']];
-  const rows = mangoData.map(([city, num]) => `<tr><td>${city}</td><td>${num}</td></tr>`).join('');
-  return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  const rows = mangoData.map(([city, num]) => `更<th>${city}</th><th>${num}</th>`).join('');
+  return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead> <th>Город</th><th>Доб.№</th> </thead><tbody>${rows}</tbody> 司</div>`;
 }
 
 function closeMopModal(e) {

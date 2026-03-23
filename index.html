@@ -1893,13 +1893,11 @@ function renderGrafik() {
   _schedWeek = Math.max(0, Math.min(_schedWeek, weeks.length-1));
   const week = weeks[_schedWeek];
   const weekDays = week.map(d => d.day);
-  // CRM group: строки 3-13 (первые 10 человек), исключаем последнюю (11-я строка) — это "кол-во в смене"
-  let crmRaw = raw.slice(3, 13);
-  if (crmRaw.length > 10) crmRaw = crmRaw.slice(0, 10); // оставляем только менеджеров
+  // CRM: строки 3-11 (9 менеджеров)
+  const crmRaw = raw.slice(3, 12);
   const g1pre = parseGroup(crmRaw, raw[1], weekDays);
-  // Дожим: строки 19-25, исключаем последнюю (25-я) — аналогично
-  let warmRaw = raw.slice(19, 25);
-  if (warmRaw.length > 6) warmRaw = warmRaw.slice(0, 6);
+  // Дожим: строки 19-23 (5 менеджеров)
+  const warmRaw = raw.slice(19, 24);
   const g2pre = parseGroup(warmRaw, raw[17], weekDays);
   const crmPeople = g1pre;
   const workerCounts = weekDays.map((_, wi) => crmPeople.filter(p => (p.cells[wi]||'').toLowerCase().trim() === 'р').length);

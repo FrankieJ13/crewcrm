@@ -1893,8 +1893,14 @@ function renderGrafik() {
   _schedWeek = Math.max(0, Math.min(_schedWeek, weeks.length-1));
   const week = weeks[_schedWeek];
   const weekDays = week.map(d => d.day);
-  const g1pre = parseGroup(raw.slice(3,13), raw[1], weekDays);
-  const g2pre = parseGroup(raw.slice(19,25), raw[17], weekDays);
+  // CRM group: строки 3-13 (первые 10 человек), исключаем последнюю (11-я строка) — это "кол-во в смене"
+  let crmRaw = raw.slice(3, 13);
+  if (crmRaw.length > 10) crmRaw = crmRaw.slice(0, 10); // оставляем только менеджеров
+  const g1pre = parseGroup(crmRaw, raw[1], weekDays);
+  // Дожим: строки 19-25, исключаем последнюю (25-я) — аналогично
+  let warmRaw = raw.slice(19, 25);
+  if (warmRaw.length > 6) warmRaw = warmRaw.slice(0, 6);
+  const g2pre = parseGroup(warmRaw, raw[17], weekDays);
   const crmPeople = g1pre;
   const workerCounts = weekDays.map((_, wi) => crmPeople.filter(p => (p.cells[wi]||'').toLowerCase().trim() === 'р').length);
   const hdrs = week.map((d, wi) => `<div class="sched-day-hdr${d.day === new Date().getDate() && new Date().getMonth()+1 === mo && new Date().getFullYear() === yr ? ' today' : ''}"><div class="sd-num">${d.day}</div><div class="sd-dow">${DOW[d.dow]}</div><div class="sd-workers">${workerCounts[wi]}</div></div>`).join('');
@@ -1945,7 +1951,7 @@ function renderInstruktsii() {
   if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
   function buildStatusTable(rows) {
     const ths = '<th>Статус</th><th>Критерии применения</th><th>Обязательные действия в CRM</th>';
-    const trs = rows.filter(r => (r[0]||'').trim() || (r[1]||'').trim()).map(r => `<tr><td>${r[0]||'—'}</td><td>${r[1]||'—'}</td><td>${r[2]||'—'}</td> </tr>`).join('');
+    const trs = rows.filter(r => (r[0]||'').trim() || (r[1]||'').trim()).map(r => `<tr><td>${r[0]||'—'}</td><td>${r[1]||'—'}</td><td>${r[2]||'—'}</td></tr>`).join('');
     return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
   }
   const primaryRows   = raw.slice(2, 18);
@@ -2026,7 +2032,7 @@ function setFaqTab(tab) {
 
 function renderMangoTab() {
   const mangoData = [['Барнаул','#9913'],['Красноярск','#1118'],['Кемерово','#1478'],['Новокузнецк','#1213'],['Новосибирск','#1516'],['Омск','#108'],['Оренбург','#11444'],['Пермь','#974'],['Сургут','#1811'],['Томск','#1417'],['Тюмень','#1512'],['Челябинск','#1612'],['АСЦ Пермь','239-26-26']];
-  const rows = mangoData.map(([city, num]) => ` <tr><td>${city}</td><td>${num}</td></tr>`).join('');
+  const rows = mangoData.map(([city, num]) => `<tr><td>${city}</td><td>${num}</td></tr>`).join('');
   return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 

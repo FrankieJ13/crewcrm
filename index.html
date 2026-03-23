@@ -256,10 +256,10 @@ header {
 @keyframes pulse {
   0% {
     transform: scale(1);
-    opacity: 0.7;
+    opacity: 0.5;
   }
   70% {
-    transform: scale(1.8);
+    transform: scale(1.3);
     opacity: 0;
   }
   100% {
@@ -948,43 +948,92 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
   font-family:'Golos Text',sans-serif;
   letter-spacing:.04em;
 }
-/* Анимация глюка */
-.glitch {
-  position: relative;
-  display: inline-block;
+/* ===== НОВАЯ АНИМАЦИЯ FLIP BOARD ===== */
+.flip-board {
+  display: flex;
+  gap: 2px;
+  justify-content: center;
+  align-items: center;
+  font-family: monospace;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: var(--txt);
 }
-.glitch::before,
-.glitch::after {
+.flip {
+  position: relative;
+  width: 12px;
+  height: 20px;
+  perspective: 200px;
+}
+.flip-inner {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+}
+.flip-front,
+.flip-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backface-visibility: hidden;
+}
+.flip-front {
+  transform: rotateX(0deg);
+}
+.flip-back {
+  transform: rotateX(180deg);
+}
+.flip.animate .flip-inner {
+  animation: flipAnim 0.35s ease;
+}
+@keyframes flipAnim {
+  0% { transform: rotateX(0deg); }
+  100% { transform: rotateX(180deg); }
+}
+/* небольшой эффект glitch на задней стороне (опционально) */
+.flip-back.glitch {
+  position: relative;
+}
+.flip-back.glitch::before,
+.flip-back.glitch::after {
   content: attr(data-text);
   position: absolute;
   left: 0;
   top: 0;
-  opacity: 0;
+  opacity: 0.6;
+  font-size: inherit;
 }
-.glitch::before { color: red; }
-.glitch::after  { color: cyan; }
-.glitch.active::before {
-  opacity: 0.8;
-  transform: translate(-2px, 1px);
+.flip-back.glitch::before {
+  color: #00ffff;
+  transform: translateX(1px);
 }
-.glitch.active::after {
-  opacity: 0.8;
-  transform: translate(2px, -1px);
+.flip-back.glitch::after {
+  color: #ff00ff;
+  transform: translateX(-1px);
 }
-.shake { animation: shake 0.2s infinite; }
-@keyframes shake {
-  0% { transform: translate(0, 0); }
-  25% { transform: translate(1px, -1px); }
-  50% { transform: translate(-1px, 1px); }
-  75% { transform: translate(1px, 1px); }
-  100% { transform: translate(0, 0); }
+
+/* для мобильных немного уменьшаем */
+@media (max-width: 480px) {
+  .flip {
+    width: 10px;
+    height: 18px;
+  }
+  .flip-board {
+    font-size: 11px;
+  }
 }
-.flash { animation: flash 0.3s; }
-@keyframes flash {
-  0% { opacity: 0; }
-  50% { opacity: 1; }
-  100% { opacity: 0.8; }
+
+/* Удаляем старые глитч-стили */
+.glitch,
+.glitch::before,
+.glitch::after {
+  display: none;
 }
+/* кнопки и прочее */
 #toast {
   position:fixed; bottom:20px; left:50%;
   transform:translateX(-50%) translateY(16px);
@@ -1119,7 +1168,6 @@ body.light .glass {
           </svg>
         </div>
         <h2>Требуется вход</h2>
-        <!-- Обёртка с пульсацией -->
         <div class="pulse-wrapper">
           <button class="center-login-btn" id="center-login-btn">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 11h8.533c.044.385.067.78.067 1.184 0 3.37-1.17 6.22-3.207 8.154C15.553 22.124 13.9 23 12 23A11 11 0 1 1 12 1c2.95 0 5.56 1.113 7.522 2.934l-3.076 3.042C15.197 5.79 13.68 5 12 5a7 7 0 1 0 0 14c3.205 0 5.542-1.916 6.27-4.987H12v-3z"/></svg>
@@ -1155,9 +1203,7 @@ body.light .glass {
   </main>
 
   <div class="page-footer">
-    <div class="glitch" id="author" data-text="© Бочаров Ю.С., 2026">
-        © Бочаров Ю.С., 2026
-    </div>
+    <div id="author" class="flip-board"></div>
   </div>
 </div>
 
@@ -1997,7 +2043,7 @@ function renderInstruktsii() {
   function buildStatusTable(rows) {
     const ths = '<th>Статус</th><th>Критерии применения</th><th>Обязательные действия в CRM</th>';
     const trs = rows.filter(r => (r[0]||'').trim() || (r[1]||'').trim()).map(r => `更<th>${r[0]||'—'}</th><th>${r[1]||'—'}</th><th>${r[2]||'—'}</th>`).join('');
-    return `<div class="table-scroll"><table class="instr-table"><thead> 更${ths}更 </thead><tbody>${trs}</tbody> 礼</div>`;
+    return `<div class="table-scroll"><table class="instr-table"><thead> <tr>${ths}</tr> </thead><tbody>${trs}</tbody> </table></div>`;
   }
   const primaryRows   = raw.slice(2, 18);
   const secondaryRows = raw.slice(20, 40);
@@ -2077,8 +2123,8 @@ function setFaqTab(tab) {
 
 function renderMangoTab() {
   const mangoData = [['Барнаул','#9913'],['Красноярск','#1118'],['Кемерово','#1478'],['Новокузнецк','#1213'],['Новосибирск','#1516'],['Омск','#108'],['Оренбург','#11444'],['Пермь','#974'],['Сургут','#1811'],['Томск','#1417'],['Тюмень','#1512'],['Челябинск','#1612'],['АСЦ Пермь','239-26-26']];
-  const rows = mangoData.map(([city, num]) => `更<th>${city}</th><th>${num}</th>`).join('');
-  return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead> <th>Город</th><th>Доб.№</th> </thead><tbody>${rows}</tbody> 司</div>`;
+  const rows = mangoData.map(([city, num]) => `<tr><td>${city}</td><td>${num}</td></tr>`).join('');
+  return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function closeMopModal(e) {
@@ -2124,6 +2170,80 @@ function showMonthDropdown() {
   setTimeout(() => document.addEventListener('click', closeDropdown), 0);
 }
 
+// ==================== FLIP BOARD ANIMATION ====================
+function initFlipBoard() {
+  const board = document.getElementById('author');
+  if (!board) return;
+  const text = "(c) Бочаров Ю.С., 2026";
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,:;()© ";
+  board.innerHTML = "";
+  text.split("").forEach(letter => {
+    const flip = document.createElement("div");
+    flip.className = "flip";
+    const inner = document.createElement("div");
+    inner.className = "flip-inner";
+    const front = document.createElement("div");
+    front.className = "flip-front";
+    front.textContent = letter;
+    const back = document.createElement("div");
+    back.className = "flip-back";
+    back.textContent = letter;
+    inner.appendChild(front);
+    inner.appendChild(back);
+    flip.appendChild(inner);
+    board.appendChild(flip);
+  });
+
+  function randomChar() {
+    return chars[Math.floor(Math.random() * chars.length)];
+  }
+
+  function animateText() {
+    const flips = document.querySelectorAll(".flip");
+    flips.forEach((flip, i) => {
+      const inner = flip.querySelector(".flip-inner");
+      const front = flip.querySelector(".flip-front");
+      const back = flip.querySelector(".flip-back");
+      let iterations = 0;
+      const target = text[i];
+      const interval = setInterval(() => {
+        flip.classList.add("animate");
+        const rand = randomChar();
+        back.textContent = rand;
+        if (Math.random() < 0.2) {
+          back.classList.add("glitch");
+          back.setAttribute("data-text", rand);
+          setTimeout(() => back.classList.remove("glitch"), 150);
+        }
+        setTimeout(() => {
+          front.textContent = rand;
+          flip.classList.remove("animate");
+        }, 180);
+        iterations++;
+        if (iterations > 8) {
+          back.textContent = target;
+          setTimeout(() => {
+            front.textContent = target;
+          }, 180);
+          clearInterval(interval);
+        }
+      }, 60 + Math.random() * 60);
+    });
+  }
+
+  let started = false;
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && !started) {
+        started = true;
+        animateText();
+        setInterval(animateText, 8000);
+      }
+    });
+  }, { threshold: 0.5 });
+  observer.observe(board);
+}
+
 // ==================== INIT ====================
 document.getElementById('btn-theme').addEventListener('click', () => setTheme(!document.body.classList.contains('light')));
 document.getElementById('btn-refresh').addEventListener('click', reloadCurrent);
@@ -2152,6 +2272,7 @@ function init() {
     } else setTimeout(waitGoogle, 100);
   }
   waitGoogle();
+  initFlipBoard(); // запускаем анимацию футера
 }
 if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
 else init();
@@ -2200,22 +2321,6 @@ else init();
     requestAnimationFrame(animate);
   }
   animate();
-})();
-
-// ==================== GLITCH ANIMATION ====================
-(function() {
-  const el = document.getElementById('author');
-  if (!el) return;
-  function triggerGlitch() {
-    const mode = Math.random();
-    el.classList.add('active');
-    if (mode < 0.33) el.classList.add('shake');
-    else if (mode < 0.66) el.classList.add('flash');
-    else el.style.color = Math.random() > 0.5 ? '#ff0040' : '#00eaff';
-    setTimeout(() => { el.classList.remove('active', 'shake', 'flash'); el.style.color = ''; }, 300 + Math.random() * 500);
-  }
-  function loop() { triggerGlitch(); setTimeout(loop, 6000 + Math.random() * 4000); }
-  setTimeout(loop, 3000);
 })();
 </script>
 </body>

@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0"/>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
@@ -23,6 +23,11 @@ if ('serviceWorker' in navigator) {
 </script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
+/* Запрет масштабирования через touch-жесты */
+html, body {
+  touch-action: pan-x pan-y; /* разрешает прокрутку, но не масштабирование */
+}
+
 :root {
   --bg:      #0d0d0d;
   --bg2:     #141414;
@@ -1893,10 +1898,10 @@ function renderGrafik() {
   _schedWeek = Math.max(0, Math.min(_schedWeek, weeks.length-1));
   const week = weeks[_schedWeek];
   const weekDays = week.map(d => d.day);
-  // CRM: строки 3-11 (9 менеджеров)
+  // CRM: строки 3-11 (9 менеджеров) – убираем строку 12 (кол-во в смене)
   const crmRaw = raw.slice(3, 12);
   const g1pre = parseGroup(crmRaw, raw[1], weekDays);
-  // Дожим: строки 19-23 (5 менеджеров)
+  // Дожим: строки 19-23 (5 менеджеров) – убираем строку 24
   const warmRaw = raw.slice(19, 24);
   const g2pre = parseGroup(warmRaw, raw[17], weekDays);
   const crmPeople = g1pre;
@@ -1949,8 +1954,8 @@ function renderInstruktsii() {
   if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
   function buildStatusTable(rows) {
     const ths = '<th>Статус</th><th>Критерии применения</th><th>Обязательные действия в CRM</th>';
-    const trs = rows.filter(r => (r[0]||'').trim() || (r[1]||'').trim()).map(r => `<tr><td>${r[0]||'—'}</td><td>${r[1]||'—'}</td><td>${r[2]||'—'}</td></tr>`).join('');
-    return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
+    const trs = rows.filter(r => (r[0]||'').trim() || (r[1]||'').trim()).map(r => `更<th>${r[0]||'—'}</th><th>${r[1]||'—'}</th><th>${r[2]||'—'}</th>`).join('');
+    return `<div class="table-scroll"><table class="instr-table"><thead> <tr>${ths}</tr> </thead><tbody>${trs}</tbody> </table></div>`;
   }
   const primaryRows   = raw.slice(2, 18);
   const secondaryRows = raw.slice(20, 40);
@@ -2087,6 +2092,13 @@ document.getElementById('center-login-btn').addEventListener('click', () => {
   if (!tokenClient) { toast('Загружается…','i'); return; }
   tokenClient.requestAccessToken({ prompt:'consent' });
 });
+
+// Дополнительная защита от пинч-зума (мультитач)
+document.addEventListener('touchmove', function(e) {
+  if (e.touches.length > 1) {
+    e.preventDefault();
+  }
+}, { passive: false });
 
 function init() {
   syncTheme();

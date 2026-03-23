@@ -201,16 +201,27 @@ header {
 .btn-icon svg { width:14px; height:14px; pointer-events:none }
 #btn-out:hover { border-color:var(--red); color:var(--red) }
 
-.btn-signin {
-  display:flex; align-items:center; gap:6px;
-  padding:6px 13px; border-radius:var(--r);
-  background:var(--acc); color:#000; border:none;
-  font-family:'Unbounded',sans-serif;
-  font-size:9px; font-weight:800; letter-spacing:.06em;
-  cursor:pointer; transition:opacity .15s; white-space:nowrap;
+/* центральная кнопка входа на гейте */
+.center-login-btn {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-radius: var(--r);
+  background: var(--acc);
+  color: #000;
+  border: none;
+  font-family: 'Unbounded', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  cursor: pointer;
+  transition: opacity .15s;
+  white-space: nowrap;
 }
-.btn-signin:hover { opacity:.85 }
-.btn-signin svg { width:13px; height:13px }
+.center-login-btn:hover { opacity: .85; }
+.center-login-btn svg { width: 16px; height: 16px; }
 
 #user-wrap { display:none; align-items:center; gap:7px; font-size:12px; color:var(--txt2) }
 #user-avatar { width:28px; height:28px; border-radius:50%; border:1.5px solid var(--line2) }
@@ -253,7 +264,7 @@ nav::-webkit-scrollbar { height:0 }
 .tab.on { color:var(--acc); border-bottom-color:var(--acc) }
 .tab-dot { width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.5 }
 
-/* ── NOT AUTH ── */
+/* ── NOT AUTH (GATE) ── */
 .gate {
   display:flex; flex-direction:column; align-items:center;
   justify-content:center; gap:14px; min-height:65vh;
@@ -266,8 +277,6 @@ nav::-webkit-scrollbar { height:0 }
 }
 .gate-icon svg { width:24px; height:24px }
 .gate h2 { font-family:'Unbounded',sans-serif; font-size:15px; font-weight:800 }
-.gate p  { font-size:13px; color:var(--txt2); line-height:1.7 }
-.gate strong { color:var(--acc) }
 
 /* ── SHARED ── */
 .sec-title {
@@ -629,8 +638,6 @@ body.light .dept-cell { background:rgba(0,0,0,0.02); }
   background: transparent;
   backdrop-filter: none;
 }
-.speedo-svg-container::before,
-.speedo-svg-container::after { display: none; }
 .speedo-svg-container svg {
   width:100%; height:auto; display:block;
   filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
@@ -1004,10 +1011,6 @@ body.light .glass {
       </div>
       <div class="hdr-right">
         <span class="badge-month" id="badge-month">—</span>
-        <button class="btn-signin" id="btn-login" style="display:none">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 11h8.533c.044.385.067.78.067 1.184 0 3.37-1.17 6.22-3.207 8.154C15.553 22.124 13.9 23 12 23A11 11 0 1 1 12 1c2.95 0 5.56 1.113 7.522 2.934l-3.076 3.042C15.197 5.79 13.68 5 12 5a7 7 0 1 0 0 14c3.205 0 5.542-1.916 6.27-4.987H12v-3z"/></svg>
-          Войти
-        </button>
         <div id="user-wrap">
           <img id="user-avatar" src="" alt=""/>
           <span id="user-name"></span>
@@ -1024,7 +1027,7 @@ body.light .glass {
           <svg id="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
           </svg>
-          <svg id="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+          <svg id="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
             <circle cx="12" cy="12" r="5"/>
             <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
             <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
@@ -1033,7 +1036,7 @@ body.light .glass {
           </svg>
         </button>
         <button class="btn-icon" id="btn-out" style="display:none" title="Выйти">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <polyline points="16 17 21 12 16 7"/>
             <line x1="21" y1="12" x2="9" y2="12"/>
@@ -1072,7 +1075,10 @@ body.light .glass {
           </svg>
         </div>
         <h2>Требуется вход</h2>
-        <p>Нажмите кнопку <strong>Войти</strong><br>в правом верхнем углу</p>
+        <button class="center-login-btn" id="center-login-btn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 11h8.533c.044.385.067.78.067 1.184 0 3.37-1.17 6.22-3.207 8.154C15.553 22.124 13.9 23 12 23A11 11 0 1 1 12 1c2.95 0 5.56 1.113 7.522 2.934l-3.076 3.042C15.197 5.79 13.68 5 12 5a7 7 0 1 0 0 14c3.205 0 5.542-1.916 6.27-4.987H12v-3z"/></svg>
+          Войти
+        </button>
       </div>
     </div>
 
@@ -1275,7 +1281,6 @@ function renderUser() {
 }
 
 function onLogin() {
-  document.getElementById('btn-login').style.display = 'none';
   document.getElementById('btn-out').style.display   = '';
   document.getElementById('main-nav').style.display  = 'flex';
   const ls = document.getElementById('scr-login');
@@ -1291,7 +1296,6 @@ function onLogout() {
   ['crm_tok','crm_exp','crm_user'].forEach(k => sessionStorage.removeItem(k));
   document.getElementById('user-wrap').style.display = 'none';
   document.getElementById('btn-out').style.display   = 'none';
-  document.getElementById('btn-login').style.display = '';
   document.getElementById('main-nav').style.display  = 'none';
   ['otchet','dohod','grafik','instruktsii'].forEach(t => {
     const s = document.getElementById('scr-'+t);
@@ -1339,10 +1343,8 @@ function setCurrentMonth(newSuffix) {
   currentSuffix = newSuffix;
   updateBadge();
   SHEETS = getSheetNames(currentSuffix);
-  // сброс данных
   S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null };
   _schedWeek = null;
-  // перезагрузить текущую вкладку
   const activeTab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
   loadTab(activeTab);
 }
@@ -1943,7 +1945,7 @@ function renderInstruktsii() {
   if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
   function buildStatusTable(rows) {
     const ths = '<th>Статус</th><th>Критерии применения</th><th>Обязательные действия в CRM</th>';
-    const trs = rows.filter(r => (r[0]||'').trim() || (r[1]||'').trim()).map(r => `<tr><td>${r[0]||'—'}</td><td>${r[1]||'—'}</td><td>${r[2]||'—'}</td></tr>`).join('');
+    const trs = rows.filter(r => (r[0]||'').trim() || (r[1]||'').trim()).map(r => `<tr><td>${r[0]||'—'}</td><td>${r[1]||'—'}</td><td>${r[2]||'—'}</td> </tr>`).join('');
     return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
   }
   const primaryRows   = raw.slice(2, 18);
@@ -2024,7 +2026,7 @@ function setFaqTab(tab) {
 
 function renderMangoTab() {
   const mangoData = [['Барнаул','#9913'],['Красноярск','#1118'],['Кемерово','#1478'],['Новокузнецк','#1213'],['Новосибирск','#1516'],['Омск','#108'],['Оренбург','#11444'],['Пермь','#974'],['Сургут','#1811'],['Томск','#1417'],['Тюмень','#1512'],['Челябинск','#1612'],['АСЦ Пермь','239-26-26']];
-  const rows = mangoData.map(([city, num]) => `<tr><td>${city}</td><td>${num}</td></tr>`).join('');
+  const rows = mangoData.map(([city, num]) => ` <tr><td>${city}</td><td>${num}</td></tr>`).join('');
   return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
@@ -2074,21 +2076,21 @@ function showMonthDropdown() {
 // ==================== INIT ====================
 document.getElementById('btn-theme').addEventListener('click', () => setTheme(!document.body.classList.contains('light')));
 document.getElementById('btn-refresh').addEventListener('click', reloadCurrent);
-document.getElementById('btn-login').addEventListener('click', () => {
-  if (!tokenClient) { toast('Загружается…','i'); return; }
-  tokenClient.requestAccessToken({ prompt:'consent' });
-});
 document.getElementById('btn-out').addEventListener('click', onLogout);
 document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => goTab(b.dataset.tab)));
 document.getElementById('badge-month').addEventListener('click', showMonthDropdown);
+document.getElementById('center-login-btn').addEventListener('click', () => {
+  if (!tokenClient) { toast('Загружается…','i'); return; }
+  tokenClient.requestAccessToken({ prompt:'consent' });
+});
 
 function init() {
   syncTheme();
   function waitGoogle() {
     if (typeof google !== 'undefined' && google.accounts) {
       initAuth();
-      if (tryRestore()) document.getElementById('btn-login').style.display = 'none';
-      else { document.getElementById('btn-login').style.display = ''; document.getElementById('scr-login').classList.add('on'); }
+      if (tryRestore()) { /* уже авторизован */ }
+      else { document.getElementById('scr-login').classList.add('on'); }
     } else setTimeout(waitGoogle, 100);
   }
   waitGoogle();

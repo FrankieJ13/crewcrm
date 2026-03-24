@@ -1252,6 +1252,18 @@ function medalBtn(idx) {
 }
 
 let tokenClient;
+let refreshTimer = null;
+
+function scheduleTokenRefresh(expiresIn) {
+  if (refreshTimer) clearTimeout(refreshTimer);
+  const delay = Math.max((expiresIn - 300) * 1000, 0);
+  refreshTimer = setTimeout(() => {
+    if (tokenClient && S.token) {
+      tokenClient.requestAccessToken({ prompt: '' });
+    }
+    refreshTimer = null;
+  }, delay);
+}
 
 function initAuth() {
   tokenClient = google.accounts.oauth2.initTokenClient({
@@ -1264,6 +1276,7 @@ function initAuth() {
       sessionStorage.setItem('crm_exp', Date.now()+(resp.expires_in-60)*1000);
       await loadUser();
       onLogin();
+      scheduleTokenRefresh(resp.expires_in);
     },
   });
 }
@@ -1295,6 +1308,10 @@ function onLogin() {
 }
 
 function onLogout() {
+  if (refreshTimer) {
+    clearTimeout(refreshTimer);
+    refreshTimer = null;
+  }
   if (S.token) google.accounts.oauth2.revoke(S.token, ()=>{});
   S.token=null; S.user=null;
   S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null };
@@ -1321,6 +1338,8 @@ function tryRestore() {
   S.token = tok;
   const u = sessionStorage.getItem('crm_user');
   if (u) { S.user = JSON.parse(u); renderUser(); }
+  const remaining = Math.max(Math.floor((exp - Date.now()) / 1000), 0);
+  scheduleTokenRefresh(remaining);
   onLogin();
   return true;
 }
@@ -1955,7 +1974,7 @@ function renderInstruktsii() {
   function buildStatusTable(rows) {
     const ths = '<th>Статус</th><th>Критерии применения</th><th>Обязательные действия в CRM</th>';
     const trs = rows.filter(r => (r[0]||'').trim() || (r[1]||'').trim()).map(r => `更<th>${r[0]||'—'}</th><th>${r[1]||'—'}</th><th>${r[2]||'—'}</th>`).join('');
-    return `<div class="table-scroll"><table class="instr-table"><thead> <tr>${ths}</tr> </thead><tbody>${trs}</tbody> </table></div>`;
+    return `<div class="table-scroll"><table class="instr-table"><thead> <tr>${ths} </thead><tbody>${trs}</tbody>  table</div>`;
   }
   const primaryRows   = raw.slice(2, 18);
   const secondaryRows = raw.slice(20, 40);
@@ -1966,10 +1985,10 @@ function renderInstruktsii() {
     if (!a && !b) return '';
     const text = b ? `${a} ${b}`.trim() : a;
     const aUp = a.toUpperCase();
-    if (aUp.startsWith('ЕСЛИ') && aUp.includes('ЗАЯВКА')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}</td></tr>`;
-    if (aUp.startsWith('НО!') || aUp.startsWith('ЛЮБЫЕ')) return `<tr class="ndz-highlight"><td colspan="2">${text}</td></tr>`;
-    if (aUp.startsWith('АЛГОРИТМ ЗВОНКОВ')) return `<tr class="ndz-highlight"><td colspan="2">${text}</td></tr>`;
-    if (aUp.startsWith('ЕСЛИ')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}</td></tr>`;
+    if (aUp.startsWith('ЕСЛИ') && aUp.includes('ЗАЯВКА')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text} </tr>`;
+    if (aUp.startsWith('НО!') || aUp.startsWith('ЛЮБЫЕ')) return `<tr class="ndz-highlight"><td colspan="2">${text} </tr>`;
+    if (aUp.startsWith('АЛГОРИТМ ЗВОНКОВ')) return `<tr class="ndz-highlight"><td colspan="2">${text} </tr>`;
+    if (aUp.startsWith('ЕСЛИ')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text} </tr>`;
     return `<tr><td colspan="2">${text}</td></tr>`;
   }).filter(Boolean).join('');
   const ndzBody = `<div class="mango-wrap"><table class="ndz-table"><tbody>${ndzHTML}</tbody></table></div>`;
@@ -2035,8 +2054,8 @@ function setFaqTab(tab) {
 
 function renderMangoTab() {
   const mangoData = [['Барнаул','#9913'],['Красноярск','#1118'],['Кемерово','#1478'],['Новокузнецк','#1213'],['Новосибирск','#1516'],['Омск','#108'],['Оренбург','#11444'],['Пермь','#974'],['Сургут','#1811'],['Томск','#1417'],['Тюмень','#1512'],['Челябинск','#1612'],['АСЦ Пермь','239-26-26']];
-  const rows = mangoData.map(([city, num]) => `<tr><td>${city}</td><td>${num}</td></tr>`).join('');
-  return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  const rows = mangoData.map(([city, num]) => `更<td>${city}</td><td>${num}</td>`).join('');
+  return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th> </thead><tbody>${rows}</tbody> </table></div>`;
 }
 
 function closeMopModal(e) {

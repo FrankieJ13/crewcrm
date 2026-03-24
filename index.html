@@ -909,42 +909,19 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
   font-family:'Golos Text',sans-serif;
   letter-spacing:.04em;
 }
-/* Анимация глюка */
-.glitch {
-  position: relative;
-  display: inline-block;
+/* Matrix effect for footer */
+#author {
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #00ff41;
+    text-shadow: 0 0 8px rgba(0, 255, 65, 0.7);
+    transition: text-shadow 0.2s;
 }
-.glitch::before,
-.glitch::after {
-  content: attr(data-text);
-  position: absolute;
-  left: 0;
-  top: 0;
-  opacity: 0;
-}
-.glitch::before { color: red; }
-.glitch::after  { color: cyan; }
-.glitch.active::before {
-  opacity: 0.8;
-  transform: translate(-2px, 1px);
-}
-.glitch.active::after {
-  opacity: 0.8;
-  transform: translate(2px, -1px);
-}
-.shake { animation: shake 0.2s infinite; }
-@keyframes shake {
-  0% { transform: translate(0, 0); }
-  25% { transform: translate(1px, -1px); }
-  50% { transform: translate(-1px, 1px); }
-  75% { transform: translate(1px, 1px); }
-  100% { transform: translate(0, 0); }
-}
-.flash { animation: flash 0.3s; }
-@keyframes flash {
-  0% { opacity: 0; }
-  50% { opacity: 1; }
-  100% { opacity: 0.8; }
+body.light #author {
+    color: #1a7a2e;
+    text-shadow: 0 0 5px rgba(26, 122, 46, 0.5);
 }
 #toast {
   position:fixed; bottom:20px; left:50%;
@@ -2179,20 +2156,46 @@ else init();
   animate();
 })();
 
-// ==================== GLITCH ANIMATION ====================
+// ==================== MATRIX TEXT EFFECT ====================
 (function() {
-  const el = document.getElementById('author');
-  if (!el) return;
-  function triggerGlitch() {
-    const mode = Math.random();
-    el.classList.add('active');
-    if (mode < 0.33) el.classList.add('shake');
-    else if (mode < 0.66) el.classList.add('flash');
-    else el.style.color = Math.random() > 0.5 ? '#ff0040' : '#00eaff';
-    setTimeout(() => { el.classList.remove('active', 'shake', 'flash'); el.style.color = ''; }, 300 + Math.random() * 500);
-  }
-  function loop() { triggerGlitch(); setTimeout(loop, 6000 + Math.random() * 4000); }
-  setTimeout(loop, 3000);
+    const target = document.getElementById("author");
+    if (!target) return;
+
+    const originalText = "© Бочаров Ю.С., 2026";
+    const letters = "日ハミヒーヘホマミムメモヤユヨラリルレロワン0123456789$+-*/=%";
+    let interval = null;
+
+    function startMatrixAnimation() {
+        let iteration = 0;
+        clearInterval(interval);
+
+        interval = setInterval(() => {
+            target.innerText = originalText
+                .split("")
+                .map((char, index) => {
+                    // уже раскрытые символы
+                    if (index < iteration) {
+                        return originalText[index];
+                    }
+                    // пробелы и запятые остаются без изменений
+                    if (char === " " || char === ",") return char;
+                    // случайный символ из набора
+                    return letters[Math.floor(Math.random() * letters.length)];
+                })
+                .join("");
+
+            if (iteration >= originalText.length) {
+                clearInterval(interval);
+            }
+
+            iteration += 1 / 2; // скорость проявления (можно менять)
+        }, 60); // частота мерцания
+    }
+
+    // запуск каждые 10 секунд
+    setInterval(startMatrixAnimation, 10000);
+    // первый запуск после загрузки страницы
+    window.addEventListener("load", startMatrixAnimation);
 })();
 </script>
 </body>

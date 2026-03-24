@@ -25,7 +25,7 @@ if ('serviceWorker' in navigator) {
 <style>
 /* Запрет масштабирования через touch-жесты */
 html, body {
-  touch-action: pan-x pan-y;
+  touch-action: pan-x pan-y; /* разрешает прокрутку, но не масштабирование */
 }
 
 :root {
@@ -69,7 +69,7 @@ body.light {
 body.light .m4 .ml { color:#fff }
 body.light .m4 .mv { color:#fff }
 
-/* ── ТЕНЬ ТЕКСТА ТОЛЬКО ДЛЯ СВЕТЛОЙ ТЕМЫ ── */
+/* ── ТЕНЬ ТЕКСТА ТОЛЬКО ДЛЯ СВЕТЛОЙ ТЕМЫ (для имён и сумм) ── */
 body.light .zp-n,
 body.light .zp-a,
 body.light .zp-banner .zv {
@@ -83,6 +83,7 @@ body {
 body.light {
   text-shadow: 0 1px 2px rgba(0,0,0,0.07);
 }
+/* Убираем тень там, где она мешает */
 input, button, svg, img, .logo-sq {
   text-shadow: none;
 }
@@ -205,6 +206,7 @@ header {
 .btn-icon svg { width:14px; height:14px; pointer-events:none }
 #btn-out:hover { border-color:var(--red); color:var(--red) }
 
+/* центральная кнопка входа на гейте */
 .center-login-btn {
   margin-top: 12px;
   display: inline-flex;
@@ -372,113 +374,6 @@ body.light .zp-row {
   opacity:0.6;
 }
 
-/* ── НОВАЯ ШКАЛА ПРОГНОЗА ── */
-.prog-scale-container {
-  position: relative;
-  width: 100%;
-  margin: 12px 0 8px;
-  padding: 8px 0;
-}
-
-.prog-scale-track {
-  position: relative;
-  width: 100%;
-  height: 8px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 20px;
-  overflow: visible;
-}
-
-.prog-scale-fill {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 0%;
-  border-radius: 20px;
-  transition: width 0.6s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-  background: linear-gradient(90deg, #ff4d4d, #ffd633, #2ecc71);
-}
-
-.prog-scale-marker {
-  position: absolute;
-  top: -20px;
-  transform: translateX(-50%);
-  font-size: 9px;
-  font-weight: 600;
-  color: var(--txt2);
-  white-space: nowrap;
-  transition: left 0.4s ease;
-  font-family: 'Unbounded', sans-serif;
-}
-
-.prog-scale-marker.marker-plan {
-  top: -28px;
-  font-size: 10px;
-  font-weight: 800;
-  color: var(--acc);
-}
-
-.prog-scale-marker.marker-current {
-  top: 14px;
-  font-size: 10px;
-  font-weight: 800;
-  color: var(--acc);
-  background: var(--acc-bg);
-  padding: 2px 6px;
-  border-radius: 12px;
-  border: 1px solid var(--acc-bdr);
-  white-space: nowrap;
-}
-
-.prog-scale-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 6px;
-  font-size: 9px;
-  color: var(--txt3);
-}
-
-.prog-scale-stats {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 12px;
-  gap: 12px;
-}
-
-.prog-stat {
-  flex: 1;
-  text-align: center;
-  padding: 8px;
-  background: rgba(255,255,255,0.05);
-  border-radius: 10px;
-  backdrop-filter: blur(4px);
-}
-
-.prog-stat .stat-label {
-  font-size: 8px;
-  color: var(--txt2);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 4px;
-}
-
-.prog-stat .stat-value {
-  font-family: 'Unbounded', sans-serif;
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.prog-stat .stat-sub {
-  font-size: 9px;
-  color: var(--txt2);
-  margin-top: 2px;
-}
-
-body.light .prog-stat {
-  background: rgba(0,0,0,0.03);
-}
-
 /* ── ОТЧЁТ: MOP CARDS ── */
 .mops { display:flex; flex-direction:column; gap:8px }
 .mop {
@@ -578,7 +473,7 @@ body.light .modal-cell { background:rgba(0,0,0,0.03); }
 .mop-overlay.open { display:flex; animation:mFade .2s ease }
 @keyframes mFade { from{opacity:0} to{opacity:1} }
 
-/* === МОДАЛЬНОЕ ОКНО === */
+/* === МОДАЛЬНОЕ ОКНО – исправленный фон === */
 .mop-modal {
   background: transparent;
   border:1px solid rgba(255,255,255,0.2);
@@ -806,7 +701,7 @@ body.light .inner-base-path { stroke:rgba(0,0,0,0.08); }
 .ti .tl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em }
 .ti .tv { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:700 }
 
-/* ── ДОХОД ── */
+/* ── ДОХОД ── (тень убрана из общих правил) */
 .zp-banner {
   border-radius:var(--r2); padding:18px;
   text-align:center; margin-bottom:16px;
@@ -1003,7 +898,7 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
 .instr-sub-body { display:none }
 .instr-sub.open .instr-sub-body { display:block }
 
-/* ── ФУТЕР ── */
+/* ── ФУТЕР (общий для всех страниц) ── */
 .page-footer {
   text-align:center;
   padding:8px 0 8px;
@@ -1014,6 +909,7 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
   font-family:'Golos Text',sans-serif;
   letter-spacing:.04em;
 }
+/* Анимация глюка */
 .glitch {
   position: relative;
   display: inline-block;
@@ -1078,6 +974,7 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
   100% { transform:translate(-50%,-50%) scale(4); opacity:0; }
 }
 
+/* ===== ФОНОВЫЕ ЭФФЕКТЫ (GLASS + ORBS) ===== */
 canvas#bg-canvas {
   position: fixed;
   top: 0;
@@ -1135,7 +1032,7 @@ body.light .glass {
           <svg id="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
           </svg>
-          <svg id="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display:none">
+          <svg id="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
             <circle cx="12" cy="12" r="5"/>
             <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
             <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
@@ -1579,94 +1476,7 @@ function renderTab(tab) {
   else if (tab==='instruktsii') renderInstruktsii();
 }
 
-/* ══ НОВАЯ ФУНКЦИЯ ДЛЯ ШКАЛЫ ПРОГНОЗА ══ */
-function renderProgScale(containerId, currentValue, planValue = 100, targetValue = null) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  
-  const val = Math.max(0, parseFloat(currentValue) || 0);
-  const plan = Math.max(1, parseFloat(planValue) || 100);
-  const target = targetValue !== null ? Math.max(plan, parseFloat(targetValue) || plan) : Math.max(plan, val);
-  
-  const maxScale = Math.max(plan, target, val);
-  const posPlan = (plan / maxScale) * 100;
-  const posTarget = (target / maxScale) * 100;
-  const posCurrent = (val / maxScale) * 100;
-  const fillWidth = Math.min(posCurrent, 100);
-  
-  const stopYellow = (50 / maxScale) * 100;
-  const stopGreen = (plan / maxScale) * 100;
-  
-  let yellowInternal = (stopYellow / fillWidth) * 100;
-  let greenInternal = (stopGreen / fillWidth) * 100;
-  
-  if (fillWidth === 0 || !isFinite(yellowInternal)) {
-    yellowInternal = 0;
-    greenInternal = 0;
-  }
-  
-  let gradient = '';
-  if (val <= plan) {
-    gradient = `linear-gradient(90deg, #ff4d4d 0%, #ffd633 ${Math.min(yellowInternal, 100)}%, #2ecc71 ${Math.min(greenInternal, 100)}%)`;
-  } else {
-    gradient = `linear-gradient(90deg, #ff4d4d 0%, #ffd633 ${Math.min(yellowInternal, 100)}%, #2ecc71 ${Math.min(greenInternal, 100)}%, #ff66b2 100%)`;
-  }
-  
-  const planPercent = Math.min(Math.round((val / plan) * 100), 999);
-  const deviation = val - plan;
-  const deviationText = deviation >= 0 ? `+${deviation}` : `${deviation}`;
-  const deviationColor = deviation >= 0 ? 'var(--grn)' : 'var(--red)';
-  
-  let forecastText = '';
-  let forecastValue = '';
-  if (targetValue !== null && targetValue > 0) {
-    const forecastPercent = Math.round((val / target) * 100);
-    forecastText = `${forecastPercent}% от цели`;
-    forecastValue = `${Math.round(val)} / ${Math.round(target)}`;
-  }
-  
-  const html = `
-    <div class="prog-scale-container">
-      <div class="prog-scale-track">
-        <div class="prog-scale-fill" style="width: ${fillWidth}%; background: ${gradient};"></div>
-        <div class="prog-scale-marker marker-plan" style="left: ${posPlan}%;">📊 План: ${Math.round(plan)}</div>
-        <div class="prog-scale-marker marker-current" style="left: ${posCurrent}%;">🎯 ${Math.round(val)}</div>
-      </div>
-      <div class="prog-scale-labels">
-        <span>0</span>
-        <span>${Math.round(maxScale)}</span>
-      </div>
-      <div class="prog-scale-stats">
-        <div class="prog-stat">
-          <div class="stat-label">Выполнение</div>
-          <div class="stat-value" style="color: ${planPercent >= 100 ? 'var(--grn)' : planPercent >= 60 ? 'var(--org)' : 'var(--red)'}">${planPercent}%</div>
-          <div class="stat-sub">от плана</div>
-        </div>
-        <div class="prog-stat">
-          <div class="stat-label">Текущий</div>
-          <div class="stat-value">${Math.round(val)}</div>
-          <div class="stat-sub">визитов</div>
-        </div>
-        <div class="prog-stat">
-          <div class="stat-label">Отклонение</div>
-          <div class="stat-value" style="color: ${deviationColor}">${deviationText}</div>
-          <div class="stat-sub">от плана</div>
-        </div>
-        ${targetValue !== null ? `
-        <div class="prog-stat">
-          <div class="stat-label">К цели</div>
-          <div class="stat-value">${forecastText}</div>
-          <div class="stat-sub">${forecastValue}</div>
-        </div>
-        ` : ''}
-      </div>
-    </div>
-  `;
-  
-  container.innerHTML = html;
-}
-
-/* ══ RENDER OTCHET (обновлённая версия со шкалой) ══ */
+// ==================== RENDER OTCHET ====================
 function renderOtchet() {
   const floating = document.getElementById('floating-subtabs');
   const el  = document.getElementById('c-otchet');
@@ -1727,7 +1537,6 @@ function renderOtchet() {
       <div class="dept-cell"><div class="dc-lbl">Остаток</div><div class="dc-val">${ostPlan||'—'}</div></div>
       <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val" style="color:${pctClr(parseInt(progOtdel))}">${progOtdel}</div></div>
     </div>
-    <div id="dept-prog-scale"></div>
     <div class="dept-row2" style="margin-bottom:8px">
       <div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">${deptKred||'—'}</div></div>
       <div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">${deptNal||'—'}</div></div>
@@ -1777,7 +1586,6 @@ function renderOtchet() {
         <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">${dPlan||'—'}</div></div>
         <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val" style="color:${pctClr(parseInt(dProg))}">${dProg}</div></div>
       </div>
-      <div id="dept-dozhim-prog-scale"></div>
       <div class="dept-row2">
         <div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">${dKred||'—'}</div></div>
         <div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">${dNal||'—'}</div></div>
@@ -1789,7 +1597,6 @@ function renderOtchet() {
     <div class="sec-title">ОТДЕЛ ДОЖИМ</div>
     <div class="dept-card" style="opacity:0.7;background:rgba(${accR},${accG},${accB},0.08)">
       <div class="dept-row1"><div class="dept-cell"><div class="dc-lbl">Визиты</div><div class="dc-val">—</div></div><div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">—</div></div><div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val">—</div></div></div>
-      <div id="dept-dozhim-prog-scale"></div>
       <div class="dept-row2"><div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">—</div></div><div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">—</div></div><div class="dept-cell"><div class="dc-lbl">Комиссия</div><div class="dc-val">—</div></div></div>
     </div>`;
   }
@@ -1865,7 +1672,6 @@ function renderOtchet() {
     const allV  = r[7]||'0';
     const rs    = rankStyles(idx, total);
     const fillGrad = `linear-gradient(90deg,${rs.color},${rs.color})`;
-    const progScaleId = `prog-scale-mgr-${idx}`;
 
     const crmCnvrs = getCnvrsRow(name, 'crm');
     const warmCnvrs = getCnvrsRow(name, 'warm');
@@ -1885,7 +1691,6 @@ function renderOtchet() {
       <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${medalBtn(idx)}</div><button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
       <div class="mop-mini"><div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div><div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div><div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div></div>
       <div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:${rs.color}">${progNum}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(progNum,100)}%;background:${fillGrad}"></div></div></div>
-      <div id="${progScaleId}" style="margin-top: 8px;"></div>
     </div>`;
   }).join('');
 
@@ -1907,29 +1712,6 @@ function renderOtchet() {
   else if (S.reportTab === 'dozhim') content = renderDozhimCards();
 
   el.innerHTML = content;
-
-  // Инициализация шкал после рендера
-  setTimeout(() => {
-    if (S.reportTab === 'dept') {
-      renderProgScale('dept-prog-scale', allVis, planTotal, ostPlan + allVis);
-      if (dRaw && dRaw.length >= 4) {
-        const dMgrs2 = dRaw.slice(3, 20).filter(r => r[0] && r[0].trim());
-        const dAllVis2 = dMgrs2.reduce((s,r) => s + num(r[7]), 0);
-        const dPlan2 = dMgrs2.reduce((s,r) => s + num(r[3]), 0);
-        renderProgScale('dept-dozhim-prog-scale', dAllVis2, dPlan2);
-      }
-    }
-    if (S.reportTab === 'mgr') {
-      withProg.forEach(({ r }, idx) => {
-        const allV = r[7] || 0;
-        const plan = r[3] || 1;
-        const progScaleId = `prog-scale-mgr-${idx}`;
-        if (document.getElementById(progScaleId)) {
-          renderProgScale(progScaleId, allV, plan);
-        }
-      });
-    }
-  }, 100);
 
   if (S.reportTab === 'dept') {
     managerStats.forEach((item, idx) => {
@@ -1970,27 +1752,14 @@ function renderDozhimCards() {
     const allV  = r[7]||'0';
     const rs    = rankStyles(idx, total);
     const fillGrad = `linear-gradient(90deg,${rs.color},${rs.color})`;
-    const progScaleId = `prog-scale-dozhim-${idx}`;
     const modalData = JSON.stringify({
       type:'dozhim', name, v800:r[1], v1000:r[2], rplan, ost, prc, prog, allV,
       kred800:r[8], nal800:r[9], td800:r[10], kom800:r[11],
       kred1000:r[12], nal1000:r[13], kom1000:r[14], zadatok:r[15],
       rs, medal: idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'', idx: idx+1
     }).replace(/'/g,"&#39;");
-    return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}"><div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${medalBtn(idx)}</div><button class="mop-info-btn" onclick="openDozhimModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div><div class="mop-mini"><div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div><div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div><div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div></div><div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:${rs.color}">${progNum}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(progNum,100)}%;background:${fillGrad}"></div></div></div><div id="${progScaleId}" style="margin-top: 8px;"></div></div>`;
+    return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}"><div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${medalBtn(idx)}</div><button class="mop-info-btn" onclick="openDozhimModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div><div class="mop-mini"><div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div><div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div><div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div></div><div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:${rs.color}">${progNum}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(progNum,100)}%;background:${fillGrad}"></div></div></div></div>`;
   }).join('');
-  
-  setTimeout(() => {
-    withProg.forEach(({ r }, idx) => {
-      const allV = r[7] || 0;
-      const plan = r[3] || 1;
-      const progScaleId = `prog-scale-dozhim-${idx}`;
-      if (document.getElementById(progScaleId)) {
-        renderProgScale(progScaleId, allV, plan);
-      }
-    });
-  }, 100);
-  
   return `<div class="sec-title">Менеджеры дожима</div><div class="mops">${cards}</div>`;
 }
 
@@ -2028,7 +1797,7 @@ function goHome() {
   if (S.data.otchet) renderOtchet();
 }
 
-/* ══ ОСТАЛЬНЫЕ ФУНКЦИИ (DOchod, Grafik, Instruktsii) остаются без изменений ══ */
+// ==================== RENDER DOHOD ====================
 function renderDohod() {
   const el = document.getElementById('c-dohod');
   const floating = document.getElementById('floating-dohod-subtabs');
@@ -2148,8 +1917,10 @@ function renderGrafik() {
   _schedWeek = Math.max(0, Math.min(_schedWeek, weeks.length-1));
   const week = weeks[_schedWeek];
   const weekDays = week.map(d => d.day);
+  // CRM: строки 3-11 (9 менеджеров) – убираем строку 12 (кол-во в смене)
   const crmRaw = raw.slice(3, 12);
   const g1pre = parseGroup(crmRaw, raw[1], weekDays);
+  // Дожим: строки 19-23 (5 менеджеров) – убираем строку 24
   const warmRaw = raw.slice(19, 24);
   const g2pre = parseGroup(warmRaw, raw[17], weekDays);
   const crmPeople = g1pre;
@@ -2202,8 +1973,8 @@ function renderInstruktsii() {
   if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
   function buildStatusTable(rows) {
     const ths = '<th>Статус</th><th>Критерии применения</th><th>Обязательные действия в CRM</th>';
-    const trs = rows.filter(r => (r[0]||'').trim() || (r[1]||'').trim()).map(r => `<tr><td>${r[0]||'—'}</td><td>${r[1]||'—'}</td><td>${r[2]||'—'}</td></tr>`).join('');
-    return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
+    const trs = rows.filter(r => (r[0]||'').trim() || (r[1]||'').trim()).map(r => `更<th>${r[0]||'—'}</th><th>${r[1]||'—'}</th><th>${r[2]||'—'}</th>`).join('');
+    return `<div class="table-scroll"><table class="instr-table"><thead> <tr>${ths} </thead><tbody>${trs}</tbody>  table</div>`;
   }
   const primaryRows   = raw.slice(2, 18);
   const secondaryRows = raw.slice(20, 40);
@@ -2214,10 +1985,10 @@ function renderInstruktsii() {
     if (!a && !b) return '';
     const text = b ? `${a} ${b}`.trim() : a;
     const aUp = a.toUpperCase();
-    if (aUp.startsWith('ЕСЛИ') && aUp.includes('ЗАЯВКА')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}</td></tr>`;
-    if (aUp.startsWith('НО!') || aUp.startsWith('ЛЮБЫЕ')) return `<tr class="ndz-highlight"><td colspan="2">${text}</td></tr>`;
-    if (aUp.startsWith('АЛГОРИТМ ЗВОНКОВ')) return `<tr class="ndz-highlight"><td colspan="2">${text}</td></tr>`;
-    if (aUp.startsWith('ЕСЛИ')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}</td></tr>`;
+    if (aUp.startsWith('ЕСЛИ') && aUp.includes('ЗАЯВКА')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text} </tr>`;
+    if (aUp.startsWith('НО!') || aUp.startsWith('ЛЮБЫЕ')) return `<tr class="ndz-highlight"><td colspan="2">${text} </tr>`;
+    if (aUp.startsWith('АЛГОРИТМ ЗВОНКОВ')) return `<tr class="ndz-highlight"><td colspan="2">${text} </tr>`;
+    if (aUp.startsWith('ЕСЛИ')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text} </tr>`;
     return `<tr><td colspan="2">${text}</td></tr>`;
   }).filter(Boolean).join('');
   const ndzBody = `<div class="mango-wrap"><table class="ndz-table"><tbody>${ndzHTML}</tbody></table></div>`;
@@ -2284,7 +2055,7 @@ function setFaqTab(tab) {
 function renderMangoTab() {
   const mangoData = [['Барнаул','#9913'],['Красноярск','#1118'],['Кемерово','#1478'],['Новокузнецк','#1213'],['Новосибирск','#1516'],['Омск','#108'],['Оренбург','#11444'],['Пермь','#974'],['Сургут','#1811'],['Томск','#1417'],['Тюмень','#1512'],['Челябинск','#1612'],['АСЦ Пермь','239-26-26']];
   const rows = mangoData.map(([city, num]) => `更<td>${city}</td><td>${num}</td>`).join('');
-  return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th> </thead><tbody>${rows}</tbody> </table></div>`;
 }
 
 function closeMopModal(e) {
@@ -2341,6 +2112,7 @@ document.getElementById('center-login-btn').addEventListener('click', () => {
   tokenClient.requestAccessToken({ prompt:'consent' });
 });
 
+// Дополнительная защита от пинч-зума (мультитач)
 document.addEventListener('touchmove', function(e) {
   if (e.touches.length > 1) {
     e.preventDefault();
@@ -2352,7 +2124,7 @@ function init() {
   function waitGoogle() {
     if (typeof google !== 'undefined' && google.accounts) {
       initAuth();
-      if (tryRestore()) { }
+      if (tryRestore()) { /* уже авторизован */ }
       else { document.getElementById('scr-login').classList.add('on'); }
     } else setTimeout(waitGoogle, 100);
   }

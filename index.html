@@ -1722,7 +1722,7 @@ function renderOtchet() {
       const targetPct = Math.min(item.visits / item.plan, 1);
       progressPath.style.strokeDasharray = `0,${length}`;
       const innerLen = innerPath ? innerPath.getTotalLength() : 0;
-      const innerTarget = Math.min((item.convPct || 0) / 100, 1);
+      const innerTarget = Math.min((item.convPct || 0) / 25, 1);
       if (innerPath) innerPath.style.strokeDasharray = `0,${innerLen}`;
       let start = null;
       function animate(ts) {

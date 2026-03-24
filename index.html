@@ -101,6 +101,10 @@ html,body {
   overflow-x:hidden;
   transition:background .2s, color .2s;
 }
+/* Запрещаем скролл у body, прокручивается только main */
+body {
+  overflow-y: hidden;
+}
 ::-webkit-scrollbar { width:3px; height:3px }
 ::-webkit-scrollbar-track { background:transparent }
 ::-webkit-scrollbar-thumb { background:var(--line2); border-radius:2px }
@@ -521,6 +525,11 @@ body.light .mop-modal-body {
 .mop-modal-title {
   display:flex; align-items:center; gap:8px;
   font-family:'Unbounded',sans-serif; font-size:11px; font-weight:800;
+}
+/* Светлая тема: делаем имя менеджера контрастным */
+body.light .mop-modal-title {
+  color: var(--acc);
+  text-shadow: none;
 }
 .mop-modal-close {
   width:28px; height:28px; border-radius:50%;
@@ -1719,7 +1728,8 @@ function renderOtchet() {
       const innerPath = document.getElementById(`inner-progress-${idx}`);
       if (!progressPath) return;
       const length = progressPath.getTotalLength();
-      const targetPct = Math.min(item.visits / item.plan, 1);
+      // Шкала спидометра: полная дуга соответствует 25% выполнения плана
+      const targetPct = Math.min((item.visits / item.plan) / 0.25, 1);
       progressPath.style.strokeDasharray = `0,${length}`;
       const innerLen = innerPath ? innerPath.getTotalLength() : 0;
       const innerTarget = Math.min((item.convPct || 0) / 100, 1);
@@ -1985,10 +1995,10 @@ function renderInstruktsii() {
     if (!a && !b) return '';
     const text = b ? `${a} ${b}`.trim() : a;
     const aUp = a.toUpperCase();
-    if (aUp.startsWith('ЕСЛИ') && aUp.includes('ЗАЯВКА')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text} </tr>`;
-    if (aUp.startsWith('НО!') || aUp.startsWith('ЛЮБЫЕ')) return `<tr class="ndz-highlight"><td colspan="2">${text} </tr>`;
-    if (aUp.startsWith('АЛГОРИТМ ЗВОНКОВ')) return `<tr class="ndz-highlight"><td colspan="2">${text} </tr>`;
-    if (aUp.startsWith('ЕСЛИ')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text} </tr>`;
+    if (aUp.startsWith('ЕСЛИ') && aUp.includes('ЗАЯВКА')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}  </td></tr>`;
+    if (aUp.startsWith('НО!') || aUp.startsWith('ЛЮБЫЕ')) return `<tr class="ndz-highlight"><td colspan="2">${text}  </td></tr>`;
+    if (aUp.startsWith('АЛГОРИТМ ЗВОНКОВ')) return `<tr class="ndz-highlight"><td colspan="2">${text}  </td></tr>`;
+    if (aUp.startsWith('ЕСЛИ')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}  </td></tr>`;
     return `<tr><td colspan="2">${text}</td></tr>`;
   }).filter(Boolean).join('');
   const ndzBody = `<div class="mango-wrap"><table class="ndz-table"><tbody>${ndzHTML}</tbody></table></div>`;
@@ -2042,7 +2052,7 @@ function openMopModal(dataStr) {
   const p = num(d.prc);
   const rs = d.rs;
   document.getElementById('mop-modal-title').innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>${d.medal?' '+d.medal:''}`;
-  document.getElementById('mop-modal-body').innerHTML = `<div class="mop-grid4"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div></div><div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div><div class="modal-sec"><div class="modal-sec-title">CRM</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td800}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div><div class="modal-cell"><div class="mc-l">(Con) визиты</div><div class="mc-v">${d.crmConVis}</div></div><div class="modal-cell"><div class="mc-l">(Con) кредиты</div><div class="mc-v">${d.crmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.crmDolya}</div></div><div class="modal-cell"><div class="mc-l">K-коэффициент</div><div class="mc-v">${d.crmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТЁПЛЫЕ ЛИДЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1200}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1200}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1200}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td1200}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1200}</div></div><div class="modal-cell"><div class="mc-l">(Con) визиты</div><div class="mc-v">${d.warmConVis}</div></div><div class="modal-cell"><div class="mc-l">(Con) кредиты</div><div class="mc-v">${d.warmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.warmDolya}</div></div><div class="modal-cell"><div class="mc-l">K-коэффициент</div><div class="mc-v">${d.warmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТРЕБУЮТ АКТУАЛИЗАЦИИ / ОТКАЗЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">В салоне</div><div class="mc-v">${d.vsalone}</div></div><div class="modal-cell"><div class="mc-l">В КСО</div><div class="mc-v">${d.vkso}</div></div><div class="modal-cell"><div class="mc-l">В банке</div><div class="mc-v">${d.vbanke}</div></div><div class="modal-cell"><div class="mc-l">ФССП</div><div class="mc-v">${d.vfSSP}</div></div><div class="modal-cell"><div class="mc-l">Отказ</div><div class="mc-v">${d.otkaz}</div></div></div></div>`;
+  document.getElementById('mop-modal-body').innerHTML = `<div class="mop-grid4"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div></div><div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div><div class="modal-sec"><div class="modal-sec-title">CRM</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td800}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div><div class="modal-cell"><div class="mc-l">(Con) визиты</div><div class="mc-v">${d.crmConVis}</div></div><div class="modal-cell"><div class="mc-l">(Con) КД</div><div class="mc-v">${d.crmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.crmDolya}</div></div><div class="modal-cell"><div class="mc-l">КОЭФФИЦИЕНТ</div><div class="mc-v">${d.crmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТЁПЛЫЕ ЛИДЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1200}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1200}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1200}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td1200}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1200}</div></div><div class="modal-cell"><div class="mc-l">(Con) визиты</div><div class="mc-v">${d.warmConVis}</div></div><div class="modal-cell"><div class="mc-l">(Con) КД</div><div class="mc-v">${d.warmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.warmDolya}</div></div><div class="modal-cell"><div class="mc-l">КОЭФФИЦИЕНТ</div><div class="mc-v">${d.warmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТРЕБУЮТ АКТУАЛИЗАЦИИ / ОТКАЗЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">В салоне</div><div class="mc-v">${d.vsalone}</div></div><div class="modal-cell"><div class="mc-l">В КСО</div><div class="mc-v">${d.vkso}</div></div><div class="modal-cell"><div class="mc-l">В банке</div><div class="mc-v">${d.vbanke}</div></div><div class="modal-cell"><div class="mc-l">ФССП</div><div class="mc-v">${d.vfSSP}</div></div><div class="modal-cell"><div class="mc-l">Отказ</div><div class="mc-v">${d.otkaz}</div></div></div></div>`;
   document.getElementById('mop-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -2055,7 +2065,7 @@ function setFaqTab(tab) {
 function renderMangoTab() {
   const mangoData = [['Барнаул','#9913'],['Красноярск','#1118'],['Кемерово','#1478'],['Новокузнецк','#1213'],['Новосибирск','#1516'],['Омск','#108'],['Оренбург','#11444'],['Пермь','#974'],['Сургут','#1811'],['Томск','#1417'],['Тюмень','#1512'],['Челябинск','#1612'],['АСЦ Пермь','239-26-26']];
   const rows = mangoData.map(([city, num]) => `更<td>${city}</td><td>${num}</td>`).join('');
-  return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th> </thead><tbody>${rows}</tbody> </table></div>`;
+  return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function closeMopModal(e) {

@@ -1394,7 +1394,6 @@ function getWorkedDays(suffix) {
 function computeDailyPlan(plan, fact, progNum, suffix) {
   const daysInMonth = getDaysInMonth(suffix);
   const worked = getWorkedDays(suffix);
-  // если месяц ещё не завершён и прогноз < 100% -> план догона
   if (worked < daysInMonth && progNum < 100) {
     const remainingDays = daysInMonth - worked;
     if (remainingDays <= 0) return Math.ceil(plan / daysInMonth);
@@ -1402,7 +1401,6 @@ function computeDailyPlan(plan, fact, progNum, suffix) {
     if (need <= 0) return 0;
     return Math.ceil(need / remainingDays);
   }
-  // иначе средний дневной план на весь месяц
   return Math.ceil(plan / daysInMonth);
 }
 
@@ -1626,7 +1624,7 @@ function renderOtchet() {
         <div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
         <div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div>
         <div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div>
-        <div class="mm"><div class="ml">Дневной план</div><div class="mv">${daily}</div></div>
+        <div class="mm"><div class="ml">Дневной</div><div class="mv">${daily}</div></div>
       </div>
       <div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:${rs.color}">${progNum}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(progNum,100)}%;background:${fillGrad}"></div></div></div>
     </div>`;
@@ -1922,36 +1920,89 @@ function schedNav(dir) {
 
 // ==================== INSTRUKTSII ====================
 function renderInstruktsii() {
-  const el  = document.getElementById('c-instruktsii');
+  const el = document.getElementById('c-instruktsii');
   const floatingFaq = document.getElementById('floating-faq-subtabs');
   const subtabs = `<span class="faq-subtab ${S.faqTab==='instr'?'active':''}" onclick="setFaqTab('instr')">ИНСТРУКЦИИ</span><span class="faq-subtab ${S.faqTab==='mango'?'active':''}" onclick="setFaqTab('mango')">MANGO</span><span class="faq-subtab ${S.faqTab==='links'?'active':''}" onclick="setFaqTab('links')">ССЫЛКИ</span>`;
   if (floatingFaq) floatingFaq.innerHTML = subtabs;
   if (S.faqTab === 'mango') { el.innerHTML = renderMangoTab(); return; }
   if (S.faqTab === 'links') { el.innerHTML = '<div class="links-placeholder">Список ссылок будет добавлен позднее</div>'; return; }
-  const raw = S.data.instruktsii;
-  if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
+
+  // Данные для таблиц
+  const primaryStatuses = [
+    ["Не устроили условия кредитования", "Клиент запросил расчёт кредита до визита. Условия (ставка, платёж) его не устроили, от дальнейшего общения отказался.", "Указать запрошенные условия (срок, первый взнос) и причину отказа (напр., «ставка 17% его не устроила», «увидел низкую ставку на рекламном сайте»)."],
+    ["Не устроило состояние авто", "Клиента не устроила информация о состоянии, комплектации или истории конкретного автомобиля, от визита отказался.", "Указать, какая информация отклонила клиента (пробег, цвет, ремонты, данные Автотеки)."],
+    ["Нецелевой контакт", "Клиент заявил, что не оставлял заявку, не интересуется покупкой.", "Зафиксировать слова клиента (напр., «Сообщил, что заявку не оставлял»)."],
+    ["СПАМ", "Нет ответа по всем каналам связи (звонок, SMS, мессенджеры) при попытке установить контакт или явные признаки спам-бота/ошибочной или намеренной отправки заявки кем-то, но не этим клиентом.", "В комментарии перечислить все неудачные попытки связи. Запрещено ставить без минимум 2 попыток в первые 2 дня. Исключения - выявленная нумерация СПАМ-номеров."],
+    ["Сброс звонка (разговор не состоялся)", "Клиент оборвал звонок на раннем этапе и более не отвечает.", "Указать, на какой теме произошёл сброс (напр., «Сбросил при уточнении модели»)."],
+    ["Неверный контакт", "Номер не существует, не принадлежит клиенту, указан с ошибкой.", "Зафиксировать причину (напр., «Недостаточно цифр в номере»)."],
+    ["Не дозвонился (теплый лид)", "Только для воронки «Теплые лиды». Контакт не установлен в рамках регламента обзвона.", "Указать количество, даты и время попыток дозвона."],
+    ["Не гражданин РФ", "У клиента нет паспорта РФ для кредита, а альтернативы (оформление на третье лицо, предложения партнёров) невозможны/отклонены.", "Перед закрытием проверить актуальные условия для нерезидентов."],
+    ["Находится далеко, не готов приехать", "Клиент из другого региона отказался от визита.", "Указать город клиента и причину отказа."],
+    ["Не доработал", "Критический статус для разбора. Менеджер признаёт, что не отработал возражения или не предоставил информацию в полном объёме на раннем этапе.", "Обязателен подробный комментарий (напр., «Не предложил альтернативный автомобиль при отказе по цене»)."],
+    ["Дубль", "Клиент уже в работе у другого менеджера ИЛИ недавно был в салоне (факт проверен).", "В комментарии указать ФИО менеджера и дату первоначальной заявки."],
+    ["ХОЗ", "Контакт — владелец автомобиля, стоящего у нас на комиссии.", "Передать информацию по клиенту в город."],
+    ["Нужен конкретный автомобиль", "Клиент ищет строго определённую модель с конкретными параметрами, которых нет в наличии. От альтернатив отказался.", "Детально указать запрошенные параметры (модель, год, цвет, двигатель и т.д.)."],
+    ["Изначально не планировал покупку", "Клиент прямо заявил, что лишь изучал рынок, «интересовался на будущее».", "Зафиксировать слова клиента."],
+    ["Откладывает покупку", "Решение отложить покупку на срок более 2-3 месяцев.", "Указать названный срок и причину (напр., «Ждёт закрытие кредитов», «Хочет сначала самостоятельно продать свое авто»)."]
+  ];
+
+  const secondaryStatuses = [
+    ["Покупка за наличные", "Автомобиль продан без использования кредитных продуктов.", "Передать информацию в город и закрыть сделку"],
+    ["Обмен", "Сделка состоялась по программе обмена.", "По возможности отразить в карточке модели принятого и проданного авто, суммы."],
+    ["Комиссия", "Клиент выставил авто на продажу через наш салон на комиссионных условиях.", "Указать данные принятого автомобиля."],
+    ["Выкуп", "Салон выкупил автомобиль у клиента.", "Указать данные выкупленного автомобиля."],
+    ["Был в салоне, не подобрали авто", "После визита и осмотра ни один вариант не устроил клиента.", "Перечислить показанные автомобили и ключевую причину отказа (бюджет, цвет, размер)."],
+    ["Не устроила оценка", "Предложенная сумма за автомобиль клиента (Trade-in/выкуп) его не устроила.", "Указать ожидаемую и предложенную суммы."],
+    ["Отказ банка", "Только для КСО. Все доступные банки дали официальный отказ.", "Статус проставляется КСО"],
+    ["ФССП / Не подаём", "Преимущественно для КСО. Выявлены неоплаченные задолженности по исполнительным производствам (ФССП).", "Статус проставляется КСО. Иногда менеджером CRM, если проверили данные для дистанционной заявки по клиенту, который находится далеко."],
+    ["Не устроили условия кредитования", "После получения детального расчёта и предодобрения в салоне клиента не устроили финальные условия. Подавать заявку отказался.", "Статус проставляется КСО/CRM"],
+    ["Одобрен, но не купил", "Банк одобрил кредит, но клиент отказался от подписания договора купли-продажи.", "Статус проставляется КСО"],
+    ["Не устроило состояние авто", "После очного осмотра в салоне клиента не устроило состояние выбранного автомобиля.", "Уточнить у МОП детали, отразить комментарий в CRM. (напр., «Обнаружены следы перекраса на пороге»)."],
+    ["Авто клиента не принимаем", "Автомобиль клиента не соответствует требованиям салона (состояние, модель в STOP-листе и т.п.).", "Уточнить у МОП детали, отразить комментарий в CRM. (напр., тех. состояние, юридические ограничения)."],
+    ["Не дозвонился", "После первичного диалога и договорённостей клиент перестал отвечать на звонки/сообщения.", "Указать тему последнего разговора и количество последующих попыток связи."],
+    ["Пропала потребность", "Клиент сообщил, что больше не нуждается в покупке автомобиля.", "Зафиксировать причину, если озвучена."],
+    ["Купил в другом месте", "После контакта с нами (визит не состоялся) клиент купил автомобиль у конкурента или физ.лица.", "Уточнить у клиента, где и какую модель купил, если известно."],
+    ["Не доработал", "Критический статус для разбора. Менеджер упустил клиента на этапе ведения из-за ошибок в работе.", "Обязателен подробный комментарий с анализом упущений (напр., «Не отправил оферту после встречи», «Не перезвонил в обещанный срок»)."],
+    ["Дубль", "Дублирующая заявка выявлена на этапе ведения (второй номер, родственник). Работа передаётся первому менеджеру.", "Указать ссылку на актуальную сделку."],
+    ["Откладывает покупку", "После диалога/договоренности на встречу клиент решил перенести покупку.", "Указать новый планируемый срок и причину, почему решил повременить."],
+    ["Сброс звонка", "После предыдущих договорённостей клиент сбрасывает звонок, узнав менеджера, и прекращает общение.", "Зафиксировать, что ранее был конструктивный диалог и договорённости."]
+  ];
+
   function buildStatusTable(rows) {
-    const ths = '<th>Статус</th><th>Критерии применения</th><th>Обязательные действия в CRM</th>';
-    const trs = rows.filter(r => (r[0]||'').trim() || (r[1]||'').trim()).map(r => `更<th>${r[0]||'—'}</th><th>${r[1]||'—'}</th><th>${r[2]||'—'}</th>`).join('');
-    return `<div class="table-scroll"><table class="instr-table"><thead> <tr>${ths} </thead><tbody>${trs}</tbody>  table</div>`;
+    const ths = '<th>Статус</th><th>Критерии применения</th><th>Обязательные действия в CRM карточке</th>';
+    const trs = rows.map(r => `更<td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td>`).join('');
+    return `<div class="table-scroll"><table class="instr-table"><thead>${ths}</thead><tbody>${trs}</tbody> </table></div>`;
   }
-  const primaryRows   = raw.slice(2, 18);
-  const secondaryRows = raw.slice(20, 40);
-  const reglamentBody = `<div class="instr-sub" id="is-primary"><div class="instr-sub-hdr" onclick="toggleSub('is-primary')"><span>СТАТУСЫ ПЕРВИЧНОГО КОНТАКТА</span><div class="instr-sub-toggle">[+]</div></div><div class="instr-sub-body">${buildStatusTable(primaryRows)}</div></div><div class="instr-sub" id="is-secondary"><div class="instr-sub-hdr" onclick="toggleSub('is-secondary')"><span>СТАТУСЫ ВТОРИЧНОГО КОНТАКТА</span><div class="instr-sub-toggle">[+]</div></div><div class="instr-sub-body">${buildStatusTable(secondaryRows)}</div></div>`;
-  const ndzRows = raw.slice(41, 57);
-  const ndzHTML = ndzRows.map(r => {
-    const a = (r[0]||'').trim(), b = (r[1]||'').trim();
-    if (!a && !b) return '';
-    const text = b ? `${a} ${b}`.trim() : a;
-    const aUp = a.toUpperCase();
-    if (aUp.startsWith('ЕСЛИ') && aUp.includes('ЗАЯВКА')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}  </tr>`;
-    if (aUp.startsWith('НО!') || aUp.startsWith('ЛЮБЫЕ')) return `<tr class="ndz-highlight"><td colspan="2">${text}  </tr>`;
-    if (aUp.startsWith('АЛГОРИТМ ЗВОНКОВ')) return `<tr class="ndz-highlight"><td colspan="2">${text}  </tr>`;
-    if (aUp.startsWith('ЕСЛИ')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}  </tr>`;
-    return `<tr><td colspan="2">${text}  </tr>`;
-  }).filter(Boolean).join('');
-  const ndzBody = `<div class="mango-wrap"><table class="ndz-table"><tbody>${ndzHTML}</tbody>  table</div>`;
-  el.innerHTML = `<div class="sec-title">Инструкции</div><div class="instr-block" id="ib-reglament"><div class="instr-hdr" onclick="toggleInstr('ib-reglament')"><h3>РЕГЛАМЕНТ КОРРЕКТНОГО ЗАКРЫТИЯ CRM ЗАЯВОК (ЛИДОВ)</h3><div class="instr-toggle">[+/-]</div></div><div class="instr-body">${reglamentBody}</div></div><div class="instr-block" id="ib-ndz"><div class="instr-hdr" onclick="toggleInstr('ib-ndz')"><h3>АЛГОРИТМ РАБОТЫ С НЕДОЗВОНАМИ</h3><div class="instr-toggle">[+/-]</div></div><div class="instr-body" style="padding:12px 14px">${ndzBody}</div></div>`;
+
+  const reglamentBody = `
+    <div class="instr-sub" id="is-primary">
+      <div class="instr-sub-hdr" onclick="toggleSub('is-primary')">
+        <span>СТАТУСЫ ПЕРВИЧНОГО КОНТАКТА</span>
+        <div class="instr-sub-toggle">[+]</div>
+      </div>
+      <div class="instr-sub-body">${buildStatusTable(primaryStatuses)}</div>
+    </div>
+    <div class="instr-sub" id="is-secondary">
+      <div class="instr-sub-hdr" onclick="toggleSub('is-secondary')">
+        <span>СТАТУСЫ ВТОРИЧНОГО КОНТАКТА</span>
+        <div class="instr-sub-toggle">[+]</div>
+      </div>
+      <div class="instr-sub-body">${buildStatusTable(secondaryStatuses)}</div>
+    </div>
+  `;
+
+  const instrHtml = `
+    <div class="sec-title">Инструкции</div>
+    <div class="instr-block" id="ib-reglament">
+      <div class="instr-hdr" onclick="toggleInstr('ib-reglament')">
+        <h3>РЕГЛАМЕНТ КОРРЕКТНОГО ЗАКРЫТИЯ CRM ЗАЯВОК (ЛИДОВ)</h3>
+        <div class="instr-toggle">[+/-]</div>
+      </div>
+      <div class="instr-body">${reglamentBody}</div>
+    </div>
+  `;
+
+  el.innerHTML = instrHtml;
 }
 
 function toggleInstr(id) {
@@ -2013,8 +2064,8 @@ function setFaqTab(tab) {
 
 function renderMangoTab() {
   const mangoData = [['Барнаул','#9913'],['Красноярск','#1118'],['Кемерово','#1478'],['Новокузнецк','#1213'],['Новосибирск','#1516'],['Омск','#108'],['Оренбург','#11444'],['Пермь','#974'],['Сургут','#1811'],['Томск','#1417'],['Тюмень','#1512'],['Челябинск','#1612'],['АСЦ Пермь','239-26-26']];
-  const rows = mangoData.map(([city, num]) => `更<td>${city}</td><td>${num}</td>`).join('');
-  return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th> </tr></thead><tbody>${rows}</tbody></table></div>`;
+  const rows = mangoData.map(([city, num]) => `<tr><td>${city}</td><td>${num}</td></tr>`).join('');
+  return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function closeMopModal(e) {

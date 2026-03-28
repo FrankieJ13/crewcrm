@@ -23,11 +23,9 @@ if ('serviceWorker' in navigator) {
 </script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
-/* Запрет масштабирования через touch-жесты */
 html, body {
-  touch-action: pan-x pan-y; /* разрешает прокрутку, но не масштабирование */
+  touch-action: pan-x pan-y;
 }
-
 :root {
   --bg:      #0d0d0d;
   --bg2:     #141414;
@@ -68,26 +66,20 @@ body.light {
 }
 body.light .m4 .ml { color:#fff }
 body.light .m4 .mv { color:#fff }
-
-/* ── ТЕНЬ ТЕКСТА ТОЛЬКО ДЛЯ СВЕТЛОЙ ТЕМЫ (для имён и сумм) ── */
 body.light .zp-n,
 body.light .zp-a,
 body.light .zp-banner .zv {
   text-shadow: 0 2px 5px rgba(255,255,255,0.6);
 }
-
-/* ── ТЕНЬ ТЕКСТА (общая) ── */
 body {
   text-shadow: 0 1px 3px rgba(0,0,0,0.25);
 }
 body.light {
   text-shadow: 0 1px 2px rgba(0,0,0,0.07);
 }
-/* Убираем тень там, где она мешает */
 input, button, svg, img, .logo-sq {
   text-shadow: none;
 }
-
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0 }
 html,body {
   height:100%;
@@ -104,8 +96,6 @@ html,body {
 ::-webkit-scrollbar { width:3px; height:3px }
 ::-webkit-scrollbar-track { background:transparent }
 ::-webkit-scrollbar-thumb { background:var(--line2); border-radius:2px }
-
-/* ── LAYOUT ── */
 #app {
   display:flex;
   flex-direction:column;
@@ -124,8 +114,6 @@ main { flex:1; overflow-y:auto; position: relative; }
 .scr { display:none; padding:0 0 10px 0; animation:up .2s ease }
 .scr.on { display:block }
 @keyframes up { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-
-/* ── HEADER ── */
 header {
   background:var(--bg); border-bottom:1px solid var(--line);
   position:sticky; top:0; z-index:100; flex-shrink:0;
@@ -152,7 +140,6 @@ header {
 }
 .logo-sq span { background:#000; border-radius:1px }
 .logo-sq span:last-child { opacity:.4 }
-
 .badge-month {
   font-size:11px; padding:3px 9px; border-radius:20px;
   background:var(--bg3); border:1px solid var(--line2);
@@ -205,8 +192,6 @@ header {
 .btn-icon:hover { border-color:var(--acc); color:var(--acc) }
 .btn-icon svg { width:14px; height:14px; pointer-events:none }
 #btn-out:hover { border-color:var(--red); color:var(--red) }
-
-/* центральная кнопка входа на гейте */
 .center-login-btn {
   margin-top: 12px;
   display: inline-flex;
@@ -227,11 +212,9 @@ header {
 }
 .center-login-btn:hover { opacity: .85; }
 .center-login-btn svg { width: 16px; height: 16px; }
-
 #user-wrap { display:none; align-items:center; gap:7px; font-size:12px; color:var(--txt2) }
 #user-avatar { width:28px; height:28px; border-radius:50%; border:1.5px solid var(--line2) }
 #user-name { display:none }
-
 .btn-out {
   padding:5px 12px; border-radius:var(--r);
   background:var(--bg3); border:1px solid var(--line2);
@@ -239,8 +222,6 @@ header {
   font-size:12px; cursor:pointer; transition:all .15s;
 }
 .btn-out:hover { border-color:var(--red); color:var(--red) }
-
-/* ── NAV ── */
 nav {
   background:var(--bg);
   border-bottom:1px solid var(--line);
@@ -268,8 +249,6 @@ nav::-webkit-scrollbar { height:0 }
 .tab:hover { color:var(--txt2) }
 .tab.on { color:var(--acc); border-bottom-color:var(--acc) }
 .tab-dot { width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.5 }
-
-/* ── NOT AUTH (GATE) ── */
 .gate {
   display:flex; flex-direction:column; align-items:center;
   justify-content:center; gap:14px; min-height:65vh;
@@ -282,8 +261,6 @@ nav::-webkit-scrollbar { height:0 }
 }
 .gate-icon svg { width:24px; height:24px }
 .gate h2 { font-family:'Unbounded',sans-serif; font-size:15px; font-weight:800 }
-
-/* ── SHARED ── */
 .sec-title {
   font-family:'Unbounded',sans-serif;
   font-size:10px; font-weight:800; letter-spacing:.1em;
@@ -293,7 +270,6 @@ nav::-webkit-scrollbar { height:0 }
   display:flex; align-items:center; gap:8px;
 }
 .sec-title::after { content:''; flex:1; height:1px; background:var(--line) }
-
 .loader {
   display:flex; flex-direction:column; align-items:center;
   justify-content:center; gap:12px; padding:60px 20px;
@@ -311,8 +287,6 @@ nav::-webkit-scrollbar { height:0 }
   font-size:13px; margin-bottom:12px;
 }
 .empty { text-align:center; padding:48px 20px; color:var(--txt3); font-size:13px }
-
-/* ── ПЛАВАЮЩИЕ ПОДВКЛАДКИ ── */
 #floating-subtabs,
 #floating-dohod-subtabs,
 #floating-faq-subtabs {
@@ -339,8 +313,6 @@ nav::-webkit-scrollbar { height:0 }
 .report-subtab.active, .faq-subtab.active {
   color:var(--acc); border-bottom-color:var(--acc);
 }
-
-/* ── LIQUID GLASS КАРТОЧКИ ── */
 .dept-card, .mop, .zp-row {
   position:relative;
   backdrop-filter: blur(12px) saturate(180%);
@@ -373,8 +345,6 @@ body.light .zp-row {
   pointer-events:none;
   opacity:0.6;
 }
-
-/* ── ОТЧЁТ: MOP CARDS ── */
 .mops { display:flex; flex-direction:column; gap:8px }
 .mop {
   border-radius:var(--r2); padding:13px 14px;
@@ -407,9 +377,8 @@ body.light .mop {
   flex-shrink:0; transition:all .15s;
 }
 .mop-info-btn:hover { border-color:var(--acc); color:var(--acc) }
-
 .mop-mini {
-  display:grid; grid-template-columns:repeat(3,1fr);
+  display:grid; grid-template-columns:repeat(4,1fr);
   gap:6px; margin-bottom:12px;
 }
 .mm {
@@ -420,7 +389,6 @@ body.light .mop {
 body.light .mm { background:rgba(0,0,0,0.03); }
 .mm .ml { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px }
 .mm .mv { font-family:'Unbounded',sans-serif; font-size:14px; font-weight:800; color:var(--txt); }
-
 .mop-prog { position:relative; }
 .mop-prog-labels {
   display:flex; justify-content:space-between;
@@ -435,8 +403,6 @@ body.light .mm { background:rgba(0,0,0,0.03); }
   height:100%; border-radius:4px;
   transition:width .7s ease;
 }
-
-/* секции в модалке */
 .modal-sec { margin-bottom:14px; }
 .modal-sec-title {
   font-family:'Unbounded',sans-serif;
@@ -472,8 +438,6 @@ body.light .modal-cell { background:rgba(0,0,0,0.03); }
 }
 .mop-overlay.open { display:flex; animation:mFade .2s ease }
 @keyframes mFade { from{opacity:0} to{opacity:1} }
-
-/* === МОДАЛЬНОЕ ОКНО – исправленный фон === */
 .mop-modal {
   background: transparent;
   border:1px solid rgba(255,255,255,0.2);
@@ -511,7 +475,6 @@ body.light .mop-modal-body {
   background: rgba(255,255,255,0.55);
 }
 @keyframes mUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
-
 .mop-modal-hdr {
   background:transparent; backdrop-filter: blur(10px);
   display:flex; align-items:center; justify-content:space-between;
@@ -531,7 +494,6 @@ body.light .mop-modal-body {
 }
 .mop-modal-close:hover { border-color:var(--red); color:var(--red) }
 .mop-modal-body { padding:14px 16px; }
-
 .mop-grid4 {
   display:grid; grid-template-columns:repeat(4,1fr);
   gap:6px; margin-bottom:12px;
@@ -556,9 +518,8 @@ body.light .mop-modal-body {
 .chip.c1200 { border-color:rgba(255,165,2,.3) }
 @media(max-width:480px) {
   .mop-grid4 { grid-template-columns:repeat(2,1fr) }
+  .mop-mini { grid-template-columns:repeat(2,1fr); }
 }
-
-/* ── КАРТОЧКА ОТДЕЛА ── */
 .dept-card {
   background: rgba(var(--acc-r), var(--acc-g), var(--acc-b), 0.08);
   border:1px solid var(--acc-bdr);
@@ -628,8 +589,6 @@ body.light .dept-cell { background:rgba(0,0,0,0.02); }
   color:var(--txt);
 }
 .dept-cell.hi .dc-val { color:var(--txt); }
-
-/* ── СПИДОМЕТРЫ ── */
 .speedo-grid {
   display:grid; grid-template-columns:repeat(3, 1fr);
   gap:10px; margin-top:5px;
@@ -679,8 +638,6 @@ body.light .inner-base-path { stroke:rgba(0,0,0,0.08); }
 @media(max-width:480px) {
   .speedo-grid { grid-template-columns:repeat(3,1fr); }
 }
-
-/* ── ИТОГИ ── */
 .totals-box {
   background:rgba(255,255,255,0.05); border:1px solid var(--line2);
   border-radius:var(--r2); padding:13px 14px; margin-top:14px;
@@ -700,8 +657,6 @@ body.light .inner-base-path { stroke:rgba(0,0,0,0.08); }
 }
 .ti .tl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em }
 .ti .tv { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:700 }
-
-/* ── ДОХОД ── (тень убрана из общих правил) */
 .zp-banner {
   border-radius:var(--r2); padding:18px;
   text-align:center; margin-bottom:16px;
@@ -739,8 +694,6 @@ body.light .zp-row {
   font-size:13px; font-weight:700;
   flex-shrink:0; text-align:right;
 }
-
-/* ── МЕДАЛЬ — кнопка ── */
 .medal-btn {
   background:none; border:none; padding:0;
   cursor:pointer; font-size:inherit; line-height:1;
@@ -749,8 +702,6 @@ body.light .zp-row {
   margin-left: 2px;
 }
 .medal-btn:hover { transform:scale(1.25); }
-
-/* ── ГРАФИК ── */
 #scr-grafik { padding-top:0 }
 #scr-grafik .w { padding-top:8px }
 .sched-nav {
@@ -771,7 +722,6 @@ body.light .zp-row {
 }
 .sched-nav-btn:hover { border-color:var(--acc); color:var(--acc) }
 .sched-nav-btn:disabled { opacity:.3; cursor:default; pointer-events:none }
-
 .sched-week {
   display:grid; grid-template-columns:repeat(7,1fr); gap:4px;
 }
@@ -797,7 +747,6 @@ body.light .zp-row {
 .sched-day-hdr.today .sd-num { color:var(--acc) }
 .sched-day-hdr.today .sd-dow { color:var(--acc) }
 .sched-day-hdr.today .sd-workers { color:var(--acc) }
-
 .sched-group-title {
   font-family:'Unbounded',sans-serif;
   font-size:10px; font-weight:800; letter-spacing:.1em;
@@ -805,7 +754,6 @@ body.light .zp-row {
   display:flex; align-items:center; gap:8px;
 }
 .sched-group-title::after { content:''; flex:1; height:1px; background:var(--line) }
-
 .sched-person {
   background:var(--bg2); border:1px solid var(--line);
   border-radius:var(--r2); margin-bottom:8px; overflow:hidden;
@@ -830,8 +778,6 @@ body.light .zp-row {
 .sched-cell.dvs { background:rgba(130,130,130,.1); color:var(--txt3) }
 .sched-cell.empty { color:var(--txt3); opacity:.4 }
 .sched-cell.today-col { outline:2px solid var(--acc); outline-offset:-2px; border-radius:6px; }
-
-/* ── ИНСТРУКЦИИ ── */
 .instr-block {
   border:1px solid var(--line); border-radius:var(--r2);
   overflow:hidden; margin-bottom:8px;
@@ -855,7 +801,6 @@ body.light .zp-row {
 }
 .instr-body { display:none; border-top:1px solid var(--line); background:var(--bg); }
 .instr-block.open > .instr-body { display:block }
-
 .table-scroll { overflow-x: auto; margin:0 -1px; }
 .instr-table { width:100%; border-collapse:collapse; font-size:13px; min-width:600px; }
 .instr-table th {
@@ -878,7 +823,6 @@ body.light .zp-row {
   border-right:1px solid var(--line);
 }
 body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
-
 .instr-sub { border-top:1px solid var(--line); }
 .instr-sub:first-child { border-top:none }
 .instr-sub-hdr {
@@ -897,8 +841,6 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
 .instr-sub.open .instr-sub-toggle { color:var(--acc); border-color:var(--acc); }
 .instr-sub-body { display:none }
 .instr-sub.open .instr-sub-body { display:block }
-
-/* ── ФУТЕР (общий для всех страниц) ── */
 .page-footer {
   text-align:center;
   padding:8px 0 8px;
@@ -909,7 +851,6 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
   font-family:'Golos Text',sans-serif;
   letter-spacing:.04em;
 }
-/* Matrix effect for footer */
 #author {
     font-family: 'Courier New', Courier, monospace;
     font-weight: bold;
@@ -934,7 +875,6 @@ body.light #author {
 #toast.s { background:rgba(46,213,115,.15); border:1px solid var(--grn); color:var(--grn) }
 #toast.e { background:rgba(255,71,87,.15);  border:1px solid var(--red); color:var(--red) }
 #toast.i { background:var(--bg3); border:1px solid var(--line2); color:var(--txt) }
-
 @media(max-width:480px) {
   .sum-grid  { grid-template-columns:1fr 1fr }
   .mop-grid4 { grid-template-columns:repeat(2,1fr) }
@@ -942,7 +882,6 @@ body.light #author {
   .scr       { padding:12px; }
   .tab       { padding:10px 14px; font-size:13px; letter-spacing:.02em }
 }
-
 @keyframes firework {
   to { transform: translate(var(--tx), var(--ty)) scale(0.6); opacity: 0; }
 }
@@ -950,8 +889,6 @@ body.light #author {
   0% { transform:translate(-50%,-50%) scale(0.5); opacity:1; }
   100% { transform:translate(-50%,-50%) scale(4); opacity:0; }
 }
-
-/* ===== ФОНОВЫЕ ЭФФЕКТЫ (GLASS + ORBS) ===== */
 canvas#bg-canvas {
   position: fixed;
   top: 0;
@@ -961,7 +898,6 @@ canvas#bg-canvas {
   pointer-events: none;
   z-index: 1;
 }
-
 .glass {
   position: fixed;
   inset: 0;
@@ -971,17 +907,14 @@ canvas#bg-canvas {
   pointer-events: none;
   background: rgba(20, 20, 30, 0.25);
 }
-
 body.light .glass {
   background: rgba(255, 255, 255, 0.25);
 }
 </style>
-
 </head>
 <body>
 <canvas id="bg-canvas"></canvas>
 <div class="glass"></div>
-
 <div id="app">
   <header>
     <div class="hdr-inner">
@@ -1027,7 +960,6 @@ body.light .glass {
       </div>
     </div>
   </header>
-
   <nav id="main-nav" style="display:none">
     <div class="nav-inner">
       <button class="tab on" data-tab="otchet"><span class="tab-dot"></span>ОТЧЁТ</button>
@@ -1036,17 +968,14 @@ body.light .glass {
       <button class="tab" data-tab="instruktsii"><span class="tab-dot"></span>FAQ</button>
     </div>
   </nav>
-
   <div id="grafik-sticky" style="display:none;background:var(--bg);border-bottom:1px solid var(--line);z-index:50;position:sticky;top:80px">
     <div class="w" style="padding-top:10px;padding-bottom:10px">
       <div id="grafik-sticky-inner"></div>
     </div>
   </div>
-
   <div id="floating-subtabs" class="report-subtabs" style="display:none;"></div>
   <div id="floating-dohod-subtabs" class="report-subtabs" style="display:none;"></div>
   <div id="floating-faq-subtabs" class="faq-subtabs" style="display:none;"></div>
-
   <main>
     <div id="scr-login" class="scr">
       <div class="gate">
@@ -1063,39 +992,33 @@ body.light .glass {
         </button>
       </div>
     </div>
-
     <div id="scr-otchet" class="scr">
       <div class="w">
         <div id="c-otchet"></div>
       </div>
     </div>
-
     <div id="scr-dohod" class="scr">
       <div class="w">
         <div id="c-dohod"></div>
       </div>
     </div>
-
     <div id="scr-grafik" class="scr">
       <div class="w">
         <div id="c-grafik"></div>
       </div>
     </div>
-
     <div id="scr-instruktsii" class="scr">
       <div class="w">
         <div id="c-instruktsii"></div>
       </div>
     </div>
   </main>
-
   <div class="page-footer">
     <div class="glitch" id="author" data-text="© Бочаров Ю.С., 2026">
         © Бочаров Ю.С., 2026
     </div>
   </div>
 </div>
-
 <div class="mop-overlay" id="mop-overlay" onclick="closeMopModal(event)">
   <div class="mop-modal" id="mop-modal">
     <div class="mop-modal-hdr">
@@ -1106,7 +1029,6 @@ body.light .glass {
   </div>
 </div>
 <div id="toast"></div>
-
 <script>
 /* ══ CONFIG ══ */
 const CFG = {
@@ -1453,6 +1375,37 @@ function renderTab(tab) {
   else if (tab==='instruktsii') renderInstruktsii();
 }
 
+// ==================== HELPER: дни в месяце / отработанные дни ====================
+function getDaysInMonth(suffix) {
+  const mm = parseInt(suffix.slice(0,2));
+  const yy = 2000 + parseInt(suffix.slice(2,4));
+  return new Date(yy, mm, 0).getDate();
+}
+function getWorkedDays(suffix) {
+  const mm = parseInt(suffix.slice(0,2));
+  const yy = 2000 + parseInt(suffix.slice(2,4));
+  const now = new Date();
+  const isCurrent = (now.getFullYear() === yy && now.getMonth()+1 === mm);
+  const daysInMonth = getDaysInMonth(suffix);
+  if (!isCurrent) return daysInMonth;
+  const today = now.getDate();
+  return Math.min(today, daysInMonth);
+}
+function computeDailyPlan(plan, fact, progNum, suffix) {
+  const daysInMonth = getDaysInMonth(suffix);
+  const worked = getWorkedDays(suffix);
+  // если месяц ещё не завершён и прогноз < 100% -> план догона
+  if (worked < daysInMonth && progNum < 100) {
+    const remainingDays = daysInMonth - worked;
+    if (remainingDays <= 0) return Math.ceil(plan / daysInMonth);
+    const need = plan - fact;
+    if (need <= 0) return 0;
+    return Math.ceil(need / remainingDays);
+  }
+  // иначе средний дневной план на весь месяц
+  return Math.ceil(plan / daysInMonth);
+}
+
 // ==================== RENDER OTCHET ====================
 function renderOtchet() {
   const floating = document.getElementById('floating-subtabs');
@@ -1644,6 +1597,9 @@ function renderOtchet() {
 
   const ranked = withProg.map(({ r, progNum }, idx) => {
     const name  = (r[0]||'—').toUpperCase();
+    const plan  = num(r[3]);
+    const fact  = num(r[7]);
+    const daily = computeDailyPlan(plan, fact, progNum, currentSuffix);
     const rplan = r[3]||'0', ost = r[4]||'0';
     const prc   = r[5]||'0%', prog = r[6]||'0%';
     const allV  = r[7]||'0';
@@ -1666,7 +1622,12 @@ function renderOtchet() {
 
     return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
       <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${medalBtn(idx)}</div><button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
-      <div class="mop-mini"><div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div><div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div><div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div></div>
+      <div class="mop-mini">
+        <div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
+        <div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div>
+        <div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div>
+        <div class="mm"><div class="ml">Дневной</div><div class="mv">${daily}</div></div>
+      </div>
       <div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:${rs.color}">${progNum}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(progNum,100)}%;background:${fillGrad}"></div></div></div>
     </div>`;
   }).join('');
@@ -1675,7 +1636,16 @@ function renderOtchet() {
     const name = (r[0]||'—').toUpperCase();
     const prog = r[6]||'0%';
     const p = parseFloat(prog.replace('%','').replace(',','.')) || 0;
-    return `<div class="mop" style="opacity:.65"><div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:rgba(128,128,128,.15);color:var(--txt3)">—</span><span class="mop-name">${name}</span></div></div><div class="mop-mini"><div class="mm"><div class="ml">Визиты</div><div class="mv">${r[7]||'0'}</div></div><div class="mm"><div class="ml">План</div><div class="mv">${r[3]||'0'}</div></div><div class="mm"><div class="ml">Остаток</div><div class="mv">${r[4]||'0'}</div></div></div><div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:var(--txt2)">${p}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(p,100)}%;background:var(--txt3)"></div></div></div></div>`;
+    const plan = num(r[3]), fact = num(r[7]);
+    const daily = computeDailyPlan(plan, fact, p, currentSuffix);
+    return `<div class="mop" style="opacity:.65"><div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:rgba(128,128,128,.15);color:var(--txt3)">—</span><span class="mop-name">${name}</span></div></div>
+      <div class="mop-mini">
+        <div class="mm"><div class="ml">Визиты</div><div class="mv">${r[7]||'0'}</div></div>
+        <div class="mm"><div class="ml">План</div><div class="mv">${r[3]||'0'}</div></div>
+        <div class="mm"><div class="ml">Остаток</div><div class="mv">${r[4]||'0'}</div></div>
+        <div class="mm"><div class="ml">Дневной</div><div class="mv">${daily}</div></div>
+      </div>
+      <div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:var(--txt2)">${p}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(p,100)}%;background:var(--txt3)"></div></div></div></div>`;
   }).join('');
 
   const mops_html = ranked + kotelHTML;
@@ -1724,6 +1694,9 @@ function renderDozhimCards() {
   const total = withProg.length;
   const cards = withProg.map(({ r, progNum }, idx) => {
     const name  = (r[0]||'—').toUpperCase();
+    const plan  = num(r[3]);
+    const fact  = num(r[7]);
+    const daily = computeDailyPlan(plan, fact, progNum, currentSuffix);
     const rplan = r[3]||'0', ost = r[4]||'0';
     const prc   = r[5]||'0%', prog = r[6]||'0%';
     const allV  = r[7]||'0';
@@ -1735,7 +1708,16 @@ function renderDozhimCards() {
       kred1000:r[12], nal1000:r[13], kom1000:r[14], zadatok:r[15],
       rs, medal: idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'', idx: idx+1
     }).replace(/'/g,"&#39;");
-    return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}"><div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${medalBtn(idx)}</div><button class="mop-info-btn" onclick="openDozhimModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div><div class="mop-mini"><div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div><div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div><div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div></div><div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:${rs.color}">${progNum}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(progNum,100)}%;background:${fillGrad}"></div></div></div></div>`;
+    return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
+      <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${medalBtn(idx)}</div><button class="mop-info-btn" onclick="openDozhimModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
+      <div class="mop-mini">
+        <div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
+        <div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div>
+        <div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div>
+        <div class="mm"><div class="ml">Дневной</div><div class="mv">${daily}</div></div>
+      </div>
+      <div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:${rs.color}">${progNum}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(progNum,100)}%;background:${fillGrad}"></div></div></div>
+    </div>`;
   }).join('');
   return `<div class="sec-title">Менеджеры дожима</div><div class="mops">${cards}</div>`;
 }
@@ -1962,13 +1944,13 @@ function renderInstruktsii() {
     if (!a && !b) return '';
     const text = b ? `${a} ${b}`.trim() : a;
     const aUp = a.toUpperCase();
-    if (aUp.startsWith('ЕСЛИ') && aUp.includes('ЗАЯВКА')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text} </tr>`;
-    if (aUp.startsWith('НО!') || aUp.startsWith('ЛЮБЫЕ')) return `<tr class="ndz-highlight"><td colspan="2">${text} </tr>`;
-    if (aUp.startsWith('АЛГОРИТМ ЗВОНКОВ')) return `<tr class="ndz-highlight"><td colspan="2">${text} </tr>`;
-    if (aUp.startsWith('ЕСЛИ')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text} </tr>`;
-    return `<tr><td colspan="2">${text}</td></tr>`;
+    if (aUp.startsWith('ЕСЛИ') && aUp.includes('ЗАЯВКА')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}  </tr>`;
+    if (aUp.startsWith('НО!') || aUp.startsWith('ЛЮБЫЕ')) return `<tr class="ndz-highlight"><td colspan="2">${text}  </tr>`;
+    if (aUp.startsWith('АЛГОРИТМ ЗВОНКОВ')) return `<tr class="ndz-highlight"><td colspan="2">${text}  </tr>`;
+    if (aUp.startsWith('ЕСЛИ')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}  </tr>`;
+    return `<tr><td colspan="2">${text}  </tr>`;
   }).filter(Boolean).join('');
-  const ndzBody = `<div class="mango-wrap"><table class="ndz-table"><tbody>${ndzHTML}</tbody></table></div>`;
+  const ndzBody = `<div class="mango-wrap"><table class="ndz-table"><tbody>${ndzHTML}</tbody>  table</div>`;
   el.innerHTML = `<div class="sec-title">Инструкции</div><div class="instr-block" id="ib-reglament"><div class="instr-hdr" onclick="toggleInstr('ib-reglament')"><h3>РЕГЛАМЕНТ КОРРЕКТНОГО ЗАКРЫТИЯ CRM ЗАЯВОК (ЛИДОВ)</h3><div class="instr-toggle">[+/-]</div></div><div class="instr-body">${reglamentBody}</div></div><div class="instr-block" id="ib-ndz"><div class="instr-hdr" onclick="toggleInstr('ib-ndz')"><h3>АЛГОРИТМ РАБОТЫ С НЕДОЗВОНАМИ</h3><div class="instr-toggle">[+/-]</div></div><div class="instr-body" style="padding:12px 14px">${ndzBody}</div></div>`;
 }
 
@@ -2032,7 +2014,7 @@ function setFaqTab(tab) {
 function renderMangoTab() {
   const mangoData = [['Барнаул','#9913'],['Красноярск','#1118'],['Кемерово','#1478'],['Новокузнецк','#1213'],['Новосибирск','#1516'],['Омск','#108'],['Оренбург','#11444'],['Пермь','#974'],['Сургут','#1811'],['Томск','#1417'],['Тюмень','#1512'],['Челябинск','#1612'],['АСЦ Пермь','239-26-26']];
   const rows = mangoData.map(([city, num]) => `更<td>${city}</td><td>${num}</td>`).join('');
-  return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th> </thead><tbody>${rows}</tbody> </table></div>`;
+  return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th> </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function closeMopModal(e) {
@@ -2173,13 +2155,10 @@ else init();
             target.innerText = originalText
                 .split("")
                 .map((char, index) => {
-                    // уже раскрытые символы
                     if (index < iteration) {
                         return originalText[index];
                     }
-                    // пробелы и запятые остаются без изменений
                     if (char === " " || char === ",") return char;
-                    // случайный символ из набора
                     return letters[Math.floor(Math.random() * letters.length)];
                 })
                 .join("");
@@ -2188,13 +2167,11 @@ else init();
                 clearInterval(interval);
             }
 
-            iteration += 1 / 2; // скорость проявления (можно менять)
-        }, 60); // частота мерцания
+            iteration += 1 / 2;
+        }, 60);
     }
 
-    // запуск каждые 10 секунд
     setInterval(startMatrixAnimation, 10000);
-    // первый запуск после загрузки страницы
     window.addEventListener("load", startMatrixAnimation);
 })();
 </script>

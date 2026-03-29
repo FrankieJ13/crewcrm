@@ -23,893 +23,279 @@ if ('serviceWorker' in navigator) {
 </script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
-html, body {
-  touch-action: pan-x pan-y;
-}
+html, body { touch-action: pan-x pan-y; }
 :root {
-  --bg:      #0d0d0d;
-  --bg2:     #141414;
-  --bg3:     #1c1c1c;
-  --line:    #252525;
-  --line2:   #2e2e2e;
-  --txt:     #f0f0f0;
-  --txt2:    #aaa;
-  --txt3:    #444;
-  --acc:     #e8ff47;
-  --acc-bg:  rgba(232,255,71,.08);
-  --acc-bdr: rgba(232,255,71,.25);
-  --red:     #ff4757;
-  --grn:     #2ed573;
-  --blu:     #1e90ff;
-  --org:     #ffa502;
-  --r:       10px;
-  --r2:      14px;
-  --m4-bg:   #1c1c1c;
+  --bg: #0d0d0d; --bg2: #141414; --bg3: #1c1c1c; --line: #252525; --line2: #2e2e2e;
+  --txt: #f0f0f0; --txt2: #aaa; --txt3: #444; --acc: #e8ff47; --acc-bg: rgba(232,255,71,.08);
+  --acc-bdr: rgba(232,255,71,.25); --red: #ff4757; --grn: #2ed573; --blu: #1e90ff; --org: #ffa502;
+  --r: 10px; --r2: 14px; --m4-bg: #1c1c1c;
 }
 body.light {
-  --bg:      #f3f3ee;
-  --bg2:     #ffffff;
-  --bg3:     #eaeae5;
-  --line:    #e0e0da;
-  --line2:   #d0d0ca;
-  --txt:     #111;
-  --txt2:    #666;
-  --txt3:    #aaa;
-  --acc:     #5137dd;
-  --acc-bg:  rgba(81,55,221,.12);
-  --acc-bdr: rgba(81,55,221,.4);
-  --red:     #d93535;
-  --grn:     #1a9e50;
-  --blu:     #1060cc;
-  --org:     #c97800;
-  --m4-bg:   #8a8a8a;
+  --bg: #f3f3ee; --bg2: #ffffff; --bg3: #eaeae5; --line: #e0e0da; --line2: #d0d0ca;
+  --txt: #111; --txt2: #666; --txt3: #aaa; --acc: #5137dd; --acc-bg: rgba(81,55,221,.12);
+  --acc-bdr: rgba(81,55,221,.4); --red: #d93535; --grn: #1a9e50; --blu: #1060cc; --org: #c97800; --m4-bg: #8a8a8a;
 }
-body.light .m4 .ml { color:#fff }
-body.light .m4 .mv { color:#fff }
-body.light .zp-n,
-body.light .zp-a,
-body.light .zp-banner .zv {
-  text-shadow: 0 2px 5px rgba(255,255,255,0.6);
-}
-body {
-  text-shadow: 0 1px 3px rgba(0,0,0,0.25);
-}
-body.light {
-  text-shadow: 0 1px 2px rgba(0,0,0,0.07);
-}
-input, button, svg, img, .logo-sq {
-  text-shadow: none;
-}
-*,*::before,*::after { box-sizing:border-box; margin:0; padding:0 }
-html,body {
-  height:100%;
-  margin:0;
-  padding:0;
-  background:var(--bg);
-  color:var(--txt);
-  font-family:'Golos Text',sans-serif;
-  font-size:14px;
-  line-height:1;
-  overflow-x:hidden;
-  transition:background .2s, color .2s;
-}
-::-webkit-scrollbar { width:3px; height:3px }
-::-webkit-scrollbar-track { background:transparent }
-::-webkit-scrollbar-thumb { background:var(--line2); border-radius:2px }
-#app {
-  display:flex;
-  flex-direction:column;
-  min-height:100vh;
-  position: relative;
-  z-index: 10;
-}
-main { flex:1; overflow-y:auto; position: relative; }
-.w {
-  width:100%;
-  max-width:720px;
-  margin:0 auto;
-  padding:0 16px;
-  box-sizing:border-box;
-}
-.scr { display:none; padding:0 0 10px 0; animation:up .2s ease }
-.scr.on { display:block }
-@keyframes up { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-header {
-  background:var(--bg); border-bottom:1px solid var(--line);
-  position:sticky; top:0; z-index:100; flex-shrink:0;
-}
-.hdr-inner {
-  max-width:720px;
-  margin:0 auto;
-  padding:0 20px;
-  height:52px;
-  display:flex; align-items:center; justify-content:space-between;
-}
-.hdr-left  { display:flex; align-items:center; gap:8px }
+body.light .m4 .ml, body.light .m4 .mv { color:#fff; }
+body.light .zp-n, body.light .zp-a, body.light .zp-banner .zv { text-shadow: 0 2px 5px rgba(255,255,255,0.6); }
+body { text-shadow: 0 1px 3px rgba(0,0,0,0.25); }
+body.light { text-shadow: 0 1px 2px rgba(0,0,0,0.07); }
+input, button, svg, img, .logo-sq { text-shadow: none; }
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html,body { height:100%; margin:0; padding:0; background:var(--bg); color:var(--txt); font-family:'Golos Text',sans-serif; font-size:14px; line-height:1; overflow-x:hidden; transition:background .2s, color .2s; }
+::-webkit-scrollbar { width:3px; height:3px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--line2); border-radius:2px; }
+#app { display:flex; flex-direction:column; min-height:100vh; position:relative; z-index:10; }
+main { flex:1; overflow-y:auto; position:relative; }
+.w { width:100%; max-width:720px; margin:0 auto; padding:0 16px; box-sizing:border-box; }
+.scr { display:none; padding:0 0 10px 0; animation:up .2s ease; }
+.scr.on { display:block; }
+@keyframes up { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
+header { background:var(--bg); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:100; flex-shrink:0; }
+.hdr-inner { max-width:720px; margin:0 auto; padding:0 20px; height:52px; display:flex; align-items:center; justify-content:space-between; }
+.hdr-left { display:flex; align-items:center; gap:8px; }
 .hdr-right { display:flex; align-items:center; gap:6px; position:relative; }
-.logo {
-  font-family:'Unbounded',sans-serif;
-  font-size:12px; font-weight:800; letter-spacing:.06em;
-  display:flex; align-items:center; gap:8px;
-  cursor:pointer;
-}
-.logo-sq {
-  width:22px; height:22px; border-radius:5px;
-  background:var(--acc);
-  display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:4px;
-}
-.logo-sq span { background:#000; border-radius:1px }
-.logo-sq span:last-child { opacity:.4 }
-.badge-month {
-  font-size:11px; padding:3px 9px; border-radius:20px;
-  background:var(--bg3); border:1px solid var(--line2);
-  color:var(--txt2); font-weight:500;
-  font-family: 'Unbounded', sans-serif;
-  cursor:pointer;
-  transition:background .2s, border-color .2s;
-}
-.badge-month:hover {
-  background:var(--acc-bg);
-  border-color:var(--acc);
-  color:var(--acc);
-}
-.month-dropdown {
-  position:absolute;
-  top:100%;
-  right:0;
-  margin-top:4px;
-  background:var(--bg2);
-  border:1px solid var(--line2);
-  border-radius:var(--r);
-  z-index:200;
-  min-width:140px;
-  display:none;
-  flex-direction:column;
-  box-shadow:0 8px 20px rgba(0,0,0,0.3);
-}
-.month-dropdown button {
-  background:none;
-  border:none;
-  padding:8px 12px;
-  text-align:left;
-  font-family:'Golos Text',sans-serif;
-  font-size:12px;
-  color:var(--txt);
-  cursor:pointer;
-  transition:background .1s;
-}
-.month-dropdown button:hover {
-  background:var(--bg3);
-  color:var(--acc);
-}
-.btn-icon {
-  width:30px; height:30px; border-radius:50%;
-  background:var(--bg3); border:1px solid var(--line2);
-  color:var(--txt2); cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  transition:border-color .15s, color .15s; flex-shrink:0;
-}
-.btn-icon:hover { border-color:var(--acc); color:var(--acc) }
-.btn-icon svg { width:14px; height:14px; pointer-events:none }
-#btn-out:hover { border-color:var(--red); color:var(--red) }
-.center-login-btn {
-  margin-top: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 20px;
-  border-radius: var(--r);
-  background: var(--acc);
-  color: #000;
-  border: none;
-  font-family: 'Unbounded', sans-serif;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .06em;
-  cursor: pointer;
-  transition: opacity .15s;
-  white-space: nowrap;
-}
-.center-login-btn:hover { opacity: .85; }
-.center-login-btn svg { width: 16px; height: 16px; }
-#user-wrap { display:none; align-items:center; gap:7px; font-size:12px; color:var(--txt2) }
-#user-avatar { width:28px; height:28px; border-radius:50%; border:1.5px solid var(--line2) }
-#user-name { display:none }
-.btn-out {
-  padding:5px 12px; border-radius:var(--r);
-  background:var(--bg3); border:1px solid var(--line2);
-  color:var(--txt2); font-family:'Golos Text',sans-serif;
-  font-size:12px; cursor:pointer; transition:all .15s;
-}
-.btn-out:hover { border-color:var(--red); color:var(--red) }
-nav {
-  background:var(--bg);
-  border-bottom:1px solid var(--line);
-  overflow-x:auto; flex-shrink:0;
-  position:sticky;
-  top:52px;
-  z-index:99;
-}
-nav::-webkit-scrollbar { height:0 }
-.nav-inner {
-  max-width:720px;
-  margin:0 auto;
-  padding:0 20px;
-  display:flex;
-}
-.tab {
-  padding:11px 16px; white-space:nowrap;
-  font-family:'Unbounded',sans-serif;
-  font-size:15px; font-weight:800; letter-spacing:.03em;
-  color:var(--txt3); background:none; border:none;
-  border-bottom:2px solid transparent;
-  cursor:pointer; transition:color .15s, border-color .15s;
-  display:flex; align-items:center; gap:5px;
-}
-.tab:hover { color:var(--txt2) }
-.tab.on { color:var(--acc); border-bottom-color:var(--acc) }
-.tab-dot { width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.5 }
-.gate {
-  display:flex; flex-direction:column; align-items:center;
-  justify-content:center; gap:14px; min-height:65vh;
-  text-align:center; padding:40px 20px;
-}
-.gate-icon {
-  width:56px; height:56px; border-radius:50%;
-  background:var(--bg3); border:1px solid var(--line2);
-  display:flex; align-items:center; justify-content:center; color:var(--txt3);
-}
-.gate-icon svg { width:24px; height:24px }
-.gate h2 { font-family:'Unbounded',sans-serif; font-size:15px; font-weight:800 }
-.sec-title {
-  font-family:'Unbounded',sans-serif;
-  font-size:10px; font-weight:800; letter-spacing:.1em;
-  text-transform:uppercase;
-  color:var(--acc);
-  margin-bottom:10px;
-  display:flex; align-items:center; gap:8px;
-}
-.sec-title::after { content:''; flex:1; height:1px; background:var(--line) }
-.loader {
-  display:flex; flex-direction:column; align-items:center;
-  justify-content:center; gap:12px; padding:60px 20px;
-  color:var(--txt2); font-size:13px;
-}
-.spin {
-  width:28px; height:28px;
-  border:2px solid var(--line2); border-top-color:var(--acc);
-  border-radius:50%; animation:spin .7s linear infinite;
-}
-@keyframes spin { to{transform:rotate(360deg)} }
-.err {
-  background:rgba(255,71,87,.08); border:1px solid rgba(255,71,87,.25);
-  border-radius:var(--r2); padding:14px; color:var(--red);
-  font-size:13px; margin-bottom:12px;
-}
-.empty { text-align:center; padding:48px 20px; color:var(--txt3); font-size:13px }
-#floating-subtabs,
-#floating-dohod-subtabs,
-#floating-faq-subtabs {
-  display: none;
-  position: sticky;
-  top: 90px;
-  background: var(--bg);
-  border-bottom: 1px solid var(--line);
-  z-index: 90;
-  width: 100%;
-}
-.report-subtabs, .faq-subtabs {
-  display:flex; justify-content:center; gap:16px;
-  padding:0 0 0px 0;
-}
-.report-subtab, .faq-subtab {
-  padding:6px 0; white-space:nowrap;
-  font-family:'Unbounded',sans-serif;
-  font-size:12px; font-weight:800; letter-spacing:.03em;
-  color:var(--txt3); background:none; border:none;
-  border-bottom:2px solid transparent;
-  cursor:pointer; transition:color .15s, border-color .15s;
-}
-.report-subtab.active, .faq-subtab.active {
-  color:var(--acc); border-bottom-color:var(--acc);
-}
-.dept-card, .mop, .zp-row {
-  position:relative;
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
-  border:1px solid rgba(255,255,255,0.15);
-  box-shadow:0 15px 35px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
-  transition:all 0.2s;
-}
-body.light .dept-card,
-body.light .mop,
-body.light .zp-row {
-  border-color:rgba(0,0,0,0.1);
-  box-shadow:0 10px 30px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.8);
-}
-.dept-card::before, .mop::before, .zp-row::before {
-  content:'';
-  position:absolute;
-  inset:0;
-  border-radius:inherit;
-  background: linear-gradient(120deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 30%, transparent 70%);
-  pointer-events:none;
-}
-.dept-card::after, .mop::after, .zp-row::after {
-  content:'';
-  position:absolute;
-  inset:0;
-  border-radius:inherit;
-  background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.2), transparent 50%),
-              radial-gradient(circle at 80% 80%, rgba(255,255,255,0.15), transparent 50%);
-  pointer-events:none;
-  opacity:0.6;
-}
-.mops { display:flex; flex-direction:column; gap:8px }
-.mop {
-  border-radius:var(--r2); padding:13px 14px;
-  background: rgba(var(--rank-r), var(--rank-g), var(--rank-b), 0.15);
-}
-body.light .mop {
-  background: rgba(var(--rank-r), var(--rank-g), var(--rank-b), 0.1);
-}
-.rank-badge {
-  display:inline-flex; align-items:center; justify-content:center;
-  width:22px; height:22px; border-radius:50%;
-  font-family:'Unbounded',sans-serif; font-size:9px; font-weight:900;
-  flex-shrink:0;
-}
-.mop-head {
-  display:flex; align-items:center;
-  justify-content:space-between; margin-bottom:12px;
-}
-.mop-head-left { display:flex; align-items:center; gap:7px }
-.mop-name {
-  font-family:'Unbounded',sans-serif;
-  font-weight:700; font-size:14px; text-transform:uppercase;
-}
-.mop-info-btn {
-  width:22px; height:22px; border-radius:50%;
-  border:1px solid var(--line2); background:var(--bg3);
-  color:var(--txt2); font-size:11px; font-weight:700;
-  font-style:italic; font-family:Georgia,serif;
-  cursor:pointer; display:flex; align-items:center; justify-content:center;
-  flex-shrink:0; transition:all .15s;
-}
-.mop-info-btn:hover { border-color:var(--acc); color:var(--acc) }
-.mop-mini {
-  display:grid; grid-template-columns:repeat(4,1fr);
-  gap:6px; margin-bottom:12px;
-}
-.mm {
-  background:rgba(255,255,255,0.05); border-radius:8px;
-  padding:8px; text-align:center;
-  backdrop-filter:blur(4px);
-}
+.logo { font-family:'Unbounded',sans-serif; font-size:12px; font-weight:800; letter-spacing:.06em; display:flex; align-items:center; gap:8px; cursor:pointer; }
+.logo-sq { width:22px; height:22px; border-radius:5px; background:var(--acc); display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:4px; }
+.logo-sq span { background:#000; border-radius:1px; }
+.logo-sq span:last-child { opacity:.4; }
+.badge-month { font-size:11px; padding:3px 9px; border-radius:20px; background:var(--bg3); border:1px solid var(--line2); color:var(--txt2); font-weight:500; font-family:'Unbounded',sans-serif; cursor:pointer; transition:background .2s, border-color .2s; }
+.badge-month:hover { background:var(--acc-bg); border-color:var(--acc); color:var(--acc); }
+.month-dropdown { position:absolute; top:100%; right:0; margin-top:4px; background:var(--bg2); border:1px solid var(--line2); border-radius:var(--r); z-index:200; min-width:140px; display:none; flex-direction:column; box-shadow:0 8px 20px rgba(0,0,0,0.3); }
+.month-dropdown button { background:none; border:none; padding:8px 12px; text-align:left; font-family:'Golos Text',sans-serif; font-size:12px; color:var(--txt); cursor:pointer; transition:background .1s; }
+.month-dropdown button:hover { background:var(--bg3); color:var(--acc); }
+.btn-icon { width:30px; height:30px; border-radius:50%; background:var(--bg3); border:1px solid var(--line2); color:var(--txt2); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:border-color .15s, color .15s; flex-shrink:0; }
+.btn-icon:hover { border-color:var(--acc); color:var(--acc); }
+.btn-icon svg { width:14px; height:14px; pointer-events:none; }
+#btn-out:hover { border-color:var(--red); color:var(--red); }
+.center-login-btn { margin-top:12px; display:inline-flex; align-items:center; gap:8px; padding:8px 20px; border-radius:var(--r); background:var(--acc); color:#000; border:none; font-family:'Unbounded',sans-serif; font-size:11px; font-weight:800; letter-spacing:.06em; cursor:pointer; transition:opacity .15s; white-space:nowrap; }
+.center-login-btn:hover { opacity:.85; }
+.center-login-btn svg { width:16px; height:16px; }
+#user-wrap { display:none; align-items:center; gap:7px; font-size:12px; color:var(--txt2); cursor:pointer; }
+#user-avatar { width:28px; height:28px; border-radius:50%; border:1.5px solid var(--line2); }
+#user-name { display:none; }
+.btn-out { padding:5px 12px; border-radius:var(--r); background:var(--bg3); border:1px solid var(--line2); color:var(--txt2); font-family:'Golos Text',sans-serif; font-size:12px; cursor:pointer; transition:all .15s; }
+.btn-out:hover { border-color:var(--red); color:var(--red); }
+nav { background:var(--bg); border-bottom:1px solid var(--line); overflow-x:auto; flex-shrink:0; position:sticky; top:52px; z-index:99; }
+nav::-webkit-scrollbar { height:0; }
+.nav-inner { max-width:720px; margin:0 auto; padding:0 20px; display:flex; }
+.tab { padding:11px 16px; white-space:nowrap; font-family:'Unbounded',sans-serif; font-size:15px; font-weight:800; letter-spacing:.03em; color:var(--txt3); background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; transition:color .15s, border-color .15s; display:flex; align-items:center; gap:5px; }
+.tab:hover { color:var(--txt2); }
+.tab.on { color:var(--acc); border-bottom-color:var(--acc); }
+.tab-dot { width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.5; }
+.gate { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; min-height:65vh; text-align:center; padding:40px 20px; }
+.gate-icon { width:56px; height:56px; border-radius:50%; background:var(--bg3); border:1px solid var(--line2); display:flex; align-items:center; justify-content:center; color:var(--txt3); }
+.gate-icon svg { width:24px; height:24px; }
+.gate h2 { font-family:'Unbounded',sans-serif; font-size:15px; font-weight:800; }
+.sec-title { font-family:'Unbounded',sans-serif; font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--acc); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+.sec-title::after { content:''; flex:1; height:1px; background:var(--line); }
+.loader { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:60px 20px; color:var(--txt2); font-size:13px; }
+.spin { width:28px; height:28px; border:2px solid var(--line2); border-top-color:var(--acc); border-radius:50%; animation:spin .7s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg);} }
+.err { background:rgba(255,71,87,.08); border:1px solid rgba(255,71,87,.25); border-radius:var(--r2); padding:14px; color:var(--red); font-size:13px; margin-bottom:12px; }
+.empty { text-align:center; padding:48px 20px; color:var(--txt3); font-size:13px; }
+#floating-subtabs, #floating-dohod-subtabs, #floating-faq-subtabs { display:none; position:sticky; top:90px; background:var(--bg); border-bottom:1px solid var(--line); z-index:90; width:100%; }
+.report-subtabs, .faq-subtabs { display:flex; justify-content:center; gap:16px; padding:0; }
+.report-subtab, .faq-subtab { padding:6px 0; white-space:nowrap; font-family:'Unbounded',sans-serif; font-size:12px; font-weight:800; letter-spacing:.03em; color:var(--txt3); background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; transition:color .15s, border-color .15s; }
+.report-subtab.active, .faq-subtab.active { color:var(--acc); border-bottom-color:var(--acc); }
+.dept-card, .mop, .zp-row { position:relative; backdrop-filter:blur(12px) saturate(180%); -webkit-backdrop-filter:blur(12px) saturate(180%); border:1px solid rgba(255,255,255,0.15); box-shadow:0 15px 35px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1); transition:all 0.2s; }
+body.light .dept-card, body.light .mop, body.light .zp-row { border-color:rgba(0,0,0,0.1); box-shadow:0 10px 30px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.8); }
+.dept-card::before, .mop::before, .zp-row::before { content:''; position:absolute; inset:0; border-radius:inherit; background:linear-gradient(120deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 30%, transparent 70%); pointer-events:none; }
+.dept-card::after, .mop::after, .zp-row::after { content:''; position:absolute; inset:0; border-radius:inherit; background:radial-gradient(circle at 20% 20%, rgba(255,255,255,0.2), transparent 50%), radial-gradient(circle at 80% 80%, rgba(255,255,255,0.15), transparent 50%); pointer-events:none; opacity:0.6; }
+.mops { display:flex; flex-direction:column; gap:8px; }
+.mop { border-radius:var(--r2); padding:13px 14px; background:rgba(var(--rank-r), var(--rank-g), var(--rank-b), 0.15); }
+body.light .mop { background:rgba(var(--rank-r), var(--rank-g), var(--rank-b), 0.1); }
+.rank-badge { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; font-family:'Unbounded',sans-serif; font-size:9px; font-weight:900; flex-shrink:0; }
+.mop-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.mop-head-left { display:flex; align-items:center; gap:7px; }
+.mop-name { font-family:'Unbounded',sans-serif; font-weight:700; font-size:14px; text-transform:uppercase; }
+.mop-info-btn { width:22px; height:22px; border-radius:50%; border:1px solid var(--line2); background:var(--bg3); color:var(--txt2); font-size:11px; font-weight:700; font-style:italic; font-family:Georgia,serif; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .15s; }
+.mop-info-btn:hover { border-color:var(--acc); color:var(--acc); }
+.mop-mini { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:12px; }
+.mm { background:rgba(255,255,255,0.05); border-radius:8px; padding:8px; text-align:center; backdrop-filter:blur(4px); }
 body.light .mm { background:rgba(0,0,0,0.03); }
-.mm .ml { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px }
+.mm .ml { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px; }
 .mm .mv { font-family:'Unbounded',sans-serif; font-size:14px; font-weight:800; color:var(--txt); }
 .mop-prog { position:relative; }
-.mop-prog-labels {
-  display:flex; justify-content:space-between;
-  font-size:10px; margin-bottom:5px;
-}
+.mop-prog-labels { display:flex; justify-content:space-between; font-size:10px; margin-bottom:5px; }
 .mop-prog-labels .cur { font-weight:700; }
-.mop-prog-labels .end { color:var(--txt2) }
-.mop-prog-track {
-  height:7px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;
-}
-.mop-prog-fill {
-  height:100%; border-radius:4px;
-  transition:width .7s ease;
-}
+.mop-prog-labels .end { color:var(--txt2); }
+.mop-prog-track { height:7px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden; }
+.mop-prog-fill { height:100%; border-radius:4px; transition:width .7s ease; }
 .modal-sec { margin-bottom:14px; }
-.modal-sec-title {
-  font-family:'Unbounded',sans-serif;
-  font-size:9px; font-weight:800; letter-spacing:.1em;
-  color:var(--acc);
-  margin-bottom:8px;
-  display:flex; align-items:center; gap:8px;
-}
-.modal-sec-title::after { content:''; flex:1; height:1px; background:var(--line2) }
-.modal-grid {
-  display:grid; gap:6px;
-  grid-template-columns:repeat(auto-fill, minmax(72px, 1fr));
-}
-.modal-cell {
-  background:rgba(255,255,255,0.05); border-radius:8px;
-  padding:8px 6px; text-align:center;
-  backdrop-filter:blur(4px);
-}
+.modal-sec-title { font-family:'Unbounded',sans-serif; font-size:9px; font-weight:800; letter-spacing:.1em; color:var(--acc); margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+.modal-sec-title::after { content:''; flex:1; height:1px; background:var(--line2); }
+.modal-grid { display:grid; gap:6px; grid-template-columns:repeat(auto-fill, minmax(72px,1fr)); }
+.modal-cell { background:rgba(255,255,255,0.05); border-radius:8px; padding:8px 6px; text-align:center; backdrop-filter:blur(4px); }
 body.light .modal-cell { background:rgba(0,0,0,0.03); }
-.modal-cell .mc-l {
-  font-size:9px; color:var(--txt2);
-  text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px;
-}
-.modal-cell .mc-v {
-  font-family:'Unbounded',sans-serif;
-  font-size:14px; font-weight:800; color:var(--txt);
-}
-.mop-overlay {
-  display:none; position:fixed; inset:0;
-  background:rgba(0,0,0,.75); backdrop-filter:blur(6px);
-  z-index:500; align-items:center; justify-content:center;
-  padding:16px;
-}
-.mop-overlay.open { display:flex; animation:mFade .2s ease }
-@keyframes mFade { from{opacity:0} to{opacity:1} }
-.mop-modal {
-  background: transparent;
-  border:1px solid rgba(255,255,255,0.2);
-  border-radius:var(--r2);
-  width:100%; max-width:460px;
-  display: flex;
-  flex-direction: column;
-  animation:mUp .22s ease;
-  position:relative;
-}
-body.light .mop-modal {
-  border-color: rgba(0,0,0,0.2);
-}
-.mop-modal-body {
-  background:rgba(18,18,18,0.55);
-  backdrop-filter: blur(25px) saturate(180%);
-  border-radius:inherit;
-  overflow-y: auto;
-  max-height: 86vh;
-  position: relative;
-  box-shadow:0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
-}
-.mop-modal-body::before {
-  content:''; position:absolute; inset:0; border-radius:inherit;
-  background: linear-gradient(120deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.15) 30%, rgba(255,255,255,0.05) 60%, transparent 100%);
-  pointer-events:none;
-}
-.mop-modal-body::after {
-  content:''; position:absolute; inset:0; border-radius:inherit;
-  background: radial-gradient(circle at 20% 10%, rgba(255,255,255,0.25), transparent 40%),
-              radial-gradient(circle at 80% 90%, rgba(255,255,255,0.15), transparent 50%);
-  pointer-events:none; opacity:.6;
-}
-body.light .mop-modal-body {
-  background: rgba(255,255,255,0.55);
-}
-@keyframes mUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
-.mop-modal-hdr {
-  background:transparent; backdrop-filter: blur(10px);
-  display:flex; align-items:center; justify-content:space-between;
-  padding:13px 16px; border-bottom:1px solid var(--line);
-  position:sticky; top:0; z-index:2;
-}
-.mop-modal-title {
-  display:flex; align-items:center; gap:8px;
-  font-family:'Unbounded',sans-serif; font-size:11px; font-weight:800;
-}
-.mop-modal-close {
-  width:28px; height:28px; border-radius:50%;
-  border:1px solid var(--line2); background:var(--bg3);
-  color:var(--txt2); font-size:18px; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  transition:all .15s; flex-shrink:0; line-height:1;
-}
-.mop-modal-close:hover { border-color:var(--red); color:var(--red) }
+.modal-cell .mc-l { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px; }
+.modal-cell .mc-v { font-family:'Unbounded',sans-serif; font-size:14px; font-weight:800; color:var(--txt); }
+.mop-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); backdrop-filter:blur(6px); z-index:500; align-items:center; justify-content:center; padding:16px; }
+.mop-overlay.open { display:flex; animation:mFade .2s ease; }
+@keyframes mFade { from{opacity:0;} to{opacity:1;} }
+.mop-modal { background:transparent; border:1px solid rgba(255,255,255,0.2); border-radius:var(--r2); width:100%; max-width:460px; display:flex; flex-direction:column; animation:mUp .22s ease; position:relative; }
+body.light .mop-modal { border-color:rgba(0,0,0,0.2); }
+.mop-modal-body { background:rgba(18,18,18,0.55); backdrop-filter:blur(25px) saturate(180%); border-radius:inherit; overflow-y:auto; max-height:86vh; position:relative; box-shadow:0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.25); }
+.mop-modal-body::before { content:''; position:absolute; inset:0; border-radius:inherit; background:linear-gradient(120deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.15) 30%, rgba(255,255,255,0.05) 60%, transparent 100%); pointer-events:none; }
+.mop-modal-body::after { content:''; position:absolute; inset:0; border-radius:inherit; background:radial-gradient(circle at 20% 10%, rgba(255,255,255,0.25), transparent 40%), radial-gradient(circle at 80% 90%, rgba(255,255,255,0.15), transparent 50%); pointer-events:none; opacity:.6; }
+body.light .mop-modal-body { background:rgba(255,255,255,0.55); }
+@keyframes mUp { from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:translateY(0);} }
+.mop-modal-hdr { background:transparent; backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:space-between; padding:13px 16px; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:2; }
+.mop-modal-title { display:flex; align-items:center; gap:8px; font-family:'Unbounded',sans-serif; font-size:11px; font-weight:800; }
+.mop-modal-close { width:28px; height:28px; border-radius:50%; border:1px solid var(--line2); background:var(--bg3); color:var(--txt2); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .15s; flex-shrink:0; line-height:1; }
+.mop-modal-close:hover { border-color:var(--red); color:var(--red); }
 .mop-modal-body { padding:14px 16px; }
-.mop-grid4 {
-  display:grid; grid-template-columns:repeat(4,1fr);
-  gap:6px; margin-bottom:12px;
-}
-.m4 { background:rgba(255,255,255,0.05); border-radius:8px; padding:7px; text-align:center }
-.m4 .ml { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px }
-.m4 .mv { font-family:'Unbounded',sans-serif; font-size:12px; font-weight:700 }
-.prog-row { display:flex; align-items:center; gap:8px; margin-bottom:12px }
-.prog-l { font-size:11px; color:var(--txt2); width:42px; text-align:right; flex-shrink:0 }
-.prog-track { flex:1; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden }
-.prog-fill { height:100%; border-radius:2px; transition:width .6s ease }
-.prog-r { font-size:11px; font-weight:600; width:38px; text-align:right; flex-shrink:0 }
-.chips-wrap { display:flex; flex-direction:column; gap:5px }
-.chips-row { display:flex; flex-wrap:wrap; gap:5px }
-.chip {
-  font-size:10px; padding:3px 8px; border-radius:6px;
-  background:rgba(255,255,255,0.05); border:1px solid var(--line);
-  color:var(--txt2); display:flex; align-items:center; gap:3px;
-}
-.chip strong { color:var(--txt); font-size:11px }
-.chip.c800  { border-color:rgba(30,144,255,.3) }
-.chip.c1200 { border-color:rgba(255,165,2,.3) }
-@media(max-width:480px) {
-  .mop-grid4 { grid-template-columns:repeat(2,1fr) }
-  .mop-mini { grid-template-columns:repeat(2,1fr); }
-}
-.dept-card {
-  background: rgba(var(--acc-r), var(--acc-g), var(--acc-b), 0.08);
-  border:1px solid var(--acc-bdr);
-  border-radius:var(--r2); padding:14px 16px;
-  margin-bottom:16px;
-}
-.dept-title {
-  font-family:'Unbounded',sans-serif;
-  font-size:10px; font-weight:800; letter-spacing:.1em;
-  color:var(--acc);
-  margin-bottom:12px;
-  display:flex; align-items:center; gap:8px;
-}
-.dept-title::after { content:''; flex:1; height:1px; background:var(--acc-bdr) }
-.dept-row1, .dept-row2 {
-  display:grid; gap:8px; margin-bottom:8px;
-}
-.dept-row1 { grid-template-columns:repeat(3,1fr) }
-.dept-row2 { grid-template-columns:repeat(3,1fr); margin-bottom:0 }
-.dept-row3 {
-  display:grid; gap:8px; margin-bottom:0;
-  grid-template-columns:repeat(3,1fr);
-}
-.dept-sec-lbl {
-  font-family:'Unbounded',sans-serif;
-  font-size:8px; font-weight:800; letter-spacing:.08em;
-  color:var(--acc); text-transform:uppercase;
-  margin:10px 0 6px; padding-left:2px;
-}
-.mango-wrap {
-  border:1px solid var(--line); border-radius:var(--r2);
-  overflow:hidden;
-}
-.mango-table {
-  width:100%; border-collapse:collapse; font-size:13px;
-}
-.mango-table th {
-  background:var(--acc); color:#000;
-  padding:10px 14px; text-align:left;
-  font-family:'Unbounded',sans-serif; font-size:10px;
-  font-weight:800; letter-spacing:.06em;
-}
-.mango-table td {
-  padding:10px 14px; border-bottom:1px solid var(--line);
-  color:var(--txt);
-}
-.mango-table tr:nth-child(even) td { background:var(--bg3) }
-.mango-table tr:nth-child(odd) td { background:var(--bg2) }
-.mango-table tr:last-child td { border-bottom:none }
-.mango-table td:last-child {
-  font-family:'Unbounded',sans-serif; font-weight:700;
-  color:var(--acc);
-}
-.dept-cell {
-  background:rgba(255,255,255,0.05); border-radius:8px;
-  padding:10px 12px; text-align:center;
-  backdrop-filter:blur(4px);
-}
+.mop-grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:12px; }
+.m4 { background:rgba(255,255,255,0.05); border-radius:8px; padding:7px; text-align:center; }
+.m4 .ml { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px; }
+.m4 .mv { font-family:'Unbounded',sans-serif; font-size:12px; font-weight:700; }
+.prog-row { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+.prog-l { font-size:11px; color:var(--txt2); width:42px; text-align:right; flex-shrink:0; }
+.prog-track { flex:1; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden; }
+.prog-fill { height:100%; border-radius:2px; transition:width .6s ease; }
+.prog-r { font-size:11px; font-weight:600; width:38px; text-align:right; flex-shrink:0; }
+.chips-wrap { display:flex; flex-direction:column; gap:5px; }
+.chips-row { display:flex; flex-wrap:wrap; gap:5px; }
+.chip { font-size:10px; padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid var(--line); color:var(--txt2); display:flex; align-items:center; gap:3px; }
+.chip strong { color:var(--txt); font-size:11px; }
+.chip.c800 { border-color:rgba(30,144,255,.3); }
+.chip.c1200 { border-color:rgba(255,165,2,.3); }
+@media(max-width:480px) { .mop-grid4 { grid-template-columns:repeat(2,1fr); } .mop-mini { grid-template-columns:repeat(2,1fr); } }
+.dept-card { background:rgba(var(--acc-r), var(--acc-g), var(--acc-b), 0.08); border:1px solid var(--acc-bdr); border-radius:var(--r2); padding:14px 16px; margin-bottom:16px; }
+.dept-title { font-family:'Unbounded',sans-serif; font-size:10px; font-weight:800; letter-spacing:.1em; color:var(--acc); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+.dept-title::after { content:''; flex:1; height:1px; background:var(--acc-bdr); }
+.dept-row1, .dept-row2 { display:grid; gap:8px; margin-bottom:8px; }
+.dept-row1 { grid-template-columns:repeat(3,1fr); }
+.dept-row2 { grid-template-columns:repeat(3,1fr); margin-bottom:0; }
+.dept-row3 { display:grid; gap:8px; margin-bottom:0; grid-template-columns:repeat(3,1fr); }
+.dept-sec-lbl { font-family:'Unbounded',sans-serif; font-size:8px; font-weight:800; letter-spacing:.08em; color:var(--acc); text-transform:uppercase; margin:10px 0 6px; padding-left:2px; }
+.mango-wrap { border:1px solid var(--line); border-radius:var(--r2); overflow:hidden; }
+.mango-table { width:100%; border-collapse:collapse; font-size:13px; }
+.mango-table th { background:var(--acc); color:#000; padding:10px 14px; text-align:left; font-family:'Unbounded',sans-serif; font-size:10px; font-weight:800; letter-spacing:.06em; }
+.mango-table td { padding:10px 14px; border-bottom:1px solid var(--line); color:var(--txt); }
+.mango-table tr:nth-child(even) td { background:var(--bg3); }
+.mango-table tr:nth-child(odd) td { background:var(--bg2); }
+.mango-table tr:last-child td { border-bottom:none; }
+.mango-table td:last-child { font-family:'Unbounded',sans-serif; font-weight:700; color:var(--acc); }
+.dept-cell { background:rgba(255,255,255,0.05); border-radius:8px; padding:10px 12px; text-align:center; backdrop-filter:blur(4px); }
 body.light .dept-cell { background:rgba(0,0,0,0.02); }
-.dept-cell .dc-lbl {
-  font-size:9px; color:var(--txt2);
-  text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px;
-}
-.dept-cell .dc-val {
-  font-family:'Unbounded',sans-serif;
-  font-size:16px; font-weight:800; letter-spacing:-.02em;
-  color:var(--txt);
-}
+.dept-cell .dc-lbl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; }
+.dept-cell .dc-val { font-family:'Unbounded',sans-serif; font-size:16px; font-weight:800; letter-spacing:-.02em; color:var(--txt); }
 .dept-cell.hi .dc-val { color:var(--txt); }
-.speedo-grid {
-  display:grid; grid-template-columns:repeat(3, 1fr);
-  gap:10px; margin-top:5px;
-}
+.speedo-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:5px; }
 .speedo-item { text-align:center; }
-.speedo-svg-container {
-  position:relative;
-  width:100%;
-  max-width:100px;
-  margin:0 auto;
-  background: transparent;
-  backdrop-filter: none;
-}
-.speedo-svg-container svg {
-  width:100%; height:auto; display:block;
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
-}
-.speedo-value {
-  position:absolute; top:50%; left:50%;
-  transform:translate(-50%, -50%);
-  font-family:'Unbounded',sans-serif;
-  font-size:11px; font-weight:900; color:var(--txt); line-height:1;
-}
-.speedo-visits {
-  position:absolute; top:85%; left:50%;
-  transform:translate(-50%, -50%);
-  font-family:'Unbounded',sans-serif;
-  font-size:14px; font-weight:800; color:var(--txt); white-space:nowrap;
-}
-.speedo-conv {
-  position:absolute; top:63%; left:50%;
-  transform:translate(-50%, -50%);
-  font-family:'Unbounded',sans-serif;
-  font-size:9px; font-weight:600; color:var(--txt2); white-space:nowrap;
-}
+.speedo-svg-container { position:relative; width:100%; max-width:100px; margin:0 auto; background:transparent; backdrop-filter:none; }
+.speedo-svg-container svg { width:100%; height:auto; display:block; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+.speedo-value { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-family:'Unbounded',sans-serif; font-size:11px; font-weight:900; color:var(--txt); line-height:1; }
+.speedo-visits { position:absolute; top:85%; left:50%; transform:translate(-50%,-50%); font-family:'Unbounded',sans-serif; font-size:14px; font-weight:800; color:var(--txt); white-space:nowrap; }
+.speedo-conv { position:absolute; top:63%; left:50%; transform:translate(-50%,-50%); font-family:'Unbounded',sans-serif; font-size:9px; font-weight:600; color:var(--txt2); white-space:nowrap; }
 .inner-base-path { fill:none; stroke:rgba(255,255,255,0.12); stroke-width:14; stroke-linecap:round; }
 .inner-progress-path { fill:none; stroke-width:14; stroke-linecap:round; stroke:url(#speedGradient); }
-.speedo-name {
-  font-family:'Unbounded',sans-serif;
-  font-size:9px; font-weight:700;
-  margin-top:0px; text-transform:uppercase; color:var(--txt2);
-}
+.speedo-name { font-family:'Unbounded',sans-serif; font-size:9px; font-weight:700; margin-top:0; text-transform:uppercase; color:var(--txt2); }
 .base-path { fill:none; stroke:rgba(255,255,255,0.15); stroke-width:20; stroke-linecap:round; }
 .progress-path { fill:none; stroke-width:20; stroke-linecap:round; stroke:url(#speedGradient); }
 body.light .base-path { stroke:rgba(0,0,0,0.1); }
 body.light .inner-base-path { stroke:rgba(0,0,0,0.08); }
-@media(max-width:480px) {
-  .speedo-grid { grid-template-columns:repeat(3,1fr); }
-}
-.totals-box {
-  background:rgba(255,255,255,0.05); border:1px solid var(--line2);
-  border-radius:var(--r2); padding:13px 14px; margin-top:14px;
-  backdrop-filter:blur(8px);
-}
-.totals-lbl {
-  font-family:'Unbounded',sans-serif;
-  font-size:9px; font-weight:800; letter-spacing:.08em;
-  color:var(--txt2); margin-bottom:8px;
-}
-.totals-row { display:flex; flex-wrap:wrap; gap:7px }
-.ti {
-  background:rgba(255,255,255,0.05); border-radius:8px;
-  padding:7px 11px; min-width:75px;
-  display:flex; flex-direction:column; gap:2px;
-  backdrop-filter:blur(4px);
-}
-.ti .tl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em }
-.ti .tv { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:700 }
-.zp-banner {
-  border-radius:var(--r2); padding:18px;
-  text-align:center; margin-bottom:16px;
-  backdrop-filter:blur(8px);
-  border:1px solid var(--acc-bdr);
-}
-.zp-banner .zl { font-size:10px; color:var(--txt2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px }
-.zp-banner .zv {
-  font-family:'Unbounded',sans-serif;
-  font-size:30px;
-  font-weight:900;
-  color:var(--acc);
-  letter-spacing:-.02em;
-}
-.zp-list { display:flex; flex-direction:column; gap:8px }
-.zp-n  {
-  font-family:'Unbounded',sans-serif;
-  font-weight:700; font-size:13px;
-  flex-shrink:0; min-width:80px;
-  text-transform:uppercase;
-}
-.zp-row {
-  display:flex; flex-direction:column;
-  border-radius:var(--r2); padding:13px 16px;
-  background: rgba(var(--rank-r), var(--rank-g), var(--rank-b), 0.15);
-}
-body.light .zp-row {
-  background: rgba(var(--rank-r), var(--rank-g), var(--rank-b), 0.1);
-}
-.zp-row:last-child { border-bottom:1px solid var(--line) }
+@media(max-width:480px) { .speedo-grid { grid-template-columns:repeat(3,1fr); } }
+.totals-box { background:rgba(255,255,255,0.05); border:1px solid var(--line2); border-radius:var(--r2); padding:13px 14px; margin-top:14px; backdrop-filter:blur(8px); }
+.totals-lbl { font-family:'Unbounded',sans-serif; font-size:9px; font-weight:800; letter-spacing:.08em; color:var(--txt2); margin-bottom:8px; }
+.totals-row { display:flex; flex-wrap:wrap; gap:7px; }
+.ti { background:rgba(255,255,255,0.05); border-radius:8px; padding:7px 11px; min-width:75px; display:flex; flex-direction:column; gap:2px; backdrop-filter:blur(4px); }
+.ti .tl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; }
+.ti .tv { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:700; }
+.zp-banner { border-radius:var(--r2); padding:18px; text-align:center; margin-bottom:16px; backdrop-filter:blur(8px); border:1px solid var(--acc-bdr); }
+.zp-banner .zl { font-size:10px; color:var(--txt2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px; }
+.zp-banner .zv { font-family:'Unbounded',sans-serif; font-size:30px; font-weight:900; color:var(--acc); letter-spacing:-.02em; }
+.zp-list { display:flex; flex-direction:column; gap:8px; }
+.zp-n { font-family:'Unbounded',sans-serif; font-weight:700; font-size:13px; flex-shrink:0; min-width:80px; text-transform:uppercase; }
+.zp-row { display:flex; flex-direction:column; border-radius:var(--r2); padding:13px 16px; background:rgba(var(--rank-r), var(--rank-g), var(--rank-b), 0.15); }
+body.light .zp-row { background:rgba(var(--rank-r), var(--rank-g), var(--rank-b), 0.1); }
+.zp-row:last-child { border-bottom:1px solid var(--line); }
 .zp-bg { flex:1; height:3px; background:rgba(255,255,255,0.2); border-radius:2px; overflow:hidden; margin:8px 0 4px; }
 .zp-fill { height:100%; border-radius:2px; transition:width .7s ease; }
-.zp-a {
-  font-family:'Unbounded',sans-serif;
-  font-size:13px; font-weight:700;
-  flex-shrink:0; text-align:right;
-}
-.medal-btn {
-  background:none; border:none; padding:0;
-  cursor:pointer; font-size:inherit; line-height:1;
-  display:inline-flex; align-items:center;
-  transition:transform .15s;
-  margin-left: 2px;
-}
+.zp-a { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:700; flex-shrink:0; text-align:right; }
+.medal-btn { background:none; border:none; padding:0; cursor:pointer; font-size:inherit; line-height:1; display:inline-flex; align-items:center; transition:transform .15s; margin-left:2px; }
 .medal-btn:hover { transform:scale(1.25); }
-#scr-grafik { padding-top:0 }
-#scr-grafik .w { padding-top:8px }
-.sched-nav {
-  display:flex; align-items:center; justify-content:space-between;
-  padding-top:10px; margin-bottom:10px; gap:12px;
-}
-.sched-nav-title {
-  font-family:'Unbounded',sans-serif;
-  font-size:12px; font-weight:800; color:var(--txt);
-  text-align:center; flex:1;
-}
-.sched-nav-btn {
-  width:34px; height:34px; border-radius:50%;
-  background:var(--bg3); border:1px solid var(--line2);
-  color:var(--txt2); font-size:18px; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  transition:all .15s; flex-shrink:0; line-height:1;
-}
-.sched-nav-btn:hover { border-color:var(--acc); color:var(--acc) }
-.sched-nav-btn:disabled { opacity:.3; cursor:default; pointer-events:none }
-.sched-week {
-  display:grid; grid-template-columns:repeat(7,1fr); gap:4px;
-}
-.sched-day-hdr {
-  text-align:center; padding:6px 2px;
-  background:var(--bg3); border-radius:8px;
-}
-.sched-day-hdr .sd-num {
-  font-family:'Unbounded',sans-serif;
-  font-size:13px; font-weight:800; line-height:1;
-}
-.sched-day-hdr .sd-dow {
-  font-size:9px; color:var(--txt2);
-  text-transform:uppercase; letter-spacing:.05em; margin-top:2px;
-}
-.sd-workers {
-  font-family:'Unbounded',sans-serif;
-  font-size:10px; font-weight:700; color:var(--acc);
-  margin-top:3px; border-top:1px solid var(--line);
-  padding-top:3px;
-}
+#scr-grafik { padding-top:0; }
+#scr-grafik .w { padding-top:8px; }
+.sched-nav { display:flex; align-items:center; justify-content:space-between; padding-top:10px; margin-bottom:10px; gap:12px; }
+.sched-nav-title { font-family:'Unbounded',sans-serif; font-size:12px; font-weight:800; color:var(--txt); text-align:center; flex:1; }
+.sched-nav-btn { width:34px; height:34px; border-radius:50%; background:var(--bg3); border:1px solid var(--line2); color:var(--txt2); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .15s; flex-shrink:0; line-height:1; }
+.sched-nav-btn:hover { border-color:var(--acc); color:var(--acc); }
+.sched-nav-btn:disabled { opacity:.3; cursor:default; pointer-events:none; }
+.sched-week { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+.sched-day-hdr { text-align:center; padding:6px 2px; background:var(--bg3); border-radius:8px; }
+.sched-day-hdr .sd-num { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:800; line-height:1; }
+.sched-day-hdr .sd-dow { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.05em; margin-top:2px; }
+.sd-workers { font-family:'Unbounded',sans-serif; font-size:10px; font-weight:700; color:var(--acc); margin-top:3px; border-top:1px solid var(--line); padding-top:3px; }
 .sched-day-hdr.today { background:var(--acc-bg); border:1px solid var(--acc-bdr); }
-.sched-day-hdr.today .sd-num { color:var(--acc) }
-.sched-day-hdr.today .sd-dow { color:var(--acc) }
-.sched-day-hdr.today .sd-workers { color:var(--acc) }
-.sched-group-title {
-  font-family:'Unbounded',sans-serif;
-  font-size:10px; font-weight:800; letter-spacing:.1em;
-  color:var(--acc); margin:14px 0 8px;
-  display:flex; align-items:center; gap:8px;
-}
-.sched-group-title::after { content:''; flex:1; height:1px; background:var(--line) }
-.sched-person {
-  background:var(--bg2); border:1px solid var(--line);
-  border-radius:var(--r2); margin-bottom:8px; overflow:hidden;
-}
-.sched-person-name {
-  font-family:'Unbounded',sans-serif;
-  font-size:11px; font-weight:700;
-  padding:10px 14px 8px;
-  border-bottom:1px solid var(--line); color:var(--txt);
-}
-.sched-cells {
-  display:grid; grid-template-columns:repeat(7,1fr);
-  gap:4px; padding:8px;
-}
-.sched-cell {
-  text-align:center; padding:8px 2px;
-  border-radius:6px; font-size:12px; font-weight:600;
-  min-height:36px; display:flex; align-items:center; justify-content:center;
-}
-.sched-cell.dr  { background:rgba(46,213,115,.12); color:var(--grn) }
-.sched-cell.dv  { background:rgba(255,71,87,.12);  color:var(--red) }
-.sched-cell.dvs { background:rgba(130,130,130,.1); color:var(--txt3) }
-.sched-cell.empty { color:var(--txt3); opacity:.4 }
+.sched-day-hdr.today .sd-num { color:var(--acc); }
+.sched-day-hdr.today .sd-dow { color:var(--acc); }
+.sched-day-hdr.today .sd-workers { color:var(--acc); }
+.sched-group-title { font-family:'Unbounded',sans-serif; font-size:10px; font-weight:800; letter-spacing:.1em; color:var(--acc); margin:14px 0 8px; display:flex; align-items:center; gap:8px; }
+.sched-group-title::after { content:''; flex:1; height:1px; background:var(--line); }
+.sched-person { background:var(--bg2); border:1px solid var(--line); border-radius:var(--r2); margin-bottom:8px; overflow:hidden; }
+.sched-person-name { font-family:'Unbounded',sans-serif; font-size:11px; font-weight:700; padding:10px 14px 8px; border-bottom:1px solid var(--line); color:var(--txt); }
+.sched-cells { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; padding:8px; }
+.sched-cell { text-align:center; padding:8px 2px; border-radius:6px; font-size:12px; font-weight:600; min-height:36px; display:flex; align-items:center; justify-content:center; }
+.sched-cell.dr { background:rgba(46,213,115,.12); color:var(--grn); }
+.sched-cell.dv { background:rgba(255,71,87,.12); color:var(--red); }
+.sched-cell.dvs { background:rgba(130,130,130,.1); color:var(--txt3); }
+.sched-cell.empty { color:var(--txt3); opacity:.4; }
 .sched-cell.today-col { outline:2px solid var(--acc); outline-offset:-2px; border-radius:6px; }
-.instr-block {
-  border:1px solid var(--line); border-radius:var(--r2);
-  overflow:hidden; margin-bottom:8px;
-}
-.instr-hdr {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:14px 16px; background:var(--bg2);
-  cursor:pointer; user-select:none; gap:10px; transition:background .15s;
-}
-.instr-hdr:hover { background:var(--bg3) }
+.instr-block { border:1px solid var(--line); border-radius:var(--r2); overflow:hidden; margin-bottom:8px; }
+.instr-hdr { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:var(--bg2); cursor:pointer; user-select:none; gap:10px; transition:background .15s; }
+.instr-hdr:hover { background:var(--bg3); }
 .instr-hdr h3 { font-weight:600; font-size:13px; line-height:1.4; flex:1; color:var(--acc); }
-.instr-toggle {
-  width:24px; height:24px; border-radius:50%;
-  background:var(--bg3); border:1px solid var(--line2);
-  display:flex; align-items:center; justify-content:center;
-  color:var(--txt2); font-size:14px; flex-shrink:0; transition:all .2s;
-}
-.instr-block.open > .instr-hdr .instr-toggle {
-  background:var(--acc-bg); border-color:var(--acc);
-  color:var(--acc);
-}
+.instr-toggle { width:24px; height:24px; border-radius:50%; background:var(--bg3); border:1px solid var(--line2); display:flex; align-items:center; justify-content:center; color:var(--txt2); font-size:14px; flex-shrink:0; transition:all .2s; }
+.instr-block.open > .instr-hdr .instr-toggle { background:var(--acc-bg); border-color:var(--acc); color:var(--acc); }
 .instr-body { display:none; border-top:1px solid var(--line); background:var(--bg); }
-.instr-block.open > .instr-body { display:block }
-.table-scroll { overflow-x: auto; margin:0 -1px; }
+.instr-block.open > .instr-body { display:block; }
+.table-scroll { overflow-x:auto; margin:0 -1px; }
 .instr-table { width:100%; border-collapse:collapse; font-size:13px; min-width:600px; }
-.instr-table th {
-  background:var(--bg3);
-  padding:10px 14px; text-align:left;
-  font-family:'Unbounded',sans-serif; font-size:9px;
-  font-weight:800; letter-spacing:.06em; color:var(--txt2);
-  border-bottom:1px solid var(--line2);
-}
-.instr-table td {
-  padding:10px 14px; vertical-align:top;
-  border-bottom:1px solid var(--line);
-  line-height:1.6; color:var(--txt2);
-}
-.instr-table tr:last-child td { border-bottom:none }
-.instr-table tr:hover td { background:rgba(255,255,255,.02) }
-.instr-table td:first-child {
-  font-weight:600; color:var(--txt);
-  white-space:nowrap; width:200px;
-  border-right:1px solid var(--line);
-}
-body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
+.instr-table th { background:var(--bg3); padding:10px 14px; text-align:left; font-family:'Unbounded',sans-serif; font-size:9px; font-weight:800; letter-spacing:.06em; color:var(--txt2); border-bottom:1px solid var(--line2); }
+.instr-table td { padding:10px 14px; vertical-align:top; border-bottom:1px solid var(--line); line-height:1.6; color:var(--txt2); }
+.instr-table tr:last-child td { border-bottom:none; }
+.instr-table tr:hover td { background:rgba(255,255,255,.02); }
+.instr-table td:first-child { font-weight:600; color:var(--txt); white-space:nowrap; width:200px; border-right:1px solid var(--line); }
+body.light .instr-table tr:hover td { background:rgba(0,0,0,.02); }
 .instr-sub { border-top:1px solid var(--line); }
-.instr-sub:first-child { border-top:none }
-.instr-sub-hdr {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:12px 16px; background:var(--bg2);
-  cursor:pointer; user-select:none; gap:8px; transition:background .15s;
-}
-.instr-sub-hdr:hover { background:var(--bg3) }
-.instr-sub-hdr span { font-weight:600; font-size:12px; flex:1; color:var(--acc) }
-.instr-sub-toggle {
-  width:20px; height:20px; border-radius:50%;
-  background:var(--bg3); border:1px solid var(--line2);
-  display:flex; align-items:center; justify-content:center;
-  color:var(--txt2); font-size:12px; flex-shrink:0; transition:all .2s;
-}
+.instr-sub:first-child { border-top:none; }
+.instr-sub-hdr { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:var(--bg2); cursor:pointer; user-select:none; gap:8px; transition:background .15s; }
+.instr-sub-hdr:hover { background:var(--bg3); }
+.instr-sub-hdr span { font-weight:600; font-size:12px; flex:1; color:var(--acc); }
+.instr-sub-toggle { width:20px; height:20px; border-radius:50%; background:var(--bg3); border:1px solid var(--line2); display:flex; align-items:center; justify-content:center; color:var(--txt2); font-size:12px; flex-shrink:0; transition:all .2s; }
 .instr-sub.open .instr-sub-toggle { color:var(--acc); border-color:var(--acc); }
-.instr-sub-body { display:none }
-.instr-sub.open .instr-sub-body { display:block }
-.page-footer {
-  text-align:center;
-  padding:8px 0 8px;
-  margin-top:auto;
-  border-top:1px solid var(--line);
-  font-size:11px;
-  color:var(--txt3);
-  font-family:'Golos Text',sans-serif;
-  letter-spacing:.04em;
-}
-#author {
-    font-family: 'Courier New', Courier, monospace;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: #00ff41;
-    text-shadow: 0 0 8px rgba(0, 255, 65, 0.7);
-    transition: text-shadow 0.2s;
-}
-body.light #author {
-    color: #1a7a2e;
-    text-shadow: 0 0 5px rgba(26, 122, 46, 0.5);
-}
-#toast {
-  position:fixed; bottom:20px; left:50%;
-  transform:translateX(-50%) translateY(16px);
-  padding:9px 16px; border-radius:var(--r);
-  font-size:13px; opacity:0; pointer-events:none;
-  transition:all .25s; z-index:999; white-space:nowrap;
-}
-#toast.on { opacity:1; transform:translateX(-50%) translateY(0) }
-#toast.s { background:rgba(46,213,115,.15); border:1px solid var(--grn); color:var(--grn) }
-#toast.e { background:rgba(255,71,87,.15);  border:1px solid var(--red); color:var(--red) }
-#toast.i { background:var(--bg3); border:1px solid var(--line2); color:var(--txt) }
-@media(max-width:480px) {
-  .sum-grid  { grid-template-columns:1fr 1fr }
-  .mop-grid4 { grid-template-columns:repeat(2,1fr) }
-  header     { padding:0 12px }
-  .scr       { padding:12px; }
-  .tab       { padding:10px 14px; font-size:13px; letter-spacing:.02em }
-}
-@keyframes firework {
-  to { transform: translate(var(--tx), var(--ty)) scale(0.6); opacity: 0; }
-}
-@keyframes flash {
-  0% { transform:translate(-50%,-50%) scale(0.5); opacity:1; }
-  100% { transform:translate(-50%,-50%) scale(4); opacity:0; }
-}
-canvas#bg-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-}
-.glass {
-  position: fixed;
-  inset: 0;
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-  z-index: 2;
-  pointer-events: none;
-  background: rgba(20, 20, 30, 0.25);
-}
-body.light .glass {
-  background: rgba(255, 255, 255, 0.25);
-}
+.instr-sub-body { display:none; padding:12px 16px; background:var(--bg); }
+.instr-sub.open .instr-sub-body { display:block; }
+.page-footer { text-align:center; padding:8px 0 8px; margin-top:auto; border-top:1px solid var(--line); font-size:11px; color:var(--txt3); font-family:'Golos Text',sans-serif; letter-spacing:.04em; }
+#author { font-family:'Courier New', Courier, monospace; font-weight:bold; text-transform:uppercase; letter-spacing:2px; color:#00ff41; text-shadow:0 0 8px rgba(0,255,65,0.7); transition:text-shadow 0.2s; }
+body.light #author { color:#1a7a2e; text-shadow:0 0 5px rgba(26,122,46,0.5); }
+#toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(16px); padding:9px 16px; border-radius:var(--r); font-size:13px; opacity:0; pointer-events:none; transition:all .25s; z-index:999; white-space:nowrap; }
+#toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
+#toast.s { background:rgba(46,213,115,.15); border:1px solid var(--grn); color:var(--grn); }
+#toast.e { background:rgba(255,71,87,.15); border:1px solid var(--red); color:var(--red); }
+#toast.i { background:var(--bg3); border:1px solid var(--line2); color:var(--txt); }
+@media(max-width:480px) { .sum-grid { grid-template-columns:1fr 1fr; } .mop-grid4 { grid-template-columns:repeat(2,1fr); } header { padding:0 12px; } .scr { padding:12px; } .tab { padding:10px 14px; font-size:13px; letter-spacing:.02em; } }
+@keyframes firework { to { transform:translate(var(--tx), var(--ty)) scale(0.6); opacity:0; } }
+@keyframes flash { 0% { transform:translate(-50%,-50%) scale(0.5); opacity:1; } 100% { transform:translate(-50%,-50%) scale(4); opacity:0; } }
+canvas#bg-canvas { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1; }
+.glass { position:fixed; inset:0; backdrop-filter:blur(40px); -webkit-backdrop-filter:blur(40px); z-index:2; pointer-events:none; background:rgba(20,20,30,0.25); }
+body.light .glass { background:rgba(255,255,255,0.25); }
+.personal-container { display:flex; flex-direction:column; gap:16px; padding-bottom:20px; }
+.personal-header { display:flex; align-items:center; justify-content:space-between; margin:8px 0 0; font-family:'Unbounded',sans-serif; }
+.personal-name { font-size:20px; font-weight:800; color:var(--acc); }
+.personal-kpi-title { font-size:12px; font-weight:800; letter-spacing:.08em; color:var(--txt2); margin:4px 0 12px; border-top:1px solid var(--line); padding-top:12px; }
+.personal-income-card { background:rgba(var(--acc-r),var(--acc-g),var(--acc-b),0.15); border:1px solid var(--acc-bdr); border-radius:var(--r2); padding:18px; text-align:center; margin-bottom:8px; }
+.personal-income-card .zl { font-size:10px; color:var(--txt2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px; }
+.personal-income-card .zv { font-family:'Unbounded',sans-serif; font-size:30px; font-weight:900; color:var(--acc); letter-spacing:-.02em; }
+.personal-badge-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:4px; }
+.personal-badge { background:rgba(255,255,255,0.05); border-radius:var(--r2); padding:12px 8px; text-align:center; backdrop-filter:blur(4px); }
+body.light .personal-badge { background:rgba(0,0,0,0.02); }
+.personal-badge .bl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
+.personal-badge .bv { font-family:'Unbounded',sans-serif; font-size:16px; font-weight:800; color:var(--txt); }
+.personal-badge.highlight .bv { color:var(--acc); }
+.separator { border-top:1px solid var(--line); margin:4px 0; }
 </style>
 </head>
 <body>
@@ -918,144 +304,62 @@ body.light .glass {
 <div id="app">
   <header>
     <div class="hdr-inner">
-      <div class="hdr-left">
-        <div class="logo" onclick="goHome()">
-          <div class="logo-sq"><span></span><span></span><span></span><span></span></div>
-          CRM
-        </div>
-      </div>
+      <div class="hdr-left"><div class="logo" onclick="goHome()"><div class="logo-sq"><span></span><span></span><span></span><span></span></div>CRM</div></div>
       <div class="hdr-right">
         <span class="badge-month" id="badge-month">—</span>
-        <div id="user-wrap">
-          <img id="user-avatar" src="" alt=""/>
-          <span id="user-name"></span>
-        </div>
-        <button class="btn-icon" id="btn-refresh" title="Обновить">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/>
-            <path d="M21 3v5h-5"/>
-            <path d="M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16"/>
-            <path d="M8 16H3v5"/>
-          </svg>
-        </button>
-        <button class="btn-icon" id="btn-theme" title="Тема">
-          <svg id="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-          </svg>
-          <svg id="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
-            <circle cx="12" cy="12" r="5"/>
-            <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-          </svg>
-        </button>
-        <button class="btn-icon" id="btn-out" style="display:none" title="Выйти">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-        </button>
+        <div id="user-wrap"><img id="user-avatar" src="" alt=""/><span id="user-name"></span></div>
+        <button class="btn-icon" id="btn-refresh" title="Обновить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button>
+        <button class="btn-icon" id="btn-theme" title="Тема"><svg id="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg id="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+        <button class="btn-icon" id="btn-out" style="display:none" title="Выйти"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
       </div>
     </div>
   </header>
-  <nav id="main-nav" style="display:none">
-    <div class="nav-inner">
-      <button class="tab on" data-tab="otchet"><span class="tab-dot"></span>ОТЧЁТ</button>
-      <button class="tab" data-tab="dohod"><span class="tab-dot"></span>ДОХОД</button>
-      <button class="tab" data-tab="grafik"><span class="tab-dot"></span>ГРАФИК</button>
-      <button class="tab" data-tab="instruktsii"><span class="tab-dot"></span>FAQ</button>
-    </div>
-  </nav>
-  <div id="grafik-sticky" style="display:none;background:var(--bg);border-bottom:1px solid var(--line);z-index:50;position:sticky;top:80px">
-    <div class="w" style="padding-top:10px;padding-bottom:10px">
-      <div id="grafik-sticky-inner"></div>
-    </div>
-  </div>
+  <nav id="main-nav" style="display:none"><div class="nav-inner"><button class="tab on" data-tab="otchet"><span class="tab-dot"></span>ОТЧЁТ</button><button class="tab" data-tab="dohod"><span class="tab-dot"></span>ДОХОД</button><button class="tab" data-tab="grafik"><span class="tab-dot"></span>ГРАФИК</button><button class="tab" data-tab="instruktsii"><span class="tab-dot"></span>FAQ</button></div></nav>
+  <div id="grafik-sticky" style="display:none;background:var(--bg);border-bottom:1px solid var(--line);z-index:50;position:sticky;top:80px"><div class="w" style="padding-top:10px;padding-bottom:10px"><div id="grafik-sticky-inner"></div></div></div>
   <div id="floating-subtabs" class="report-subtabs" style="display:none;"></div>
   <div id="floating-dohod-subtabs" class="report-subtabs" style="display:none;"></div>
   <div id="floating-faq-subtabs" class="faq-subtabs" style="display:none;"></div>
   <main>
-    <div id="scr-login" class="scr">
-      <div class="gate">
-        <div class="gate-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <rect x="3" y="11" width="18" height="11" rx="2"/>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
-        </div>
-        <h2>Требуется вход</h2>
-        <button class="center-login-btn" id="center-login-btn">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 11h8.533c.044.385.067.78.067 1.184 0 3.37-1.17 6.22-3.207 8.154C15.553 22.124 13.9 23 12 23A11 11 0 1 1 12 1c2.95 0 5.56 1.113 7.522 2.934l-3.076 3.042C15.197 5.79 13.68 5 12 5a7 7 0 1 0 0 14c3.205 0 5.542-1.916 6.27-4.987H12v-3z"/></svg>
-          Войти
-        </button>
-      </div>
-    </div>
-    <div id="scr-otchet" class="scr">
-      <div class="w">
-        <div id="c-otchet"></div>
-      </div>
-    </div>
-    <div id="scr-dohod" class="scr">
-      <div class="w">
-        <div id="c-dohod"></div>
-      </div>
-    </div>
-    <div id="scr-grafik" class="scr">
-      <div class="w">
-        <div id="c-grafik"></div>
-      </div>
-    </div>
-    <div id="scr-instruktsii" class="scr">
-      <div class="w">
-        <div id="c-instruktsii"></div>
-      </div>
-    </div>
+    <div id="scr-login" class="scr"><div class="gate"><div class="gate-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><h2>Требуется вход</h2><button class="center-login-btn" id="center-login-btn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 11h8.533c.044.385.067.78.067 1.184 0 3.37-1.17 6.22-3.207 8.154C15.553 22.124 13.9 23 12 23A11 11 0 1 1 12 1c2.95 0 5.56 1.113 7.522 2.934l-3.076 3.042C15.197 5.79 13.68 5 12 5a7 7 0 1 0 0 14c3.205 0 5.542-1.916 6.27-4.987H12v-3z"/></svg>Войти</button></div></div>
+    <div id="scr-otchet" class="scr"><div class="w"><div id="c-otchet"></div></div></div>
+    <div id="scr-dohod" class="scr"><div class="w"><div id="c-dohod"></div></div></div>
+    <div id="scr-grafik" class="scr"><div class="w"><div id="c-grafik"></div></div></div>
+    <div id="scr-instruktsii" class="scr"><div class="w"><div id="c-instruktsii"></div></div></div>
+    <div id="scr-personal" class="scr"><div class="w"><div id="c-personal"></div></div></div>
   </main>
-  <div class="page-footer">
-    <div class="glitch" id="author" data-text="© Бочаров Ю.С., 2026">
-        © Бочаров Ю.С., 2026
-    </div>
-  </div>
+  <div class="page-footer"><div class="glitch" id="author">© Бочаров Ю.С., 2026</div></div>
 </div>
-<div class="mop-overlay" id="mop-overlay" onclick="closeMopModal(event)">
-  <div class="mop-modal" id="mop-modal">
-    <div class="mop-modal-hdr">
-      <div class="mop-modal-title" id="mop-modal-title"></div>
-      <button class="mop-modal-close" onclick="closeMopModal()">×</button>
-    </div>
-    <div class="mop-modal-body" id="mop-modal-body"></div>
-  </div>
-</div>
+<div class="mop-overlay" id="mop-overlay" onclick="closeMopModal(event)"><div class="mop-modal"><div class="mop-modal-hdr"><div class="mop-modal-title" id="mop-modal-title"></div><button class="mop-modal-close" onclick="closeMopModal()">×</button></div><div class="mop-modal-body" id="mop-modal-body"></div></div></div>
 <div id="toast"></div>
 <script>
-/* ══ CONFIG ══ */
+// ==================== ПОЛНЫЙ JAVASCRIPT КОД ====================
+// ==================== КОНФИГУРАЦИЯ ====================
 const CFG = {
   CLIENT_ID: '364532815329-0j1lkobb1v9vcserj6artf64nd95a0la.apps.googleusercontent.com',
-  SHEET_ID:  '1DeUsHB_O1SbIMR4p5yd64o_R0yllWvtnyNhjxjhipn8',
+  SHEET_ID: '1DeUsHB_O1SbIMR4p5yd64o_R0yllWvtnyNhjxjhipn8',
+  USERS_SHEET: 'USERS'
 };
 
-/* ══ MONTH STATE ══ */
+// ==================== МЕСЯЦ ====================
 let currentSuffix = (() => {
   const now = new Date();
-  return String(now.getMonth()+1).padStart(2,'0') + String(now.getFullYear()).slice(-2);
+  return String(now.getMonth() + 1).padStart(2, '0') + String(now.getFullYear()).slice(-2);
 })();
 
 function getMonthName(suffix) {
-  const mm = parseInt(suffix.slice(0,2));
-  const yy = 2000 + parseInt(suffix.slice(2,4));
-  return new Date(yy, mm-1, 1).toLocaleString('ru', { month:'long', year:'numeric' });
+  const mm = parseInt(suffix.slice(0, 2));
+  const yy = 2000 + parseInt(suffix.slice(2, 4));
+  return new Date(yy, mm - 1, 1).toLocaleString('ru', { month: 'long', year: 'numeric' });
 }
 
 function getSheetNames(suffix) {
   return {
-    otchet:      'ОТЧЁТ'   + suffix,
-    dohod:       'ЗП'      + suffix,
-    d_otchet:    'Д_ОТЧЁТ' + suffix,
-    d_dohod:     'Д_ЗП'    + suffix,
-    grafik:      'ГРАФИКИ' + suffix,
-    cnvrs:       'CNVRS'   + suffix,
+    otchet: 'ОТЧЁТ' + suffix,
+    dohod: 'ЗП' + suffix,
+    d_otchet: 'Д_ОТЧЁТ' + suffix,
+    d_dohod: 'Д_ЗП' + suffix,
+    grafik: 'ГРАФИКИ' + suffix,
+    cnvrs: 'CNVRS' + suffix,
     instruktsii: 'ИНСТРУКЦИИ',
   };
 }
@@ -1063,43 +367,46 @@ function getSheetNames(suffix) {
 let SHEETS = getSheetNames(currentSuffix);
 
 function updateBadge() {
-  document.getElementById('badge-month').textContent = currentSuffix.slice(0,2)+'/'+currentSuffix.slice(2);
+  document.getElementById('badge-month').textContent = currentSuffix.slice(0, 2) + '/' + currentSuffix.slice(2);
 }
 updateBadge();
 
-/* ══ STATE ══ */
+// ==================== ГЛОБАЛЬНОЕ СОСТОЯНИЕ ====================
 const S = {
-  token:null,
-  user:null,
-  data:{ otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null },
+  token: null,
+  user: null,
+  data: { otchet: null, dohod: null, grafik: null, instruktsii: null, d_otchet: null, d_dohod: null, cnvrs: null, users: null },
   reportTab: 'dept',
   dohodTab: 'crm',
-  faqTab: 'instr'
+  faqTab: 'instr',
+  userInfo: null
 };
 
-/* ══ THEME ══ */
+// ==================== ТЕМА ====================
 if (localStorage.getItem('crm_theme') === 'light') document.body.classList.add('light');
 
 function setTheme(light) {
   document.body.classList.toggle('light', light);
   document.getElementById('ico-moon').style.display = light ? 'none' : '';
-  document.getElementById('ico-sun').style.display  = light ? '' : 'none';
+  document.getElementById('ico-sun').style.display = light ? '' : 'none';
   localStorage.setItem('crm_theme', light ? 'light' : 'dark');
 }
-function syncTheme() { setTheme(document.body.classList.contains('light')) }
+function syncTheme() { setTheme(document.body.classList.contains('light')); }
 
+// ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
 let _tt;
-function toast(msg, type='i') {
+function toast(msg, type = 'i') {
   const el = document.getElementById('toast');
   el.textContent = msg; el.className = type + ' on';
-  clearTimeout(_tt); _tt = setTimeout(() => el.className='', 2600);
+  clearTimeout(_tt); _tt = setTimeout(() => el.className = '', 2600);
 }
 
 function showScr(id) {
-  ['otchet','dohod','grafik','instruktsii'].forEach(t =>
-    document.getElementById('scr-'+t).classList.remove('on')
-  );
-  document.getElementById('scr-'+id)?.classList.add('on');
+  ['otchet', 'dohod', 'grafik', 'instruktsii', 'personal'].forEach(t => {
+    const el = document.getElementById('scr-' + t);
+    if (el) el.classList.remove('on');
+  });
+  document.getElementById('scr-' + id)?.classList.add('on');
   const gs = document.getElementById('grafik-sticky');
   if (gs) gs.style.display = id === 'grafik' ? '' : 'none';
   const floating = document.getElementById('floating-subtabs');
@@ -1110,46 +417,46 @@ function showScr(id) {
   if (floatingFaq) floatingFaq.style.display = id === 'instruktsii' ? 'flex' : 'none';
 }
 
-function num(v) { return parseInt(v)||0 }
+function num(v) { return parseInt(v) || 0; }
 function fmtRub(v) {
-  const n = parseFloat(String(v||'').replace(/[^\d.,-]/g,'').replace(',','.'));
-  return isNaN(n) ? (v||'—') : n.toLocaleString('ru') + ' ₽';
+  const n = parseFloat(String(v || '').replace(/[^\d.,-]/g, '').replace(',', '.'));
+  return isNaN(n) ? (v || '—') : n.toLocaleString('ru') + ' ₽';
 }
-function pctClr(p) { return p>=100?'var(--grn)':p>=60?'var(--org)':'var(--red)' }
+function pctClr(p) { return p >= 100 ? 'var(--grn)' : p >= 60 ? 'var(--org)' : 'var(--red)'; }
 
 function rankColor(pos, total) {
-  if (total <= 1) return { r:0, g:230, b:90 };
+  if (total <= 1) return { r: 0, g: 230, b: 90 };
   const t = pos / (total - 1);
   let r, g, b;
   if (t <= 0.5) {
     const f = t * 2;
-    r = Math.round(0   + (255 - 0)   * f);
+    r = Math.round(0 + (255 - 0) * f);
     g = Math.round(230 + (224 - 230) * f);
-    b = Math.round(90  + (0   - 90)  * f);
+    b = Math.round(90 + (0 - 90) * f);
   } else {
     const f = (t - 0.5) * 2;
     r = Math.round(255 + (255 - 255) * f);
-    g = Math.round(224 + (40  - 224) * f);
-    b = Math.round(0   + (40  - 0)   * f);
+    g = Math.round(224 + (40 - 224) * f);
+    b = Math.round(0 + (40 - 0) * f);
   }
   return { r, g, b };
 }
 
 function rankStyles(pos, total) {
   const { r, g, b } = rankColor(pos, total);
-  const color   = `rgb(${r},${g},${b})`;
-  const border  = `rgba(${r},${g},${b},.6)`;
+  const color = `rgb(${r},${g},${b})`;
+  const border = `rgba(${r},${g},${b},.6)`;
   const badgeBg = `rgba(${r},${g},${b},.25)`;
   return { color, border, badgeBg, r, g, b };
 }
-function loader() { return `<div class="loader"><div class="spin"></div><span>Загружаем…</span></div>` }
-
+function loader() { return `<div class="loader"><div class="spin"></div><span>Загружаем…</span></div>`; }
 function medalBtn(idx) {
-  const emoji = idx===0 ? '🥇' : idx===1 ? '🥈' : idx===2 ? '🥉' : '';
+  const emoji = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '';
   if (!emoji) return '';
   return `<button class="medal-btn" onclick="burstConfetti(this,${idx})" title="🎉">${emoji}</button>`;
 }
 
+// ==================== АВТОРИЗАЦИЯ ====================
 let tokenClient;
 let refreshTimer = null;
 
@@ -1169,10 +476,10 @@ function initAuth() {
     client_id: CFG.CLIENT_ID,
     scope: 'https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
     callback: async (resp) => {
-      if (resp.error) { toast('Ошибка: '+resp.error, 'e'); return; }
+      if (resp.error) { toast('Ошибка: ' + resp.error, 'e'); return; }
       S.token = resp.access_token;
       sessionStorage.setItem('crm_tok', resp.access_token);
-      sessionStorage.setItem('crm_exp', Date.now()+(resp.expires_in-60)*1000);
+      sessionStorage.setItem('crm_exp', Date.now() + (resp.expires_in - 60) * 1000);
       await loadUser();
       onLogin();
       scheduleTokenRefresh(resp.expires_in);
@@ -1182,56 +489,58 @@ function initAuth() {
 
 async function loadUser() {
   try {
-    const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo',
-      { headers:{ Authorization:'Bearer '+S.token } });
+    const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: 'Bearer ' + S.token } });
     S.user = await r.json();
     sessionStorage.setItem('crm_user', JSON.stringify(S.user));
     renderUser();
-  } catch(e) {}
+  } catch (e) { }
 }
 
 function renderUser() {
   if (!S.user) return;
   if (S.user.picture) document.getElementById('user-avatar').src = S.user.picture;
-  if (S.user.name)    document.getElementById('user-name').textContent = S.user.name.split(' ')[0];
+  if (S.user.name) document.getElementById('user-name').textContent = S.user.name.split(' ')[0];
   document.getElementById('user-wrap').style.display = 'flex';
 }
 
 function onLogin() {
-  document.getElementById('btn-out').style.display   = '';
-  document.getElementById('main-nav').style.display  = 'flex';
+  document.getElementById('btn-out').style.display = '';
+  document.getElementById('main-nav').style.display = 'flex';
   const ls = document.getElementById('scr-login');
   ls.classList.remove('on'); ls.style.display = 'none';
-  goTab('otchet');
+  loadUserMapping().then(() => {
+    if (S.userInfo) {
+      showPersonalPage();
+    } else {
+      goTab('otchet');
+    }
+  });
   toast('Приветствую, коллега!', 's');
 }
 
 function onLogout() {
-  if (refreshTimer) {
-    clearTimeout(refreshTimer);
-    refreshTimer = null;
-  }
-  if (S.token) google.accounts.oauth2.revoke(S.token, ()=>{});
-  S.token=null; S.user=null;
-  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null };
-  ['crm_tok','crm_exp','crm_user'].forEach(k => sessionStorage.removeItem(k));
+  if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+  if (S.token) google.accounts.oauth2.revoke(S.token, () => { });
+  S.token = null; S.user = null; S.userInfo = null;
+  S.data = { otchet: null, dohod: null, grafik: null, instruktsii: null, d_otchet: null, d_dohod: null, cnvrs: null, users: null };
+  ['crm_tok', 'crm_exp', 'crm_user'].forEach(k => sessionStorage.removeItem(k));
   document.getElementById('user-wrap').style.display = 'none';
-  document.getElementById('btn-out').style.display   = 'none';
-  document.getElementById('main-nav').style.display  = 'none';
-  ['otchet','dohod','grafik','instruktsii'].forEach(t => {
-    const s = document.getElementById('scr-'+t);
+  document.getElementById('btn-out').style.display = 'none';
+  document.getElementById('main-nav').style.display = 'none';
+  ['otchet', 'dohod', 'grafik', 'instruktsii', 'personal'].forEach(t => {
+    const s = document.getElementById('scr-' + t);
     s.classList.remove('on'); s.style.display = '';
   });
   const ls = document.getElementById('scr-login');
-  ls.style.display=''; ls.classList.add('on');
+  ls.style.display = ''; ls.classList.add('on');
   toast('Вы вышли');
 }
 
 function tryRestore() {
   const tok = sessionStorage.getItem('crm_tok');
-  const exp = parseInt(sessionStorage.getItem('crm_exp')||'0');
+  const exp = parseInt(sessionStorage.getItem('crm_exp') || '0');
   if (!tok || exp <= Date.now()) {
-    ['crm_tok','crm_exp','crm_user'].forEach(k => sessionStorage.removeItem(k));
+    ['crm_tok', 'crm_exp', 'crm_user'].forEach(k => sessionStorage.removeItem(k));
     return false;
   }
   S.token = tok;
@@ -1243,16 +552,16 @@ function tryRestore() {
   return true;
 }
 
+// ==================== API К SHEETS ====================
 async function api(sheet, range) {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/`
-            + encodeURIComponent(sheet+'!'+range);
-  const r = await fetch(url, { headers:{ Authorization:'Bearer '+S.token } });
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/` + encodeURIComponent(sheet + '!' + range);
+  const r = await fetch(url, { headers: { Authorization: 'Bearer ' + S.token } });
   if (!r.ok) {
     const e = await r.json();
     const msg = e.error?.message || r.statusText;
-    if (r.status===401 || r.status===403 || msg.includes('insufficient')) {
-      ['crm_tok','crm_exp','crm_user'].forEach(k => sessionStorage.removeItem(k));
-      S.token=null; onLogout(); toast('Сессия истекла — войдите снова','e');
+    if (r.status === 401 || r.status === 403 || msg.includes('insufficient')) {
+      ['crm_tok', 'crm_exp', 'crm_user'].forEach(k => sessionStorage.removeItem(k));
+      S.token = null; onLogout(); toast('Сессия истекла — войдите снова', 'e');
       throw new Error('auth');
     }
     if (r.status === 404) throw new Error('NOT_FOUND');
@@ -1261,25 +570,211 @@ async function api(sheet, range) {
   return (await r.json()).values || [];
 }
 
+// ==================== ЗАГРУЗКА USERS И ОПРЕДЕЛЕНИЕ ПОЛЬЗОВАТЕЛЯ ====================
+async function loadUserMapping() {
+  if (S.data.users) return S.data.users;
+  try {
+    const rows = await api(CFG.USERS_SHEET, 'A1:C200');
+    S.data.users = rows;
+    if (!S.user || !S.user.email) return null;
+    const email = S.user.email.toLowerCase().trim();
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (row.length < 3) continue;
+      const emails = (row[2] || '').toLowerCase().split(',').map(e => e.trim());
+      if (emails.includes(email)) {
+        S.userInfo = {
+          name: (row[0] || '').trim().toUpperCase(),
+          role: (row[1] || '').trim().toLowerCase(),
+          rowData: row
+        };
+        break;
+      }
+    }
+    if (!S.userInfo) S.userInfo = null;
+    return S.userInfo;
+  } catch (e) {
+    console.warn('Не удалось загрузить USERS', e);
+    return null;
+  }
+}
+
+// ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ПЕРСОНАЛЬНОЙ СТРАНИЦЫ ====================
+function getPersonalRowData(role, name) {
+  if (role === 'crm') {
+    if (!S.data.otchet) return null;
+    const rows = S.data.otchet.slice(3, 12).filter(r => r[0] && r[0].trim().toUpperCase() === name);
+    return rows[0] || null;
+  } else if (role === 'dozhim') {
+    if (!S.data.d_otchet) return null;
+    const rows = S.data.d_otchet.slice(3, 20).filter(r => r[0] && r[0].trim().toUpperCase() === name);
+    return rows[0] || null;
+  }
+  return null;
+}
+
+function getPersonalIncome(role, name) {
+  if (role === 'crm') {
+    if (!S.data.dohod) return null;
+    const rows = S.data.dohod.slice(2, 12).filter(r => r[0] && r[0].trim().toUpperCase() === name);
+    return rows[0] ? rows[0][1] : null;
+  } else if (role === 'dozhim') {
+    if (!S.data.d_dohod) return null;
+    const rows = S.data.d_dohod.slice(2, 20).filter(r => r[0] && r[0].trim().toUpperCase() === name);
+    return rows[0] ? rows[0][1] : null;
+  }
+  return null;
+}
+
+function getCnvrsData(name) {
+  if (!S.data.cnvrs) return null;
+  const generalRows = S.data.cnvrs.slice(30, 39);
+  const row = generalRows.find(r => (r[0] || '').toLowerCase().trim() === name.toLowerCase().trim());
+  return row || null;
+}
+
+function getDaysInMonth(suffix) {
+  const mm = parseInt(suffix.slice(0, 2));
+  const yy = 2000 + parseInt(suffix.slice(2, 4));
+  return new Date(yy, mm, 0).getDate();
+}
+
+function getWorkedDays(suffix) {
+  const mm = parseInt(suffix.slice(0, 2));
+  const yy = 2000 + parseInt(suffix.slice(2, 4));
+  const now = new Date();
+  const isCurrent = (now.getFullYear() === yy && now.getMonth() + 1 === mm);
+  const daysInMonth = getDaysInMonth(suffix);
+  if (!isCurrent) return daysInMonth;
+  return Math.min(now.getDate(), daysInMonth);
+}
+
+function computeDailyPlan(plan, fact, progNum, suffix) {
+  const daysInMonth = getDaysInMonth(suffix);
+  const worked = getWorkedDays(suffix);
+  if (worked < daysInMonth && progNum < 100) {
+    const remainingDays = daysInMonth - worked;
+    if (remainingDays <= 0) return Math.ceil(plan / daysInMonth);
+    const need = plan - fact;
+    if (need <= 0) return 0;
+    return Math.ceil(need / remainingDays);
+  }
+  return Math.ceil(plan / daysInMonth);
+}
+
+// ==================== ОТРИСОВКА ПЕРСОНАЛЬНОЙ СТРАНИЦЫ ====================
+function renderPersonalPage() {
+  const container = document.getElementById('c-personal');
+  if (!S.userInfo) {
+    container.innerHTML = '<div class="empty">Не удалось загрузить персональные данные</div>';
+    return;
+  }
+  const name = S.userInfo.name;
+  const role = S.userInfo.role;
+  const row = getPersonalRowData(role, name);
+  if (!row) {
+    container.innerHTML = '<div class="empty">Данные менеджера не найдены в отчёте</div>';
+    return;
+  }
+  const incomeRaw = getPersonalIncome(role, name);
+  const plan = num(row[3]);
+  const visits = num(row[7]);
+  const ost = num(row[4]);
+  const progNum = parseFloat((row[6] || '0%').replace('%', '').replace(',', '.')) || 0;
+  const daily = computeDailyPlan(plan, visits, progNum, currentSuffix);
+  const progPct = progNum;
+  const pctExec = plan ? Math.round(visits / plan * 100) : 0;
+
+  let kred = 0, nal = 0, kom = 0;
+  if (role === 'crm') {
+    kred = num(row[8]) + num(row[12]);
+    nal = num(row[9]) + num(row[13]);
+    kom = num(row[11]) + num(row[15]);
+  } else {
+    kred = num(row[8]) + num(row[12]);
+    nal = num(row[9]) + num(row[13]);
+    kom = num(row[14]);
+  }
+  const cnv = getCnvrsData(name);
+  const convVis = cnv ? (cnv[6] || '—') : '—';
+  const convKred = cnv ? (cnv[7] || '—') : '—';
+  const pctTarget = cnv ? (cnv[9] || '—') : '—';
+
+  const isLight = document.body.classList.contains('light');
+  const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
+
+  const incomeHtml = incomeRaw
+    ? `<div class="personal-income-card" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Доход за месяц</div><div class="zv">${fmtRub(incomeRaw)}</div></div>`
+    : `<div class="personal-income-card" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Доход за месяц</div><div class="zv">—</div></div>`;
+
+  const html = `
+    <div class="personal-container">
+      <div class="personal-header"><div class="personal-name">${name}</div></div>
+      <div class="personal-kpi-title">ТЕКУЩИЙ KPI</div>
+      ${incomeHtml}
+      <div class="separator"></div>
+      <div class="personal-badge-grid">
+        <div class="personal-badge"><div class="bl">ПЛАН</div><div class="bv">${plan || '—'}</div></div>
+        <div class="personal-badge"><div class="bl">ВИЗИТЫ</div><div class="bv">${visits || '—'}</div></div>
+        <div class="personal-badge"><div class="bl">ОСТАТОК</div><div class="bv">${ost || '—'}</div></div>
+        <div class="personal-badge"><div class="bl">ДНЕВНОЙ</div><div class="bv">${daily}</div></div>
+        <div class="personal-badge"><div class="bl">ПРОГНОЗ</div><div class="bv" style="color:${pctClr(progPct)}">${progPct}%</div></div>
+        <div class="personal-badge"><div class="bl">% ВЫПОЛНЕНИЯ</div><div class="bv" style="color:${pctClr(pctExec)}">${pctExec}%</div></div>
+        <div class="personal-badge"><div class="bl">КРЕДИТЫ</div><div class="bv">${kred || '—'}</div></div>
+        <div class="personal-badge"><div class="bl">НАЛИЧКА</div><div class="bv">${nal || '—'}</div></div>
+        <div class="personal-badge"><div class="bl">КОМИССИЯ</div><div class="bv">${kom || '—'}</div></div>
+        <div class="personal-badge"><div class="bl">КОНВЕРСИЯ (визиты)</div><div class="bv">${convVis}</div></div>
+        <div class="personal-badge"><div class="bl">КОНВЕРСИЯ (кредиты)</div><div class="bv">${convKred}</div></div>
+        <div class="personal-badge"><div class="bl">% ЦЕЛЕВЫХ</div><div class="bv">${pctTarget}</div></div>
+      </div>
+    </div>
+  `;
+  container.innerHTML = html;
+}
+
+function showPersonalPage() {
+  if (!S.userInfo) {
+    toast('Персональные данные не настроены', 'i');
+    goTab('otchet');
+    return;
+  }
+  showScr('personal');
+  renderPersonalPage();
+}
+
+// ==================== ЗАГРУЗКА ДАННЫХ И ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ====================
 function setCurrentMonth(newSuffix) {
   if (newSuffix === currentSuffix) return;
   currentSuffix = newSuffix;
   updateBadge();
   SHEETS = getSheetNames(currentSuffix);
-  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null };
+  S.data = { otchet: null, dohod: null, grafik: null, instruktsii: null, d_otchet: null, d_dohod: null, cnvrs: null };
   _schedWeek = null;
   const activeTab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
-  loadTab(activeTab);
+  if (document.getElementById('scr-personal').classList.contains('on')) {
+    if (S.userInfo) renderPersonalPage();
+    else goTab(activeTab);
+  } else {
+    loadTab(activeTab);
+  }
 }
 
 function goTab(tab) {
-  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab===tab));
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
   showScr(tab);
   loadTab(tab);
 }
 
+function goHome() {
+  const tabBtn = document.querySelector('.tab[data-tab="otchet"]');
+  if (tabBtn) tabBtn.click();
+  S.reportTab = 'dept';
+  if (S.data.otchet) renderOtchet();
+  if (document.getElementById('scr-personal').classList.contains('on')) showScr('otchet');
+}
+
 async function loadTab(tab) {
-  const showArchiveMsg = (container, isArchive=true) => {
+  const showArchiveMsg = (container, isArchive = true) => {
     if (container) container.innerHTML = `<div class="empty">${isArchive ? 'Информация отсутствует. Данные ушли в архив.' : 'Нет данных'}</div>`;
   };
   if (tab === 'otchet') {
@@ -1288,8 +783,8 @@ async function loadTab(tab) {
       if (el) el.innerHTML = loader();
       try {
         S.data.otchet = await api(SHEETS.otchet, 'A1:Z15');
-      } catch(e) {
-        if (e.message!=='auth') {
+      } catch (e) {
+        if (e.message !== 'auth') {
           if (e.message === 'NOT_FOUND') showArchiveMsg(el);
           else if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
         }
@@ -1299,7 +794,7 @@ async function loadTab(tab) {
     if (S.reportTab === 'dozhim' && !S.data.d_otchet) {
       try {
         S.data.d_otchet = await api(SHEETS.d_otchet, 'A1:R20');
-      } catch(e) {
+      } catch (e) {
         if (e.message !== 'NOT_FOUND') S.data.d_otchet = [];
         else S.data.d_otchet = null;
       }
@@ -1325,8 +820,8 @@ async function loadTab(tab) {
       if (el) el.innerHTML = loader();
       try {
         S.data.dohod = await api(SHEETS.dohod, 'A1:B13');
-      } catch(e) {
-        if (e.message!=='auth') {
+      } catch (e) {
+        if (e.message !== 'auth') {
           if (e.message === 'NOT_FOUND') showArchiveMsg(el);
           else if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
         }
@@ -1336,7 +831,7 @@ async function loadTab(tab) {
     if (S.dohodTab === 'dozhim' && !S.data.d_dohod) {
       try {
         S.data.d_dohod = await api(SHEETS.d_dohod, 'A1:N20');
-      } catch(e) {
+      } catch (e) {
         if (e.message !== 'NOT_FOUND') S.data.d_dohod = [];
         else S.data.d_dohod = null;
       }
@@ -1345,14 +840,14 @@ async function loadTab(tab) {
     return;
   }
   if (S.data[tab]) { renderTab(tab); return; }
-  const el = document.getElementById('c-'+tab);
+  const el = document.getElementById('c-' + tab);
   if (el) el.innerHTML = loader();
   try {
-    if      (tab==='grafik')      S.data.grafik       = await api(SHEETS.grafik,      'A1:AI25');
-    else if (tab==='instruktsii') S.data.instruktsii  = await api(SHEETS.instruktsii, 'A1:C200');
+    if (tab === 'grafik') S.data.grafik = await api(SHEETS.grafik, 'A1:AI25');
+    else if (tab === 'instruktsii') S.data.instruktsii = await api(SHEETS.instruktsii, 'A1:C200');
     renderTab(tab);
-  } catch(e) {
-    if (e.message!=='auth') {
+  } catch (e) {
+    if (e.message !== 'auth') {
       if (e.message === 'NOT_FOUND') showArchiveMsg(el);
       else if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
     }
@@ -1365,73 +860,41 @@ function reloadCurrent() {
   S.data[tab] = null;
   if (tab === 'otchet') { S.data.d_otchet = null; S.data.cnvrs = null; }
   if (tab === 'dohod') S.data.d_dohod = null;
-  loadTab(tab).then(() => toast('Обновлено','s'));
+  loadTab(tab).then(() => toast('Обновлено', 's'));
 }
 
 function renderTab(tab) {
-  if      (tab==='otchet')      renderOtchet();
-  else if (tab==='dohod')       renderDohod();
-  else if (tab==='grafik')      renderGrafik();
-  else if (tab==='instruktsii') renderInstruktsii();
+  if (tab === 'otchet') renderOtchet();
+  else if (tab === 'dohod') renderDohod();
+  else if (tab === 'grafik') renderGrafik();
+  else if (tab === 'instruktsii') renderInstruktsii();
 }
 
-// ==================== HELPER: дни в месяце / отработанные дни ====================
-function getDaysInMonth(suffix) {
-  const mm = parseInt(suffix.slice(0,2));
-  const yy = 2000 + parseInt(suffix.slice(2,4));
-  return new Date(yy, mm, 0).getDate();
-}
-function getWorkedDays(suffix) {
-  const mm = parseInt(suffix.slice(0,2));
-  const yy = 2000 + parseInt(suffix.slice(2,4));
-  const now = new Date();
-  const isCurrent = (now.getFullYear() === yy && now.getMonth()+1 === mm);
-  const daysInMonth = getDaysInMonth(suffix);
-  if (!isCurrent) return daysInMonth;
-  const today = now.getDate();
-  return Math.min(today, daysInMonth);
-}
-function computeDailyPlan(plan, fact, progNum, suffix) {
-  const daysInMonth = getDaysInMonth(suffix);
-  const worked = getWorkedDays(suffix);
-  // если месяц ещё не завершён и прогноз < 100% -> план догона
-  if (worked < daysInMonth && progNum < 100) {
-    const remainingDays = daysInMonth - worked;
-    if (remainingDays <= 0) return Math.ceil(plan / daysInMonth);
-    const need = plan - fact;
-    if (need <= 0) return 0;
-    return Math.ceil(need / remainingDays);
-  }
-  // иначе средний дневной план на весь месяц
-  return Math.ceil(plan / daysInMonth);
-}
-
-// ==================== RENDER OTCHET ====================
+// ==================== ОТЧЁТ (RENDER OTCHET) ====================
 function renderOtchet() {
   const floating = document.getElementById('floating-subtabs');
-  const el  = document.getElementById('c-otchet');
+  const el = document.getElementById('c-otchet');
   const raw = S.data.otchet;
-  if (!raw || raw.length < 4) { 
+  if (!raw || raw.length < 4) {
     if (floating) floating.innerHTML = '';
-    el.innerHTML = '<div class="empty">Нет данных</div>'; 
-    return; 
+    el.innerHTML = '<div class="empty">Нет данных</div>';
+    return;
   }
 
   const mgrRows = raw.slice(3, 12).filter(r => r[0] && r[0].trim());
-  const kot     = raw[13] || [];
-  const totRow  = raw[14] || [];
+  const kot = raw[13] || [];
+  const totRow = raw[14] || [];
 
-  const vis800sum  = raw.slice(3,12).reduce((s,r) => s + num(r[1]), 0) + num(kot[1]);
-  const vis1200sum = raw.slice(3,12).reduce((s,r) => s + num(r[2]), 0) + num(kot[2]);
-  const allVis     = vis800sum + vis1200sum;
-  const planTotal  = num(totRow[3]);
+  const vis800sum = raw.slice(3, 12).reduce((s, r) => s + num(r[1]), 0) + num(kot[1]);
+  const vis1200sum = raw.slice(3, 12).reduce((s, r) => s + num(r[2]), 0) + num(kot[2]);
+  const allVis = vis800sum + vis1200sum;
+  const planTotal = num(totRow[3]);
 
-  const mo  = parseInt(currentSuffix.slice(0,2));
-  const yr  = 2000 + parseInt(currentSuffix.slice(2,4));
+  const mo = parseInt(currentSuffix.slice(0, 2));
+  const yr = 2000 + parseInt(currentSuffix.slice(2, 4));
   const dim = new Date(yr, mo, 0).getDate();
   const today = new Date();
-  const dp  = (today.getFullYear()===yr && today.getMonth()+1===mo) ? today.getDate()
-            : today > new Date(yr,mo-1,dim) ? dim : null;
+  const dp = (today.getFullYear() === yr && today.getMonth() + 1 === mo) ? today.getDate() : today > new Date(yr, mo - 1, dim) ? dim : null;
 
   let progOtdel = '—';
   if (dp && planTotal > 0) {
@@ -1439,87 +902,86 @@ function renderOtchet() {
     progOtdel = Math.round(allVis / target * 100) + '%';
   }
 
-  const deptKred = raw.slice(3,12).reduce((s,r) => s + num(r[8])  + num(r[12]), 0) + num(kot[8])  + num(kot[12]);
-  const deptNal  = raw.slice(3,12).reduce((s,r) => s + num(r[9])  + num(r[13]), 0) + num(kot[9])  + num(kot[13]);
-  const deptKom  = raw.slice(3,12).reduce((s,r) => s + num(r[11]) + num(r[15]), 0) + num(kot[11]) + num(kot[15]);
+  const deptKred = raw.slice(3, 12).reduce((s, r) => s + num(r[8]) + num(r[12]), 0) + num(kot[8]) + num(kot[12]);
+  const deptNal = raw.slice(3, 12).reduce((s, r) => s + num(r[9]) + num(r[13]), 0) + num(kot[9]) + num(kot[13]);
+  const deptKom = raw.slice(3, 12).reduce((s, r) => s + num(r[11]) + num(r[15]), 0) + num(kot[11]) + num(kot[15]);
 
   const isLight = document.body.classList.contains('light');
-  const accR = isLight ? 81  : 232;
-  const accG = isLight ? 55  : 255;
+  const accR = isLight ? 81 : 232;
+  const accG = isLight ? 55 : 255;
   const accB = isLight ? 221 : 71;
 
   const ostPlan = Math.max(0, planTotal - allVis);
   const cnvrsData = S.data.cnvrs || [];
-  const cnvrsTotCrm  = cnvrsData[11] || [];
+  const cnvrsTotCrm = cnvrsData[11] || [];
   const cnvrsTotWarm = cnvrsData[25] || [];
-  const cnvrsTotGen  = cnvrsData[39] || [];
+  const cnvrsTotGen = cnvrsData[39] || [];
 
   const deptCard = `
   <div class="sec-title">ОТДЕЛ CRM</div>
   <div class="dept-card" style="background:rgba(${accR},${accG},${accB},0.08)">
     <div class="dept-row1">
-      <div class="dept-cell hi"><div class="dc-lbl">Визиты</div><div class="dc-val">${allVis||'—'}</div></div>
-      <div class="dept-cell"><div class="dc-lbl">Визиты CRM</div><div class="dc-val">${vis800sum||'—'}</div></div>
-      <div class="dept-cell"><div class="dc-lbl">Визиты ТЛ</div><div class="dc-val">${vis1200sum||'—'}</div></div>
+      <div class="dept-cell hi"><div class="dc-lbl">Визиты</div><div class="dc-val">${allVis || '—'}</div></div>
+      <div class="dept-cell"><div class="dc-lbl">Визиты CRM</div><div class="dc-val">${vis800sum || '—'}</div></div>
+      <div class="dept-cell"><div class="dc-lbl">Визиты ТЛ</div><div class="dc-val">${vis1200sum || '—'}</div></div>
     </div>
     <div class="dept-row1" style="margin-bottom:8px">
-      <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">${planTotal||'—'}</div></div>
-      <div class="dept-cell"><div class="dc-lbl">Остаток</div><div class="dc-val">${ostPlan||'—'}</div></div>
+      <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">${planTotal || '—'}</div></div>
+      <div class="dept-cell"><div class="dc-lbl">Остаток</div><div class="dc-val">${ostPlan || '—'}</div></div>
       <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val" style="color:${pctClr(parseInt(progOtdel))}">${progOtdel}</div></div>
     </div>
     <div class="dept-row2" style="margin-bottom:8px">
-      <div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">${deptKred||'—'}</div></div>
-      <div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">${deptNal||'—'}</div></div>
-      <div class="dept-cell"><div class="dc-lbl">Комиссия</div><div class="dc-val">${deptKom||'—'}</div></div>
+      <div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">${deptKred || '—'}</div></div>
+      <div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">${deptNal || '—'}</div></div>
+      <div class="dept-cell"><div class="dc-lbl">Комиссия</div><div class="dc-val">${deptKom || '—'}</div></div>
     </div>
     <div class="dept-sec-lbl">Конверсии / Доли</div>
     <div class="dept-sec-lbl" style="font-size:7px;color:var(--txt2);margin:4px 0 6px">Конверсия общая</div>
     <div class="dept-row3">
-      <div class="dept-cell"><div class="dc-lbl">Конверсия</div><div class="dc-val">${cnvrsTotGen[6]||'—'}</div><div class="dc-lbl" style="margin-top:3px;margin-bottom:0">визиты</div></div>
-      <div class="dept-cell"><div class="dc-lbl">Конверсия</div><div class="dc-val">${cnvrsTotGen[7]||'—'}</div><div class="dc-lbl" style="margin-top:3px;margin-bottom:0">кредиты</div></div>
-      <div class="dept-cell"><div class="dc-lbl">% нецелевых</div><div class="dc-val">${cnvrsTotGen[9]||'—'}</div><div class="dc-lbl" style="margin-top:3px;margin-bottom:0">сделок</div></div>
+      <div class="dept-cell"><div class="dc-lbl">Конверсия</div><div class="dc-val">${cnvrsTotGen[6] || '—'}</div><div class="dc-lbl" style="margin-top:3px;margin-bottom:0">визиты</div></div>
+      <div class="dept-cell"><div class="dc-lbl">Конверсия</div><div class="dc-val">${cnvrsTotGen[7] || '—'}</div><div class="dc-lbl" style="margin-top:3px;margin-bottom:0">кредиты</div></div>
+      <div class="dept-cell"><div class="dc-lbl">% нецелевых</div><div class="dc-val">${cnvrsTotGen[9] || '—'}</div><div class="dc-lbl" style="margin-top:3px;margin-bottom:0">сделок</div></div>
     </div>
     <div class="dept-sec-lbl" style="font-size:7px;color:var(--txt2);margin:10px 0 6px">Конверсия CRM</div>
     <div class="dept-row3">
-      <div class="dept-cell"><div class="dc-lbl">Конверсия</div><div class="dc-val">${cnvrsTotCrm[6]||'—'}</div><div class="dc-lbl" style="margin-top:3px;margin-bottom:0">визиты</div></div>
-      <div class="dept-cell"><div class="dc-lbl">Конверсия</div><div class="dc-val">${cnvrsTotCrm[7]||'—'}</div><div class="dc-lbl" style="margin-top:3px;margin-bottom:0">кредиты</div></div>
-      <div class="dept-cell"><div class="dc-lbl">% нецелевых</div><div class="dc-val">${cnvrsTotCrm[9]||'—'}</div><div class="dc-lbl" style="margin-top:3px;margin-bottom:0">сделок</div></div>
+      <div class="dept-cell"><div class="dc-lbl">Конверсия</div><div class="dc-val">${cnvrsTotCrm[6] || '—'}</div><div class="dc-lbl" style="margin-top:3px;margin-bottom:0">визиты</div></div>
+      <div class="dept-cell"><div class="dc-lbl">Конверсия</div><div class="dc-val">${cnvrsTotCrm[7] || '—'}</div><div class="dc-lbl" style="margin-top:3px;margin-bottom:0">кредиты</div></div>
+      <div class="dept-cell"><div class="dc-lbl">% нецелевых</div><div class="dc-val">${cnvrsTotCrm[9] || '—'}</div><div class="dc-lbl" style="margin-top:3px;margin-bottom:0">сделок</div></div>
     </div>
     <div class="dept-sec-lbl" style="font-size:7px;color:var(--txt2);margin:10px 0 6px">Конверсия тёплые лиды</div>
     <div class="dept-row3">
-      <div class="dept-cell"><div class="dc-lbl">Конверсия</div><div class="dc-val">${cnvrsTotWarm[6]||'—'}</div><div class="dc-lbl" style="margin-top:3px;margin-bottom:0">визиты</div></div>
-      <div class="dept-cell"><div class="dc-lbl">Конверсия</div><div class="dc-val">${cnvrsTotWarm[7]||'—'}</div><div class="dc-lbl" style="margin-top:3px;margin-bottom:0">кредиты</div></div>
-      <div class="dept-cell"><div class="dc-lbl">% нецелевых</div><div class="dc-val">${cnvrsTotWarm[9]||'—'}</div><div class="dc-lbl" style="margin-top:3px;margin-bottom:0">сделок</div></div>
+      <div class="dept-cell"><div class="dc-lbl">Конверсия</div><div class="dc-val">${cnvrsTotWarm[6] || '—'}</div><div class="dc-lbl" style="margin-top:3px;margin-bottom:0">визиты</div></div>
+      <div class="dept-cell"><div class="dc-lbl">Конверсия</div><div class="dc-val">${cnvrsTotWarm[7] || '—'}</div><div class="dc-lbl" style="margin-top:3px;margin-bottom:0">кредиты</div></div>
+      <div class="dept-cell"><div class="dc-lbl">% нецелевых</div><div class="dc-val">${cnvrsTotWarm[9] || '—'}</div><div class="dc-lbl" style="margin-top:3px;margin-bottom:0">сделок</div></div>
     </div>
   </div>`;
 
-  // ДОЖИМ DEPT CARD
   let dozhimDeptCard = '';
   const dRaw = S.data.d_otchet;
   if (dRaw && dRaw.length >= 4) {
     const dMgrs = dRaw.slice(3, 20).filter(r => r[0] && r[0].trim());
-    const dAllVis = dMgrs.reduce((s,r) => s + num(r[7]), 0);
-    const dPlan   = dMgrs.reduce((s,r) => s + num(r[3]), 0);
+    const dAllVis = dMgrs.reduce((s, r) => s + num(r[7]), 0);
+    const dPlan = dMgrs.reduce((s, r) => s + num(r[3]), 0);
     let dProg = '—';
     if (dp && dPlan > 0) {
       const tgt = (dPlan / dim) * dp;
       dProg = Math.round(dAllVis / tgt * 100) + '%';
     }
-    const dKred = dMgrs.reduce((s,r) => s + num(r[8]) + num(r[12]), 0);
-    const dNal  = dMgrs.reduce((s,r) => s + num(r[9]) + num(r[13]), 0);
-    const dKom  = dMgrs.reduce((s,r) => s + num(r[14]), 0);
+    const dKred = dMgrs.reduce((s, r) => s + num(r[8]) + num(r[12]), 0);
+    const dNal = dMgrs.reduce((s, r) => s + num(r[9]) + num(r[13]), 0);
+    const dKom = dMgrs.reduce((s, r) => s + num(r[14]), 0);
     dozhimDeptCard = `
     <div class="sec-title">ОТДЕЛ ДОЖИМ</div>
     <div class="dept-card" style="background:rgba(${accR},${accG},${accB},0.08)">
       <div class="dept-row1">
-        <div class="dept-cell hi"><div class="dc-lbl">Визиты</div><div class="dc-val">${dAllVis||'—'}</div></div>
-        <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">${dPlan||'—'}</div></div>
+        <div class="dept-cell hi"><div class="dc-lbl">Визиты</div><div class="dc-val">${dAllVis || '—'}</div></div>
+        <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">${dPlan || '—'}</div></div>
         <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val" style="color:${pctClr(parseInt(dProg))}">${dProg}</div></div>
       </div>
       <div class="dept-row2">
-        <div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">${dKred||'—'}</div></div>
-        <div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">${dNal||'—'}</div></div>
-        <div class="dept-cell"><div class="dc-lbl">Комиссия</div><div class="dc-val">${dKom||'—'}</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">${dKred || '—'}</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">${dNal || '—'}</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Комиссия</div><div class="dc-val">${dKom || '—'}</div></div>
       </div>
     </div>`;
   } else {
@@ -1531,27 +993,27 @@ function renderOtchet() {
     </div>`;
   }
 
-  const KOTEL = ['котел','котёл','kotel'];
-  const isKotel = n => KOTEL.includes((n||'').toLowerCase().trim());
+  const KOTEL = ['котел', 'котёл', 'kotel'];
+  const isKotel = n => KOTEL.includes((n || '').toLowerCase().trim());
 
   function getCnvrsRow(name, section) {
-    const n = (name||'').toLowerCase().trim();
+    const n = (name || '').toLowerCase().trim();
     let rows;
     if (section === 'crm') rows = cnvrsData.slice(2, 11);
     else if (section === 'warm') rows = cnvrsData.slice(16, 25);
     else rows = cnvrsData.slice(30, 39);
-    return rows.find(r => (r[0]||'').toLowerCase().trim() === n) || [];
+    return rows.find(r => (r[0] || '').toLowerCase().trim() === n) || [];
   }
 
   const managerStats = mgrRows.filter(r => !isKotel(r[0])).map(r => {
-    const mName = (r[0]||'—').trim();
+    const mName = (r[0] || '—').trim();
     const genRow = getCnvrsRow(mName, 'general');
-    const convStr = (genRow[6]||'0%').replace('%','').replace(',','.');
+    const convStr = (genRow[6] || '0%').replace('%', '').replace(',', '.');
     return {
-      name:    mName.toUpperCase(),
-      visits:  num(r[7]),
-      plan:    num(r[3]) || 1,
-      progNum: parseFloat((r[6]||'0%').replace('%','').replace(',','.')) || 0,
+      name: mName.toUpperCase(),
+      visits: num(r[7]),
+      plan: num(r[3]) || 1,
+      progNum: parseFloat((r[6] || '0%').replace('%', '').replace(',', '.')) || 0,
       convPct: parseFloat(convStr) || 0,
     };
   });
@@ -1585,72 +1047,72 @@ function renderOtchet() {
       <div class="speedo-grid">${speedoHTML}</div>
     </div>`;
 
-  const rankRows  = mgrRows.filter(r => !isKotel(r[0]));
-  const kotelRows = mgrRows.filter(r =>  isKotel(r[0]));
+  const rankRows = mgrRows.filter(r => !isKotel(r[0]));
+  const kotelRows = mgrRows.filter(r => isKotel(r[0]));
 
   const withProg = rankRows.map(r => {
-    const progNum = parseFloat((r[6]||'0%').replace('%','').replace(',','.')) || 0;
+    const progNum = parseFloat((r[6] || '0%').replace('%', '').replace(',', '.')) || 0;
     return { r, progNum };
   });
   withProg.sort((a, b) => b.progNum - a.progNum);
   const total = withProg.length;
 
   const ranked = withProg.map(({ r, progNum }, idx) => {
-    const name  = (r[0]||'—').toUpperCase();
-    const plan  = num(r[3]);
-    const fact  = num(r[7]);
+    const name = (r[0] || '—').toUpperCase();
+    const plan = num(r[3]);
+    const fact = num(r[7]);
     const daily = computeDailyPlan(plan, fact, progNum, currentSuffix);
-    const rplan = r[3]||'0', ost = r[4]||'0';
-    const prc   = r[5]||'0%', prog = r[6]||'0%';
-    const allV  = r[7]||'0';
-    const rs    = rankStyles(idx, total);
+    const rplan = r[3] || '0', ost = r[4] || '0';
+    const prc = r[5] || '0%', prog = r[6] || '0%';
+    const allV = r[7] || '0';
+    const rs = rankStyles(idx, total);
     const fillGrad = `linear-gradient(90deg,${rs.color},${rs.color})`;
 
     const crmCnvrs = getCnvrsRow(name, 'crm');
     const warmCnvrs = getCnvrsRow(name, 'warm');
     const modalData = JSON.stringify({
-      name, v800:r[1], v1200:r[2], rplan, ost, prc, prog, allV,
-      kred800:r[8], nal800:r[9], td800:r[10], kom800:r[11],
-      kred1200:r[12], nal1200:r[13], td1200:r[14], kom1200:r[15],
-      zadatok:r[16], vsalone:r[19], vkso:r[22], vfSSP:r[23], vbanke:r[24], otkaz:r[25],
-      crmConVis:crmCnvrs[6]||'—', crmConKred:crmCnvrs[7]||'—',
-      crmDolya:crmCnvrs[8]||'—', crmKoef:crmCnvrs[12]||'—',
-      warmConVis:warmCnvrs[6]||'—', warmConKred:warmCnvrs[7]||'—',
-      warmDolya:warmCnvrs[8]||'—', warmKoef:warmCnvrs[12]||'—',
-      rs, medal: idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'', idx: idx+1
-    }).replace(/'/g,"&#39;");
+      name, v800: r[1], v1200: r[2], rplan, ost, prc, prog, allV,
+      kred800: r[8], nal800: r[9], td800: r[10], kom800: r[11],
+      kred1200: r[12], nal1200: r[13], td1200: r[14], kom1200: r[15],
+      zadatok: r[16], vsalone: r[19], vkso: r[22], vfSSP: r[23], vbanke: r[24], otkaz: r[25],
+      crmConVis: crmCnvrs[6] || '—', crmConKred: crmCnvrs[7] || '—',
+      crmDolya: crmCnvrs[8] || '—', crmKoef: crmCnvrs[12] || '—',
+      warmConVis: warmCnvrs[6] || '—', warmConKred: warmCnvrs[7] || '—',
+      warmDolya: warmCnvrs[8] || '—', warmKoef: warmCnvrs[12] || '—',
+      rs, medal: idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '', idx: idx + 1
+    }).replace(/'/g, "&#39;");
 
     return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
-      <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${medalBtn(idx)}</div><button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
+      <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx + 1}</span><span class="mop-name">${name}</span>${medalBtn(idx)}</div><button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g, "&quot;")}')">i</button></div>
       <div class="mop-mini">
         <div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
         <div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div>
         <div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div>
         <div class="mm"><div class="ml">Дневной</div><div class="mv">${daily}</div></div>
       </div>
-      <div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:${rs.color}">${progNum}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(progNum,100)}%;background:${fillGrad}"></div></div></div>
+      <div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:${rs.color}">${progNum}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(progNum, 100)}%;background:${fillGrad}"></div></div></div>
     </div>`;
   }).join('');
 
   const kotelHTML = kotelRows.map(r => {
-    const name = (r[0]||'—').toUpperCase();
-    const prog = r[6]||'0%';
-    const p = parseFloat(prog.replace('%','').replace(',','.')) || 0;
+    const name = (r[0] || '—').toUpperCase();
+    const prog = r[6] || '0%';
+    const p = parseFloat(prog.replace('%', '').replace(',', '.')) || 0;
     const plan = num(r[3]), fact = num(r[7]);
     const daily = computeDailyPlan(plan, fact, p, currentSuffix);
     return `<div class="mop" style="opacity:.65"><div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:rgba(128,128,128,.15);color:var(--txt3)">—</span><span class="mop-name">${name}</span></div></div>
       <div class="mop-mini">
-        <div class="mm"><div class="ml">Визиты</div><div class="mv">${r[7]||'0'}</div></div>
-        <div class="mm"><div class="ml">План</div><div class="mv">${r[3]||'0'}</div></div>
-        <div class="mm"><div class="ml">Остаток</div><div class="mv">${r[4]||'0'}</div></div>
+        <div class="mm"><div class="ml">Визиты</div><div class="mv">${r[7] || '0'}</div></div>
+        <div class="mm"><div class="ml">План</div><div class="mv">${r[3] || '0'}</div></div>
+        <div class="mm"><div class="ml">Остаток</div><div class="mv">${r[4] || '0'}</div></div>
         <div class="mm"><div class="ml">Дневной</div><div class="mv">${daily}</div></div>
       </div>
-      <div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:var(--txt2)">${p}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(p,100)}%;background:var(--txt3)"></div></div></div></div>`;
+      <div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:var(--txt2)">${p}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(p, 100)}%;background:var(--txt3)"></div></div></div></div>`;
   }).join('');
 
   const mops_html = ranked + kotelHTML;
 
-  const subtabs = `<span class="report-subtab ${S.reportTab==='dept'?'active':''}" onclick="setReportTab('dept')">ОТДЕЛ</span><span class="report-subtab ${S.reportTab==='mgr'?'active':''}" onclick="setReportTab('mgr')">МЕНЕДЖЕРЫ</span><span class="report-subtab ${S.reportTab==='dozhim'?'active':''}" onclick="setReportTab('dozhim')">ДОЖИМ</span>`;
+  const subtabs = `<span class="report-subtab ${S.reportTab === 'dept' ? 'active' : ''}" onclick="setReportTab('dept')">ОТДЕЛ</span><span class="report-subtab ${S.reportTab === 'mgr' ? 'active' : ''}" onclick="setReportTab('mgr')">МЕНЕДЖЕРЫ</span><span class="report-subtab ${S.reportTab === 'dozhim' ? 'active' : ''}" onclick="setReportTab('dozhim')">ДОЖИМ</span>`;
   if (floating) floating.innerHTML = subtabs;
 
   let content = '';
@@ -1689,45 +1151,45 @@ function renderDozhimCards() {
   if (!dRaw || dRaw.length < 4) return '<div class="empty">Нет данных по дожиму</div>';
   const dMgrs = dRaw.slice(3, 20).filter(r => r[0] && r[0].trim());
   if (!dMgrs.length) return '<div class="empty">Нет данных по дожиму</div>';
-  const withProg = dMgrs.map(r => ({ r, progNum: parseFloat((r[6]||'0%').replace('%','').replace(',','.')) || 0 }));
+  const withProg = dMgrs.map(r => ({ r, progNum: parseFloat((r[6] || '0%').replace('%', '').replace(',', '.')) || 0 }));
   withProg.sort((a, b) => b.progNum - a.progNum);
   const total = withProg.length;
   const cards = withProg.map(({ r, progNum }, idx) => {
-    const name  = (r[0]||'—').toUpperCase();
-    const plan  = num(r[3]);
-    const fact  = num(r[7]);
+    const name = (r[0] || '—').toUpperCase();
+    const plan = num(r[3]);
+    const fact = num(r[7]);
     const daily = computeDailyPlan(plan, fact, progNum, currentSuffix);
-    const rplan = r[3]||'0', ost = r[4]||'0';
-    const prc   = r[5]||'0%', prog = r[6]||'0%';
-    const allV  = r[7]||'0';
-    const rs    = rankStyles(idx, total);
+    const rplan = r[3] || '0', ost = r[4] || '0';
+    const prc = r[5] || '0%', prog = r[6] || '0%';
+    const allV = r[7] || '0';
+    const rs = rankStyles(idx, total);
     const fillGrad = `linear-gradient(90deg,${rs.color},${rs.color})`;
     const modalData = JSON.stringify({
-      type:'dozhim', name, v800:r[1], v1000:r[2], rplan, ost, prc, prog, allV,
-      kred800:r[8], nal800:r[9], td800:r[10], kom800:r[11],
-      kred1000:r[12], nal1000:r[13], kom1000:r[14], zadatok:r[15],
-      rs, medal: idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'', idx: idx+1
-    }).replace(/'/g,"&#39;");
+      type: 'dozhim', name, v800: r[1], v1000: r[2], rplan, ost, prc, prog, allV,
+      kred800: r[8], nal800: r[9], td800: r[10], kom800: r[11],
+      kred1000: r[12], nal1000: r[13], kom1000: r[14], zadatok: r[15],
+      rs, medal: idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '', idx: idx + 1
+    }).replace(/'/g, "&#39;");
     return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
-      <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${medalBtn(idx)}</div><button class="mop-info-btn" onclick="openDozhimModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
+      <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx + 1}</span><span class="mop-name">${name}</span>${medalBtn(idx)}</div><button class="mop-info-btn" onclick="openDozhimModal('${modalData.replace(/"/g, "&quot;")}')">i</button></div>
       <div class="mop-mini">
         <div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
         <div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div>
         <div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div>
         <div class="mm"><div class="ml">Дневной</div><div class="mv">${daily}</div></div>
       </div>
-      <div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:${rs.color}">${progNum}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(progNum,100)}%;background:${fillGrad}"></div></div></div>
+      <div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:${rs.color}">${progNum}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(progNum, 100)}%;background:${fillGrad}"></div></div></div>
     </div>`;
   }).join('');
   return `<div class="sec-title">Менеджеры дожима</div><div class="mops">${cards}</div>`;
 }
 
 function openDozhimModal(dataStr) {
-  const d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"'));
+  const d = JSON.parse(dataStr.replace(/&#39;/g, "'").replace(/&quot;/g, '"'));
   const p = num(d.prc);
   const rs = d.rs;
-  document.getElementById('mop-modal-title').innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>${d.medal?' '+d.medal:''}`;
-  document.getElementById('mop-modal-body').innerHTML = `<div class="mop-grid4"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div></div><div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div><div class="modal-sec"><div class="modal-sec-title">800</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td800}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">1000</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1000}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1000}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1000}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1000}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div></div></div>`;
+  document.getElementById('mop-modal-title').innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>${d.medal ? ' ' + d.medal : ''}`;
+  document.getElementById('mop-modal-body').innerHTML = `<div class="mop-grid4"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div></div><div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${Math.min(p, 100)}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div><div class="modal-sec"><div class="modal-sec-title">800</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td800}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">1000</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1000}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1000}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1000}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1000}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div></div></div>`;
   document.getElementById('mop-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -1749,14 +1211,7 @@ function setReportTab(tab) {
   renderOtchet();
 }
 
-function goHome() {
-  const tabBtn = document.querySelector('.tab[data-tab="otchet"]');
-  if (tabBtn) tabBtn.click();
-  S.reportTab = 'dept';
-  if (S.data.otchet) renderOtchet();
-}
-
-// ==================== RENDER DOHOD ====================
+// ==================== ДОХОД (RENDER DOHOD) ====================
 function renderDohod() {
   const el = document.getElementById('c-dohod');
   const floating = document.getElementById('floating-dohod-subtabs');
@@ -1765,24 +1220,24 @@ function renderDohod() {
   if (S.dohodTab === 'dozhim') { renderDohodDozhim(el); return; }
   const raw = S.data.dohod;
   if (!raw || raw.length < 3) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
-  const mgrs   = raw.slice(2,12).filter(r => r[0]&&r[0].trim());
+  const mgrs = raw.slice(2, 12).filter(r => r[0] && r[0].trim());
   const totRow = raw[12] || [];
-  const KOTEL_NAMES = ['котел','котёл','kotel'];
-  const isKotel = name => KOTEL_NAMES.includes((name||'').toLowerCase().trim());
+  const KOTEL_NAMES = ['котел', 'котёл', 'kotel'];
+  const isKotel = name => KOTEL_NAMES.includes((name || '').toLowerCase().trim());
   const kotelRow = mgrs.find(r => isKotel(r[0]));
   const rankMgrs = mgrs.filter(r => !isKotel(r[0]));
-  const parsed = rankMgrs.map(r => ({ name: (r[0]||'—').toUpperCase(), raw: r[1]||'0', n: parseFloat(String(r[1]||'0').replace(/[^\d.]/g,''))||0 }));
+  const parsed = rankMgrs.map(r => ({ name: (r[0] || '—').toUpperCase(), raw: r[1] || '0', n: parseFloat(String(r[1] || '0').replace(/[^\d.]/g, '')) || 0 }));
   parsed.sort((a, b) => b.n - a.n);
   const maxAmt = parsed[0]?.n || 0;
-  const total  = parsed.length;
+  const total = parsed.length;
   const isLight = document.body.classList.contains('light');
   const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
   const rows = parsed.map((item, idx) => {
-    const w  = maxAmt ? Math.round(item.n / maxAmt * 100) : 0;
+    const w = maxAmt ? Math.round(item.n / maxAmt * 100) : 0;
     const rs = rankStyles(idx, total);
-    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:${rs.color}">${item.name}</span>${medalBtn(idx)}</div><div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div><div style="text-align:right"><span class="zp-a" style="color:${rs.color}">${fmtRub(item.raw)}</span></div></div>`;
+    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx + 1}</span><span class="zp-n" style="color:${rs.color}">${item.name}</span>${medalBtn(idx)}</div><div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div><div style="text-align:right"><span class="zp-a" style="color:${rs.color}">${fmtRub(item.raw)}</span></div></div>`;
   }).join('');
-  const kotelHTML = kotelRow ? `<div class="zp-row" style="opacity:.6;margin-top:8px"><span class="zp-n" style="color:var(--txt2)">${(kotelRow[0]||'').toUpperCase()}</span><div class="zp-bg"><div class="zp-fill" style="width:0%"></div></div><span class="zp-a" style="color:var(--txt2)">${fmtRub(kotelRow[1])}</span></div>` : '';
+  const kotelHTML = kotelRow ? `<div class="zp-row" style="opacity:.6;margin-top:8px"><span class="zp-n" style="color:var(--txt2)">${(kotelRow[0] || '').toUpperCase()}</span><div class="zp-bg"><div class="zp-fill" style="width:0%"></div></div><span class="zp-a" style="color:var(--txt2)">${fmtRub(kotelRow[1])}</span></div>` : '';
   el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Фонд отдела за месяц</div><div class="zv">${fmtRub(totRow[1])}</div></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}${kotelHTML}</div>`;
 }
 
@@ -1791,7 +1246,7 @@ function renderDohodDozhim(el) {
   if (!raw || raw.length < 3) { el.innerHTML = '<div class="empty">Нет данных по дожиму</div>'; return; }
   const mgrs = raw.slice(2, 20).filter(r => r[0] && r[0].trim());
   if (!mgrs.length) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
-  const parsed = mgrs.map(r => ({ name: (r[0]||'—').toUpperCase(), itogo: r[1]||'0', n: parseFloat(String(r[1]||'0').replace(/[^\d.]/g,''))||0 }));
+  const parsed = mgrs.map(r => ({ name: (r[0] || '—').toUpperCase(), itogo: r[1] || '0', n: parseFloat(String(r[1] || '0').replace(/[^\d.]/g, '')) || 0 }));
   parsed.sort((a, b) => b.n - a.n);
   const maxAmt = parsed[0]?.n || 0;
   const totalSum = parsed.reduce((s, p) => s + p.n, 0);
@@ -1799,7 +1254,7 @@ function renderDohodDozhim(el) {
   const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
   const rows = parsed.map((item, idx) => {
     const w = maxAmt ? Math.round(item.n / maxAmt * 100) : 0;
-    return `<div class="zp-row" style="--rank-r:128;--rank-g:128;--rank-b:128;border-color:var(--line2);background:var(--bg2)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="rank-badge" style="background:var(--bg3);color:var(--txt2)">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span></div><div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:var(--acc)"></div></div><div style="text-align:right"><span class="zp-a" style="color:var(--acc)">${fmtRub(item.itogo)}</span></div></div>`;
+    return `<div class="zp-row" style="--rank-r:128;--rank-g:128;--rank-b:128;border-color:var(--line2);background:var(--bg2)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="rank-badge" style="background:var(--bg3);color:var(--txt2)">${idx + 1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span></div><div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:var(--acc)"></div></div><div style="text-align:right"><span class="zp-a" style="color:var(--acc)">${fmtRub(item.itogo)}</span></div></div>`;
   }).join('');
   el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Фонд дожима за месяц</div><div class="zv">${fmtRub(totalSum)}</div></div><div class="sec-title">Доход менеджеров дожима</div><div class="zp-list">${rows}</div>`;
 }
@@ -1821,8 +1276,8 @@ function setDohodTab(tab) {
   renderDohod();
 }
 
-// ==================== GRAFIK ====================
-const DOW = ['вс','пн','вт','ср','чт','пт','сб'];
+// ==================== ГРАФИК (RENDER GRAFIK) ====================
+const DOW = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
 let _schedWeek = null;
 
 function getWeeksForMonth(year, month) {
@@ -1862,37 +1317,35 @@ function parseGroup(rows, daysRow, weekDays) {
 }
 
 function renderGrafik() {
-  const el  = document.getElementById('c-grafik');
+  const el = document.getElementById('c-grafik');
   const raw = S.data.grafik;
   if (!raw || raw.length < 3) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
-  const mo  = parseInt(currentSuffix.slice(0,2));
-  const yr  = 2000 + parseInt(currentSuffix.slice(2,4));
+  const mo = parseInt(currentSuffix.slice(0, 2));
+  const yr = 2000 + parseInt(currentSuffix.slice(2, 4));
   const weeks = getWeeksForMonth(yr, mo - 1);
   if (_schedWeek === null) {
     const today = new Date();
-    const todayWeek = weeks.findIndex(w => w.some(d => d.day === today.getDate() && today.getMonth()+1 === mo && today.getFullYear() === yr));
+    const todayWeek = weeks.findIndex(w => w.some(d => d.day === today.getDate() && today.getMonth() + 1 === mo && today.getFullYear() === yr));
     _schedWeek = todayWeek >= 0 ? todayWeek : 0;
   }
-  _schedWeek = Math.max(0, Math.min(_schedWeek, weeks.length-1));
+  _schedWeek = Math.max(0, Math.min(_schedWeek, weeks.length - 1));
   const week = weeks[_schedWeek];
   const weekDays = week.map(d => d.day);
-  // CRM: строки 3-11 (9 менеджеров) – убираем строку 12 (кол-во в смене)
   const crmRaw = raw.slice(3, 12);
   const g1pre = parseGroup(crmRaw, raw[1], weekDays);
-  // Дожим: строки 19-23 (5 менеджеров) – убираем строку 24
   const warmRaw = raw.slice(19, 24);
   const g2pre = parseGroup(warmRaw, raw[17], weekDays);
   const crmPeople = g1pre;
-  const workerCounts = weekDays.map((_, wi) => crmPeople.filter(p => (p.cells[wi]||'').toLowerCase().trim() === 'р').length);
-  const hdrs = week.map((d, wi) => `<div class="sched-day-hdr${d.day === new Date().getDate() && new Date().getMonth()+1 === mo && new Date().getFullYear() === yr ? ' today' : ''}"><div class="sd-num">${d.day}</div><div class="sd-dow">${DOW[d.dow]}</div><div class="sd-workers">${workerCounts[wi]}</div></div>`).join('');
+  const workerCounts = weekDays.map((_, wi) => crmPeople.filter(p => (p.cells[wi] || '').toLowerCase().trim() === 'р').length);
+  const hdrs = week.map((d, wi) => `<div class="sched-day-hdr${d.day === new Date().getDate() && new Date().getMonth() + 1 === mo && new Date().getFullYear() === yr ? ' today' : ''}"><div class="sd-num">${d.day}</div><div class="sd-dow">${DOW[d.dow]}</div><div class="sd-workers">${workerCounts[wi]}</div></div>`).join('');
   const weekHeader = `<div class="sched-week">${hdrs}</div>`;
   function buildCards(people) {
     return people.map(p => {
       const cells = p.cells.map((val, wi) => {
         const v = val.toLowerCase().trim();
-        const cls = v==='р'?'dr':v==='в'?'dv':v==='вс'?'dvs':val?'':'empty';
-        const isT = week[wi]?.day === new Date().getDate() && new Date().getMonth()+1 === mo && new Date().getFullYear() === yr;
-        return `<div class="sched-cell ${cls}${isT?' today-col':''}">${val||'·'}</div>`;
+        const cls = v === 'р' ? 'dr' : v === 'в' ? 'dv' : v === 'вс' ? 'dvs' : val ? '' : 'empty';
+        const isT = week[wi]?.day === new Date().getDate() && new Date().getMonth() + 1 === mo && new Date().getFullYear() === yr;
+        return `<div class="sched-cell ${cls}${isT ? ' today-col' : ''}">${val || '·'}</div>`;
       }).join('');
       return `<div class="sched-person"><div class="sched-person-name"><span>${p.name}</span></div><div class="sched-cells">${cells}</div></div>`;
     }).join('');
@@ -1904,10 +1357,10 @@ function renderGrafik() {
   const stickyInner = document.getElementById('grafik-sticky-inner');
   if (stickyEl && stickyInner) {
     stickyEl.style.display = '';
-    const wStart = week[0].day, wEnd = week[week.length-1].day;
-    const mName = new Date(yr, mo-1, 1).toLocaleString('ru',{month:'long'});
+    const wStart = week[0].day, wEnd = week[week.length - 1].day;
+    const mName = new Date(yr, mo - 1, 1).toLocaleString('ru', { month: 'long' });
     const prevDis = _schedWeek === 0 ? 'disabled' : '';
-    const nextDis = _schedWeek === weeks.length-1 ? 'disabled' : '';
+    const nextDis = _schedWeek === weeks.length - 1 ? 'disabled' : '';
     stickyInner.innerHTML = `<div class="sched-nav"><button class="sched-nav-btn" onclick="schedNav(-1)" ${prevDis}>‹</button><div class="sched-nav-title">${wStart}–${wEnd} ${mName}</div><button class="sched-nav-btn" onclick="schedNav(1)" ${nextDis}>›</button></div>${weekHeader}`;
     const hdr = document.querySelector('header');
     const nav = document.getElementById('main-nav');
@@ -1916,41 +1369,41 @@ function renderGrafik() {
 }
 
 function schedNav(dir) {
-  _schedWeek = (_schedWeek||0) + dir;
+  _schedWeek = (_schedWeek || 0) + dir;
   if (S.data.grafik) renderGrafik();
 }
 
-// ==================== INSTRUKTSII ====================
+// ==================== ИНСТРУКЦИИ (RENDER INSTRUKTSII) ====================
 function renderInstruktsii() {
-  const el  = document.getElementById('c-instruktsii');
+  const el = document.getElementById('c-instruktsii');
   const floatingFaq = document.getElementById('floating-faq-subtabs');
-  const subtabs = `<span class="faq-subtab ${S.faqTab==='instr'?'active':''}" onclick="setFaqTab('instr')">ИНСТРУКЦИИ</span><span class="faq-subtab ${S.faqTab==='mango'?'active':''}" onclick="setFaqTab('mango')">MANGO</span><span class="faq-subtab ${S.faqTab==='links'?'active':''}" onclick="setFaqTab('links')">ССЫЛКИ</span>`;
+  const subtabs = `<span class="faq-subtab ${S.faqTab === 'instr' ? 'active' : ''}" onclick="setFaqTab('instr')">ИНСТРУКЦИИ</span><span class="faq-subtab ${S.faqTab === 'mango' ? 'active' : ''}" onclick="setFaqTab('mango')">MANGO</span><span class="faq-subtab ${S.faqTab === 'links' ? 'active' : ''}" onclick="setFaqTab('links')">ССЫЛКИ</span>`;
   if (floatingFaq) floatingFaq.innerHTML = subtabs;
   if (S.faqTab === 'mango') { el.innerHTML = renderMangoTab(); return; }
   if (S.faqTab === 'links') { el.innerHTML = '<div class="links-placeholder">Список ссылок будет добавлен позднее</div>'; return; }
   const raw = S.data.instruktsii;
-  if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
+  if (!raw || !raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
   function buildStatusTable(rows) {
     const ths = '<th>Статус</th><th>Критерии применения</th><th>Обязательные действия в CRM</th>';
-    const trs = rows.filter(r => (r[0]||'').trim() || (r[1]||'').trim()).map(r => `更<th>${r[0]||'—'}</th><th>${r[1]||'—'}</th><th>${r[2]||'—'}</th>`).join('');
-    return `<div class="table-scroll"><table class="instr-table"><thead> <tr>${ths} </thead><tbody>${trs}</tbody>  table</div>`;
+    const trs = rows.filter(r => (r[0] || '').trim() || (r[1] || '').trim()).map(r => `<tr><td>${r[0] || '—'}</td><td>${r[1] || '—'}</td><td>${r[2] || '—'}</td></tr>`).join('');
+    return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
   }
-  const primaryRows   = raw.slice(2, 18);
+  const primaryRows = raw.slice(2, 18);
   const secondaryRows = raw.slice(20, 40);
   const reglamentBody = `<div class="instr-sub" id="is-primary"><div class="instr-sub-hdr" onclick="toggleSub('is-primary')"><span>СТАТУСЫ ПЕРВИЧНОГО КОНТАКТА</span><div class="instr-sub-toggle">[+]</div></div><div class="instr-sub-body">${buildStatusTable(primaryRows)}</div></div><div class="instr-sub" id="is-secondary"><div class="instr-sub-hdr" onclick="toggleSub('is-secondary')"><span>СТАТУСЫ ВТОРИЧНОГО КОНТАКТА</span><div class="instr-sub-toggle">[+]</div></div><div class="instr-sub-body">${buildStatusTable(secondaryRows)}</div></div>`;
   const ndzRows = raw.slice(41, 57);
   const ndzHTML = ndzRows.map(r => {
-    const a = (r[0]||'').trim(), b = (r[1]||'').trim();
+    const a = (r[0] || '').trim(), b = (r[1] || '').trim();
     if (!a && !b) return '';
     const text = b ? `${a} ${b}`.trim() : a;
     const aUp = a.toUpperCase();
-    if (aUp.startsWith('ЕСЛИ') && aUp.includes('ЗАЯВКА')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}  </tr>`;
-    if (aUp.startsWith('НО!') || aUp.startsWith('ЛЮБЫЕ')) return `<tr class="ndz-highlight"><td colspan="2">${text}  </tr>`;
-    if (aUp.startsWith('АЛГОРИТМ ЗВОНКОВ')) return `<tr class="ndz-highlight"><td colspan="2">${text}  </tr>`;
-    if (aUp.startsWith('ЕСЛИ')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}  </tr>`;
-    return `<tr><td colspan="2">${text}  </tr>`;
+    if (aUp.startsWith('ЕСЛИ') && aUp.includes('ЗАЯВКА')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}</td></tr>`;
+    if (aUp.startsWith('НО!') || aUp.startsWith('ЛЮБЫЕ')) return `<tr class="ndz-highlight"><td colspan="2">${text}</td></tr>`;
+    if (aUp.startsWith('АЛГОРИТМ ЗВОНКОВ')) return `<tr class="ndz-highlight"><td colspan="2">${text}</td></tr>`;
+    if (aUp.startsWith('ЕСЛИ')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}</td></tr>`;
+    return `<tr><td colspan="2">${text}</td></tr>`;
   }).filter(Boolean).join('');
-  const ndzBody = `<div class="mango-wrap"><table class="ndz-table"><tbody>${ndzHTML}</tbody>  table</div>`;
+  const ndzBody = `<div class="mango-wrap"><table class="ndz-table"><tbody>${ndzHTML}</tbody></table></div>`;
   el.innerHTML = `<div class="sec-title">Инструкции</div><div class="instr-block" id="ib-reglament"><div class="instr-hdr" onclick="toggleInstr('ib-reglament')"><h3>РЕГЛАМЕНТ КОРРЕКТНОГО ЗАКРЫТИЯ CRM ЗАЯВОК (ЛИДОВ)</h3><div class="instr-toggle">[+/-]</div></div><div class="instr-body">${reglamentBody}</div></div><div class="instr-block" id="ib-ndz"><div class="instr-hdr" onclick="toggleInstr('ib-ndz')"><h3>АЛГОРИТМ РАБОТЫ С НЕДОЗВОНАМИ</h3><div class="instr-toggle">[+/-]</div></div><div class="instr-body" style="padding:12px 14px">${ndzBody}</div></div>`;
 }
 
@@ -1966,20 +1419,30 @@ function toggleSub(id) {
   const btn = sub.querySelector('.instr-sub-toggle');
   if (btn) btn.textContent = sub.classList.contains('open') ? '[-]' : '[+]';
 }
+function setFaqTab(tab) {
+  S.faqTab = tab;
+  renderInstruktsii();
+}
+function renderMangoTab() {
+  const mangoData = [['Барнаул', '#9913'], ['Красноярск', '#1118'], ['Кемерово', '#1478'], ['Новокузнецк', '#1213'], ['Новосибирск', '#1516'], ['Омск', '#108'], ['Оренбург', '#11444'], ['Пермь', '#974'], ['Сургут', '#1811'], ['Томск', '#1417'], ['Тюмень', '#1512'], ['Челябинск', '#1612'], ['АСЦ Пермь', '239-26-26']];
+  const rows = mangoData.map(([city, num]) => `<tr><td>${city}</td><td>${num}</td></tr>`).join('');
+  return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
 
+// ==================== МОДАЛЬНЫЕ ОКНА И КОНФЕТТИ ====================
 function burstConfetti(el, idx) {
   const isGold = (idx === 0), isSilver = (idx === 1);
   const rect = el.getBoundingClientRect();
-  const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+  const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
   if (isGold) {
     const audio = new Audio('https://actions.google.com/sounds/v1/fireworks/firework_burst.ogg');
-    audio.volume = 0.25; audio.play().catch(()=>{});
+    audio.volume = 0.25; audio.play().catch(() => { });
     const flash = document.createElement('div');
     flash.style.cssText = `position:fixed; left:${cx}px; top:${cy}px; width:20px; height:20px; border-radius:50%; background:radial-gradient(circle,#fff,#ffd700,#ffae00,transparent); transform:translate(-50%,-50%); pointer-events:none; z-index:9999; animation:flash 0.4s ease-out forwards;`;
     document.body.appendChild(flash);
     setTimeout(() => flash.remove(), 400);
   }
-  const colors = isGold ? ['#FFD700','#FFC300','#FFDF00','#FFF8DC','#FFFFFF'] : isSilver ? ['#C0C0C0','#D8D8D8','#A8A8A8','#E8E8E8','#FFFFFF'] : ['#e8ff47','#ff4757','#2ed573','#1e90ff','#ffa502'];
+  const colors = isGold ? ['#FFD700', '#FFC300', '#FFDF00', '#FFF8DC', '#FFFFFF'] : isSilver ? ['#C0C0C0', '#D8D8D8', '#A8A8A8', '#E8E8E8', '#FFFFFF'] : ['#e8ff47', '#ff4757', '#2ed573', '#1e90ff', '#ffa502'];
   const count = isGold ? 140 : isSilver ? 80 : 55;
   const radius = isGold ? 280 : isSilver ? 180 : 130;
   for (let i = 0; i < count; i++) {
@@ -1997,24 +1460,13 @@ function burstConfetti(el, idx) {
 }
 
 function openMopModal(dataStr) {
-  const d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"'));
+  const d = JSON.parse(dataStr.replace(/&#39;/g, "'").replace(/&quot;/g, '"'));
   const p = num(d.prc);
   const rs = d.rs;
-  document.getElementById('mop-modal-title').innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>${d.medal?' '+d.medal:''}`;
-  document.getElementById('mop-modal-body').innerHTML = `<div class="mop-grid4"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div></div><div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div><div class="modal-sec"><div class="modal-sec-title">CRM</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td800}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.crmConVis}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.crmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.crmDolya}</div></div><div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.crmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТЁПЛЫЕ ЛИДЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1200}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1200}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1200}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td1200}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1200}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.warmConVis}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.warmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.warmDolya}</div></div><div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.warmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТРЕБУЮТ АКТУАЛИЗАЦИИ / ОТКАЗЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">В салоне</div><div class="mc-v">${d.vsalone}</div></div><div class="modal-cell"><div class="mc-l">В КСО</div><div class="mc-v">${d.vkso}</div></div><div class="modal-cell"><div class="mc-l">В банке</div><div class="mc-v">${d.vbanke}</div></div><div class="modal-cell"><div class="mc-l">ФССП</div><div class="mc-v">${d.vfSSP}</div></div><div class="modal-cell"><div class="mc-l">Отказ</div><div class="mc-v">${d.otkaz}</div></div></div></div>`;
+  document.getElementById('mop-modal-title').innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>${d.medal ? ' ' + d.medal : ''}`;
+  document.getElementById('mop-modal-body').innerHTML = `<div class="mop-grid4"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div></div><div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${Math.min(p, 100)}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div><div class="modal-sec"><div class="modal-sec-title">CRM</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td800}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.crmConVis}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.crmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.crmDolya}</div></div><div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.crmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТЁПЛЫЕ ЛИДЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1200}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1200}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1200}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td1200}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1200}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.warmConVis}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.warmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.warmDolya}</div></div><div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.warmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТРЕБУЮТ АКТУАЛИЗАЦИИ / ОТКАЗЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">В салоне</div><div class="mc-v">${d.vsalone}</div></div><div class="modal-cell"><div class="mc-l">В КСО</div><div class="mc-v">${d.vkso}</div></div><div class="modal-cell"><div class="mc-l">В банке</div><div class="mc-v">${d.vbanke}</div></div><div class="modal-cell"><div class="mc-l">ФССП</div><div class="mc-v">${d.vfSSP}</div></div><div class="modal-cell"><div class="mc-l">Отказ</div><div class="mc-v">${d.otkaz}</div></div></div></div>`;
   document.getElementById('mop-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
-}
-
-function setFaqTab(tab) {
-  S.faqTab = tab;
-  renderInstruktsii();
-}
-
-function renderMangoTab() {
-  const mangoData = [['Барнаул','#9913'],['Красноярск','#1118'],['Кемерово','#1478'],['Новокузнецк','#1213'],['Новосибирск','#1516'],['Омск','#108'],['Оренбург','#11444'],['Пермь','#974'],['Сургут','#1811'],['Томск','#1417'],['Тюмень','#1512'],['Челябинск','#1612'],['АСЦ Пермь','239-26-26']];
-  const rows = mangoData.map(([city, num]) => `更<td>${city}</td><td>${num}</td>`).join('');
-  return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th> </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function closeMopModal(e) {
@@ -2023,7 +1475,7 @@ function closeMopModal(e) {
   document.body.style.overflow = '';
 }
 
-// ==================== MONTH DROPDOWN ====================
+// ==================== ВЫПАДАЮЩЕЕ МЕНЮ МЕСЯЦА ====================
 function showMonthDropdown() {
   const existing = document.querySelector('.month-dropdown');
   if (existing) existing.remove();
@@ -2034,7 +1486,7 @@ function showMonthDropdown() {
     const d = new Date();
     d.setMonth(d.getMonth() - i);
     const yy = d.getFullYear().toString().slice(-2);
-    const mm = (d.getMonth() + 1).toString().padStart(2,'0');
+    const mm = (d.getMonth() + 1).toString().padStart(2, '0');
     const suffix = mm + yy;
     months.push({ suffix, name: getMonthName(suffix) });
   }
@@ -2060,22 +1512,23 @@ function showMonthDropdown() {
   setTimeout(() => document.addEventListener('click', closeDropdown), 0);
 }
 
-// ==================== INIT ====================
+// ==================== ИНИЦИАЛИЗАЦИЯ ====================
 document.getElementById('btn-theme').addEventListener('click', () => setTheme(!document.body.classList.contains('light')));
 document.getElementById('btn-refresh').addEventListener('click', reloadCurrent);
 document.getElementById('btn-out').addEventListener('click', onLogout);
 document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => goTab(b.dataset.tab)));
 document.getElementById('badge-month').addEventListener('click', showMonthDropdown);
 document.getElementById('center-login-btn').addEventListener('click', () => {
-  if (!tokenClient) { toast('Загружается…','i'); return; }
-  tokenClient.requestAccessToken({ prompt:'consent' });
+  if (!tokenClient) { toast('Загружается…', 'i'); return; }
+  tokenClient.requestAccessToken({ prompt: 'consent' });
 });
-
-// Дополнительная защита от пинч-зума (мультитач)
-document.addEventListener('touchmove', function(e) {
-  if (e.touches.length > 1) {
-    e.preventDefault();
-  }
+document.getElementById('user-wrap').addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (S.userInfo) showPersonalPage();
+  else toast('Персональные данные не найдены', 'i');
+});
+document.addEventListener('touchmove', function (e) {
+  if (e.touches.length > 1) e.preventDefault();
 }, { passive: false });
 
 function init() {
@@ -2083,17 +1536,17 @@ function init() {
   function waitGoogle() {
     if (typeof google !== 'undefined' && google.accounts) {
       initAuth();
-      if (tryRestore()) { /* уже авторизован */ }
+      if (tryRestore()) { }
       else { document.getElementById('scr-login').classList.add('on'); }
     } else setTimeout(waitGoogle, 100);
   }
   waitGoogle();
 }
-if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
 
-// ==================== BACKGROUND ORBS ====================
-(function() {
+// ==================== ФОНОВЫЕ ЭФФЕКТЫ ====================
+(function () {
   const canvas = document.getElementById('bg-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
@@ -2138,41 +1591,28 @@ else init();
   animate();
 })();
 
-// ==================== MATRIX TEXT EFFECT ====================
-(function() {
-    const target = document.getElementById("author");
-    if (!target) return;
-
-    const originalText = "© Бочаров Ю.С., 2026";
-    const letters = "日ハミヒーヘホマミムメモヤユヨラリルレロワン0123456789$+-*/=%";
-    let interval = null;
-
-    function startMatrixAnimation() {
-        let iteration = 0;
-        clearInterval(interval);
-
-        interval = setInterval(() => {
-            target.innerText = originalText
-                .split("")
-                .map((char, index) => {
-                    if (index < iteration) {
-                        return originalText[index];
-                    }
-                    if (char === " " || char === ",") return char;
-                    return letters[Math.floor(Math.random() * letters.length)];
-                })
-                .join("");
-
-            if (iteration >= originalText.length) {
-                clearInterval(interval);
-            }
-
-            iteration += 1 / 2;
-        }, 60);
-    }
-
-    setInterval(startMatrixAnimation, 10000);
-    window.addEventListener("load", startMatrixAnimation);
+// ==================== МАТРИЧНЫЙ ЭФФЕКТ ====================
+(function () {
+  const target = document.getElementById("author");
+  if (!target) return;
+  const originalText = "© Бочаров Ю.С., 2026";
+  const letters = "日ハミヒーヘホマミムメモヤユヨラリルレロワン0123456789$+-*/=%";
+  let interval = null;
+  function startMatrixAnimation() {
+    let iteration = 0;
+    clearInterval(interval);
+    interval = setInterval(() => {
+      target.innerText = originalText.split("").map((char, index) => {
+        if (index < iteration) return originalText[index];
+        if (char === " " || char === ",") return char;
+        return letters[Math.floor(Math.random() * letters.length)];
+      }).join("");
+      if (iteration >= originalText.length) clearInterval(interval);
+      iteration += 1 / 2;
+    }, 60);
+  }
+  setInterval(startMatrixAnimation, 10000);
+  window.addEventListener("load", startMatrixAnimation);
 })();
 </script>
 </body>

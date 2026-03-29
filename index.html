@@ -2149,9 +2149,11 @@ function findUserInSheet() {
   console.log('[CRM] Ищем email:', JSON.stringify(email), '| всего строк USERS:', S.usersData.length);
   for (let i = 1; i < S.usersData.length; i++) {
     const row = S.usersData[i];
-    const rowEmail = (row[0]||'').toLowerCase().trim();
-    console.log(`[CRM] USERS[${i}]:`, JSON.stringify(rowEmail), '→', row[1], row[2]);
-    if (rowEmail === email) {
+    const rawEmails = (row[0]||'');
+    // Разбиваем по запятой, точке с запятой или пробелу
+    const emails = rawEmails.split(/[,;\s]+/).map(e => e.toLowerCase().trim()).filter(Boolean);
+    console.log(`[CRM] USERS[${i}]:`, JSON.stringify(emails), '→', row[1], row[2]);
+    if (emails.includes(email)) {
       return { email: row[0], name: (row[1]||'').trim(), role: (row[2]||'crm').toLowerCase().trim() };
     }
   }

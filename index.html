@@ -2141,14 +2141,21 @@ function getCnvrsRowGlobal(name, section) {
 }
 
 function findUserInSheet() {
-  if (!S.usersData || !S.user) return null;
+  if (!S.usersData || !S.user) {
+    console.warn('[CRM] findUserInSheet: usersData=', S.usersData, 'user=', S.user);
+    return null;
+  }
   const email = (S.user.email || '').toLowerCase().trim();
+  console.log('[CRM] Ищем email:', JSON.stringify(email), '| всего строк USERS:', S.usersData.length);
   for (let i = 1; i < S.usersData.length; i++) {
     const row = S.usersData[i];
-    if ((row[0]||'').toLowerCase().trim() === email) {
+    const rowEmail = (row[0]||'').toLowerCase().trim();
+    console.log(`[CRM] USERS[${i}]:`, JSON.stringify(rowEmail), '→', row[1], row[2]);
+    if (rowEmail === email) {
       return { email: row[0], name: (row[1]||'').trim(), role: (row[2]||'crm').toLowerCase().trim() };
     }
   }
+  console.warn('[CRM] Совпадений не найдено для email:', JSON.stringify(email));
   return null;
 }
 
@@ -2156,9 +2163,14 @@ async function loadUsersAndStart() {
   try {
     if (!S.usersData) {
       S.usersData = await api('USERS', 'A1:C50');
+      console.log('[CRM] USERS загружен, строк:', S.usersData.length, S.usersData);
     }
-  } catch(e) { S.usersData = []; }
+  } catch(e) {
+    console.error('[CRM] Ошибка загрузки USERS:', e.message);
+    S.usersData = [];
+  }
   const matched = findUserInSheet();
+  console.log('[CRM] matched:', matched);
   if (matched && matched.name) {
     goPersonal();
   } else {

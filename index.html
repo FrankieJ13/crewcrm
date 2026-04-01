@@ -1490,6 +1490,12 @@ async function loadTab(tab) {
         return;
       }
     }
+    if (!S.data.dohodDetail) {
+      api(SHEETS.dohod, 'A1:Q15').then(data => {
+        S.data.dohodDetail = data;
+        if (S.dohodTab !== 'dozhim') renderDohod();
+      }).catch(() => { S.data.dohodDetail = []; });
+    }
     if (S.dohodTab === 'dozhim' && !S.data.d_dohod) {
       try {
         S.data.d_dohod = await api(SHEETS.d_dohod, 'A1:N20');
@@ -1532,7 +1538,7 @@ function reloadCurrent() {
   if (tab === 'grafik') _schedWeek = null;
   S.data[tab] = null;
   if (tab === 'otchet') { S.data.d_otchet = null; S.data.cnvrs = null; }
-  if (tab === 'dohod') S.data.d_dohod = null;
+  if (tab === 'dohod') { S.data.d_dohod = null; S.data.dohodDetail = null; }
   loadTab(tab).then(() => toast('Обновлено','s'));
 }
 
@@ -1995,7 +2001,20 @@ function renderDohod() {
   const rows = parsed.map((item, idx) => {
     const w  = maxAmt ? Math.round(item.n / maxAmt * 100) : 0;
     const rs = rankStyles(idx, total);
-    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:${rs.color}">${item.name}</span>${medalBtn(idx)}</div><div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div><div style="text-align:right"><span class="zp-a" style="color:${rs.color}">${fmtRub(item.raw)}</span></div></div>`;
+    // ищем строку детализации по имени менеджера
+    let detailBtn = '';
+    if (S.data.dohodDetail) {
+      const nameLow = item.name.toLowerCase().trim();
+      const dRow = S.data.dohodDetail.slice(2).find(r => (r[0]||'').toLowerCase().trim() === nameLow);
+      if (dRow) {
+        const det = {
+          crm:  { vis:dRow[5]||'0', kred:dRow[6]||'0', nal:dRow[7]||'0', obmen:dRow[8]||'0', kom:dRow[9]||'0', zadatok:dRow[16]||'0' },
+          warm: { vis:dRow[11]||'0', kred:dRow[12]||'0', nal:dRow[13]||'0', obmen:dRow[14]||'0', kom:dRow[15]||'0' },
+        };
+        detailBtn = `<button class="mop-info-btn" style="flex-shrink:0" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="${item.raw}">i</button>`;
+      }
+    }
+    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:${rs.color}">${item.name}</span>${medalBtn(idx)}</div><div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div><div style="display:flex;align-items:center;justify-content:flex-end;gap:8px">${detailBtn}<span class="zp-a" style="color:${rs.color}">${fmtRub(item.raw)}</span></div></div>`;
   }).join('');
   const kotelHTML = kotelRow ? `<div class="zp-row" style="opacity:.6;margin-top:8px"><span class="zp-n" style="color:var(--txt2)">${(kotelRow[0]||'').toUpperCase()}</span><div class="zp-bg"><div class="zp-fill" style="width:0%"></div></div><span class="zp-a" style="color:var(--txt2)">${fmtRub(kotelRow[1])}</span></div>` : '';
   el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Фонд отдела за месяц</div><div class="zv">${fmtRub(totRow[1])}</div></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}${kotelHTML}</div>`;

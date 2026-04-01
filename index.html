@@ -931,7 +931,8 @@ body.light .glass {
   margin-bottom:14px;
   backdrop-filter:blur(12px) saturate(180%);
   -webkit-backdrop-filter:blur(12px) saturate(180%);
-  border:1px solid rgba(255,255,255,0.15);
+  background: var(--acc-bg);
+  border:1px solid var(--acc-bdr);
   box-shadow:0 15px 35px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
   position:relative;
 }
@@ -2279,7 +2280,7 @@ function renderPersonal(matched) {
   el.innerHTML = `
     <div class="kpi-manager-name">${name.toUpperCase()}</div>
     <div class="kpi-divider"></div>
-    <div class="kpi-income-panel" style="background:rgba(${accR},${accG},${accB},0.15)">
+    <div class="kpi-income-panel">
       <div class="zl">Доход за месяц</div>
       <div class="zv">${fmtRub(incomeStr)}</div>
     </div>

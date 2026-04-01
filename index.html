@@ -1463,10 +1463,59 @@ function getWorkedDays(suffix) {
   const today = now.getDate();
   return Math.min(today, daysInMonth);
 }
-function computeDailyPlan(plan, fact, progNum, suffix) {
+
+// Считает смены менеджера по графику: total за месяц и remaining начиная с сегодня
+function getManagerShiftCounts(name, suffix) {
+  const raw = S.data.grafik;
+  if (!raw || raw.length < 3) return null;
+  const mm = parseInt(suffix.slice(0,2));
+  const yy = 2000 + parseInt(suffix.slice(2,4));
+  const nameLow = (name||'').toLowerCase().trim();
+  // ищем в CRM (строки 3-11, строка дней raw[1]) и Дожим (строки 19-23, строка дней raw[17])
+  const groups = [
+    { rows: raw.slice(3, 12),  daysRow: raw[1]  || [] },
+    { rows: raw.slice(19, 24), daysRow: raw[17] || [] },
+  ];
+  let mgrRow = null, daysRow = null;
+  for (const g of groups) {
+    const found = g.rows.find(r => (r[0]||'').toLowerCase().trim() === nameLow);
+    if (found) { mgrRow = found; daysRow = g.daysRow; break; }
+  }
+  if (!mgrRow) return null;
+  const now = new Date();
+  const isCurrent = (now.getFullYear() === yy && now.getMonth()+1 === mm);
+  const today = isCurrent ? now.getDate() : 0;
+  let total = 0, remaining = 0;
+  for (let c = 1; c <= 35; c++) {
+    const dayNum = parseInt(daysRow[c]);
+    if (!dayNum || dayNum < 1 || dayNum > 31) continue;
+    const val = (mgrRow[c]||'').toLowerCase().trim();
+    if (val === 'р') {
+      total++;
+      if (!isCurrent || dayNum > today) remaining++;
+    }
+  }
+  return { total, remaining };
+}
+
+function computeDailyPlan(plan, fact, progNum, suffix, name) {
+  const shifts = name ? getManagerShiftCounts(name, suffix) : null;
+  if (shifts && shifts.total > 0) {
+    // текущий месяц с отставанием
+    const daysInMonth = getDaysInMonth(suffix);
+    const worked = getWorkedDays(suffix);
+    if (worked < daysInMonth && progNum < 100) {
+      if (shifts.remaining <= 0) return shifts.total > 0 ? Math.ceil(plan / shifts.total) : '—';
+      const need = plan - fact;
+      if (need <= 0) return 0;
+      return Math.ceil(need / shifts.remaining);
+    }
+    // месяц завершён или план выполнен — средний по всем сменам
+    return shifts.total > 0 ? Math.ceil(plan / shifts.total) : '—';
+  }
+  // fallback на календарные дни если графика нет
   const daysInMonth = getDaysInMonth(suffix);
   const worked = getWorkedDays(suffix);
-  // если месяц ещё не завершён и прогноз < 100% -> план догона
   if (worked < daysInMonth && progNum < 100) {
     const remainingDays = daysInMonth - worked;
     if (remainingDays <= 0) return Math.ceil(plan / daysInMonth);
@@ -1474,7 +1523,6 @@ function computeDailyPlan(plan, fact, progNum, suffix) {
     if (need <= 0) return 0;
     return Math.ceil(need / remainingDays);
   }
-  // иначе средний дневной план на весь месяц
   return Math.ceil(plan / daysInMonth);
 }
 
@@ -1671,13 +1719,12 @@ function renderOtchet() {
     const name  = (r[0]||'—').toUpperCase();
     const plan  = num(r[3]);
     const fact  = num(r[7]);
-    const daily = computeDailyPlan(plan, fact, progNum, currentSuffix);
+    const daily = computeDailyPlan(plan, fact, progNum, currentSuffix, name);
     const rplan = r[3]||'0', ost = r[4]||'0';
     const prc   = r[5]||'0%', prog = r[6]||'0%';
     const allV  = r[7]||'0';
     const rs    = rankStyles(idx, total);
     const fillGrad = `linear-gradient(90deg,${rs.color},${rs.color})`;
-
     const crmCnvrs = getCnvrsRow(name, 'crm');
     const warmCnvrs = getCnvrsRow(name, 'warm');
     const modalData = JSON.stringify({
@@ -1709,7 +1756,7 @@ function renderOtchet() {
     const prog = r[6]||'0%';
     const p = parseFloat(prog.replace('%','').replace(',','.')) || 0;
     const plan = num(r[3]), fact = num(r[7]);
-    const daily = computeDailyPlan(plan, fact, p, currentSuffix);
+    const daily = computeDailyPlan(plan, fact, p, currentSuffix, name);
     return `<div class="mop" style="opacity:.65"><div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:rgba(128,128,128,.15);color:var(--txt3)">—</span><span class="mop-name">${name}</span></div></div>
       <div class="mop-mini">
         <div class="mm"><div class="ml">Визиты</div><div class="mv">${r[7]||'0'}</div></div>
@@ -1768,7 +1815,7 @@ function renderDozhimCards() {
     const name  = (r[0]||'—').toUpperCase();
     const plan  = num(r[3]);
     const fact  = num(r[7]);
-    const daily = computeDailyPlan(plan, fact, progNum, currentSuffix);
+    const daily = computeDailyPlan(plan, fact, progNum, currentSuffix, name);
     const rplan = r[3]||'0', ost = r[4]||'0';
     const prc   = r[5]||'0%', prog = r[6]||'0%';
     const allV  = r[7]||'0';
@@ -2009,7 +2056,7 @@ function renderInstruktsii() {
   }
   const primaryRows   = raw.slice(2, 18);
   const secondaryRows = raw.slice(20, 40);
-  const reglamentBody = `<div class="instr-sub" id="is-primary"><div class="instr-sub-hdr" onclick="toggleSub('is-primary')"><span>СТАТУСЫ ПЕРВИЧНОГО КОНТАКТА</span><div class="instr-sub-toggle">[+]</div></div><div class="instr-sub-body">${buildStatusTable(primaryRows)}</div></div><div class="instr-sub" id="is-secondary"><div class="instr-sub-hdr" onclick="toggleSub('is-secondary')"><span>СТАТУСЫ ВТОРИЧНОГО КОНТАКТА</span><div class="instr-sub-toggle">[+]</div></div><div class="instr-sub-body">${buildStatusTable(secondaryRows)}</div></div>`;
+  const reglamentBody = `<div class="instr-sub" id="is-primary"><div class="instr-sub-hdr" onclick="toggleSub('is-primary')"><span>СТАТУСЫ ПЕРВИЧНОГО КОНТАКТА</span><div class="instr-sub-toggle">+</div></div><div class="instr-sub-body">${buildStatusTable(primaryRows)}</div></div><div class="instr-sub" id="is-secondary"><div class="instr-sub-hdr" onclick="toggleSub('is-secondary')"><span>СТАТУСЫ ВТОРИЧНОГО КОНТАКТА</span><div class="instr-sub-toggle">+</div></div><div class="instr-sub-body">${buildStatusTable(secondaryRows)}</div></div>`;
   const ndzRows = raw.slice(41, 57);
   const ndzHTML = ndzRows.map(r => {
     const a = (r[0]||'').trim(), b = (r[1]||'').trim();
@@ -2023,20 +2070,20 @@ function renderInstruktsii() {
     return `<tr><td colspan="2">${text}</td></tr>`;
   }).filter(Boolean).join('');
   const ndzBody = `<div class="mango-wrap"><table class="ndz-table"><tbody>${ndzHTML}</tbody></table></div>`;
-  el.innerHTML = `<div class="sec-title">Инструкции</div><div class="instr-block" id="ib-reglament"><div class="instr-hdr" onclick="toggleInstr('ib-reglament')"><h3>РЕГЛАМЕНТ КОРРЕКТНОГО ЗАКРЫТИЯ CRM ЗАЯВОК (ЛИДОВ)</h3><div class="instr-toggle">[+/-]</div></div><div class="instr-body">${reglamentBody}</div></div><div class="instr-block" id="ib-ndz"><div class="instr-hdr" onclick="toggleInstr('ib-ndz')"><h3>АЛГОРИТМ РАБОТЫ С НЕДОЗВОНАМИ</h3><div class="instr-toggle">[+/-]</div></div><div class="instr-body" style="padding:12px 14px">${ndzBody}</div></div>`;
+  el.innerHTML = `<div class="sec-title">Инструкции</div><div class="instr-block" id="ib-reglament"><div class="instr-hdr" onclick="toggleInstr('ib-reglament')"><h3>РЕГЛАМЕНТ КОРРЕКТНОГО ЗАКРЫТИЯ CRM ЗАЯВОК (ЛИДОВ)</h3><div class="instr-toggle">+</div></div><div class="instr-body">${reglamentBody}</div></div><div class="instr-block" id="ib-ndz"><div class="instr-hdr" onclick="toggleInstr('ib-ndz')"><h3>АЛГОРИТМ РАБОТЫ С НЕДОЗВОНАМИ</h3><div class="instr-toggle">+</div></div><div class="instr-body" style="padding:12px 14px">${ndzBody}</div></div>`;
 }
 
 function toggleInstr(id) {
   const block = document.getElementById(id);
   block.classList.toggle('open');
   const btn = block.querySelector('.instr-toggle');
-  if (btn) btn.textContent = block.classList.contains('open') ? '[-/+]' : '[+/-]';
+  if (btn) btn.textContent = block.classList.contains('open') ? '−' : '+';
 }
 function toggleSub(id) {
   const sub = document.getElementById(id);
   sub.classList.toggle('open');
   const btn = sub.querySelector('.instr-sub-toggle');
-  if (btn) btn.textContent = sub.classList.contains('open') ? '[-]' : '[+]';
+  if (btn) btn.textContent = sub.classList.contains('open') ? '−' : '+';
 }
 
 function burstConfetti(el, idx) {
@@ -2205,6 +2252,7 @@ async function loadPersonal(matched) {
       if (!S.data.dohod)  S.data.dohod  = await api(SHEETS.dohod,  'A1:B13');
       if (!S.data.cnvrs)  S.data.cnvrs  = await api(SHEETS.cnvrs,  'A1:N40');
     }
+    if (!S.data.grafik) S.data.grafik = await api(SHEETS.grafik, 'A1:AI25');
   } catch(e) {
     if (e.message !== 'auth') el.innerHTML = `<div class="err">Ошибка загрузки данных: ${e.message}</div>`;
     return;
@@ -2242,7 +2290,7 @@ function renderPersonal(matched) {
   const prog    = mgrRow[6]||'—';
   const prc     = mgrRow[5]||'—';
   const progNum = parseFloat((mgrRow[6]||'0%').replace('%','').replace(',','.')) || 0;
-  const daily   = mgrRow[3] ? computeDailyPlan(num(mgrRow[3]), factN, progNum, currentSuffix) : '—';
+  const daily   = mgrRow[3] ? computeDailyPlan(num(mgrRow[3]), factN, progNum, currentSuffix, name) : '—';
 
   let kred='—', nal='—', kom='—', kredSub='', nalSub='', komSub='';
   let convVis='—', convKred='—', pctTarget='—';

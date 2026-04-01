@@ -266,7 +266,7 @@ nav::-webkit-scrollbar { height:0 }
   font-size:10px; font-weight:800; letter-spacing:.1em;
   text-transform:uppercase;
   color:var(--acc);
-  margin-bottom:10px;
+  margin-top:8px; margin-bottom:10px;
   display:flex; align-items:center; gap:8px;
 }
 .sec-title::after { content:''; flex:1; height:1px; background:var(--line) }
@@ -684,6 +684,7 @@ body.light .inner-base-path { stroke:rgba(0,0,0,0.08); }
   display:flex; flex-direction:column;
   border-radius:var(--r2); padding:13px 16px;
   background: rgba(var(--rank-r), var(--rank-g), var(--rank-b), 0.15);
+  position:relative;
 }
 body.light .zp-row {
   background: rgba(var(--rank-r), var(--rank-g), var(--rank-b), 0.1);
@@ -1045,7 +1046,35 @@ body.light .kpi-badge { background:rgba(0,0,0,0.03); }
 .kpi-badge .kb-val {
   font-family:'Unbounded',sans-serif; font-size:15px; font-weight:800; color:var(--txt);
 }
-.kpi-badge .kb-sub { font-size:9px; color:var(--txt2); margin-top:3px; letter-spacing:.02em; }
+/* ---- instr-table: alternating rows ---- */
+.instr-table tbody tr:nth-child(odd) td  { background:var(--bg2); }
+.instr-table tbody tr:nth-child(even) td { background:var(--bg3); }
+/* ---- ndz-table ---- */
+.ndz-table { width:100%; border-collapse:collapse; font-size:13px; }
+.ndz-table td { padding:9px 14px; line-height:1.5; color:var(--txt2); }
+.ndz-table tr { border-bottom:1px solid var(--line); }
+.ndz-table tr:last-child { border-bottom:none; }
+.ndz-table tr td { background:var(--bg2); }
+.ndz-table tr:nth-child(even) td { background:var(--bg3); }
+.ndz-table tr.ndz-sub-hdr td {
+  background:var(--acc-bg);
+  color:var(--acc);
+  font-family:'Unbounded',sans-serif;
+  font-size:10px; font-weight:800; letter-spacing:.06em;
+  text-transform:uppercase;
+  border-bottom:1px solid var(--acc-bdr);
+  border-top:1px solid var(--acc-bdr);
+  padding:10px 14px;
+}
+.ndz-table tr.ndz-highlight td {
+  background:rgba(255,71,87,.08);
+  color:var(--red);
+  font-weight:600;
+  border-bottom:1px solid rgba(255,71,87,.2);
+  border-top:1px solid rgba(255,71,87,.2);
+}
+body.light .ndz-table tr.ndz-sub-hdr td { background:var(--acc-bg); }
+body.light .ndz-table tr.ndz-highlight td { background:rgba(217,53,53,.06); }
 </style>
 </head>
 <body>
@@ -1268,7 +1297,10 @@ function fmtRub(v) {
   const n = parseFloat(String(v||'').replace(/[^\d.,-]/g,'').replace(',','.'));
   return isNaN(n) ? (v||'—') : n.toLocaleString('ru') + ' ₽';
 }
-function pctClr(p) { return p>=100?'var(--grn)':p>=60?'var(--org)':'var(--red)' }
+function pctClr(p) {
+  const n = (typeof p === 'number') ? p : (parseFloat(String(p||0).replace(/[^\d.,-]/g,'').replace(',','.')) || 0);
+  return n >= 100 ? 'var(--grn)' : n >= 60 ? 'var(--org)' : 'var(--red)';
+}
 
 function rankColor(pos, total) {
   if (total <= 1) return { r:0, g:230, b:90 };
@@ -1830,7 +1862,7 @@ function renderOtchet() {
     const crmCnvrs = getCnvrsRow(name, 'crm');
     const warmCnvrs = getCnvrsRow(name, 'warm');
     const modalData = JSON.stringify({
-      name, v800:r[1], v1200:r[2], rplan, ost, prc, prog, allV,
+      name, v800:r[1], v1200:r[2], rplan, ost, prc, prog, allV, daily, progNum,
       kred800:r[8], nal800:r[9], td800:r[10], kom800:r[11],
       kred1200:r[12], nal1200:r[13], td1200:r[14], kom1200:r[15],
       zadatok:r[16], vsalone:r[19], vkso:r[22], vfSSP:r[23], vbanke:r[24], otkaz:r[25],
@@ -2011,10 +2043,10 @@ function renderDohod() {
           crm:  { vis:dRow[5]||'0', kred:dRow[6]||'0', nal:dRow[7]||'0', obmen:dRow[8]||'0', kom:dRow[9]||'0', zadatok:dRow[16]||'0' },
           warm: { vis:dRow[11]||'0', kred:dRow[12]||'0', nal:dRow[13]||'0', obmen:dRow[14]||'0', kom:dRow[15]||'0' },
         };
-        detailBtn = `<button class="mop-info-btn" style="flex-shrink:0" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="${item.raw}">i</button>`;
+      detailBtn = `<button class="mop-info-btn" style="position:absolute;top:10px;right:10px" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="${item.raw}">i</button>`;
       }
     }
-    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:${rs.color}">${item.name}</span>${medalBtn(idx)}</div><div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div><div style="display:flex;align-items:center;justify-content:flex-end;gap:8px">${detailBtn}<span class="zp-a" style="color:${rs.color}">${fmtRub(item.raw)}</span></div></div>`;
+    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:${rs.color}">${item.name}</span>${medalBtn(idx)}</div><div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div><div style="text-align:right"><span class="zp-a" style="color:${rs.color}">${fmtRub(item.raw)}</span></div></div>`;
   }).join('');
   const kotelHTML = kotelRow ? `<div class="zp-row" style="opacity:.6;margin-top:8px"><span class="zp-n" style="color:var(--txt2)">${(kotelRow[0]||'').toUpperCase()}</span><div class="zp-bg"><div class="zp-fill" style="width:0%"></div></div><span class="zp-a" style="color:var(--txt2)">${fmtRub(kotelRow[1])}</span></div>` : '';
   el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Фонд отдела за месяц</div><div class="zv">${fmtRub(totRow[1])}</div></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}${kotelHTML}</div>`;
@@ -2232,10 +2264,11 @@ function burstConfetti(el, idx) {
 
 function openMopModal(dataStr) {
   const d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"'));
-  const p = num(d.prc);
   const rs = d.rs;
+  const progPct = parseFloat(String(d.prog||'0').replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
+  const progVis = (d.rplan && progPct) ? Math.round(num(d.rplan) * progPct / 100) : '—';
   document.getElementById('mop-modal-title').innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>${d.medal?' '+d.medal:''}`;
-  document.getElementById('mop-modal-body').innerHTML = `<div class="mop-grid4"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div></div><div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div><div class="modal-sec"><div class="modal-sec-title">CRM</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td800}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.crmConVis}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.crmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.crmDolya}</div></div><div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.crmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТЁПЛЫЕ ЛИДЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1200}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1200}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1200}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td1200}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1200}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.warmConVis}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.warmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.warmDolya}</div></div><div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.warmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТРЕБУЮТ АКТУАЛИЗАЦИИ / ОТКАЗЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">В салоне</div><div class="mc-v">${d.vsalone}</div></div><div class="modal-cell"><div class="mc-l">В КСО</div><div class="mc-v">${d.vkso}</div></div><div class="modal-cell"><div class="mc-l">В банке</div><div class="mc-v">${d.vbanke}</div></div><div class="modal-cell"><div class="mc-l">ФССП</div><div class="mc-v">${d.vfSSP}</div></div><div class="modal-cell"><div class="mc-l">Отказ</div><div class="mc-v">${d.otkaz}</div></div></div></div>`;
+  document.getElementById('mop-modal-body').innerHTML = `<div class="mop-grid4" style="grid-template-columns:repeat(3,1fr)"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Дневной</div><div class="mv">${d.daily||'—'}</div></div><div class="m4"><div class="ml">Прогноз, шт</div><div class="mv" style="color:${pctClr(progPct)}">${progVis}</div></div><div class="m4"><div class="ml">Прогноз, %</div><div class="mv" style="color:${pctClr(progPct)}">${d.prog}</div></div></div><div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${Math.min(progPct,100)}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div><div class="modal-sec"><div class="modal-sec-title">CRM</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td800}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.crmConVis}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.crmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.crmDolya}</div></div><div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.crmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТЁПЛЫЕ ЛИДЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1200}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1200}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1200}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td1200}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1200}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.warmConVis}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.warmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.warmDolya}</div></div><div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.warmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТРЕБУЮТ АКТУАЛИЗАЦИИ / ОТКАЗЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">В салоне</div><div class="mc-v">${d.vsalone}</div></div><div class="modal-cell"><div class="mc-l">В КСО</div><div class="mc-v">${d.vkso}</div></div><div class="modal-cell"><div class="mc-l">В банке</div><div class="mc-v">${d.vbanke}</div></div><div class="modal-cell"><div class="mc-l">ФССП</div><div class="mc-v">${d.vfSSP}</div></div><div class="modal-cell"><div class="mc-l">Отказ</div><div class="mc-v">${d.otkaz}</div></div></div></div>`;
   document.getElementById('mop-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }

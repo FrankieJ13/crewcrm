@@ -2734,6 +2734,8 @@ function openIncomeDetail(btn) {
 
   const okladRow = oklad > 0 ? `<div class="income-sec-title">Оклад</div>${subtotal('Оклад', oklad)}` : '';
   const kotelRow = (d.inFund && kotel > 0) ? `<div class="income-sec-title">Котёл</div><div style="font-size:10px;color:var(--txt2);margin-bottom:6px">Участников котла: ${fundCount}</div>${subtotal('Доля котла', kotel)}` : '';
+
+  // Две колонки для факта и прогноза
   const factKoef = d.fact ? d.fact.koef : null;
   const progKoef = d.prognoz ? d.prognoz.koef : null;
   const koefRow = (factKoef !== null) ? `

@@ -1075,6 +1075,31 @@ body.light .kpi-badge { background:rgba(0,0,0,0.03); }
 }
 body.light .ndz-table tr.ndz-sub-hdr td { background:var(--acc-bg); }
 body.light .ndz-table tr.ndz-highlight td { background:rgba(217,53,53,.06); }
+/* ---- premium block ---- */
+.prem-panel {
+  border-radius:var(--r2); padding:14px 16px; margin-top:8px;
+  background:var(--bg2); border:1px solid var(--line2);
+}
+.prem-koef-badge {
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700;
+  font-family:'Unbounded',sans-serif; margin-left:6px;
+  background:var(--acc-bg); border:1px solid var(--acc-bdr); color:var(--acc);
+}
+.prem-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:7px 0; border-bottom:1px solid var(--line);
+}
+.prem-row:last-child { border-bottom:none; padding-bottom:0; }
+.prem-row:first-child { padding-top:0; }
+.prem-lbl { font-size:11px; color:var(--txt2); }
+.prem-val { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:800; color:var(--txt); }
+.prem-total-row {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-top:10px; padding-top:10px; border-top:2px solid var(--line2);
+}
+.prem-total-lbl { font-size:11px; font-weight:600; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; }
+.prem-total-val { font-family:'Unbounded',sans-serif; font-size:18px; font-weight:900; color:var(--acc); }
 </style>
 </head>
 <body>
@@ -2352,6 +2377,14 @@ function showMonthDropdown() {
 }
 
 // ==================== PERSONAL PAGE ====================
+// Коэффициент премии по % выполнения плана
+function premKoef(p) {
+  if (p < 80)  return 0.8;
+  if (p < 100) return 0.9;
+  if (p < 130) return 1.0;
+  if (p < 150) return 1.1;
+  return 1.2;
+}
 function getCnvrsRowGlobal(name, section) {
   const cnvrs = S.data.cnvrs || [];
   const n = (name||'').toLowerCase().trim();
@@ -2499,6 +2532,58 @@ function renderPersonal(matched) {
   }
   const detailBtn = incomeDetail ? `<button class="kpi-info-btn" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(incomeDetail).replace(/'/g,"&#39;")}' data-total="${incomeStr}">i</button>` : '';
 
+  // ── Расчёт премии ────────────────────────────────────────────
+  let premiumBlock = '';
+  if (!isDozhim && incomeDetail) {
+    function nf(v) { return parseFloat(String(v||'0').replace(/[^\d.,-]/g,'').replace(',','.')) || 0; }
+    const crmSum  = nf(incomeDetail.crm.vis)  + nf(incomeDetail.crm.kred)  + nf(incomeDetail.crm.nal)
+                  + nf(incomeDetail.crm.obmen) + nf(incomeDetail.crm.kom)   + nf(incomeDetail.crm.zadatok);
+    const warmSum = nf(incomeDetail.warm.vis)  + nf(incomeDetail.warm.kred) + nf(incomeDetail.warm.nal)
+                  + nf(incomeDetail.warm.obmen) + nf(incomeDetail.warm.kom);
+    const baseSum = crmSum + warmSum;
+
+    // Прогнозная премия (по прогнозу выполнения — твой вариант)
+    const koefProg  = premKoef(progNum);
+    const premProg  = Math.round(baseSum * koefProg);
+
+    // Текущая премия (по фактическому % на сегодня — мой вариант)
+    const prcNum   = parseFloat(String(prc||'0').replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
+    const koefFact = premKoef(prcNum);
+    const premFact = Math.round(baseSum * koefFact);
+
+    const koefClr  = koefProg >= 1.1 ? 'var(--grn)' : koefProg >= 1.0 ? 'var(--acc)' : koefProg >= 0.9 ? 'var(--org)' : 'var(--red)';
+
+    premiumBlock = `
+    <div class="kpi-divider"></div>
+    <div class="kpi-subtitle">Премия</div>
+    <div class="prem-panel">
+      <div class="prem-row">
+        <span class="prem-lbl">База (CRM + ТЛ)</span>
+        <span class="prem-val">${fmtRub(baseSum)}</span>
+      </div>
+      <div class="prem-row">
+        <span class="prem-lbl">CRM</span>
+        <span class="prem-val">${fmtRub(crmSum)}</span>
+      </div>
+      <div class="prem-row">
+        <span class="prem-lbl">Тёплые лиды</span>
+        <span class="prem-val">${fmtRub(warmSum)}</span>
+      </div>
+      <div class="prem-row">
+        <span class="prem-lbl">Прогноз <span style="color:${pctClr(progNum)}">${prog}</span> → коэфф.<span class="prem-koef-badge" style="color:${koefClr};border-color:${koefClr};background:transparent">×${koefProg.toFixed(1)}</span></span>
+        <span class="prem-val" style="color:${koefClr}">${fmtRub(premProg)}</span>
+      </div>
+      ${koefFact !== koefProg ? `<div class="prem-row">
+        <span class="prem-lbl">Факт <span style="color:${pctClr(prcNum)}">${prc}</span> → коэфф.<span class="prem-koef-badge">×${koefFact.toFixed(1)}</span></span>
+        <span class="prem-val">${fmtRub(premFact)}</span>
+      </div>` : ''}
+      <div class="prem-total-row">
+        <span class="prem-total-lbl">Итого премия</span>
+        <span class="prem-total-val">${fmtRub(premProg)}</span>
+      </div>
+    </div>`;
+  }
+
   el.innerHTML = `
     <div class="kpi-manager-name">${name.toUpperCase()}</div>
     <div class="kpi-divider"></div>
@@ -2526,6 +2611,7 @@ function renderPersonal(matched) {
       <div class="kpi-badge"><div class="kb-lbl">Комиссия CRM/ТЛ</div><div class="kb-val">${kom}</div><div class="kb-sub">${komSub}</div></div>
     </div>
     ${convRow}
+    ${premiumBlock}
   `;
 }
 

@@ -1221,7 +1221,7 @@ const CFG = {
 /* ══ MONTH STATE ══ */
 let currentSuffix = (() => {
 const now = new Date();
-return String(now.getMonth()+1).padStart(2,‘0’) + String(now.getFullYear()).slice(-2);
+return String(now.getMonth()+1).padStart(2,'0') + String(now.getFullYear()).slice(-2);
 })();
 
 function getMonthName(suffix) {

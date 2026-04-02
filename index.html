@@ -1227,7 +1227,7 @@ return String(now.getMonth()+1).padStart(2,'0') + String(now.getFullYear()).slic
 function getMonthName(suffix) {
 const mm = parseInt(suffix.slice(0,2));
 const yy = 2000 + parseInt(suffix.slice(2,4));
-return new Date(yy, mm-1, 1).toLocaleString(‘ru’, { month:‘long’, year:‘numeric’ });
+return new Date(yy, mm-1, 1).toLocaleString('ru', { month:'long', year:'numeric' });
 }
 
 function getSheetNames(suffix) {

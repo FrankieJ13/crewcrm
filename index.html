@@ -996,31 +996,37 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
 }
 .income-col {
   border-radius: var(--r);
-  padding: 12px 10px;
+  padding: 10px 10px 8px;
   text-align: center;
   background: rgba(255,255,255,0.04);
   border: 1px solid var(--line2);
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
 }
 .income-col.fact  { border-color: rgba(30,144,255,.35); }
 .income-col.prog  { border-color: var(--acc-bdr); }
 .income-col .ic-lbl {
   font-size: 9px; color: var(--txt2);
   text-transform: uppercase; letter-spacing: .06em;
-  margin-bottom: 4px; line-height: 1.3;
+  line-height: 1.3; margin-top: auto;
+  order: 3;
 }
 .income-col .ic-val {
   font-family: 'Unbounded', sans-serif;
   font-size: 16px; font-weight: 900;
   letter-spacing: -.02em; line-height: 1.1;
-  margin-bottom: 4px;
+  order: 1;
 }
 .income-col.fact .ic-val { color: var(--blu); }
 .income-col.prog .ic-val { color: var(--acc); }
 .income-col .ic-koef {
   font-size: 10px; font-weight: 700;
   padding: 2px 7px; border-radius: 20px;
-  display: inline-block; margin-top: 2px;
+  display: inline-block;
+  order: 2;
 }
 .ic-koef.k08 { background: rgba(255,71,87,.15);  color: var(--red); }
 .ic-koef.k09 { background: rgba(255,165,2,.15);  color: var(--org); }
@@ -1028,7 +1034,7 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
 .ic-koef.k11 { background: rgba(46,213,115,.12); color: var(--grn); }
 .ic-koef.k12 { background: rgba(46,213,115,.22); color: var(--grn); }
 .income-col .ic-pct {
-  font-size: 9px; color: var(--txt2); margin-top: 3px;
+  font-size: 9px; color: var(--txt2); order: 3;
 }
 body.light .income-col { background: rgba(0,0,0,.02); }
 body.light .income-col.fact { border-color: rgba(16,96,204,.3); }
@@ -1038,6 +1044,7 @@ body.light .income-col.fact { border-color: rgba(16,96,204,.3); }
 .kpi-income-panel .income-col { background: rgba(255,255,255,0.05); }
 .kpi-income-panel .income-col.fact { border-color: rgba(30,144,255,.4); }
 .kpi-income-panel .income-col.prog { border-color: var(--acc-bdr); }
+.kpi-info-btn {
   position:absolute; top:10px; right:10px;
   width:22px; height:22px; border-radius:50%;
   border:1px solid var(--acc-bdr); background:var(--acc-bg);
@@ -2154,14 +2161,14 @@ function renderDohod() {
     const incomeCols = item.sal ? `
       <div class="income-cols" style="margin:8px 0 4px">
         <div class="income-col fact">
-          <div class="ic-lbl">Факт ${item.sal.fact.pct}%</div>
           <div class="ic-val" style="font-size:13px">${fmtRub(Math.round(item.sal.fact.total))}</div>
           <span class="ic-koef ${koefClass(item.sal.fact.koef)}">×${item.sal.fact.koef.toFixed(1)}</span>
+          <div class="ic-lbl">Фактический<br>${item.sal.fact.pct}%</div>
         </div>
         <div class="income-col prog">
-          <div class="ic-lbl">Прогноз ${item.sal.prognoz.pct}%</div>
           <div class="ic-val" style="font-size:13px">${fmtRub(Math.round(item.sal.prognoz.total))}</div>
           <span class="ic-koef ${koefClass(item.sal.prognoz.koef)}">×${item.sal.prognoz.koef.toFixed(1)}</span>
+          <div class="ic-lbl">Прогнозируемый<br>${item.sal.prognoz.pct}%</div>
         </div>
       </div>` : `<div style="text-align:right"><span class="zp-a" style="color:${rs.color}">—</span></div>`;
 
@@ -2701,14 +2708,14 @@ function renderIncomePanel(sal, detailBtn) {
     <div class="zl" style="margin-bottom:8px">Доход за месяц</div>
     <div class="income-cols">
       <div class="income-col fact">
-        <div class="ic-lbl">Факт<br>${f.pct}%</div>
         <div class="ic-val">${fmtRub(Math.round(f.total))}</div>
         <span class="ic-koef ${koefClass(f.koef)}">×${f.koef.toFixed(1)}</span>
+        <div class="ic-lbl">Фактический<br>${f.pct}%</div>
       </div>
       <div class="income-col prog">
-        <div class="ic-lbl">Прогноз<br>${p.pct}%</div>
         <div class="ic-val">${fmtRub(Math.round(p.total))}</div>
         <span class="ic-koef ${koefClass(p.koef)}">×${p.koef.toFixed(1)}</span>
+        <div class="ic-lbl">Прогнозируемый<br>${p.pct}%</div>
       </div>
     </div>`;
 }
@@ -2796,7 +2803,7 @@ function renderPersonal(matched) {
       fact:     salObj.fact,
       prognoz:  salObj.prognoz,
     };
-    detailBtn = `<button class="kpi-info-btn" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(incomeDetail).replace(/'/g,"&#39;")}' data-total="">i</button>`;
+    detailBtn = `<button class="kpi-info-btn" style="position:absolute;top:10px;right:10px;z-index:2" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(incomeDetail).replace(/'/g,"&#39;")}' data-total="">i</button>`;
     incomePanelContent = renderIncomePanel(salObj, detailBtn);
   } else {
     incomePanelContent = `<div class="zl">Доход за месяц</div><div class="zv">—</div>`;

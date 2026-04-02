@@ -1358,7 +1358,9 @@ function initAuth() {
       S.token = resp.access_token;
       sessionStorage.setItem('crm_tok', resp.access_token);
       sessionStorage.setItem('crm_exp', Date.now()+(resp.expires_in-60)*1000);
-      await loadUser();
+      // Не ждём loadUser — onLogin вызывается сразу, данные начинают грузиться
+      // loadUser работает параллельно; когда завершится — попробует открыть личную страницу
+      loadUser();
       onLogin();
       scheduleTokenRefresh(resp.expires_in);
     },
@@ -1367,12 +1369,25 @@ function initAuth() {
 
 async function loadUser() {
   try {
+    // Таймаут 8 секунд — fetch на мобильном может зависнуть без него
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
     const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo',
-      { headers:{ Authorization:'Bearer '+S.token } });
+      { headers:{ Authorization:'Bearer '+S.token }, signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!r.ok) return;
     S.user = await r.json();
     sessionStorage.setItem('crm_user', JSON.stringify(S.user));
     renderUser();
-  } catch(e) {}
+    // loadUser завершился параллельно с loadUsersAndStart.
+    // Если мы уже на ОТЧЁТ и USERS готов — проверяем нужна ли личная страница
+    if (S.usersData !== null &&
+        document.getElementById('scr-otchet')?.classList.contains('on') &&
+        !document.getElementById('scr-personal')?.classList.contains('on')) {
+      const matched = findUserInSheet();
+      if (matched && matched.name) goPersonal();
+    }
+  } catch(e) { /* таймаут или ошибка — продолжаем без данных пользователя */ }
 }
 
 function renderUser() {
@@ -1392,6 +1407,11 @@ function onLogin() {
   const ls = document.getElementById('scr-login');
   ls.classList.remove('on'); ls.style.display = 'none';
   toast('Приветствую, коллега!', 's');
+  // Сразу показываем ОТЧЁТ и начинаем грузить данные — не ждём USERS
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab==='otchet'));
+  showScr('otchet');
+  loadTab('otchet');
+  // Параллельно проверяем нужна ли личная страница
   loadUsersAndStart();
 }
 
@@ -2343,23 +2363,16 @@ function getCnvrsRowGlobal(name, section) {
 }
 
 function findUserInSheet() {
-  if (!S.usersData || !S.user) {
-    console.warn('[CRM] findUserInSheet: usersData=', S.usersData, 'user=', S.user);
-    return null;
-  }
+  if (!S.usersData || !S.user) return null;
   const email = (S.user.email || '').toLowerCase().trim();
-  console.log('[CRM] Ищем email:', JSON.stringify(email), '| всего строк USERS:', S.usersData.length);
   for (let i = 1; i < S.usersData.length; i++) {
     const row = S.usersData[i];
     const rawEmails = (row[0]||'');
-    // Разбиваем по запятой, точке с запятой или пробелу
     const emails = rawEmails.split(/[,;\s]+/).map(e => e.toLowerCase().trim()).filter(Boolean);
-    console.log(`[CRM] USERS[${i}]:`, JSON.stringify(emails), '→', row[1], row[2]);
     if (emails.includes(email)) {
       return { email: row[0], name: (row[1]||'').trim(), role: (row[2]||'crm').toLowerCase().trim() };
     }
   }
-  console.warn('[CRM] Совпадений не найдено для email:', JSON.stringify(email));
   return null;
 }
 
@@ -2367,19 +2380,14 @@ async function loadUsersAndStart() {
   try {
     if (!S.usersData) {
       S.usersData = await api('USERS', 'A1:C50');
-      console.log('[CRM] USERS загружен, строк:', S.usersData.length, S.usersData);
     }
-  } catch(e) {
-    console.error('[CRM] Ошибка загрузки USERS:', e.message);
-    S.usersData = [];
-  }
+  } catch(e) { S.usersData = []; }
   const matched = findUserInSheet();
-  console.log('[CRM] matched:', matched);
   if (matched && matched.name) {
+    // Найден пользователь — переходим на личную страницу
     goPersonal();
-  } else {
-    goTab('otchet');
   }
+  // Если не найден — данные отчёта уже грузятся через loadTab('otchet') из onLogin()
 }
 
 function goPersonal() {

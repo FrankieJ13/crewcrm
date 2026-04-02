@@ -1237,6 +1237,7 @@ function getSheetNames(suffix) {
     d_dohod:     'Д_ЗП'    + suffix,
     grafik:      'ГРАФИКИ' + suffix,
     cnvrs:       'CNVRS'   + suffix,
+    stavki:      'СТАВКИ'  + suffix,
     instruktsii: 'ИНСТРУКЦИИ',
   };
 }
@@ -1253,7 +1254,7 @@ const S = {
   token:null,
   user:null,
   usersData:null,
-  data:{ otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, dohodDetail:null },
+  data:{ otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, dohodDetail:null, stavki:null },
   reportTab: 'dept',
   dohodTab: 'crm',
   faqTab: 'instr'
@@ -1422,7 +1423,7 @@ function onLogout() {
   }
   if (S.token) google.accounts.oauth2.revoke(S.token, ()=>{});
   S.token=null; S.user=null; S.usersData=null;
-  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, dohodDetail:null };
+  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, dohodDetail:null, stavki:null };
   ['crm_tok','crm_exp','crm_user'].forEach(k => sessionStorage.removeItem(k));
   document.getElementById('user-wrap').style.display = 'none';
   document.getElementById('btn-out').style.display   = 'none';
@@ -1475,7 +1476,7 @@ function setCurrentMonth(newSuffix) {
   currentSuffix = newSuffix;
   updateBadge();
   SHEETS = getSheetNames(currentSuffix);
-  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, dohodDetail:null };
+  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, dohodDetail:null, stavki:null };
   _schedWeek = null;
   const activeTab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
   loadTab(activeTab);
@@ -1530,10 +1531,27 @@ async function loadTab(tab) {
   }
   if (tab === 'dohod') {
     const el = document.getElementById('c-dohod');
-    if (!S.data.dohod) {
+    if (S.dohodTab === 'dozhim') {
+      if (!S.data.d_dohod) {
+        if (el) el.innerHTML = loader();
+        try {
+          S.data.d_dohod = await api(SHEETS.d_dohod, 'A1:N20');
+        } catch(e) {
+          if (e.message!=='auth') {
+            if (e.message === 'NOT_FOUND') showArchiveMsg(el);
+            else if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
+          }
+          return;
+        }
+      }
+      renderTab('dohod');
+      return;
+    }
+    // CRM — нужны ОТЧЁТ и СТАВКИ
+    if (!S.data.otchet) {
       if (el) el.innerHTML = loader();
       try {
-        S.data.dohod = await api(SHEETS.dohod, 'A1:B13');
+        S.data.otchet = await api(SHEETS.otchet, 'A1:Z15');
       } catch(e) {
         if (e.message!=='auth') {
           if (e.message === 'NOT_FOUND') showArchiveMsg(el);
@@ -1542,18 +1560,11 @@ async function loadTab(tab) {
         return;
       }
     }
-    if (!S.data.dohodDetail) {
-      api(SHEETS.dohod, 'A1:Q15').then(data => {
-        S.data.dohodDetail = data;
-        if (S.dohodTab !== 'dozhim') renderDohod();
-      }).catch(() => { S.data.dohodDetail = []; });
-    }
-    if (S.dohodTab === 'dozhim' && !S.data.d_dohod) {
+    if (!S.data.stavki) {
       try {
-        S.data.d_dohod = await api(SHEETS.d_dohod, 'A1:N20');
+        S.data.stavki = await api(SHEETS.stavki, 'A1:B25');
       } catch(e) {
-        if (e.message !== 'NOT_FOUND') S.data.d_dohod = [];
-        else S.data.d_dohod = null;
+        S.data.stavki = [];
       }
     }
     renderTab('dohod');
@@ -1581,7 +1592,7 @@ function reloadCurrent() {
     if (matched) {
       const isDozhim = matched.role === 'dozhim';
       if (isDozhim) { S.data.d_otchet = null; S.data.d_dohod = null; }
-      else { S.data.otchet = null; S.data.dohod = null; S.data.cnvrs = null; }
+      else { S.data.otchet = null; S.data.stavki = null; S.data.cnvrs = null; }
       loadPersonal(matched).then(() => toast('Обновлено','s'));
     }
     return;
@@ -1590,7 +1601,7 @@ function reloadCurrent() {
   if (tab === 'grafik') _schedWeek = null;
   S.data[tab] = null;
   if (tab === 'otchet') { S.data.d_otchet = null; S.data.cnvrs = null; }
-  if (tab === 'dohod') { S.data.d_dohod = null; S.data.dohodDetail = null; }
+  if (tab === 'dohod') { S.data.d_dohod = null; S.data.stavki = null; }
   loadTab(tab).then(() => toast('Обновлено','s'));
 }
 
@@ -2036,40 +2047,55 @@ function renderDohod() {
   const subtabs = `<span class="report-subtab ${S.dohodTab !== 'dozhim' ? 'active' : ''}" onclick="setDohodTab('crm')">CRM</span><span class="report-subtab ${S.dohodTab === 'dozhim' ? 'active' : ''}" onclick="setDohodTab('dozhim')">ДОЖИМ</span>`;
   if (floating) floating.innerHTML = subtabs;
   if (S.dohodTab === 'dozhim') { renderDohodDozhim(el); return; }
-  const raw = S.data.dohod;
-  if (!raw || raw.length < 3) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
-  const mgrs   = raw.slice(2,12).filter(r => r[0]&&r[0].trim());
-  const totRow = raw[12] || [];
+
+  const raw = S.data.otchet;
+  if (!raw || raw.length < 4) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
+  if (!S.data.stavki) { el.innerHTML = '<div class="loader"><div class="spin"></div><span>Загружаем ставки…</span></div>'; return; }
+
   const KOTEL_NAMES = ['котел','котёл','kotel'];
   const isKotel = name => KOTEL_NAMES.includes((name||'').toLowerCase().trim());
-  const kotelRow = mgrs.find(r => isKotel(r[0]));
-  const rankMgrs = mgrs.filter(r => !isKotel(r[0]));
-  const parsed = rankMgrs.map(r => ({ name: (r[0]||'—').toUpperCase(), raw: r[1]||'0', n: parseFloat(String(r[1]||'0').replace(/[^\d.]/g,''))||0 }));
-  parsed.sort((a, b) => b.n - a.n);
-  const maxAmt = parsed[0]?.n || 0;
+
+  // Считаем зарплату каждого менеджера из ОТЧЁТ + СТАВКИ
+  const mgrRows = raw.slice(3, 12).filter(r => r[0] && r[0].trim() && !isKotel(r[0]));
+  const parsed = mgrRows.map(r => {
+    const name = (r[0]||'—').trim();
+    const nameLow = name.toLowerCase().trim();
+    const sal = calcSalary(nameLow);
+    const total = sal ? Math.round(sal.total) : 0;
+    return { name: name.toUpperCase(), nameLow, total, sal };
+  });
+  parsed.sort((a, b) => b.total - a.total);
+
+  // Котёл — отдельная строка (индекс 13)
+  const kotelRow = raw[13];
+  const kotelName = kotelRow ? (kotelRow[0]||'').toUpperCase() : '';
+
+  // Общий фонд = сумма всех личных зарплат + котёл (если есть данные)
+  const totalFund = parsed.reduce((s, p) => s + p.total, 0);
+
+  const maxAmt = parsed[0]?.total || 0;
   const total  = parsed.length;
   const isLight = document.body.classList.contains('light');
   const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
+
   const rows = parsed.map((item, idx) => {
-    const w  = maxAmt ? Math.round(item.n / maxAmt * 100) : 0;
+    const w  = maxAmt ? Math.round(item.total / maxAmt * 100) : 0;
     const rs = rankStyles(idx, total);
-    // ищем строку детализации по имени менеджера
     let detailBtn = '';
-    if (S.data.dohodDetail) {
-      const nameLow = item.name.toLowerCase().trim();
-      const dRow = S.data.dohodDetail.slice(2).find(r => (r[0]||'').toLowerCase().trim() === nameLow);
-      if (dRow) {
-        const det = {
-          crm:  { vis:dRow[5]||'0', kred:dRow[6]||'0', nal:dRow[7]||'0', obmen:dRow[8]||'0', kom:dRow[9]||'0', zadatok:dRow[16]||'0' },
-          warm: { vis:dRow[11]||'0', kred:dRow[12]||'0', nal:dRow[13]||'0', obmen:dRow[14]||'0', kom:dRow[15]||'0' },
-        };
-      detailBtn = `<button class="mop-info-btn" style="position:absolute;top:10px;right:10px" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="${item.raw}">i</button>`;
-      }
+    if (item.sal) {
+      const det = {
+        crm:  item.sal.detail.crm,
+        warm: item.sal.detail.warm,
+        oklad:     item.sal.detail.oklad,
+        kotel:     item.sal.detail.kotel,
+        fundCount: item.sal.detail.fundCount,
+      };
+      detailBtn = `<button class="mop-info-btn" style="position:absolute;top:10px;right:10px" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="${item.total}">i</button>`;
     }
-    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:${rs.color}">${item.name}</span>${medalBtn(idx)}</div><div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div><div style="text-align:right"><span class="zp-a" style="color:${rs.color}">${fmtRub(item.raw)}</span></div></div>`;
+    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:${rs.color}">${item.name}</span>${medalBtn(idx)}</div><div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div><div style="text-align:right"><span class="zp-a" style="color:${rs.color}">${fmtRub(item.total)}</span></div></div>`;
   }).join('');
-  const kotelHTML = kotelRow ? `<div class="zp-row" style="opacity:.6;margin-top:8px"><span class="zp-n" style="color:var(--txt2)">${(kotelRow[0]||'').toUpperCase()}</span><div class="zp-bg"><div class="zp-fill" style="width:0%"></div></div><span class="zp-a" style="color:var(--txt2)">${fmtRub(kotelRow[1])}</span></div>` : '';
-  el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Фонд отдела за месяц</div><div class="zv">${fmtRub(totRow[1])}</div></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}${kotelHTML}</div>`;
+
+  el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Фонд отдела за месяц</div><div class="zv">${fmtRub(totalFund)}</div></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`;
 }
 
 function renderDohodDozhim(el) {
@@ -2379,7 +2405,7 @@ function findUserInSheet() {
 async function loadUsersAndStart() {
   try {
     if (!S.usersData) {
-      S.usersData = await api('USERS', 'A1:C50');
+      S.usersData = await api('USERS', 'A1:D50');
     }
   } catch(e) { S.usersData = []; }
   const matched = findUserInSheet();
@@ -2408,10 +2434,12 @@ async function loadPersonal(matched) {
       if (!S.data.d_otchet) S.data.d_otchet = await api(SHEETS.d_otchet, 'A1:R20');
       if (!S.data.d_dohod)  S.data.d_dohod  = await api(SHEETS.d_dohod,  'A1:N20');
     } else {
-      if (!S.data.otchet)     S.data.otchet     = await api(SHEETS.otchet, 'A1:Z15');
-      if (!S.data.dohod)      S.data.dohod      = await api(SHEETS.dohod,  'A1:B13');
-      if (!S.data.dohodDetail) S.data.dohodDetail = await api(SHEETS.dohod, 'A1:Q15');
-      if (!S.data.cnvrs)      S.data.cnvrs      = await api(SHEETS.cnvrs,  'A1:N40');
+      if (!S.data.otchet) S.data.otchet = await api(SHEETS.otchet, 'A1:Z15');
+      if (!S.data.stavki) {
+        try { S.data.stavki = await api(SHEETS.stavki, 'A1:B25'); }
+        catch(e) { S.data.stavki = []; }
+      }
+      if (!S.data.cnvrs) S.data.cnvrs = await api(SHEETS.cnvrs, 'A1:N40');
     }
     if (!S.data.grafik) S.data.grafik = await api(SHEETS.grafik, 'A1:AI25');
   } catch(e) {
@@ -2419,6 +2447,119 @@ async function loadPersonal(matched) {
     return;
   }
   renderPersonal(matched);
+}
+
+// ==================== SALARY CALC ====================
+// Считает кол-во участников котла из USERS (столбец D = fund, "да"/"нет")
+function getFundCount() {
+  if (!S.usersData || S.usersData.length < 2) return 8; // fallback
+  let count = 0;
+  for (let i = 1; i < S.usersData.length; i++) {
+    const row = S.usersData[i];
+    if (!row[1]) continue; // нет имени — пропускаем
+    const fund = (row[3]||'').toLowerCase().trim();
+    if (fund === 'да') count++;
+  }
+  return count > 0 ? count : 8;
+}
+
+// Парсим числовое значение из ячейки ставки (может быть "500", "1 000", "1000.5" и т.д.)
+function parseRate(v) {
+  return parseFloat(String(v||'0').replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
+}
+
+// Главная функция расчёта зарплаты менеджера CRM
+// Возвращает { total, detail } где detail = { crm:{...}, warm:{...}, kotel, oklad }
+function calcSalary(nameLow) {
+  const otchet = S.data.otchet || [];
+  const stavki = S.data.stavki || [];
+
+  // ── ставки (индексы 0-based, столбец B = index 1) ──
+  const oklad        = parseRate(stavki[0]?.[1]);  // B1
+  const rCrmVis      = parseRate(stavki[8]?.[1]);  // B9
+  const rCrmKred     = parseRate(stavki[9]?.[1]);  // B10
+  const rCrmNal      = parseRate(stavki[10]?.[1]); // B11
+  const rCrmObmen    = parseRate(stavki[11]?.[1]); // B12
+  const rCrmKom      = parseRate(stavki[12]?.[1]); // B13
+  const rWarmVis     = parseRate(stavki[14]?.[1]); // B15
+  const rWarmKred    = parseRate(stavki[15]?.[1]); // B16
+  const rWarmNal     = parseRate(stavki[16]?.[1]); // B17
+  const rWarmObmen   = parseRate(stavki[17]?.[1]); // B18
+  const rWarmKom     = parseRate(stavki[18]?.[1]); // B19
+  const rZadatok     = parseRate(stavki[20]?.[1]); // B21
+
+  // ── строка менеджера из ОТЧЁТ (строки 3-11, индексы 3-11) ──
+  const mgrRow = otchet.slice(3, 12).find(r => (r[0]||'').toLowerCase().trim() === nameLow);
+  if (!mgrRow) return null;
+
+  // ── показатели менеджера ──
+  const crm = {
+    vis:    num(mgrRow[1]),
+    kred:   num(mgrRow[8]),
+    nal:    num(mgrRow[9]),
+    obmen:  num(mgrRow[10]),
+    kom:    num(mgrRow[11]),
+    zadatok:num(mgrRow[16]),
+  };
+  const warm = {
+    vis:   num(mgrRow[2]),
+    kred:  num(mgrRow[12]),
+    nal:   num(mgrRow[13]),
+    obmen: num(mgrRow[14]),
+    kom:   num(mgrRow[15]),
+  };
+
+  // ── личные начисления ──
+  const crmEarn  = crm.vis*rCrmVis + crm.kred*rCrmKred + crm.nal*rCrmNal + crm.obmen*rCrmObmen + crm.kom*rCrmKom + crm.zadatok*rZadatok;
+  const warmEarn = warm.vis*rWarmVis + warm.kred*rWarmKred + warm.nal*rWarmNal + warm.obmen*rWarmObmen + warm.kom*rWarmKom;
+
+  // ── котёл (строка 14, индекс 13 в массиве) ──
+  const kotelRow = otchet[13] || [];
+  const kotelCrm = {
+    vis:    num(kotelRow[1]),
+    kred:   num(kotelRow[8]),
+    nal:    num(kotelRow[9]),
+    obmen:  num(kotelRow[10]),
+    kom:    num(kotelRow[11]),
+    zadatok:num(kotelRow[16]),
+  };
+  const kotelWarm = {
+    vis:   num(kotelRow[2]),
+    kred:  num(kotelRow[12]),
+    nal:   num(kotelRow[13]),
+    obmen: num(kotelRow[14]),
+    kom:   num(kotelRow[15]),
+  };
+  const kotelTotal = kotelCrm.vis*rCrmVis + kotelCrm.kred*rCrmKred + kotelCrm.nal*rCrmNal + kotelCrm.obmen*rCrmObmen + kotelCrm.kom*rCrmKom + kotelCrm.zadatok*rZadatok
+                   + kotelWarm.vis*rWarmVis + kotelWarm.kred*rWarmKred + kotelWarm.nal*rWarmNal + kotelWarm.obmen*rWarmObmen + kotelWarm.kom*rWarmKom;
+  const fundCount = getFundCount();
+  const kotelShare = fundCount > 0 ? kotelTotal / fundCount : 0;
+
+  const total = oklad + crmEarn + warmEarn + kotelShare;
+
+  return {
+    total,
+    detail: {
+      oklad,
+      crm: {
+        vis:    crm.vis    * rCrmVis,
+        kred:   crm.kred   * rCrmKred,
+        nal:    crm.nal    * rCrmNal,
+        obmen:  crm.obmen  * rCrmObmen,
+        kom:    crm.kom    * rCrmKom,
+        zadatok:crm.zadatok* rZadatok,
+      },
+      warm: {
+        vis:  warm.vis  * rWarmVis,
+        kred: warm.kred * rWarmKred,
+        nal:  warm.nal  * rWarmNal,
+        obmen:warm.obmen* rWarmObmen,
+        kom:  warm.kom  * rWarmKom,
+      },
+      kotel: kotelShare,
+      fundCount,
+    }
+  };
 }
 
 function renderPersonal(matched) {
@@ -2439,8 +2580,9 @@ function renderPersonal(matched) {
   } else {
     const raw = S.data.otchet || [];
     mgrRow = raw.slice(3, 12).find(r => (r[0]||'').toLowerCase().trim() === nameLow);
-    const incRow = (S.data.dohod||[]).slice(2, 12).find(r => (r[0]||'').toLowerCase().trim() === nameLow);
-    if (incRow) incomeStr = incRow[1]||'—';
+    // расчёт зарплаты из ОТЧЁТ + СТАВКИ (не зависит от листа ЗП)
+    const sal = calcSalary(nameLow);
+    if (sal) incomeStr = Math.round(sal.total).toString();
   }
 
   if (!mgrRow) { goTab('otchet'); return; }
@@ -2486,14 +2628,30 @@ function renderPersonal(matched) {
       <div class="kpi-badge"><div class="kb-lbl">% целевых</div><div class="kb-val">${pctTarget}</div></div>
     </div>` : '';
 
-  // Детализация дохода из листа ЗП (A=0,B=1,...,F=5,G=6,H=7,I=8,J=9,Q=16,L=11,M=12,N=13,O=14,P=15)
+  // Детализация дохода из ОТЧЁТ + СТАВКИ (независимо от листа ЗП)
   let incomeDetail = null;
-  if (!isDozhim && S.data.dohodDetail) {
-    const dRow = S.data.dohodDetail.slice(2).find(r => (r[0]||'').toLowerCase().trim() === nameLow);
-    if (dRow) {
+  if (!isDozhim) {
+    const sal = calcSalary(nameLow);
+    if (sal) {
       incomeDetail = {
-        crm:  { vis: dRow[5]||'0', kred: dRow[6]||'0', nal: dRow[7]||'0', obmen: dRow[8]||'0', kom: dRow[9]||'0', zadatok: dRow[16]||'0' },
-        warm: { vis: dRow[11]||'0', kred: dRow[12]||'0', nal: dRow[13]||'0', obmen: dRow[14]||'0', kom: dRow[15]||'0' },
+        crm:  {
+          vis:     sal.detail.crm.vis,
+          kred:    sal.detail.crm.kred,
+          nal:     sal.detail.crm.nal,
+          obmen:   sal.detail.crm.obmen,
+          kom:     sal.detail.crm.kom,
+          zadatok: sal.detail.crm.zadatok,
+        },
+        warm: {
+          vis:   sal.detail.warm.vis,
+          kred:  sal.detail.warm.kred,
+          nal:   sal.detail.warm.nal,
+          obmen: sal.detail.warm.obmen,
+          kom:   sal.detail.warm.kom,
+        },
+        oklad:     sal.detail.oklad,
+        kotel:     sal.detail.kotel,
+        fundCount: sal.detail.fundCount,
       };
     }
   }
@@ -2543,14 +2701,27 @@ function openIncomeDetail(btn) {
     return `<div class="income-subtotal"><span class="ist-lbl">${lbl}</span><span class="ist-val">${fmtRub(sum)}</span></div>`;
   }
 
-  const crmSum = n(d.crm.vis)+n(d.crm.kred)+n(d.crm.nal)+n(d.crm.obmen)+n(d.crm.kom)+n(d.crm.zadatok);
+  const crmSum  = n(d.crm.vis)+n(d.crm.kred)+n(d.crm.nal)+n(d.crm.obmen)+n(d.crm.kom)+n(d.crm.zadatok);
   const warmSum = n(d.warm.vis)+n(d.warm.kred)+n(d.warm.nal)+n(d.warm.obmen)+n(d.warm.kom);
+  const oklad   = n(d.oklad);
+  const kotel   = n(d.kotel);
+  const fundCount = d.fundCount || '—';
+
+  const okladRow = oklad > 0 ? `
+    <div class="income-sec-title">Оклад</div>
+    ${subtotal('Оклад', oklad)}` : '';
+
+  const kotelRow = kotel > 0 ? `
+    <div class="income-sec-title">Котёл</div>
+    <div style="font-size:10px;color:var(--txt2);margin-bottom:6px">Участников котла: ${fundCount}</div>
+    ${subtotal('Доля котла', kotel)}` : '';
 
   document.getElementById('income-modal-content').innerHTML = `
     <div class="income-total-banner">
       <div class="itb-lbl">Общий доход</div>
       <div class="itb-val">${fmtRub(totalStr)}</div>
     </div>
+    ${okladRow}
     <div class="income-sec-title">CRM</div>
     <div class="income-badges">
       ${badge('Визиты',   d.crm.vis)}
@@ -2562,7 +2733,7 @@ function openIncomeDetail(btn) {
       ${badge('Комиссия', d.crm.kom)}
       ${badge('Задаток',  d.crm.zadatok)}
     </div>
-    ${subtotal('Общий итог CRM', crmSum)}
+    ${subtotal('Итого CRM', crmSum)}
     <div class="income-sec-title">Тёплые лиды</div>
     <div class="income-badges">
       ${badge('Визиты',   d.warm.vis)}
@@ -2573,7 +2744,8 @@ function openIncomeDetail(btn) {
       ${badge('Обмен',    d.warm.obmen)}
       ${badge('Комиссия', d.warm.kom)}
     </div>
-    ${subtotal('Общий итог Тёплые лиды', warmSum)}
+    ${subtotal('Итого Тёплые лиды', warmSum)}
+    ${kotelRow}
   `;
   document.getElementById('income-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';

@@ -2068,9 +2068,8 @@ function renderDohod() {
 
   // Котёл — отдельная строка (индекс 13)
   const kotelRow = raw[13];
-  const kotelName = kotelRow ? (kotelRow[0]||'').toUpperCase() : '';
 
-  // Общий фонд = сумма всех личных зарплат + котёл (если есть данные)
+  // Общий фонд = сумма всех личных зарплат
   const totalFund = parsed.reduce((s, p) => s + p.total, 0);
 
   const maxAmt = parsed[0]?.total || 0;
@@ -2084,11 +2083,12 @@ function renderDohod() {
     let detailBtn = '';
     if (item.sal) {
       const det = {
-        crm:  item.sal.detail.crm,
-        warm: item.sal.detail.warm,
+        crm:       item.sal.detail.crm,
+        warm:      item.sal.detail.warm,
         oklad:     item.sal.detail.oklad,
         kotel:     item.sal.detail.kotel,
         fundCount: item.sal.detail.fundCount,
+        inFund:    item.sal.detail.inFund,
       };
       detailBtn = `<button class="mop-info-btn" style="position:absolute;top:10px;right:10px" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="${item.total}">i</button>`;
     }
@@ -2396,7 +2396,12 @@ function findUserInSheet() {
     const rawEmails = (row[0]||'');
     const emails = rawEmails.split(/[,;\s]+/).map(e => e.toLowerCase().trim()).filter(Boolean);
     if (emails.includes(email)) {
-      return { email: row[0], name: (row[1]||'').trim(), role: (row[2]||'crm').toLowerCase().trim() };
+      return {
+        email: row[0],
+        name:  (row[1]||'').trim(),
+        role:  (row[2]||'crm').toLowerCase().trim(),
+        fund:  (row[3]||'').toLowerCase().trim() === 'да',
+      };
     }
   }
   return null;
@@ -2450,7 +2455,17 @@ async function loadPersonal(matched) {
 }
 
 // ==================== SALARY CALC ====================
-// Считает кол-во участников котла из USERS (столбец D = fund, "да"/"нет")
+// Проверяет участвует ли менеджер в котле (fund=да в USERS)
+function isInFund(nameLow) {
+  if (!S.usersData || S.usersData.length < 2) return true; // fallback — участвует
+  for (let i = 1; i < S.usersData.length; i++) {
+    const row = S.usersData[i];
+    if ((row[1]||'').toLowerCase().trim() === nameLow) {
+      return (row[3]||'').toLowerCase().trim() === 'да';
+    }
+  }
+  return false;
+}
 function getFundCount() {
   if (!S.usersData || S.usersData.length < 2) return 8; // fallback
   let count = 0;
@@ -2491,6 +2506,7 @@ function calcSalary(nameLow) {
   // ── строка менеджера из ОТЧЁТ (строки 3-11, индексы 3-11) ──
   const mgrRow = otchet.slice(3, 12).find(r => (r[0]||'').toLowerCase().trim() === nameLow);
   if (!mgrRow) return null;
+  const inFund = isInFund(nameLow);
 
   // ── показатели менеджера ──
   const crm = {
@@ -2540,7 +2556,7 @@ function calcSalary(nameLow) {
   const kotelTotal = kotelCrmPureVis*rCrmVis + kotelCrm.kred*rCrmKred + kotelCrm.nal*rCrmNal + kotelCrm.obmen*rCrmObmen + kotelCrm.kom*rCrmKom + kotelCrm.zadatok*rZadatok
                    + kotelWarmPureVis*rWarmVis + kotelWarm.kred*rWarmKred + kotelWarm.nal*rWarmNal + kotelWarm.obmen*rWarmObmen + kotelWarm.kom*rWarmKom;
   const fundCount = getFundCount();
-  const kotelShare = fundCount > 0 ? kotelTotal / fundCount : 0;
+  const kotelShare = (inFund !== false && fundCount > 0) ? kotelTotal / fundCount : 0;
 
   const total = oklad + crmEarn + warmEarn + kotelShare;
 
@@ -2548,6 +2564,7 @@ function calcSalary(nameLow) {
     total,
     detail: {
       oklad,
+      inFund,
       crm: {
         vis:    crm.vis    * rCrmVis,
         kred:   crm.kred   * rCrmKred,
@@ -2588,7 +2605,7 @@ function renderPersonal(matched) {
     const raw = S.data.otchet || [];
     mgrRow = raw.slice(3, 12).find(r => (r[0]||'').toLowerCase().trim() === nameLow);
     // расчёт зарплаты из ОТЧЁТ + СТАВКИ (не зависит от листа ЗП)
-    const sal = calcSalary(nameLow);
+    const sal = calcSalary(nameLow, matched.fund);
     if (sal) incomeStr = Math.round(sal.total).toString();
   }
 
@@ -2638,7 +2655,7 @@ function renderPersonal(matched) {
   // Детализация дохода из ОТЧЁТ + СТАВКИ (независимо от листа ЗП)
   let incomeDetail = null;
   if (!isDozhim) {
-    const sal = calcSalary(nameLow);
+    const sal = calcSalary(nameLow, matched.fund);
     if (sal) {
       incomeDetail = {
         crm:  {
@@ -2659,6 +2676,7 @@ function renderPersonal(matched) {
         oklad:     sal.detail.oklad,
         kotel:     sal.detail.kotel,
         fundCount: sal.detail.fundCount,
+        inFund:    sal.detail.inFund,
       };
     }
   }
@@ -2718,7 +2736,7 @@ function openIncomeDetail(btn) {
     <div class="income-sec-title">Оклад</div>
     ${subtotal('Оклад', oklad)}` : '';
 
-  const kotelRow = kotel > 0 ? `
+  const kotelRow = (d.inFund && kotel > 0) ? `
     <div class="income-sec-title">Котёл</div>
     <div style="font-size:10px;color:var(--txt2);margin-bottom:6px">Участников котла: ${fundCount}</div>
     ${subtotal('Доля котла', kotel)}` : '';

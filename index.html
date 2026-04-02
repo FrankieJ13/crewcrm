@@ -2510,8 +2510,12 @@ function calcSalary(nameLow) {
   };
 
   // ── личные начисления ──
-  const crmEarn  = crm.vis*rCrmVis + crm.kred*rCrmKred + crm.nal*rCrmNal + crm.obmen*rCrmObmen + crm.kom*rCrmKom + crm.zadatok*rZadatok;
-  const warmEarn = warm.vis*rWarmVis + warm.kred*rWarmKred + warm.nal*rWarmNal + warm.obmen*rWarmObmen + warm.kom*rWarmKom;
+  // Чистые визиты = визиты минус все сделки (визит со сделкой оплачивается по ставке сделки)
+  const crmPureVis  = Math.max(0, crm.vis  - crm.kred - crm.nal - crm.obmen - crm.kom);
+  const warmPureVis = Math.max(0, warm.vis - warm.kred - warm.nal - warm.obmen - warm.kom);
+
+  const crmEarn  = crmPureVis*rCrmVis + crm.kred*rCrmKred + crm.nal*rCrmNal + crm.obmen*rCrmObmen + crm.kom*rCrmKom + crm.zadatok*rZadatok;
+  const warmEarn = warmPureVis*rWarmVis + warm.kred*rWarmKred + warm.nal*rWarmNal + warm.obmen*rWarmObmen + warm.kom*rWarmKom;
 
   // ── котёл (строка 14, индекс 13 в массиве) ──
   const kotelRow = otchet[13] || [];
@@ -2530,8 +2534,11 @@ function calcSalary(nameLow) {
     obmen: num(kotelRow[14]),
     kom:   num(kotelRow[15]),
   };
-  const kotelTotal = kotelCrm.vis*rCrmVis + kotelCrm.kred*rCrmKred + kotelCrm.nal*rCrmNal + kotelCrm.obmen*rCrmObmen + kotelCrm.kom*rCrmKom + kotelCrm.zadatok*rZadatok
-                   + kotelWarm.vis*rWarmVis + kotelWarm.kred*rWarmKred + kotelWarm.nal*rWarmNal + kotelWarm.obmen*rWarmObmen + kotelWarm.kom*rWarmKom;
+  const kotelCrmPureVis  = Math.max(0, kotelCrm.vis  - kotelCrm.kred - kotelCrm.nal - kotelCrm.obmen - kotelCrm.kom);
+  const kotelWarmPureVis = Math.max(0, kotelWarm.vis - kotelWarm.kred - kotelWarm.nal - kotelWarm.obmen - kotelWarm.kom);
+
+  const kotelTotal = kotelCrmPureVis*rCrmVis + kotelCrm.kred*rCrmKred + kotelCrm.nal*rCrmNal + kotelCrm.obmen*rCrmObmen + kotelCrm.kom*rCrmKom + kotelCrm.zadatok*rZadatok
+                   + kotelWarmPureVis*rWarmVis + kotelWarm.kred*rWarmKred + kotelWarm.nal*rWarmNal + kotelWarm.obmen*rWarmObmen + kotelWarm.kom*rWarmKom;
   const fundCount = getFundCount();
   const kotelShare = fundCount > 0 ? kotelTotal / fundCount : 0;
 

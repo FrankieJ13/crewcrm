@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="ru">
 <head>
 <meta charset="UTF-8"/>
@@ -989,144 +988,94 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
 }
 .income-subtotal .ist-lbl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.06em; }
 .income-subtotal .ist-val { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:800; color:var(--acc); }
-.income-cols {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 14px;
+.kpi-info-btn {
+  position:absolute; top:10px; right:10px;
+  width:22px; height:22px; border-radius:50%;
+  border:1px solid var(--acc-bdr); background:var(--acc-bg);
+  color:var(--acc); font-size:11px; font-weight:700;
+  font-style:italic; font-family:Georgia,serif;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:all .15s; flex-shrink:0;
 }
-.income-col {
-  border-radius: var(--r);
-  padding: 12px 10px;
-  text-align: center;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--line2);
-  position: relative;
-}
-.income-col.fact  { border-color: rgba(30,144,255,.35); }
-.income-col.prog  { border-color: var(--acc-bdr); }
-.income-col .ic-lbl {
-  font-size: 9px; color: var(--txt2);
-  text-transform: uppercase; letter-spacing: .06em;
-  margin-bottom: 4px; line-height: 1.3;
-}
-.income-col .ic-val {
-  font-family: 'Unbounded', sans-serif;
-  font-size: 16px; font-weight: 900;
-  letter-spacing: -.02em; line-height: 1.1;
-  margin-bottom: 4px;
-}
-.income-col.fact .ic-val { color: var(--blu); }
-.income-col.prog .ic-val { color: var(--acc); }
-.income-col .ic-koef {
-  font-size: 10px; font-weight: 700;
-  padding: 2px 7px; border-radius: 20px;
-  display: inline-block; margin-top: 2px;
-}
-.ic-koef.k08 { background: rgba(255,71,87,.15);  color: var(--red); }
-.ic-koef.k09 { background: rgba(255,165,2,.15);  color: var(--org); }
-.ic-koef.k10 { background: rgba(255,255,255,.08);color: var(--txt2);}
-.ic-koef.k11 { background: rgba(46,213,115,.12); color: var(--grn); }
-.ic-koef.k12 { background: rgba(46,213,115,.22); color: var(--grn); }
-.income-col .ic-pct {
-  font-size: 9px; color: var(--txt2); margin-top: 3px;
-}
-body.light .income-col { background: rgba(0,0,0,.02); }
-body.light .income-col.fact { border-color: rgba(16,96,204,.3); }
-
-/* KPI income panel override for two-col */
-.kpi-income-panel .income-cols { margin-bottom: 0; }
-.kpi-income-panel .income-col { background: rgba(255,255,255,0.05); }
-.kpi-income-panel .income-col.fact { border-color: rgba(30,144,255,.4); }
-.kpi-income-panel .income-col.prog { border-color: var(–acc-bdr); }
-position:absolute; top:10px; right:10px;
-width:22px; height:22px; border-radius:50%;
-border:1px solid var(–acc-bdr); background:var(–acc-bg);
-color:var(–acc); font-size:11px; font-weight:700;
-font-style:italic; font-family:Georgia,serif;
-cursor:pointer; display:flex; align-items:center; justify-content:center;
-transition:all .15s; flex-shrink:0;
-}
-.kpi-info-btn:hover { background:var(–acc); color:#000; border-color:var(–acc); }
+.kpi-info-btn:hover { background:var(--acc); color:#000; border-color:var(--acc); }
 /* ==================== PERSONAL KPI PAGE ==================== */
 .kpi-manager-name {
-font-family:‘Unbounded’,sans-serif;
-font-size:18px; font-weight:800; letter-spacing:.03em;
-color:var(–txt); margin:14px 0 10px; line-height:1.2;
+  font-family:'Unbounded',sans-serif;
+  font-size:18px; font-weight:800; letter-spacing:.03em;
+  color:var(--txt); margin:14px 0 10px; line-height:1.2;
 }
-.kpi-divider { height:1px; background:var(–line2); margin-bottom:14px; }
+.kpi-divider { height:1px; background:var(--line2); margin-bottom:14px; }
 .kpi-subtitle {
-font-family:‘Unbounded’,sans-serif;
-font-size:10px; font-weight:800; letter-spacing:.1em;
-text-transform:uppercase; color:var(–acc);
-margin-bottom:12px; display:flex; align-items:center; gap:8px;
+  font-family:'Unbounded',sans-serif;
+  font-size:10px; font-weight:800; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--acc);
+  margin-bottom:12px; display:flex; align-items:center; gap:8px;
 }
-.kpi-subtitle::after { content:’’; flex:1; height:1px; background:var(–line) }
+.kpi-subtitle::after { content:''; flex:1; height:1px; background:var(--line) }
 .kpi-income-panel {
-border-radius:var(–r2); padding:16px; text-align:center;
-margin-bottom:14px;
-backdrop-filter:blur(12px) saturate(180%);
--webkit-backdrop-filter:blur(12px) saturate(180%);
-background: var(–acc-bg);
-border:1px solid var(–acc-bdr);
-box-shadow:0 15px 35px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
-position:relative;
+  border-radius:var(--r2); padding:16px; text-align:center;
+  margin-bottom:14px;
+  backdrop-filter:blur(12px) saturate(180%);
+  -webkit-backdrop-filter:blur(12px) saturate(180%);
+  background: var(--acc-bg);
+  border:1px solid var(--acc-bdr);
+  box-shadow:0 15px 35px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+  position:relative;
 }
 body.light .kpi-income-panel {
-border-color:rgba(0,0,0,0.1);
-box-shadow:0 10px 30px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.8);
+  border-color:rgba(0,0,0,0.1);
+  box-shadow:0 10px 30px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.8);
 }
-.kpi-income-panel .zl { font-size:10px; color:var(–txt2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px }
+.kpi-income-panel .zl { font-size:10px; color:var(--txt2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px }
 .kpi-income-panel .zv {
-font-family:‘Unbounded’,sans-serif;
-font-size:28px; font-weight:900; color:var(–acc); letter-spacing:-.02em;
+  font-family:'Unbounded',sans-serif;
+  font-size:28px; font-weight:900; color:var(--acc); letter-spacing:-.02em;
 }
-.kpi-badge-sep { height:1px; background:var(–line2); margin:10px 0; }
+.kpi-badge-sep { height:1px; background:var(--line2); margin:10px 0; }
 .kpi-badges { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:8px; }
 .kpi-badge {
-background:rgba(255,255,255,0.05); border-radius:10px;
-padding:10px 8px; text-align:center;
-backdrop-filter:blur(4px); border:1px solid var(–line);
+  background:rgba(255,255,255,0.05); border-radius:10px;
+  padding:10px 8px; text-align:center;
+  backdrop-filter:blur(4px); border:1px solid var(--line);
 }
 body.light .kpi-badge { background:rgba(0,0,0,0.03); }
 .kpi-badge .kb-lbl {
-font-size:9px; color:var(–txt2);
-text-transform:uppercase; letter-spacing:.04em; margin-bottom:5px; line-height:1.3;
+  font-size:9px; color:var(--txt2);
+  text-transform:uppercase; letter-spacing:.04em; margin-bottom:5px; line-height:1.3;
 }
 .kpi-badge .kb-val {
-font-family:‘Unbounded’,sans-serif; font-size:15px; font-weight:800; color:var(–txt);
+  font-family:'Unbounded',sans-serif; font-size:15px; font-weight:800; color:var(--txt);
 }
-/* –– instr-table: alternating rows –– */
-.instr-table tbody tr:nth-child(odd) td  { background:var(–bg2); }
-.instr-table tbody tr:nth-child(even) td { background:var(–bg3); }
-/* –– ndz-table –– */
+/* ---- instr-table: alternating rows ---- */
+.instr-table tbody tr:nth-child(odd) td  { background:var(--bg2); }
+.instr-table tbody tr:nth-child(even) td { background:var(--bg3); }
+/* ---- ndz-table ---- */
 .ndz-table { width:100%; border-collapse:collapse; font-size:13px; }
-.ndz-table td { padding:9px 14px; line-height:1.5; color:var(–txt2); }
-.ndz-table tr { border-bottom:1px solid var(–line); }
+.ndz-table td { padding:9px 14px; line-height:1.5; color:var(--txt2); }
+.ndz-table tr { border-bottom:1px solid var(--line); }
 .ndz-table tr:last-child { border-bottom:none; }
-.ndz-table tr td { background:var(–bg2); }
-.ndz-table tr:nth-child(even) td { background:var(–bg3); }
+.ndz-table tr td { background:var(--bg2); }
+.ndz-table tr:nth-child(even) td { background:var(--bg3); }
 .ndz-table tr.ndz-sub-hdr td {
-background:var(–acc-bg);
-color:var(–acc);
-font-family:‘Unbounded’,sans-serif;
-font-size:10px; font-weight:800; letter-spacing:.06em;
-text-transform:uppercase;
-border-bottom:1px solid var(–acc-bdr);
-border-top:1px solid var(–acc-bdr);
-padding:10px 14px;
+  background:var(--acc-bg);
+  color:var(--acc);
+  font-family:'Unbounded',sans-serif;
+  font-size:10px; font-weight:800; letter-spacing:.06em;
+  text-transform:uppercase;
+  border-bottom:1px solid var(--acc-bdr);
+  border-top:1px solid var(--acc-bdr);
+  padding:10px 14px;
 }
 .ndz-table tr.ndz-highlight td {
-background:rgba(255,71,87,.08);
-color:var(–red);
-font-weight:600;
-border-bottom:1px solid rgba(255,71,87,.2);
-border-top:1px solid rgba(255,71,87,.2);
+  background:rgba(255,71,87,.08);
+  color:var(--red);
+  font-weight:600;
+  border-bottom:1px solid rgba(255,71,87,.2);
+  border-top:1px solid rgba(255,71,87,.2);
 }
-body.light .ndz-table tr.ndz-sub-hdr td { background:var(–acc-bg); }
+body.light .ndz-table tr.ndz-sub-hdr td { background:var(--acc-bg); }
 body.light .ndz-table tr.ndz-highlight td { background:rgba(217,53,53,.06); }
 </style>
-
 </head>
 <body>
 <canvas id="bg-canvas"></canvas>
@@ -1270,528 +1219,516 @@ const CFG = {
 
 /* ══ MONTH STATE ══ */
 let currentSuffix = (() => {
-const now = new Date();
-return String(now.getMonth()+1).padStart(2,‘0’) + String(now.getFullYear()).slice(-2);
+  const now = new Date();
+  return String(now.getMonth()+1).padStart(2,'0') + String(now.getFullYear()).slice(-2);
 })();
 
 function getMonthName(suffix) {
-const mm = parseInt(suffix.slice(0,2));
-const yy = 2000 + parseInt(suffix.slice(2,4));
-return new Date(yy, mm-1, 1).toLocaleString(‘ru’, { month:‘long’, year:‘numeric’ });
+  const mm = parseInt(suffix.slice(0,2));
+  const yy = 2000 + parseInt(suffix.slice(2,4));
+  return new Date(yy, mm-1, 1).toLocaleString('ru', { month:'long', year:'numeric' });
 }
 
 function getSheetNames(suffix) {
-return {
-otchet:      ‘ОТЧЁТ’   + suffix,
-dohod:       ‘ЗП’      + suffix,
-d_otchet:    ‘Д_ОТЧЁТ’ + suffix,
-d_dohod:     ‘Д_ЗП’    + suffix,
-grafik:      ‘ГРАФИКИ’ + suffix,
-cnvrs:       ‘CNVRS’   + suffix,
-stavki:      ‘СТАВКИ’  + suffix,
-instruktsii: ‘ИНСТРУКЦИИ’,
-};
+  return {
+    otchet:      'ОТЧЁТ'   + suffix,
+    dohod:       'ЗП'      + suffix,
+    d_otchet:    'Д_ОТЧЁТ' + suffix,
+    d_dohod:     'Д_ЗП'    + suffix,
+    grafik:      'ГРАФИКИ' + suffix,
+    cnvrs:       'CNVRS'   + suffix,
+    instruktsii: 'ИНСТРУКЦИИ',
+  };
 }
 
 let SHEETS = getSheetNames(currentSuffix);
 
 function updateBadge() {
-document.getElementById(‘badge-month’).textContent = currentSuffix.slice(0,2)+’/’+currentSuffix.slice(2);
+  document.getElementById('badge-month').textContent = currentSuffix.slice(0,2)+'/'+currentSuffix.slice(2);
 }
 updateBadge();
 
 /* ══ STATE ══ */
 const S = {
-token:null,
-user:null,
-usersData:null,
-data:{ otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, dohodDetail:null, stavki:null },
-reportTab: ‘dept’,
-dohodTab: ‘crm’,
-faqTab: ‘instr’
+  token:null,
+  user:null,
+  usersData:null,
+  data:{ otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, dohodDetail:null },
+  reportTab: 'dept',
+  dohodTab: 'crm',
+  faqTab: 'instr'
 };
 
 /* ══ THEME ══ */
-if (localStorage.getItem(‘crm_theme’) === ‘light’) document.body.classList.add(‘light’);
+if (localStorage.getItem('crm_theme') === 'light') document.body.classList.add('light');
 
 function setTheme(light) {
-document.body.classList.toggle(‘light’, light);
-document.getElementById(‘ico-moon’).style.display = light ? ‘none’ : ‘’;
-document.getElementById(‘ico-sun’).style.display  = light ? ‘’ : ‘none’;
-localStorage.setItem(‘crm_theme’, light ? ‘light’ : ‘dark’);
+  document.body.classList.toggle('light', light);
+  document.getElementById('ico-moon').style.display = light ? 'none' : '';
+  document.getElementById('ico-sun').style.display  = light ? '' : 'none';
+  localStorage.setItem('crm_theme', light ? 'light' : 'dark');
 }
-function syncTheme() { setTheme(document.body.classList.contains(‘light’)) }
+function syncTheme() { setTheme(document.body.classList.contains('light')) }
 
 let _tt;
-function toast(msg, type=‘i’) {
-const el = document.getElementById(‘toast’);
-el.textContent = msg; el.className = type + ’ on’;
-clearTimeout(_tt); _tt = setTimeout(() => el.className=’’, 2600);
+function toast(msg, type='i') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = type + ' on';
+  clearTimeout(_tt); _tt = setTimeout(() => el.className='', 2600);
 }
 
 function showScr(id) {
-[‘otchet’,‘dohod’,‘grafik’,‘instruktsii’,‘personal’].forEach(t =>
-document.getElementById(‘scr-’+t).classList.remove(‘on’)
-);
-document.getElementById(‘scr-’+id)?.classList.add(‘on’);
-const gs = document.getElementById(‘grafik-sticky’);
-if (gs) gs.style.display = id === ‘grafik’ ? ‘’ : ‘none’;
-const floating = document.getElementById(‘floating-subtabs’);
-if (floating) floating.style.display = id === ‘otchet’ ? ‘flex’ : ‘none’;
-const floatingDohod = document.getElementById(‘floating-dohod-subtabs’);
-if (floatingDohod) floatingDohod.style.display = id === ‘dohod’ ? ‘flex’ : ‘none’;
-const floatingFaq = document.getElementById(‘floating-faq-subtabs’);
-if (floatingFaq) floatingFaq.style.display = id === ‘instruktsii’ ? ‘flex’ : ‘none’;
+  ['otchet','dohod','grafik','instruktsii','personal'].forEach(t =>
+    document.getElementById('scr-'+t).classList.remove('on')
+  );
+  document.getElementById('scr-'+id)?.classList.add('on');
+  const gs = document.getElementById('grafik-sticky');
+  if (gs) gs.style.display = id === 'grafik' ? '' : 'none';
+  const floating = document.getElementById('floating-subtabs');
+  if (floating) floating.style.display = id === 'otchet' ? 'flex' : 'none';
+  const floatingDohod = document.getElementById('floating-dohod-subtabs');
+  if (floatingDohod) floatingDohod.style.display = id === 'dohod' ? 'flex' : 'none';
+  const floatingFaq = document.getElementById('floating-faq-subtabs');
+  if (floatingFaq) floatingFaq.style.display = id === 'instruktsii' ? 'flex' : 'none';
 }
 
 function num(v) { return parseInt(v)||0 }
 function fmtRub(v) {
-const n = parseFloat(String(v||’’).replace(/[^\d.,-]/g,’’).replace(’,’,’.’));
-return isNaN(n) ? (v||’—’) : n.toLocaleString(‘ru’) + ’ ₽’;
+  const n = parseFloat(String(v||'').replace(/[^\d.,-]/g,'').replace(',','.'));
+  return isNaN(n) ? (v||'—') : n.toLocaleString('ru') + ' ₽';
 }
 function pctClr(p) {
-const n = (typeof p === ‘number’) ? p : (parseFloat(String(p||0).replace(/[^\d.,-]/g,’’).replace(’,’,’.’)) || 0);
-return n >= 100 ? ‘var(–grn)’ : n >= 60 ? ‘var(–org)’ : ‘var(–red)’;
+  const n = (typeof p === 'number') ? p : (parseFloat(String(p||0).replace(/[^\d.,-]/g,'').replace(',','.')) || 0);
+  return n >= 100 ? 'var(--grn)' : n >= 60 ? 'var(--org)' : 'var(--red)';
 }
 
 function rankColor(pos, total) {
-if (total <= 1) return { r:0, g:230, b:90 };
-const t = pos / (total - 1);
-let r, g, b;
-if (t <= 0.5) {
-const f = t * 2;
-r = Math.round(0   + (255 - 0)   * f);
-g = Math.round(230 + (224 - 230) * f);
-b = Math.round(90  + (0   - 90)  * f);
-} else {
-const f = (t - 0.5) * 2;
-r = Math.round(255 + (255 - 255) * f);
-g = Math.round(224 + (40  - 224) * f);
-b = Math.round(0   + (40  - 0)   * f);
-}
-return { r, g, b };
+  if (total <= 1) return { r:0, g:230, b:90 };
+  const t = pos / (total - 1);
+  let r, g, b;
+  if (t <= 0.5) {
+    const f = t * 2;
+    r = Math.round(0   + (255 - 0)   * f);
+    g = Math.round(230 + (224 - 230) * f);
+    b = Math.round(90  + (0   - 90)  * f);
+  } else {
+    const f = (t - 0.5) * 2;
+    r = Math.round(255 + (255 - 255) * f);
+    g = Math.round(224 + (40  - 224) * f);
+    b = Math.round(0   + (40  - 0)   * f);
+  }
+  return { r, g, b };
 }
 
 function rankStyles(pos, total) {
-const { r, g, b } = rankColor(pos, total);
-const color   = `rgb(${r},${g},${b})`;
-const border  = `rgba(${r},${g},${b},.6)`;
-const badgeBg = `rgba(${r},${g},${b},.25)`;
-return { color, border, badgeBg, r, g, b };
+  const { r, g, b } = rankColor(pos, total);
+  const color   = `rgb(${r},${g},${b})`;
+  const border  = `rgba(${r},${g},${b},.6)`;
+  const badgeBg = `rgba(${r},${g},${b},.25)`;
+  return { color, border, badgeBg, r, g, b };
 }
 function loader() { return `<div class="loader"><div class="spin"></div><span>Загружаем…</span></div>` }
 
 function medalBtn(idx) {
-const emoji = idx===0 ? ‘🥇’ : idx===1 ? ‘🥈’ : idx===2 ? ‘🥉’ : ‘’;
-if (!emoji) return ‘’;
-return `<button class="medal-btn" onclick="burstConfetti(this,${idx})" title="🎉">${emoji}</button>`;
+  const emoji = idx===0 ? '🥇' : idx===1 ? '🥈' : idx===2 ? '🥉' : '';
+  if (!emoji) return '';
+  return `<button class="medal-btn" onclick="burstConfetti(this,${idx})" title="🎉">${emoji}</button>`;
 }
 
 let tokenClient;
 let refreshTimer = null;
 
 function scheduleTokenRefresh(expiresIn) {
-if (refreshTimer) clearTimeout(refreshTimer);
-const delay = Math.max((expiresIn - 300) * 1000, 0);
-refreshTimer = setTimeout(() => {
-if (tokenClient && S.token) {
-tokenClient.requestAccessToken({ prompt: ‘’ });
-}
-refreshTimer = null;
-}, delay);
+  if (refreshTimer) clearTimeout(refreshTimer);
+  const delay = Math.max((expiresIn - 300) * 1000, 0);
+  refreshTimer = setTimeout(() => {
+    if (tokenClient && S.token) {
+      tokenClient.requestAccessToken({ prompt: '' });
+    }
+    refreshTimer = null;
+  }, delay);
 }
 
 function initAuth() {
-tokenClient = google.accounts.oauth2.initTokenClient({
-client_id: CFG.CLIENT_ID,
-scope: ‘https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email’,
-callback: async (resp) => {
-if (resp.error) { toast(’Ошибка: ’+resp.error, ‘e’); return; }
-S.token = resp.access_token;
-sessionStorage.setItem(‘crm_tok’, resp.access_token);
-sessionStorage.setItem(‘crm_exp’, Date.now()+(resp.expires_in-60)*1000);
-// Не ждём loadUser — onLogin вызывается сразу, данные начинают грузиться
-// loadUser работает параллельно; когда завершится — попробует открыть личную страницу
-loadUser();
-onLogin();
-scheduleTokenRefresh(resp.expires_in);
-},
-});
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CFG.CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+    callback: async (resp) => {
+      if (resp.error) { toast('Ошибка: '+resp.error, 'e'); return; }
+      S.token = resp.access_token;
+      sessionStorage.setItem('crm_tok', resp.access_token);
+      sessionStorage.setItem('crm_exp', Date.now()+(resp.expires_in-60)*1000);
+      // Не ждём loadUser — onLogin вызывается сразу, данные начинают грузиться
+      // loadUser работает параллельно; когда завершится — попробует открыть личную страницу
+      loadUser();
+      onLogin();
+      scheduleTokenRefresh(resp.expires_in);
+    },
+  });
 }
 
 async function loadUser() {
-try {
-// Таймаут 8 секунд — fetch на мобильном может зависнуть без него
-const ctrl = new AbortController();
-const timer = setTimeout(() => ctrl.abort(), 8000);
-const r = await fetch(‘https://www.googleapis.com/oauth2/v3/userinfo’,
-{ headers:{ Authorization:’Bearer ’+S.token }, signal: ctrl.signal });
-clearTimeout(timer);
-if (!r.ok) return;
-S.user = await r.json();
-sessionStorage.setItem(‘crm_user’, JSON.stringify(S.user));
-renderUser();
-// loadUser завершился параллельно с loadUsersAndStart.
-// Если мы уже на ОТЧЁТ и USERS готов — проверяем нужна ли личная страница
-if (S.usersData !== null &&
-document.getElementById(‘scr-otchet’)?.classList.contains(‘on’) &&
-!document.getElementById(‘scr-personal’)?.classList.contains(‘on’)) {
-const matched = findUserInSheet();
-if (matched && matched.name) goPersonal();
-}
-} catch(e) { /* таймаут или ошибка — продолжаем без данных пользователя */ }
+  try {
+    // Таймаут 8 секунд — fetch на мобильном может зависнуть без него
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo',
+      { headers:{ Authorization:'Bearer '+S.token }, signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!r.ok) return;
+    S.user = await r.json();
+    sessionStorage.setItem('crm_user', JSON.stringify(S.user));
+    renderUser();
+    // loadUser завершился параллельно с loadUsersAndStart.
+    // Если мы уже на ОТЧЁТ и USERS готов — проверяем нужна ли личная страница
+    if (S.usersData !== null &&
+        document.getElementById('scr-otchet')?.classList.contains('on') &&
+        !document.getElementById('scr-personal')?.classList.contains('on')) {
+      const matched = findUserInSheet();
+      if (matched && matched.name) goPersonal();
+    }
+  } catch(e) { /* таймаут или ошибка — продолжаем без данных пользователя */ }
 }
 
 function renderUser() {
-if (!S.user) return;
-const av = document.getElementById(‘user-avatar’);
-if (S.user.picture) av.src = S.user.picture;
-av.style.cursor = ‘pointer’;
-av.title = ‘Мой KPI’;
-av.onclick = goPersonal;
-if (S.user.name)    document.getElementById(‘user-name’).textContent = S.user.name.split(’ ’)[0];
-document.getElementById(‘user-wrap’).style.display = ‘flex’;
+  if (!S.user) return;
+  const av = document.getElementById('user-avatar');
+  if (S.user.picture) av.src = S.user.picture;
+  av.style.cursor = 'pointer';
+  av.title = 'Мой KPI';
+  av.onclick = goPersonal;
+  if (S.user.name)    document.getElementById('user-name').textContent = S.user.name.split(' ')[0];
+  document.getElementById('user-wrap').style.display = 'flex';
 }
 
 function onLogin() {
-document.getElementById(‘btn-out’).style.display   = ‘’;
-document.getElementById(‘main-nav’).style.display  = ‘flex’;
-const ls = document.getElementById(‘scr-login’);
-ls.classList.remove(‘on’); ls.style.display = ‘none’;
-toast(‘Приветствую, коллега!’, ‘s’);
-// Сразу показываем ОТЧЁТ и начинаем грузить данные — не ждём USERS
-document.querySelectorAll(’.tab’).forEach(b => b.classList.toggle(‘on’, b.dataset.tab===‘otchet’));
-showScr(‘otchet’);
-loadTab(‘otchet’);
-// Параллельно проверяем нужна ли личная страница
-loadUsersAndStart();
+  document.getElementById('btn-out').style.display   = '';
+  document.getElementById('main-nav').style.display  = 'flex';
+  const ls = document.getElementById('scr-login');
+  ls.classList.remove('on'); ls.style.display = 'none';
+  toast('Приветствую, коллега!', 's');
+  // Сразу показываем ОТЧЁТ и начинаем грузить данные — не ждём USERS
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab==='otchet'));
+  showScr('otchet');
+  loadTab('otchet');
+  // Параллельно проверяем нужна ли личная страница
+  loadUsersAndStart();
 }
 
 function onLogout() {
-if (refreshTimer) {
-clearTimeout(refreshTimer);
-refreshTimer = null;
-}
-if (S.token) google.accounts.oauth2.revoke(S.token, ()=>{});
-S.token=null; S.user=null; S.usersData=null;
-S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, dohodDetail:null, stavki:null };
-[‘crm_tok’,‘crm_exp’,‘crm_user’].forEach(k => sessionStorage.removeItem(k));
-document.getElementById(‘user-wrap’).style.display = ‘none’;
-document.getElementById(‘btn-out’).style.display   = ‘none’;
-document.getElementById(‘main-nav’).style.display  = ‘none’;
-[‘otchet’,‘dohod’,‘grafik’,‘instruktsii’,‘personal’].forEach(t => {
-const s = document.getElementById(‘scr-’+t);
-s.classList.remove(‘on’); s.style.display = ‘’;
-});
-const ls = document.getElementById(‘scr-login’);
-ls.style.display=’’; ls.classList.add(‘on’);
-toast(‘Вы вышли’);
+  if (refreshTimer) {
+    clearTimeout(refreshTimer);
+    refreshTimer = null;
+  }
+  if (S.token) google.accounts.oauth2.revoke(S.token, ()=>{});
+  S.token=null; S.user=null; S.usersData=null;
+  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, dohodDetail:null };
+  ['crm_tok','crm_exp','crm_user'].forEach(k => sessionStorage.removeItem(k));
+  document.getElementById('user-wrap').style.display = 'none';
+  document.getElementById('btn-out').style.display   = 'none';
+  document.getElementById('main-nav').style.display  = 'none';
+  ['otchet','dohod','grafik','instruktsii','personal'].forEach(t => {
+    const s = document.getElementById('scr-'+t);
+    s.classList.remove('on'); s.style.display = '';
+  });
+  const ls = document.getElementById('scr-login');
+  ls.style.display=''; ls.classList.add('on');
+  toast('Вы вышли');
 }
 
 function tryRestore() {
-const tok = sessionStorage.getItem(‘crm_tok’);
-const exp = parseInt(sessionStorage.getItem(‘crm_exp’)||‘0’);
-if (!tok || exp <= Date.now()) {
-[‘crm_tok’,‘crm_exp’,‘crm_user’].forEach(k => sessionStorage.removeItem(k));
-return false;
-}
-S.token = tok;
-const u = sessionStorage.getItem(‘crm_user’);
-if (u) { S.user = JSON.parse(u); renderUser(); }
-const remaining = Math.max(Math.floor((exp - Date.now()) / 1000), 0);
-scheduleTokenRefresh(remaining);
-onLogin();
-return true;
+  const tok = sessionStorage.getItem('crm_tok');
+  const exp = parseInt(sessionStorage.getItem('crm_exp')||'0');
+  if (!tok || exp <= Date.now()) {
+    ['crm_tok','crm_exp','crm_user'].forEach(k => sessionStorage.removeItem(k));
+    return false;
+  }
+  S.token = tok;
+  const u = sessionStorage.getItem('crm_user');
+  if (u) { S.user = JSON.parse(u); renderUser(); }
+  const remaining = Math.max(Math.floor((exp - Date.now()) / 1000), 0);
+  scheduleTokenRefresh(remaining);
+  onLogin();
+  return true;
 }
 
 async function api(sheet, range) {
-const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/`
-+ encodeURIComponent(sheet+’!’+range);
-const r = await fetch(url, { headers:{ Authorization:’Bearer ’+S.token } });
-if (!r.ok) {
-const e = await r.json();
-const msg = e.error?.message || r.statusText;
-if (r.status===401 || r.status===403 || msg.includes(‘insufficient’)) {
-[‘crm_tok’,‘crm_exp’,‘crm_user’].forEach(k => sessionStorage.removeItem(k));
-S.token=null; onLogout(); toast(‘Сессия истекла — войдите снова’,‘e’);
-throw new Error(‘auth’);
-}
-if (r.status === 404) throw new Error(‘NOT_FOUND’);
-throw new Error(msg);
-}
-return (await r.json()).values || [];
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/`
+            + encodeURIComponent(sheet+'!'+range);
+  const r = await fetch(url, { headers:{ Authorization:'Bearer '+S.token } });
+  if (!r.ok) {
+    const e = await r.json();
+    const msg = e.error?.message || r.statusText;
+    if (r.status===401 || r.status===403 || msg.includes('insufficient')) {
+      ['crm_tok','crm_exp','crm_user'].forEach(k => sessionStorage.removeItem(k));
+      S.token=null; onLogout(); toast('Сессия истекла — войдите снова','e');
+      throw new Error('auth');
+    }
+    if (r.status === 404) throw new Error('NOT_FOUND');
+    throw new Error(msg);
+  }
+  return (await r.json()).values || [];
 }
 
 function setCurrentMonth(newSuffix) {
-if (newSuffix === currentSuffix) return;
-currentSuffix = newSuffix;
-updateBadge();
-SHEETS = getSheetNames(currentSuffix);
-S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, dohodDetail:null, stavki:null };
-_schedWeek = null;
-const activeTab = document.querySelector(’.tab.on’)?.dataset.tab || ‘otchet’;
-loadTab(activeTab);
+  if (newSuffix === currentSuffix) return;
+  currentSuffix = newSuffix;
+  updateBadge();
+  SHEETS = getSheetNames(currentSuffix);
+  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, dohodDetail:null };
+  _schedWeek = null;
+  const activeTab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
+  loadTab(activeTab);
 }
 
 function goTab(tab) {
-document.querySelectorAll(’.tab’).forEach(b => b.classList.toggle(‘on’, b.dataset.tab===tab));
-showScr(tab);
-loadTab(tab);
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab===tab));
+  showScr(tab);
+  loadTab(tab);
 }
 
 async function loadTab(tab) {
-const showArchiveMsg = (container, isArchive=true) => {
-if (container) container.innerHTML = `<div class="empty">${isArchive ? 'Информация отсутствует. Данные ушли в архив.' : 'Нет данных'}</div>`;
-};
-if (tab === ‘otchet’) {
-const el = document.getElementById(‘c-otchet’);
-if (!S.data.otchet) {
-if (el) el.innerHTML = loader();
-try {
-S.data.otchet = await api(SHEETS.otchet, ‘A1:Z15’);
-} catch(e) {
-if (e.message!==‘auth’) {
-if (e.message === ‘NOT_FOUND’) showArchiveMsg(el);
-else if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
-}
-return;
-}
-}
-if (S.reportTab === ‘dozhim’ && !S.data.d_otchet) {
-try {
-S.data.d_otchet = await api(SHEETS.d_otchet, ‘A1:R20’);
-} catch(e) {
-if (e.message !== ‘NOT_FOUND’) S.data.d_otchet = [];
-else S.data.d_otchet = null;
-}
-}
-if (S.reportTab === ‘dept’ && !S.data.d_otchet) {
-api(SHEETS.d_otchet, ‘A1:R20’).then(data => {
-S.data.d_otchet = data;
-if (S.reportTab === ‘dept’) renderOtchet();
-}).catch(() => { S.data.d_otchet = []; });
-}
-if (!S.data.cnvrs) {
-api(SHEETS.cnvrs, ‘A1:N40’).then(data => {
-S.data.cnvrs = data;
-renderTab(‘otchet’);
-}).catch(() => { S.data.cnvrs = []; });
-}
-renderTab(‘otchet’);
-return;
-}
-if (tab === ‘dohod’) {
-const el = document.getElementById(‘c-dohod’);
-if (S.dohodTab === ‘dozhim’) {
-if (!S.data.d_dohod) {
-if (el) el.innerHTML = loader();
-try {
-S.data.d_dohod = await api(SHEETS.d_dohod, ‘A1:N20’);
-} catch(e) {
-if (e.message!==‘auth’) {
-if (e.message === ‘NOT_FOUND’) showArchiveMsg(el);
-else if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
-}
-return;
-}
-}
-renderTab(‘dohod’);
-return;
-}
-// CRM — нужны ОТЧЁТ и СТАВКИ
-if (!S.data.otchet) {
-if (el) el.innerHTML = loader();
-try {
-S.data.otchet = await api(SHEETS.otchet, ‘A1:Z15’);
-} catch(e) {
-if (e.message!==‘auth’) {
-if (e.message === ‘NOT_FOUND’) showArchiveMsg(el);
-else if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
-}
-return;
-}
-}
-if (!S.data.stavki) {
-try {
-S.data.stavki = await api(SHEETS.stavki, ‘A1:B25’);
-} catch(e) {
-S.data.stavki = [];
-}
-}
-renderTab(‘dohod’);
-return;
-}
-if (S.data[tab]) { renderTab(tab); return; }
-const el = document.getElementById(‘c-’+tab);
-if (el) el.innerHTML = loader();
-try {
-if      (tab===‘grafik’)      S.data.grafik       = await api(SHEETS.grafik,      ‘A1:AI25’);
-else if (tab===‘instruktsii’) S.data.instruktsii  = await api(SHEETS.instruktsii, ‘A1:C200’);
-renderTab(tab);
-} catch(e) {
-if (e.message!==‘auth’) {
-if (e.message === ‘NOT_FOUND’) showArchiveMsg(el);
-else if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
-}
-}
+  const showArchiveMsg = (container, isArchive=true) => {
+    if (container) container.innerHTML = `<div class="empty">${isArchive ? 'Информация отсутствует. Данные ушли в архив.' : 'Нет данных'}</div>`;
+  };
+  if (tab === 'otchet') {
+    const el = document.getElementById('c-otchet');
+    if (!S.data.otchet) {
+      if (el) el.innerHTML = loader();
+      try {
+        S.data.otchet = await api(SHEETS.otchet, 'A1:Z15');
+      } catch(e) {
+        if (e.message!=='auth') {
+          if (e.message === 'NOT_FOUND') showArchiveMsg(el);
+          else if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
+        }
+        return;
+      }
+    }
+    if (S.reportTab === 'dozhim' && !S.data.d_otchet) {
+      try {
+        S.data.d_otchet = await api(SHEETS.d_otchet, 'A1:R20');
+      } catch(e) {
+        if (e.message !== 'NOT_FOUND') S.data.d_otchet = [];
+        else S.data.d_otchet = null;
+      }
+    }
+    if (S.reportTab === 'dept' && !S.data.d_otchet) {
+      api(SHEETS.d_otchet, 'A1:R20').then(data => {
+        S.data.d_otchet = data;
+        if (S.reportTab === 'dept') renderOtchet();
+      }).catch(() => { S.data.d_otchet = []; });
+    }
+    if (!S.data.cnvrs) {
+      api(SHEETS.cnvrs, 'A1:N40').then(data => {
+        S.data.cnvrs = data;
+        renderTab('otchet');
+      }).catch(() => { S.data.cnvrs = []; });
+    }
+    renderTab('otchet');
+    return;
+  }
+  if (tab === 'dohod') {
+    const el = document.getElementById('c-dohod');
+    if (!S.data.dohod) {
+      if (el) el.innerHTML = loader();
+      try {
+        S.data.dohod = await api(SHEETS.dohod, 'A1:B13');
+      } catch(e) {
+        if (e.message!=='auth') {
+          if (e.message === 'NOT_FOUND') showArchiveMsg(el);
+          else if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
+        }
+        return;
+      }
+    }
+    if (!S.data.dohodDetail) {
+      api(SHEETS.dohod, 'A1:Q15').then(data => {
+        S.data.dohodDetail = data;
+        if (S.dohodTab !== 'dozhim') renderDohod();
+      }).catch(() => { S.data.dohodDetail = []; });
+    }
+    if (S.dohodTab === 'dozhim' && !S.data.d_dohod) {
+      try {
+        S.data.d_dohod = await api(SHEETS.d_dohod, 'A1:N20');
+      } catch(e) {
+        if (e.message !== 'NOT_FOUND') S.data.d_dohod = [];
+        else S.data.d_dohod = null;
+      }
+    }
+    renderTab('dohod');
+    return;
+  }
+  if (S.data[tab]) { renderTab(tab); return; }
+  const el = document.getElementById('c-'+tab);
+  if (el) el.innerHTML = loader();
+  try {
+    if      (tab==='grafik')      S.data.grafik       = await api(SHEETS.grafik,      'A1:AI25');
+    else if (tab==='instruktsii') S.data.instruktsii  = await api(SHEETS.instruktsii, 'A1:C200');
+    renderTab(tab);
+  } catch(e) {
+    if (e.message!=='auth') {
+      if (e.message === 'NOT_FOUND') showArchiveMsg(el);
+      else if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
+    }
+  }
 }
 
 function reloadCurrent() {
-const isPersonal = document.getElementById(‘scr-personal’)?.classList.contains(‘on’);
-if (isPersonal) {
-const matched = findUserInSheet();
-if (matched) {
-const isDozhim = matched.role === ‘dozhim’;
-if (isDozhim) { S.data.d_otchet = null; S.data.d_dohod = null; }
-else { S.data.otchet = null; S.data.stavki = null; S.data.cnvrs = null; }
-loadPersonal(matched).then(() => toast(‘Обновлено’,‘s’));
-}
-return;
-}
-const tab = document.querySelector(’.tab.on’)?.dataset.tab || ‘otchet’;
-if (tab === ‘grafik’) _schedWeek = null;
-S.data[tab] = null;
-if (tab === ‘otchet’) { S.data.d_otchet = null; S.data.cnvrs = null; }
-if (tab === ‘dohod’) { S.data.d_dohod = null; S.data.stavki = null; }
-loadTab(tab).then(() => toast(‘Обновлено’,‘s’));
+  const isPersonal = document.getElementById('scr-personal')?.classList.contains('on');
+  if (isPersonal) {
+    const matched = findUserInSheet();
+    if (matched) {
+      const isDozhim = matched.role === 'dozhim';
+      if (isDozhim) { S.data.d_otchet = null; S.data.d_dohod = null; }
+      else { S.data.otchet = null; S.data.dohod = null; S.data.cnvrs = null; }
+      loadPersonal(matched).then(() => toast('Обновлено','s'));
+    }
+    return;
+  }
+  const tab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
+  if (tab === 'grafik') _schedWeek = null;
+  S.data[tab] = null;
+  if (tab === 'otchet') { S.data.d_otchet = null; S.data.cnvrs = null; }
+  if (tab === 'dohod') { S.data.d_dohod = null; S.data.dohodDetail = null; }
+  loadTab(tab).then(() => toast('Обновлено','s'));
 }
 
 function renderTab(tab) {
-if      (tab===‘otchet’)      renderOtchet();
-else if (tab===‘dohod’)       renderDohod();
-else if (tab===‘grafik’)      renderGrafik();
-else if (tab===‘instruktsii’) renderInstruktsii();
+  if      (tab==='otchet')      renderOtchet();
+  else if (tab==='dohod')       renderDohod();
+  else if (tab==='grafik')      renderGrafik();
+  else if (tab==='instruktsii') renderInstruktsii();
 }
 
 // ==================== HELPER: дни в месяце / отработанные дни ====================
 function getDaysInMonth(suffix) {
-const mm = parseInt(suffix.slice(0,2));
-const yy = 2000 + parseInt(suffix.slice(2,4));
-return new Date(yy, mm, 0).getDate();
+  const mm = parseInt(suffix.slice(0,2));
+  const yy = 2000 + parseInt(suffix.slice(2,4));
+  return new Date(yy, mm, 0).getDate();
 }
 function getWorkedDays(suffix) {
-const mm = parseInt(suffix.slice(0,2));
-const yy = 2000 + parseInt(suffix.slice(2,4));
-const now = new Date();
-const isCurrent = (now.getFullYear() === yy && now.getMonth()+1 === mm);
-const daysInMonth = getDaysInMonth(suffix);
-if (!isCurrent) return daysInMonth;
-const today = now.getDate();
-return Math.min(today, daysInMonth);
+  const mm = parseInt(suffix.slice(0,2));
+  const yy = 2000 + parseInt(suffix.slice(2,4));
+  const now = new Date();
+  const isCurrent = (now.getFullYear() === yy && now.getMonth()+1 === mm);
+  const daysInMonth = getDaysInMonth(suffix);
+  if (!isCurrent) return daysInMonth;
+  const today = now.getDate();
+  return Math.min(today, daysInMonth);
 }
 
 // Считает смены менеджера по графику: total за месяц и remaining начиная с сегодня
 function getManagerShiftCounts(name, suffix) {
-const raw = S.data.grafik;
-if (!raw || raw.length < 3) return null;
-const mm = parseInt(suffix.slice(0,2));
-const yy = 2000 + parseInt(suffix.slice(2,4));
-const nameLow = (name||’’).toLowerCase().trim();
-// ищем в CRM (строки 3-11, строка дней raw[1]) и Дожим (строки 19-23, строка дней raw[17])
-const groups = [
-{ rows: raw.slice(3, 12),  daysRow: raw[1]  || [] },
-{ rows: raw.slice(19, 24), daysRow: raw[17] || [] },
-];
-let mgrRow = null, daysRow = null;
-for (const g of groups) {
-const found = g.rows.find(r => (r[0]||’’).toLowerCase().trim() === nameLow);
-if (found) { mgrRow = found; daysRow = g.daysRow; break; }
-}
-if (!mgrRow) return null;
-const now = new Date();
-const isCurrent = (now.getFullYear() === yy && now.getMonth()+1 === mm);
-const today = isCurrent ? now.getDate() : 0;
-let total = 0, remaining = 0;
-for (let c = 1; c <= 35; c++) {
-const dayNum = parseInt(daysRow[c]);
-if (!dayNum || dayNum < 1 || dayNum > 31) continue;
-const val = (mgrRow[c]||’’).toLowerCase().trim();
-if (val === ‘р’) {
-total++;
-if (!isCurrent || dayNum > today) remaining++;
-}
-}
-return { total, remaining };
+  const raw = S.data.grafik;
+  if (!raw || raw.length < 3) return null;
+  const mm = parseInt(suffix.slice(0,2));
+  const yy = 2000 + parseInt(suffix.slice(2,4));
+  const nameLow = (name||'').toLowerCase().trim();
+  // ищем в CRM (строки 3-11, строка дней raw[1]) и Дожим (строки 19-23, строка дней raw[17])
+  const groups = [
+    { rows: raw.slice(3, 12),  daysRow: raw[1]  || [] },
+    { rows: raw.slice(19, 24), daysRow: raw[17] || [] },
+  ];
+  let mgrRow = null, daysRow = null;
+  for (const g of groups) {
+    const found = g.rows.find(r => (r[0]||'').toLowerCase().trim() === nameLow);
+    if (found) { mgrRow = found; daysRow = g.daysRow; break; }
+  }
+  if (!mgrRow) return null;
+  const now = new Date();
+  const isCurrent = (now.getFullYear() === yy && now.getMonth()+1 === mm);
+  const today = isCurrent ? now.getDate() : 0;
+  let total = 0, remaining = 0;
+  for (let c = 1; c <= 35; c++) {
+    const dayNum = parseInt(daysRow[c]);
+    if (!dayNum || dayNum < 1 || dayNum > 31) continue;
+    const val = (mgrRow[c]||'').toLowerCase().trim();
+    if (val === 'р') {
+      total++;
+      if (!isCurrent || dayNum > today) remaining++;
+    }
+  }
+  return { total, remaining };
 }
 
 function computeDailyPlan(plan, fact, progNum, suffix, name) {
-const shifts = name ? getManagerShiftCounts(name, suffix) : null;
-if (shifts && shifts.total > 0) {
-// текущий месяц с отставанием
-const daysInMonth = getDaysInMonth(suffix);
-const worked = getWorkedDays(suffix);
-if (worked < daysInMonth && progNum < 100) {
-if (shifts.remaining <= 0) return shifts.total > 0 ? Math.ceil(plan / shifts.total) : ‘—’;
-const need = plan - fact;
-if (need <= 0) return 0;
-return Math.ceil(need / shifts.remaining);
-}
-// месяц завершён или план выполнен — средний по всем сменам
-return shifts.total > 0 ? Math.ceil(plan / shifts.total) : ‘—’;
-}
-// fallback на календарные дни если графика нет
-const daysInMonth = getDaysInMonth(suffix);
-const worked = getWorkedDays(suffix);
-if (worked < daysInMonth && progNum < 100) {
-const remainingDays = daysInMonth - worked;
-if (remainingDays <= 0) return Math.ceil(plan / daysInMonth);
-const need = plan - fact;
-if (need <= 0) return 0;
-return Math.ceil(need / remainingDays);
-}
-return Math.ceil(plan / daysInMonth);
+  const shifts = name ? getManagerShiftCounts(name, suffix) : null;
+  if (shifts && shifts.total > 0) {
+    // текущий месяц с отставанием
+    const daysInMonth = getDaysInMonth(suffix);
+    const worked = getWorkedDays(suffix);
+    if (worked < daysInMonth && progNum < 100) {
+      if (shifts.remaining <= 0) return shifts.total > 0 ? Math.ceil(plan / shifts.total) : '—';
+      const need = plan - fact;
+      if (need <= 0) return 0;
+      return Math.ceil(need / shifts.remaining);
+    }
+    // месяц завершён или план выполнен — средний по всем сменам
+    return shifts.total > 0 ? Math.ceil(plan / shifts.total) : '—';
+  }
+  // fallback на календарные дни если графика нет
+  const daysInMonth = getDaysInMonth(suffix);
+  const worked = getWorkedDays(suffix);
+  if (worked < daysInMonth && progNum < 100) {
+    const remainingDays = daysInMonth - worked;
+    if (remainingDays <= 0) return Math.ceil(plan / daysInMonth);
+    const need = plan - fact;
+    if (need <= 0) return 0;
+    return Math.ceil(need / remainingDays);
+  }
+  return Math.ceil(plan / daysInMonth);
 }
 
 // ==================== RENDER OTCHET ====================
 function renderOtchet() {
-const floating = document.getElementById(‘floating-subtabs’);
-const el  = document.getElementById(‘c-otchet’);
-const raw = S.data.otchet;
-if (!raw || raw.length < 4) {
-if (floating) floating.innerHTML = ‘’;
-el.innerHTML = ‘<div class="empty">Нет данных</div>’;
-return;
-}
+  const floating = document.getElementById('floating-subtabs');
+  const el  = document.getElementById('c-otchet');
+  const raw = S.data.otchet;
+  if (!raw || raw.length < 4) { 
+    if (floating) floating.innerHTML = '';
+    el.innerHTML = '<div class="empty">Нет данных</div>'; 
+    return; 
+  }
 
-const mgrRows = raw.slice(3, 12).filter(r => r[0] && r[0].trim());
-const kot     = raw[13] || [];
-const totRow  = raw[14] || [];
+  const mgrRows = raw.slice(3, 12).filter(r => r[0] && r[0].trim());
+  const kot     = raw[13] || [];
+  const totRow  = raw[14] || [];
 
-const vis800sum  = raw.slice(3,12).reduce((s,r) => s + num(r[1]), 0) + num(kot[1]);
-const vis1200sum = raw.slice(3,12).reduce((s,r) => s + num(r[2]), 0) + num(kot[2]);
-const allVis     = vis800sum + vis1200sum;
-const planTotal  = num(totRow[3]);
+  const vis800sum  = raw.slice(3,12).reduce((s,r) => s + num(r[1]), 0) + num(kot[1]);
+  const vis1200sum = raw.slice(3,12).reduce((s,r) => s + num(r[2]), 0) + num(kot[2]);
+  const allVis     = vis800sum + vis1200sum;
+  const planTotal  = num(totRow[3]);
 
-const mo  = parseInt(currentSuffix.slice(0,2));
-const yr  = 2000 + parseInt(currentSuffix.slice(2,4));
-const dim = new Date(yr, mo, 0).getDate();
-const today = new Date();
-const dp  = (today.getFullYear()===yr && today.getMonth()+1===mo) ? today.getDate()
-: today > new Date(yr,mo-1,dim) ? dim : null;
+  const mo  = parseInt(currentSuffix.slice(0,2));
+  const yr  = 2000 + parseInt(currentSuffix.slice(2,4));
+  const dim = new Date(yr, mo, 0).getDate();
+  const today = new Date();
+  const dp  = (today.getFullYear()===yr && today.getMonth()+1===mo) ? today.getDate()
+            : today > new Date(yr,mo-1,dim) ? dim : null;
 
-let progOtdel = ‘—’;
-if (dp && planTotal > 0) {
-const target = (planTotal / dim) * dp;
-progOtdel = Math.round(allVis / target * 100) + ‘%’;
-}
+  let progOtdel = '—';
+  if (dp && planTotal > 0) {
+    const target = (planTotal / dim) * dp;
+    progOtdel = Math.round(allVis / target * 100) + '%';
+  }
 
-const deptKred = raw.slice(3,12).reduce((s,r) => s + num(r[8])  + num(r[12]), 0) + num(kot[8])  + num(kot[12]);
-const deptNal  = raw.slice(3,12).reduce((s,r) => s + num(r[9])  + num(r[13]), 0) + num(kot[9])  + num(kot[13]);
-const deptKom  = raw.slice(3,12).reduce((s,r) => s + num(r[11]) + num(r[15]), 0) + num(kot[11]) + num(kot[15]);
+  const deptKred = raw.slice(3,12).reduce((s,r) => s + num(r[8])  + num(r[12]), 0) + num(kot[8])  + num(kot[12]);
+  const deptNal  = raw.slice(3,12).reduce((s,r) => s + num(r[9])  + num(r[13]), 0) + num(kot[9])  + num(kot[13]);
+  const deptKom  = raw.slice(3,12).reduce((s,r) => s + num(r[11]) + num(r[15]), 0) + num(kot[11]) + num(kot[15]);
 
-const isLight = document.body.classList.contains(‘light’);
-const accR = isLight ? 81  : 232;
-const accG = isLight ? 55  : 255;
-const accB = isLight ? 221 : 71;
+  const isLight = document.body.classList.contains('light');
+  const accR = isLight ? 81  : 232;
+  const accG = isLight ? 55  : 255;
+  const accB = isLight ? 221 : 71;
 
-const ostPlan = Math.max(0, planTotal - allVis);
-const cnvrsData = S.data.cnvrs || [];
-const cnvrsTotCrm  = cnvrsData[11] || [];
-const cnvrsTotWarm = cnvrsData[25] || [];
-const cnvrsTotGen  = cnvrsData[39] || [];
+  const ostPlan = Math.max(0, planTotal - allVis);
+  const cnvrsData = S.data.cnvrs || [];
+  const cnvrsTotCrm  = cnvrsData[11] || [];
+  const cnvrsTotWarm = cnvrsData[25] || [];
+  const cnvrsTotGen  = cnvrsData[39] || [];
 
-const deptCard = `
-
+  const deptCard = `
   <div class="sec-title">ОТДЕЛ CRM</div>
   <div class="dept-card" style="background:rgba(${accR},${accG},${accB},0.08)">
     <div class="dept-row1">
@@ -1830,1063 +1767,938 @@ const deptCard = `
     </div>
   </div>`;
 
-// ДОЖИМ DEPT CARD
-let dozhimDeptCard = ‘’;
-const dRaw = S.data.d_otchet;
-if (dRaw && dRaw.length >= 4) {
-const dMgrs = dRaw.slice(3, 20).filter(r => r[0] && r[0].trim());
-const dAllVis = dMgrs.reduce((s,r) => s + num(r[7]), 0);
-const dPlan   = dMgrs.reduce((s,r) => s + num(r[3]), 0);
-let dProg = ‘—’;
-if (dp && dPlan > 0) {
-const tgt = (dPlan / dim) * dp;
-dProg = Math.round(dAllVis / tgt * 100) + ‘%’;
-}
-const dKred = dMgrs.reduce((s,r) => s + num(r[8]) + num(r[12]), 0);
-const dNal  = dMgrs.reduce((s,r) => s + num(r[9]) + num(r[13]), 0);
-const dKom  = dMgrs.reduce((s,r) => s + num(r[14]), 0);
-dozhimDeptCard = ` <div class="sec-title">ОТДЕЛ ДОЖИМ</div> <div class="dept-card" style="background:rgba(${accR},${accG},${accB},0.08)"> <div class="dept-row1"> <div class="dept-cell hi"><div class="dc-lbl">Визиты</div><div class="dc-val">${dAllVis||'—'}</div></div> <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">${dPlan||'—'}</div></div> <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val" style="color:${pctClr(parseInt(dProg))}">${dProg}</div></div> </div> <div class="dept-row2"> <div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">${dKred||'—'}</div></div> <div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">${dNal||'—'}</div></div> <div class="dept-cell"><div class="dc-lbl">Комиссия</div><div class="dc-val">${dKom||'—'}</div></div> </div> </div>`;
-} else {
-dozhimDeptCard = ` <div class="sec-title">ОТДЕЛ ДОЖИМ</div> <div class="dept-card" style="opacity:0.7;background:rgba(${accR},${accG},${accB},0.08)"> <div class="dept-row1"><div class="dept-cell"><div class="dc-lbl">Визиты</div><div class="dc-val">—</div></div><div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">—</div></div><div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val">—</div></div></div> <div class="dept-row2"><div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">—</div></div><div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">—</div></div><div class="dept-cell"><div class="dc-lbl">Комиссия</div><div class="dc-val">—</div></div></div> </div>`;
-}
+  // ДОЖИМ DEPT CARD
+  let dozhimDeptCard = '';
+  const dRaw = S.data.d_otchet;
+  if (dRaw && dRaw.length >= 4) {
+    const dMgrs = dRaw.slice(3, 20).filter(r => r[0] && r[0].trim());
+    const dAllVis = dMgrs.reduce((s,r) => s + num(r[7]), 0);
+    const dPlan   = dMgrs.reduce((s,r) => s + num(r[3]), 0);
+    let dProg = '—';
+    if (dp && dPlan > 0) {
+      const tgt = (dPlan / dim) * dp;
+      dProg = Math.round(dAllVis / tgt * 100) + '%';
+    }
+    const dKred = dMgrs.reduce((s,r) => s + num(r[8]) + num(r[12]), 0);
+    const dNal  = dMgrs.reduce((s,r) => s + num(r[9]) + num(r[13]), 0);
+    const dKom  = dMgrs.reduce((s,r) => s + num(r[14]), 0);
+    dozhimDeptCard = `
+    <div class="sec-title">ОТДЕЛ ДОЖИМ</div>
+    <div class="dept-card" style="background:rgba(${accR},${accG},${accB},0.08)">
+      <div class="dept-row1">
+        <div class="dept-cell hi"><div class="dc-lbl">Визиты</div><div class="dc-val">${dAllVis||'—'}</div></div>
+        <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">${dPlan||'—'}</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val" style="color:${pctClr(parseInt(dProg))}">${dProg}</div></div>
+      </div>
+      <div class="dept-row2">
+        <div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">${dKred||'—'}</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">${dNal||'—'}</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Комиссия</div><div class="dc-val">${dKom||'—'}</div></div>
+      </div>
+    </div>`;
+  } else {
+    dozhimDeptCard = `
+    <div class="sec-title">ОТДЕЛ ДОЖИМ</div>
+    <div class="dept-card" style="opacity:0.7;background:rgba(${accR},${accG},${accB},0.08)">
+      <div class="dept-row1"><div class="dept-cell"><div class="dc-lbl">Визиты</div><div class="dc-val">—</div></div><div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">—</div></div><div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val">—</div></div></div>
+      <div class="dept-row2"><div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">—</div></div><div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">—</div></div><div class="dept-cell"><div class="dc-lbl">Комиссия</div><div class="dc-val">—</div></div></div>
+    </div>`;
+  }
 
-const KOTEL = [‘котел’,‘котёл’,‘kotel’];
-const isKotel = n => KOTEL.includes((n||’’).toLowerCase().trim());
+  const KOTEL = ['котел','котёл','kotel'];
+  const isKotel = n => KOTEL.includes((n||'').toLowerCase().trim());
 
-function getCnvrsRow(name, section) {
-const n = (name||’’).toLowerCase().trim();
-let rows;
-if (section === ‘crm’) rows = cnvrsData.slice(2, 11);
-else if (section === ‘warm’) rows = cnvrsData.slice(16, 25);
-else rows = cnvrsData.slice(30, 39);
-return rows.find(r => (r[0]||’’).toLowerCase().trim() === n) || [];
-}
+  function getCnvrsRow(name, section) {
+    const n = (name||'').toLowerCase().trim();
+    let rows;
+    if (section === 'crm') rows = cnvrsData.slice(2, 11);
+    else if (section === 'warm') rows = cnvrsData.slice(16, 25);
+    else rows = cnvrsData.slice(30, 39);
+    return rows.find(r => (r[0]||'').toLowerCase().trim() === n) || [];
+  }
 
-const managerStats = mgrRows.filter(r => !isKotel(r[0])).map(r => {
-const mName = (r[0]||’—’).trim();
-const genRow = getCnvrsRow(mName, ‘general’);
-const convStr = (genRow[6]||‘0%’).replace(’%’,’’).replace(’,’,’.’);
-return {
-name:    mName.toUpperCase(),
-visits:  num(r[7]),
-plan:    num(r[3]) || 1,
-progNum: parseFloat((r[6]||‘0%’).replace(’%’,’’).replace(’,’,’.’)) || 0,
-convPct: parseFloat(convStr) || 0,
-};
-});
-managerStats.sort((a, b) => b.progNum - a.progNum);
+  const managerStats = mgrRows.filter(r => !isKotel(r[0])).map(r => {
+    const mName = (r[0]||'—').trim();
+    const genRow = getCnvrsRow(mName, 'general');
+    const convStr = (genRow[6]||'0%').replace('%','').replace(',','.');
+    return {
+      name:    mName.toUpperCase(),
+      visits:  num(r[7]),
+      plan:    num(r[3]) || 1,
+      progNum: parseFloat((r[6]||'0%').replace('%','').replace(',','.')) || 0,
+      convPct: parseFloat(convStr) || 0,
+    };
+  });
+  managerStats.sort((a, b) => b.progNum - a.progNum);
 
-const speedoHTML = managerStats.map((item, idx) => {
-const progressId = `progress-${idx}`;
-const innerProgressId = `inner-progress-${idx}`;
-const convPct = item.convPct || 0;
-return ` <div class="speedo-item"> <div class="speedo-svg-container"> <svg viewBox="0 0 200 200"> <defs><linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#eb4d4b"/><stop offset="50%" stop-color="#fbad33"/><stop offset="100%" stop-color="#27ae60"/></linearGradient></defs> <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/> <path id="${progressId}" class="progress-path" stroke="url(#speedGradient)" d="M 40 160 A 85 85 0 1 1 160 160"/> <path class="inner-base-path" d="M 61 139 A 55 55 0 1 1 139 139"/> <path id="${innerProgressId}" class="inner-progress-path" stroke="url(#speedGradient)" d="M 61 139 A 55 55 0 1 1 139 139"/> </svg> <div class="speedo-value">${Math.round(item.progNum)}%</div> <div class="speedo-conv">${convPct}%</div> <div class="speedo-visits">${item.visits}</div> </div> <div class="speedo-name">${item.name}</div> </div>`;
-}).join(’’);
+  const speedoHTML = managerStats.map((item, idx) => {
+    const progressId = `progress-${idx}`;
+    const innerProgressId = `inner-progress-${idx}`;
+    const convPct = item.convPct || 0;
+    return `
+      <div class="speedo-item">
+        <div class="speedo-svg-container">
+          <svg viewBox="0 0 200 200">
+            <defs><linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#eb4d4b"/><stop offset="50%" stop-color="#fbad33"/><stop offset="100%" stop-color="#27ae60"/></linearGradient></defs>
+            <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/>
+            <path id="${progressId}" class="progress-path" stroke="url(#speedGradient)" d="M 40 160 A 85 85 0 1 1 160 160"/>
+            <path class="inner-base-path" d="M 61 139 A 55 55 0 1 1 139 139"/>
+            <path id="${innerProgressId}" class="inner-progress-path" stroke="url(#speedGradient)" d="M 61 139 A 55 55 0 1 1 139 139"/>
+          </svg>
+          <div class="speedo-value">${Math.round(item.progNum)}%</div>
+          <div class="speedo-conv">${convPct}%</div>
+          <div class="speedo-visits">${item.visits}</div>
+        </div>
+        <div class="speedo-name">${item.name}</div>
+      </div>`;
+  }).join('');
 
-const speedoCard = ` <div class="sec-title">ПРОГНОЗЫ ПО МЕНЕДЖЕРАМ</div> <div class="dept-card" style="margin-top:0;background:rgba(${accR},${accG},${accB},0.08)"> <div class="speedo-grid">${speedoHTML}</div> </div>`;
+  const speedoCard = `
+    <div class="sec-title">ПРОГНОЗЫ ПО МЕНЕДЖЕРАМ</div>
+    <div class="dept-card" style="margin-top:0;background:rgba(${accR},${accG},${accB},0.08)">
+      <div class="speedo-grid">${speedoHTML}</div>
+    </div>`;
 
-const rankRows  = mgrRows.filter(r => !isKotel(r[0]));
-const kotelRows = mgrRows.filter(r =>  isKotel(r[0]));
+  const rankRows  = mgrRows.filter(r => !isKotel(r[0]));
+  const kotelRows = mgrRows.filter(r =>  isKotel(r[0]));
 
-const withProg = rankRows.map(r => {
-const progNum = parseFloat((r[6]||‘0%’).replace(’%’,’’).replace(’,’,’.’)) || 0;
-return { r, progNum };
-});
-withProg.sort((a, b) => b.progNum - a.progNum);
-const total = withProg.length;
+  const withProg = rankRows.map(r => {
+    const progNum = parseFloat((r[6]||'0%').replace('%','').replace(',','.')) || 0;
+    return { r, progNum };
+  });
+  withProg.sort((a, b) => b.progNum - a.progNum);
+  const total = withProg.length;
 
-const ranked = withProg.map(({ r, progNum }, idx) => {
-const name  = (r[0]||’—’).toUpperCase();
-const plan  = num(r[3]);
-const fact  = num(r[7]);
-const daily = computeDailyPlan(plan, fact, progNum, currentSuffix, name);
-const rplan = r[3]||‘0’, ost = r[4]||‘0’;
-const prc   = r[5]||‘0%’, prog = r[6]||‘0%’;
-const allV  = r[7]||‘0’;
-const rs    = rankStyles(idx, total);
-const fillGrad = `linear-gradient(90deg,${rs.color},${rs.color})`;
-const crmCnvrs = getCnvrsRow(name, ‘crm’);
-const warmCnvrs = getCnvrsRow(name, ‘warm’);
-const modalData = JSON.stringify({
-name, v800:r[1], v1200:r[2], rplan, ost, prc, prog, allV, daily, progNum,
-kred800:r[8], nal800:r[9], td800:r[10], kom800:r[11],
-kred1200:r[12], nal1200:r[13], td1200:r[14], kom1200:r[15],
-zadatok:r[16], vsalone:r[19], vkso:r[22], vfSSP:r[23], vbanke:r[24], otkaz:r[25],
-crmConVis:crmCnvrs[6]||’—’, crmConKred:crmCnvrs[7]||’—’,
-crmDolya:crmCnvrs[8]||’—’, crmKoef:crmCnvrs[12]||’—’,
-warmConVis:warmCnvrs[6]||’—’, warmConKred:warmCnvrs[7]||’—’,
-warmDolya:warmCnvrs[8]||’—’, warmKoef:warmCnvrs[12]||’—’,
-rs, medal: idx===0?‘🥇’:idx===1?‘🥈’:idx===2?‘🥉’:’’, idx: idx+1
-}).replace(/’/g,”'”);
+  const ranked = withProg.map(({ r, progNum }, idx) => {
+    const name  = (r[0]||'—').toUpperCase();
+    const plan  = num(r[3]);
+    const fact  = num(r[7]);
+    const daily = computeDailyPlan(plan, fact, progNum, currentSuffix, name);
+    const rplan = r[3]||'0', ost = r[4]||'0';
+    const prc   = r[5]||'0%', prog = r[6]||'0%';
+    const allV  = r[7]||'0';
+    const rs    = rankStyles(idx, total);
+    const fillGrad = `linear-gradient(90deg,${rs.color},${rs.color})`;
+    const crmCnvrs = getCnvrsRow(name, 'crm');
+    const warmCnvrs = getCnvrsRow(name, 'warm');
+    const modalData = JSON.stringify({
+      name, v800:r[1], v1200:r[2], rplan, ost, prc, prog, allV, daily, progNum,
+      kred800:r[8], nal800:r[9], td800:r[10], kom800:r[11],
+      kred1200:r[12], nal1200:r[13], td1200:r[14], kom1200:r[15],
+      zadatok:r[16], vsalone:r[19], vkso:r[22], vfSSP:r[23], vbanke:r[24], otkaz:r[25],
+      crmConVis:crmCnvrs[6]||'—', crmConKred:crmCnvrs[7]||'—',
+      crmDolya:crmCnvrs[8]||'—', crmKoef:crmCnvrs[12]||'—',
+      warmConVis:warmCnvrs[6]||'—', warmConKred:warmCnvrs[7]||'—',
+      warmDolya:warmCnvrs[8]||'—', warmKoef:warmCnvrs[12]||'—',
+      rs, medal: idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'', idx: idx+1
+    }).replace(/'/g,"&#39;");
 
-```
-return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
-  <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${medalBtn(idx)}</div><button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
-  <div class="mop-mini">
-    <div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
-    <div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div>
-    <div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div>
-    <div class="mm"><div class="ml">Дневной</div><div class="mv">${daily}</div></div>
-  </div>
-  <div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:${rs.color}">${progNum}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(progNum,100)}%;background:${pctClr(progNum)}"></div></div></div>
-</div>`;
-```
+    return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
+      <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${medalBtn(idx)}</div><button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
+      <div class="mop-mini">
+        <div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
+        <div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div>
+        <div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div>
+        <div class="mm"><div class="ml">Дневной</div><div class="mv">${daily}</div></div>
+      </div>
+      <div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:${rs.color}">${progNum}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(progNum,100)}%;background:${pctClr(progNum)}"></div></div></div>
+    </div>`;
+  }).join('');
 
-}).join(’’);
+  const kotelHTML = kotelRows.map(r => {
+    const name = (r[0]||'—').toUpperCase();
+    const prog = r[6]||'0%';
+    const p = parseFloat(prog.replace('%','').replace(',','.')) || 0;
+    const plan = num(r[3]), fact = num(r[7]);
+    const daily = computeDailyPlan(plan, fact, p, currentSuffix, name);
+    return `<div class="mop" style="opacity:.65"><div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:rgba(128,128,128,.15);color:var(--txt3)">—</span><span class="mop-name">${name}</span></div></div>
+      <div class="mop-mini">
+        <div class="mm"><div class="ml">Визиты</div><div class="mv">${r[7]||'0'}</div></div>
+        <div class="mm"><div class="ml">План</div><div class="mv">${r[3]||'0'}</div></div>
+        <div class="mm"><div class="ml">Остаток</div><div class="mv">${r[4]||'0'}</div></div>
+        <div class="mm"><div class="ml">Дневной</div><div class="mv">${daily}</div></div>
+      </div>
+      <div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:var(--txt2)">${p}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(p,100)}%;background:var(--txt3)"></div></div></div></div>`;
+  }).join('');
 
-const kotelHTML = kotelRows.map(r => {
-const name = (r[0]||’—’).toUpperCase();
-const prog = r[6]||‘0%’;
-const p = parseFloat(prog.replace(’%’,’’).replace(’,’,’.’)) || 0;
-const plan = num(r[3]), fact = num(r[7]);
-const daily = computeDailyPlan(plan, fact, p, currentSuffix, name);
-return `<div class="mop" style="opacity:.65"><div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:rgba(128,128,128,.15);color:var(--txt3)">—</span><span class="mop-name">${name}</span></div></div> <div class="mop-mini"> <div class="mm"><div class="ml">Визиты</div><div class="mv">${r[7]||'0'}</div></div> <div class="mm"><div class="ml">План</div><div class="mv">${r[3]||'0'}</div></div> <div class="mm"><div class="ml">Остаток</div><div class="mv">${r[4]||'0'}</div></div> <div class="mm"><div class="ml">Дневной</div><div class="mv">${daily}</div></div> </div> <div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:var(--txt2)">${p}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(p,100)}%;background:var(--txt3)"></div></div></div></div>`;
-}).join(’’);
+  const mops_html = ranked + kotelHTML;
 
-const mops_html = ranked + kotelHTML;
+  const subtabs = `<span class="report-subtab ${S.reportTab==='dept'?'active':''}" onclick="setReportTab('dept')">ОТДЕЛ</span><span class="report-subtab ${S.reportTab==='mgr'?'active':''}" onclick="setReportTab('mgr')">CRM</span><span class="report-subtab ${S.reportTab==='dozhim'?'active':''}" onclick="setReportTab('dozhim')">ДОЖИМ</span>`;
+  if (floating) floating.innerHTML = subtabs;
 
-const subtabs = `<span class="report-subtab ${S.reportTab==='dept'?'active':''}" onclick="setReportTab('dept')">ОТДЕЛ</span><span class="report-subtab ${S.reportTab==='mgr'?'active':''}" onclick="setReportTab('mgr')">CRM</span><span class="report-subtab ${S.reportTab==='dozhim'?'active':''}" onclick="setReportTab('dozhim')">ДОЖИМ</span>`;
-if (floating) floating.innerHTML = subtabs;
+  let content = '';
+  if (S.reportTab === 'dept') content = deptCard + dozhimDeptCard + speedoCard;
+  else if (S.reportTab === 'mgr') content = `<div class="sec-title">Менеджеры CRM</div><div class="mops">${mops_html}</div>`;
+  else if (S.reportTab === 'dozhim') content = renderDozhimCards();
 
-let content = ‘’;
-if (S.reportTab === ‘dept’) content = deptCard + dozhimDeptCard + speedoCard;
-else if (S.reportTab === ‘mgr’) content = `<div class="sec-title">Менеджеры CRM</div><div class="mops">${mops_html}</div>`;
-else if (S.reportTab === ‘dozhim’) content = renderDozhimCards();
+  el.innerHTML = content;
 
-el.innerHTML = content;
-
-if (S.reportTab === ‘dept’) {
-managerStats.forEach((item, idx) => {
-const progressPath = document.getElementById(`progress-${idx}`);
-const innerPath = document.getElementById(`inner-progress-${idx}`);
-if (!progressPath) return;
-const length = progressPath.getTotalLength();
-const targetPct = Math.min(item.visits / item.plan, 1);
-progressPath.style.strokeDasharray = `0,${length}`;
-const innerLen = innerPath ? innerPath.getTotalLength() : 0;
-const innerTarget = Math.min((item.convPct || 0) / 25, 1);
-if (innerPath) innerPath.style.strokeDasharray = `0,${innerLen}`;
-let start = null;
-function animate(ts) {
-if (!start) start = ts;
-const ease = 1 - Math.pow(1 - Math.min((ts - start) / 2000, 1), 4);
-progressPath.style.strokeDasharray = `${ease * length * targetPct},${length}`;
-if (innerPath) innerPath.style.strokeDasharray = `${ease * innerLen * innerTarget},${innerLen}`;
-if (ease < 1) requestAnimationFrame(animate);
-}
-requestAnimationFrame(animate);
-});
-}
+  if (S.reportTab === 'dept') {
+    managerStats.forEach((item, idx) => {
+      const progressPath = document.getElementById(`progress-${idx}`);
+      const innerPath = document.getElementById(`inner-progress-${idx}`);
+      if (!progressPath) return;
+      const length = progressPath.getTotalLength();
+      const targetPct = Math.min(item.visits / item.plan, 1);
+      progressPath.style.strokeDasharray = `0,${length}`;
+      const innerLen = innerPath ? innerPath.getTotalLength() : 0;
+      const innerTarget = Math.min((item.convPct || 0) / 25, 1);
+      if (innerPath) innerPath.style.strokeDasharray = `0,${innerLen}`;
+      let start = null;
+      function animate(ts) {
+        if (!start) start = ts;
+        const ease = 1 - Math.pow(1 - Math.min((ts - start) / 2000, 1), 4);
+        progressPath.style.strokeDasharray = `${ease * length * targetPct},${length}`;
+        if (innerPath) innerPath.style.strokeDasharray = `${ease * innerLen * innerTarget},${innerLen}`;
+        if (ease < 1) requestAnimationFrame(animate);
+      }
+      requestAnimationFrame(animate);
+    });
+  }
 }
 
 function renderDozhimCards() {
-const dRaw = S.data.d_otchet;
-if (!dRaw || dRaw.length < 4) return ‘<div class="empty">Нет данных по дожиму</div>’;
-const dMgrs = dRaw.slice(3, 20).filter(r => r[0] && r[0].trim());
-if (!dMgrs.length) return ‘<div class="empty">Нет данных по дожиму</div>’;
-const withProg = dMgrs.map(r => ({ r, progNum: parseFloat((r[6]||‘0%’).replace(’%’,’’).replace(’,’,’.’)) || 0 }));
-withProg.sort((a, b) => b.progNum - a.progNum);
-const total = withProg.length;
-const cards = withProg.map(({ r, progNum }, idx) => {
-const name  = (r[0]||’—’).toUpperCase();
-const plan  = num(r[3]);
-const fact  = num(r[7]);
-const daily = computeDailyPlan(plan, fact, progNum, currentSuffix, name);
-const rplan = r[3]||‘0’, ost = r[4]||‘0’;
-const prc   = r[5]||‘0%’, prog = r[6]||‘0%’;
-const allV  = r[7]||‘0’;
-const rs    = rankStyles(idx, total);
-const fillGrad = `linear-gradient(90deg,${rs.color},${rs.color})`;
-const modalData = JSON.stringify({
-type:‘dozhim’, name, v800:r[1], v1000:r[2], rplan, ost, prc, prog, allV,
-kred800:r[8], nal800:r[9], td800:r[10], kom800:r[11],
-kred1000:r[12], nal1000:r[13], kom1000:r[14], zadatok:r[15],
-rs, medal: idx===0?‘🥇’:idx===1?‘🥈’:idx===2?‘🥉’:’’, idx: idx+1
-}).replace(/’/g,”'”);
-return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}"> <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${medalBtn(idx)}</div><button class="mop-info-btn" onclick="openDozhimModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div> <div class="mop-mini"> <div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div> <div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div> <div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div> <div class="mm"><div class="ml">Дневной</div><div class="mv">${daily}</div></div> </div> <div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:${rs.color}">${progNum}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(progNum,100)}%;background:${pctClr(progNum)}"></div></div></div> </div>`;
-}).join(’’);
-return `<div class="sec-title">Менеджеры дожима</div><div class="mops">${cards}</div>`;
+  const dRaw = S.data.d_otchet;
+  if (!dRaw || dRaw.length < 4) return '<div class="empty">Нет данных по дожиму</div>';
+  const dMgrs = dRaw.slice(3, 20).filter(r => r[0] && r[0].trim());
+  if (!dMgrs.length) return '<div class="empty">Нет данных по дожиму</div>';
+  const withProg = dMgrs.map(r => ({ r, progNum: parseFloat((r[6]||'0%').replace('%','').replace(',','.')) || 0 }));
+  withProg.sort((a, b) => b.progNum - a.progNum);
+  const total = withProg.length;
+  const cards = withProg.map(({ r, progNum }, idx) => {
+    const name  = (r[0]||'—').toUpperCase();
+    const plan  = num(r[3]);
+    const fact  = num(r[7]);
+    const daily = computeDailyPlan(plan, fact, progNum, currentSuffix, name);
+    const rplan = r[3]||'0', ost = r[4]||'0';
+    const prc   = r[5]||'0%', prog = r[6]||'0%';
+    const allV  = r[7]||'0';
+    const rs    = rankStyles(idx, total);
+    const fillGrad = `linear-gradient(90deg,${rs.color},${rs.color})`;
+    const modalData = JSON.stringify({
+      type:'dozhim', name, v800:r[1], v1000:r[2], rplan, ost, prc, prog, allV,
+      kred800:r[8], nal800:r[9], td800:r[10], kom800:r[11],
+      kred1000:r[12], nal1000:r[13], kom1000:r[14], zadatok:r[15],
+      rs, medal: idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'', idx: idx+1
+    }).replace(/'/g,"&#39;");
+    return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
+      <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${medalBtn(idx)}</div><button class="mop-info-btn" onclick="openDozhimModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
+      <div class="mop-mini">
+        <div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
+        <div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div>
+        <div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div>
+        <div class="mm"><div class="ml">Дневной</div><div class="mv">${daily}</div></div>
+      </div>
+      <div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:${rs.color}">${progNum}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(progNum,100)}%;background:${pctClr(progNum)}"></div></div></div>
+    </div>`;
+  }).join('');
+  return `<div class="sec-title">Менеджеры дожима</div><div class="mops">${cards}</div>`;
 }
 
 function openDozhimModal(dataStr) {
-const d = JSON.parse(dataStr.replace(/'/g,”’”).replace(/"/g,’”’));
-const p = num(d.prc);
-const rs = d.rs;
-document.getElementById(‘mop-modal-title’).innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>${d.medal?' '+d.medal:''}`;
-document.getElementById(‘mop-modal-body’).innerHTML = `<div class="mop-grid4"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div></div><div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div><div class="modal-sec"><div class="modal-sec-title">800</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td800}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">1000</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1000}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1000}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1000}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1000}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div></div></div>`;
-document.getElementById(‘mop-overlay’).classList.add(‘open’);
-document.body.style.overflow = ‘hidden’;
+  const d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"'));
+  const p = num(d.prc);
+  const rs = d.rs;
+  document.getElementById('mop-modal-title').innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>${d.medal?' '+d.medal:''}`;
+  document.getElementById('mop-modal-body').innerHTML = `<div class="mop-grid4"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div></div><div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div><div class="modal-sec"><div class="modal-sec-title">800</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td800}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">1000</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1000}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1000}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1000}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1000}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div></div></div>`;
+  document.getElementById('mop-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
 
 function setReportTab(tab) {
-S.reportTab = tab;
-if (tab === ‘dozhim’ && !S.data.d_otchet) {
-const el = document.getElementById(‘c-otchet’);
-el.innerHTML = loader();
-api(SHEETS.d_otchet, ‘A1:R20’).then(data => {
-S.data.d_otchet = data;
-renderOtchet();
-}).catch(() => {
-S.data.d_otchet = [];
-renderOtchet();
-});
-return;
-}
-renderOtchet();
+  S.reportTab = tab;
+  if (tab === 'dozhim' && !S.data.d_otchet) {
+    const el = document.getElementById('c-otchet');
+    el.innerHTML = loader();
+    api(SHEETS.d_otchet, 'A1:R20').then(data => {
+      S.data.d_otchet = data;
+      renderOtchet();
+    }).catch(() => {
+      S.data.d_otchet = [];
+      renderOtchet();
+    });
+    return;
+  }
+  renderOtchet();
 }
 
 function goHome() {
-const tabBtn = document.querySelector(’.tab[data-tab=“otchet”]’);
-if (tabBtn) tabBtn.click();
-S.reportTab = ‘dept’;
-if (S.data.otchet) renderOtchet();
+  const tabBtn = document.querySelector('.tab[data-tab="otchet"]');
+  if (tabBtn) tabBtn.click();
+  S.reportTab = 'dept';
+  if (S.data.otchet) renderOtchet();
 }
 
 // ==================== RENDER DOHOD ====================
 function renderDohod() {
-const el = document.getElementById(‘c-dohod’);
-const floating = document.getElementById(‘floating-dohod-subtabs’);
-const subtabs = `<span class="report-subtab ${S.dohodTab !== 'dozhim' ? 'active' : ''}" onclick="setDohodTab('crm')">CRM</span><span class="report-subtab ${S.dohodTab === 'dozhim' ? 'active' : ''}" onclick="setDohodTab('dozhim')">ДОЖИМ</span>`;
-if (floating) floating.innerHTML = subtabs;
-if (S.dohodTab === ‘dozhim’) { renderDohodDozhim(el); return; }
-
-const raw = S.data.otchet;
-if (!raw || raw.length < 4) { el.innerHTML = ‘<div class="empty">Нет данных</div>’; return; }
-if (!S.data.stavki) { el.innerHTML = ‘<div class="loader"><div class="spin"></div><span>Загружаем ставки…</span></div>’; return; }
-
-const KOTEL_NAMES = [‘котел’,‘котёл’,‘kotel’];
-const isKotel = name => KOTEL_NAMES.includes((name||’’).toLowerCase().trim());
-
-// Считаем зарплату каждого менеджера из ОТЧЁТ + СТАВКИ
-const mgrRows = raw.slice(3, 12).filter(r => r[0] && r[0].trim() && !isKotel(r[0]));
-const parsed = mgrRows.map(r => {
-const name = (r[0]||’—’).trim();
-const nameLow = name.toLowerCase().trim();
-const sal = calcSalary(nameLow);
-return { name: name.toUpperCase(), nameLow, sal };
-});
-parsed.sort((a, b) => b.total - a.total);
-
-// Котёл — отдельная строка (индекс 13)
-const kotelRow = raw[13];
-
-// Сортируем по прогнозному доходу (факт может быть занижен в середине месяца)
-parsed.sort((a, b) => {
-const aT = a.sal ? a.sal.prognoz.total : 0;
-const bT = b.sal ? b.sal.prognoz.total : 0;
-return bT - aT;
-});
-
-// Общий фонд = сумма прогнозных доходов
-const totalFund = parsed.reduce((s, p) => s + (p.sal ? Math.round(p.sal.prognoz.total) : 0), 0);
-
-const maxAmt = parsed[0]?.sal ? Math.round(parsed[0].sal.prognoz.total) : 0;
-const total  = parsed.length;
-const isLight = document.body.classList.contains(‘light’);
-const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
-
-const rows = parsed.map((item, idx) => {
-const rs = rankStyles(idx, total);
-const progTotal = item.sal ? Math.round(item.sal.prognoz.total) : 0;
-const w = maxAmt ? Math.round(progTotal / maxAmt * 100) : 0;
-let detailBtn = ‘’;
-if (item.sal) {
-const det = {
-crm:      item.sal.detail.crm,
-warm:     item.sal.detail.warm,
-oklad:    item.sal.detail.oklad,
-premium:  item.sal.detail.premium,
-kotel:    item.sal.detail.kotel,
-fundCount:item.sal.detail.fundCount,
-inFund:   item.sal.detail.inFund,
-fact:     item.sal.fact,
-prognoz:  item.sal.prognoz,
-};
-detailBtn = `<button class="mop-info-btn" style="position:absolute;top:10px;right:10px" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="">i</button>`;
-}
-const incomeCols = item.sal ? ` <div class="income-cols" style="margin:8px 0 4px"> <div class="income-col fact"> <div class="ic-lbl">Факт ${item.sal.fact.pct}%</div> <div class="ic-val" style="font-size:13px">${fmtRub(Math.round(item.sal.fact.total))}</div> <span class="ic-koef ${koefClass(item.sal.fact.koef)}">×${item.sal.fact.koef.toFixed(1)}</span> </div> <div class="income-col prog"> <div class="ic-lbl">Прогноз ${item.sal.prognoz.pct}%</div> <div class="ic-val" style="font-size:13px">${fmtRub(Math.round(item.sal.prognoz.total))}</div> <span class="ic-koef ${koefClass(item.sal.prognoz.koef)}">×${item.sal.prognoz.koef.toFixed(1)}</span> </div> </div>` : `<div style="text-align:right"><span class="zp-a" style="color:${rs.color}">—</span></div>`;
-
-```
-return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:${rs.color}">${item.name}</span>${medalBtn(idx)}</div>${incomeCols}<div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div></div>`;
-```
-
-}).join(’’);
-
-el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Прогноз фонда отдела</div><div class="zv">${fmtRub(totalFund)}</div></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`;
+  const el = document.getElementById('c-dohod');
+  const floating = document.getElementById('floating-dohod-subtabs');
+  const subtabs = `<span class="report-subtab ${S.dohodTab !== 'dozhim' ? 'active' : ''}" onclick="setDohodTab('crm')">CRM</span><span class="report-subtab ${S.dohodTab === 'dozhim' ? 'active' : ''}" onclick="setDohodTab('dozhim')">ДОЖИМ</span>`;
+  if (floating) floating.innerHTML = subtabs;
+  if (S.dohodTab === 'dozhim') { renderDohodDozhim(el); return; }
+  const raw = S.data.dohod;
+  if (!raw || raw.length < 3) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
+  const mgrs   = raw.slice(2,12).filter(r => r[0]&&r[0].trim());
+  const totRow = raw[12] || [];
+  const KOTEL_NAMES = ['котел','котёл','kotel'];
+  const isKotel = name => KOTEL_NAMES.includes((name||'').toLowerCase().trim());
+  const kotelRow = mgrs.find(r => isKotel(r[0]));
+  const rankMgrs = mgrs.filter(r => !isKotel(r[0]));
+  const parsed = rankMgrs.map(r => ({ name: (r[0]||'—').toUpperCase(), raw: r[1]||'0', n: parseFloat(String(r[1]||'0').replace(/[^\d.]/g,''))||0 }));
+  parsed.sort((a, b) => b.n - a.n);
+  const maxAmt = parsed[0]?.n || 0;
+  const total  = parsed.length;
+  const isLight = document.body.classList.contains('light');
+  const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
+  const rows = parsed.map((item, idx) => {
+    const w  = maxAmt ? Math.round(item.n / maxAmt * 100) : 0;
+    const rs = rankStyles(idx, total);
+    // ищем строку детализации по имени менеджера
+    let detailBtn = '';
+    if (S.data.dohodDetail) {
+      const nameLow = item.name.toLowerCase().trim();
+      const dRow = S.data.dohodDetail.slice(2).find(r => (r[0]||'').toLowerCase().trim() === nameLow);
+      if (dRow) {
+        const det = {
+          crm:  { vis:dRow[5]||'0', kred:dRow[6]||'0', nal:dRow[7]||'0', obmen:dRow[8]||'0', kom:dRow[9]||'0', zadatok:dRow[16]||'0' },
+          warm: { vis:dRow[11]||'0', kred:dRow[12]||'0', nal:dRow[13]||'0', obmen:dRow[14]||'0', kom:dRow[15]||'0' },
+        };
+      detailBtn = `<button class="mop-info-btn" style="position:absolute;top:10px;right:10px" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="${item.raw}">i</button>`;
+      }
+    }
+    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:${rs.color}">${item.name}</span>${medalBtn(idx)}</div><div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div><div style="text-align:right"><span class="zp-a" style="color:${rs.color}">${fmtRub(item.raw)}</span></div></div>`;
+  }).join('');
+  const kotelHTML = kotelRow ? `<div class="zp-row" style="opacity:.6;margin-top:8px"><span class="zp-n" style="color:var(--txt2)">${(kotelRow[0]||'').toUpperCase()}</span><div class="zp-bg"><div class="zp-fill" style="width:0%"></div></div><span class="zp-a" style="color:var(--txt2)">${fmtRub(kotelRow[1])}</span></div>` : '';
+  el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Фонд отдела за месяц</div><div class="zv">${fmtRub(totRow[1])}</div></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}${kotelHTML}</div>`;
 }
 
 function renderDohodDozhim(el) {
-const raw = S.data.d_dohod;
-if (!raw || raw.length < 3) { el.innerHTML = ‘<div class="empty">Нет данных по дожиму</div>’; return; }
-const mgrs = raw.slice(2, 20).filter(r => r[0] && r[0].trim());
-if (!mgrs.length) { el.innerHTML = ‘<div class="empty">Нет данных</div>’; return; }
-const parsed = mgrs.map(r => ({ name: (r[0]||’—’).toUpperCase(), itogo: r[1]||‘0’, n: parseFloat(String(r[1]||‘0’).replace(/[^\d.]/g,’’))||0 }));
-parsed.sort((a, b) => b.n - a.n);
-const maxAmt = parsed[0]?.n || 0;
-const totalSum = parsed.reduce((s, p) => s + p.n, 0);
-const isLight = document.body.classList.contains(‘light’);
-const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
-const rows = parsed.map((item, idx) => {
-const w = maxAmt ? Math.round(item.n / maxAmt * 100) : 0;
-return `<div class="zp-row" style="--rank-r:128;--rank-g:128;--rank-b:128;border-color:var(--line2);background:var(--bg2)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="rank-badge" style="background:var(--bg3);color:var(--txt2)">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span></div><div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:var(--acc)"></div></div><div style="text-align:right"><span class="zp-a" style="color:var(--acc)">${fmtRub(item.itogo)}</span></div></div>`;
-}).join(’’);
-el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Фонд дожима за месяц</div><div class="zv">${fmtRub(totalSum)}</div></div><div class="sec-title">Доход менеджеров дожима</div><div class="zp-list">${rows}</div>`;
+  const raw = S.data.d_dohod;
+  if (!raw || raw.length < 3) { el.innerHTML = '<div class="empty">Нет данных по дожиму</div>'; return; }
+  const mgrs = raw.slice(2, 20).filter(r => r[0] && r[0].trim());
+  if (!mgrs.length) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
+  const parsed = mgrs.map(r => ({ name: (r[0]||'—').toUpperCase(), itogo: r[1]||'0', n: parseFloat(String(r[1]||'0').replace(/[^\d.]/g,''))||0 }));
+  parsed.sort((a, b) => b.n - a.n);
+  const maxAmt = parsed[0]?.n || 0;
+  const totalSum = parsed.reduce((s, p) => s + p.n, 0);
+  const isLight = document.body.classList.contains('light');
+  const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
+  const rows = parsed.map((item, idx) => {
+    const w = maxAmt ? Math.round(item.n / maxAmt * 100) : 0;
+    return `<div class="zp-row" style="--rank-r:128;--rank-g:128;--rank-b:128;border-color:var(--line2);background:var(--bg2)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="rank-badge" style="background:var(--bg3);color:var(--txt2)">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span></div><div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:var(--acc)"></div></div><div style="text-align:right"><span class="zp-a" style="color:var(--acc)">${fmtRub(item.itogo)}</span></div></div>`;
+  }).join('');
+  el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Фонд дожима за месяц</div><div class="zv">${fmtRub(totalSum)}</div></div><div class="sec-title">Доход менеджеров дожима</div><div class="zp-list">${rows}</div>`;
 }
 
 function setDohodTab(tab) {
-S.dohodTab = tab;
-if (tab === ‘dozhim’ && !S.data.d_dohod) {
-const el = document.getElementById(‘c-dohod’);
-el.innerHTML = loader();
-api(SHEETS.d_dohod, ‘A1:N20’).then(data => {
-S.data.d_dohod = data;
-renderDohod();
-}).catch(() => {
-S.data.d_dohod = [];
-renderDohod();
-});
-return;
-}
-renderDohod();
+  S.dohodTab = tab;
+  if (tab === 'dozhim' && !S.data.d_dohod) {
+    const el = document.getElementById('c-dohod');
+    el.innerHTML = loader();
+    api(SHEETS.d_dohod, 'A1:N20').then(data => {
+      S.data.d_dohod = data;
+      renderDohod();
+    }).catch(() => {
+      S.data.d_dohod = [];
+      renderDohod();
+    });
+    return;
+  }
+  renderDohod();
 }
 
 // ==================== GRAFIK ====================
-const DOW = [‘вс’,‘пн’,‘вт’,‘ср’,‘чт’,‘пт’,‘сб’];
+const DOW = ['вс','пн','вт','ср','чт','пт','сб'];
 let _schedWeek = null;
 
 function getWeeksForMonth(year, month) {
-const dim = new Date(year, month + 1, 0).getDate();
-const days = [];
-for (let d = 1; d <= dim; d++) {
-days.push({ day: d, dow: new Date(year, month, d).getDay() });
-}
-const weeks = [];
-let i = 0;
-while (i < days.length) {
-let end = i;
-while (end < days.length && days[end].dow !== 0) end++;
-if (end < days.length) {
-weeks.push(days.slice(i, end + 1));
-i = end + 1;
-} else {
-weeks.push(days.slice(i));
-break;
-}
-}
-return weeks;
+  const dim = new Date(year, month + 1, 0).getDate();
+  const days = [];
+  for (let d = 1; d <= dim; d++) {
+    days.push({ day: d, dow: new Date(year, month, d).getDay() });
+  }
+  const weeks = [];
+  let i = 0;
+  while (i < days.length) {
+    let end = i;
+    while (end < days.length && days[end].dow !== 0) end++;
+    if (end < days.length) {
+      weeks.push(days.slice(i, end + 1));
+      i = end + 1;
+    } else {
+      weeks.push(days.slice(i));
+      break;
+    }
+  }
+  return weeks;
 }
 
 function parseGroup(rows, daysRow, weekDays) {
-const dRow = daysRow || [];
-return rows.filter(r => r[0] && r[0].trim()).map(r => {
-const cells = weekDays.map(dayNum => {
-let colIdx = -1;
-for (let c = 1; c <= 31; c++) {
-if (parseInt(dRow[c]) === dayNum) { colIdx = c; break; }
-}
-return colIdx >= 0 ? (r[colIdx] || ‘’) : ‘’;
-});
-return { name: r[0], cells };
-});
+  const dRow = daysRow || [];
+  return rows.filter(r => r[0] && r[0].trim()).map(r => {
+    const cells = weekDays.map(dayNum => {
+      let colIdx = -1;
+      for (let c = 1; c <= 31; c++) {
+        if (parseInt(dRow[c]) === dayNum) { colIdx = c; break; }
+      }
+      return colIdx >= 0 ? (r[colIdx] || '') : '';
+    });
+    return { name: r[0], cells };
+  });
 }
 
 function renderGrafik() {
-const el  = document.getElementById(‘c-grafik’);
-const raw = S.data.grafik;
-if (!raw || raw.length < 3) { el.innerHTML = ‘<div class="empty">Нет данных</div>’; return; }
-const mo  = parseInt(currentSuffix.slice(0,2));
-const yr  = 2000 + parseInt(currentSuffix.slice(2,4));
-const weeks = getWeeksForMonth(yr, mo - 1);
-if (_schedWeek === null) {
-const today = new Date();
-const todayWeek = weeks.findIndex(w => w.some(d => d.day === today.getDate() && today.getMonth()+1 === mo && today.getFullYear() === yr));
-_schedWeek = todayWeek >= 0 ? todayWeek : 0;
-}
-_schedWeek = Math.max(0, Math.min(_schedWeek, weeks.length-1));
-const week = weeks[*schedWeek];
-const weekDays = week.map(d => d.day);
-// CRM: строки 3-11 (9 менеджеров) – убираем строку 12 (кол-во в смене)
-const crmRaw = raw.slice(3, 12);
-const g1pre = parseGroup(crmRaw, raw[1], weekDays);
-// Дожим: строки 19-23 (5 менеджеров) – убираем строку 24
-const warmRaw = raw.slice(19, 24);
-const g2pre = parseGroup(warmRaw, raw[17], weekDays);
-const crmPeople = g1pre;
-const workerCounts = weekDays.map((*, wi) => crmPeople.filter(p => (p.cells[wi]||’’).toLowerCase().trim() === ‘р’).length);
-const hdrs = week.map((d, wi) => `<div class="sched-day-hdr${d.day === new Date().getDate() && new Date().getMonth()+1 === mo && new Date().getFullYear() === yr ? ' today' : ''}"><div class="sd-num">${d.day}</div><div class="sd-dow">${DOW[d.dow]}</div><div class="sd-workers">${workerCounts[wi]}</div></div>`).join(’’);
-const weekHeader = `<div class="sched-week">${hdrs}</div>`;
-function buildCards(people) {
-return people.map(p => {
-const cells = p.cells.map((val, wi) => {
-const v = val.toLowerCase().trim();
-const cls = v===‘р’?‘dr’:v===‘в’?‘dv’:v===‘вс’?‘dvs’:val?’’:‘empty’;
-const isT = week[wi]?.day === new Date().getDate() && new Date().getMonth()+1 === mo && new Date().getFullYear() === yr;
-return `<div class="sched-cell ${cls}${isT?' today-col':''}">${val||'·'}</div>`;
-}).join(’’);
-return `<div class="sched-person"><div class="sched-person-name"><span>${p.name}</span></div><div class="sched-cells">${cells}</div></div>`;
-}).join(’’);
-}
-const g1title = raw[0]?.[0] || ‘Группа 1’;
-const g2title = raw[16]?.[0] || ‘Группа 2’;
-el.innerHTML = `<div class="sched-group-title" style="margin-top:4px">${g1title}</div>${buildCards(g1pre)}<div class="sched-group-title">${g2title}</div>${buildCards(g2pre)}`;
-const stickyEl = document.getElementById(‘grafik-sticky’);
-const stickyInner = document.getElementById(‘grafik-sticky-inner’);
-if (stickyEl && stickyInner) {
-stickyEl.style.display = ‘’;
-const wStart = week[0].day, wEnd = week[week.length-1].day;
-const mName = new Date(yr, mo-1, 1).toLocaleString(‘ru’,{month:‘long’});
-const prevDis = _schedWeek === 0 ? ‘disabled’ : ‘’;
-const nextDis = _schedWeek === weeks.length-1 ? ‘disabled’ : ‘’;
-stickyInner.innerHTML = `<div class="sched-nav"><button class="sched-nav-btn" onclick="schedNav(-1)" ${prevDis}>‹</button><div class="sched-nav-title">${wStart}–${wEnd} ${mName}</div><button class="sched-nav-btn" onclick="schedNav(1)" ${nextDis}>›</button></div>${weekHeader}`;
-const hdr = document.querySelector(‘header’);
-const nav = document.getElementById(‘main-nav’);
-if (hdr && nav) stickyEl.style.top = (hdr.offsetHeight + nav.offsetHeight) + ‘px’;
-}
+  const el  = document.getElementById('c-grafik');
+  const raw = S.data.grafik;
+  if (!raw || raw.length < 3) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
+  const mo  = parseInt(currentSuffix.slice(0,2));
+  const yr  = 2000 + parseInt(currentSuffix.slice(2,4));
+  const weeks = getWeeksForMonth(yr, mo - 1);
+  if (_schedWeek === null) {
+    const today = new Date();
+    const todayWeek = weeks.findIndex(w => w.some(d => d.day === today.getDate() && today.getMonth()+1 === mo && today.getFullYear() === yr));
+    _schedWeek = todayWeek >= 0 ? todayWeek : 0;
+  }
+  _schedWeek = Math.max(0, Math.min(_schedWeek, weeks.length-1));
+  const week = weeks[_schedWeek];
+  const weekDays = week.map(d => d.day);
+  // CRM: строки 3-11 (9 менеджеров) – убираем строку 12 (кол-во в смене)
+  const crmRaw = raw.slice(3, 12);
+  const g1pre = parseGroup(crmRaw, raw[1], weekDays);
+  // Дожим: строки 19-23 (5 менеджеров) – убираем строку 24
+  const warmRaw = raw.slice(19, 24);
+  const g2pre = parseGroup(warmRaw, raw[17], weekDays);
+  const crmPeople = g1pre;
+  const workerCounts = weekDays.map((_, wi) => crmPeople.filter(p => (p.cells[wi]||'').toLowerCase().trim() === 'р').length);
+  const hdrs = week.map((d, wi) => `<div class="sched-day-hdr${d.day === new Date().getDate() && new Date().getMonth()+1 === mo && new Date().getFullYear() === yr ? ' today' : ''}"><div class="sd-num">${d.day}</div><div class="sd-dow">${DOW[d.dow]}</div><div class="sd-workers">${workerCounts[wi]}</div></div>`).join('');
+  const weekHeader = `<div class="sched-week">${hdrs}</div>`;
+  function buildCards(people) {
+    return people.map(p => {
+      const cells = p.cells.map((val, wi) => {
+        const v = val.toLowerCase().trim();
+        const cls = v==='р'?'dr':v==='в'?'dv':v==='вс'?'dvs':val?'':'empty';
+        const isT = week[wi]?.day === new Date().getDate() && new Date().getMonth()+1 === mo && new Date().getFullYear() === yr;
+        return `<div class="sched-cell ${cls}${isT?' today-col':''}">${val||'·'}</div>`;
+      }).join('');
+      return `<div class="sched-person"><div class="sched-person-name"><span>${p.name}</span></div><div class="sched-cells">${cells}</div></div>`;
+    }).join('');
+  }
+  const g1title = raw[0]?.[0] || 'Группа 1';
+  const g2title = raw[16]?.[0] || 'Группа 2';
+  el.innerHTML = `<div class="sched-group-title" style="margin-top:4px">${g1title}</div>${buildCards(g1pre)}<div class="sched-group-title">${g2title}</div>${buildCards(g2pre)}`;
+  const stickyEl = document.getElementById('grafik-sticky');
+  const stickyInner = document.getElementById('grafik-sticky-inner');
+  if (stickyEl && stickyInner) {
+    stickyEl.style.display = '';
+    const wStart = week[0].day, wEnd = week[week.length-1].day;
+    const mName = new Date(yr, mo-1, 1).toLocaleString('ru',{month:'long'});
+    const prevDis = _schedWeek === 0 ? 'disabled' : '';
+    const nextDis = _schedWeek === weeks.length-1 ? 'disabled' : '';
+    stickyInner.innerHTML = `<div class="sched-nav"><button class="sched-nav-btn" onclick="schedNav(-1)" ${prevDis}>‹</button><div class="sched-nav-title">${wStart}–${wEnd} ${mName}</div><button class="sched-nav-btn" onclick="schedNav(1)" ${nextDis}>›</button></div>${weekHeader}`;
+    const hdr = document.querySelector('header');
+    const nav = document.getElementById('main-nav');
+    if (hdr && nav) stickyEl.style.top = (hdr.offsetHeight + nav.offsetHeight) + 'px';
+  }
 }
 
 function schedNav(dir) {
-_schedWeek = (_schedWeek||0) + dir;
-if (S.data.grafik) renderGrafik();
+  _schedWeek = (_schedWeek||0) + dir;
+  if (S.data.grafik) renderGrafik();
 }
 
 // ==================== INSTRUKTSII ====================
 function renderInstruktsii() {
-const el  = document.getElementById(‘c-instruktsii’);
-const floatingFaq = document.getElementById(‘floating-faq-subtabs’);
-const subtabs = `<span class="faq-subtab ${S.faqTab==='instr'?'active':''}" onclick="setFaqTab('instr')">ИНСТРУКЦИИ</span><span class="faq-subtab ${S.faqTab==='mango'?'active':''}" onclick="setFaqTab('mango')">MANGO</span><span class="faq-subtab ${S.faqTab==='links'?'active':''}" onclick="setFaqTab('links')">ССЫЛКИ</span>`;
-if (floatingFaq) floatingFaq.innerHTML = subtabs;
-if (S.faqTab === ‘mango’) { el.innerHTML = renderMangoTab(); return; }
-if (S.faqTab === ‘links’) { el.innerHTML = ‘<div class="links-placeholder">Список ссылок будет добавлен позднее</div>’; return; }
-const raw = S.data.instruktsii;
-if (!raw||!raw.length) { el.innerHTML = ‘<div class="empty">Нет инструкций</div>’; return; }
-function buildStatusTable(rows) {
-const ths = ‘<th>Статус</th><th>Критерии применения</th><th>Обязательные действия в CRM</th>’;
-const trs = rows.filter(r => (r[0]||’’).trim() || (r[1]||’’).trim()).map(r => `<tr><td>${r[0]||'—'}</td><td>${r[1]||'—'}</td><td>${r[2]||'—'}</td></tr>`).join(’’);
-return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
-}
-const primaryRows   = raw.slice(2, 18);
-const secondaryRows = raw.slice(20, 40);
-const reglamentBody = `<div class="instr-sub" id="is-primary"><div class="instr-sub-hdr" onclick="toggleSub('is-primary')"><span>СТАТУСЫ ПЕРВИЧНОГО КОНТАКТА</span><div class="instr-sub-toggle">+</div></div><div class="instr-sub-body">${buildStatusTable(primaryRows)}</div></div><div class="instr-sub" id="is-secondary"><div class="instr-sub-hdr" onclick="toggleSub('is-secondary')"><span>СТАТУСЫ ВТОРИЧНОГО КОНТАКТА</span><div class="instr-sub-toggle">+</div></div><div class="instr-sub-body">${buildStatusTable(secondaryRows)}</div></div>`;
-const ndzRows = raw.slice(41, 57);
-const ndzHTML = ndzRows.map(r => {
-const a = (r[0]||’’).trim(), b = (r[1]||’’).trim();
-if (!a && !b) return ‘’;
-const text = b ? `${a} ${b}`.trim() : a;
-const aUp = a.toUpperCase();
-if (aUp.startsWith(‘ЕСЛИ’) && aUp.includes(‘ЗАЯВКА’)) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}</td></tr>`;
-if (aUp.startsWith(‘НО!’) || aUp.startsWith(‘ЛЮБЫЕ’)) return `<tr class="ndz-highlight"><td colspan="2">${text}</td></tr>`;
-if (aUp.startsWith(‘АЛГОРИТМ ЗВОНКОВ’)) return `<tr class="ndz-highlight"><td colspan="2">${text}</td></tr>`;
-if (aUp.startsWith(‘ЕСЛИ’)) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}</td></tr>`;
-return `<tr><td colspan="2">${text}</td></tr>`;
-}).filter(Boolean).join(’’);
-const ndzBody = `<div class="mango-wrap"><table class="ndz-table"><tbody>${ndzHTML}</tbody></table></div>`;
-el.innerHTML = `<div class="sec-title">Инструкции</div><div class="instr-block" id="ib-reglament"><div class="instr-hdr" onclick="toggleInstr('ib-reglament')"><h3>РЕГЛАМЕНТ КОРРЕКТНОГО ЗАКРЫТИЯ CRM ЗАЯВОК (ЛИДОВ)</h3><div class="instr-toggle">+</div></div><div class="instr-body">${reglamentBody}</div></div><div class="instr-block" id="ib-ndz"><div class="instr-hdr" onclick="toggleInstr('ib-ndz')"><h3>АЛГОРИТМ РАБОТЫ С НЕДОЗВОНАМИ</h3><div class="instr-toggle">+</div></div><div class="instr-body" style="padding:12px 14px">${ndzBody}</div></div>`;
+  const el  = document.getElementById('c-instruktsii');
+  const floatingFaq = document.getElementById('floating-faq-subtabs');
+  const subtabs = `<span class="faq-subtab ${S.faqTab==='instr'?'active':''}" onclick="setFaqTab('instr')">ИНСТРУКЦИИ</span><span class="faq-subtab ${S.faqTab==='mango'?'active':''}" onclick="setFaqTab('mango')">MANGO</span><span class="faq-subtab ${S.faqTab==='links'?'active':''}" onclick="setFaqTab('links')">ССЫЛКИ</span>`;
+  if (floatingFaq) floatingFaq.innerHTML = subtabs;
+  if (S.faqTab === 'mango') { el.innerHTML = renderMangoTab(); return; }
+  if (S.faqTab === 'links') { el.innerHTML = '<div class="links-placeholder">Список ссылок будет добавлен позднее</div>'; return; }
+  const raw = S.data.instruktsii;
+  if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
+  function buildStatusTable(rows) {
+    const ths = '<th>Статус</th><th>Критерии применения</th><th>Обязательные действия в CRM</th>';
+    const trs = rows.filter(r => (r[0]||'').trim() || (r[1]||'').trim()).map(r => `<tr><td>${r[0]||'—'}</td><td>${r[1]||'—'}</td><td>${r[2]||'—'}</td></tr>`).join('');
+    return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
+  }
+  const primaryRows   = raw.slice(2, 18);
+  const secondaryRows = raw.slice(20, 40);
+  const reglamentBody = `<div class="instr-sub" id="is-primary"><div class="instr-sub-hdr" onclick="toggleSub('is-primary')"><span>СТАТУСЫ ПЕРВИЧНОГО КОНТАКТА</span><div class="instr-sub-toggle">+</div></div><div class="instr-sub-body">${buildStatusTable(primaryRows)}</div></div><div class="instr-sub" id="is-secondary"><div class="instr-sub-hdr" onclick="toggleSub('is-secondary')"><span>СТАТУСЫ ВТОРИЧНОГО КОНТАКТА</span><div class="instr-sub-toggle">+</div></div><div class="instr-sub-body">${buildStatusTable(secondaryRows)}</div></div>`;
+  const ndzRows = raw.slice(41, 57);
+  const ndzHTML = ndzRows.map(r => {
+    const a = (r[0]||'').trim(), b = (r[1]||'').trim();
+    if (!a && !b) return '';
+    const text = b ? `${a} ${b}`.trim() : a;
+    const aUp = a.toUpperCase();
+    if (aUp.startsWith('ЕСЛИ') && aUp.includes('ЗАЯВКА')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}</td></tr>`;
+    if (aUp.startsWith('НО!') || aUp.startsWith('ЛЮБЫЕ')) return `<tr class="ndz-highlight"><td colspan="2">${text}</td></tr>`;
+    if (aUp.startsWith('АЛГОРИТМ ЗВОНКОВ')) return `<tr class="ndz-highlight"><td colspan="2">${text}</td></tr>`;
+    if (aUp.startsWith('ЕСЛИ')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}</td></tr>`;
+    return `<tr><td colspan="2">${text}</td></tr>`;
+  }).filter(Boolean).join('');
+  const ndzBody = `<div class="mango-wrap"><table class="ndz-table"><tbody>${ndzHTML}</tbody></table></div>`;
+  el.innerHTML = `<div class="sec-title">Инструкции</div><div class="instr-block" id="ib-reglament"><div class="instr-hdr" onclick="toggleInstr('ib-reglament')"><h3>РЕГЛАМЕНТ КОРРЕКТНОГО ЗАКРЫТИЯ CRM ЗАЯВОК (ЛИДОВ)</h3><div class="instr-toggle">+</div></div><div class="instr-body">${reglamentBody}</div></div><div class="instr-block" id="ib-ndz"><div class="instr-hdr" onclick="toggleInstr('ib-ndz')"><h3>АЛГОРИТМ РАБОТЫ С НЕДОЗВОНАМИ</h3><div class="instr-toggle">+</div></div><div class="instr-body" style="padding:12px 14px">${ndzBody}</div></div>`;
 }
 
 function toggleInstr(id) {
-const block = document.getElementById(id);
-block.classList.toggle(‘open’);
-const btn = block.querySelector(’.instr-toggle’);
-if (btn) btn.textContent = block.classList.contains(‘open’) ? ‘−’ : ‘+’;
+  const block = document.getElementById(id);
+  block.classList.toggle('open');
+  const btn = block.querySelector('.instr-toggle');
+  if (btn) btn.textContent = block.classList.contains('open') ? '−' : '+';
 }
 function toggleSub(id) {
-const sub = document.getElementById(id);
-sub.classList.toggle(‘open’);
-const btn = sub.querySelector(’.instr-sub-toggle’);
-if (btn) btn.textContent = sub.classList.contains(‘open’) ? ‘−’ : ‘+’;
+  const sub = document.getElementById(id);
+  sub.classList.toggle('open');
+  const btn = sub.querySelector('.instr-sub-toggle');
+  if (btn) btn.textContent = sub.classList.contains('open') ? '−' : '+';
 }
 
 function burstConfetti(el, idx) {
-const isGold = (idx === 0), isSilver = (idx === 1);
-const rect = el.getBoundingClientRect();
-const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
-if (isGold) {
-const audio = new Audio(‘https://actions.google.com/sounds/v1/fireworks/firework_burst.ogg’);
-audio.volume = 0.25; audio.play().catch(()=>{});
-const flash = document.createElement(‘div’);
-flash.style.cssText = `position:fixed; left:${cx}px; top:${cy}px; width:20px; height:20px; border-radius:50%; background:radial-gradient(circle,#fff,#ffd700,#ffae00,transparent); transform:translate(-50%,-50%); pointer-events:none; z-index:9999; animation:flash 0.4s ease-out forwards;`;
-document.body.appendChild(flash);
-setTimeout(() => flash.remove(), 400);
-}
-const colors = isGold ? [’#FFD700’,’#FFC300’,’#FFDF00’,’#FFF8DC’,’#FFFFFF’] : isSilver ? [’#C0C0C0’,’#D8D8D8’,’#A8A8A8’,’#E8E8E8’,’#FFFFFF’] : [’#e8ff47’,’#ff4757’,’#2ed573’,’#1e90ff’,’#ffa502’];
-const count = isGold ? 140 : isSilver ? 80 : 55;
-const radius = isGold ? 280 : isSilver ? 180 : 130;
-for (let i = 0; i < count; i++) {
-const piece = document.createElement(‘div’);
-const angle = (i / count) * 2 * Math.PI;
-const dist = radius + (Math.random() - 0.5) * (isGold ? 40 : 20);
-const tx = Math.cos(angle) * dist, ty = Math.sin(angle) * dist;
-const size = isGold ? 6 + Math.random() * 10 : 4 + Math.random() * 6;
-const dur = isGold ? 0.8 + Math.random() * 0.8 : 0.5 + Math.random() * 0.5;
-piece.style.cssText = `position:fixed; left:${cx}px; top:${cy}px; width:${size}px; height:${size}px; background:${colors[Math.floor(Math.random() * colors.length)]}; border-radius:${Math.random() > 0.5 ? '50%' : '2px'}; pointer-events:none; z-index:9999; animation:firework ${dur}s ease-out forwards; --tx:${tx}px; --ty:${ty}px;`;
-document.body.appendChild(piece);
-setTimeout(() => piece.remove(), dur * 1000);
-}
-if (isGold) setTimeout(() => burstConfetti(el, 99), 140);
+  const isGold = (idx === 0), isSilver = (idx === 1);
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+  if (isGold) {
+    const audio = new Audio('https://actions.google.com/sounds/v1/fireworks/firework_burst.ogg');
+    audio.volume = 0.25; audio.play().catch(()=>{});
+    const flash = document.createElement('div');
+    flash.style.cssText = `position:fixed; left:${cx}px; top:${cy}px; width:20px; height:20px; border-radius:50%; background:radial-gradient(circle,#fff,#ffd700,#ffae00,transparent); transform:translate(-50%,-50%); pointer-events:none; z-index:9999; animation:flash 0.4s ease-out forwards;`;
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 400);
+  }
+  const colors = isGold ? ['#FFD700','#FFC300','#FFDF00','#FFF8DC','#FFFFFF'] : isSilver ? ['#C0C0C0','#D8D8D8','#A8A8A8','#E8E8E8','#FFFFFF'] : ['#e8ff47','#ff4757','#2ed573','#1e90ff','#ffa502'];
+  const count = isGold ? 140 : isSilver ? 80 : 55;
+  const radius = isGold ? 280 : isSilver ? 180 : 130;
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement('div');
+    const angle = (i / count) * 2 * Math.PI;
+    const dist = radius + (Math.random() - 0.5) * (isGold ? 40 : 20);
+    const tx = Math.cos(angle) * dist, ty = Math.sin(angle) * dist;
+    const size = isGold ? 6 + Math.random() * 10 : 4 + Math.random() * 6;
+    const dur = isGold ? 0.8 + Math.random() * 0.8 : 0.5 + Math.random() * 0.5;
+    piece.style.cssText = `position:fixed; left:${cx}px; top:${cy}px; width:${size}px; height:${size}px; background:${colors[Math.floor(Math.random() * colors.length)]}; border-radius:${Math.random() > 0.5 ? '50%' : '2px'}; pointer-events:none; z-index:9999; animation:firework ${dur}s ease-out forwards; --tx:${tx}px; --ty:${ty}px;`;
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), dur * 1000);
+  }
+  if (isGold) setTimeout(() => burstConfetti(el, 99), 140);
 }
 
 function openMopModal(dataStr) {
-const d = JSON.parse(dataStr.replace(/'/g,”’”).replace(/"/g,’”’));
-const rs = d.rs;
-const progPct = parseFloat(String(d.prog||‘0’).replace(/[^\d.,-]/g,’’).replace(’,’,’.’)) || 0;
-const progVis = (d.rplan && progPct) ? Math.round(num(d.rplan) * progPct / 100) : ‘—’;
-// Фактический % выполнения: факт / план * 100 (для шкалы)
-const factPct = d.rplan && num(d.rplan) > 0
-? Math.min(Math.round(num(d.allV) / num(d.rplan) * 100), 100)
-: parseFloat(String(d.prc||‘0’).replace(/[^\d.,-]/g,’’).replace(’,’,’.’)) || 0;
-document.getElementById(‘mop-modal-title’).innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>${d.medal?' '+d.medal:''}`;
-document.getElementById(‘mop-modal-body’).innerHTML = `<div class="mop-grid4" style="grid-template-columns:repeat(3,1fr)"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Дневной</div><div class="mv">${d.daily||'—'}</div></div><div class="m4"><div class="ml">Прогноз, шт</div><div class="mv" style="color:${pctClr(progPct)}">${progVis}</div></div><div class="m4"><div class="ml">Прогноз, %</div><div class="mv" style="color:${pctClr(progPct)}">${d.prog}</div></div></div><div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${factPct}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div><div class="modal-sec"><div class="modal-sec-title">CRM</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td800}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.crmConVis}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.crmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.crmDolya}</div></div><div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.crmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТЁПЛЫЕ ЛИДЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1200}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1200}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1200}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td1200}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1200}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.warmConVis}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.warmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.warmDolya}</div></div><div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.warmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТРЕБУЮТ АКТУАЛИЗАЦИИ / ОТКАЗЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">В салоне</div><div class="mc-v">${d.vsalone}</div></div><div class="modal-cell"><div class="mc-l">В КСО</div><div class="mc-v">${d.vkso}</div></div><div class="modal-cell"><div class="mc-l">В банке</div><div class="mc-v">${d.vbanke}</div></div><div class="modal-cell"><div class="mc-l">ФССП</div><div class="mc-v">${d.vfSSP}</div></div><div class="modal-cell"><div class="mc-l">Отказ</div><div class="mc-v">${d.otkaz}</div></div></div></div>`;
-document.getElementById(‘mop-overlay’).classList.add(‘open’);
-document.body.style.overflow = ‘hidden’;
+  const d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"'));
+  const rs = d.rs;
+  const progPct = parseFloat(String(d.prog||'0').replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
+  const progVis = (d.rplan && progPct) ? Math.round(num(d.rplan) * progPct / 100) : '—';
+  // Фактический % выполнения: факт / план * 100 (для шкалы)
+  const factPct = d.rplan && num(d.rplan) > 0
+    ? Math.min(Math.round(num(d.allV) / num(d.rplan) * 100), 100)
+    : parseFloat(String(d.prc||'0').replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
+  document.getElementById('mop-modal-title').innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>${d.medal?' '+d.medal:''}`;
+  document.getElementById('mop-modal-body').innerHTML = `<div class="mop-grid4" style="grid-template-columns:repeat(3,1fr)"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Дневной</div><div class="mv">${d.daily||'—'}</div></div><div class="m4"><div class="ml">Прогноз, шт</div><div class="mv" style="color:${pctClr(progPct)}">${progVis}</div></div><div class="m4"><div class="ml">Прогноз, %</div><div class="mv" style="color:${pctClr(progPct)}">${d.prog}</div></div></div><div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${factPct}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div><div class="modal-sec"><div class="modal-sec-title">CRM</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td800}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.crmConVis}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.crmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.crmDolya}</div></div><div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.crmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТЁПЛЫЕ ЛИДЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1200}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1200}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1200}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td1200}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1200}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.warmConVis}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.warmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.warmDolya}</div></div><div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.warmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТРЕБУЮТ АКТУАЛИЗАЦИИ / ОТКАЗЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">В салоне</div><div class="mc-v">${d.vsalone}</div></div><div class="modal-cell"><div class="mc-l">В КСО</div><div class="mc-v">${d.vkso}</div></div><div class="modal-cell"><div class="mc-l">В банке</div><div class="mc-v">${d.vbanke}</div></div><div class="modal-cell"><div class="mc-l">ФССП</div><div class="mc-v">${d.vfSSP}</div></div><div class="modal-cell"><div class="mc-l">Отказ</div><div class="mc-v">${d.otkaz}</div></div></div></div>`;
+  document.getElementById('mop-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
 
 function setFaqTab(tab) {
-S.faqTab = tab;
-renderInstruktsii();
+  S.faqTab = tab;
+  renderInstruktsii();
 }
 
 function renderMangoTab() {
-const mangoData = [[‘Барнаул’,’#9913’],[‘Красноярск’,’#1118’],[‘Кемерово’,’#1478’],[‘Новокузнецк’,’#1213’],[‘Новосибирск’,’#1516’],[‘Омск’,’#108’],[‘Оренбург’,’#11444’],[‘Пермь’,’#974’],[‘Сургут’,’#1811’],[‘Томск’,’#1417’],[‘Тюмень’,’#1512’],[‘Челябинск’,’#1612’],[‘АСЦ Пермь’,‘239-26-26’]];
-const rows = mangoData.map(([city, num]) => `<tr><td>${city}</td><td>${num}</td></tr>`).join(’’);
-return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  const mangoData = [['Барнаул','#9913'],['Красноярск','#1118'],['Кемерово','#1478'],['Новокузнецк','#1213'],['Новосибирск','#1516'],['Омск','#108'],['Оренбург','#11444'],['Пермь','#974'],['Сургут','#1811'],['Томск','#1417'],['Тюмень','#1512'],['Челябинск','#1612'],['АСЦ Пермь','239-26-26']];
+  const rows = mangoData.map(([city, num]) => `<tr><td>${city}</td><td>${num}</td></tr>`).join('');
+  return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function closeMopModal(e) {
-if (e && e.target !== document.getElementById(‘mop-overlay’)) return;
-document.getElementById(‘mop-overlay’).classList.remove(‘open’);
-document.body.style.overflow = ‘’;
+  if (e && e.target !== document.getElementById('mop-overlay')) return;
+  document.getElementById('mop-overlay').classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 // ==================== MONTH DROPDOWN ====================
 function showMonthDropdown() {
-const existing = document.querySelector(’.month-dropdown’);
-if (existing) existing.remove();
-const dropdown = document.createElement(‘div’);
-dropdown.className = ‘month-dropdown’;
-const months = [];
-for (let i = 0; i < 4; i++) {
-const d = new Date();
-d.setMonth(d.getMonth() - i);
-const yy = d.getFullYear().toString().slice(-2);
-const mm = (d.getMonth() + 1).toString().padStart(2,‘0’);
-const suffix = mm + yy;
-months.push({ suffix, name: getMonthName(suffix) });
-}
-months.forEach(m => {
-const btn = document.createElement(‘button’);
-btn.textContent = m.name;
-btn.onclick = () => {
-setCurrentMonth(m.suffix);
-dropdown.remove();
-};
-dropdown.appendChild(btn);
-});
-const badge = document.getElementById(‘badge-month’);
-badge.parentNode.style.position = ‘relative’;
-badge.parentNode.appendChild(dropdown);
-dropdown.style.display = ‘flex’;
-const closeDropdown = (e) => {
-if (!dropdown.contains(e.target) && e.target !== badge) {
-dropdown.remove();
-document.removeEventListener(‘click’, closeDropdown);
-}
-};
-setTimeout(() => document.addEventListener(‘click’, closeDropdown), 0);
+  const existing = document.querySelector('.month-dropdown');
+  if (existing) existing.remove();
+  const dropdown = document.createElement('div');
+  dropdown.className = 'month-dropdown';
+  const months = [];
+  for (let i = 0; i < 4; i++) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const yy = d.getFullYear().toString().slice(-2);
+    const mm = (d.getMonth() + 1).toString().padStart(2,'0');
+    const suffix = mm + yy;
+    months.push({ suffix, name: getMonthName(suffix) });
+  }
+  months.forEach(m => {
+    const btn = document.createElement('button');
+    btn.textContent = m.name;
+    btn.onclick = () => {
+      setCurrentMonth(m.suffix);
+      dropdown.remove();
+    };
+    dropdown.appendChild(btn);
+  });
+  const badge = document.getElementById('badge-month');
+  badge.parentNode.style.position = 'relative';
+  badge.parentNode.appendChild(dropdown);
+  dropdown.style.display = 'flex';
+  const closeDropdown = (e) => {
+    if (!dropdown.contains(e.target) && e.target !== badge) {
+      dropdown.remove();
+      document.removeEventListener('click', closeDropdown);
+    }
+  };
+  setTimeout(() => document.addEventListener('click', closeDropdown), 0);
 }
 
 // ==================== PERSONAL PAGE ====================
 function getCnvrsRowGlobal(name, section) {
-const cnvrs = S.data.cnvrs || [];
-const n = (name||’’).toLowerCase().trim();
-let rows;
-if (section === ‘crm’) rows = cnvrs.slice(2, 11);
-else if (section === ‘warm’) rows = cnvrs.slice(16, 25);
-else rows = cnvrs.slice(30, 39);
-return rows.find(r => (r[0]||’’).toLowerCase().trim() === n) || [];
+  const cnvrs = S.data.cnvrs || [];
+  const n = (name||'').toLowerCase().trim();
+  let rows;
+  if (section === 'crm') rows = cnvrs.slice(2, 11);
+  else if (section === 'warm') rows = cnvrs.slice(16, 25);
+  else rows = cnvrs.slice(30, 39);
+  return rows.find(r => (r[0]||'').toLowerCase().trim() === n) || [];
 }
 
 function findUserInSheet() {
-if (!S.usersData || !S.user) return null;
-const email = (S.user.email || ‘’).toLowerCase().trim();
-for (let i = 1; i < S.usersData.length; i++) {
-const row = S.usersData[i];
-const rawEmails = (row[0]||’’);
-const emails = rawEmails.split(/[,;\s]+/).map(e => e.toLowerCase().trim()).filter(Boolean);
-if (emails.includes(email)) {
-return {
-email: row[0],
-name:  (row[1]||’’).trim(),
-role:  (row[2]||‘crm’).toLowerCase().trim(),
-fund:  (row[3]||’’).toLowerCase().trim() === ‘да’,
-};
-}
-}
-return null;
+  if (!S.usersData || !S.user) return null;
+  const email = (S.user.email || '').toLowerCase().trim();
+  for (let i = 1; i < S.usersData.length; i++) {
+    const row = S.usersData[i];
+    const rawEmails = (row[0]||'');
+    const emails = rawEmails.split(/[,;\s]+/).map(e => e.toLowerCase().trim()).filter(Boolean);
+    if (emails.includes(email)) {
+      return { email: row[0], name: (row[1]||'').trim(), role: (row[2]||'crm').toLowerCase().trim() };
+    }
+  }
+  return null;
 }
 
 async function loadUsersAndStart() {
-try {
-if (!S.usersData) {
-S.usersData = await api(‘USERS’, ‘A1:D50’);
-}
-} catch(e) { S.usersData = []; }
-const matched = findUserInSheet();
-if (matched && matched.name) {
-// Найден пользователь — переходим на личную страницу
-goPersonal();
-}
-// Если не найден — данные отчёта уже грузятся через loadTab(‘otchet’) из onLogin()
+  try {
+    if (!S.usersData) {
+      S.usersData = await api('USERS', 'A1:C50');
+    }
+  } catch(e) { S.usersData = []; }
+  const matched = findUserInSheet();
+  if (matched && matched.name) {
+    // Найден пользователь — переходим на личную страницу
+    goPersonal();
+  }
+  // Если не найден — данные отчёта уже грузятся через loadTab('otchet') из onLogin()
 }
 
 function goPersonal() {
-const matched = findUserInSheet();
-if (!matched || !matched.name) { goTab(‘otchet’); return; }
-document.querySelectorAll(’.tab’).forEach(b => b.classList.remove(‘on’));
-showScr(‘personal’);
-loadPersonal(matched);
+  const matched = findUserInSheet();
+  if (!matched || !matched.name) { goTab('otchet'); return; }
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+  showScr('personal');
+  loadPersonal(matched);
 }
 
 async function loadPersonal(matched) {
-const el = document.getElementById(‘c-personal’);
-if (!el) return;
-el.innerHTML = loader();
-const isDozhim = matched.role === ‘dozhim’;
-try {
-if (isDozhim) {
-if (!S.data.d_otchet) S.data.d_otchet = await api(SHEETS.d_otchet, ‘A1:R20’);
-if (!S.data.d_dohod)  S.data.d_dohod  = await api(SHEETS.d_dohod,  ‘A1:N20’);
-} else {
-if (!S.data.otchet) S.data.otchet = await api(SHEETS.otchet, ‘A1:Z15’);
-if (!S.data.stavki) {
-try { S.data.stavki = await api(SHEETS.stavki, ‘A1:B25’); }
-catch(e) { S.data.stavki = []; }
-}
-if (!S.data.cnvrs) S.data.cnvrs = await api(SHEETS.cnvrs, ‘A1:N40’);
-}
-if (!S.data.grafik) S.data.grafik = await api(SHEETS.grafik, ‘A1:AI25’);
-} catch(e) {
-if (e.message !== ‘auth’) el.innerHTML = `<div class="err">Ошибка загрузки данных: ${e.message}</div>`;
-return;
-}
-renderPersonal(matched);
-}
-
-// ==================== SALARY CALC ====================
-// Проверяет участвует ли менеджер в котле (fund=да в USERS)
-function isInFund(nameLow) {
-if (!S.usersData || S.usersData.length < 2) return true; // fallback — участвует
-for (let i = 1; i < S.usersData.length; i++) {
-const row = S.usersData[i];
-if ((row[1]||’’).toLowerCase().trim() === nameLow) {
-return (row[3]||’’).toLowerCase().trim() === ‘да’;
-}
-}
-return false;
-}
-function getFundCount() {
-if (!S.usersData || S.usersData.length < 2) return 8; // fallback
-let count = 0;
-for (let i = 1; i < S.usersData.length; i++) {
-const row = S.usersData[i];
-if (!row[1]) continue; // нет имени — пропускаем
-const fund = (row[3]||’’).toLowerCase().trim();
-if (fund === ‘да’) count++;
-}
-return count > 0 ? count : 8;
-}
-
-// Парсим числовое значение из ячейки ставки (может быть “500”, “1 000”, “1000.5” и т.д.)
-function parseRate(v) {
-return parseFloat(String(v||‘0’).replace(/[^\d.,-]/g,’’).replace(’,’,’.’)) || 0;
-}
-
-// Коэффициент по % выполнения плана
-function getKoef(pct) {
-if (pct < 80)  return 0.8;
-if (pct < 100) return 0.9;
-if (pct < 130) return 1.0;
-if (pct <= 150) return 1.1;
-return 1.2;
-}
-
-// Главная функция расчёта зарплаты менеджера CRM
-// Возвращает { fact, prognoz, detail } где fact/prognoz = { total, koef, pct, premium }
-function calcSalary(nameLow) {
-const otchet = S.data.otchet || [];
-const stavki = S.data.stavki || [];
-
-// ── ставки (индексы 0-based, столбец B = index 1) ──
-const oklad        = parseRate(stavki[0]?.[1]);  // B1
-const rCrmVis      = parseRate(stavki[8]?.[1]);  // B9
-const rCrmKred     = parseRate(stavki[9]?.[1]);  // B10
-const rCrmNal      = parseRate(stavki[10]?.[1]); // B11
-const rCrmObmen    = parseRate(stavki[11]?.[1]); // B12
-const rCrmKom      = parseRate(stavki[12]?.[1]); // B13
-const rWarmVis     = parseRate(stavki[14]?.[1]); // B15
-const rWarmKred    = parseRate(stavki[15]?.[1]); // B16
-const rWarmNal     = parseRate(stavki[16]?.[1]); // B17
-const rWarmObmen   = parseRate(stavki[17]?.[1]); // B18
-const rWarmKom     = parseRate(stavki[18]?.[1]); // B19
-const rZadatok     = parseRate(stavki[20]?.[1]); // B21
-
-// ── строка менеджера из ОТЧЁТ (строки 3-11, индексы 3-11) ──
-const mgrRow = otchet.slice(3, 12).find(r => (r[0]||’’).toLowerCase().trim() === nameLow);
-if (!mgrRow) return null;
-const inFund = isInFund(nameLow);
-
-// ── показатели менеджера ──
-const crm = {
-vis:    num(mgrRow[1]),
-kred:   num(mgrRow[8]),
-nal:    num(mgrRow[9]),
-obmen:  num(mgrRow[10]),
-kom:    num(mgrRow[11]),
-zadatok:num(mgrRow[16]),
-};
-const warm = {
-vis:   num(mgrRow[2]),
-kred:  num(mgrRow[12]),
-nal:   num(mgrRow[13]),
-obmen: num(mgrRow[14]),
-kom:   num(mgrRow[15]),
-};
-
-// ── личные начисления ──
-// Чистые визиты = визиты минус все сделки (визит со сделкой оплачивается по ставке сделки)
-const crmPureVis  = Math.max(0, crm.vis  - crm.kred - crm.nal - crm.obmen - crm.kom);
-const warmPureVis = Math.max(0, warm.vis - warm.kred - warm.nal - warm.obmen - warm.kom);
-
-const crmEarn  = crmPureVis*rCrmVis + crm.kred*rCrmKred + crm.nal*rCrmNal + crm.obmen*rCrmObmen + crm.kom*rCrmKom + crm.zadatok*rZadatok;
-const warmEarn = warmPureVis*rWarmVis + warm.kred*rWarmKred + warm.nal*rWarmNal + warm.obmen*rWarmObmen + warm.kom*rWarmKom;
-
-// ── котёл (строка 14, индекс 13 в массиве) ──
-const kotelRow = otchet[13] || [];
-const kotelCrm = {
-vis:    num(kotelRow[1]),
-kred:   num(kotelRow[8]),
-nal:    num(kotelRow[9]),
-obmen:  num(kotelRow[10]),
-kom:    num(kotelRow[11]),
-zadatok:num(kotelRow[16]),
-};
-const kotelWarm = {
-vis:   num(kotelRow[2]),
-kred:  num(kotelRow[12]),
-nal:   num(kotelRow[13]),
-obmen: num(kotelRow[14]),
-kom:   num(kotelRow[15]),
-};
-const kotelCrmPureVis  = Math.max(0, kotelCrm.vis  - kotelCrm.kred - kotelCrm.nal - kotelCrm.obmen - kotelCrm.kom);
-const kotelWarmPureVis = Math.max(0, kotelWarm.vis - kotelWarm.kred - kotelWarm.nal - kotelWarm.obmen - kotelWarm.kom);
-
-const kotelTotal = kotelCrmPureVis*rCrmVis + kotelCrm.kred*rCrmKred + kotelCrm.nal*rCrmNal + kotelCrm.obmen*rCrmObmen + kotelCrm.kom*rCrmKom + kotelCrm.zadatok*rZadatok
-+ kotelWarmPureVis*rWarmVis + kotelWarm.kred*rWarmKred + kotelWarm.nal*rWarmNal + kotelWarm.obmen*rWarmObmen + kotelWarm.kom*rWarmKom;
-const fundCount = getFundCount();
-const kotelShare = (inFund !== false && fundCount > 0) ? kotelTotal / fundCount : 0;
-
-// ── премия (без оклада) ──
-const premium = crmEarn + warmEarn + kotelShare;
-
-// ── % выполнения: факт r[5], прогноз r[6] ──
-const pctFact  = parseFloat((mgrRow[5]||‘0%’).replace(’%’,’’).replace(’,’,’.’)) || 0;
-const pctProg  = parseFloat((mgrRow[6]||‘0%’).replace(’%’,’’).replace(’,’,’.’)) || 0;
-const koefFact = getKoef(pctFact);
-const koefProg = getKoef(pctProg);
-
-const totalFact = oklad + premium * koefFact;
-const totalProg = oklad + premium * koefProg;
-
-const detailCrm = {
-vis:    crmPureVis  * rCrmVis,
-kred:   crm.kred   * rCrmKred,
-nal:    crm.nal    * rCrmNal,
-obmen:  crm.obmen  * rCrmObmen,
-kom:    crm.kom    * rCrmKom,
-zadatok:crm.zadatok* rZadatok,
-};
-const detailWarm = {
-vis:  warmPureVis * rWarmVis,
-kred: warm.kred * rWarmKred,
-nal:  warm.nal  * rWarmNal,
-obmen:warm.obmen* rWarmObmen,
-kom:  warm.kom  * rWarmKom,
-};
-
-return {
-fact:   { total: totalFact, koef: koefFact, pct: pctFact, premium },
-prognoz:{ total: totalProg, koef: koefProg, pct: pctProg, premium },
-detail: {
-oklad,
-inFund,
-premium,
-crm:      detailCrm,
-warm:     detailWarm,
-kotel:    kotelShare,
-fundCount,
-}
-};
-}
-
-// Хелпер: CSS-класс для бейджа коэффициента
-function koefClass(k) {
-if (k <= 0.8) return ‘k08’;
-if (k <= 0.9) return ‘k09’;
-if (k <= 1.0) return ‘k10’;
-if (k <= 1.1) return ‘k11’;
-return ‘k12’;
-}
-
-// Хелпер: рендер двухколоночной панели дохода
-function renderIncomePanel(sal, detailBtn) {
-if (!sal) return `<div class="zl">Доход за месяц</div><div class="zv">—</div>`;
-const f = sal.fact, p = sal.prognoz;
-return ` ${detailBtn || ''} <div class="zl" style="margin-bottom:8px">Доход за месяц</div> <div class="income-cols"> <div class="income-col fact"> <div class="ic-lbl">Факт<br>${f.pct}%</div> <div class="ic-val">${fmtRub(Math.round(f.total))}</div> <span class="ic-koef ${koefClass(f.koef)}">×${f.koef.toFixed(1)}</span> </div> <div class="income-col prog"> <div class="ic-lbl">Прогноз<br>${p.pct}%</div> <div class="ic-val">${fmtRub(Math.round(p.total))}</div> <span class="ic-koef ${koefClass(p.koef)}">×${p.koef.toFixed(1)}</span> </div> </div>`;
+  const el = document.getElementById('c-personal');
+  if (!el) return;
+  el.innerHTML = loader();
+  const isDozhim = matched.role === 'dozhim';
+  try {
+    if (isDozhim) {
+      if (!S.data.d_otchet) S.data.d_otchet = await api(SHEETS.d_otchet, 'A1:R20');
+      if (!S.data.d_dohod)  S.data.d_dohod  = await api(SHEETS.d_dohod,  'A1:N20');
+    } else {
+      if (!S.data.otchet)     S.data.otchet     = await api(SHEETS.otchet, 'A1:Z15');
+      if (!S.data.dohod)      S.data.dohod      = await api(SHEETS.dohod,  'A1:B13');
+      if (!S.data.dohodDetail) S.data.dohodDetail = await api(SHEETS.dohod, 'A1:Q15');
+      if (!S.data.cnvrs)      S.data.cnvrs      = await api(SHEETS.cnvrs,  'A1:N40');
+    }
+    if (!S.data.grafik) S.data.grafik = await api(SHEETS.grafik, 'A1:AI25');
+  } catch(e) {
+    if (e.message !== 'auth') el.innerHTML = `<div class="err">Ошибка загрузки данных: ${e.message}</div>`;
+    return;
+  }
+  renderPersonal(matched);
 }
 
 function renderPersonal(matched) {
-const el = document.getElementById(‘c-personal’);
-if (!el) return;
-const isDozhim = matched.role === ‘dozhim’;
-const name = matched.name;
-const nameLow = name.toLowerCase().trim();
+  const el = document.getElementById('c-personal');
+  if (!el) return;
+  const isDozhim = matched.role === 'dozhim';
+  const name = matched.name;
+  const nameLow = name.toLowerCase().trim();
 
-let mgrRow = null;
-let salObj = null;
+  let mgrRow = null;
+  let incomeStr = '—';
 
-if (isDozhim) {
-const dRaw = S.data.d_otchet || [];
-mgrRow = dRaw.slice(3, 20).find(r => (r[0]||’’).toLowerCase().trim() === nameLow);
-} else {
-const raw = S.data.otchet || [];
-mgrRow = raw.slice(3, 12).find(r => (r[0]||’’).toLowerCase().trim() === nameLow);
-salObj = calcSalary(nameLow);
-}
+  if (isDozhim) {
+    const dRaw = S.data.d_otchet || [];
+    mgrRow = dRaw.slice(3, 20).find(r => (r[0]||'').toLowerCase().trim() === nameLow);
+    const dIncome = (S.data.d_dohod||[]).slice(2, 20).find(r => (r[0]||'').toLowerCase().trim() === nameLow);
+    if (dIncome) incomeStr = dIncome[1]||'—';
+  } else {
+    const raw = S.data.otchet || [];
+    mgrRow = raw.slice(3, 12).find(r => (r[0]||'').toLowerCase().trim() === nameLow);
+    const incRow = (S.data.dohod||[]).slice(2, 12).find(r => (r[0]||'').toLowerCase().trim() === nameLow);
+    if (incRow) incomeStr = incRow[1]||'—';
+  }
 
-if (!mgrRow) { goTab(‘otchet’); return; }
+  if (!mgrRow) { goTab('otchet'); return; }
 
-const plan    = mgrRow[3]||’—’;
-const factN   = num(mgrRow[7]);
-const ost     = mgrRow[4]||’—’;
-const prog    = mgrRow[6]||’—’;
-const prc     = mgrRow[5]||’—’;
-const progNum = parseFloat((mgrRow[6]||‘0%’).replace(’%’,’’).replace(’,’,’.’)) || 0;
-const daily   = mgrRow[3] ? computeDailyPlan(num(mgrRow[3]), factN, progNum, currentSuffix, name) : ‘—’;
+  const plan    = mgrRow[3]||'—';
+  const factN   = num(mgrRow[7]);
+  const ost     = mgrRow[4]||'—';
+  const prog    = mgrRow[6]||'—';
+  const prc     = mgrRow[5]||'—';
+  const progNum = parseFloat((mgrRow[6]||'0%').replace('%','').replace(',','.')) || 0;
+  const daily   = mgrRow[3] ? computeDailyPlan(num(mgrRow[3]), factN, progNum, currentSuffix, name) : '—';
 
-let kred=’—’, nal=’—’, kom=’—’, kredSub=’’, nalSub=’’, komSub=’’;
-let convVis=’—’, convKred=’—’, pctTarget=’—’;
+  let kred='—', nal='—', kom='—', kredSub='', nalSub='', komSub='';
+  let convVis='—', convKred='—', pctTarget='—';
 
-if (isDozhim) {
-kred = (num(mgrRow[8]) + num(mgrRow[12])) || ‘—’;
-kredSub = `${mgrRow[8]||'0'} / ${mgrRow[12]||'0'}`;
-nal  = (num(mgrRow[9]) + num(mgrRow[13])) || ‘—’;
-nalSub = `${mgrRow[9]||'0'} / ${mgrRow[13]||'0'}`;
-kom  = (num(mgrRow[11]) + num(mgrRow[14])) || ‘—’;
-komSub = `${mgrRow[11]||'0'} / ${mgrRow[14]||'0'}`;
-} else {
-kred = (num(mgrRow[8]) + num(mgrRow[12])) || ‘—’;
-kredSub = `${mgrRow[8]||'0'} / ${mgrRow[12]||'0'}`;
-nal  = (num(mgrRow[9]) + num(mgrRow[13])) || ‘—’;
-nalSub = `${mgrRow[9]||'0'} / ${mgrRow[13]||'0'}`;
-kom  = (num(mgrRow[11]) + num(mgrRow[15])) || ‘—’;
-komSub = `${mgrRow[11]||'0'} / ${mgrRow[15]||'0'}`;
-const genRow = getCnvrsRowGlobal(name, ‘general’);
-convVis   = genRow[6]||’—’;
-convKred  = genRow[7]||’—’;
-pctTarget = genRow[8]||’—’;
-}
+  if (isDozhim) {
+    kred = (num(mgrRow[8]) + num(mgrRow[12])) || '—';
+    kredSub = `${mgrRow[8]||'0'} / ${mgrRow[12]||'0'}`;
+    nal  = (num(mgrRow[9]) + num(mgrRow[13])) || '—';
+    nalSub = `${mgrRow[9]||'0'} / ${mgrRow[13]||'0'}`;
+    kom  = (num(mgrRow[11]) + num(mgrRow[14])) || '—';
+    komSub = `${mgrRow[11]||'0'} / ${mgrRow[14]||'0'}`;
+  } else {
+    kred = (num(mgrRow[8]) + num(mgrRow[12])) || '—';
+    kredSub = `${mgrRow[8]||'0'} / ${mgrRow[12]||'0'}`;
+    nal  = (num(mgrRow[9]) + num(mgrRow[13])) || '—';
+    nalSub = `${mgrRow[9]||'0'} / ${mgrRow[13]||'0'}`;
+    kom  = (num(mgrRow[11]) + num(mgrRow[15])) || '—';
+    komSub = `${mgrRow[11]||'0'} / ${mgrRow[15]||'0'}`;
+    const genRow = getCnvrsRowGlobal(name, 'general');
+    convVis   = genRow[6]||'—';
+    convKred  = genRow[7]||'—';
+    pctTarget = genRow[8]||'—';
+  }
 
-const isLight = document.body.classList.contains(‘light’);
-const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
-const convRow = !isDozhim ? ` <div class="kpi-badge-sep"></div> <div class="kpi-badges"> <div class="kpi-badge"><div class="kb-lbl"><b><i>К</i></b> визиты</div><div class="kb-val">${convVis}</div></div> <div class="kpi-badge"><div class="kb-lbl"><b><i>К</i></b> кредиты</div><div class="kb-val">${convKred}</div></div> <div class="kpi-badge"><div class="kb-lbl">% целевых</div><div class="kb-val">${pctTarget}</div></div> </div>` : ‘’;
+  const isLight = document.body.classList.contains('light');
+  const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
+  const convRow = !isDozhim ? `
+    <div class="kpi-badge-sep"></div>
+    <div class="kpi-badges">
+      <div class="kpi-badge"><div class="kb-lbl"><b><i>К</i></b> визиты</div><div class="kb-val">${convVis}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl"><b><i>К</i></b> кредиты</div><div class="kb-val">${convKred}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl">% целевых</div><div class="kb-val">${pctTarget}</div></div>
+    </div>` : '';
 
-// ── панель дохода ──
-let incomeDetail = null;
-let detailBtn = ‘’;
-let incomePanelContent = ‘’;
+  // Детализация дохода из листа ЗП (A=0,B=1,...,F=5,G=6,H=7,I=8,J=9,Q=16,L=11,M=12,N=13,O=14,P=15)
+  let incomeDetail = null;
+  if (!isDozhim && S.data.dohodDetail) {
+    const dRow = S.data.dohodDetail.slice(2).find(r => (r[0]||'').toLowerCase().trim() === nameLow);
+    if (dRow) {
+      incomeDetail = {
+        crm:  { vis: dRow[5]||'0', kred: dRow[6]||'0', nal: dRow[7]||'0', obmen: dRow[8]||'0', kom: dRow[9]||'0', zadatok: dRow[16]||'0' },
+        warm: { vis: dRow[11]||'0', kred: dRow[12]||'0', nal: dRow[13]||'0', obmen: dRow[14]||'0', kom: dRow[15]||'0' },
+      };
+    }
+  }
+  const detailBtn = incomeDetail ? `<button class="kpi-info-btn" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(incomeDetail).replace(/'/g,"&#39;")}' data-total="${incomeStr}">i</button>` : '';
 
-if (isDozhim) {
-const dIncome = (S.data.d_dohod||[]).slice(2, 20).find(r => (r[0]||’’).toLowerCase().trim() === nameLow);
-const incomeStr = dIncome ? dIncome[1]||’—’ : ‘—’;
-incomePanelContent = `<div class="zl">Доход за месяц</div><div class="zv">${fmtRub(incomeStr)}</div>`;
-} else if (salObj) {
-incomeDetail = {
-crm:      salObj.detail.crm,
-warm:     salObj.detail.warm,
-oklad:    salObj.detail.oklad,
-premium:  salObj.detail.premium,
-kotel:    salObj.detail.kotel,
-fundCount:salObj.detail.fundCount,
-inFund:   salObj.detail.inFund,
-fact:     salObj.fact,
-prognoz:  salObj.prognoz,
-};
-detailBtn = `<button class="kpi-info-btn" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(incomeDetail).replace(/'/g,"&#39;")}' data-total="">i</button>`;
-incomePanelContent = renderIncomePanel(salObj, detailBtn);
-} else {
-incomePanelContent = `<div class="zl">Доход за месяц</div><div class="zv">—</div>`;
-}
-
-el.innerHTML = `<div class="kpi-manager-name">${name.toUpperCase()}</div> <div class="kpi-divider"></div> <div class="kpi-income-panel" style="position:relative"> ${incomePanelContent} </div> <div class="kpi-divider"></div> <div class="kpi-subtitle">Текущий KPI</div> <div class="kpi-badges"> <div class="kpi-badge"><div class="kb-lbl">План</div><div class="kb-val">${plan}</div></div> <div class="kpi-badge"><div class="kb-lbl">Визиты</div><div class="kb-val">${factN}</div></div> <div class="kpi-badge"><div class="kb-lbl">Остаток</div><div class="kb-val">${ost}</div></div> </div> <div class="kpi-badges"> <div class="kpi-badge"><div class="kb-lbl">Дневной</div><div class="kb-val">${daily}</div></div> <div class="kpi-badge"><div class="kb-lbl">Прогноз</div><div class="kb-val" style="color:${pctClr(progNum)}">${prog}</div></div> <div class="kpi-badge"><div class="kb-lbl">%</div><div class="kb-val" style="color:${pctClr(progNum)}">${prc}</div></div> </div> <div class="kpi-badge-sep"></div> <div class="kpi-badges"> <div class="kpi-badge"><div class="kb-lbl">Кредиты CRM/ТЛ</div><div class="kb-val">${kred}</div><div class="kb-sub">${kredSub}</div></div> <div class="kpi-badge"><div class="kb-lbl">Наличка CRM/ТЛ</div><div class="kb-val">${nal}</div><div class="kb-sub">${nalSub}</div></div> <div class="kpi-badge"><div class="kb-lbl">Комиссия CRM/ТЛ</div><div class="kb-val">${kom}</div><div class="kb-sub">${komSub}</div></div> </div> ${convRow}`;
+  el.innerHTML = `
+    <div class="kpi-manager-name">${name.toUpperCase()}</div>
+    <div class="kpi-divider"></div>
+    <div class="kpi-income-panel" style="position:relative">
+      ${detailBtn}
+      <div class="zl">Доход за месяц</div>
+      <div class="zv">${fmtRub(incomeStr)}</div>
+    </div>
+    <div class="kpi-divider"></div>
+    <div class="kpi-subtitle">Текущий KPI</div>
+    <div class="kpi-badges">
+      <div class="kpi-badge"><div class="kb-lbl">План</div><div class="kb-val">${plan}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl">Визиты</div><div class="kb-val">${factN}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl">Остаток</div><div class="kb-val">${ost}</div></div>
+    </div>
+    <div class="kpi-badges">
+      <div class="kpi-badge"><div class="kb-lbl">Дневной</div><div class="kb-val">${daily}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl">Прогноз</div><div class="kb-val" style="color:${pctClr(progNum)}">${prog}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl">%</div><div class="kb-val" style="color:${pctClr(progNum)}">${prc}</div></div>
+    </div>
+    <div class="kpi-badge-sep"></div>
+    <div class="kpi-badges">
+      <div class="kpi-badge"><div class="kb-lbl">Кредиты CRM/ТЛ</div><div class="kb-val">${kred}</div><div class="kb-sub">${kredSub}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl">Наличка CRM/ТЛ</div><div class="kb-val">${nal}</div><div class="kb-sub">${nalSub}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl">Комиссия CRM/ТЛ</div><div class="kb-val">${kom}</div><div class="kb-sub">${komSub}</div></div>
+    </div>
+    ${convRow}
+  `;
 }
 
 // ==================== INCOME DETAIL MODAL ====================
 function openIncomeDetail(btn) {
-const raw = btn.dataset.income.replace(/'/g,”’”);
-const d = JSON.parse(raw);
+  const raw = btn.dataset.income.replace(/&#39;/g,"'");
+  const d = JSON.parse(raw);
+  const totalStr = btn.dataset.total;
 
-function n(v) { return parseFloat(String(v||‘0’).replace(/[^\d.,-]/g,’’).replace(’,’,’.’)) || 0; }
-function badge(lbl, val) {
-return `<div class="income-badge"><div class="ib-lbl">${lbl}</div><div class="ib-val">${fmtRub(val)}</div></div>`;
-}
-function subtotal(lbl, sum) {
-return `<div class="income-subtotal"><span class="ist-lbl">${lbl}</span><span class="ist-val">${fmtRub(sum)}</span></div>`;
-}
+  function n(v) { return parseFloat(String(v||'0').replace(/[^\d.,-]/g,'').replace(',','.')) || 0; }
+  function badge(lbl, val) {
+    return `<div class="income-badge"><div class="ib-lbl">${lbl}</div><div class="ib-val">${fmtRub(val)}</div></div>`;
+  }
+  function subtotal(lbl, sum) {
+    return `<div class="income-subtotal"><span class="ist-lbl">${lbl}</span><span class="ist-val">${fmtRub(sum)}</span></div>`;
+  }
 
-const crmSum  = n(d.crm.vis)+n(d.crm.kred)+n(d.crm.nal)+n(d.crm.obmen)+n(d.crm.kom)+n(d.crm.zadatok);
-const warmSum = n(d.warm.vis)+n(d.warm.kred)+n(d.warm.nal)+n(d.warm.obmen)+n(d.warm.kom);
-const oklad   = n(d.oklad);
-const kotel   = n(d.kotel);
-const premium = n(d.premium) || (crmSum + warmSum + kotel);
-const fundCount = d.fundCount || ‘—’;
+  const crmSum = n(d.crm.vis)+n(d.crm.kred)+n(d.crm.nal)+n(d.crm.obmen)+n(d.crm.kom)+n(d.crm.zadatok);
+  const warmSum = n(d.warm.vis)+n(d.warm.kred)+n(d.warm.nal)+n(d.warm.obmen)+n(d.warm.kom);
 
-const okladRow = oklad > 0 ? ` <div class="income-sec-title">Оклад</div> ${subtotal('Оклад', oklad)}` : ‘’;
-
-const kotelRow = (d.inFund && kotel > 0) ? ` <div class="income-sec-title">Котёл</div> <div style="font-size:10px;color:var(--txt2);margin-bottom:6px">Участников котла: ${fundCount}</div> ${subtotal('Доля котла', kotel)}` : ‘’;
-
-// блок коэффициентов
-const factKoef = d.fact ? d.fact.koef : null;
-const progKoef = d.prognoz ? d.prognoz.koef : null;
-const koefRow = (factKoef !== null) ? ` <div class="income-sec-title">Коэффициент</div> <div class="income-cols" style="margin-bottom:8px"> <div class="income-col fact"> <div class="ic-lbl">Факт ${d.fact.pct}%</div> <div class="ic-val" style="font-size:15px">${fmtRub(Math.round(d.fact.total))}</div> <span class="ic-koef ${koefClass(factKoef)}">×${factKoef.toFixed(1)}</span> </div> <div class="income-col prog"> <div class="ic-lbl">Прогноз ${d.prognoz.pct}%</div> <div class="ic-val" style="font-size:15px">${fmtRub(Math.round(d.prognoz.total))}</div> <span class="ic-koef ${koefClass(progKoef)}">×${progKoef.toFixed(1)}</span> </div> </div> <div style="font-size:10px;color:var(--txt2);margin-bottom:4px;line-height:1.5"> Оклад + (Премия × К) = Итог<br> ${fmtRub(oklad)} + (${fmtRub(Math.round(premium))} × ${factKoef.toFixed(1)}) = ${fmtRub(Math.round(d.fact.total))} </div>` : ‘’;
-
-document.getElementById(‘income-modal-content’).innerHTML = `${koefRow} ${okladRow} <div class="income-sec-title">CRM</div> <div class="income-badges"> ${badge('Визиты',   d.crm.vis)} ${badge('Кредит',   d.crm.kred)} ${badge('Наличка',  d.crm.nal)} </div> <div class="income-badges"> ${badge('Обмен',    d.crm.obmen)} ${badge('Комиссия', d.crm.kom)} ${badge('Задаток',  d.crm.zadatok)} </div> ${subtotal('Итого CRM', crmSum)} <div class="income-sec-title">Тёплые лиды</div> <div class="income-badges"> ${badge('Визиты',   d.warm.vis)} ${badge('Кредит',   d.warm.kred)} ${badge('Наличка',  d.warm.nal)} </div> <div class="income-badges" style="grid-template-columns:repeat(2,1fr)"> ${badge('Обмен',    d.warm.obmen)} ${badge('Комиссия', d.warm.kom)} </div> ${subtotal('Итого Тёплые лиды', warmSum)} ${kotelRow}`;
-document.getElementById(‘income-overlay’).classList.add(‘open’);
-document.body.style.overflow = ‘hidden’;
+  document.getElementById('income-modal-content').innerHTML = `
+    <div class="income-total-banner">
+      <div class="itb-lbl">Общий доход</div>
+      <div class="itb-val">${fmtRub(totalStr)}</div>
+    </div>
+    <div class="income-sec-title">CRM</div>
+    <div class="income-badges">
+      ${badge('Визиты',   d.crm.vis)}
+      ${badge('Кредит',   d.crm.kred)}
+      ${badge('Наличка',  d.crm.nal)}
+    </div>
+    <div class="income-badges">
+      ${badge('Обмен',    d.crm.obmen)}
+      ${badge('Комиссия', d.crm.kom)}
+      ${badge('Задаток',  d.crm.zadatok)}
+    </div>
+    ${subtotal('Общий итог CRM', crmSum)}
+    <div class="income-sec-title">Тёплые лиды</div>
+    <div class="income-badges">
+      ${badge('Визиты',   d.warm.vis)}
+      ${badge('Кредит',   d.warm.kred)}
+      ${badge('Наличка',  d.warm.nal)}
+    </div>
+    <div class="income-badges" style="grid-template-columns:repeat(2,1fr)">
+      ${badge('Обмен',    d.warm.obmen)}
+      ${badge('Комиссия', d.warm.kom)}
+    </div>
+    ${subtotal('Общий итог Тёплые лиды', warmSum)}
+  `;
+  document.getElementById('income-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
 
 function closeIncomeDetail(e) {
-if (e && e.target !== document.getElementById(‘income-overlay’)) return;
-document.getElementById(‘income-overlay’).classList.remove(‘open’);
-document.body.style.overflow = ‘’;
+  if (e && e.target !== document.getElementById('income-overlay')) return;
+  document.getElementById('income-overlay').classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 // ==================== INIT ====================
-document.getElementById(‘btn-theme’).addEventListener(‘click’, () => setTheme(!document.body.classList.contains(‘light’)));
-document.getElementById(‘btn-refresh’).addEventListener(‘click’, reloadCurrent);
-document.getElementById(‘btn-out’).addEventListener(‘click’, onLogout);
-document.querySelectorAll(’.tab’).forEach(b => b.addEventListener(‘click’, () => goTab(b.dataset.tab)));
-document.getElementById(‘badge-month’).addEventListener(‘click’, showMonthDropdown);
-document.getElementById(‘center-login-btn’).addEventListener(‘click’, () => {
-if (!tokenClient) { toast(‘Загружается…’,‘i’); return; }
-tokenClient.requestAccessToken({ prompt:‘consent’ });
+document.getElementById('btn-theme').addEventListener('click', () => setTheme(!document.body.classList.contains('light')));
+document.getElementById('btn-refresh').addEventListener('click', reloadCurrent);
+document.getElementById('btn-out').addEventListener('click', onLogout);
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => goTab(b.dataset.tab)));
+document.getElementById('badge-month').addEventListener('click', showMonthDropdown);
+document.getElementById('center-login-btn').addEventListener('click', () => {
+  if (!tokenClient) { toast('Загружается…','i'); return; }
+  tokenClient.requestAccessToken({ prompt:'consent' });
 });
 
 // Дополнительная защита от пинч-зума (мультитач)
-document.addEventListener(‘touchmove’, function(e) {
-if (e.touches.length > 1) {
-e.preventDefault();
-}
+document.addEventListener('touchmove', function(e) {
+  if (e.touches.length > 1) {
+    e.preventDefault();
+  }
 }, { passive: false });
 
 function init() {
-syncTheme();
-function waitGoogle() {
-if (typeof google !== ‘undefined’ && google.accounts) {
-initAuth();
-if (tryRestore()) { /* уже авторизован */ }
-else { document.getElementById(‘scr-login’).classList.add(‘on’); }
-} else setTimeout(waitGoogle, 100);
+  syncTheme();
+  function waitGoogle() {
+    if (typeof google !== 'undefined' && google.accounts) {
+      initAuth();
+      if (tryRestore()) { /* уже авторизован */ }
+      else { document.getElementById('scr-login').classList.add('on'); }
+    } else setTimeout(waitGoogle, 100);
+  }
+  waitGoogle();
 }
-waitGoogle();
-}
-if (document.readyState===‘loading’) document.addEventListener(‘DOMContentLoaded’, init);
+if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
 else init();
 
 // ==================== BACKGROUND ORBS ====================
 (function() {
-const canvas = document.getElementById(‘bg-canvas’);
-if (!canvas) return;
-const ctx = canvas.getContext(‘2d’);
-let orbs = [];
-const ORB_COUNT = 20;
-function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-resize();
-window.addEventListener(‘resize’, resize);
-class Orb {
-constructor() { this.reset(); }
-reset() {
-this.x = Math.random() * canvas.width;
-this.y = Math.random() * canvas.height;
-this.baseRadius = 60 + Math.random() * 120;
-this.radius = 0;
-this.alpha = 0;
-this.vx = (Math.random() - 0.5) * 0.5;
-this.vy = (Math.random() - 0.5) * 0.5;
-}
-update() {
-this.x += this.vx; this.y += this.vy;
-if (this.alpha < 1) this.alpha += 0.01;
-if (this.radius < this.baseRadius) this.radius += this.baseRadius * 0.02;
-if (this.x < -500 || this.x > canvas.width + 500 || this.y < -500 || this.y > canvas.height + 500) this.reset();
-}
-draw() {
-const isLight = document.body.classList.contains(‘light’);
-let color = isLight ? “232, 255, 71” : “50, 0, 85”;
-const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
-gradient.addColorStop(0, `rgba(${color}, ${0.35 * this.alpha})`);
-gradient.addColorStop(1, `rgba(${color}, 0)`);
-ctx.fillStyle = gradient;
-ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
-}
-}
-for (let i = 0; i < ORB_COUNT; i++) orbs.push(new Orb());
-function animate() {
-ctx.clearRect(0, 0, canvas.width, canvas.height);
-orbs.forEach(o => { o.update(); o.draw(); });
-requestAnimationFrame(animate);
-}
-animate();
+  const canvas = document.getElementById('bg-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let orbs = [];
+  const ORB_COUNT = 20;
+  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+  class Orb {
+    constructor() { this.reset(); }
+    reset() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.baseRadius = 60 + Math.random() * 120;
+      this.radius = 0;
+      this.alpha = 0;
+      this.vx = (Math.random() - 0.5) * 0.5;
+      this.vy = (Math.random() - 0.5) * 0.5;
+    }
+    update() {
+      this.x += this.vx; this.y += this.vy;
+      if (this.alpha < 1) this.alpha += 0.01;
+      if (this.radius < this.baseRadius) this.radius += this.baseRadius * 0.02;
+      if (this.x < -500 || this.x > canvas.width + 500 || this.y < -500 || this.y > canvas.height + 500) this.reset();
+    }
+    draw() {
+      const isLight = document.body.classList.contains('light');
+      let color = isLight ? "232, 255, 71" : "50, 0, 85";
+      const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+      gradient.addColorStop(0, `rgba(${color}, ${0.35 * this.alpha})`);
+      gradient.addColorStop(1, `rgba(${color}, 0)`);
+      ctx.fillStyle = gradient;
+      ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  for (let i = 0; i < ORB_COUNT; i++) orbs.push(new Orb());
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    orbs.forEach(o => { o.update(); o.draw(); });
+    requestAnimationFrame(animate);
+  }
+  animate();
 })();
 
 // ==================== MATRIX TEXT EFFECT ====================
 (function() {
-const target = document.getElementById(“author”);
-if (!target) return;
+    const target = document.getElementById("author");
+    if (!target) return;
 
-```
-const originalText = "© Бочаров Ю.С., 2026";
-const letters = "日ハミヒーヘホマミムメモヤユヨラリルレロワン0123456789$+-*/=%";
-let interval = null;
+    const originalText = "© Бочаров Ю.С., 2026";
+    const letters = "日ハミヒーヘホマミムメモヤユヨラリルレロワン0123456789$+-*/=%";
+    let interval = null;
 
-function startMatrixAnimation() {
-    let iteration = 0;
-    clearInterval(interval);
+    function startMatrixAnimation() {
+        let iteration = 0;
+        clearInterval(interval);
 
-    interval = setInterval(() => {
-        target.innerText = originalText
-            .split("")
-            .map((char, index) => {
-                if (index < iteration) {
-                    return originalText[index];
-                }
-                if (char === " " || char === ",") return char;
-                return letters[Math.floor(Math.random() * letters.length)];
-            })
-            .join("");
+        interval = setInterval(() => {
+            target.innerText = originalText
+                .split("")
+                .map((char, index) => {
+                    if (index < iteration) {
+                        return originalText[index];
+                    }
+                    if (char === " " || char === ",") return char;
+                    return letters[Math.floor(Math.random() * letters.length)];
+                })
+                .join("");
 
-        if (iteration >= originalText.length) {
-            clearInterval(interval);
-        }
+            if (iteration >= originalText.length) {
+                clearInterval(interval);
+            }
 
-        iteration += 1 / 2;
-    }, 60);
-}
+            iteration += 1 / 2;
+        }, 60);
+    }
 
-setInterval(startMatrixAnimation, 10000);
-window.addEventListener("load", startMatrixAnimation);
-```
-
+    setInterval(startMatrixAnimation, 10000);
+    window.addEventListener("load", startMatrixAnimation);
 })();
 </script>
-
 </body>
 </html>

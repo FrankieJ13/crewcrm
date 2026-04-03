@@ -2089,12 +2089,15 @@ function renderDohod() {
     const rs = rankStyles(idx, total);
     const progTotal = item.sal ? Math.round(item.sal.prognoz.total) : 0;
     const w = maxAmt ? Math.round(progTotal / maxAmt * 100) : 0;
-    let detailBtn = '';
+    let incomeColsAttr = '';
     if (item.sal) {
       const det = {
         crm:      item.sal.detail.crm,
         warm:     item.sal.detail.warm,
         oklad:    item.sal.detail.oklad,
+        baseOklad:item.sal.detail.baseOklad,
+        workedR:  item.sal.detail.workedR,
+        totalR:   item.sal.detail.totalR,
         premium:  item.sal.detail.premium,
         kotel:    item.sal.detail.kotel,
         fundCount:item.sal.detail.fundCount,
@@ -2102,23 +2105,23 @@ function renderDohod() {
         fact:     item.sal.fact,
         prognoz:  item.sal.prognoz,
       };
-      detailBtn = `<button class="mop-info-btn" style="position:absolute;top:10px;right:10px" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="">i</button>`;
+      incomeColsAttr = `onclick="openIncomeDetail(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="" style="cursor:pointer"`;
     }
     const incomeCols = item.sal ? `
-      <div class="income-cols">
+      <div class="income-cols" ${incomeColsAttr}>
         <div class="income-col">
           <span class="ic-koef ${koefClass(item.sal.fact.koef)}">×${item.sal.fact.koef.toFixed(1)}</span>
-          <div class="ic-lbl">Факт ${item.sal.fact.pct}%</div>
+          <div class="ic-lbl">Фактический</div>
           <div class="ic-val" style="color:${pctClr(item.sal.fact.pct)}">${fmtRub(Math.round(item.sal.fact.total))}</div>
         </div>
         <div class="income-col">
           <span class="ic-koef ${koefClass(item.sal.prognoz.koef)}">×${item.sal.prognoz.koef.toFixed(1)}</span>
-          <div class="ic-lbl">Прогноз ${item.sal.prognoz.pct}%</div>
+          <div class="ic-lbl">Прогнозируемый</div>
           <div class="ic-val" style="color:${pctClr(item.sal.prognoz.pct)}">${fmtRub(Math.round(item.sal.prognoz.total))}</div>
         </div>
       </div>` : `<div style="text-align:right"><span class="zp-a" style="color:${rs.color}">—</span></div>`;
 
-    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:${rs.color}">${item.name}</span>${medalBtn(idx)}</div>${incomeCols}<div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div></div>`;
+    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:${rs.color}">${item.name}</span>${medalBtn(idx)}</div>${incomeCols}<div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div></div>`;
   }).join('');
 
   el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Прогноз фонда отдела</div><div class="zv">${fmtRub(totalFund)}</div></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`;
@@ -2535,7 +2538,7 @@ function renderPersonal(matched) {
     </div>` : '';
 
   let incomePanelContent = '';
-  let detailBtn = '';
+  let incomePanelAttr = 'style="position:relative"';
 
   if (isDozhim) {
     const dIncome = (S.data.d_dohod||[]).slice(2, 20).find(r => (r[0]||'').toLowerCase().trim() === nameLow);
@@ -2546,6 +2549,9 @@ function renderPersonal(matched) {
       crm:      salObj.detail.crm,
       warm:     salObj.detail.warm,
       oklad:    salObj.detail.oklad,
+      baseOklad:salObj.detail.baseOklad,
+      workedR:  salObj.detail.workedR,
+      totalR:   salObj.detail.totalR,
       premium:  salObj.detail.premium,
       kotel:    salObj.detail.kotel,
       fundCount:salObj.detail.fundCount,
@@ -2553,18 +2559,17 @@ function renderPersonal(matched) {
       fact:     salObj.fact,
       prognoz:  salObj.prognoz,
     };
-    detailBtn = `<button class="kpi-info-btn" style="position:absolute;top:10px;right:10px;z-index:2" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(incomeDetail).replace(/'/g,"&#39;")}' data-total="">i</button>`;
+    incomePanelAttr = `style="position:relative;cursor:pointer" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(incomeDetail).replace(/'/g,"&#39;")}' data-total=""`;
     incomePanelContent = `
-      ${detailBtn}
       <div class="income-cols" style="margin-bottom:0">
         <div class="income-col fact">
           <span class="ic-koef ${koefClass(salObj.fact.koef)}">×${salObj.fact.koef.toFixed(1)}</span>
-          <div class="ic-lbl">Факт ${salObj.fact.pct}%</div>
+          <div class="ic-lbl">Фактический</div>
           <div class="ic-val" style="color:${pctClr(salObj.fact.pct)}">${fmtRub(Math.round(salObj.fact.total))}</div>
         </div>
         <div class="income-col prog">
           <span class="ic-koef ${koefClass(salObj.prognoz.koef)}">×${salObj.prognoz.koef.toFixed(1)}</span>
-          <div class="ic-lbl">Прогноз ${salObj.prognoz.pct}%</div>
+          <div class="ic-lbl">Прогнозируемый</div>
           <div class="ic-val" style="color:${pctClr(salObj.prognoz.pct)}">${fmtRub(Math.round(salObj.prognoz.total))}</div>
         </div>
       </div>
@@ -2577,7 +2582,7 @@ function renderPersonal(matched) {
     <div class="kpi-manager-name">${name.toUpperCase()}</div>
     <div class="kpi-divider"></div>
     <div class="kpi-subtitle">Доход за месяц</div>
-    <div class="kpi-income-panel" style="position:relative">
+    <div class="kpi-income-panel" ${incomePanelAttr}>
       ${incomePanelContent}
     </div>
     <div class="kpi-divider"></div>
@@ -2814,12 +2819,12 @@ function openIncomeDetail(btn) {
     <div class="income-cols" style="margin-bottom:8px">
       <div class="income-col fact">
         <span class="ic-koef ${koefClass(factKoef)}">×${factKoef.toFixed(1)}</span>
-        <div class="ic-lbl">Факт ${d.fact.pct}%</div>
+        <div class="ic-lbl">Фактический</div>
         <div class="ic-val" style="color:${pctClr(d.fact.pct)}">${fmtRub(Math.round(d.fact.total))}</div>
       </div>
       <div class="income-col prog">
         <span class="ic-koef ${koefClass(progKoef)}">×${progKoef.toFixed(1)}</span>
-        <div class="ic-lbl">Прогноз ${d.prognoz.pct}%</div>
+        <div class="ic-lbl">Прогнозируемый</div>
         <div class="ic-val" style="color:${pctClr(d.prognoz.pct)}">${fmtRub(Math.round(d.prognoz.total))}</div>
       </div>
     </div>

@@ -2740,7 +2740,7 @@ function calcSalary(nameLow) {
   const koefProg = getKoef(pctProg);
 
   const totalFact = oklad + premium * koefFact;
-  const totalProg = oklad + premium * koefProg;
+  const totalProg = baseOklad + premium * koefProg;
 
   const detailCrm = {
     vis:    crmPureVis  * rCrmVis,

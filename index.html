@@ -1076,6 +1076,28 @@ body.light .kpi-badge { background:rgba(0,0,0,0.03); }
 }
 body.light .ndz-table tr.ndz-sub-hdr td { background:var(--acc-bg); }
 body.light .ndz-table tr.ndz-highlight td { background:rgba(217,53,53,.06); }
+/* ==================== INCOME COLS BADGES ==================== */
+.income-cols { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:8px 0 4px; }
+.income-col {
+  position:relative;
+  background:rgba(255,255,255,0.06); border-radius:10px;
+  padding:10px 10px 9px; text-align:center;
+  backdrop-filter:blur(4px);
+  border:1px solid rgba(255,255,255,0.08);
+}
+body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.07); }
+.ic-lbl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:5px; line-height:1; }
+.ic-val { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:800; line-height:1; }
+.ic-koef {
+  position:absolute; top:6px; right:6px;
+  font-size:8px; font-weight:800; padding:2px 5px; border-radius:5px;
+  font-family:'Unbounded',sans-serif; line-height:1.4;
+}
+.k08 { background:rgba(255,71,87,.15);  color:var(--red); }
+.k09 { background:rgba(255,165,2,.15);  color:var(--org); }
+.k10 { background:rgba(255,165,2,.12);  color:var(--org); }
+.k11 { background:rgba(46,213,115,.15); color:var(--grn); }
+.k12 { background:rgba(46,213,115,.22); color:var(--grn); }
 </style>
 </head>
 <body>
@@ -2075,14 +2097,16 @@ function renderDohod() {
       detailBtn = `<button class="mop-info-btn" style="position:absolute;top:10px;right:10px" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="">i</button>`;
     }
     const incomeCols = item.sal ? `
-      <div class="income-cols" style="margin:8px 0 4px">
+      <div class="income-cols">
         <div class="income-col">
-          <div class="ic-val" style="font-size:13px;color:${pctClr(item.sal.fact.pct)}">${fmtRub(Math.round(item.sal.fact.total))}</div>
           <span class="ic-koef ${koefClass(item.sal.fact.koef)}">×${item.sal.fact.koef.toFixed(1)}</span>
+          <div class="ic-lbl">Факт ${item.sal.fact.pct}%</div>
+          <div class="ic-val" style="color:${pctClr(item.sal.fact.pct)}">${fmtRub(Math.round(item.sal.fact.total))}</div>
         </div>
         <div class="income-col">
-          <div class="ic-val" style="font-size:13px;color:${pctClr(item.sal.prognoz.pct)}">${fmtRub(Math.round(item.sal.prognoz.total))}</div>
           <span class="ic-koef ${koefClass(item.sal.prognoz.koef)}">×${item.sal.prognoz.koef.toFixed(1)}</span>
+          <div class="ic-lbl">Прогноз ${item.sal.prognoz.pct}%</div>
+          <div class="ic-val" style="color:${pctClr(item.sal.prognoz.pct)}">${fmtRub(Math.round(item.sal.prognoz.total))}</div>
         </div>
       </div>` : `<div style="text-align:right"><span class="zp-a" style="color:${rs.color}">—</span></div>`;
 

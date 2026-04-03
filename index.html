@@ -2548,14 +2548,14 @@ function renderPersonal(matched) {
       ${detailBtn}
       <div class="income-cols" style="margin-bottom:0">
         <div class="income-col fact">
-          <div class="ic-lbl">Факт ${salObj.fact.pct}%</div>
-          <div class="ic-val" style="font-size:15px">${fmtRub(Math.round(salObj.fact.total))}</div>
           <span class="ic-koef ${koefClass(salObj.fact.koef)}">×${salObj.fact.koef.toFixed(1)}</span>
+          <div class="ic-lbl">Факт ${salObj.fact.pct}%</div>
+          <div class="ic-val" style="color:${pctClr(salObj.fact.pct)}">${fmtRub(Math.round(salObj.fact.total))}</div>
         </div>
         <div class="income-col prog">
-          <div class="ic-lbl">Прогноз ${salObj.prognoz.pct}%</div>
-          <div class="ic-val" style="font-size:15px">${fmtRub(Math.round(salObj.prognoz.total))}</div>
           <span class="ic-koef ${koefClass(salObj.prognoz.koef)}">×${salObj.prognoz.koef.toFixed(1)}</span>
+          <div class="ic-lbl">Прогноз ${salObj.prognoz.pct}%</div>
+          <div class="ic-val" style="color:${pctClr(salObj.prognoz.pct)}">${fmtRub(Math.round(salObj.prognoz.total))}</div>
         </div>
       </div>
     `;

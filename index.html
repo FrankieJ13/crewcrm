@@ -2222,7 +2222,9 @@ function renderGrafik() {
         const isT = week[wi]?.day === new Date().getDate() && new Date().getMonth()+1 === mo && new Date().getFullYear() === yr;
         return `<div class="sched-cell ${cls}${isT?' today-col':''}">${val||'·'}</div>`;
       }).join('');
-      return `<div class="sched-person"><div class="sched-person-name"><span>${p.name}</span></div><div class="sched-cells">${cells}</div></div>`;
+      const sched = getWorkedAndTotalR(p.name.toLowerCase().trim());
+      const workedBadge = sched ? `<span style="font-family:'Unbounded',sans-serif;font-size:10px;font-weight:700;color:var(--acc);margin-left:auto">отработано ${sched.workedR}<span style="color:var(--txt3);font-weight:500"> / ${sched.totalR}</span></span>` : '';
+      return `<div class="sched-person"><div class="sched-person-name" style="display:flex;align-items:center;gap:8px"><span>${p.name}</span>${workedBadge}</div><div class="sched-cells">${cells}</div></div>`;
     }).join('');
   }
   const g1title = raw[0]?.[0] || 'Группа 1';
@@ -2631,11 +2633,44 @@ function koefClass(k) {
   if (k <= 1.1) return 'k11';
   return 'k12';
 }
+function getWorkedAndTotalR(nameLow) {
+  const raw = S.data.grafik;
+  if (!raw || raw.length < 3) return null;
+  const mo = parseInt(currentSuffix.slice(0, 2));
+  const yr = 2000 + parseInt(currentSuffix.slice(2, 4));
+  const now = new Date();
+  if (now.getFullYear() !== yr || now.getMonth() + 1 !== mo) return null; // только текущий месяц
+  const today = now.getDate();
+  const groups = [
+    { rows: raw.slice(3, 12),  daysRow: raw[1] },
+    { rows: raw.slice(19, 24), daysRow: raw[17] },
+  ];
+  for (const { rows, daysRow } of groups) {
+    const mgrRow = rows.find(r => (r[0] || '').toLowerCase().trim() === nameLow);
+    if (!mgrRow) continue;
+    let totalR = 0, workedR = 0;
+    for (let c = 1; c <= 31; c++) {
+      const dayNum = parseInt((daysRow || [])[c]);
+      if (!dayNum) continue;
+      if ((mgrRow[c] || '').toLowerCase().trim() === 'р') {
+        totalR++;
+        if (dayNum <= today) workedR++;
+      }
+    }
+    return { totalR, workedR };
+  }
+  return null;
+}
+
 function calcSalary(nameLow) {
   const otchet = S.data.otchet || [];
   const stavki = S.data.stavki || [];
 
-  const oklad        = parseRate(stavki[0]?.[1]);
+  const baseOklad   = parseRate(stavki[0]?.[1]);
+  const schedInfo   = getWorkedAndTotalR(nameLow);
+  const oklad       = (schedInfo && schedInfo.totalR > 0)
+    ? Math.round(baseOklad / schedInfo.totalR * schedInfo.workedR)
+    : baseOklad;
   const rCrmVis      = parseRate(stavki[8]?.[1]);
   const rCrmKred     = parseRate(stavki[9]?.[1]);
   const rCrmNal      = parseRate(stavki[10]?.[1]);
@@ -2728,6 +2763,9 @@ function calcSalary(nameLow) {
     prognoz:{ total: totalProg, koef: koefProg, pct: pctProg, premium },
     detail: {
       oklad,
+      baseOklad,
+      workedR:  schedInfo ? schedInfo.workedR : null,
+      totalR:   schedInfo ? schedInfo.totalR  : null,
       inFund,
       premium,
       crm:      detailCrm,
@@ -2756,27 +2794,30 @@ function openIncomeDetail(btn) {
   const premium = n(d.premium) || (crmSum + warmSum + kotel);
   const fundCount = d.fundCount || '—';
 
-  const okladRow = oklad > 0 ? `<div class="income-sec-title">Оклад</div>${subtotal('Оклад', oklad)}` : '';
+  const okladRow = oklad > 0 ? `<div class="income-sec-title">Оклад</div>${subtotal(d.workedR != null ? `Оклад (${d.workedR}/${d.totalR} дн.)` : 'Оклад', oklad)}` : '';
   const kotelRow = (d.inFund && kotel > 0) ? `<div class="income-sec-title">Котёл</div><div style="font-size:10px;color:var(--txt2);margin-bottom:6px">Участников котла: ${fundCount}</div>${subtotal('Доля котла', kotel)}` : '';
   const factKoef = d.fact ? d.fact.koef : null;
   const progKoef = d.prognoz ? d.prognoz.koef : null;
+  const okladFormula = d.workedR != null
+    ? `(${fmtRub(d.baseOklad)}÷${d.totalR}×${d.workedR}) + (${fmtRub(Math.round(premium))} × ${factKoef ? factKoef.toFixed(1) : '—'}) = ${fmtRub(Math.round(d.fact ? d.fact.total : 0))}`
+    : `${fmtRub(oklad)} + (${fmtRub(Math.round(premium))} × ${factKoef ? factKoef.toFixed(1) : '—'}) = ${fmtRub(Math.round(d.fact ? d.fact.total : 0))}`;
   const koefRow = (factKoef !== null) ? `
     <div class="income-sec-title">Коэффициент</div>
     <div class="income-cols" style="margin-bottom:8px">
       <div class="income-col fact">
-        <div class="ic-lbl">Факт ${d.fact.pct}%</div>
-        <div class="ic-val" style="font-size:15px">${fmtRub(Math.round(d.fact.total))}</div>
         <span class="ic-koef ${koefClass(factKoef)}">×${factKoef.toFixed(1)}</span>
+        <div class="ic-lbl">Факт ${d.fact.pct}%</div>
+        <div class="ic-val" style="color:${pctClr(d.fact.pct)}">${fmtRub(Math.round(d.fact.total))}</div>
       </div>
       <div class="income-col prog">
-        <div class="ic-lbl">Прогноз ${d.prognoz.pct}%</div>
-        <div class="ic-val" style="font-size:15px">${fmtRub(Math.round(d.prognoz.total))}</div>
         <span class="ic-koef ${koefClass(progKoef)}">×${progKoef.toFixed(1)}</span>
+        <div class="ic-lbl">Прогноз ${d.prognoz.pct}%</div>
+        <div class="ic-val" style="color:${pctClr(d.prognoz.pct)}">${fmtRub(Math.round(d.prognoz.total))}</div>
       </div>
     </div>
     <div style="font-size:10px;color:var(--txt2);margin-bottom:4px;line-height:1.5">
       Оклад + (Премия × К) = Итог<br>
-      ${fmtRub(oklad)} + (${fmtRub(Math.round(premium))} × ${factKoef.toFixed(1)}) = ${fmtRub(Math.round(d.fact.total))}
+      ${okladFormula}
     </div>` : '';
 
   document.getElementById('income-modal-content').innerHTML = `

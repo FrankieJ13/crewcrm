@@ -2089,7 +2089,7 @@ function renderDohod() {
     const rs = rankStyles(idx, total);
     const progTotal = item.sal ? Math.round(item.sal.prognoz.total) : 0;
     const w = maxAmt ? Math.round(progTotal / maxAmt * 100) : 0;
-    let incomeColsAttr = '';
+    let detailBtn = '';
     if (item.sal) {
       const det = {
         crm:      item.sal.detail.crm,
@@ -2105,10 +2105,10 @@ function renderDohod() {
         fact:     item.sal.fact,
         prognoz:  item.sal.prognoz,
       };
-      incomeColsAttr = `onclick="openIncomeDetail(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="" style="cursor:pointer"`;
+      detailBtn = `<button class="mop-info-btn" style="position:absolute;top:10px;right:10px" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="">i</button>`;
     }
     const incomeCols = item.sal ? `
-      <div class="income-cols" ${incomeColsAttr}>
+      <div class="income-cols">
         <div class="income-col">
           <span class="ic-koef ${koefClass(item.sal.fact.koef)}">×${item.sal.fact.koef.toFixed(1)}</span>
           <div class="ic-lbl">Фактический</div>
@@ -2121,7 +2121,7 @@ function renderDohod() {
         </div>
       </div>` : `<div style="text-align:right"><span class="zp-a" style="color:${rs.color}">—</span></div>`;
 
-    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:${rs.color}">${item.name}</span>${medalBtn(idx)}</div>${incomeCols}<div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div></div>`;
+    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:${rs.color}">${item.name}</span>${medalBtn(idx)}</div>${incomeCols}<div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div></div>`;
   }).join('');
 
   el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Прогноз фонда отдела</div><div class="zv">${fmtRub(totalFund)}</div></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`;

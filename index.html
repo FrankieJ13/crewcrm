@@ -1695,6 +1695,19 @@ function getWorkedDays(suffix) {
   return Math.min(today, daysInMonth);
 }
 
+function computeFactPct(allV, plan) {
+  if (!plan || plan <= 0) return 0;
+  return Math.round(allV / plan * 100);
+}
+
+function computeProgPct(allV, plan, suffix) {
+  if (!plan || plan <= 0) return 0;
+  const worked = getWorkedDays(suffix);
+  const total  = getDaysInMonth(suffix);
+  if (worked <= 0) return 0;
+  return Math.round(allV / plan * total / worked * 100);
+}
+
 function getManagerShiftCounts(name, suffix) {
   const raw = S.data.grafik;
   if (!raw || raw.length < 3) return null;
@@ -1892,11 +1905,13 @@ function renderOtchet() {
     const mName = (r[0]||'—').trim();
     const genRow = getCnvrsRow(mName, 'general');
     const convStr = (genRow[6]||'0%').replace('%','').replace(',','.');
+    const allV = num(r[7]);
+    const plan = num(r[3]) || 1;
     return {
       name:    mName.toUpperCase(),
-      visits:  num(r[7]),
-      plan:    num(r[3]) || 1,
-      progNum: parseFloat((r[6]||'0%').replace('%','').replace(',','.')) || 0,
+      visits:  allV,
+      plan,
+      progNum: computeProgPct(allV, plan, currentSuffix),
       convPct: parseFloat(convStr) || 0,
     };
   });
@@ -1934,19 +1949,23 @@ function renderOtchet() {
   const kotelRows = mgrRows.filter(r =>  isKotel(r[0]));
 
   const withProg = rankRows.map(r => {
-    const progNum = parseFloat((r[6]||'0%').replace('%','').replace(',','.')) || 0;
-    return { r, progNum };
+    const allV = num(r[7]);
+    const plan = num(r[3]) || 1;
+    const progNum = computeProgPct(allV, plan, currentSuffix);
+    const factNum = computeFactPct(allV, plan);
+    return { r, progNum, factNum };
   });
   withProg.sort((a, b) => b.progNum - a.progNum);
   const total = withProg.length;
 
-  const ranked = withProg.map(({ r, progNum }, idx) => {
+  const ranked = withProg.map(({ r, progNum, factNum }, idx) => {
     const name  = (r[0]||'—').toUpperCase();
     const plan  = num(r[3]);
     const fact  = num(r[7]);
     const daily = computeDailyPlan(plan, fact, progNum, currentSuffix, name);
     const rplan = r[3]||'0', ost = r[4]||'0';
-    const prc   = r[5]||'0%', prog = r[6]||'0%';
+    const prc   = factNum + '%';
+    const prog  = progNum + '%';
     const allV  = r[7]||'0';
     const rs    = rankStyles(idx, total);
     const fillGrad = `linear-gradient(90deg,${rs.color},${rs.color})`;
@@ -1978,9 +1997,11 @@ function renderOtchet() {
 
   const kotelHTML = kotelRows.map(r => {
     const name = (r[0]||'—').toUpperCase();
-    const prog = r[6]||'0%';
-    const p = parseFloat(prog.replace('%','').replace(',','.')) || 0;
-    const plan = num(r[3]), fact = num(r[7]);
+    const allV = num(r[7]);
+    const plan = num(r[3]) || 1;
+    const p = computeProgPct(allV, plan, currentSuffix);
+    const prog = p + '%';
+    const fact  = allV;
     const daily = computeDailyPlan(plan, fact, p, currentSuffix, name);
     return `<div class="mop" style="opacity:.65"><div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:rgba(128,128,128,.15);color:var(--txt3)">—</span><span class="mop-name">${name}</span></div></div>
       <div class="mop-mini">
@@ -2172,7 +2193,7 @@ function renderDohod() {
         </div>
       </div>` : `<div style="text-align:right"><span class="zp-a" style="color:${rs.color}">—</span></div>`;
 
-    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:${rs.color}">${item.name}</span>${medalBtn(idx)}</div>${incomeCols}<div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div></div>`;
+    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span>${medalBtn(idx)}</div>${incomeCols}<div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div></div>`;
   }).join('');
 
   el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Прогноз фонда отдела</div><div class="zv">${fmtRub(totalFund)}</div></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`;
@@ -2181,7 +2202,9 @@ function renderDohod() {
 function renderDohodDozhim(el) {
   const raw = S.data.d_dohod;
   if (!raw || raw.length < 3) { el.innerHTML = '<div class="empty">Нет данных по дожиму</div>'; return; }
-  const mgrs = raw.slice(2, 20).filter(r => r[0] && r[0].trim());
+  const KOTEL = ['котел','котёл','kotel'];
+  const isKotelRow = n => KOTEL.includes((n||'').toLowerCase().trim());
+  const mgrs = raw.slice(2, 20).filter(r => r[0] && r[0].trim() && !isKotelRow(r[0]));
   if (!mgrs.length) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
   const parsed = mgrs.map(r => ({ name: (r[0]||'—').toUpperCase(), itogo: r[1]||'0', n: parseFloat(String(r[1]||'0').replace(/[^\d.]/g,''))||0 }));
   parsed.sort((a, b) => b.n - a.n);
@@ -2798,8 +2821,8 @@ function calcSalary(nameLow) {
   const kotelShare = (inFund !== false && fundCount > 0) ? kotelTotal / fundCount : 0;
 
   const premium = crmEarn + warmEarn + kotelShare;
-  const pctFact  = parseFloat((mgrRow[5]||'0%').replace('%','').replace(',','.')) || 0;
-  const pctProg  = parseFloat((mgrRow[6]||'0%').replace('%','').replace(',','.')) || 0;
+  const pctFact  = computeFactPct(num(mgrRow[7]), num(mgrRow[3]) || 1);
+  const pctProg  = computeProgPct(num(mgrRow[7]), num(mgrRow[3]) || 1, currentSuffix);
   const koefFact = getKoef(pctFact);
   const koefProg = getKoef(pctProg);
 

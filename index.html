@@ -1386,7 +1386,21 @@ function initAuth() {
     client_id: CFG.CLIENT_ID,
     scope: 'https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
     callback: async (resp) => {
-      if (resp.error) { toast('Ошибка: '+resp.error, 'e'); return; }
+      if (resp.error) {
+        // Тихий рефреш не удался — показываем экран входа
+        const l = document.getElementById('silent-loader');
+        if (l) l.remove();
+        if (window._silentFallback) { clearTimeout(window._silentFallback); window._silentFallback = null; }
+        localStorage.removeItem('crm_user');
+        document.getElementById('scr-login').style.display = '';
+        document.getElementById('scr-login').classList.add('on');
+        toast('Ошибка: '+resp.error, 'e');
+        return;
+      }
+      // Успех — убираем лоадер
+      const l = document.getElementById('silent-loader');
+      if (l) l.remove();
+      if (window._silentFallback) { clearTimeout(window._silentFallback); window._silentFallback = null; }
       S.token = resp.access_token;
       localStorage.setItem('crm_tok', resp.access_token);
       localStorage.setItem('crm_exp', Date.now()+(resp.expires_in-60)*1000);
@@ -1464,17 +1478,54 @@ function onLogout() {
 function tryRestore() {
   const tok = localStorage.getItem('crm_tok');
   const exp = parseInt(localStorage.getItem('crm_exp')||'0');
-  if (!tok || exp <= Date.now()) {
-    ['crm_tok','crm_exp','crm_user'].forEach(k => localStorage.removeItem(k));
-    return false;
+  const u   = localStorage.getItem('crm_user');
+
+  if (tok && exp > Date.now()) {
+    // Токен живой — входим сразу
+    S.token = tok;
+    if (u) { S.user = JSON.parse(u); renderUser(); }
+    const remaining = Math.max(Math.floor((exp - Date.now()) / 1000), 0);
+    scheduleTokenRefresh(remaining);
+    onLogin();
+    return true;
   }
-  S.token = tok;
-  const u = localStorage.getItem('crm_user');
-  if (u) { S.user = JSON.parse(u); renderUser(); }
-  const remaining = Math.max(Math.floor((exp - Date.now()) / 1000), 0);
-  scheduleTokenRefresh(remaining);
-  onLogin();
-  return true;
+
+  if (u) {
+    // Токен истёк, но пользователь известен — тихий рефреш без UI
+    S.user = JSON.parse(u);
+    trySilentRefresh();
+    return true; // не показываем экран входа
+  }
+
+  return false;
+}
+
+function trySilentRefresh() {
+  // Показываем лоадер вместо экрана входа
+  document.getElementById('scr-login').classList.remove('on');
+  document.getElementById('scr-login').style.display = 'none';
+  const loader = document.createElement('div');
+  loader.id = 'silent-loader';
+  loader.className = 'loader';
+  loader.innerHTML = '<div class="spin"></div><div>Восстановление сессии…</div>';
+  document.querySelector('main').prepend(loader);
+
+  // prompt:'' — Google не показывает никакого UI если сессия жива в профиле
+  tokenClient.requestAccessToken({ prompt: '' });
+
+  // Если через 8 секунд ответа нет — показываем экран входа
+  const fallback = setTimeout(() => {
+    const l = document.getElementById('silent-loader');
+    if (l) l.remove();
+    if (!S.token) {
+      localStorage.removeItem('crm_user');
+      document.getElementById('scr-login').style.display = '';
+      document.getElementById('scr-login').classList.add('on');
+    }
+  }, 8000);
+
+  // Сохраняем таймер чтобы отменить при успехе (в initAuth callback)
+  window._silentFallback = fallback;
 }
 
 async function api(sheet, range) {
@@ -2893,8 +2944,9 @@ function init() {
   function waitGoogle() {
     if (typeof google !== 'undefined' && google.accounts) {
       initAuth();
-      if (tryRestore()) { /* already logged in */ }
-      else { document.getElementById('scr-login').classList.add('on'); }
+      if (!tryRestore()) {
+        document.getElementById('scr-login').classList.add('on');
+      }
     } else setTimeout(waitGoogle, 100);
   }
   waitGoogle();

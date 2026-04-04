@@ -2573,13 +2573,15 @@ function renderPersonal(matched) {
 
   if (!mgrRow) { goTab('otchet'); return; }
 
-  const plan    = mgrRow[3]||'—';
-  const factN   = num(mgrRow[7]);
-  const ost     = mgrRow[4]||'—';
-  const prog    = mgrRow[6]||'—';
-  const prc     = mgrRow[5]||'—';
-  const progNum = parseFloat((mgrRow[6]||'0%').replace('%','').replace(',','.')) || 0;
-  const daily   = mgrRow[3] ? computeDailyPlan(num(mgrRow[3]), factN, progNum, currentSuffix, name) : '—';
+  const planNum  = num(mgrRow[3]);
+  const factN    = num(mgrRow[7]);
+  const plan     = mgrRow[3]||'—';
+  const ost      = mgrRow[4]||'—';
+  const progNum  = computeProgPct(factN, planNum || 1, currentSuffix);
+  const factPct  = computeFactPct(factN, planNum || 1);
+  const prog     = progNum + '%';
+  const prc      = factPct + '%';
+  const daily    = planNum ? computeDailyPlan(planNum, factN, progNum, currentSuffix, name) : '—';
 
   let kred='—', nal='—', kom='—', kredSub='', nalSub='', komSub='';
   let convVis='—', convKred='—', pctTarget='—';

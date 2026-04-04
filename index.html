@@ -1901,18 +1901,19 @@ function renderOtchet() {
     return rows.find(r => (r[0]||'').toLowerCase().trim() === n) || [];
   }
 
-  const managerStats = mgrRows.filter(r => !isKotel(r[0])).map(r => {
+  const managerStats = mgrRows.map(r => {
     const mName = (r[0]||'—').trim();
     const genRow = getCnvrsRow(mName, 'general');
     const convStr = (genRow[6]||'0%').replace('%','').replace(',','.');
     const allV = num(r[7]);
     const plan = num(r[3]) || 1;
     return {
-      name:    mName.toUpperCase(),
-      visits:  allV,
+      name:     mName.toUpperCase(),
+      visits:   allV,
       plan,
-      progNum: computeProgPct(allV, plan, currentSuffix),
-      convPct: parseFloat(convStr) || 0,
+      progNum:  computeProgPct(allV, plan, currentSuffix),
+      convPct:  parseFloat(convStr) || 0,
+      isKotel:  isKotel(r[0]),
     };
   });
   managerStats.sort((a, b) => b.progNum - a.progNum);
@@ -1921,8 +1922,9 @@ function renderOtchet() {
     const progressId = `progress-${idx}`;
     const innerProgressId = `inner-progress-${idx}`;
     const convPct = item.convPct || 0;
+    const nameLabel = item.isKotel ? `🫕 ${item.name}` : item.name;
     return `
-      <div class="speedo-item">
+      <div class="speedo-item" style="${item.isKotel ? 'opacity:0.75' : ''}">
         <div class="speedo-svg-container">
           <svg viewBox="0 0 200 200">
             <defs><linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#eb4d4b"/><stop offset="50%" stop-color="#fbad33"/><stop offset="100%" stop-color="#27ae60"/></linearGradient></defs>
@@ -1935,7 +1937,7 @@ function renderOtchet() {
           <div class="speedo-conv">${convPct}%</div>
           <div class="speedo-visits">${item.visits}</div>
         </div>
-        <div class="speedo-name">${item.name}</div>
+        <div class="speedo-name">${nameLabel}</div>
       </div>`;
   }).join('');
 
@@ -2052,7 +2054,8 @@ function renderOtchet() {
 function renderDozhimCards() {
   const dRaw = S.data.d_otchet;
   if (!dRaw || dRaw.length < 4) return '<div class="empty">Нет данных по дожиму</div>';
-  const dMgrs = dRaw.slice(3, 20).filter(r => r[0] && r[0].trim());
+  const KOTEL_D = ['котел','котёл','kotel'];
+  const dMgrs = dRaw.slice(3, 20).filter(r => r[0] && r[0].trim() && !KOTEL_D.includes((r[0]||'').toLowerCase().trim()));
   if (!dMgrs.length) return '<div class="empty">Нет данных по дожиму</div>';
   const withProg = dMgrs.map(r => ({ r, progNum: parseFloat((r[6]||'0%').replace('%','').replace(',','.')) || 0 }));
   withProg.sort((a, b) => b.progNum - a.progNum);

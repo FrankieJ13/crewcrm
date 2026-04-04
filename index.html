@@ -1454,10 +1454,20 @@ function onLogin() {
   showScr('otchet');
   loadTab('otchet');
   loadUsersAndStart();
-  // Автообновление каждые 3 минуты
+  // Автообновление каждые 3 минуты — полный сброс кеша
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
   autoRefreshTimer = setInterval(() => {
-    if (S.token) reloadCurrent();
+    if (!S.token) return;
+    S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null };
+    const isPersonal = document.getElementById('scr-personal')?.classList.contains('on');
+    if (isPersonal) {
+      const matched = findUserInSheet();
+      if (matched) loadPersonal(matched);
+    } else {
+      const tab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
+      if (tab === 'grafik') _schedWeek = null;
+      loadTab(tab);
+    }
   }, AUTO_REFRESH_INTERVAL);
 }
 

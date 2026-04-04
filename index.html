@@ -1388,8 +1388,8 @@ function initAuth() {
     callback: async (resp) => {
       if (resp.error) { toast('Ошибка: '+resp.error, 'e'); return; }
       S.token = resp.access_token;
-      sessionStorage.setItem('crm_tok', resp.access_token);
-      sessionStorage.setItem('crm_exp', Date.now()+(resp.expires_in-60)*1000);
+      localStorage.setItem('crm_tok', resp.access_token);
+      localStorage.setItem('crm_exp', Date.now()+(resp.expires_in-60)*1000);
       loadUser();
       onLogin();
       scheduleTokenRefresh(resp.expires_in);
@@ -1406,7 +1406,7 @@ async function loadUser() {
     clearTimeout(timer);
     if (!r.ok) return;
     S.user = await r.json();
-    sessionStorage.setItem('crm_user', JSON.stringify(S.user));
+    localStorage.setItem('crm_user', JSON.stringify(S.user));
     renderUser();
     if (S.usersData !== null &&
         document.getElementById('scr-otchet')?.classList.contains('on') &&
@@ -1448,7 +1448,7 @@ function onLogout() {
   if (S.token) google.accounts.oauth2.revoke(S.token, ()=>{});
   S.token=null; S.user=null; S.usersData=null;
   S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null };
-  ['crm_tok','crm_exp','crm_user'].forEach(k => sessionStorage.removeItem(k));
+  ['crm_tok','crm_exp','crm_user'].forEach(k => localStorage.removeItem(k));
   document.getElementById('user-wrap').style.display = 'none';
   document.getElementById('btn-out').style.display   = 'none';
   document.getElementById('main-nav').style.display  = 'none';
@@ -1462,14 +1462,14 @@ function onLogout() {
 }
 
 function tryRestore() {
-  const tok = sessionStorage.getItem('crm_tok');
-  const exp = parseInt(sessionStorage.getItem('crm_exp')||'0');
+  const tok = localStorage.getItem('crm_tok');
+  const exp = parseInt(localStorage.getItem('crm_exp')||'0');
   if (!tok || exp <= Date.now()) {
-    ['crm_tok','crm_exp','crm_user'].forEach(k => sessionStorage.removeItem(k));
+    ['crm_tok','crm_exp','crm_user'].forEach(k => localStorage.removeItem(k));
     return false;
   }
   S.token = tok;
-  const u = sessionStorage.getItem('crm_user');
+  const u = localStorage.getItem('crm_user');
   if (u) { S.user = JSON.parse(u); renderUser(); }
   const remaining = Math.max(Math.floor((exp - Date.now()) / 1000), 0);
   scheduleTokenRefresh(remaining);
@@ -1485,7 +1485,7 @@ async function api(sheet, range) {
     const e = await r.json();
     const msg = e.error?.message || r.statusText;
     if (r.status===401 || r.status===403 || msg.includes('insufficient')) {
-      ['crm_tok','crm_exp','crm_user'].forEach(k => sessionStorage.removeItem(k));
+      ['crm_tok','crm_exp','crm_user'].forEach(k => localStorage.removeItem(k));
       S.token=null; onLogout(); toast('Сессия истекла — войдите снова','e');
       throw new Error('auth');
     }

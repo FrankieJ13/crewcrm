@@ -1369,6 +1369,8 @@ function medalBtn(idx) {
 
 let tokenClient;
 let refreshTimer = null;
+let autoRefreshTimer = null;
+const AUTO_REFRESH_INTERVAL = 3 * 60 * 1000; // 3 минуты
 
 function scheduleTokenRefresh(expiresIn) {
   if (refreshTimer) clearTimeout(refreshTimer);
@@ -1452,13 +1454,16 @@ function onLogin() {
   showScr('otchet');
   loadTab('otchet');
   loadUsersAndStart();
+  // Автообновление каждые 3 минуты
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+  autoRefreshTimer = setInterval(() => {
+    if (S.token) reloadCurrent();
+  }, AUTO_REFRESH_INTERVAL);
 }
 
 function onLogout() {
-  if (refreshTimer) {
-    clearTimeout(refreshTimer);
-    refreshTimer = null;
-  }
+  if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+  if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
   if (S.token) google.accounts.oauth2.revoke(S.token, ()=>{});
   S.token=null; S.user=null; S.usersData=null;
   S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null };

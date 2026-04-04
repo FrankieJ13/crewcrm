@@ -144,10 +144,8 @@ header {
 .logo-img {
   width:40px; height:40px; border-radius:5px;
   object-fit:contain; flex-shrink:0;
+  transition: opacity 0.4s ease;
 }
-.logo-img-l { display:none; }
-body.light .logo-img-d { display:none; }
-body.light .logo-img-l { display:block; }
 .badge-month {
   font-size:11px; padding:3px 9px; border-radius:20px;
   background:var(--bg3); border:1px solid var(--line2);
@@ -1115,8 +1113,7 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
     <div class="hdr-inner">
       <div class="hdr-left">
         <div class="logo" onclick="goHome()">
-          <img src="logo_d.png" class="logo-img logo-img-d" alt="logo"/>
-          <img src="logo_l.png" class="logo-img logo-img-l" alt="logo"/>
+          <img id="logo-img" src="logos/01.png" class="logo-img" alt="logo"/>
           ДАШБОРД
         </div>
       </div>
@@ -1371,6 +1368,29 @@ let tokenClient;
 let refreshTimer = null;
 let autoRefreshTimer = null;
 const AUTO_REFRESH_INTERVAL = 3 * 60 * 1000; // 3 минуты
+
+// ==================== LOGO ROTATION ====================
+const LOGOS = Array.from({length: 20}, (_, i) => `logos/${String(i+1).padStart(2,'0')}.png`);
+let _logoIdx = Math.floor(Math.random() * LOGOS.length); // стартуем со случайной
+let _logoTimer = null;
+
+function rotateLogo() {
+  const el = document.getElementById('logo-img');
+  if (!el) return;
+  _logoIdx = (_logoIdx + 1) % LOGOS.length;
+  el.style.opacity = '0';
+  setTimeout(() => {
+    el.src = LOGOS[_logoIdx];
+    el.style.opacity = '1';
+  }, 400);
+}
+
+function initLogoRotation() {
+  const el = document.getElementById('logo-img');
+  if (el) el.src = LOGOS[_logoIdx];
+  if (_logoTimer) clearInterval(_logoTimer);
+  _logoTimer = setInterval(rotateLogo, 5 * 60 * 1000); // каждые 5 минут
+}
 
 function scheduleTokenRefresh(expiresIn) {
   if (refreshTimer) clearTimeout(refreshTimer);
@@ -2984,6 +3004,7 @@ document.addEventListener('touchmove', function(e) {
 
 function init() {
   syncTheme();
+  initLogoRotation();
   function waitGoogle() {
     if (typeof google !== 'undefined' && google.accounts) {
       initAuth();

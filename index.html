@@ -1369,7 +1369,9 @@ let refreshTimer = null;
 let autoRefreshTimer = null;
 const AUTO_REFRESH_INTERVAL = 3 * 60 * 1000; // 3 минуты
 
-// ==================== LOGO ROTATION ====================
+// Определяем Android WebView (Capacitor) — Google OAuth там не работает
+const isAndroidWebView = /Android/.test(navigator.userAgent) && /wv\b/.test(navigator.userAgent);
+
 const LOGOS = Array.from({length: 20}, (_, i) => `logos/${String(i+1).padStart(2,'0')}.png`);
 let _logoIdx = Math.floor(Math.random() * LOGOS.length); // стартуем со случайной
 let _logoTimer = null;
@@ -2992,6 +2994,11 @@ document.getElementById('btn-out').addEventListener('click', onLogout);
 document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => goTab(b.dataset.tab)));
 document.getElementById('badge-month').addEventListener('click', showMonthDropdown);
 document.getElementById('center-login-btn').addEventListener('click', () => {
+  if (isAndroidWebView) {
+    // Google блокирует OAuth в Android WebView — открываем в Chrome
+    window.open('https://frankiej13.github.io/crewcrm/index.html', '_system');
+    return;
+  }
   if (!tokenClient) { toast('Загружается…','i'); return; }
   tokenClient.requestAccessToken({ prompt:'consent' });
 });
@@ -3005,8 +3012,30 @@ document.addEventListener('touchmove', function(e) {
 function init() {
   syncTheme();
   initLogoRotation();
+
+  // На Android WebView сразу показываем экран входа с подсказкой
+  if (isAndroidWebView) {
+    const btn = document.getElementById('center-login-btn');
+    if (btn) {
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 11h8.533c.044.385.067.78.067 1.184 0 3.37-1.17 6.22-3.207 8.154C15.553 22.124 13.9 23 12 23A11 11 0 1 1 12 1c2.95 0 5.56 1.113 7.522 2.934l-3.076 3.042C15.197 5.79 13.68 5 12 5a7 7 0 1 0 0 14c3.205 0 5.542-1.916 6.27-4.987H12v-3z"/></svg>Открыть в Chrome`;
+    }
+    document.getElementById('scr-login').classList.add('on');
+    return;
+  }
+
+  // Таймаут: показываем вход если GSI не загрузился за 6 секунд
+  const gsiTimeout = setTimeout(() => {
+    if (!tokenClient) {
+      const l = document.getElementById('silent-loader');
+      if (l) l.remove();
+      document.getElementById('scr-login').style.display = '';
+      document.getElementById('scr-login').classList.add('on');
+    }
+  }, 6000);
+
   function waitGoogle() {
     if (typeof google !== 'undefined' && google.accounts) {
+      clearTimeout(gsiTimeout);
       initAuth();
       if (!tryRestore()) {
         document.getElementById('scr-login').classList.add('on');

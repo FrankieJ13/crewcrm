@@ -2294,18 +2294,10 @@ function renderDohodDozhim(el) {
       };
       detailBtn = `<button class="mop-info-btn" style="position:absolute;top:10px;right:10px" onclick="openDozhimIncomeModal(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="">i</button>`;
     }
-    const incomeCols = item.sal ? `
-      <div class="income-cols">
-        <div class="income-col">
-          <div class="ic-lbl">Фактический</div>
-          <div class="ic-val" style="color:${pctClr(item.sal.fact.pct)}">${fmtRub(Math.round(item.sal.fact.total))}</div>
-        </div>
-        <div class="income-col">
-          <div class="ic-lbl">Прогнозируемый</div>
-          <div class="ic-val" style="color:${pctClr(item.sal.prognoz.pct)}">${fmtRub(Math.round(item.sal.prognoz.total))}</div>
-        </div>
-      </div>` : `<div style="text-align:right"><span class="zp-a" style="color:${rs.color}">—</span></div>`;
-    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span></div>${incomeCols}<div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div></div>`;
+    const incomeArea = item.sal
+      ? `<div style="text-align:right;margin:6px 0 4px"><span class="zp-a" style="color:var(--acc)">${fmtRub(Math.round(item.sal.fact.total))}</span></div>`
+      : `<div style="text-align:right;margin:6px 0 4px"><span class="zp-a" style="color:var(--txt3)">—</span></div>`;
+    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span></div>${incomeArea}<div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div></div>`;
   }).join('');
 
   el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Прогноз фонда дожима</div><div class="zv">${fmtRub(totalFund)}</div></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`;
@@ -2725,16 +2717,8 @@ function renderPersonal(matched) {
       };
       incomePanelAttr = `style="position:relative;cursor:pointer" onclick="openDozhimIncomeModal(this)" data-income='${JSON.stringify(incomeDetail).replace(/'/g,"&#39;")}' data-total=""`;
       incomePanelContent = `
-        <div class="income-cols" style="margin-bottom:0">
-          <div class="income-col">
-            <div class="ic-lbl">Фактический</div>
-            <div class="ic-val" style="color:${pctClr(dSal.fact.pct)}">${fmtRub(Math.round(dSal.fact.total))}</div>
-          </div>
-          <div class="income-col">
-            <div class="ic-lbl">Прогнозируемый</div>
-            <div class="ic-val" style="color:${pctClr(dSal.prognoz.pct)}">${fmtRub(Math.round(dSal.prognoz.total))}</div>
-          </div>
-        </div>
+        <div class="zl">Доход за месяц</div>
+        <div class="zv">${fmtRub(Math.round(dSal.fact.total))}</div>
       `;
     } else {
       incomePanelContent = `<div class="zl">Доход за месяц</div><div class="zv">—</div>`;

@@ -2254,7 +2254,19 @@ function renderDohodDozhim(el) {
   const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
   const rows = parsed.map((item, idx) => {
     const w = maxAmt ? Math.round(item.n / maxAmt * 100) : 0;
-    return `<div class="zp-row" style="--rank-r:128;--rank-g:128;--rank-b:128;border-color:var(--line2);background:var(--bg2)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="rank-badge" style="background:var(--bg3);color:var(--txt2)">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span></div><div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:var(--acc)"></div></div><div style="text-align:right"><span class="zp-a" style="color:var(--acc)">${fmtRub(item.itogo)}</span></div></div>`;
+    const sal = calcSalaryDozhim(item.name.toLowerCase().trim());
+    const incomeCols = sal ? `
+      <div class="income-cols">
+        <div class="income-col">
+          <div class="ic-lbl">Собственный</div>
+          <div class="ic-val" style="color:var(--acc)">${fmtRub(Math.round(sal.ownIncome))}</div>
+        </div>
+        <div class="income-col">
+          <div class="ic-lbl">С котлом</div>
+          <div class="ic-val" style="color:var(--grn)">${fmtRub(Math.round(sal.total))}</div>
+        </div>
+      </div>` : `<div style="text-align:right"><span class="zp-a" style="color:var(--acc)">${fmtRub(item.itogo)}</span></div>`;
+    return `<div class="zp-row" style="--rank-r:128;--rank-g:128;--rank-b:128;border-color:var(--line2);background:var(--bg2)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:var(--bg3);color:var(--txt2)">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span></div>${incomeCols}<div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:var(--acc)"></div></div></div>`;
   }).join('');
   el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Фонд дожима за месяц</div><div class="zv">${fmtRub(totalSum)}</div></div><div class="sec-title">Доход менеджеров дожима</div><div class="zp-list">${rows}</div>`;
 }
@@ -2657,9 +2669,25 @@ function renderPersonal(matched) {
   let incomePanelAttr = 'style="position:relative"';
 
   if (isDozhim) {
-    const dIncome = (S.data.d_dohod||[]).slice(2, 20).find(r => (r[0]||'').toLowerCase().trim() === nameLow);
-    const incomeStr = dIncome ? dIncome[1]||'—' : '—';
-    incomePanelContent = `<div class="zl">Доход за месяц</div><div class="zv">${fmtRub(incomeStr)}</div>`;
+    const dSal = calcSalaryDozhim(nameLow);
+    if (dSal) {
+      incomePanelContent = `
+        <div class="income-cols" style="margin-bottom:0">
+          <div class="income-col">
+            <div class="ic-lbl">Собственный</div>
+            <div class="ic-val" style="color:var(--acc)">${fmtRub(Math.round(dSal.ownIncome))}</div>
+          </div>
+          <div class="income-col">
+            <div class="ic-lbl">С котлом</div>
+            <div class="ic-val" style="color:var(--grn)">${fmtRub(Math.round(dSal.total))}</div>
+          </div>
+        </div>
+        ${dSal.inFund && dSal.kotelShare > 0 ? `<div style="font-size:10px;color:var(--txt2);margin-top:8px;text-align:center">Котёл: ${fmtRub(Math.round(dSal.kotelTotal))} ÷ ${dSal.fundCount} = ${fmtRub(Math.round(dSal.kotelShare))}</div>` : ''}
+      `;
+    } else {
+      const dIncome = (S.data.d_dohod||[]).slice(2, 20).find(r => (r[0]||'').toLowerCase().trim() === nameLow);
+      incomePanelContent = `<div class="zl">Доход за месяц</div><div class="zv">${fmtRub(dIncome?.[1]||'—')}</div>`;
+    }
   } else if (salObj) {
     const incomeDetail = {
       crm:      salObj.detail.crm,
@@ -2724,26 +2752,30 @@ function renderPersonal(matched) {
 }
 
 // ==================== SALARY CALC ====================
-function isInFund(nameLow) {
+// type: 'crm' | 'dozhim'. Обратная совместимость: 'да' трактуется как 'crm'
+function isInFund(nameLow, type = 'crm') {
   if (!S.usersData || S.usersData.length < 2) return true;
   for (let i = 1; i < S.usersData.length; i++) {
     const row = S.usersData[i];
     if ((row[1]||'').toLowerCase().trim() === nameLow) {
-      return (row[3]||'').toLowerCase().trim() === 'да';
+      const val = (row[3]||'').toLowerCase().trim();
+      if (type === 'crm') return val === 'crm' || val === 'да';
+      return val === type;
     }
   }
   return false;
 }
-function getFundCount() {
+function getFundCount(type = 'crm') {
   if (!S.usersData || S.usersData.length < 2) return 8;
   let count = 0;
   for (let i = 1; i < S.usersData.length; i++) {
     const row = S.usersData[i];
     if (!row[1]) continue;
-    const fund = (row[3]||'').toLowerCase().trim();
-    if (fund === 'да') count++;
+    const val = (row[3]||'').toLowerCase().trim();
+    if (type === 'crm' && (val === 'crm' || val === 'да')) count++;
+    else if (type !== 'crm' && val === type) count++;
   }
-  return count > 0 ? count : 8;
+  return count > 0 ? count : 1;
 }
 function parseRate(v) {
   return parseFloat(String(v||'0').replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
@@ -2814,7 +2846,7 @@ function calcSalary(nameLow) {
 
   const mgrRow = otchet.slice(3, 12).find(r => (r[0]||'').toLowerCase().trim() === nameLow);
   if (!mgrRow) return null;
-  const inFund = isInFund(nameLow);
+  const inFund = isInFund(nameLow, 'crm');
 
   const crm = {
     vis:    num(mgrRow[1]),
@@ -2859,7 +2891,7 @@ function calcSalary(nameLow) {
 
   const kotelTotal = kotelCrmPureVis*rCrmVis + kotelCrm.kred*rCrmKred + kotelCrm.nal*rCrmNal + kotelCrm.obmen*rCrmObmen + kotelCrm.kom*rCrmKom + kotelCrm.zadatok*rZadatok
                    + kotelWarmPureVis*rWarmVis + kotelWarm.kred*rWarmKred + kotelWarm.nal*rWarmNal + kotelWarm.obmen*rWarmObmen + kotelWarm.kom*rWarmKom;
-  const fundCount = getFundCount();
+  const fundCount = getFundCount('crm');
   const kotelShare = (inFund !== false && fundCount > 0) ? kotelTotal / fundCount : 0;
 
   const premium = crmEarn + warmEarn + kotelShare;
@@ -2902,6 +2934,41 @@ function calcSalary(nameLow) {
       kotel:    kotelShare,
       fundCount,
     }
+  };
+}
+
+// ==================== SALARY CALC: ДОЖИМ ====================
+function calcSalaryDozhim(nameLow) {
+  const dDohod = S.data.d_dohod || [];
+  if (dDohod.length < 3) return null;
+
+  const KOTEL_NAMES = ['котел','котёл','kotel'];
+  const rows = dDohod.slice(2, 20);
+
+  const mgrRow = rows.find(r => (r[0]||'').toLowerCase().trim() === nameLow);
+  if (!mgrRow) return null;
+
+  const ownIncome = parseFloat(String(mgrRow[1]||'0').replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
+
+  // Котёл дожима — строка с именем котел/kotel
+  const kotelRow = rows.find(r => KOTEL_NAMES.includes((r[0]||'').toLowerCase().trim()));
+  const kotelTotal = kotelRow
+    ? (parseFloat(String(kotelRow[1]||'0').replace(/[^\d.,-]/g,'').replace(',','.')) || 0)
+    : 0;
+
+  const inFund = isInFund(nameLow, 'dozhim');
+  const fundCount = getFundCount('dozhim');
+  const kotelShare = (inFund && fundCount > 0 && kotelTotal > 0) ? kotelTotal / fundCount : 0;
+
+  const total = ownIncome + kotelShare;
+
+  return {
+    ownIncome,
+    kotelShare,
+    kotelTotal,
+    fundCount,
+    inFund,
+    total,
   };
 }
 

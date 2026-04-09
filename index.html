@@ -2295,7 +2295,7 @@ function renderDohodDozhim(el) {
       detailBtn = `<button class="mop-info-btn" style="position:absolute;top:10px;right:10px" onclick="openDozhimIncomeModal(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="">i</button>`;
     }
     const incomeArea = item.sal
-      ? `<div style="text-align:right;margin:6px 0 4px"><span class="zp-a" style="color:var(--acc)">${fmtRub(Math.round(item.sal.fact.total))}</span></div>`
+      ? `<div style="text-align:right;margin:6px 0 4px"><span class="zp-a" style="color:var(--acc)">${fmtRub(Math.round(item.sal.prognoz.total))}</span></div>`
       : `<div style="text-align:right;margin:6px 0 4px"><span class="zp-a" style="color:var(--txt3)">—</span></div>`;
     return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span></div>${incomeArea}<div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div></div>`;
   }).join('');
@@ -2718,7 +2718,7 @@ function renderPersonal(matched) {
       incomePanelAttr = `style="position:relative;cursor:pointer" onclick="openDozhimIncomeModal(this)" data-income='${JSON.stringify(incomeDetail).replace(/'/g,"&#39;")}' data-total=""`;
       incomePanelContent = `
         <div class="zl">Доход за месяц</div>
-        <div class="zv">${fmtRub(Math.round(dSal.fact.total))}</div>
+        <div class="zv">${fmtRub(Math.round(dSal.prognoz.total))}</div>
       `;
     } else {
       incomePanelContent = `<div class="zl">Доход за месяц</div><div class="zv">—</div>`;

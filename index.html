@@ -1658,33 +1658,46 @@ async function loadTab(tab) {
   }
   if (tab === 'dohod') {
     const el = document.getElementById('c-dohod');
-    if (!S.data.otchet) {
-      if (el) el.innerHTML = loader();
-      try {
-        S.data.otchet = await api(SHEETS.otchet, 'A1:Z15');
-      } catch(e) {
-        if (e.message!=='auth') {
-          if (e.message === 'NOT_FOUND') showArchiveMsg(el);
-          else if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
+    const matched = findUserInSheet();
+    const role = matched?.role || '';
+    const isCeo = role === 'ceo';
+    const isDozhim = role === 'dozhim';
+
+    if (isCeo || !isDozhim) {
+      // CEO или CRM — нужны otchet + stavki
+      if (!S.data.otchet) {
+        if (el) el.innerHTML = loader();
+        try { S.data.otchet = await api(SHEETS.otchet, 'A1:Z15'); }
+        catch(e) {
+          if (e.message!=='auth') {
+            if (e.message === 'NOT_FOUND') showArchiveMsg(el);
+            else if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
+          }
+          return;
         }
-        return;
+      }
+      if (!S.data.stavki) {
+        try { S.data.stavki = await api(SHEETS.stavki, 'A1:B25'); }
+        catch(e) { S.data.stavki = []; }
+      }
+      if (!S.data.grafik) {
+        try { S.data.grafik = await api(SHEETS.grafik, 'A1:AI25'); }
+        catch(e) { S.data.grafik = []; }
       }
     }
-    if (!S.data.stavki) {
-      try {
-        S.data.stavki = await api(SHEETS.stavki, 'A1:B25');
-      } catch(e) {
-        S.data.stavki = [];
+
+    if (isDozhim) {
+      // ДОЖИМ — нужны d_otchet + d_stavki + grafik
+      if (!S.data.d_otchet || !S.data.d_stavki || !S.data.grafik) {
+        if (el) el.innerHTML = loader();
+        await Promise.all([
+          S.data.d_otchet ? Promise.resolve() : api(SHEETS.d_otchet, 'A1:R20').then(d => S.data.d_otchet = d).catch(() => S.data.d_otchet = []),
+          S.data.d_stavki ? Promise.resolve() : api(SHEETS.d_stavki, 'A1:B25').then(d => S.data.d_stavki = d).catch(() => S.data.d_stavki = []),
+          S.data.grafik   ? Promise.resolve() : api(SHEETS.grafik,   'A1:AI25').then(d => S.data.grafik   = d).catch(() => S.data.grafik   = []),
+        ]);
       }
     }
-    if (S.dohodTab === 'dozhim' && !S.data.d_dohod) {
-      try {
-        S.data.d_dohod = await api(SHEETS.d_dohod, 'A1:N20');
-      } catch(e) {
-        if (e.message !== 'NOT_FOUND') S.data.d_dohod = [];
-        else S.data.d_dohod = null;
-      }
-    }
+
     renderTab('dohod');
     return;
   }
@@ -2180,10 +2193,90 @@ function goHome() {
 function renderDohod() {
   const el = document.getElementById('c-dohod');
   const floating = document.getElementById('floating-dohod-subtabs');
-  const subtabs = `<span class="report-subtab ${S.dohodTab !== 'dozhim' ? 'active' : ''}" onclick="setDohodTab('crm')">CRM</span><span class="report-subtab ${S.dohodTab === 'dozhim' ? 'active' : ''}" onclick="setDohodTab('dozhim')">ДОЖИМ</span>`;
-  if (floating) floating.innerHTML = subtabs;
-  if (S.dohodTab === 'dozhim') { renderDohodDozhim(el); return; }
+  const matched = findUserInSheet();
+  const role = matched?.role || '';
+  const isCeo = role === 'ceo';
 
+  // CEO — прежний формат с подвкладками
+  if (isCeo) {
+    const subtabs = `<span class="report-subtab ${S.dohodTab !== 'dozhim' ? 'active' : ''}" onclick="setDohodTab('crm')">CRM</span><span class="report-subtab ${S.dohodTab === 'dozhim' ? 'active' : ''}" onclick="setDohodTab('dozhim')">ДОЖИМ</span>`;
+    if (floating) { floating.innerHTML = subtabs; floating.style.display = 'flex'; }
+    if (S.dohodTab === 'dozhim') { renderDohodDozhim(el); return; }
+    renderDohodCrm(el);
+    return;
+  }
+
+  // Обычный менеджер — скрываем подвкладки, показываем только свой доход
+  if (floating) { floating.innerHTML = ''; floating.style.display = 'none'; }
+
+  if (!matched || !matched.name) {
+    el.innerHTML = '<div class="empty">Пользователь не найден в базе</div>';
+    return;
+  }
+
+  const nameLow = matched.name.toLowerCase().trim();
+  const isDozhim = role === 'dozhim';
+  const isLight = document.body.classList.contains('light');
+  const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
+
+  if (isDozhim) {
+    if (!S.data.d_otchet || !S.data.d_stavki) {
+      el.innerHTML = loader(); return;
+    }
+    const sal = calcSalaryDozhim(nameLow);
+    if (!sal) { el.innerHTML = '<div class="empty">Нет данных по вашему доходу</div>'; return; }
+    const det = {
+      oklad: sal.detail.oklad, baseOklad: sal.detail.baseOklad,
+      workedR: sal.detail.workedR, totalR: sal.detail.totalR,
+      premium: sal.detail.premium, kotel: sal.detail.kotel,
+      kotelTotal: sal.detail.kotelTotal, fundCount: sal.detail.fundCount,
+      inFund: sal.detail.inFund, fact: sal.fact, prognoz: sal.prognoz,
+      metrics: sal.detail.metrics,
+    };
+    el.innerHTML = `
+      <div class="w" style="padding-top:16px">
+        <div class="kpi-subtitle">Доход за месяц</div>
+        <div class="kpi-income-panel" style="position:relative;text-align:center;cursor:pointer;background:rgba(${accR},${accG},${accB},0.15)"
+             onclick="openDozhimIncomeModal(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="">
+          <div class="zl">Прогнозируемый</div>
+          <div class="zv">${fmtRub(Math.round(sal.prognoz.total))}</div>
+        </div>
+      </div>`;
+  } else {
+    if (!S.data.otchet || !S.data.stavki) { el.innerHTML = loader(); return; }
+    const sal = calcSalary(nameLow);
+    if (!sal) { el.innerHTML = '<div class="empty">Нет данных по вашему доходу</div>'; return; }
+    const incomeDetail = {
+      crm: sal.detail.crm, warm: sal.detail.warm,
+      oklad: sal.detail.oklad, baseOklad: sal.detail.baseOklad,
+      workedR: sal.detail.workedR, totalR: sal.detail.totalR,
+      premium: sal.detail.premium, kotel: sal.detail.kotel,
+      fundCount: sal.detail.fundCount, inFund: sal.detail.inFund,
+      fact: sal.fact, prognoz: sal.prognoz,
+    };
+    el.innerHTML = `
+      <div class="w" style="padding-top:16px">
+        <div class="kpi-subtitle">Доход за месяц</div>
+        <div class="kpi-income-panel" style="position:relative;cursor:pointer;background:rgba(${accR},${accG},${accB},0.15)"
+             onclick="openIncomeDetail(this)" data-income='${JSON.stringify(incomeDetail).replace(/'/g,"&#39;")}' data-total="">
+          <div class="income-cols" style="margin-bottom:0">
+            <div class="income-col">
+              <span class="ic-koef ${koefClass(sal.fact.koef)}">×${sal.fact.koef.toFixed(1)}</span>
+              <div class="ic-lbl">Фактический</div>
+              <div class="ic-val" style="color:${pctClr(sal.fact.pct)}">${fmtRub(Math.round(sal.fact.total))}</div>
+            </div>
+            <div class="income-col">
+              <span class="ic-koef ${koefClass(sal.prognoz.koef)}">×${sal.prognoz.koef.toFixed(1)}</span>
+              <div class="ic-lbl">Прогнозируемый</div>
+              <div class="ic-val" style="color:${pctClr(sal.prognoz.pct)}">${fmtRub(Math.round(sal.prognoz.total))}</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+}
+
+function renderDohodCrm(el) {
   const raw = S.data.otchet;
   if (!raw || raw.length < 4) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
   if (!S.data.stavki) { el.innerHTML = '<div class="loader"><div class="spin"></div><span>Загружаем ставки…</span></div>'; return; }

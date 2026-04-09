@@ -3135,6 +3135,7 @@ function openDozhimIncomeModal(btn) {
     ${kotelRow}
     <div class="income-sec-title">Итого</div>
     ${subtotal('Фактический доход', Math.round(n(d.fact?.total)))}
+    ${subtotal('Прогнозируемый доход', Math.round(n(d.prognoz?.total)))}
   `;
   document.getElementById('income-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';

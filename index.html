@@ -2289,19 +2289,6 @@ function renderDohod() {
         </div>
         <div class="kpi-subtitle" style="margin-top:16px">Детализация</div>
         <div style="padding-bottom:16px">
-          <div class="income-sec-title">Коэффициент</div>
-          <div class="income-cols" style="margin-bottom:8px">
-            <div class="income-col fact">
-              <span class="ic-koef ${koefClass(factKoef)}">×${factKoef.toFixed(1)}</span>
-              <div class="ic-lbl">Факт ${d.fact.pct}%</div>
-              <div class="ic-val" style="color:${pctClr(d.fact.pct)}">${fmtRub(Math.round(d.fact.total))}</div>
-            </div>
-            <div class="income-col prog">
-              <span class="ic-koef ${koefClass(progKoef)}">×${progKoef.toFixed(1)}</span>
-              <div class="ic-lbl">Прогноз ${d.prognoz.pct}%</div>
-              <div class="ic-val" style="color:${pctClr(d.prognoz.pct)}">${fmtRub(Math.round(d.prognoz.total))}</div>
-            </div>
-          </div>
           <div style="font-size:10px;color:var(--txt2);margin-bottom:8px;line-height:1.5">
             Оклад + (Премия × К) = Итог<br>${okladFormula}
           </div>

@@ -2288,12 +2288,10 @@ function renderDohodDozhim(el) {
     const incomeCols = item.sal ? `
       <div class="income-cols">
         <div class="income-col">
-          <span class="ic-koef ${koefClass(item.sal.fact.koef)}">×${item.sal.fact.koef.toFixed(1)}</span>
           <div class="ic-lbl">Фактический</div>
           <div class="ic-val" style="color:${pctClr(item.sal.fact.pct)}">${fmtRub(Math.round(item.sal.fact.total))}</div>
         </div>
         <div class="income-col">
-          <span class="ic-koef ${koefClass(item.sal.prognoz.koef)}">×${item.sal.prognoz.koef.toFixed(1)}</span>
           <div class="ic-lbl">Прогнозируемый</div>
           <div class="ic-val" style="color:${pctClr(item.sal.prognoz.pct)}">${fmtRub(Math.round(item.sal.prognoz.total))}</div>
         </div>
@@ -2721,12 +2719,10 @@ function renderPersonal(matched) {
       incomePanelContent = `
         <div class="income-cols" style="margin-bottom:0">
           <div class="income-col">
-            <span class="ic-koef ${koefClass(dSal.fact.koef)}">×${dSal.fact.koef.toFixed(1)}</span>
             <div class="ic-lbl">Фактический</div>
             <div class="ic-val" style="color:${pctClr(dSal.fact.pct)}">${fmtRub(Math.round(dSal.fact.total))}</div>
           </div>
           <div class="income-col">
-            <span class="ic-koef ${koefClass(dSal.prognoz.koef)}">×${dSal.prognoz.koef.toFixed(1)}</span>
             <div class="ic-lbl">Прогнозируемый</div>
             <div class="ic-val" style="color:${pctClr(dSal.prognoz.pct)}">${fmtRub(Math.round(dSal.prognoz.total))}</div>
           </div>
@@ -3069,15 +3065,13 @@ function calcSalaryDozhim(nameLow) {
   const premium  = earn800 + earn1000 + kotelShare;
   const pctFact  = computeFactPct(num(mgrRow[7]), num(mgrRow[3]) || 1);
   const pctProg  = computeProgPct(num(mgrRow[7]), num(mgrRow[3]) || 1, currentSuffix);
-  const koefFact = getKoef(pctFact);
-  const koefProg = getKoef(pctProg);
 
-  const totalFact = oklad + premium * koefFact;
-  const totalProg = baseOklad + premium * koefProg;
+  const totalFact = oklad + premium;
+  const totalProg = baseOklad + premium;
 
   return {
-    fact:    { total: totalFact, koef: koefFact, pct: pctFact, premium },
-    prognoz: { total: totalProg, koef: koefProg, pct: pctProg, premium },
+    fact:    { total: totalFact, koef: null, pct: pctFact, premium },
+    prognoz: { total: totalProg, koef: null, pct: pctProg, premium },
     detail: {
       oklad, baseOklad,
       workedR:  schedInfo ? schedInfo.workedR : null,

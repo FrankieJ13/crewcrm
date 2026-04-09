@@ -1091,6 +1091,10 @@ body.light .dz-badge { background:rgba(0,0,0,0.03); }
 .dz-badge .dzb-lbl  { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px; }
 .dz-badge .dzb-count { font-family:'Unbounded',sans-serif; font-size:14px; font-weight:800; color:var(--txt); margin-bottom:3px; }
 .dz-badge .dzb-earn  { font-size:10px; color:var(--acc); font-weight:600; }
+body.light #income-modal-content[data-modal="dozhim"] .income-subtotal .ist-lbl { color:#fff; }
+body.light #income-modal-content[data-modal="dozhim"] .income-subtotal .ist-val { color:#fff; }
+body.light #income-modal-content[data-modal="dozhim"] .income-sec-title { color:#fff; }
+body.light #income-modal-content[data-modal="dozhim"] .income-sec-title::after { background:rgba(255,255,255,0.3); }
 /* ==================== INCOME COLS BADGES ==================== */
 .income-cols { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:8px 0 4px; }
 .income-col {
@@ -2306,14 +2310,16 @@ function renderDohodDozhim(el) {
 function setDohodTab(tab) {
   S.dohodTab = tab;
   const el = document.getElementById('c-dohod');
-  if (tab === 'dozhim' && (!S.data.d_otchet || !S.data.d_stavki)) {
+  if (tab === 'dozhim' && (!S.data.d_otchet || !S.data.d_stavki || !S.data.grafik)) {
     el.innerHTML = loader();
     Promise.all([
       S.data.d_otchet ? Promise.resolve(S.data.d_otchet) : api(SHEETS.d_otchet, 'A1:R20').catch(() => []),
       S.data.d_stavki ? Promise.resolve(S.data.d_stavki) : api(SHEETS.d_stavki, 'A1:B25').catch(() => []),
-    ]).then(([otchet, stavki]) => {
+      S.data.grafik   ? Promise.resolve(S.data.grafik)   : api(SHEETS.grafik,    'A1:AI25').catch(() => []),
+    ]).then(([otchet, stavki, grafik]) => {
       S.data.d_otchet = otchet;
       S.data.d_stavki = stavki;
+      S.data.grafik   = grafik;
       renderDohod();
     });
     return;
@@ -3126,7 +3132,9 @@ function openDozhimIncomeModal(btn) {
     </div>
     ${subtotal('Доля котла', Math.round(kotel))}` : '';
 
-  document.getElementById('income-modal-content').innerHTML = `
+  const mc = document.getElementById('income-modal-content');
+  mc.setAttribute('data-modal', 'dozhim');
+  mc.innerHTML = `
     <div class="income-sec-title">Оклад</div>
     ${subtotal(okladLbl, oklad)}
     <div class="income-sec-title">Премия</div>
@@ -3185,7 +3193,9 @@ function openIncomeDetail(btn) {
       ${okladFormula}
     </div>` : '';
 
-  document.getElementById('income-modal-content').innerHTML = `
+  const mc = document.getElementById('income-modal-content');
+  mc.removeAttribute('data-modal');
+  mc.innerHTML = `
     ${koefRow}
     ${okladRow}
     <div class="income-sec-title">CRM</div>

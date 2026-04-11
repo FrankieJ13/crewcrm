@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.json"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&family=Exo+2:wght@200;300;700&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet"/>
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
@@ -1129,90 +1129,90 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
 }
 #teaser-overlay.active { display: block; }
 #teaser-overlay canvas { display: block; width: 100% !important; height: 100% !important; }
-#teaser-overlay .t-vignette {
+#t-canvas { position: absolute; inset: 0; }
+.t-vignette {
   position: absolute; inset: 0; pointer-events: none;
   background: radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.75) 100%),
               linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.75) 100%);
 }
-#teaser-overlay .t-scanlines {
+.t-scanlines {
   position: absolute; inset: 0; pointer-events: none;
   background: repeating-linear-gradient(to bottom, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px);
 }
-#teaser-overlay .t-topbar {
+.t-topbar {
   position: absolute; top: 0; left: 0; right: 0;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 28px 48px;
-  font-family: 'JetBrains Mono', monospace;
+  padding: 28px 48px; font-family: 'JetBrains Mono', monospace;
 }
-#teaser-overlay .t-brand {
+.t-brand {
   font-size: 11px; font-weight: 300; letter-spacing: 0.22em;
   color: rgba(255,255,255,0.45); text-transform: uppercase;
 }
-#teaser-overlay .t-status {
+.t-status {
   display: flex; align-items: center; gap: 8px;
   font-size: 10px; font-weight: 300; letter-spacing: 0.18em;
   color: rgba(255,255,255,0.35); text-transform: uppercase;
 }
-#teaser-overlay .t-dot {
+.t-dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: #4ade80; box-shadow: 0 0 8px #4ade80;
   animation: t-pulse 2.4s ease-in-out infinite;
 }
 @keyframes t-pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-#teaser-overlay .t-stage {
+.t-stage {
   position: absolute; inset: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center; color: #fff;
-  font-family: 'Exo 2', 'Exo 2 Variable', sans-serif;
+  font-family: 'Exo 2', sans-serif;
   animation: t-fadeup 1.2s cubic-bezier(0.22,1,0.36,1) both;
 }
 @keyframes t-fadeup { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-#teaser-overlay .t-eyebrow {
+.t-eyebrow {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10.5px; font-weight: 300; letter-spacing: 0.38em;
   color: rgba(255,255,255,0.4); text-transform: uppercase; margin-bottom: 28px;
 }
-#teaser-overlay .t-headline {
+.t-headline {
   font-size: clamp(52px, 8vw, 108px); font-weight: 200;
   letter-spacing: -0.01em; line-height: 0.9; text-transform: uppercase;
 }
-#teaser-overlay .t-headline b { font-weight: 700; }
-#teaser-overlay .t-pill {
+.t-headline b { font-weight: 700; }
+.t-pill {
   display: inline-flex; align-items: center; gap: 6px;
   margin-top: 20px; padding: 5px 14px;
   border: 1px solid rgba(255,255,255,0.18); border-radius: 2px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px; letter-spacing: 0.14em; color: rgba(255,255,255,0.55);
 }
-#teaser-overlay .t-pill-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.4); }
-#teaser-overlay .t-divider {
+.t-pill-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.4); }
+.t-divider {
   width: 1px; height: 52px;
   background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.2), transparent);
   margin: 36px auto;
 }
-#teaser-overlay .t-tagline {
+.t-tagline {
   font-size: clamp(13px,1.4vw,16px); font-weight: 300; letter-spacing: 0.06em;
   color: rgba(255,255,255,0.38); max-width: 440px; line-height: 1.8;
 }
-#teaser-overlay .t-soon {
+.t-soon {
   margin-top: 48px; display: flex; flex-direction: column; align-items: center; gap: 12px;
 }
-#teaser-overlay .t-soon-label {
+.t-soon-label {
   font-family: 'JetBrains Mono', monospace;
   font-size: 9.5px; letter-spacing: 0.4em; text-transform: uppercase;
   color: rgba(255,255,255,0.22);
 }
-#teaser-overlay .t-bar-wrap { width: 220px; height: 1px; background: rgba(255,255,255,0.1); overflow: hidden; }
-#teaser-overlay .t-bar {
+.t-bar-wrap { width: 220px; height: 1px; background: rgba(255,255,255,0.1); overflow: hidden; }
+.t-bar {
   height: 100%; width: 0%;
   background: linear-gradient(to right, rgba(255,255,255,0.3), rgba(255,255,255,0.8));
-  transition: width 2.8s cubic-bezier(0.4,0,0.2,1);
+  transition: width 2.4s cubic-bezier(0.4,0,0.2,1);
 }
-#teaser-overlay .t-pct {
+.t-pct {
   font-family: 'JetBrains Mono', monospace;
   font-size: 9px; letter-spacing: 0.2em; color: rgba(255,255,255,0.22);
 }
-#teaser-overlay .t-close-hint {
+.t-close-hint {
   position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
   font-family: 'JetBrains Mono', monospace;
   font-size: 9px; letter-spacing: 0.28em; text-transform: uppercase;
@@ -1220,7 +1220,7 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
   animation: t-blink 3s ease-in-out infinite;
 }
 @keyframes t-blink { 0%,100%{opacity:.15} 50%{opacity:.45} }
-#teaser-overlay .t-bottombar {
+.t-bottombar {
   position: absolute; bottom: 0; left: 0; right: 0;
   display: flex; justify-content: space-between;
   padding: 28px 48px;
@@ -1228,12 +1228,8 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
   font-size: 10px; font-weight: 300; letter-spacing: 0.16em;
   color: rgba(255,255,255,0.22); text-transform: uppercase; line-height: 1.8;
 }
-#author-credit {
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-#author-credit:hover { opacity: 0.7; }
-/* ===== END TEASER OVERLAY ===== */  
+#author { cursor: pointer; }
+/* ===== END TEASER OVERLAY ===== */
 </style>
 </head>
 <body>
@@ -3604,43 +3600,61 @@ else init();
     setInterval(startMatrixAnimation, 10000);
     window.addEventListener("load", startMatrixAnimation);
 })();
+</script>
 
-// ===== TEASER OVERLAY =====
+<!-- ===== TEASER OVERLAY ===== -->
+<div id="teaser-overlay">
+  <div id="t-canvas"></div>
+  <div class="t-vignette"></div>
+  <div class="t-scanlines"></div>
+  <header class="t-topbar">
+    <span class="t-brand">Crystal Motors — CRM System</span>
+    <div class="t-status"><div class="t-dot"></div><span>В разработке</span></div>
+  </header>
+  <div class="t-stage">
+    <div class="t-eyebrow">Новое поколение</div>
+    <h1 class="t-headline">CRM<br><b>Dashboard</b></h1>
+    <div class="t-pill"><div class="t-pill-dot"></div>Version 2.0</div>
+    <div class="t-divider"></div>
+    <p class="t-tagline">Переработанный интерфейс, расширенная аналитика и новые инструменты для команды продаж.</p>
+    <div class="t-soon">
+      <span class="t-soon-label">Готовность</span>
+      <div class="t-bar-wrap"><div class="t-bar" id="t-bar"></div></div>
+      <span class="t-pct" id="t-pct">0%</span>
+    </div>
+  </div>
+  <div class="t-close-hint">Нажмите в любом месте, чтобы закрыть</div>
+  <footer class="t-bottombar">
+    <span>© 2026 Crystal Motors<br>Бочаров Ю.С. / frankiej13</span>
+    <span style="text-align:right">frankiej13.github.io<br>/CRM-CM/</span>
+  </footer>
+</div>
+
+<script>
 (function () {
-  var overlay   = document.getElementById('teaser-overlay');
-  var trigger   = document.getElementById('author-credit');
-  var tBar      = document.getElementById('t-bar');
-  var tPct      = document.getElementById('t-pct');
-  var shaderInitialized = false;
-  var animId    = null;
-  var THREE_t   = null;
-  var uniforms_t = null;
-  var renderer_t = null;
+  var overlay  = document.getElementById('teaser-overlay');
+  var tBar     = document.getElementById('t-bar');
+  var tPct     = document.getElementById('t-pct');
+  var shaderOk = false;
 
   function initShader() {
-    if (shaderInitialized) return;
-
-    // Подгружаем Three.js только если ещё нет
+    if (shaderOk) return;
     function setup() {
-      THREE_t = window.THREE;
+      var T = window.THREE;
       var container = document.getElementById('t-canvas');
-      container.style.cssText = 'position:absolute;inset:0;';
-      var camera = new THREE_t.Camera();
-      camera.position.z = 1;
-      var scene = new THREE_t.Scene();
-      var geometry = new THREE_t.PlaneBufferGeometry(2, 2);
-      uniforms_t = {
+      var camera = new T.Camera(); camera.position.z = 1;
+      var scene = new T.Scene();
+      var uniforms = {
         time:       { type: 'f',  value: 1.0 },
-        resolution: { type: 'v2', value: new THREE_t.Vector2() }
+        resolution: { type: 'v2', value: new T.Vector2() }
       };
-      var material = new THREE_t.ShaderMaterial({
-        uniforms: uniforms_t,
+      var material = new T.ShaderMaterial({
+        uniforms: uniforms,
         vertexShader: 'void main(){gl_Position=vec4(position,1.0);}',
         fragmentShader: [
           'precision highp float;',
           'uniform vec2 resolution; uniform float time;',
           'float rnd(float x){return fract(sin(x)*1e4);}',
-          'float rnd(vec2 st){return fract(sin(dot(st,vec2(12.9898,78.233)))*43758.5453123);}',
           'void main(){',
           '  vec2 uv=(gl_FragCoord.xy*2.0-resolution.xy)/min(resolution.x,resolution.y);',
           '  vec2 ms=vec2(4.0,2.0),ss=vec2(256.0);',
@@ -3654,34 +3668,29 @@ else init();
           '}'
         ].join('\n')
       });
-      scene.add(new THREE_t.Mesh(geometry, material));
-      renderer_t = new THREE_t.WebGLRenderer({ antialias: false });
-      renderer_t.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      container.appendChild(renderer_t.domElement);
+      scene.add(new T.Mesh(new T.PlaneBufferGeometry(2,2), material));
+      var renderer = new T.WebGLRenderer({ antialias: false });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
       function onResize() {
-        renderer_t.setSize(window.innerWidth, window.innerHeight);
-        uniforms_t.resolution.value.x = renderer_t.domElement.width;
-        uniforms_t.resolution.value.y = renderer_t.domElement.height;
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        uniforms.resolution.value.x = renderer.domElement.width;
+        uniforms.resolution.value.y = renderer.domElement.height;
       }
       onResize();
       window.addEventListener('resize', onResize);
-      function animate() {
-        animId = requestAnimationFrame(animate);
-        uniforms_t.time.value += 0.05;
-        renderer_t.render(scene, camera);
-      }
-      animate();
-      shaderInitialized = true;
+      (function animate() {
+        requestAnimationFrame(animate);
+        uniforms.time.value += 0.05;
+        renderer.render(scene, camera);
+      })();
+      shaderOk = true;
     }
-
-    if (window.THREE) {
-      setup();
-    } else {
-      var s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/89/three.min.js';
-      s.onload = setup;
-      document.head.appendChild(s);
-    }
+    if (window.THREE) { setup(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/89/three.min.js';
+    s.onload = setup;
+    document.head.appendChild(s);
   }
 
   function animateProgress() {
@@ -3700,61 +3709,23 @@ else init();
     requestAnimationFrame(tick);
   }
 
-  function openOverlay() {
+  function openTeaser() {
     initShader();
     overlay.classList.add('active');
     setTimeout(animateProgress, 300);
     document.body.style.overflow = 'hidden';
   }
 
-  function closeOverlay() {
+  function closeTeaser() {
     overlay.classList.remove('active');
     document.body.style.overflow = '';
   }
 
-  trigger.addEventListener('click', function (e) {
-    e.stopPropagation();
-    openOverlay();
-  });
-
-  overlay.addEventListener('click', closeOverlay);
+  var authorEl = document.getElementById('author');
+  if (authorEl) authorEl.addEventListener('click', openTeaser);
+  overlay.addEventListener('click', closeTeaser);
 })();
-// ===== END TEASER OVERLAY =====  
 </script>
-<!-- TEASER OVERLAY -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@200;300;700&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
-
-<div id="teaser-overlay">
-  <div id="t-canvas"></div>
-  <div class="t-vignette"></div>
-  <div class="t-scanlines"></div>
-
-  <header class="t-topbar">
-    <span class="t-brand">Crystal Motors — CRM System</span>
-    <div class="t-status"><div class="t-dot"></div><span>В разработке</span></div>
-  </header>
-
-  <div class="t-stage">
-    <div class="t-eyebrow">Новое поколение</div>
-    <h1 class="t-headline">CRM<br><b>Dashboard</b></h1>
-    <div class="t-pill"><div class="t-pill-dot"></div>Version 2.0</div>
-    <div class="t-divider"></div>
-    <p class="t-tagline">Переработанный интерфейс, расширенная аналитика и новые инструменты для команды продаж.</p>
-    <div class="t-soon">
-      <span class="t-soon-label">Готовность</span>
-      <div class="t-bar-wrap"><div class="t-bar" id="t-bar"></div></div>
-      <span class="t-pct" id="t-pct">0%</span>
-    </div>
-  </div>
-
-  <div class="t-close-hint">Нажмите в любом месте, чтобы закрыть</div>
-
-  <footer class="t-bottombar">
-    <span>© 2026 Crystal Motors<br>Бочаров Ю.С. / frankiej13</span>
-    <span style="text-align:right">frankiej13.github.io<br>/CRM-CM/</span>
-  </footer>
-</div>
-<!-- END TEASER OVERLAY -->
+<!-- ===== END TEASER OVERLAY ===== -->
 </body>
 </html>

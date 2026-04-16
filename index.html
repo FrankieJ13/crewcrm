@@ -1184,7 +1184,7 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
   position: relative; z-index: 2; pointer-events: none;
 }
 .links-photo-img-wrap:hover img {
-  transform: scale(1.5);
+  transform: scale(2.0);
   box-shadow: 0 12px 40px rgba(0,0,0,0.5);
   z-index: 100;
 }
@@ -2895,7 +2895,18 @@ function initLinksTab() {
     if (linksOpenInApp) {
       window.open(url, '_blank', 'noopener,noreferrer');
     } else {
-      window.open(url, '_system');
+      // WPF WebView2: передаём хосту, C# откроет Process.Start
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ type: 'openExternal', url: url }));
+        return;
+      }
+      // Capacitor Android
+      if (typeof window.Capacitor !== 'undefined') {
+        window.open(url, '_system');
+        return;
+      }
+      // Обычный браузер — иного способа нет
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
   }
 

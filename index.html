@@ -1173,14 +1173,22 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
   color: var(--txt3); margin-bottom: 10px; display: block;
 }
 .links-photo-img-wrap {
-  width: 100%; border-radius: var(--r, 6px); overflow: hidden;
-  border: 1px solid var(--line2); cursor: zoom-in; position: relative;
+  width: 100%; border-radius: var(--r, 6px);
+  border: 1px solid var(--line2);
+  position: relative; overflow: visible;
 }
 .links-photo-img-wrap img {
   width: 100%; height: auto; display: block;
-  transition: transform .2s;
+  border-radius: var(--r, 6px);
+  transform-origin: top center;
+  transition: transform .25s ease, box-shadow .25s ease;
+  position: relative; z-index: 2;
 }
-.links-photo-img-wrap:hover img { transform: scale(1.02); }
+.links-photo-img-wrap:hover img {
+  transform: scale(1.5);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  z-index: 100;
+}
 .links-placeholder-inner {
   text-align: center; padding: 40px 20px;
   color: var(--txt3); font-size: 13px;
@@ -1217,24 +1225,6 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
   font-weight: 500; color: var(--txt2); white-space: nowrap;
   min-width: 100px;
 }
-/* Lightbox */
-#links-lightbox {
-  display: none; position: fixed; inset: 0; z-index: 99998;
-  background: rgba(0,0,0,.88); cursor: zoom-out;
-  align-items: center; justify-content: center;
-}
-#links-lightbox.open { display: flex; }
-#links-lightbox img {
-  max-width: 92vw; max-height: 88vh;
-  border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,.6);
-  pointer-events: none;
-}
-#links-lightbox-close {
-  position: absolute; top: 20px; right: 24px;
-  font-size: 28px; color: rgba(255,255,255,.6);
-  cursor: pointer; line-height: 1; user-select: none;
-}
-#links-lightbox-close:hover { color: #fff; }
 /* ===== END LINKS TAB ===== */
 
 /* ===== TEASER OVERLAY ===== */
@@ -2876,10 +2866,6 @@ function renderLinksTab() {
   <div id="links-content">
     <div class="links-placeholder-inner">Выберите город из списка выше</div>
   </div>
-</div>
-<div id="links-lightbox">
-  <span id="links-lightbox-close">&#x2715;</span>
-  <img id="links-lightbox-img" src="" alt="">
 </div>`;
 }
 
@@ -2910,7 +2896,13 @@ function initLinksTab() {
     if (linksOpenInApp) {
       window.open(url, '_blank', 'noopener,noreferrer');
     } else {
-      window.open(url, '_system') || window.open(url, '_blank', 'noopener,noreferrer');
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_system';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
   }
 
@@ -2923,7 +2915,7 @@ function initLinksTab() {
     const photoHtml = d.photo
       ? `<div class="links-photo-wrap">
            <span class="links-photo-label">Фото автосалона — ${city}</span>
-           <div class="links-photo-img-wrap" id="links-photo-clickable">
+           <div class="links-photo-img-wrap">
              <img src="${d.photo}" alt="Фото автосалона ${city}" onerror="this.parentElement.innerHTML='<div class=\\'links-placeholder-inner\\'>Фото временно недоступно</div>'">
            </div>
          </div>`
@@ -2942,29 +2934,9 @@ function initLinksTab() {
         openLink(this.dataset.href);
       });
     });
-
-    const imgWrap = document.getElementById('links-photo-clickable');
-    if (imgWrap) {
-      imgWrap.addEventListener('click', function() {
-        const lb = document.getElementById('links-lightbox');
-        document.getElementById('links-lightbox-img').src = d.photo;
-        lb.classList.add('open');
-        document.body.style.overflow = 'hidden';
-      });
-    }
   }
 
   sel.addEventListener('change', function() { if (this.value) renderCity(this.value); });
-
-  const lb = document.getElementById('links-lightbox');
-  if (lb) {
-    lb.addEventListener('click', function(e) {
-      if (e.target === lb || e.target.id === 'links-lightbox-close') {
-        lb.classList.remove('open');
-        document.body.style.overflow = '';
-      }
-    });
-  }
 }
 
 function renderMangoTab() {

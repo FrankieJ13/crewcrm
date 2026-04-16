@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.json"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&family=Exo+2:wght@200;300;700&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet"/>
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
@@ -1120,9 +1120,8 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
 
 /* ===== LINKS TAB ===== */
 .links-wrap { padding: 4px 0 16px; }
-.links-city-select-wrap {
-  margin-bottom: 16px;
-}
+.links-top-row { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 16px; }
+.links-city-select-wrap { margin-bottom: 0; }
 .links-city-label {
   font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
   color: var(--txt3); margin-bottom: 8px; display: block;
@@ -1187,6 +1186,37 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
   color: var(--txt3); font-size: 13px;
   border: 1px dashed var(--line2); border-radius: var(--r, 6px);
 }
+/* Toggle */
+.links-mode-wrap {
+  display: flex; flex-direction: column; gap: 0; flex-shrink: 0;
+}
+.links-mode-toggle {
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer; user-select: none; padding: 10px 0;
+}
+.links-mode-track {
+  width: 36px; height: 20px; border-radius: 10px;
+  background: var(--line2); border: 1px solid var(--line2);
+  position: relative; flex-shrink: 0;
+  transition: background .2s, border-color .2s;
+}
+.links-mode-track.links-mode-on {
+  background: var(--acc-bg); border-color: var(--acc-bdr);
+}
+.links-mode-thumb {
+  position: absolute; top: 2px; left: 2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--txt3);
+  transition: transform .2s, background .2s;
+}
+.links-mode-track.links-mode-on .links-mode-thumb {
+  transform: translateX(16px); background: var(--acc);
+}
+.links-mode-label {
+  font-family: 'Golos Text', sans-serif; font-size: 13px;
+  font-weight: 500; color: var(--txt2); white-space: nowrap;
+  min-width: 100px;
+}
 /* Lightbox */
 #links-lightbox {
   display: none; position: fixed; inset: 0; z-index: 99998;
@@ -1206,6 +1236,57 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
 }
 #links-lightbox-close:hover { color: #fff; }
 /* ===== END LINKS TAB ===== */
+
+/* ===== TEASER OVERLAY ===== */
+#teaser-overlay {
+  display: none; position: fixed; inset: 0; z-index: 99999;
+  cursor: pointer; background: #000;
+}
+#teaser-overlay.active { display: block; }
+#teaser-overlay canvas { display: block; width: 100% !important; height: 100% !important; }
+#t-canvas { position: absolute; inset: 0; }
+.t-vignette {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.75) 100%),
+              linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.75) 100%);
+}
+.t-scanlines {
+  position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(to bottom, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px);
+}
+.t-topbar {
+  position: absolute; top: 0; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 28px 48px; font-family: 'JetBrains Mono', monospace;
+}
+.t-brand { font-size: 11px; font-weight: 300; letter-spacing: 0.22em; color: rgba(255,255,255,0.45); text-transform: uppercase; }
+.t-status { display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: 300; letter-spacing: 0.18em; color: rgba(255,255,255,0.35); text-transform: uppercase; }
+.t-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 8px #4ade80; animation: t-pulse 2.4s ease-in-out infinite; }
+@keyframes t-pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+.t-stage {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; color: #fff; font-family: 'Exo 2', sans-serif;
+  animation: t-fadeup 1.2s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes t-fadeup { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+.t-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 300; letter-spacing: 0.38em; color: rgba(255,255,255,0.4); text-transform: uppercase; margin-bottom: 28px; }
+.t-headline { font-size: clamp(52px, 8vw, 108px); font-weight: 200; letter-spacing: -0.01em; line-height: 0.9; text-transform: uppercase; }
+.t-headline b { font-weight: 700; }
+.t-pill { display: inline-flex; align-items: center; gap: 6px; margin-top: 20px; padding: 5px 14px; border: 1px solid rgba(255,255,255,0.18); border-radius: 2px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: rgba(255,255,255,0.55); }
+.t-pill-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.4); }
+.t-divider { width: 1px; height: 52px; background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.2), transparent); margin: 36px auto; }
+.t-tagline { font-size: clamp(13px,1.4vw,16px); font-weight: 300; letter-spacing: 0.06em; color: rgba(255,255,255,0.38); max-width: 440px; line-height: 1.8; }
+.t-soon { margin-top: 48px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.t-soon-label { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.4em; text-transform: uppercase; color: rgba(255,255,255,0.22); }
+.t-bar-wrap { width: 220px; height: 1px; background: rgba(255,255,255,0.1); overflow: hidden; }
+.t-bar { height: 100%; width: 0%; background: linear-gradient(to right, rgba(255,255,255,0.3), rgba(255,255,255,0.8)); transition: width 2.4s cubic-bezier(0.4,0,0.2,1); }
+.t-pct { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.2em; color: rgba(255,255,255,0.22); }
+.t-close-hint { position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.28em; text-transform: uppercase; color: rgba(255,255,255,0.15); white-space: nowrap; animation: t-blink 3s ease-in-out infinite; }
+@keyframes t-blink { 0%,100%{opacity:.15} 50%{opacity:.45} }
+.t-bottombar { position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; padding: 28px 48px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 300; letter-spacing: 0.16em; color: rgba(255,255,255,0.22); text-transform: uppercase; line-height: 1.8; }
+#author { cursor: pointer; }
+/* ===== END TEASER OVERLAY ===== */
 </style>
 </head>
 <body>
@@ -1584,15 +1665,16 @@ function onLogin() {
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
   autoRefreshTimer = setInterval(() => {
     if (!S.token) return;
-    S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null };
     const isPersonal = document.getElementById('scr-personal')?.classList.contains('on');
+    const activeTab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
+    if (!isPersonal && activeTab === 'instruktsii') return;
+    S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null };
     if (isPersonal) {
       const matched = findUserInSheet();
       if (matched) loadPersonal(matched);
     } else {
-      const tab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
-      if (tab === 'grafik') _schedWeek = null;
-      loadTab(tab);
+      if (activeTab === 'grafik') _schedWeek = null;
+      loadTab(activeTab);
     }
   }, AUTO_REFRESH_INTERVAL);
 }
@@ -2743,6 +2825,7 @@ function setFaqTab(tab) {
 }
 
 // ==================== LINKS TAB ====================
+let linksOpenInApp = true; // true = в новом окне приложения, false = системный браузер
 const LINKS_DATA = {
   "Барнаул":     { autocred:"https://barnaul.autocred1.ru/", autohouse:"https://barnaul.autohouse24.ru/", crystal:"https://barnaul.crystal-motors.ru/avtomobili_s_probegom", drom:"https://auto.drom.ru/crystalmotors-barnaul/", autoru:"https://auto.ru/diler/cars/all/crystal_motors_barnaul/", avito:"https://www.avito.ru/brands/i280950426/all/avtomobili?sellerId=e149edb207990686ae688c910d846ab0", gis:"https://2gis.ru/barnaul/geo/563585608610081", select:"https://selectauto24.ru/barnaul", addr:"Правобережный тракт 26", photo:"https://i.ibb.co/Xfk4QxpC/image.jpg" },
   "Кемерово":    { autocred:"https://kemerovo.autocred1.ru/", autohouse:"https://kemerovo.autohouse24.ru/", crystal:"https://kemerovo.crystal-motors.ru/avtomobili_s_probegom", drom:"https://auto.drom.ru/crystalmotors_kemerovo/", autoru:"https://auto.ru/diler/cars/all/crystal_motors_kemerovo/", avito:"https://www.avito.ru/brands/crystal-motors-kemerovo/all/avtomobili?sellerId=855dfcc5d6b5a0aa07927b9db17e5347", gis:"https://2gis.ru/kemerovo/firm/70000001057296192", select:"https://selectauto24.ru/kemerovo", addr:"Тухачевского 64", photo:"https://i.ibb.co/35DvZ0fg/image.jpg" },
@@ -2772,12 +2855,23 @@ function renderLinksTab() {
   const opts = Object.keys(LINKS_DATA).map(c => `<option value="${c}">${c}</option>`).join('');
   return `
 <div class="links-wrap">
-  <div class="links-city-select-wrap">
-    <span class="links-city-label">Выберите город</span>
-    <select class="links-city-select" id="links-city-sel">
-      <option value="" disabled selected>— Выберите город —</option>
-      ${opts}
-    </select>
+  <div class="links-top-row">
+    <div class="links-city-select-wrap" style="flex:1">
+      <span class="links-city-label">Выберите город</span>
+      <select class="links-city-select" id="links-city-sel">
+        <option value="" disabled selected>— Выберите город —</option>
+        ${opts}
+      </select>
+    </div>
+    <div class="links-mode-wrap">
+      <span class="links-city-label">Открывать в</span>
+      <div class="links-mode-toggle" id="links-mode-toggle" title="Переключить режим открытия">
+        <div class="links-mode-track">
+          <div class="links-mode-thumb"></div>
+        </div>
+        <span class="links-mode-label" id="links-mode-label">В приложении</span>
+      </div>
+    </div>
   </div>
   <div id="links-content">
     <div class="links-placeholder-inner">Выберите город из списка выше</div>
@@ -2791,12 +2885,41 @@ function renderLinksTab() {
 
 function initLinksTab() {
   const sel = document.getElementById('links-city-sel');
+  const toggle = document.getElementById('links-mode-toggle');
+  const modeLabel = document.getElementById('links-mode-label');
   if (!sel) return;
-  sel.addEventListener('change', function() {
-    const city = this.value;
+
+  function updateToggleUI() {
+    const track = toggle.querySelector('.links-mode-track');
+    if (linksOpenInApp) {
+      track.classList.add('links-mode-on');
+      modeLabel.textContent = 'В приложении';
+    } else {
+      track.classList.remove('links-mode-on');
+      modeLabel.textContent = 'В браузере';
+    }
+  }
+  updateToggleUI();
+
+  toggle.addEventListener('click', function() {
+    linksOpenInApp = !linksOpenInApp;
+    updateToggleUI();
+  });
+
+  function openLink(url) {
+    if (linksOpenInApp) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else {
+      window.open(url, '_system') || window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  }
+
+  function renderCity(city) {
     const d = LINKS_DATA[city];
     if (!d) return;
-    const btns = LINKS_BTNS.map(b => `<a class="links-btn" href="${d[b.key]}" target="_blank" rel="noopener noreferrer">${b.label}</a>`).join('');
+    const btns = LINKS_BTNS.map(b =>
+      `<button class="links-btn" data-href="${d[b.key]}">${b.label}</button>`
+    ).join('');
     const photoHtml = d.photo
       ? `<div class="links-photo-wrap">
            <span class="links-photo-label">Фото автосалона — ${city}</span>
@@ -2812,7 +2935,14 @@ function initLinksTab() {
       </div>
       <div class="links-btns-grid">${btns}</div>
       ${photoHtml}`;
-    // lightbox
+
+    document.querySelectorAll('.links-btn[data-href]').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        openLink(this.dataset.href);
+      });
+    });
+
     const imgWrap = document.getElementById('links-photo-clickable');
     if (imgWrap) {
       imgWrap.addEventListener('click', function() {
@@ -2822,8 +2952,10 @@ function initLinksTab() {
         document.body.style.overflow = 'hidden';
       });
     }
-  });
-  // lightbox close
+  }
+
+  sel.addEventListener('change', function() { if (this.value) renderCity(this.value); });
+
   const lb = document.getElementById('links-lightbox');
   if (lb) {
     lb.addEventListener('click', function(e) {
@@ -3670,5 +3802,120 @@ else init();
     window.addEventListener("load", startMatrixAnimation);
 })();
 </script>
+
+<!-- ===== TEASER OVERLAY ===== -->
+<div id="teaser-overlay">
+  <div id="t-canvas"></div>
+  <div class="t-vignette"></div>
+  <div class="t-scanlines"></div>
+  <header class="t-topbar">
+    <span class="t-brand">Crystal Motors — CRM System</span>
+    <div class="t-status"><div class="t-dot"></div><span>В разработке</span></div>
+  </header>
+  <div class="t-stage">
+    <div class="t-eyebrow">Новое поколение</div>
+    <h1 class="t-headline">CRM<br><b>Dashboard</b></h1>
+    <div class="t-pill"><div class="t-pill-dot"></div>Version 2.0</div>
+    <div class="t-divider"></div>
+    <p class="t-tagline">Переработанный интерфейс, расширенная аналитика и новые инструменты для команды продаж.</p>
+    <div class="t-soon">
+      <span class="t-soon-label">Готовность</span>
+      <div class="t-bar-wrap"><div class="t-bar" id="t-bar"></div></div>
+      <span class="t-pct" id="t-pct">0%</span>
+    </div>
+  </div>
+  <div class="t-close-hint">Нажмите в любом месте, чтобы закрыть</div>
+  <footer class="t-bottombar">
+    <span>© 2026 Crystal Motors<br>Бочаров Ю.С. / frankiej13</span>
+    <span style="text-align:right">frankiej13.github.io<br>/CRM-CM/</span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var overlay  = document.getElementById('teaser-overlay');
+  var tBar     = document.getElementById('t-bar');
+  var tPct     = document.getElementById('t-pct');
+  var shaderOk = false;
+
+  function initShader() {
+    if (shaderOk) return;
+    function setup() {
+      var T = window.THREE;
+      var container = document.getElementById('t-canvas');
+      var camera = new T.Camera(); camera.position.z = 1;
+      var scene = new T.Scene();
+      var uniforms = {
+        time:       { type: 'f',  value: 1.0 },
+        resolution: { type: 'v2', value: new T.Vector2() }
+      };
+      var material = new T.ShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: 'void main(){gl_Position=vec4(position,1.0);}',
+        fragmentShader: [
+          'precision highp float;',
+          'uniform vec2 resolution; uniform float time;',
+          'float rnd(float x){return fract(sin(x)*1e4);}',
+          'void main(){',
+          '  vec2 uv=(gl_FragCoord.xy*2.0-resolution.xy)/min(resolution.x,resolution.y);',
+          '  vec2 ms=vec2(4.0,2.0),ss=vec2(256.0);',
+          '  uv.x=floor(uv.x*ss.x/ms.x)/(ss.x/ms.x);',
+          '  uv.y=floor(uv.y*ss.y/ms.y)/(ss.y/ms.y);',
+          '  float t=time*0.06+rnd(uv.x)*0.4, lw=0.0008;',
+          '  vec3 c=vec3(0.0);',
+          '  for(int j=0;j<3;j++) for(int i=0;i<5;i++)',
+          '    c[j]+=lw*float(i*i)/abs(fract(t-0.01*float(j)+float(i)*0.01)*1.0-length(uv));',
+          '  gl_FragColor=vec4(c[2],c[1],c[0],1.0);',
+          '}'
+        ].join('\n')
+      });
+      scene.add(new T.Mesh(new T.PlaneBufferGeometry(2,2), material));
+      var renderer = new T.WebGLRenderer({ antialias: false });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+      function onResize() {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        uniforms.resolution.value.x = renderer.domElement.width;
+        uniforms.resolution.value.y = renderer.domElement.height;
+      }
+      onResize();
+      window.addEventListener('resize', onResize);
+      (function animate() {
+        requestAnimationFrame(animate);
+        uniforms.time.value += 0.05;
+        renderer.render(scene, camera);
+      })();
+      shaderOk = true;
+    }
+    if (window.THREE) { setup(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/89/three.min.js';
+    s.onload = setup;
+    document.head.appendChild(s);
+  }
+
+  function animateProgress() {
+    tBar.style.width = '0%'; tPct.textContent = '0%';
+    var target = 13, duration = 2400, start = null;
+    function tick(now) {
+      if (!start) start = now;
+      var p = Math.min((now - start) / duration, 1);
+      var ease = 1 - Math.pow(1 - p, 3);
+      var val = Math.round(ease * target);
+      tBar.style.width = val + '%'; tPct.textContent = val + '%';
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function openTeaser() { initShader(); overlay.classList.add('active'); setTimeout(animateProgress, 300); document.body.style.overflow = 'hidden'; }
+  function closeTeaser() { overlay.classList.remove('active'); document.body.style.overflow = ''; }
+
+  var authorEl = document.getElementById('author');
+  if (authorEl) authorEl.addEventListener('click', openTeaser);
+  overlay.addEventListener('click', closeTeaser);
+})();
+</script>
+<!-- ===== END TEASER OVERLAY ===== -->
 </body>
 </html>

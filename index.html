@@ -1120,8 +1120,7 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
 
 /* ===== LINKS TAB ===== */
 .links-wrap { padding: 4px 0 16px; }
-.links-top-row { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 16px; }
-.links-city-select-wrap { margin-bottom: 0; }
+.links-city-select-wrap { margin-bottom: 16px; }
 .links-city-label {
   font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
   color: var(--txt3); margin-bottom: 8px; display: block;
@@ -1192,37 +1191,6 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
   text-align: center; padding: 40px 20px;
   color: var(--txt3); font-size: 13px;
   border: 1px dashed var(--line2); border-radius: var(--r, 6px);
-}
-/* Toggle */
-.links-mode-wrap {
-  display: flex; flex-direction: column; gap: 0; flex-shrink: 0;
-}
-.links-mode-toggle {
-  display: flex; align-items: center; gap: 8px;
-  cursor: pointer; user-select: none; padding: 10px 0;
-}
-.links-mode-track {
-  width: 36px; height: 20px; border-radius: 10px;
-  background: var(--line2); border: 1px solid var(--line2);
-  position: relative; flex-shrink: 0;
-  transition: background .2s, border-color .2s;
-}
-.links-mode-track.links-mode-on {
-  background: var(--acc-bg); border-color: var(--acc-bdr);
-}
-.links-mode-thumb {
-  position: absolute; top: 2px; left: 2px;
-  width: 14px; height: 14px; border-radius: 50%;
-  background: var(--txt3);
-  transition: transform .2s, background .2s;
-}
-.links-mode-track.links-mode-on .links-mode-thumb {
-  transform: translateX(16px); background: var(--acc);
-}
-.links-mode-label {
-  font-family: 'Golos Text', sans-serif; font-size: 13px;
-  font-weight: 500; color: var(--txt2); white-space: nowrap;
-  min-width: 100px;
 }
 /* ===== END LINKS TAB ===== */
 
@@ -2814,7 +2782,6 @@ function setFaqTab(tab) {
 }
 
 // ==================== LINKS TAB ====================
-let linksOpenInApp = true; // true = в новом окне приложения, false = системный браузер
 const LINKS_DATA = {
   "Барнаул":     { autocred:"https://barnaul.autocred1.ru/", autohouse:"https://barnaul.autohouse24.ru/", crystal:"https://barnaul.crystal-motors.ru/avtomobili_s_probegom", drom:"https://auto.drom.ru/crystalmotors-barnaul/", autoru:"https://auto.ru/diler/cars/all/crystal_motors_barnaul/", avito:"https://www.avito.ru/brands/i280950426/all/avtomobili?sellerId=e149edb207990686ae688c910d846ab0", gis:"https://2gis.ru/barnaul/geo/563585608610081", select:"https://selectauto24.ru/barnaul", addr:"Правобережный тракт 26", photo:"https://i.ibb.co/Xfk4QxpC/image.jpg" },
   "Кемерово":    { autocred:"https://kemerovo.autocred1.ru/", autohouse:"https://kemerovo.autohouse24.ru/", crystal:"https://kemerovo.crystal-motors.ru/avtomobili_s_probegom", drom:"https://auto.drom.ru/crystalmotors_kemerovo/", autoru:"https://auto.ru/diler/cars/all/crystal_motors_kemerovo/", avito:"https://www.avito.ru/brands/crystal-motors-kemerovo/all/avtomobili?sellerId=855dfcc5d6b5a0aa07927b9db17e5347", gis:"https://2gis.ru/kemerovo/firm/70000001057296192", select:"https://selectauto24.ru/kemerovo", addr:"Тухачевского 64", photo:"https://i.ibb.co/35DvZ0fg/image.jpg" },
@@ -2844,23 +2811,12 @@ function renderLinksTab() {
   const opts = Object.keys(LINKS_DATA).map(c => `<option value="${c}">${c}</option>`).join('');
   return `
 <div class="links-wrap">
-  <div class="links-top-row">
-    <div class="links-city-select-wrap" style="flex:1">
-      <span class="links-city-label">Выберите город</span>
-      <select class="links-city-select" id="links-city-sel">
-        <option value="" disabled selected>— Выберите город —</option>
-        ${opts}
-      </select>
-    </div>
-    <div class="links-mode-wrap">
-      <span class="links-city-label">Открывать в</span>
-      <div class="links-mode-toggle" id="links-mode-toggle" title="Переключить режим открытия">
-        <div class="links-mode-track">
-          <div class="links-mode-thumb"></div>
-        </div>
-        <span class="links-mode-label" id="links-mode-label">В приложении</span>
-      </div>
-    </div>
+  <div class="links-city-select-wrap">
+    <span class="links-city-label">Выберите город</span>
+    <select class="links-city-select" id="links-city-sel">
+      <option value="" disabled selected>— Выберите город —</option>
+      ${opts}
+    </select>
   </div>
   <div id="links-content">
     <div class="links-placeholder-inner">Выберите город из списка выше</div>
@@ -2870,51 +2826,13 @@ function renderLinksTab() {
 
 function initLinksTab() {
   const sel = document.getElementById('links-city-sel');
-  const toggle = document.getElementById('links-mode-toggle');
-  const modeLabel = document.getElementById('links-mode-label');
   if (!sel) return;
-
-  function updateToggleUI() {
-    const track = toggle.querySelector('.links-mode-track');
-    if (linksOpenInApp) {
-      track.classList.add('links-mode-on');
-      modeLabel.textContent = 'В приложении';
-    } else {
-      track.classList.remove('links-mode-on');
-      modeLabel.textContent = 'В браузере';
-    }
-  }
-  updateToggleUI();
-
-  toggle.addEventListener('click', function() {
-    linksOpenInApp = !linksOpenInApp;
-    updateToggleUI();
-  });
-
-  function openLink(url) {
-    if (linksOpenInApp) {
-      window.open(url, '_blank', 'noopener,noreferrer');
-    } else {
-      // WPF WebView2: передаём хосту, C# откроет Process.Start
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ type: 'openExternal', url: url }));
-        return;
-      }
-      // Capacitor Android
-      if (typeof window.Capacitor !== 'undefined') {
-        window.open(url, '_system');
-        return;
-      }
-      // Обычный браузер — иного способа нет
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
-  }
 
   function renderCity(city) {
     const d = LINKS_DATA[city];
     if (!d) return;
     const btns = LINKS_BTNS.map(b =>
-      `<button class="links-btn" data-href="${d[b.key]}">${b.label}</button>`
+      `<a class="links-btn" href="${d[b.key]}" target="_blank" rel="noopener noreferrer">${b.label}</a>`
     ).join('');
     const photoHtml = d.photo
       ? `<div class="links-photo-wrap">
@@ -2931,13 +2849,6 @@ function initLinksTab() {
       </div>
       <div class="links-btns-grid">${btns}</div>
       ${photoHtml}`;
-
-    document.querySelectorAll('.links-btn[data-href]').forEach(btn => {
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        openLink(this.dataset.href);
-      });
-    });
 
     const wrap = document.getElementById('links-photo-wrap');
     if (wrap) {

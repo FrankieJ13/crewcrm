@@ -1180,9 +1180,8 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
 .links-photo-img-wrap img {
   width: 100%; height: auto; display: block;
   border-radius: var(--r, 6px);
-  transform-origin: top center;
-  transition: transform .25s ease, box-shadow .25s ease;
-  position: relative; z-index: 2;
+  transition: transform .15s ease, box-shadow .15s ease;
+  position: relative; z-index: 2; pointer-events: none;
 }
 .links-photo-img-wrap:hover img {
   transform: scale(1.5);
@@ -2896,13 +2895,7 @@ function initLinksTab() {
     if (linksOpenInApp) {
       window.open(url, '_blank', 'noopener,noreferrer');
     } else {
-      const a = document.createElement('a');
-      a.href = url;
-      a.target = '_system';
-      a.rel = 'noopener noreferrer';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      window.open(url, '_system');
     }
   }
 
@@ -2915,7 +2908,7 @@ function initLinksTab() {
     const photoHtml = d.photo
       ? `<div class="links-photo-wrap">
            <span class="links-photo-label">Фото автосалона — ${city}</span>
-           <div class="links-photo-img-wrap">
+           <div class="links-photo-img-wrap" id="links-photo-wrap">
              <img src="${d.photo}" alt="Фото автосалона ${city}" onerror="this.parentElement.innerHTML='<div class=\\'links-placeholder-inner\\'>Фото временно недоступно</div>'">
            </div>
          </div>`
@@ -2934,6 +2927,20 @@ function initLinksTab() {
         openLink(this.dataset.href);
       });
     });
+
+    const wrap = document.getElementById('links-photo-wrap');
+    if (wrap) {
+      const img = wrap.querySelector('img');
+      wrap.addEventListener('mousemove', function(e) {
+        const r = wrap.getBoundingClientRect();
+        const x = ((e.clientX - r.left) / r.width  * 100).toFixed(1);
+        const y = ((e.clientY - r.top)  / r.height * 100).toFixed(1);
+        img.style.transformOrigin = `${x}% ${y}%`;
+      });
+      wrap.addEventListener('mouseleave', function() {
+        img.style.transformOrigin = 'center center';
+      });
+    }
   }
 
   sel.addEventListener('change', function() { if (this.value) renderCity(this.value); });

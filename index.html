@@ -2153,10 +2153,10 @@ function renderOtchet() {
 
   const ostPlan = Math.max(0, planTotal - allVis);
 
-  // ПРОГНОЗ ШТ
+  // ПРОГНОЗ ШТ — прогноз визитов (CRM + ТЛ) к концу месяца при текущем темпе
   let progVisShт = '—';
-  if (dp && planTotal > 0) {
-    progVisShт = Math.round(planTotal / dim * dp);
+  if (dp && dp > 0) {
+    progVisShт = Math.round((vis800sum + vis1200sum) / dp * dim);
   }
 
   // СЕГОДНЯ и В КСО — из листа ВИЗИТЫ{suffix}

@@ -1028,15 +1028,6 @@ body.light .income-modal-body { background:rgba(255,255,255,0.6); }
 #sal-info-modal .si-note {
   font-size:10px; color:var(--txt3); margin-top:6px; line-height:1.5;
 }
-/* БЕЗ КОЭФФИЦИЕНТОВ section */
-.income-nokoef-sep {
-  display:flex; align-items:center; gap:8px;
-  margin:12px 0 8px; font-size:8px; font-weight:700;
-  letter-spacing:.1em; text-transform:uppercase; color:var(--txt3);
-}
-.income-nokoef-sep::before, .income-nokoef-sep::after {
-  content:''; flex:1; height:1px; background:var(--line2);
-}
 
 .income-total-banner {
   text-align:center; padding:12px; margin-bottom:14px;
@@ -1509,11 +1500,11 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
       <div class="si-row"><span class="si-key">Участие</span><span class="si-val">Только у включённых в котёл</span></div>
 
       <div class="si-sec">Коэффициент (×К)</div>
-      <div class="si-row"><span class="si-key">×0.8</span><span class="si-val">Выполнение &lt; 60% плана</span></div>
-      <div class="si-row"><span class="si-key">×0.9</span><span class="si-val">60–79%</span></div>
-      <div class="si-row"><span class="si-key">×1.0</span><span class="si-val">80–99%</span></div>
-      <div class="si-row"><span class="si-key">×1.1</span><span class="si-val">100–119%</span></div>
-      <div class="si-row"><span class="si-key">×1.2</span><span class="si-val">≥ 120% плана</span></div>
+      <div class="si-row"><span class="si-key">×0.8</span><span class="si-val">Менее 80% плана</span></div>
+      <div class="si-row"><span class="si-key">×0.9</span><span class="si-val">80% — не более 100%</span></div>
+      <div class="si-row"><span class="si-key">×1.0</span><span class="si-val">100% — 130% включительно</span></div>
+      <div class="si-row"><span class="si-key">×1.1</span><span class="si-val">Более 130% и до 150% включ.</span></div>
+      <div class="si-row"><span class="si-key">×1.2</span><span class="si-val">Более 150% плана</span></div>
       <div class="si-note">Коэффициент применяется к сумме всей премии (CRM + ТЛ + Котёл), но не к окладу.</div>
 
       <div class="si-sec">Фактический доход</div>
@@ -2592,7 +2583,7 @@ function renderDohod() {
     const okladRow = oklad > 0 ? `<div class="income-sec-title">Оклад</div>${subtotal(okladLbl, oklad)}` : '';
     const kotelRow = (d.detail.inFund && kotel > 0) ? `<div class="income-sec-title">Котёл</div><div style="font-size:10px;color:var(--txt2);margin-bottom:6px">Участников котла: ${fundCount}</div>${subtotal('Доля котла', kotel)}` : '';
     const noKoefTotal = Math.round(oklad + crmSum + warmSum + kotel);
-    const noKoefRow = `<div class="income-nokoef-sep">Без коэффициентов</div>${subtotal('Оклад 100% + Премия + Котёл', noKoefTotal)}`;
+    const noKoefRow = `<div class="income-sec-title">Без коэффициентов</div>${subtotal('Оклад 100% + Премия + Котёл', noKoefTotal)}`;
 
     el.innerHTML = `
       <div class="w" style="padding-top:16px">
@@ -3410,9 +3401,9 @@ function parseRate(v) {
   return parseFloat(String(v||'0').replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
 }
 function getKoef(pct) {
-  if (pct < 80)  return 0.8;
-  if (pct < 100) return 0.9;
-  if (pct < 130) return 1.0;
+  if (pct < 80)   return 0.8;
+  if (pct < 100)  return 0.9;
+  if (pct <= 130) return 1.0;
   if (pct <= 150) return 1.1;
   return 1.2;
 }
@@ -3730,7 +3721,7 @@ function openDozhimIncomeModal(btn) {
     ${premiumBadges}
     ${subtotal('Итого премия', Math.round(premium - kotel))}
     ${kotelRow}
-    <div class="income-nokoef-sep">Без коэффициентов</div>
+    <div class="income-sec-title">Без коэффициентов</div>
     ${subtotal('Оклад 100% + Премия + Котёл', noKoefTotalDz)}
     <div class="income-sec-title">Итого</div>
     ${subtotal('Фактический доход', Math.round(n(d.fact?.total)))}
@@ -3761,7 +3752,7 @@ function openIncomeDetail(btn) {
   const okladRow = oklad > 0 ? `<div class="income-sec-title">Оклад</div>${subtotal(d.workedR != null ? `Оклад (${d.workedR}/${d.totalR} дн.)` : 'Оклад', oklad)}` : '';
   const kotelRow = (d.inFund && kotel > 0) ? `<div class="income-sec-title">Котёл</div><div style="font-size:10px;color:var(--txt2);margin-bottom:6px">Участников котла: ${fundCount}</div>${subtotal('Доля котла', kotel)}` : '';
   const noKoefTotal = Math.round(oklad + crmSum + warmSum + kotel);
-  const noKoefRow = `<div class="income-nokoef-sep">Без коэффициентов</div>${subtotal('Оклад 100% + Премия + Котёл', noKoefTotal)}`;
+  const noKoefRow = `<div class="income-sec-title">Без коэффициентов</div>${subtotal('Оклад 100% + Премия + Котёл', noKoefTotal)}`;
   const factKoef = d.fact ? d.fact.koef : null;
   const progKoef = d.prognoz ? d.prognoz.koef : null;
   const okladFormula = d.workedR != null

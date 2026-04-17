@@ -965,7 +965,79 @@ body.light .income-modal-body { background:rgba(255,255,255,0.6); }
   transition:all .15s; flex-shrink:0; line-height:1;
 }
 .income-modal-close:hover { border-color:var(--red); color:var(--red) }
-.income-modal-content { padding:14px 16px; }
+.income-modal-info-btn {
+  width:28px; height:28px; border-radius:50%;
+  border:1px solid var(--line2); background:var(--bg3);
+  color:var(--txt2); font-size:13px; font-weight:700; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .15s; flex-shrink:0; line-height:1; margin-right:6px;
+  font-family:'Unbounded',sans-serif;
+}
+.income-modal-info-btn:hover { border-color:var(--acc); color:var(--acc) }
+.income-modal-hdr-btns { display:flex; align-items:center; gap:0; }
+/* Salary info overlay */
+#sal-info-overlay {
+  display:none; position:fixed; inset:0; z-index:10001;
+  background:rgba(0,0,0,.6); align-items:center; justify-content:center;
+}
+#sal-info-overlay.open { display:flex; }
+#sal-info-modal {
+  background:var(--bg2); border:1px solid var(--line2);
+  border-radius:var(--r2); width:min(420px,94vw);
+  max-height:82vh; display:flex; flex-direction:column;
+  overflow:hidden;
+}
+#sal-info-modal .si-hdr {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 16px; border-bottom:1px solid var(--line);
+  background:var(--bg2); position:sticky; top:0;
+}
+#sal-info-modal .si-title {
+  font-family:'Unbounded',sans-serif; font-size:10px; font-weight:800; color:var(--txt);
+}
+#sal-info-modal .si-close {
+  width:26px; height:26px; border-radius:50%;
+  border:1px solid var(--line2); background:var(--bg3);
+  color:var(--txt2); font-size:16px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; line-height:1;
+}
+#sal-info-modal .si-close:hover { border-color:var(--red); color:var(--red) }
+#sal-info-modal .si-body {
+  overflow-y:auto; padding:14px 16px; font-size:12px;
+  color:var(--txt2); line-height:1.65;
+}
+#sal-info-modal .si-sec {
+  font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--txt3); margin:14px 0 6px; padding-bottom:4px;
+  border-bottom:1px solid var(--line);
+}
+#sal-info-modal .si-sec:first-child { margin-top:0; }
+#sal-info-modal .si-row {
+  display:flex; justify-content:space-between; gap:8px;
+  padding:4px 0; border-bottom:1px solid var(--line);
+  font-size:11px;
+}
+#sal-info-modal .si-row:last-child { border-bottom:none; }
+#sal-info-modal .si-key { color:var(--txt2); }
+#sal-info-modal .si-val { color:var(--txt); font-weight:500; text-align:right; flex-shrink:0; max-width:55%; }
+#sal-info-modal .si-formula {
+  background:var(--bg3); border-radius:4px; padding:8px 10px;
+  font-size:11px; color:var(--txt); margin:6px 0;
+  font-family:'Courier New',monospace; line-height:1.5;
+}
+#sal-info-modal .si-note {
+  font-size:10px; color:var(--txt3); margin-top:6px; line-height:1.5;
+}
+/* БЕЗ КОЭФФИЦИЕНТОВ section */
+.income-nokoef-sep {
+  display:flex; align-items:center; gap:8px;
+  margin:12px 0 8px; font-size:8px; font-weight:700;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--txt3);
+}
+.income-nokoef-sep::before, .income-nokoef-sep::after {
+  content:''; flex:1; height:1px; background:var(--line2);
+}
+
 .income-total-banner {
   text-align:center; padding:12px; margin-bottom:14px;
   border-radius:var(--r); background:var(--acc-bg); border:1px solid var(--acc-bdr);
@@ -1394,10 +1466,67 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
   <div class="income-modal" id="income-modal">
     <div class="income-modal-hdr">
       <div class="income-modal-title">Детализация дохода</div>
-      <button class="income-modal-close" onclick="closeIncomeDetail()">×</button>
+      <div class="income-modal-hdr-btns">
+        <button class="income-modal-info-btn" onclick="openSalInfo()" title="Как считается зарплата">i</button>
+        <button class="income-modal-close" onclick="closeIncomeDetail()">×</button>
+      </div>
     </div>
     <div class="income-modal-body">
       <div class="income-modal-content" id="income-modal-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Salary instruction modal -->
+<div id="sal-info-overlay" onclick="if(event.target===this)closeSalInfo()">
+  <div id="sal-info-modal">
+    <div class="si-hdr">
+      <span class="si-title">Как считается зарплата</span>
+      <button class="si-close" onclick="closeSalInfo()">×</button>
+    </div>
+    <div class="si-body">
+      <div class="si-sec">Формула</div>
+      <div class="si-formula">Зарплата = Оклад + (Премия × Коэффициент)</div>
+      <div class="si-note">Оклад начисляется пропорционально отработанным рабочим дням.<br>Премия = CRM + Тёплые лиды + Доля котла.</div>
+
+      <div class="si-sec">Оклад</div>
+      <div class="si-row"><span class="si-key">База</span><span class="si-val">Фиксированный оклад по ставке</span></div>
+      <div class="si-row"><span class="si-key">Расчёт</span><span class="si-val">Оклад ÷ раб.дней × отработано</span></div>
+
+      <div class="si-sec">Премия CRM (лиды 8:00–17:00)</div>
+      <div class="si-row"><span class="si-key">Визит</span><span class="si-val">По ставке за визит</span></div>
+      <div class="si-row"><span class="si-key">Кредит / Наличка</span><span class="si-val">По ставке за сделку</span></div>
+      <div class="si-row"><span class="si-key">Обмен / Комиссия</span><span class="si-val">По ставке</span></div>
+      <div class="si-row"><span class="si-key">Задаток</span><span class="si-val">По ставке за задаток</span></div>
+
+      <div class="si-sec">Премия Тёплые лиды (12:00–20:00)</div>
+      <div class="si-row"><span class="si-key">Визит / Кредит / Наличка</span><span class="si-val">По ставке тёплых лидов</span></div>
+      <div class="si-row"><span class="si-key">Обмен / Комиссия</span><span class="si-val">По ставке тёплых лидов</span></div>
+
+      <div class="si-sec">Котёл</div>
+      <div class="si-row"><span class="si-key">Что это</span><span class="si-val">Общий фонд отдела, делится поровну</span></div>
+      <div class="si-row"><span class="si-key">Доля</span><span class="si-val">Котёл ÷ кол-во участников</span></div>
+      <div class="si-row"><span class="si-key">Участие</span><span class="si-val">Только у включённых в котёл</span></div>
+
+      <div class="si-sec">Коэффициент (×К)</div>
+      <div class="si-row"><span class="si-key">×0.8</span><span class="si-val">Выполнение &lt; 60% плана</span></div>
+      <div class="si-row"><span class="si-key">×0.9</span><span class="si-val">60–79%</span></div>
+      <div class="si-row"><span class="si-key">×1.0</span><span class="si-val">80–99%</span></div>
+      <div class="si-row"><span class="si-key">×1.1</span><span class="si-val">100–119%</span></div>
+      <div class="si-row"><span class="si-key">×1.2</span><span class="si-val">≥ 120% плана</span></div>
+      <div class="si-note">Коэффициент применяется к сумме всей премии (CRM + ТЛ + Котёл), но не к окладу.</div>
+
+      <div class="si-sec">Фактический доход</div>
+      <div class="si-formula">Оклад + (Премия × К_факт)</div>
+      <div class="si-note">К_факт рассчитан по текущему % выполнения плана на сегодня.</div>
+
+      <div class="si-sec">Прогнозируемый доход</div>
+      <div class="si-formula">Оклад + (Премия × К_прогноз)</div>
+      <div class="si-note">К_прогноз рассчитан исходя из текущего темпа: если до конца месяца ничего не изменится, ожидаемый % выполнения определяет итоговый коэффициент.</div>
+
+      <div class="si-sec">Без коэффициентов</div>
+      <div class="si-formula">Оклад (100%) + Премия CRM + Премия ТЛ + Доля котла</div>
+      <div class="si-note">Базовый расчёт без умножения на коэффициент (К=1). Показывает «чистую» заработанную сумму до применения поправки за выполнение плана.</div>
     </div>
   </div>
 </div>
@@ -1432,6 +1561,7 @@ function getSheetNames(suffix) {
     stavki:      'СТАВКИ'  + suffix,
     d_stavki:    'Д_СТАВКИ'+ suffix,
     instruktsii: 'ИНСТРУКЦИИ',
+    vizity:      'ВИЗИТЫ'   + suffix,
   };
 }
 
@@ -1447,7 +1577,7 @@ const S = {
   token:null,
   user:null,
   usersData:null,
-  data:{ otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null },
+  data:{ otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null },
   reportTab: 'dept',
   dohodTab: 'crm',
   faqTab: 'instr'
@@ -1648,7 +1778,7 @@ function onLogin() {
     const isPersonal = document.getElementById('scr-personal')?.classList.contains('on');
     const activeTab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
     if (!isPersonal && activeTab === 'instruktsii') return;
-    S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null };
+    S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null };
     if (isPersonal) {
       const matched = findUserInSheet();
       if (matched) loadPersonal(matched);
@@ -1664,7 +1794,7 @@ function onLogout() {
   if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
   if (S.token) google.accounts.oauth2.revoke(S.token, ()=>{});
   S.token=null; S.user=null; S.usersData=null;
-  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null };
+  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null };
   ['crm_tok','crm_exp','crm_user'].forEach(k => localStorage.removeItem(k));
   document.getElementById('user-wrap').style.display = 'none';
   document.getElementById('btn-out').style.display   = 'none';
@@ -1754,7 +1884,7 @@ function setCurrentMonth(newSuffix) {
   currentSuffix = newSuffix;
   updateBadge();
   SHEETS = getSheetNames(currentSuffix);
-  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null };
+  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null };
   _schedWeek = null;
   const activeTab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
   loadTab(activeTab);
@@ -1803,6 +1933,12 @@ async function loadTab(tab) {
         S.data.cnvrs = data;
         renderTab('otchet');
       }).catch(() => { S.data.cnvrs = []; });
+    }
+    if (!S.data.vizity) {
+      api(SHEETS.vizity, 'A:E').then(data => {
+        S.data.vizity = data;
+        if (S.reportTab === 'dept') renderOtchet();
+      }).catch(() => { S.data.vizity = []; });
     }
     renderTab('otchet');
     return;
@@ -1882,7 +2018,7 @@ function reloadCurrent() {
   const tab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
   if (tab === 'grafik') _schedWeek = null;
   S.data[tab] = null;
-  if (tab === 'otchet') { S.data.d_otchet = null; S.data.cnvrs = null; }
+  if (tab === 'otchet') { S.data.d_otchet = null; S.data.cnvrs = null; S.data.vizity = null; }
   if (tab === 'dohod') { S.data.otchet = null; S.data.stavki = null; S.data.d_dohod = null; }
   loadTab(tab).then(() => toast('Обновлено','s'));
 }
@@ -2024,6 +2160,36 @@ function renderOtchet() {
   const accB = isLight ? 221 : 71;
 
   const ostPlan = Math.max(0, planTotal - allVis);
+
+  // ПРОГНОЗ ШТ
+  let progVisShт = '—';
+  if (dp && planTotal > 0) {
+    progVisShт = Math.round(planTotal / dim * dp);
+  }
+
+  // СЕГОДНЯ и В КСО — из листа ВИЗИТЫ{suffix}
+  // Ожидаем: колонка A — дата, колонка E — статус "В работе КСО"
+  let todayVis = '—', todayKso = '—';
+  const vizData = S.data.vizity;
+  if (vizData && vizData.length > 1) {
+    const now = new Date();
+    const todayStr = `${String(now.getDate()).padStart(2,'0')}.${String(now.getMonth()+1).padStart(2,'0')}.${now.getFullYear()}`;
+    const todayAlt = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    let tVis = 0, tKso = 0;
+    for (let i = 1; i < vizData.length; i++) {
+      const row = vizData[i];
+      if (!row || !row[0]) continue;
+      const cell = String(row[0]).trim();
+      if (cell === todayStr || cell === todayAlt || cell.startsWith(todayStr) || cell.startsWith(todayAlt)) {
+        tVis++;
+        const status = String(row[4]||'').trim();
+        const ksoStatuses = ['Подает заявку', 'В работе КСО', 'на рассмотрении банка'];
+        if (ksoStatuses.includes(status)) tKso++;
+      }
+    }
+    todayVis = tVis;
+    todayKso = tKso;
+  }
   const cnvrsData = S.data.cnvrs || [];
   const cnvrsTotCrm  = cnvrsData[11] || [];
   const cnvrsTotWarm = cnvrsData[25] || [];
@@ -2041,6 +2207,11 @@ function renderOtchet() {
       <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">${planTotal||'—'}</div></div>
       <div class="dept-cell"><div class="dc-lbl">Остаток</div><div class="dc-val">${ostPlan||'—'}</div></div>
       <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val" style="color:${pctClr(parseInt(progOtdel))}">${progOtdel}</div></div>
+    </div>
+    <div class="dept-row1" style="margin-bottom:8px">
+      <div class="dept-cell"><div class="dc-lbl">Прогноз шт</div><div class="dc-val">${progVisShт}</div></div>
+      <div class="dept-cell hi"><div class="dc-lbl">Сегодня</div><div class="dc-val">${todayVis}</div></div>
+      <div class="dept-cell"><div class="dc-lbl">В КСО</div><div class="dc-val">${todayKso}</div></div>
     </div>
     <div class="dept-row2" style="margin-bottom:8px">
       <div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">${deptKred||'—'}</div></div>
@@ -2420,6 +2591,8 @@ function renderDohod() {
       : `${fmtRub(oklad)} + (${fmtRub(Math.round(premium))} × ${factKoef.toFixed(1)}) = ${fmtRub(Math.round(d.fact.total))}`;
     const okladRow = oklad > 0 ? `<div class="income-sec-title">Оклад</div>${subtotal(okladLbl, oklad)}` : '';
     const kotelRow = (d.detail.inFund && kotel > 0) ? `<div class="income-sec-title">Котёл</div><div style="font-size:10px;color:var(--txt2);margin-bottom:6px">Участников котла: ${fundCount}</div>${subtotal('Доля котла', kotel)}` : '';
+    const noKoefTotal = Math.round(oklad + crmSum + warmSum + kotel);
+    const noKoefRow = `<div class="income-nokoef-sep">Без коэффициентов</div>${subtotal('Оклад 100% + Премия + Котёл', noKoefTotal)}`;
 
     el.innerHTML = `
       <div class="w" style="padding-top:16px">
@@ -2461,6 +2634,7 @@ function renderDohod() {
           </div>
           ${subtotal('Итого Тёплые лиды', warmSum)}
           ${kotelRow}
+          ${noKoefRow}
         </div>
       </div>`;
   }
@@ -3548,6 +3722,7 @@ function openDozhimIncomeModal(btn) {
 
   const mc = document.getElementById('income-modal-content');
   mc.setAttribute('data-modal', 'dozhim');
+  const noKoefTotalDz = Math.round(oklad + premium);
   mc.innerHTML = `
     <div class="income-sec-title">Оклад</div>
     ${subtotal(okladLbl, oklad)}
@@ -3555,6 +3730,8 @@ function openDozhimIncomeModal(btn) {
     ${premiumBadges}
     ${subtotal('Итого премия', Math.round(premium - kotel))}
     ${kotelRow}
+    <div class="income-nokoef-sep">Без коэффициентов</div>
+    ${subtotal('Оклад 100% + Премия + Котёл', noKoefTotalDz)}
     <div class="income-sec-title">Итого</div>
     ${subtotal('Фактический доход', Math.round(n(d.fact?.total)))}
     ${subtotal('Прогнозируемый доход', Math.round(n(d.prognoz?.total)))}
@@ -3583,6 +3760,8 @@ function openIncomeDetail(btn) {
 
   const okladRow = oklad > 0 ? `<div class="income-sec-title">Оклад</div>${subtotal(d.workedR != null ? `Оклад (${d.workedR}/${d.totalR} дн.)` : 'Оклад', oklad)}` : '';
   const kotelRow = (d.inFund && kotel > 0) ? `<div class="income-sec-title">Котёл</div><div style="font-size:10px;color:var(--txt2);margin-bottom:6px">Участников котла: ${fundCount}</div>${subtotal('Доля котла', kotel)}` : '';
+  const noKoefTotal = Math.round(oklad + crmSum + warmSum + kotel);
+  const noKoefRow = `<div class="income-nokoef-sep">Без коэффициентов</div>${subtotal('Оклад 100% + Премия + Котёл', noKoefTotal)}`;
   const factKoef = d.fact ? d.fact.koef : null;
   const progKoef = d.prognoz ? d.prognoz.koef : null;
   const okladFormula = d.workedR != null
@@ -3636,9 +3815,17 @@ function openIncomeDetail(btn) {
     </div>
     ${subtotal('Итого Тёплые лиды', warmSum)}
     ${kotelRow}
+    ${noKoefRow}
   `;
   document.getElementById('income-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
+}
+
+function openSalInfo() {
+  document.getElementById('sal-info-overlay').classList.add('open');
+}
+function closeSalInfo() {
+  document.getElementById('sal-info-overlay').classList.remove('open');
 }
 
 function closeIncomeDetail(e) {

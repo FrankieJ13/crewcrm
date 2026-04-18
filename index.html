@@ -3133,7 +3133,8 @@ function initLinksTab() {
 function renderMangoTab() {
   const mangoData = [['Барнаул','#9913'],['Красноярск','#1118'],['Кемерово','#1478'],['Новокузнецк','#1213'],['Новосибирск','#1516'],['Омск','#108'],['Оренбург','#11444'],['Пермь','#974'],['Сургут','#1811'],['Томск','#1417'],['Тюмень','#1512'],['Челябинск','#1612'],['АСЦ Пермь','239-26-26']];
   const rows = mangoData.map(([city, num]) => `<tr><td>${city}</td><td>${num}</td></tr>`).join('');
-  return `
+
+  const html = `
     <div class="sec-title">Добавочные номера Mango</div>
     <div class="mango-wrap">
       <table class="mango-table">
@@ -3145,22 +3146,37 @@ function renderMangoTab() {
     <div class="phone-lookup-wrap">
       <div class="phone-lookup-input-row">
         <input class="phone-lookup-input" id="phone-lookup-inp"
-               type="tel" placeholder="+7 (___) ___-__-__"
-               maxlength="18" autocomplete="off"/>
-        <button class="phone-lookup-btn" id="phone-lookup-btn" onclick="phoneLookup()">Определить</button>
+               type="text" placeholder="+7 (___) ___-__-__"
+               autocomplete="off"/>
+        <button class="phone-lookup-btn" id="phone-lookup-btn">Определить</button>
       </div>
       <div class="phone-lookup-result" id="phone-lookup-result"></div>
     </div>`;
+
+  // Вешаем listener после того как DOM обновится
+  setTimeout(function() {
+    const btn = document.getElementById('phone-lookup-btn');
+    const inp = document.getElementById('phone-lookup-inp');
+    if (btn) btn.addEventListener('click', phoneLookup);
+    if (inp) inp.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') phoneLookup();
+    });
+  }, 0);
+
+  return html;
 }
 
 function phoneLookup() {
-  const inp  = document.getElementById('phone-lookup-inp');
-  const res  = document.getElementById('phone-lookup-result');
-  const btn  = document.getElementById('phone-lookup-btn');
-  if (!inp || !res) return;
+  const inp = document.getElementById('phone-lookup-inp');
+  const res = document.getElementById('phone-lookup-result');
+  const btn = document.getElementById('phone-lookup-btn');
+  if (!inp || !res || !btn) return;
 
   const query = inp.value.trim();
-  if (!query) { res.innerHTML = '<div class="phone-lookup-err">Введите номер телефона</div>'; return; }
+  if (!query) {
+    res.innerHTML = '<div class="phone-lookup-err">Введите номер телефона</div>';
+    return;
+  }
 
   btn.disabled = true;
   res.innerHTML = '<div class="phone-lookup-spin"><div class="spin"></div>Запрос…</div>';
@@ -3176,52 +3192,41 @@ function phoneLookup() {
     },
     body: JSON.stringify([query])
   })
-  .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-  .then(data => {
+  .then(function(r) {
+    if (!r.ok) return r.text().then(function(t) { throw new Error('HTTP ' + r.status + ': ' + t); });
+    return r.json();
+  })
+  .then(function(data) {
     btn.disabled = false;
     const d = Array.isArray(data) ? data[0] : data;
-    if (!d || !d.phone) {
-      res.innerHTML = '<div class="phone-lookup-err">Номер не распознан</div>';
-      return;
-    }
+    if (!d) { res.innerHTML = '<div class="phone-lookup-err">Пустой ответ от сервера</div>'; return; }
+    if (!d.phone && d.qc === 3) { res.innerHTML = '<div class="phone-lookup-err">Номер не распознан (некорректный формат)</div>'; return; }
+    if (!d.phone) { res.innerHTML = '<div class="phone-lookup-err">Номер не определён</div>'; return; }
 
-    const qcLabels = { 0:'Верный', 1:'Требует уточнения', 2:'Не определён', 3:'Неверный' };
-    const qcColors = { 0:'var(--grn)', 1:'var(--org, #fbad33)', 2:'var(--txt3)', 3:'var(--red)' };
-    const qcLabel  = qcLabels[d.qc] ?? '—';
-    const qcColor  = qcColors[d.qc] ?? 'var(--txt2)';
-
+    const qcLabels = {0:'Верный', 1:'Требует уточнения', 2:'Не определён', 3:'Неверный'};
+    const qcColors = {0:'var(--grn)', 1:'#fbad33', 2:'var(--txt3)', 3:'var(--red)'};
     const rows = [];
-    if (d.type)      rows.push(['Тип',            d.type]);
-    if (d.provider)  rows.push(['Оператор',        d.provider]);
-    if (d.country)   rows.push(['Страна',           d.country]);
-    if (d.region)    rows.push(['Регион',           d.region]);
-    if (d.city)      rows.push(['Город',            d.city]);
-    if (d.timezone)  rows.push(['Часовой пояс',     d.timezone]);
-    if (d.city_code) rows.push(['DEF / код города', d.city_code]);
-    if (d.extension) rows.push(['Добавочный',       d.extension]);
+    if (d.type)      rows.push(['Тип',             d.type]);
+    if (d.provider)  rows.push(['Оператор',         d.provider]);
+    if (d.country)   rows.push(['Страна',            d.country]);
+    if (d.region)    rows.push(['Регион',            d.region]);
+    if (d.city)      rows.push(['Город',             d.city]);
+    if (d.timezone)  rows.push(['Часовой пояс',      d.timezone]);
+    if (d.city_code) rows.push(['DEF / код города',  d.city_code]);
+    if (d.extension) rows.push(['Добавочный',        d.extension]);
+    rows.push(['Качество', '<span style="color:' + (qcColors[d.qc] || 'var(--txt2)') + '">' + (qcLabels[d.qc] || '—') + '</span>']);
 
-    res.innerHTML = `
-      <div class="phone-lookup-number">${d.phone}</div>
-      ${rows.map(([k,v]) => `
-        <div class="phone-lookup-row">
-          <span class="phone-lookup-key">${k}</span>
-          <span class="phone-lookup-val">${v}</span>
-        </div>`).join('')}
-      <div class="phone-lookup-row">
-        <span class="phone-lookup-key">Качество</span>
-        <span class="phone-lookup-val" style="color:${qcColor}">${qcLabel}</span>
-      </div>`;
+    res.innerHTML = '<div class="phone-lookup-number">' + d.phone + '</div>' +
+      rows.map(function(r) {
+        return '<div class="phone-lookup-row"><span class="phone-lookup-key">' + r[0] +
+               '</span><span class="phone-lookup-val">' + r[1] + '</span></div>';
+      }).join('');
   })
-  .catch(err => {
+  .catch(function(err) {
     btn.disabled = false;
-    res.innerHTML = `<div class="phone-lookup-err">Ошибка: ${err.message}</div>`;
+    res.innerHTML = '<div class="phone-lookup-err">Ошибка: ' + err.message + '</div>';
   });
 }
-
-// Enter по полю
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter' && document.activeElement?.id === 'phone-lookup-inp') phoneLookup();
-});
 
 function closeMopModal(e) {
   if (e && e.target !== document.getElementById('mop-overlay')) return;

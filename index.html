@@ -3159,51 +3159,63 @@ function phoneLookup() {
   const btn  = document.getElementById('phone-lookup-btn');
   if (!inp || !res) return;
 
-  const raw  = inp.value.replace(/\D/g, '');
-  if (raw.length < 7) { res.innerHTML = '<div class="phone-lookup-err">Введите корректный номер</div>'; return; }
+  const query = inp.value.trim();
+  if (!query) { res.innerHTML = '<div class="phone-lookup-err">Введите номер телефона</div>'; return; }
 
   btn.disabled = true;
   res.innerHTML = '<div class="phone-lookup-spin"><div class="spin"></div>Запрос…</div>';
 
-  // API: тестовый ключ test (100 запросов/сутки). Для снятия лимита — получить ключ на admin@kody.su
-  fetch(`https://www.kody.su/check-tel/${raw}/json/?key=test`)
-    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(data => {
-      btn.disabled = false;
-      const rows = [];
-      const num = data.number || data.tel || raw;
+  fetch('https://cleaner.dadata.ru/api/v1/clean/phone', {
+    method: 'POST',
+    mode: 'cors',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': 'Token 52925b3003fd142fd4e4f2650abd772533150298',
+      'X-Secret': 'cbe8cde2f2b87297683cd65495dedd9debcfe0d5'
+    },
+    body: JSON.stringify([query])
+  })
+  .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(data => {
+    btn.disabled = false;
+    const d = Array.isArray(data) ? data[0] : data;
+    if (!d || !d.phone) {
+      res.innerHTML = '<div class="phone-lookup-err">Номер не распознан</div>';
+      return;
+    }
 
-      if (data.operator)         rows.push(['Оператор',      data.operator]);
-      if (data.mnp_operator)     rows.push(['Фактич. оператор', data.mnp_operator]);
-      if (data.region)           rows.push(['Регион',         data.region]);
-      if (data.country)          rows.push(['Страна',         data.country]);
-      if (data.timezone)         rows.push(['Часовой пояс',   data.timezone]);
-      if (data.time)             rows.push(['Местное время',  data.time]);
-      if (data.def)              rows.push(['DEF-код',        data.def]);
-      if (data.type)             rows.push(['Тип',            data.type]);
+    const qcLabels = { 0:'Верный', 1:'Требует уточнения', 2:'Не определён', 3:'Неверный' };
+    const qcColors = { 0:'var(--grn)', 1:'var(--org, #fbad33)', 2:'var(--txt3)', 3:'var(--red)' };
+    const qcLabel  = qcLabels[d.qc] ?? '—';
+    const qcColor  = qcColors[d.qc] ?? 'var(--txt2)';
 
-      if (!rows.length && data.error) {
-        res.innerHTML = `<div class="phone-lookup-err">${data.error}</div>`;
-        return;
-      }
-      if (!rows.length) {
-        res.innerHTML = '<div class="phone-lookup-err">Данные не найдены</div>';
-        return;
-      }
+    const rows = [];
+    if (d.type)      rows.push(['Тип',            d.type]);
+    if (d.provider)  rows.push(['Оператор',        d.provider]);
+    if (d.country)   rows.push(['Страна',           d.country]);
+    if (d.region)    rows.push(['Регион',           d.region]);
+    if (d.city)      rows.push(['Город',            d.city]);
+    if (d.timezone)  rows.push(['Часовой пояс',     d.timezone]);
+    if (d.city_code) rows.push(['DEF / код города', d.city_code]);
+    if (d.extension) rows.push(['Добавочный',       d.extension]);
 
-      const ported = data.mnp_operator && data.mnp_operator !== data.operator
-        ? `<div class="phone-lookup-row"><span class="phone-lookup-key">Перенесён</span><span class="phone-lookup-val phone-lookup-ported">Да (БД МНП)</span></div>`
-        : '';
-
-      res.innerHTML = `
-        <div class="phone-lookup-number">+${num}</div>
-        ${rows.map(([k,v]) => `<div class="phone-lookup-row"><span class="phone-lookup-key">${k}</span><span class="phone-lookup-val">${v}</span></div>`).join('')}
-        ${ported}`;
-    })
-    .catch(err => {
-      btn.disabled = false;
-      res.innerHTML = `<div class="phone-lookup-err">Ошибка запроса. Проверьте соединение.<br><span style="font-size:10px;color:var(--txt3)">${err.message}</span></div>`;
-    });
+    res.innerHTML = `
+      <div class="phone-lookup-number">${d.phone}</div>
+      ${rows.map(([k,v]) => `
+        <div class="phone-lookup-row">
+          <span class="phone-lookup-key">${k}</span>
+          <span class="phone-lookup-val">${v}</span>
+        </div>`).join('')}
+      <div class="phone-lookup-row">
+        <span class="phone-lookup-key">Качество</span>
+        <span class="phone-lookup-val" style="color:${qcColor}">${qcLabel}</span>
+      </div>`;
+  })
+  .catch(err => {
+    btn.disabled = false;
+    res.innerHTML = `<div class="phone-lookup-err">Ошибка: ${err.message}</div>`;
+  });
 }
 
 // Enter по полю

@@ -1082,6 +1082,15 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
   margin-bottom:12px; display:flex; align-items:center; gap:8px;
 }
 .kpi-subtitle::after { content:''; flex:1; height:1px; background:var(--line) }
+.kpi-subtitle-info {
+  width:22px; height:22px; border-radius:50%;
+  border:1px solid var(--line2); background:var(--bg3);
+  color:var(--txt2); font-size:11px; font-weight:700; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+  transition:all .15s; flex-shrink:0; font-family:'Unbounded',sans-serif;
+  margin-left:2px;
+}
+.kpi-subtitle-info:hover { border-color:var(--acc); color:var(--acc) }
 .kpi-income-panel {
   border-radius:var(--r2); padding:16px; text-align:center;
   margin-bottom:14px;
@@ -1476,50 +1485,7 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
       <span class="si-title">Как считается зарплата</span>
       <button class="si-close" onclick="closeSalInfo()">×</button>
     </div>
-    <div class="si-body">
-      <div class="si-sec">Формула</div>
-      <div class="si-formula">Зарплата = Оклад + (Премия × Коэффициент)</div>
-      <div class="si-note">Оклад начисляется пропорционально отработанным рабочим дням.<br>Премия = CRM + Тёплые лиды + Доля котла.</div>
-
-      <div class="si-sec">Оклад</div>
-      <div class="si-row"><span class="si-key">База</span><span class="si-val">Фиксированный оклад по ставке</span></div>
-      <div class="si-row"><span class="si-key">Расчёт</span><span class="si-val">Оклад ÷ раб.дней × отработано</span></div>
-
-      <div class="si-sec">Премия CRM</div>
-      <div class="si-row"><span class="si-key">Визит</span><span class="si-val">По ставке за визит</span></div>
-      <div class="si-row"><span class="si-key">Кредит / Наличка</span><span class="si-val">По ставке за сделку</span></div>
-      <div class="si-row"><span class="si-key">Обмен / Комиссия</span><span class="si-val">По ставке</span></div>
-      <div class="si-row"><span class="si-key">Задаток</span><span class="si-val">По ставке за задаток</span></div>
-
-      <div class="si-sec">Премия Тёплые лиды</div>
-      <div class="si-row"><span class="si-key">Визит / Кредит / Наличка</span><span class="si-val">По ставке тёплых лидов</span></div>
-      <div class="si-row"><span class="si-key">Обмен / Комиссия</span><span class="si-val">По ставке тёплых лидов</span></div>
-
-      <div class="si-sec">Котёл</div>
-      <div class="si-row"><span class="si-key">Что это</span><span class="si-val">Общий фонд отдела, делится поровну</span></div>
-      <div class="si-row"><span class="si-key">Доля</span><span class="si-val">Котёл ÷ кол-во участников</span></div>
-      <div class="si-row"><span class="si-key">Участие</span><span class="si-val">Только у включённых в котёл</span></div>
-
-      <div class="si-sec">Коэффициент (×К)</div>
-      <div class="si-row"><span class="si-key">×0.8</span><span class="si-val">Менее 80% плана</span></div>
-      <div class="si-row"><span class="si-key">×0.9</span><span class="si-val">80% — не более 100%</span></div>
-      <div class="si-row"><span class="si-key">×1.0</span><span class="si-val">100% — 130% включительно</span></div>
-      <div class="si-row"><span class="si-key">×1.1</span><span class="si-val">Более 130% и до 150% включ.</span></div>
-      <div class="si-row"><span class="si-key">×1.2</span><span class="si-val">Более 150% плана</span></div>
-      <div class="si-note">Коэффициент применяется к сумме всей премии (CRM + ТЛ + Котёл), но не к окладу.</div>
-
-      <div class="si-sec">Фактический доход</div>
-      <div class="si-formula">Оклад + (Премия × К_факт)</div>
-      <div class="si-note">К_факт рассчитан по текущему % выполнения плана на сегодня.</div>
-
-      <div class="si-sec">Прогнозируемый доход</div>
-      <div class="si-formula">Оклад + (Премия × К_прогноз)</div>
-      <div class="si-note">К_прогноз рассчитан исходя из текущего темпа: если до конца месяца ничего не изменится, ожидаемый % выполнения определяет итоговый коэффициент.</div>
-
-      <div class="si-sec">Без коэффициентов</div>
-      <div class="si-formula">Оклад (100%) + Премия CRM + Премия ТЛ + Доля котла</div>
-      <div class="si-note">Базовый расчёт без умножения на коэффициент (К=1). Показывает «чистую» заработанную сумму до применения поправки за выполнение плана.</div>
-    </div>
+    <div class="si-body" id="sal-info-body"></div>
   </div>
 </div>
 <div id="toast"></div>
@@ -2552,7 +2518,7 @@ function renderDohod() {
     };
     el.innerHTML = `
       <div class="w" style="padding-top:16px">
-        <div class="kpi-subtitle">Доход за месяц</div>
+        <div class="kpi-subtitle">Доход за месяц<button class="kpi-subtitle-info" onclick="openSalInfo()">i</button></div>
         <div class="kpi-income-panel" style="position:relative;text-align:center;cursor:pointer;background:rgba(${accR},${accG},${accB},0.15)"
              onclick="openDozhimIncomeModal(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="">
           <div class="zl">Прогнозируемый</div>
@@ -2591,7 +2557,7 @@ function renderDohod() {
 
     el.innerHTML = `
       <div class="w" style="padding-top:16px">
-        <div class="kpi-subtitle">Доход за месяц</div>
+        <div class="kpi-subtitle">Доход за месяц<button class="kpi-subtitle-info" onclick="openSalInfo()">i</button></div>
         <div class="kpi-income-panel" style="background:rgba(${accR},${accG},${accB},0.15)">
           <div class="income-cols" style="margin-bottom:0">
             <div class="income-col">
@@ -3349,7 +3315,7 @@ function renderPersonal(matched) {
   el.innerHTML = `
     <div class="kpi-manager-name">${name.toUpperCase()}</div>
     <div class="kpi-divider"></div>
-    <div class="kpi-subtitle">Доход за месяц</div>
+    <div class="kpi-subtitle">Доход за месяц<button class="kpi-subtitle-info" onclick="openSalInfo()">i</button></div>
     <div class="kpi-income-panel" ${incomePanelAttr}>
       ${incomePanelContent}
     </div>
@@ -3816,7 +3782,87 @@ function openIncomeDetail(btn) {
   document.body.style.overflow = 'hidden';
 }
 
-function openSalInfo() {
+function openSalInfo(roleHint) {
+  const st = S.data.stavki || [];
+  const dst = S.data.d_stavki || [];
+  const parseR = v => parseFloat(String(v||'0').replace(/[^0-9.,-]/g,'').replace(',','.')) || 0;
+  const rub = v => v ? fmtRub(v) : '—';
+
+  // CRM ставки (calcSalary использует stavki)
+  const crmVis   = rub(parseR(st[8]?.[1]));
+  const crmKred  = rub(parseR(st[9]?.[1]));
+  const crmNal   = rub(parseR(st[10]?.[1]));
+  const crmObmen = rub(parseR(st[11]?.[1]));
+  const crmKom   = rub(parseR(st[12]?.[1]));
+  const crmZad   = rub(parseR(st[20]?.[1]));
+  // ТЛ ставки
+  const tlVis    = rub(parseR(st[14]?.[1]));
+  const tlKred   = rub(parseR(st[15]?.[1]));
+  const tlNal    = rub(parseR(st[16]?.[1]));
+  const tlObmen  = rub(parseR(st[17]?.[1]));
+  const tlKom    = rub(parseR(st[18]?.[1]));
+
+  const hasRates = st.length > 0;
+
+  const ratesBlock = hasRates ? `
+    <div class="si-sec">Ставки — CRM</div>
+    <div class="si-row"><span class="si-key">Визит</span><span class="si-val">${crmVis}</span></div>
+    <div class="si-row"><span class="si-key">Кредит</span><span class="si-val">${crmKred}</span></div>
+    <div class="si-row"><span class="si-key">Наличка</span><span class="si-val">${crmNal}</span></div>
+    <div class="si-row"><span class="si-key">Обмен</span><span class="si-val">${crmObmen}</span></div>
+    <div class="si-row"><span class="si-key">Комиссия</span><span class="si-val">${crmKom}</span></div>
+    <div class="si-row"><span class="si-key">Задаток</span><span class="si-val">${crmZad}</span></div>
+    <div class="si-sec">Ставки — Тёплые лиды</div>
+    <div class="si-row"><span class="si-key">Визит</span><span class="si-val">${tlVis}</span></div>
+    <div class="si-row"><span class="si-key">Кредит</span><span class="si-val">${tlKred}</span></div>
+    <div class="si-row"><span class="si-key">Наличка</span><span class="si-val">${tlNal}</span></div>
+    <div class="si-row"><span class="si-key">Обмен</span><span class="si-val">${tlObmen}</span></div>
+    <div class="si-row"><span class="si-key">Комиссия</span><span class="si-val">${tlKom}</span></div>` : '';
+
+  document.getElementById('sal-info-body').innerHTML = `
+    <div class="si-sec">Формула</div>
+    <div class="si-formula">Зарплата = Оклад + (Премия × Коэффициент)</div>
+    <div class="si-note">Оклад начисляется пропорционально отработанным рабочим дням.<br>Премия = CRM + Тёплые лиды + Доля котла.</div>
+
+    <div class="si-sec">Оклад</div>
+    <div class="si-row"><span class="si-key">База</span><span class="si-val">Фиксированный оклад по ставке</span></div>
+    <div class="si-row"><span class="si-key">Расчёт</span><span class="si-val">Оклад ÷ раб.дней × отработано</span></div>
+
+    <div class="si-sec">Премия CRM</div>
+    <div class="si-row"><span class="si-key">Визит / Кредит / Наличка</span><span class="si-val">По ставке за действие</span></div>
+    <div class="si-row"><span class="si-key">Обмен / Комиссия / Задаток</span><span class="si-val">По ставке</span></div>
+
+    <div class="si-sec">Премия Тёплые лиды</div>
+    <div class="si-row"><span class="si-key">Визит / Кредит / Наличка</span><span class="si-val">По ставке тёплых лидов</span></div>
+    <div class="si-row"><span class="si-key">Обмен / Комиссия</span><span class="si-val">По ставке тёплых лидов</span></div>
+
+    <div class="si-sec">Котёл</div>
+    <div class="si-row"><span class="si-key">Что это</span><span class="si-val">Общий фонд отдела, делится поровну</span></div>
+    <div class="si-row"><span class="si-key">Доля</span><span class="si-val">Котёл ÷ кол-во участников</span></div>
+    <div class="si-row"><span class="si-key">Участие</span><span class="si-val">Только у включённых в котёл</span></div>
+
+    <div class="si-sec">Коэффициент (×К)</div>
+    <div class="si-row"><span class="si-key">×0.8</span><span class="si-val">Менее 80% плана</span></div>
+    <div class="si-row"><span class="si-key">×0.9</span><span class="si-val">80% — не более 100%</span></div>
+    <div class="si-row"><span class="si-key">×1.0</span><span class="si-val">100% — 130% включительно</span></div>
+    <div class="si-row"><span class="si-key">×1.1</span><span class="si-val">Более 130% и до 150% включ.</span></div>
+    <div class="si-row"><span class="si-key">×1.2</span><span class="si-val">Более 150% плана</span></div>
+    <div class="si-note">Коэффициент применяется к сумме всей премии (CRM + ТЛ + Котёл), но не к окладу.</div>
+
+    <div class="si-sec">Фактический доход</div>
+    <div class="si-formula">Оклад + (Премия × К_факт)</div>
+    <div class="si-note">К_факт рассчитан по текущему % выполнения плана на сегодня.</div>
+
+    <div class="si-sec">Прогнозируемый доход</div>
+    <div class="si-formula">Оклад + (Премия × К_прогноз)</div>
+    <div class="si-note">К_прогноз — экстраполяция текущего темпа до конца месяца.</div>
+
+    <div class="si-sec">Без коэффициентов</div>
+    <div class="si-formula">Оклад (100%) + Премия CRM + Премия ТЛ + Доля котла</div>
+    <div class="si-note">Базовый расчёт с К=1. Показывает «чистую» заработанную сумму до применения поправки за план.</div>
+
+    ${ratesBlock}
+  `;
   document.getElementById('sal-info-overlay').classList.add('open');
 }
 function closeSalInfo() {

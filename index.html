@@ -562,82 +562,55 @@ body.light .mop-modal-body {
   overflow:hidden;
 }
 
-/* kody.su widget styles */
-.kody-wrap {
+/* ===== PHONE LOOKUP WIDGET ===== */
+.phone-lookup-wrap {
   border:1px solid var(--line); border-radius:var(--r2);
   overflow:hidden; margin-bottom:16px;
 }
-#kody_widget .request {
+.phone-lookup-input-row {
+  display:flex; align-items:center; gap:8px;
   padding:12px 14px; background:var(--bg2);
   border-bottom:1px solid var(--line);
-  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
 }
-#kody_widget .request h4 {
-  display:none;
-}
-#kody_widget .number {
-  flex:1; min-width:160px;
-  background:var(--bg3); border:1px solid var(--line2);
+.phone-lookup-input {
+  flex:1; background:var(--bg3); border:1px solid var(--line2);
   color:var(--txt); font-family:'Golos Text',sans-serif;
-  font-size:14px; padding:8px 12px;
-  border-radius:var(--r); outline:none;
-  transition:border-color .15s;
+  font-size:14px; padding:8px 12px; border-radius:var(--r);
+  outline:none; transition:border-color .15s;
 }
-#kody_widget .number:focus { border-color:var(--acc); }
-#kody_widget .number::placeholder { color:var(--txt3); }
-#kody_widget .submit {
+.phone-lookup-input:focus { border-color:var(--acc); }
+.phone-lookup-input::placeholder { color:var(--txt3); }
+.phone-lookup-btn {
   background:var(--acc); color:#000;
-  font-family:'Unbounded',sans-serif; font-size:10px;
-  font-weight:800; letter-spacing:.06em;
-  border:none; padding:9px 16px;
-  border-radius:var(--r); cursor:pointer;
-  transition:opacity .15s; white-space:nowrap;
-}
-#kody_widget .submit:hover { opacity:.85; }
-#kody_widget .result {
-  padding:0 14px 12px; background:var(--bg2);
-}
-#kody_widget .result h4 {
   font-family:'Unbounded',sans-serif; font-size:9px;
-  font-weight:800; letter-spacing:.08em; text-transform:uppercase;
-  color:var(--txt3); padding:10px 0 6px;
-  border-bottom:1px solid var(--line2); margin-bottom:8px;
+  font-weight:800; letter-spacing:.06em;
+  border:none; padding:9px 14px; border-radius:var(--r);
+  cursor:pointer; transition:opacity .15s; white-space:nowrap;
+  flex-shrink:0;
 }
-#kody_widget .result_row {
-  display:flex; flex-wrap:wrap; gap:4px 12px;
-  padding:6px 0; border-bottom:1px solid var(--line);
-  font-size:13px; align-items:baseline;
+.phone-lookup-btn:hover { opacity:.82; }
+.phone-lookup-btn:disabled { opacity:.4; cursor:default; }
+.phone-lookup-result { background:var(--bg2); padding:0 14px; }
+.phone-lookup-result:empty { display:none; }
+.phone-lookup-number {
+  font-family:'Unbounded',sans-serif; font-size:12px;
+  font-weight:800; color:var(--acc);
+  padding:12px 0 8px; border-bottom:1px solid var(--line2); margin-bottom:6px;
 }
-#kody_widget .result_row:last-child { border-bottom:none; }
-#kody_widget .result_number {
-  font-family:'Unbounded',sans-serif; font-weight:700;
-  font-size:11px; color:var(--acc); flex-shrink:0;
+.phone-lookup-row {
+  display:flex; justify-content:space-between; gap:12px;
+  padding:5px 0; border-bottom:1px solid var(--line); font-size:12px;
 }
-#kody_widget .result_table {
-  width:100%; border-collapse:collapse; margin-top:2px;
-  font-size:12px; color:var(--txt2);
+.phone-lookup-row:last-child { border-bottom:none; padding-bottom:12px; }
+.phone-lookup-key { color:var(--txt3); font-size:11px; }
+.phone-lookup-val { color:var(--txt); font-weight:500; text-align:right; }
+.phone-lookup-ported { color:var(--grn); font-size:11px; font-weight:500; }
+.phone-lookup-err { color:var(--red); font-size:12px; padding:10px 0 12px; text-align:center; }
+.phone-lookup-spin {
+  display:flex; align-items:center; justify-content:center;
+  gap:8px; padding:14px 0; color:var(--txt3); font-size:12px;
 }
-#kody_widget .result_table td {
-  padding:2px 0; vertical-align:top;
-}
-#kody_widget .result_table td:first-child {
-  color:var(--txt3); width:40%; font-size:11px;
-}
-#kody_widget .result_bdpn {
-  font-size:11px; color:var(--grn); margin-top:3px;
-}
-#kody_widget .result_time {
-  font-size:11px; color:var(--txt2);
-}
-#kody_widget a[href="https://www.kody.su/"] {
-  display:block; text-align:right; padding:6px 14px 10px;
-  background:var(--bg2);
-}
-#kody_widget a[href="https://www.kody.su/"] img {
-  height:16px; opacity:.35; filter:grayscale(1);
-  transition:opacity .15s;
-}
-#kody_widget a[href="https://www.kody.su/"]:hover img { opacity:.6; }
+/* ===== END PHONE LOOKUP WIDGET ===== */
 .mango-table {
   width:100%; border-collapse:collapse; font-size:13px;
 }
@@ -3160,33 +3133,83 @@ function initLinksTab() {
 function renderMangoTab() {
   const mangoData = [['Барнаул','#9913'],['Красноярск','#1118'],['Кемерово','#1478'],['Новокузнецк','#1213'],['Новосибирск','#1516'],['Омск','#108'],['Оренбург','#11444'],['Пермь','#974'],['Сургут','#1811'],['Томск','#1417'],['Тюмень','#1512'],['Челябинск','#1612'],['АСЦ Пермь','239-26-26']];
   const rows = mangoData.map(([city, num]) => `<tr><td>${city}</td><td>${num}</td></tr>`).join('');
-
-  // Загружаем скрипт виджета если ещё не загружен
-  if (!document.getElementById('kody-script')) {
-    const s = document.createElement('script');
-    s.id = 'kody-script';
-    s.type = 'text/javascript';
-    s.charset = 'UTF-8';
-    s.async = true;
-    s.src = 'https://www.kody.su/embed/widget.min.js';
-    document.head.appendChild(s);
-  }
-
   return `
-    <div class="sec-title">Определить номер</div>
-    <div class="kody-wrap">
-      <div id="kody_widget">
-        <a href="https://www.kody.su/" target="_blank"><img alt="kody.su: телефонные коды" src="https://www.kody.su/img/mlogo.png"></a>
-      </div>
-    </div>
     <div class="sec-title">Добавочные номера Mango</div>
     <div class="mango-wrap">
       <table class="mango-table">
         <thead><tr><th>Город</th><th>Доб.№</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
+    </div>
+    <div class="sec-title">Определить номер</div>
+    <div class="phone-lookup-wrap">
+      <div class="phone-lookup-input-row">
+        <input class="phone-lookup-input" id="phone-lookup-inp"
+               type="tel" placeholder="+7 (___) ___-__-__"
+               maxlength="18" autocomplete="off"/>
+        <button class="phone-lookup-btn" id="phone-lookup-btn" onclick="phoneLookup()">Определить</button>
+      </div>
+      <div class="phone-lookup-result" id="phone-lookup-result"></div>
     </div>`;
 }
+
+function phoneLookup() {
+  const inp  = document.getElementById('phone-lookup-inp');
+  const res  = document.getElementById('phone-lookup-result');
+  const btn  = document.getElementById('phone-lookup-btn');
+  if (!inp || !res) return;
+
+  const raw  = inp.value.replace(/\D/g, '');
+  if (raw.length < 7) { res.innerHTML = '<div class="phone-lookup-err">Введите корректный номер</div>'; return; }
+
+  btn.disabled = true;
+  res.innerHTML = '<div class="phone-lookup-spin"><div class="spin"></div>Запрос…</div>';
+
+  // API: тестовый ключ test (100 запросов/сутки). Для снятия лимита — получить ключ на admin@kody.su
+  fetch(`https://www.kody.su/check-tel/${raw}/json/?key=test`)
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(data => {
+      btn.disabled = false;
+      const rows = [];
+      const num = data.number || data.tel || raw;
+
+      if (data.operator)         rows.push(['Оператор',      data.operator]);
+      if (data.mnp_operator)     rows.push(['Фактич. оператор', data.mnp_operator]);
+      if (data.region)           rows.push(['Регион',         data.region]);
+      if (data.country)          rows.push(['Страна',         data.country]);
+      if (data.timezone)         rows.push(['Часовой пояс',   data.timezone]);
+      if (data.time)             rows.push(['Местное время',  data.time]);
+      if (data.def)              rows.push(['DEF-код',        data.def]);
+      if (data.type)             rows.push(['Тип',            data.type]);
+
+      if (!rows.length && data.error) {
+        res.innerHTML = `<div class="phone-lookup-err">${data.error}</div>`;
+        return;
+      }
+      if (!rows.length) {
+        res.innerHTML = '<div class="phone-lookup-err">Данные не найдены</div>';
+        return;
+      }
+
+      const ported = data.mnp_operator && data.mnp_operator !== data.operator
+        ? `<div class="phone-lookup-row"><span class="phone-lookup-key">Перенесён</span><span class="phone-lookup-val phone-lookup-ported">Да (БД МНП)</span></div>`
+        : '';
+
+      res.innerHTML = `
+        <div class="phone-lookup-number">+${num}</div>
+        ${rows.map(([k,v]) => `<div class="phone-lookup-row"><span class="phone-lookup-key">${k}</span><span class="phone-lookup-val">${v}</span></div>`).join('')}
+        ${ported}`;
+    })
+    .catch(err => {
+      btn.disabled = false;
+      res.innerHTML = `<div class="phone-lookup-err">Ошибка запроса. Проверьте соединение.<br><span style="font-size:10px;color:var(--txt3)">${err.message}</span></div>`;
+    });
+}
+
+// Enter по полю
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && document.activeElement?.id === 'phone-lookup-inp') phoneLookup();
+});
 
 function closeMopModal(e) {
   if (e && e.target !== document.getElementById('mop-overlay')) return;

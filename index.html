@@ -561,6 +561,83 @@ body.light .mop-modal-body {
   border:1px solid var(--line); border-radius:var(--r2);
   overflow:hidden;
 }
+
+/* kody.su widget styles */
+.kody-wrap {
+  border:1px solid var(--line); border-radius:var(--r2);
+  overflow:hidden; margin-bottom:16px;
+}
+#kody_widget .request {
+  padding:12px 14px; background:var(--bg2);
+  border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+}
+#kody_widget .request h4 {
+  display:none;
+}
+#kody_widget .number {
+  flex:1; min-width:160px;
+  background:var(--bg3); border:1px solid var(--line2);
+  color:var(--txt); font-family:'Golos Text',sans-serif;
+  font-size:14px; padding:8px 12px;
+  border-radius:var(--r); outline:none;
+  transition:border-color .15s;
+}
+#kody_widget .number:focus { border-color:var(--acc); }
+#kody_widget .number::placeholder { color:var(--txt3); }
+#kody_widget .submit {
+  background:var(--acc); color:#000;
+  font-family:'Unbounded',sans-serif; font-size:10px;
+  font-weight:800; letter-spacing:.06em;
+  border:none; padding:9px 16px;
+  border-radius:var(--r); cursor:pointer;
+  transition:opacity .15s; white-space:nowrap;
+}
+#kody_widget .submit:hover { opacity:.85; }
+#kody_widget .result {
+  padding:0 14px 12px; background:var(--bg2);
+}
+#kody_widget .result h4 {
+  font-family:'Unbounded',sans-serif; font-size:9px;
+  font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--txt3); padding:10px 0 6px;
+  border-bottom:1px solid var(--line2); margin-bottom:8px;
+}
+#kody_widget .result_row {
+  display:flex; flex-wrap:wrap; gap:4px 12px;
+  padding:6px 0; border-bottom:1px solid var(--line);
+  font-size:13px; align-items:baseline;
+}
+#kody_widget .result_row:last-child { border-bottom:none; }
+#kody_widget .result_number {
+  font-family:'Unbounded',sans-serif; font-weight:700;
+  font-size:11px; color:var(--acc); flex-shrink:0;
+}
+#kody_widget .result_table {
+  width:100%; border-collapse:collapse; margin-top:2px;
+  font-size:12px; color:var(--txt2);
+}
+#kody_widget .result_table td {
+  padding:2px 0; vertical-align:top;
+}
+#kody_widget .result_table td:first-child {
+  color:var(--txt3); width:40%; font-size:11px;
+}
+#kody_widget .result_bdpn {
+  font-size:11px; color:var(--grn); margin-top:3px;
+}
+#kody_widget .result_time {
+  font-size:11px; color:var(--txt2);
+}
+#kody_widget a[href="https://www.kody.su/"] {
+  display:block; text-align:right; padding:6px 14px 10px;
+  background:var(--bg2);
+}
+#kody_widget a[href="https://www.kody.su/"] img {
+  height:16px; opacity:.35; filter:grayscale(1);
+  transition:opacity .15s;
+}
+#kody_widget a[href="https://www.kody.su/"]:hover img { opacity:.6; }
 .mango-table {
   width:100%; border-collapse:collapse; font-size:13px;
 }
@@ -3083,7 +3160,32 @@ function initLinksTab() {
 function renderMangoTab() {
   const mangoData = [['Барнаул','#9913'],['Красноярск','#1118'],['Кемерово','#1478'],['Новокузнецк','#1213'],['Новосибирск','#1516'],['Омск','#108'],['Оренбург','#11444'],['Пермь','#974'],['Сургут','#1811'],['Томск','#1417'],['Тюмень','#1512'],['Челябинск','#1612'],['АСЦ Пермь','239-26-26']];
   const rows = mangoData.map(([city, num]) => `<tr><td>${city}</td><td>${num}</td></tr>`).join('');
-  return `<div class="sec-title">Добавочные номера Mango</div><div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+
+  // Загружаем скрипт виджета если ещё не загружен
+  if (!document.getElementById('kody-script')) {
+    const s = document.createElement('script');
+    s.id = 'kody-script';
+    s.type = 'text/javascript';
+    s.charset = 'UTF-8';
+    s.async = true;
+    s.src = 'https://www.kody.su/embed/widget.min.js';
+    document.head.appendChild(s);
+  }
+
+  return `
+    <div class="sec-title">Определить номер</div>
+    <div class="kody-wrap">
+      <div id="kody_widget">
+        <a href="https://www.kody.su/" target="_blank"><img alt="kody.su: телефонные коды" src="https://www.kody.su/img/mlogo.png"></a>
+      </div>
+    </div>
+    <div class="sec-title">Добавочные номера Mango</div>
+    <div class="mango-wrap">
+      <table class="mango-table">
+        <thead><tr><th>Город</th><th>Доб.№</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
 }
 
 function closeMopModal(e) {

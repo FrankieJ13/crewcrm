@@ -3181,16 +3181,20 @@ function phoneLookup() {
   btn.disabled = true;
   res.innerHTML = '<div class="phone-lookup-spin"><div class="spin"></div>Запрос…</div>';
 
-  fetch('https://cleaner.dadata.ru/api/v1/clean/phone', {
+  // Прокси через Google Apps Script (обходит CORS).
+  // Вставь свой URL после деплоя Apps Script:
+  const PROXY_URL = 'https://script.google.com/macros/s/AKfycbz0VDp16YODAqjmVYL7Clv2_nD89nDaSoEvXEALnzU8gVwm8i2rZQvBnmLNtsm-qF05Gw/exec';
+
+  if (!PROXY_URL || PROXY_URL.includes('PASTE')) {
+    res.innerHTML = '<div class="phone-lookup-err">Настройте прокси: вставьте URL Apps Script в переменную PROXY_URL в коде дашборда.</div>';
+    btn.disabled = false;
+    return;
+  }
+
+  fetch(PROXY_URL, {
     method: 'POST',
-    mode: 'cors',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': 'Token 52925b3003fd142fd4e4f2650abd772533150298',
-      'X-Secret': 'cbe8cde2f2b87297683cd65495dedd9debcfe0d5'
-    },
-    body: JSON.stringify([query])
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone: query })
   })
   .then(function(r) {
     if (!r.ok) return r.text().then(function(t) { throw new Error('HTTP ' + r.status + ': ' + t); });

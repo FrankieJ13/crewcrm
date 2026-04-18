@@ -1340,42 +1340,23 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
 .t-bottombar { position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; padding: 28px 48px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 300; letter-spacing: 0.16em; color: rgba(255,255,255,0.22); text-transform: uppercase; line-height: 1.8; }
 #author { cursor: pointer; }
 /* ===== END TEASER OVERLAY ===== */
-
 /* ===== PHONE LOOKUP ===== */
-.phone-lookup-wrap { border:1px solid var(--line); border-radius:var(--r2); overflow:hidden; margin-bottom:4px; }
-.phone-lookup-row-inp { display:flex; align-items:center; gap:8px; padding:12px 14px; background:var(--bg2); border-bottom:1px solid var(--line); }
-.phone-lookup-input {
-  flex:1; background:var(--bg3); border:1px solid var(--line2);
-  color:var(--txt); font-family:'Golos Text',sans-serif;
-  font-size:14px; padding:8px 12px; border-radius:var(--r);
-  outline:none; transition:border-color .15s;
-}
-.phone-lookup-input:focus { border-color:var(--acc); }
-.phone-lookup-input::placeholder { color:var(--txt3); }
-.phone-lookup-btn {
-  background:var(--acc); color:#000;
-  font-family:'Unbounded',sans-serif; font-size:9px; font-weight:800;
-  letter-spacing:.06em; border:none; padding:9px 14px;
-  border-radius:var(--r); cursor:pointer; transition:opacity .15s;
-  white-space:nowrap; flex-shrink:0;
-}
-.phone-lookup-btn:hover { opacity:.82; }
-.phone-lookup-btn:disabled { opacity:.35; cursor:default; }
-.phone-lookup-result { background:var(--bg2); padding:0 14px; }
-.phone-lookup-number {
-  font-family:'Unbounded',sans-serif; font-size:12px; font-weight:800;
-  color:var(--acc); padding:12px 0 8px;
-  border-bottom:1px solid var(--line2); margin-bottom:4px;
-}
-.phone-lookup-line {
-  display:flex; justify-content:space-between; gap:12px;
-  padding:5px 0; border-bottom:1px solid var(--line); font-size:12px;
-}
-.phone-lookup-line:last-child { border-bottom:none; padding-bottom:12px; }
-.phone-lookup-lk { color:var(--txt3); font-size:11px; }
-.phone-lookup-lv { color:var(--txt); font-weight:500; text-align:right; }
-.phone-lookup-err { color:var(--red); font-size:12px; padding:10px 0 12px; text-align:center; }
-.phone-lookup-spin { display:flex; align-items:center; justify-content:center; gap:8px; padding:14px 0; color:var(--txt3); font-size:12px; }
+.pl-wrap{border:1px solid var(--line);border-radius:var(--r2);overflow:hidden;margin-bottom:4px}
+.pl-inp-row{display:flex;align-items:center;gap:8px;padding:12px 14px;background:var(--bg2);border-bottom:1px solid var(--line)}
+.pl-input{flex:1;background:var(--bg3);border:1px solid var(--line2);color:var(--txt);font-family:'Golos Text',sans-serif;font-size:14px;padding:8px 12px;border-radius:var(--r);outline:none;transition:border-color .15s}
+.pl-input:focus{border-color:var(--acc)}
+.pl-input::placeholder{color:var(--txt3)}
+.pl-btn{background:var(--acc);color:#000;font-family:'Unbounded',sans-serif;font-size:9px;font-weight:800;letter-spacing:.06em;border:none;padding:9px 14px;border-radius:var(--r);cursor:pointer;transition:opacity .15s;white-space:nowrap;flex-shrink:0}
+.pl-btn:hover{opacity:.82}
+.pl-btn:disabled{opacity:.35;cursor:default}
+.pl-result{background:var(--bg2);padding:0 14px}
+.pl-number{font-family:'Unbounded',sans-serif;font-size:12px;font-weight:800;color:var(--acc);padding:12px 0 8px;border-bottom:1px solid var(--line2);margin-bottom:4px}
+.pl-row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid var(--line);font-size:12px}
+.pl-row:last-child{border-bottom:none;padding-bottom:12px}
+.pl-k{color:var(--txt3);font-size:11px}
+.pl-v{color:var(--txt);font-weight:500;text-align:right}
+.pl-err{color:var(--red);font-size:12px;padding:10px 0 12px;text-align:center}
+.pl-spin{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 0;color:var(--txt3);font-size:12px}
 /* ===== END PHONE LOOKUP ===== */
 </style>
 </head>
@@ -3119,22 +3100,23 @@ function initLinksTab() {
 
 function renderMangoTab() {
   const mangoData = [['Барнаул','#9913'],['Красноярск','#1118'],['Кемерово','#1478'],['Новокузнецк','#1213'],['Новосибирск','#1516'],['Омск','#108'],['Оренбург','#11444'],['Пермь','#974'],['Сургут','#1811'],['Томск','#1417'],['Тюмень','#1512'],['Челябинск','#1612'],['АСЦ Пермь','239-26-26']];
-  const rows = mangoData.map(([city, num]) => '<tr><td>' + city + '</td><td>' + num + '</td></tr>').join('');
-  const html = '<div class="sec-title">Добавочные номера Mango</div>' +
-    '<div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+  const rows = mangoData.map(([c,n]) => '<tr><td>'+c+'</td><td>'+n+'</td></tr>').join('');
+  const html =
+    '<div class="sec-title">Добавочные номера Mango</div>' +
+    '<div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th></tr></thead><tbody>'+rows+'</tbody></table></div>' +
     '<div class="sec-title">Определить номер</div>' +
-    '<div class="phone-lookup-wrap">' +
-      '<div class="phone-lookup-row-inp">' +
-        '<input class="phone-lookup-input" id="pl-inp" type="text" placeholder="+7 (___) ___-__-__" autocomplete="off"/>' +
-        '<button class="phone-lookup-btn" id="pl-btn">Определить</button>' +
+    '<div class="pl-wrap">' +
+      '<div class="pl-inp-row">' +
+        '<input class="pl-input" id="pl-inp" type="text" placeholder="+7 (___) ___-__-__" autocomplete="off"/>' +
+        '<button class="pl-btn" id="pl-btn">Определить</button>' +
       '</div>' +
-      '<div class="phone-lookup-result" id="pl-res"></div>' +
+      '<div class="pl-result" id="pl-res"></div>' +
     '</div>';
   setTimeout(function() {
-    var btn = document.getElementById('pl-btn');
-    var inp = document.getElementById('pl-inp');
-    if (btn) btn.addEventListener('click', phoneLookup);
-    if (inp) inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') phoneLookup(); });
+    var b = document.getElementById('pl-btn');
+    var i = document.getElementById('pl-inp');
+    if (b) b.addEventListener('click', phoneLookup);
+    if (i) i.addEventListener('keydown', function(e) { if (e.key === 'Enter') phoneLookup(); });
   }, 0);
   return html;
 }
@@ -3144,19 +3126,20 @@ function phoneLookup() {
   var res = document.getElementById('pl-res');
   var btn = document.getElementById('pl-btn');
   if (!inp || !res || !btn) return;
-  var query = inp.value.trim();
-  if (!query) { res.innerHTML = '<div class="phone-lookup-err">Введите номер телефона</div>'; return; }
+  var q = inp.value.trim();
+  if (!q) { res.innerHTML = '<div class="pl-err">Введите номер телефона</div>'; return; }
 
   btn.disabled = true;
-  res.innerHTML = '<div class="phone-lookup-spin"><div class="spin"></div>Запрос…</div>';
+  res.innerHTML = '<div class="pl-spin"><div class="spin"></div>Запрос…</div>';
 
-  function renderResult(data) {
+  function render(data) {
     btn.disabled = false;
     var d = Array.isArray(data) ? data[0] : data;
-    if (!d || (!d.phone && d.qc === 3)) { res.innerHTML = '<div class="phone-lookup-err">Номер не распознан</div>'; return; }
-    if (!d.phone) { res.innerHTML = '<div class="phone-lookup-err">Номер не определён</div>'; return; }
-    var qcClr = {0:'var(--grn)',1:'#fbad33',2:'var(--txt3)',3:'var(--red)'};
-    var qcLbl = {0:'Верный',1:'Уточнить',2:'Не определён',3:'Неверный'};
+    if (!d) { res.innerHTML = '<div class="pl-err">Пустой ответ</div>'; return; }
+    if (d.error) { res.innerHTML = '<div class="pl-err">Ошибка: ' + d.error + '</div>'; return; }
+    if (!d.phone) { res.innerHTML = '<div class="pl-err">Номер не распознан</div>'; return; }
+    var qc = {0:'Верный',1:'Уточнить',2:'Не определён',3:'Неверный'};
+    var qcC = {0:'var(--grn)',1:'#fbad33',2:'var(--txt3)',3:'var(--red)'};
     var rows = [];
     if (d.type)      rows.push(['Тип',            d.type]);
     if (d.provider)  rows.push(['Оператор',        d.provider]);
@@ -3166,43 +3149,27 @@ function phoneLookup() {
     if (d.timezone)  rows.push(['Часовой пояс',     d.timezone]);
     if (d.city_code) rows.push(['DEF / код города', d.city_code]);
     if (d.extension) rows.push(['Добавочный',       d.extension]);
-    rows.push(['Качество', '<span style="color:' + (qcClr[d.qc] || 'var(--txt2)') + '">' + (qcLbl[d.qc] || '—') + '</span>']);
-    res.innerHTML = '<div class="phone-lookup-number">' + d.phone + '</div>' +
-      rows.map(function(r) {
-        return '<div class="phone-lookup-line"><span class="phone-lookup-lk">' + r[0] + '</span><span class="phone-lookup-lv">' + r[1] + '</span></div>';
-      }).join('');
+    rows.push(['Качество','<span style="color:'+(qcC[d.qc]||'var(--txt2)')+'">'+( qc[d.qc]||'—')+'</span>']);
+    res.innerHTML = '<div class="pl-number">'+d.phone+'</div>' +
+      rows.map(function(r){return '<div class="pl-row"><span class="pl-k">'+r[0]+'</span><span class="pl-v">'+r[1]+'</span></div>';}).join('');
   }
 
-  function fetchFailed(err) {
-    btn.disabled = false;
-    res.innerHTML = '<div class="phone-lookup-err">Ошибка: ' + (err && err.message ? err.message : err) + '</div>';
-  }
-
-  // В WPF WebView2 — через C# (без CORS)
+  // WPF WebView2 → C# делает запрос (нет CORS)
   if (window.chrome && window.chrome.webview) {
-    window._phoneLookupCallback = function(data) { renderResult(JSON.parse(data)); };
-    window.chrome.webview.postMessage(JSON.stringify({ type: 'phoneLookup', phone: query }));
+    window._phoneLookupCallback = function(raw) { try { render(JSON.parse(raw)); } catch(e) { btn.disabled=false; res.innerHTML='<div class="pl-err">Ошибка разбора ответа</div>'; } };
+    window.chrome.webview.postMessage(JSON.stringify({ type: 'phoneLookup', phone: q }));
     return;
   }
 
-  // В браузере — прямой запрос к DaData (поддерживает CORS)
-  fetch('https://cleaner.dadata.ru/api/v1/clean/phone', {
+  // Браузер → Apps Script прокси (обходит CORS)
+  fetch('https://script.google.com/macros/s/AKfycbz0VDp16YODAqjmVYL7Clv2_nD89nDaSoEvXEALnzU8gVwm8i2rZQvBnmLNtsm-qF05Gw/exec', {
     method: 'POST',
-    mode: 'cors',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': 'Token 52925b3003fd142fd4e4f2650abd772533150298',
-      'X-Secret': 'cbe8cde2f2b87297683cd65495dedd9debcfe0d5'
-    },
-    body: JSON.stringify([query])
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone: q })
   })
-  .then(function(r) {
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    return r.json();
-  })
-  .then(renderResult)
-  .catch(fetchFailed);
+  .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(render)
+  .catch(function(err) { btn.disabled=false; res.innerHTML='<div class="pl-err">Ошибка: '+err.message+'</div>'; });
 }
 
 function closeMopModal(e) {

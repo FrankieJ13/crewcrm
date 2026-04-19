@@ -1449,10 +1449,10 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
   background:var(--bg2); border:1px solid var(--acc);
   border-radius:var(--r2); overflow:hidden;
   box-shadow:0 8px 32px rgba(0,0,0,.45);
-  z-index:9000; animation:up .35s ease;
+  z-index:9000;
   flex-direction:column;
 }
-#bday-banner.on { display:flex; }
+#bday-banner.on { display:flex; animation:up .35s ease; }
 /* Фон с шарами */
 .bday-balloons {
   position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0;
@@ -1481,7 +1481,7 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
 /* Торт — левая колонка */
 .bday-cake-col {
   flex-shrink:0; display:flex; align-items:flex-end; justify-content:center;
-  width:100px;
+  width:100px; padding-top:14px;
 }
 /* Текст — правая колонка */
 .bday-body { flex:1; min-width:0; }
@@ -4127,6 +4127,28 @@ function resetCandles() {
   });
 }
 
+function restartCakeAnimations() {
+  // Клонируем SVG — SMIL анимации перезапускаются с нуля
+  const oldSvg = document.getElementById('bday-cake-svg');
+  if (oldSvg) {
+    const newSvg = oldSvg.cloneNode(true);
+    oldSvg.parentNode.replaceChild(newSvg, oldSvg);
+  }
+  // Сброс CSS-анимаций свечей через reflow
+  document.querySelectorAll('#bday-banner .velas').forEach(v => {
+    v.classList.remove('out');
+    v.querySelectorAll('.velas-smoke').forEach(s => s.remove());
+    v.style.animation = 'none';
+    void v.offsetWidth;
+    v.style.animation = '';
+  });
+  document.querySelectorAll('#bday-banner .fuego').forEach(f => {
+    f.style.animation = 'none';
+    void f.offsetWidth;
+    f.style.animation = '';
+  });
+}
+
 function showNextBday() {
   if (!_bdayBannerQueue.length) return;
   const item = _bdayBannerQueue.shift();
@@ -4138,11 +4160,14 @@ function showNextBday() {
   const dateEl = document.getElementById('bday-date');
   if (dateEl) dateEl.textContent = 'До дня рождения: ' + item.days + ' ' + pluralDays(item.days);
 
-  resetCandles();
-  spawnBalloons();
-  document.getElementById('bday-banner').classList.add('on');
+  const banner = document.getElementById('bday-banner');
+  banner.classList.remove('on');
+  void banner.offsetWidth; // reflow перезапускает animation:up
 
-  // Звук
+  restartCakeAnimations();
+  spawnBalloons();
+  banner.classList.add('on');
+
   try {
     const audio = document.getElementById('bday-audio');
     if (audio) { audio.currentTime = 0; audio.play().catch(() => {}); }

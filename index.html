@@ -1445,14 +1445,39 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
 #bday-banner {
   display:none; position:fixed; bottom:72px; left:50%;
   transform:translateX(-50%);
-  width:min(380px, 92vw);
+  width:min(400px, 94vw);
   background:var(--bg2); border:1px solid var(--acc);
-  border-radius:var(--r2); padding:14px 16px 14px 18px;
-  box-shadow:0 4px 24px rgba(0,0,0,.35);
-  z-index:9000; animation:up .3s ease;
+  border-radius:var(--r2); overflow:hidden;
+  box-shadow:0 8px 32px rgba(0,0,0,.45);
+  z-index:9000; animation:up .35s ease;
+  flex-direction:column;
 }
-#bday-banner.on { display:flex; gap:12px; align-items:flex-start; }
-.bday-icon { font-size:22px; flex-shrink:0; margin-top:1px; }
+#bday-banner.on { display:flex; }
+/* Фон с шарами */
+.bday-balloons {
+  position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0;
+}
+.bday-balloon {
+  position:absolute; bottom:-60px;
+  width:28px; height:34px; border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
+  opacity:.55; animation:bday-float linear infinite;
+}
+.bday-balloon::after {
+  content:''; position:absolute; bottom:-10px; left:50%;
+  transform:translateX(-50%);
+  width:1px; height:14px; background:rgba(255,255,255,.4);
+}
+@keyframes bday-float {
+  0%   { transform:translateX(0) translateY(0); opacity:.55; }
+  50%  { transform:translateX(12px) translateY(-40vh); opacity:.4; }
+  100% { transform:translateX(-6px) translateY(-90vh); opacity:0; }
+}
+/* Контент поверх шаров */
+.bday-content {
+  position:relative; z-index:1;
+  padding:14px 16px 0 18px;
+  display:flex; gap:10px; align-items:flex-start;
+}
 .bday-body { flex:1; }
 .bday-title {
   font-family:'Unbounded',sans-serif; font-size:9px; font-weight:800;
@@ -1466,6 +1491,111 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
   transition:color .15s;
 }
 .bday-close:hover { color:var(--txt); }
+/* Торт */
+.bday-cake-wrap {
+  position:relative; z-index:1;
+  display:flex; justify-content:center; align-items:flex-end;
+  padding:10px 0 16px; cursor:default;
+}
+.bday-cake {
+  position:relative; display:inline-block;
+}
+/* Тарелка */
+.cake-plate {
+  position:absolute; bottom:-6px; left:50%; transform:translateX(-50%);
+  width:112px; height:10px;
+  background:linear-gradient(180deg,#bbb,#888);
+  border-radius:50%;
+}
+/* Корж нижний */
+.cake-base {
+  width:90px; height:28px;
+  background:linear-gradient(180deg,#c8874a,#a0622a);
+  border-radius:6px 6px 4px 4px;
+  position:relative;
+  box-shadow:0 3px 8px rgba(0,0,0,.3);
+}
+.cake-base::after {
+  content:''; position:absolute; top:0; left:0; right:0; height:8px;
+  background:linear-gradient(180deg,#f5c28a,#d4874a);
+  border-radius:6px 6px 0 0;
+}
+/* Корж верхний */
+.cake-top {
+  width:72px; height:22px; margin:0 auto;
+  background:linear-gradient(180deg,#e88a4a,#c06030);
+  border-radius:5px 5px 3px 3px;
+  position:relative;
+  box-shadow:0 2px 6px rgba(0,0,0,.25);
+}
+.cake-top::after {
+  content:''; position:absolute; top:0; left:0; right:0; height:6px;
+  background:linear-gradient(180deg,#ffd0a0,#e89060);
+  border-radius:5px 5px 0 0;
+}
+/* Крем волны */
+.cake-cream {
+  width:72px; margin:0 auto;
+  height:10px; position:relative; overflow:visible;
+}
+.cake-cream::before {
+  content:'';
+  position:absolute; top:-5px; left:0; right:0;
+  height:10px;
+  background:
+    radial-gradient(circle at 8px 50%, #fff8f0 6px, transparent 6px),
+    radial-gradient(circle at 20px 50%, #fff8f0 6px, transparent 6px),
+    radial-gradient(circle at 32px 50%, #fff8f0 6px, transparent 6px),
+    radial-gradient(circle at 44px 50%, #fff8f0 6px, transparent 6px),
+    radial-gradient(circle at 56px 50%, #fff8f0 6px, transparent 6px),
+    radial-gradient(circle at 68px 50%, #fff8f0 6px, transparent 6px);
+}
+/* Свечи */
+.cake-candles {
+  display:flex; justify-content:center; gap:12px;
+  position:absolute; top:-38px; left:50%; transform:translateX(-50%);
+  width:72px;
+}
+.candle {
+  display:flex; flex-direction:column; align-items:center;
+  cursor:pointer; position:relative;
+}
+.candle-body {
+  width:8px; height:20px; border-radius:3px;
+}
+.candle-wick {
+  width:1.5px; height:5px; background:#333; border-radius:1px;
+}
+/* Пламя */
+.candle-flame {
+  width:10px; height:14px;
+  background:radial-gradient(ellipse at 50% 80%, #fff 0%, #ffe066 30%, #ff9900 65%, transparent 100%);
+  border-radius:50% 50% 35% 35%;
+  animation:flame-flicker .4s ease-in-out infinite alternate;
+  transform-origin:50% 100%;
+  filter:drop-shadow(0 0 4px #ff9900aa);
+  transition:opacity .2s, height .2s;
+}
+.candle.out .candle-flame {
+  opacity:0; height:0;
+}
+/* Дымок при тушении */
+.candle.out .candle-wick::after {
+  content:''; display:block;
+  width:2px; height:8px;
+  background:linear-gradient(180deg, rgba(180,180,180,.8), transparent);
+  border-radius:1px; margin:0 auto;
+  animation:smoke-rise .8s ease-out forwards;
+}
+@keyframes flame-flicker {
+  0%  { transform:scaleX(1) scaleY(1) rotate(-2deg); }
+  50% { transform:scaleX(.85) scaleY(1.08) rotate(1deg); }
+  100%{ transform:scaleX(1.1) scaleY(.95) rotate(-1deg); }
+}
+@keyframes smoke-rise {
+  0%   { opacity:.8; transform:translateY(0) scaleX(1); }
+  100% { opacity:0;  transform:translateY(-12px) scaleX(2); }
+}
 /* ===== END BIRTHDAY BANNER ===== */
 </style>
 </head>
@@ -1606,13 +1736,41 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
 </div>
 <!-- BIRTHDAY BANNER -->
 <div id="bday-banner">
-  <span class="bday-icon">🎂</span>
-  <div class="bday-body">
-    <div class="bday-title">День рождения коллеги</div>
-    <div class="bday-msg" id="bday-msg"></div>
+  <div class="bday-balloons" id="bday-balloons"></div>
+  <div class="bday-content">
+    <div class="bday-body">
+      <div class="bday-title">🎉 День рождения коллеги</div>
+      <div class="bday-msg" id="bday-msg"></div>
+    </div>
+    <button class="bday-close" onclick="closeBdayBanner()">×</button>
   </div>
-  <button class="bday-close" onclick="closeBdayBanner()">×</button>
+  <div class="bday-cake-wrap">
+    <div class="bday-cake">
+      <div class="cake-candles" id="cake-candles">
+        <div class="candle" onclick="blowCandle(this)">
+          <div class="candle-flame"></div>
+          <div class="candle-wick"></div>
+          <div class="candle-body" style="background:linear-gradient(180deg,#ff6b9d,#c0392b)"></div>
+        </div>
+        <div class="candle" onclick="blowCandle(this)">
+          <div class="candle-flame"></div>
+          <div class="candle-wick"></div>
+          <div class="candle-body" style="background:linear-gradient(180deg,#74b9ff,#0984e3)"></div>
+        </div>
+        <div class="candle" onclick="blowCandle(this)">
+          <div class="candle-flame"></div>
+          <div class="candle-wick"></div>
+          <div class="candle-body" style="background:linear-gradient(180deg,#55efc4,#00b894)"></div>
+        </div>
+      </div>
+      <div class="cake-cream"></div>
+      <div class="cake-top"></div>
+      <div class="cake-base"></div>
+      <div class="cake-plate"></div>
+    </div>
+  </div>
 </div>
+<audio id="bday-audio" src="https://frankiej13.github.io/crewcrm/dob.mp3" preload="auto"></audio>
 <div class="mop-overlay" id="mop-overlay" onclick="closeMopModal(event)">
   <div class="mop-modal" id="mop-modal">
     <div class="mop-modal-hdr">
@@ -3869,17 +4027,62 @@ function showBdayQueue(queue) {
   showNextBday();
 }
 
+// Цвета шаров
+const BALLOON_COLORS = [
+  '#ff6b9d','#ff9f43','#ffeaa7','#55efc4','#74b9ff',
+  '#a29bfe','#fd79a8','#e17055','#00cec9','#6c5ce7',
+];
+
+function spawnBalloons() {
+  const container = document.getElementById('bday-balloons');
+  if (!container) return;
+  container.innerHTML = '';
+  for (let i = 0; i < 12; i++) {
+    const b = document.createElement('div');
+    b.className = 'bday-balloon';
+    const color = BALLOON_COLORS[i % BALLOON_COLORS.length];
+    b.style.background = `radial-gradient(circle at 35% 35%, ${color}ee, ${color}88)`;
+    b.style.left = (5 + Math.random() * 90) + '%';
+    b.style.animationDuration = (6 + Math.random() * 8) + 's';
+    b.style.animationDelay = (Math.random() * 5) + 's';
+    b.style.width  = (22 + Math.random() * 14) + 'px';
+    b.style.height = (28 + Math.random() * 16) + 'px';
+    container.appendChild(b);
+  }
+}
+
+function blowCandle(el) {
+  if (el.classList.contains('out')) return;
+  el.classList.add('out');
+  // Если все потушены — маленький конфетти-эффект
+  const all = document.querySelectorAll('#cake-candles .candle');
+  if ([...all].every(c => c.classList.contains('out'))) {
+    setTimeout(() => toast('🎊 Все свечи потушены!', 's'), 300);
+  }
+}
+
+function resetCandles() {
+  document.querySelectorAll('#cake-candles .candle').forEach(c => c.classList.remove('out'));
+}
+
 function showNextBday() {
   if (!_bdayBannerQueue.length) return;
   const item = _bdayBannerQueue.shift();
   const gen = toGenitive(item.firstName);
   document.getElementById('bday-msg').textContent =
     'У твоего коллеги, ' + gen + ', скоро день рождения. Это знаменательный день! Начните уже включаться в процесс сбора средств на подарок!';
+
+  resetCandles();
+  spawnBalloons();
   document.getElementById('bday-banner').classList.add('on');
-  // Сохраняем что это уведомление показано
+
+  // Звук
+  try {
+    const audio = document.getElementById('bday-audio');
+    if (audio) { audio.currentTime = 0; audio.play().catch(() => {}); }
+  } catch(e) {}
+
   try { localStorage.setItem(item.key, '1'); } catch(e) {}
-  // Следующий баннер — через 6 секунд после закрытия
-  _bdayBannerQueue._current = item;
 }
 
 function closeBdayBanner() {

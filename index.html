@@ -1400,11 +1400,11 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
 .pe-status { font-size:11px; color:var(--txt3); display:flex; align-items:center; gap:6px; }
 /* Кнопка «Планы» в навбаре CEO */
 #btn-plan-edit {
-  display:none; align-items:center; gap:5px;
-  font-size:11px; font-weight:600; letter-spacing:.04em;
+  display:none; align-items:center; justify-content:center;
   color:var(--acc); background:var(--acc-bg);
   border:1px solid var(--acc-bdr); border-radius:var(--r);
-  padding:5px 10px; cursor:pointer; transition:opacity .15s;
+  padding:6px; cursor:pointer; transition:opacity .15s;
+  width:30px; height:30px;
 }
 #btn-plan-edit:hover { opacity:.8; }
 /* ===== END PLAN EDITOR ===== */
@@ -1473,7 +1473,12 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
             <line x1="21" y1="12" x2="9" y2="12"/>
           </svg>
         </button>
-        <button id="btn-plan-edit" onclick="openPlanEditor()" title="Редактировать планы">✎ Планы</button>
+        <button id="btn-plan-edit" onclick="openPlanEditor()" title="Редактировать планы">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
       </div>
     </div>
   </header>
@@ -1819,8 +1824,15 @@ function renderUser() {
   if (S.user.picture) av.src = S.user.picture;
   av.style.cursor = 'pointer';
   av.title = 'Мой KPI';
-  av.onclick = goPersonal;
-  if (S.user.name)    document.getElementById('user-name').textContent = S.user.name.split(' ')[0];
+  av.onclick = function() {
+    const m = findUserInSheet();
+    if (m && m.role === 'ceo') return;
+    goPersonal();
+  };
+  if (S.user.name) {
+    const nameParts = S.user.name.split(' ');
+    document.getElementById('user-name').textContent = nameParts[0];
+  }
   document.getElementById('user-wrap').style.display = 'flex';
 }
 
@@ -2514,7 +2526,13 @@ function renderOtchet() {
     return rows.find(r => (r[0]||'').toLowerCase().trim() === n) || [];
   }
 
-  const managerStats = mgrRows.map(r => {
+  const managerStats = mgrRows
+    .filter(r => {
+      if (isKotel(r[0])) return true; // котёл показываем
+      const role = getRoleByName(r[0].toLowerCase().trim());
+      return role === 'crm' || role === '';
+    })
+    .map(r => {
     const mName = (r[0]||'—').trim();
     const genRow = getCnvrsRow(mName, 'general');
     const convStr = (genRow[6]||'0%').replace('%','').replace(',','.');
@@ -2560,8 +2578,13 @@ function renderOtchet() {
       <div class="speedo-grid">${speedoHTML}</div>
     </div>`;
 
-  const rankRows  = mgrRows.filter(r => !isKotel(r[0]));
-  const kotelRows = mgrRows.filter(r =>  isKotel(r[0]));
+  // Фильтруем: в CRM-рейтинге только менеджеры с role=crm
+  const rankRows  = mgrRows.filter(r => {
+    if (isKotel(r[0])) return false;
+    const role = getRoleByName(r[0].toLowerCase().trim());
+    return role === 'crm' || role === '';
+  });
+  const kotelRows = mgrRows.filter(r => isKotel(r[0]));
 
   const withProg = rankRows.map(r => {
     const allV = num(r[7]);
@@ -2794,7 +2817,7 @@ function renderDohod() {
         </div>
       </div>`;
   } else {
-    if (!S.data.otchet || !S.data.stavki) { el.innerHTML = loader(); return; }
+    if (!S.data.vizity || !S.data.stavki) { el.innerHTML = loader(); return; }
     const sal = calcSalary(nameLow);
     if (!sal) { el.innerHTML = '<div class="empty">Нет данных по вашему доходу</div>'; return; }
 
@@ -2874,7 +2897,13 @@ function renderDohodCrm(el) {
   if (!S.data.stavki) { el.innerHTML = '<div class="loader"><div class="spin"></div><span>Загружаем ставки…</span></div>'; return; }
 
   const planData = S.data.plan || [];
-  const planNames = planData.slice(1).filter(r => r && r[0]).map(r => String(r[0]).trim());
+  const planNames = planData.slice(1)
+    .filter(r => r && r[0])
+    .map(r => String(r[0]).trim())
+    .filter(name => {
+      const role = getRoleByName(name.toLowerCase().trim());
+      return role === 'crm' || role === '';
+    });
   if (!planNames.length) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
 
   const mgrRows = planNames.map(name => name);
@@ -3570,6 +3599,28 @@ function getCnvrsRowGlobal(name, section) {
   return rows.find(r => (r[0]||'').toLowerCase().trim() === n) || [];
 }
 
+// Возвращает rang менеджера ('manager' | 'rookie') по имени из USERS
+function getRangByName(nameLow) {
+  if (!S.usersData) return 'manager';
+  for (let i = 1; i < S.usersData.length; i++) {
+    const row = S.usersData[i];
+    const name = (row[1]||'').toLowerCase().trim();
+    if (name === nameLow) return (row[4]||'manager').toLowerCase().trim();
+  }
+  return 'manager';
+}
+
+// Возвращает role менеджера ('crm' | 'dozhim' | 'ceo') по имени из USERS
+function getRoleByName(nameLow) {
+  if (!S.usersData) return 'crm';
+  for (let i = 1; i < S.usersData.length; i++) {
+    const row = S.usersData[i];
+    const name = (row[1]||'').toLowerCase().trim();
+    if (name === nameLow) return (row[2]||'crm').toLowerCase().trim();
+  }
+  return 'crm';
+}
+
 function findUserInSheet() {
   if (!S.usersData || !S.user) return null;
   const email = (S.user.email || '').toLowerCase().trim();
@@ -3578,7 +3629,13 @@ function findUserInSheet() {
     const rawEmails = (row[0]||'');
     const emails = rawEmails.split(/[,;\s]+/).map(e => e.toLowerCase().trim()).filter(Boolean);
     if (emails.includes(email)) {
-      return { email: row[0], name: (row[1]||'').trim(), role: (row[2]||'crm').toLowerCase().trim(), fund: (row[3]||'').toLowerCase().trim() === 'да' };
+      return {
+        email: row[0],
+        name:  (row[1]||'').trim(),
+        role:  (row[2]||'crm').toLowerCase().trim(),
+        fund:  (row[3]||'').toLowerCase().trim() === 'да',
+        rang:  (row[4]||'manager').toLowerCase().trim(), // Manager или Rookie
+      };
     }
   }
   return null;
@@ -3587,12 +3644,13 @@ function findUserInSheet() {
 async function loadUsersAndStart() {
   try {
     if (!S.usersData) {
-      S.usersData = await api('USERS', 'A1:D50');
+      S.usersData = await api('USERS', 'A1:E50');
     }
   } catch(e) { S.usersData = []; }
   const matched = findUserInSheet();
   if (matched && matched.name) {
-    const firstName = matched.name.trim().split(/\s+/)[0];
+    const parts = matched.name.trim().split(/\s+/);
+    const firstName = parts.length >= 2 ? parts[1] : parts[0];
     toast('Приветствую, ' + firstName + '!', 's');
     showPlanEditBtnIfCeo(matched);
     if (matched.role === 'ceo') {
@@ -3607,7 +3665,7 @@ async function loadUsersAndStart() {
 
 function goPersonal() {
   const matched = findUserInSheet();
-  if (!matched || !matched.name) { goTab('otchet'); return; }
+  if (!matched || !matched.name || matched.role === 'ceo') { goTab('otchet'); return; }
   document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
   showScr('personal');
   loadPersonal(matched);
@@ -3949,8 +4007,12 @@ function calcSalary(nameLow) {
   const mgrPlan   = planMap[nameLow] || 0;
   const pctFact  = computeFactPct(mgrAllVis, mgrPlan || 1);
   const pctProg  = computeProgPct(mgrAllVis, mgrPlan || 1, currentSuffix);
-  const koefFact = getKoef(pctFact);
-  const koefProg = getKoef(pctProg);
+
+  // Rang: rookie — без коэффициентов (всегда ×1.0)
+  const mgrRang = getRangByName(nameLow);
+  const isRookie = mgrRang === 'rookie';
+  const koefFact = isRookie ? 1.0 : getKoef(pctFact);
+  const koefProg = isRookie ? 1.0 : getKoef(pctProg);
 
   const totalFact = oklad + premium * koefFact;
   const totalProg = baseOklad + premium * koefProg;

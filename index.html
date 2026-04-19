@@ -2002,20 +2002,24 @@ async function loadTab(tab) {
         renderTab('otchet');
       }).catch(() => { S.data.cnvrs = []; });
     }
-    if (!S.data.vizity) {
-      api(SHEETS.vizity, 'A:J').then(data => {
-        S.data.vizity = data;
-        if (S.reportTab === 'dept') renderOtchet();
-      }).catch(() => { S.data.vizity = []; });
+    const needVizity = !S.data.vizity;
+    const needPlan   = !S.data.plan;
+    if (needVizity || needPlan) {
+      if (el) el.innerHTML = loader();
+      const promises = [];
+      if (needVizity) promises.push(
+        api(SHEETS.vizity, 'A:J')
+          .then(d => { S.data.vizity = d; })
+          .catch(() => { S.data.vizity = []; })
+      );
+      if (needPlan) promises.push(
+        api(SHEETS.plan, 'A:B')
+          .then(d => { S.data.plan = d; })
+          .catch(() => { S.data.plan = []; })
+      );
+      Promise.all(promises).then(() => renderOtchet());
+      return;
     }
-    if (!S.data.plan) {
-      api(SHEETS.plan, 'A:B').then(data => {
-        S.data.plan = data;
-        if (S.reportTab === 'dept' || S.reportTab === 'mgr') renderOtchet();
-      }).catch(() => { S.data.plan = []; });
-    }
-    renderTab('otchet');
-    return;
   }
   if (tab === 'dohod') {
     const el = document.getElementById('c-dohod');
@@ -3609,7 +3613,11 @@ async function loadUsersAndStart() {
     const firstName = matched.name.trim().split(/\s+/)[0];
     toast('Приветствую, ' + firstName + '!', 's');
     showPlanEditBtnIfCeo(matched);
-    goPersonal();
+    if (matched.role === 'ceo') {
+      goTab('otchet');
+    } else {
+      goPersonal();
+    }
   } else {
     toast('Приветствую, коллега!', 's');
   }

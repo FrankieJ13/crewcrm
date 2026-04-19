@@ -1742,7 +1742,7 @@ function onLogin() {
   document.getElementById('main-nav').style.display  = 'flex';
   const ls = document.getElementById('scr-login');
   ls.classList.remove('on'); ls.style.display = 'none';
-  toast('Приветствую, коллега!', 's');
+  toast('Приветствую!', 's');
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab==='otchet'));
   showScr('otchet');
   loadTab('otchet');
@@ -3248,7 +3248,11 @@ async function loadUsersAndStart() {
   } catch(e) { S.usersData = []; }
   const matched = findUserInSheet();
   if (matched && matched.name) {
+    const firstName = matched.name.trim().split(/\s+/)[0];
+    toast('Приветствую, ' + firstName + '!', 's');
     goPersonal();
+  } else {
+    toast('Приветствую, коллега!', 's');
   }
 }
 

@@ -1379,10 +1379,10 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
 .pe-spoiler summary::-webkit-details-marker { display:none; }
 .pe-spoiler summary::after { content:'▾'; font-size:12px; color:var(--acc); }
 .pe-spoiler[open] summary::after { content:'▴'; }
-.pe-spoiler-body { padding:8px 0 4px; }
+.pe-spoiler-body { padding:4px 12px 8px; }
 .pe-row {
   display:flex; align-items:center; justify-content:space-between;
-  gap:10px; padding:7px 0; border-bottom:1px solid var(--line);
+  gap:10px; padding:7px 4px; border-bottom:1px solid var(--line);
 }
 .pe-row:last-child { border-bottom:none; }
 .pe-name { font-size:13px; color:var(--txt); }
@@ -1735,7 +1735,7 @@ function rankStyles(pos, total) {
   const badgeBg = `rgba(${r},${g},${b},.25)`;
   return { color, border, badgeBg, r, g, b };
 }
-function loader() { return `<div class="loader"><div class="spin"></div><span>Загружаем…</span></div>` }
+function loader() { return `<div class="loader"><div class="spin"></div><span>Синхронизация…</span></div>` }
 
 function medalBtn(idx) {
   const emoji = idx===0 ? '🥇' : idx===1 ? '🥈' : idx===2 ? '🥉' : '';
@@ -2035,6 +2035,7 @@ async function loadTab(tab) {
   }
   if (tab === 'dohod') {
     const el = document.getElementById('c-dohod');
+    if (el) el.innerHTML = loader();  // показываем сразу
     const matched = findUserInSheet();
     const role = matched?.role || '';
     const isCeo = role === 'ceo';
@@ -3051,7 +3052,7 @@ function renderDohod() {
 
 function renderDohodCrm(el) {
   if (!S.data.vizity || !S.data.plan) { el.innerHTML = loader(); return; }
-  if (!S.data.stavki) { el.innerHTML = '<div class="loader"><div class="spin"></div><span>Загружаем ставки…</span></div>'; return; }
+  if (!S.data.stavki) { el.innerHTML = '<div class="loader"><div class="spin"></div><span>Синхронизация…</span></div>'; return; }
 
   const planData = S.data.plan || [];
   const planNames = planData.slice(1)
@@ -3647,10 +3648,10 @@ function openPlanEditor() {
 
   let html = '';
   if (groups.crm.length) {
-    html += `<details class="pe-spoiler" open><summary>CRM (${groups.crm.length} чел.)</summary><div class="pe-spoiler-body">${makeRows(groups.crm)}</div></details>`;
+    html += `<details class="pe-spoiler"><summary>CRM (${groups.crm.length} чел.)</summary><div class="pe-spoiler-body">${makeRows(groups.crm)}</div></details>`;
   }
   if (groups.dozhim.length) {
-    html += `<details class="pe-spoiler" open><summary>ДОЖИМ (${groups.dozhim.length} чел.)</summary><div class="pe-spoiler-body">${makeRows(groups.dozhim)}</div></details>`;
+    html += `<details class="pe-spoiler"><summary>ДОЖИМ (${groups.dozhim.length} чел.)</summary><div class="pe-spoiler-body">${makeRows(groups.dozhim)}</div></details>`;
   }
   if (groups.other.length) {
     html += `<details class="pe-spoiler"><summary>Прочие (${groups.other.length} чел.)</summary><div class="pe-spoiler-body">${makeRows(groups.other)}</div></details>`;

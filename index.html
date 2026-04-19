@@ -1535,22 +1535,22 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
   background:linear-gradient(180deg,#ffd0a0,#e89060);
   border-radius:5px 5px 0 0;
 }
-/* Крем волны */
+/* Крем волны — прилегает вплотную снизу к верхнему коржу */
 .cake-cream {
   width:72px; margin:0 auto;
-  height:10px; position:relative; overflow:visible;
+  height:8px; position:relative;
+  margin-bottom:-2px; /* прижимаем вплотную к cake-top */
 }
 .cake-cream::before {
   content:'';
-  position:absolute; top:-5px; left:0; right:0;
-  height:10px;
+  position:absolute; top:0; left:0; right:0; height:8px;
   background:
-    radial-gradient(circle at 8px 50%, #fff8f0 6px, transparent 6px),
-    radial-gradient(circle at 20px 50%, #fff8f0 6px, transparent 6px),
-    radial-gradient(circle at 32px 50%, #fff8f0 6px, transparent 6px),
-    radial-gradient(circle at 44px 50%, #fff8f0 6px, transparent 6px),
-    radial-gradient(circle at 56px 50%, #fff8f0 6px, transparent 6px),
-    radial-gradient(circle at 68px 50%, #fff8f0 6px, transparent 6px);
+    radial-gradient(circle at 8px 50%, #fff8f0 5px, transparent 5px),
+    radial-gradient(circle at 20px 50%, #fff8f0 5px, transparent 5px),
+    radial-gradient(circle at 32px 50%, #fff8f0 5px, transparent 5px),
+    radial-gradient(circle at 44px 50%, #fff8f0 5px, transparent 5px),
+    radial-gradient(circle at 56px 50%, #fff8f0 5px, transparent 5px),
+    radial-gradient(circle at 68px 50%, #fff8f0 5px, transparent 5px);
 }
 /* Свечи */
 .cake-candles {
@@ -1568,7 +1568,7 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
 .candle-wick {
   width:1.5px; height:5px; background:#333; border-radius:1px;
 }
-/* Пламя */
+/* Пламя — фиксированная высота, скрываем через visibility чтобы не сдвигать свечи */
 .candle-flame {
   width:10px; height:14px;
   background:radial-gradient(ellipse at 50% 80%, #fff 0%, #ffe066 30%, #ff9900 65%, transparent 100%);
@@ -1576,10 +1576,11 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
   animation:flame-flicker .4s ease-in-out infinite alternate;
   transform-origin:50% 100%;
   filter:drop-shadow(0 0 4px #ff9900aa);
-  transition:opacity .2s, height .2s;
+  transition:opacity .25s;
 }
 .candle.out .candle-flame {
-  opacity:0; height:0;
+  opacity:0;
+  animation:none;
 }
 /* Дымок при тушении */
 .candle.out .candle-wick::after {
@@ -1760,8 +1761,8 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
             <div class="candle-body" style="background:linear-gradient(180deg,#55efc4,#00b894)"></div>
           </div>
         </div>
-        <div class="cake-cream"></div>
         <div class="cake-top"></div>
+        <div class="cake-cream"></div>
         <div class="cake-base"></div>
         <div class="cake-plate"></div>
       </div>

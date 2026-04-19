@@ -105,6 +105,9 @@ html,body {
   z-index: 10;
 }
 main { flex:1; overflow-y:auto; position: relative; }
+/* Когда показан экран авторизации — блокируем скролл */
+body.login-active main { overflow-y:hidden; }
+body.login-active .page-footer { position:fixed; bottom:0; left:0; right:0; z-index:50; background:var(--bg); }
 .w {
   width:100%;
   max-width:720px;
@@ -1793,7 +1796,7 @@ function initAuth() {
         if (window._silentFallback) { clearTimeout(window._silentFallback); window._silentFallback = null; }
         localStorage.removeItem('crm_user');
         document.getElementById('scr-login').style.display = '';
-        document.getElementById('scr-login').classList.add('on');
+        document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active');
         toast('Ошибка: '+resp.error, 'e');
         return;
       }
@@ -1853,7 +1856,7 @@ function onLogin() {
   document.getElementById('btn-out').style.display   = '';
   document.getElementById('main-nav').style.display  = 'flex';
   const ls = document.getElementById('scr-login');
-  ls.classList.remove('on'); ls.style.display = 'none';
+  ls.classList.remove('on'); ls.style.display = 'none'; document.body.classList.remove('login-active');
   toast('Приветствую!', 's');
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab==='otchet'));
   showScr('otchet');
@@ -1924,7 +1927,7 @@ function tryRestore() {
 function trySilentRefresh() {
   // Показываем лоадер вместо экрана входа
   document.getElementById('scr-login').classList.remove('on');
-  document.getElementById('scr-login').style.display = 'none';
+  document.getElementById('scr-login').style.display = 'none'; document.body.classList.remove('login-active');
   const loader = document.createElement('div');
   loader.id = 'silent-loader';
   loader.className = 'loader';
@@ -1941,7 +1944,7 @@ function trySilentRefresh() {
     if (!S.token) {
       localStorage.removeItem('crm_user');
       document.getElementById('scr-login').style.display = '';
-      document.getElementById('scr-login').classList.add('on');
+      document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active');
     }
   }, 8000);
 
@@ -2312,7 +2315,7 @@ function buildDozhimStats(dVizData) {
     }
     const m   = mgrs[mgrL];
     const cat = String(row[6]||'').trim().toLowerCase(); // col G = категория
-    const st  = String(row[7]||'').trim().toLowerCase(); // col H = способ покупки
+    const st  = String(row[4]||'').trim().toLowerCase(); // col E = комментарий (итоговый статус сделки)
     const zadSum = parseFloat(String(row[9]||'0').replace(/[^\d.]/g,'')) || 0; // col J
 
     if (cat === CAT800)  m.vis800++;
@@ -2887,7 +2890,7 @@ function openDozhimModal(dataStr) {
   const p = num(d.prc);
   const rs = d.rs;
   document.getElementById('mop-modal-title').innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>${d.medal?' '+d.medal:''}`;
-  document.getElementById('mop-modal-body').innerHTML = `<div class="mop-grid4"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div></div><div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div><div class="modal-sec"><div class="modal-sec-title">800</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td800}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">1000</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1000}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1000}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1000}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1000}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div></div></div>`;
+  document.getElementById('mop-modal-body').innerHTML = `<div class="mop-grid4"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div></div><div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div><div class="modal-sec"><div class="modal-sec-title">КАТ 800</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Обмен</div><div class="mc-v">${d.obmen800||0}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">КАТ 1000</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1000}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1000}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1000}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1000}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div></div></div>`;
   document.getElementById('mop-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -3971,20 +3974,22 @@ function renderPersonal(matched) {
   let incomePanelAttr = 'style="position:relative"';
 
   if (isDozhim) {
-    const dSal = calcSalaryDozhim(nameLow);
+    const dSal = calcSalaryDozhimFromVizity(nameLow);
     if (dSal) {
       const incomeDetail = {
         oklad: dSal.detail.oklad, baseOklad: dSal.detail.baseOklad,
         workedR: dSal.detail.workedR, totalR: dSal.detail.totalR,
         premium: dSal.detail.premium, kotel: dSal.detail.kotel,
         kotelTotal: dSal.detail.kotelTotal, fundCount: dSal.detail.fundCount,
-        inFund: dSal.detail.inFund, fact: dSal.fact, prognoz: dSal.prognoz,
-        metrics: dSal.detail.metrics,
+        inFund: dSal.detail.inFund,
+        ch800: dSal.detail.ch800, ch1000: dSal.detail.ch1000,
+        earn800: dSal.detail.earn800, earn1000: dSal.detail.earn1000,
+        fact: dSal.fact, prognoz: dSal.prognoz,
       };
       incomePanelAttr = `style="position:relative;cursor:pointer" onclick="openDozhimIncomeModal(this)" data-income='${JSON.stringify(incomeDetail).replace(/'/g,"&#39;")}' data-total=""`;
       incomePanelContent = `
         <div class="zl">Доход за месяц</div>
-        <div class="zv">${fmtRub(Math.round(dSal.prognoz.total))}</div>
+        <div class="zv">${fmtRub(Math.round(dSal.fact.total))}</div>
       `;
     } else {
       incomePanelContent = `<div class="zl">Доход за месяц</div><div class="zv">—</div>`;
@@ -4637,7 +4642,7 @@ function init() {
     if (btn) {
       btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 11h8.533c.044.385.067.78.067 1.184 0 3.37-1.17 6.22-3.207 8.154C15.553 22.124 13.9 23 12 23A11 11 0 1 1 12 1c2.95 0 5.56 1.113 7.522 2.934l-3.076 3.042C15.197 5.79 13.68 5 12 5a7 7 0 1 0 0 14c3.205 0 5.542-1.916 6.27-4.987H12v-3z"/></svg>Открыть в Chrome`;
     }
-    document.getElementById('scr-login').classList.add('on');
+    document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active');
     return;
   }
 
@@ -4647,7 +4652,7 @@ function init() {
       const l = document.getElementById('silent-loader');
       if (l) l.remove();
       document.getElementById('scr-login').style.display = '';
-      document.getElementById('scr-login').classList.add('on');
+      document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active');
     }
   }, 6000);
 
@@ -4656,7 +4661,7 @@ function init() {
       clearTimeout(gsiTimeout);
       initAuth();
       if (!tryRestore()) {
-        document.getElementById('scr-login').classList.add('on');
+        document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active');
       }
     } else setTimeout(waitGoogle, 100);
   }

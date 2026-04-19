@@ -1441,6 +1441,32 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
 .pl-err{color:var(--red);font-size:12px;padding:10px 0 12px;text-align:center}
 .pl-spin{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 0;color:var(--txt3);font-size:12px}
 /* ===== END PHONE LOOKUP ===== */
+/* ===== BIRTHDAY BANNER ===== */
+#bday-banner {
+  display:none; position:fixed; bottom:72px; left:50%;
+  transform:translateX(-50%);
+  width:min(380px, 92vw);
+  background:var(--bg2); border:1px solid var(--acc);
+  border-radius:var(--r2); padding:14px 16px 14px 18px;
+  box-shadow:0 4px 24px rgba(0,0,0,.35);
+  z-index:9000; animation:up .3s ease;
+}
+#bday-banner.on { display:flex; gap:12px; align-items:flex-start; }
+.bday-icon { font-size:22px; flex-shrink:0; margin-top:1px; }
+.bday-body { flex:1; }
+.bday-title {
+  font-family:'Unbounded',sans-serif; font-size:9px; font-weight:800;
+  letter-spacing:.08em; color:var(--acc); margin-bottom:5px;
+  text-transform:uppercase;
+}
+.bday-msg { font-size:12px; color:var(--txt); line-height:1.5; }
+.bday-close {
+  background:none; border:none; color:var(--txt3); font-size:18px;
+  cursor:pointer; padding:0; line-height:1; flex-shrink:0;
+  transition:color .15s;
+}
+.bday-close:hover { color:var(--txt); }
+/* ===== END BIRTHDAY BANNER ===== */
 </style>
 </head>
 <body>
@@ -1577,6 +1603,15 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
         © Бочаров Ю.С., 2026
     </div>
   </div>
+</div>
+<!-- BIRTHDAY BANNER -->
+<div id="bday-banner">
+  <span class="bday-icon">🎂</span>
+  <div class="bday-body">
+    <div class="bday-title">День рождения коллеги</div>
+    <div class="bday-msg" id="bday-msg"></div>
+  </div>
+  <button class="bday-close" onclick="closeBdayBanner()">×</button>
 </div>
 <div class="mop-overlay" id="mop-overlay" onclick="closeMopModal(event)">
   <div class="mop-modal" id="mop-modal">
@@ -3727,6 +3762,135 @@ function showPlanEditBtnIfCeo(matched) {
 
 // ==================== END PLAN EDITOR ====================
 
+// ==================== BIRTHDAY NOTIFICATIONS ====================
+
+// Склонение имени в родительный падеж (упрощённое)
+function toGenitive(firstName) {
+  if (!firstName) return firstName;
+  const n = firstName.trim();
+  if (n.endsWith('ия')) return n.slice(0,-1) + 'и';   // Анастасия → Анастасии
+  if (n.endsWith('ий')) return n.slice(0,-2) + 'ия';   // Дмитрий → Дмитрия
+  if (n.endsWith('ья')) return n.slice(0,-1) + 'и';    // Илья → Ильи, Наталья → Натальи
+  if (n.endsWith('я'))  return n.slice(0,-1) + 'и';    // прочие на -я
+  if (n.endsWith('а'))  return n.slice(0,-1) + 'ы';    // Никита → Никиты, Анна → Анны
+  return n + 'а';                                        // Кирилл → Кирилла, Эдуард → Эдуарда
+}
+
+// Парсим ДР: "дд.мм" или "дд.мм.гг" → { day, month }
+function parseDOB(dob) {
+  if (!dob) return null;
+  const parts = String(dob).trim().split('.');
+  if (parts.length < 2) return null;
+  const day = parseInt(parts[0]);
+  const month = parseInt(parts[1]);
+  if (!day || !month || day < 1 || day > 31 || month < 1 || month > 12) return null;
+  return { day, month };
+}
+
+// Количество дней до ближайшего ДР (0 = сегодня)
+function daysUntilBirthday(day, month) {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let bday = new Date(today.getFullYear(), month - 1, day);
+  if (bday < today) bday.setFullYear(today.getFullYear() + 1);
+  return Math.round((bday - today) / 86400000);
+}
+
+const BDAY_THRESHOLDS = [14, 10, 7];
+
+function getBdayStorageKey(name, birthdayKey, threshold) {
+  return 'crm_bday_' + name + '_' + birthdayKey + '_' + threshold;
+}
+
+// Получить ключ предстоящего ДР для хранения: "месяц-день-год"
+function getBirthdayKey(day, month) {
+  const now = new Date();
+  let year = now.getFullYear();
+  const bday = new Date(year, month - 1, day);
+  if (bday < new Date(now.getFullYear(), now.getMonth(), now.getDate())) year++;
+  return month + '-' + day + '-' + year;
+}
+
+let _bdayBannerQueue = [];
+let _bdayBannerTimer = null;
+
+function checkBirthdayNotifications() {
+  if (!S.usersData || !S.user) return;
+  const now = new Date();
+  const hour = now.getHours();
+  if (hour < 11) {
+    // До 11:00 — планируем проверку на 11:00
+    const msTo11 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 11, 0, 0) - now;
+    clearTimeout(_bdayBannerTimer);
+    _bdayBannerTimer = setTimeout(checkBirthdayNotifications, msTo11);
+    return;
+  }
+
+  const currentUserName = (S.user.email || '').toLowerCase();
+  const matched = findUserInSheet();
+  const myNameLow = matched ? matched.name.toLowerCase() : '';
+
+  const toShow = []; // { name, firstName, days, threshold, storageKey }
+
+  for (let i = 1; i < S.usersData.length; i++) {
+    const row = S.usersData[i];
+    if (!row || !row[1]) continue;
+    const fullName = String(row[1]).trim();
+    const nameLow  = fullName.toLowerCase();
+
+    // Не показываем именнику самому себе
+    if (nameLow === myNameLow) continue;
+
+    const dob = parseDOB(row[5]); // col F = DOB
+    if (!dob) continue;
+
+    const days = daysUntilBirthday(dob.day, dob.month);
+    const bdayKey = getBirthdayKey(dob.day, dob.month);
+
+    for (const threshold of BDAY_THRESHOLDS) {
+      if (days <= threshold) {
+        const key = getBdayStorageKey(nameLow, bdayKey, threshold);
+        if (!localStorage.getItem(key)) {
+          // Имя (второе слово = имя, первое = фамилия)
+          const parts = fullName.split(/\s+/);
+          const firstName = parts.length >= 2 ? parts[1] : parts[0];
+          toShow.push({ firstName, days, threshold, key });
+          break; // показываем по максимальному threshold который ещё не показан
+        }
+      }
+    }
+  }
+
+  if (toShow.length > 0) showBdayQueue(toShow);
+}
+
+function showBdayQueue(queue) {
+  _bdayBannerQueue = queue;
+  showNextBday();
+}
+
+function showNextBday() {
+  if (!_bdayBannerQueue.length) return;
+  const item = _bdayBannerQueue.shift();
+  const gen = toGenitive(item.firstName);
+  document.getElementById('bday-msg').textContent =
+    'У твоего коллеги, ' + gen + ', скоро день рождения. Это знаменательный день! Начните уже включаться в процесс сбора средств на подарок!';
+  document.getElementById('bday-banner').classList.add('on');
+  // Сохраняем что это уведомление показано
+  try { localStorage.setItem(item.key, '1'); } catch(e) {}
+  // Следующий баннер — через 6 секунд после закрытия
+  _bdayBannerQueue._current = item;
+}
+
+function closeBdayBanner() {
+  document.getElementById('bday-banner').classList.remove('on');
+  if (_bdayBannerQueue.length > 0) {
+    setTimeout(showNextBday, 800);
+  }
+}
+
+// ==================== END BIRTHDAY NOTIFICATIONS ====================
+
 function closeMopModal(e) {
   if (e && e.target !== document.getElementById('mop-overlay')) return;
   document.getElementById('mop-overlay').classList.remove('open');
@@ -3826,7 +3990,7 @@ function findUserInSheet() {
 async function loadUsersAndStart() {
   try {
     if (!S.usersData) {
-      S.usersData = await api('USERS', 'A1:E50');
+      S.usersData = await api('USERS', 'A1:F50');
     }
   } catch(e) { S.usersData = []; }
   const matched = findUserInSheet();
@@ -3835,6 +3999,7 @@ async function loadUsersAndStart() {
     const firstName = parts.length >= 2 ? parts[1] : parts[0];
     toast('Приветствую, ' + firstName + '!', 's');
     showPlanEditBtnIfCeo(matched);
+    checkBirthdayNotifications();
     if (matched.role === 'ceo') {
       goTab('otchet');
     } else {

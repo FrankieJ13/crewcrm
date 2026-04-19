@@ -1766,7 +1766,7 @@ function scheduleTokenRefresh(expiresIn) {
 function initAuth() {
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CFG.CLIENT_ID,
-    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+    scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
     callback: async (resp) => {
       if (resp.error) {
         // Тихий рефреш не удался — показываем экран входа
@@ -1965,16 +1965,17 @@ async function loadTab(tab) {
   };
   if (tab === 'otchet') {
     const el = document.getElementById('c-otchet');
-    // Загружаем ВИЗИТЫ и ПЛАН параллельно вместо ОТЧЁТ
+
+    // Загружаем ВИЗИТЫ и ПЛАН синхронно если не загружены
     if (!S.data.vizity || !S.data.plan) {
       if (el) el.innerHTML = loader();
       try {
-        const [vizData, planData] = await Promise.all([
+        const [vd, pd] = await Promise.all([
           S.data.vizity ? Promise.resolve(S.data.vizity) : api(SHEETS.vizity, 'A:J'),
           S.data.plan   ? Promise.resolve(S.data.plan)   : api(SHEETS.plan,   'A:B'),
         ]);
-        S.data.vizity = vizData;
-        S.data.plan   = planData;
+        S.data.vizity = vd;
+        S.data.plan   = pd;
       } catch(e) {
         if (e.message !== 'auth') {
           if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
@@ -1982,44 +1983,25 @@ async function loadTab(tab) {
         return;
       }
     }
+
+    // Д_ОТЧЁТ и CNVRS — фоновая загрузка (не блокирует рендер)
     if (S.reportTab === 'dozhim' && !S.data.d_otchet) {
-      try {
-        S.data.d_otchet = await api(SHEETS.d_otchet, 'A1:R20');
-      } catch(e) {
-        if (e.message !== 'NOT_FOUND') S.data.d_otchet = [];
-        else S.data.d_otchet = null;
-      }
+      try { S.data.d_otchet = await api(SHEETS.d_otchet, 'A1:R20'); }
+      catch(e) { S.data.d_otchet = []; }
     }
     if (S.reportTab === 'dept' && !S.data.d_otchet) {
-      api(SHEETS.d_otchet, 'A1:R20').then(data => {
-        S.data.d_otchet = data;
-        if (S.reportTab === 'dept') renderOtchet();
-      }).catch(() => { S.data.d_otchet = []; });
+      api(SHEETS.d_otchet, 'A1:R20')
+        .then(d => { S.data.d_otchet = d; if (S.reportTab === 'dept') renderOtchet(); })
+        .catch(() => { S.data.d_otchet = []; });
     }
     if (!S.data.cnvrs) {
-      api(SHEETS.cnvrs, 'A1:N40').then(data => {
-        S.data.cnvrs = data;
-        renderTab('otchet');
-      }).catch(() => { S.data.cnvrs = []; });
+      api(SHEETS.cnvrs, 'A1:N40')
+        .then(d => { S.data.cnvrs = d; renderOtchet(); })
+        .catch(() => { S.data.cnvrs = []; });
     }
-    const needVizity = !S.data.vizity;
-    const needPlan   = !S.data.plan;
-    if (needVizity || needPlan) {
-      if (el) el.innerHTML = loader();
-      const promises = [];
-      if (needVizity) promises.push(
-        api(SHEETS.vizity, 'A:J')
-          .then(d => { S.data.vizity = d; })
-          .catch(() => { S.data.vizity = []; })
-      );
-      if (needPlan) promises.push(
-        api(SHEETS.plan, 'A:B')
-          .then(d => { S.data.plan = d; })
-          .catch(() => { S.data.plan = []; })
-      );
-      Promise.all(promises).then(() => renderOtchet());
-      return;
-    }
+
+    renderOtchet();
+    return;
   }
   if (tab === 'dohod') {
     const el = document.getElementById('c-dohod');

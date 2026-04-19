@@ -1365,6 +1365,18 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
 }
 .pe-close:hover { border-color:var(--red); color:var(--red); }
 .pe-body { overflow-y:auto; padding:12px 16px; }
+.pe-spoiler { border:1px solid var(--line); border-radius:var(--r); overflow:hidden; margin-bottom:4px; }
+.pe-spoiler summary {
+  list-style:none; padding:10px 14px;
+  font-family:'Unbounded',sans-serif; font-size:9px; font-weight:800;
+  letter-spacing:.06em; color:var(--txt2); cursor:pointer;
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--bg3); user-select:none;
+}
+.pe-spoiler summary::-webkit-details-marker { display:none; }
+.pe-spoiler summary::after { content:'▾'; font-size:12px; color:var(--acc); }
+.pe-spoiler[open] summary::after { content:'▴'; }
+.pe-spoiler-body { padding:8px 0 4px; }
 .pe-row {
   display:flex; align-items:center; justify-content:space-between;
   gap:10px; padding:7px 0; border-bottom:1px solid var(--line);
@@ -1630,6 +1642,7 @@ function getSheetNames(suffix) {
     instruktsii: 'ИНСТРУКЦИИ',
     vizity:      'ВИЗИТЫ'   + suffix,
     plan:        'ПЛАН'     + suffix,
+    d_vizity:    'Д_ВИЗИТЫ' + suffix,
   };
 }
 
@@ -1645,7 +1658,7 @@ const S = {
   token:null,
   user:null,
   usersData:null,
-  data:{ otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null },
+  data:{ otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null },
   reportTab: 'dept',
   dohodTab: 'crm',
   faqTab: 'instr'
@@ -1853,7 +1866,7 @@ function onLogin() {
     const isPersonal = document.getElementById('scr-personal')?.classList.contains('on');
     const activeTab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
     if (!isPersonal && activeTab === 'instruktsii') return;
-    S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null };
+    S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null };
     if (isPersonal) {
       const matched = findUserInSheet();
       if (matched) loadPersonal(matched);
@@ -1869,7 +1882,7 @@ function onLogout() {
   if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
   if (S.token) google.accounts.oauth2.revoke(S.token, ()=>{});
   S.token=null; S.user=null; S.usersData=null;
-  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null };
+  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null };
   ['crm_tok','crm_exp','crm_user'].forEach(k => localStorage.removeItem(k));
   document.getElementById('user-wrap').style.display = 'none';
   document.getElementById('btn-out').style.display   = 'none';
@@ -1959,7 +1972,7 @@ function setCurrentMonth(newSuffix) {
   currentSuffix = newSuffix;
   updateBadge();
   SHEETS = getSheetNames(currentSuffix);
-  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null };
+  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null };
   _schedWeek = null;
   const activeTab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
   loadTab(activeTab);
@@ -1996,15 +2009,17 @@ async function loadTab(tab) {
       }
     }
 
-    // Д_ОТЧЁТ и CNVRS — фоновая загрузка (не блокирует рендер)
-    if (S.reportTab === 'dozhim' && !S.data.d_otchet) {
-      try { S.data.d_otchet = await api(SHEETS.d_otchet, 'A1:R20'); }
-      catch(e) { S.data.d_otchet = []; }
+    // Д_ВИЗИТЫ — фоновая загрузка для вкладки ДОЖИМ
+    if (S.reportTab === 'dozhim' && !S.data.d_vizity) {
+      Promise.all([
+        api(SHEETS.d_vizity, 'A:L').catch(() => []),
+        S.data.plan ? Promise.resolve(S.data.plan) : api(SHEETS.plan, 'A:B').catch(() => []),
+      ]).then(([dv, pd]) => { S.data.d_vizity = dv; S.data.plan = pd; renderOtchet(); });
     }
-    if (S.reportTab === 'dept' && !S.data.d_otchet) {
-      api(SHEETS.d_otchet, 'A1:R20')
-        .then(d => { S.data.d_otchet = d; if (S.reportTab === 'dept') renderOtchet(); })
-        .catch(() => { S.data.d_otchet = []; });
+    if (S.reportTab === 'dept' && !S.data.d_vizity) {
+      Promise.all([
+        api(SHEETS.d_vizity, 'A:L').catch(() => []),
+      ]).then(([dv]) => { S.data.d_vizity = dv; if (S.reportTab === 'dept') renderOtchet(); });
     }
     if (!S.data.cnvrs) {
       api(SHEETS.cnvrs, 'A1:N40')
@@ -2051,13 +2066,13 @@ async function loadTab(tab) {
     }
 
     if (isDozhim) {
-      // ДОЖИМ — нужны d_otchet + d_stavki + grafik
-      if (!S.data.d_otchet || !S.data.d_stavki || !S.data.grafik) {
+      // ДОЖИМ — нужны d_vizity + plan + grafik
+      if (!S.data.d_vizity || !S.data.plan || !S.data.grafik) {
         if (el) el.innerHTML = loader();
         await Promise.all([
-          S.data.d_otchet ? Promise.resolve() : api(SHEETS.d_otchet, 'A1:R20').then(d => S.data.d_otchet = d).catch(() => S.data.d_otchet = []),
-          S.data.d_stavki ? Promise.resolve() : api(SHEETS.d_stavki, 'A1:B25').then(d => S.data.d_stavki = d).catch(() => S.data.d_stavki = []),
-          S.data.grafik   ? Promise.resolve() : api(SHEETS.grafik,   'A1:AI25').then(d => S.data.grafik   = d).catch(() => S.data.grafik   = []),
+          S.data.d_vizity ? Promise.resolve() : api(SHEETS.d_vizity, 'A:L').then(d => S.data.d_vizity = d).catch(() => S.data.d_vizity = []),
+          S.data.plan     ? Promise.resolve() : api(SHEETS.plan,     'A:B').then(d => S.data.plan     = d).catch(() => S.data.plan     = []),
+          S.data.grafik   ? Promise.resolve() : api(SHEETS.grafik,   'A1:AI25').then(d => S.data.grafik = d).catch(() => S.data.grafik = []),
         ]);
       }
     }
@@ -2086,7 +2101,7 @@ function reloadCurrent() {
     const matched = findUserInSheet();
     if (matched) {
       const isDozhim = matched.role === 'dozhim';
-      if (isDozhim) { S.data.d_otchet = null; S.data.d_dohod = null; }
+      if (isDozhim) { S.data.d_vizity = null; S.data.plan = null; }
       else { S.data.vizity = null; S.data.plan = null; S.data.stavki = null; S.data.cnvrs = null; }
       loadPersonal(matched).then(() => toast('Обновлено','s'));
     }
@@ -2095,7 +2110,7 @@ function reloadCurrent() {
   const tab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
   if (tab === 'grafik') _schedWeek = null;
   S.data[tab] = null;
-  if (tab === 'otchet') { S.data.d_otchet = null; S.data.cnvrs = null; S.data.vizity = null; S.data.plan = null; }
+  if (tab === 'otchet') { S.data.d_vizity = null; S.data.cnvrs = null; S.data.vizity = null; S.data.plan = null; }
   if (tab === 'dohod') { S.data.vizity = null; S.data.plan = null; S.data.stavki = null; S.data.d_dohod = null; }
   loadTab(tab).then(() => toast('Обновлено','s'));
 }
@@ -2264,6 +2279,129 @@ function buildCrmStats(vizData) {
 }
 
 // Возвращает Map: nameLow → plan (число) из листа ПЛАН
+// ==================== DOZHIM STATS FROM Д_ВИЗИТЫ ====================
+// Столбцы (0-based): A=дата, B=ФИО, C=телефон, D=город, E=комментарий,
+//   F=источник, G=категория, H=способ покупки, I=менеджер, J=задаток, K=авто, L=сверка
+// Категории: кат 800, кат 1000
+function buildDozhimStats(dVizData) {
+  const mgrs = {};
+  if (!dVizData || dVizData.length < 2) return mgrs;
+
+  const BUY_KREDIT = 'покупка (кредит)';
+  const BUY_NAL    = 'покупка (наличные)';
+  const BUY_OBMEN  = 'обмен';
+  const BUY_KOM    = 'комиссия';
+  const CAT800     = 'кат 800';
+  const CAT1000    = 'кат 1000';
+
+  for (let i = 1; i < dVizData.length; i++) {
+    const row = dVizData[i];
+    if (!row || !row[8]) continue; // col I = менеджер
+    const mgr  = String(row[8]).trim();
+    const mgrL = mgr.toLowerCase();
+    if (!mgr) continue;
+
+    if (!mgrs[mgrL]) {
+      mgrs[mgrL] = {
+        name: mgr,
+        vis800:0, vis1000:0,
+        kred800:0, nal800:0, obmen800:0, kom800:0,
+        kred1000:0, nal1000:0, kom1000:0,
+        zadatok:0,
+      };
+    }
+    const m   = mgrs[mgrL];
+    const cat = String(row[6]||'').trim().toLowerCase(); // col G = категория
+    const st  = String(row[7]||'').trim().toLowerCase(); // col H = способ покупки
+    const zadSum = parseFloat(String(row[9]||'0').replace(/[^\d.]/g,'')) || 0; // col J
+
+    if (cat === CAT800)  m.vis800++;
+    if (cat === CAT1000) m.vis1000++;
+
+    if (cat === CAT800) {
+      if (st === BUY_KREDIT) m.kred800++;
+      if (st === BUY_NAL)    m.nal800++;
+      if (st === BUY_OBMEN)  m.obmen800++;
+      if (st === BUY_KOM)    m.kom800++;
+    }
+    if (cat === CAT1000) {
+      if (st === BUY_KREDIT) m.kred1000++;
+      if (st === BUY_NAL)    m.nal1000++;
+      if (st === BUY_KOM)    m.kom1000++;
+    }
+    if (zadSum >= 1000) m.zadatok++;
+  }
+  return mgrs;
+}
+
+// ==================== DOZHIM SALARY FROM Д_ВИЗИТЫ ====================
+// Фиксированные ставки (не зависят от листа Д_СТАВКИ)
+const DOZHIM_RATES = {
+  baseOklad: 15000,
+  r800Vis: 800, r800Kred: 3000, r800Nal: 2000, r800Obmen: 2000, r800Kom: 2000,
+  r1000Vis: 1000, r1000Kred: 7000, r1000Nal: 7000, r1000Kom: 3000,
+  rZadatok: 1000,
+};
+
+function calcSalaryDozhimFromVizity(nameLow) {
+  const dVizData = S.data.d_vizity || [];
+  const allStats = buildDozhimStats(dVizData);
+  const mgrStat  = allStats[nameLow];
+  if (!mgrStat) return null;
+
+  const R = DOZHIM_RATES;
+  const schedInfo = getWorkedAndTotalR(nameLow);
+  const oklad = (schedInfo && schedInfo.totalR > 0)
+    ? Math.round(R.baseOklad / schedInfo.totalR * schedInfo.workedR)
+    : R.baseOklad;
+
+  const ch800 = { vis: mgrStat.vis800, kred: mgrStat.kred800, nal: mgrStat.nal800, obmen: mgrStat.obmen800, kom: mgrStat.kom800, zadatok: mgrStat.zadatok };
+  const ch1000 = { vis: mgrStat.vis1000, kred: mgrStat.kred1000, nal: mgrStat.nal1000, kom: mgrStat.kom1000 };
+
+  const pure800  = Math.max(0, ch800.vis  - ch800.kred  - ch800.nal  - ch800.obmen - ch800.kom);
+  const pure1000 = Math.max(0, ch1000.vis - ch1000.kred - ch1000.nal - ch1000.kom);
+
+  const earn800  = pure800*R.r800Vis  + ch800.kred*R.r800Kred  + ch800.nal*R.r800Nal  + ch800.obmen*R.r800Obmen  + ch800.kom*R.r800Kom  + ch800.zadatok*R.rZadatok;
+  const earn1000 = pure1000*R.r1000Vis + ch1000.kred*R.r1000Kred + ch1000.nal*R.r1000Nal + ch1000.kom*R.r1000Kom;
+
+  // Котёл — суммируем тех кто не в ПЛАН (dozhim-менеджеры)
+  const planM = getPlanMap(S.data.plan || []);
+  const planNamesLow = new Set(Object.keys(planM).filter(nl => getRoleByName(nl) === 'dozhim'));
+  let kotelEarn800 = 0, kotelEarn1000 = 0;
+  Object.values(allStats).forEach(s => {
+    if (!planNamesLow.has(s.name.toLowerCase())) {
+      const p8  = Math.max(0, s.vis800  - s.kred800  - s.nal800  - s.obmen800 - s.kom800);
+      const p10 = Math.max(0, s.vis1000 - s.kred1000 - s.nal1000 - s.kom1000);
+      kotelEarn800  += p8*R.r800Vis  + s.kred800*R.r800Kred  + s.nal800*R.r800Nal  + s.obmen800*R.r800Obmen  + s.kom800*R.r800Kom  + s.zadatok*R.rZadatok;
+      kotelEarn1000 += p10*R.r1000Vis + s.kred1000*R.r1000Kred + s.nal1000*R.r1000Nal + s.kom1000*R.r1000Kom;
+    }
+  });
+  const kotelTotal = kotelEarn800 + kotelEarn1000;
+  const fundCount  = getFundCount('dozhim');
+  const inFund     = isInFund(nameLow, 'dozhim');
+  const kotelShare = (inFund && fundCount > 0) ? kotelTotal / fundCount : 0;
+
+  const premium   = earn800 + earn1000 + kotelShare;
+  const totalFact = oklad + premium;  // без коэффициента
+
+  const planVal = planM[nameLow] || 0;
+  const allVis  = ch800.vis + ch1000.vis;
+  const pctFact = computeFactPct(allVis, planVal || 1);
+  const pctProg = computeProgPct(allVis, planVal || 1, currentSuffix);
+
+  return {
+    fact:    { total: totalFact, koef: null, pct: pctFact, premium },
+    prognoz: { total: totalFact, koef: null, pct: pctProg, premium }, // прогноз = факт (нет коэфа)
+    detail: {
+      oklad, baseOklad: R.baseOklad,
+      workedR: schedInfo ? schedInfo.workedR : null,
+      totalR:  schedInfo ? schedInfo.totalR  : null,
+      inFund, premium, kotel: kotelShare, kotelTotal, fundCount,
+      ch800, ch1000, earn800, earn1000,
+    },
+  };
+}
+
 function getPlanMap(planData) {
   const map = {};
   if (!planData) return map;
@@ -2298,7 +2436,11 @@ function renderOtchet() {
 
   const planNames = (planData || []).slice(1)
     .filter(r => r && r[0])
-    .map(r => String(r[0]).trim());
+    .map(r => String(r[0]).trim())
+    .filter(name => {
+      const role = getRoleByName(name.toLowerCase().trim());
+      return role === 'crm' || role === '';  // только CRM (не dozhim, не ceo)
+    });
 
   if (!planNames.length) {
     if (floating) floating.innerHTML = '';
@@ -2480,19 +2622,18 @@ function renderOtchet() {
   </div>`;
 
   let dozhimDeptCard = '';
-  const dRaw = S.data.d_otchet;
-  if (dRaw && dRaw.length >= 4) {
-    const dMgrs = dRaw.slice(3, 20).filter(r => r[0] && r[0].trim());
-    const dAllVis = dMgrs.reduce((s,r) => s + num(r[7]), 0);
-    const dPlan   = dMgrs.reduce((s,r) => s + num(r[3]), 0);
+  const dVizData = S.data.d_vizity;
+  if (dVizData && dVizData.length > 1) {
+    const dStats = buildDozhimStats(dVizData);
+    const dPlanM = getPlanMap(S.data.plan || []);
+    const dNames = (S.data.plan||[]).slice(1).filter(r=>r&&r[0]).map(r=>String(r[0]).trim()).filter(n=>getRoleByName(n.toLowerCase())==='dozhim');
+    const dAllVis = dNames.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.vis800||0)+(st.vis1000||0);},0);
+    const dPlan   = dNames.reduce((s,n)=>s+(dPlanM[n.toLowerCase()]||0),0);
+    const dKred   = dNames.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.kred800||0)+(st.kred1000||0);},0);
+    const dNal    = dNames.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.nal800||0)+(st.nal1000||0);},0);
+    const dKom    = dNames.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.kom800||0)+(st.kom1000||0);},0);
     let dProg = '—';
-    if (dp && dPlan > 0) {
-      const tgt = (dPlan / dim) * dp;
-      dProg = Math.round(dAllVis / tgt * 100) + '%';
-    }
-    const dKred = dMgrs.reduce((s,r) => s + num(r[8]) + num(r[12]), 0);
-    const dNal  = dMgrs.reduce((s,r) => s + num(r[9]) + num(r[13]), 0);
-    const dKom  = dMgrs.reduce((s,r) => s + num(r[14]), 0);
+    if (dp && dPlan > 0) dProg = Math.round(dAllVis / (dPlan / dim * dp) * 100) + '%';
     dozhimDeptCard = `
     <div class="sec-title">ОТДЕЛ ДОЖИМ</div>
     <div class="dept-card" style="background:rgba(${accR},${accG},${accB},0.08)">
@@ -2691,41 +2832,53 @@ function renderOtchet() {
 }
 
 function renderDozhimCards() {
-  const dRaw = S.data.d_otchet;
-  if (!dRaw || dRaw.length < 4) return '<div class="empty">Нет данных по дожиму</div>';
-  const KOTEL_D = ['котел','котёл','kotel'];
-  const dMgrs = dRaw.slice(3, 20).filter(r => r[0] && r[0].trim() && !KOTEL_D.includes((r[0]||'').toLowerCase().trim()));
-  if (!dMgrs.length) return '<div class="empty">Нет данных по дожиму</div>';
-  const withProg = dMgrs.map(r => ({ r, progNum: parseFloat((r[6]||'0%').replace('%','').replace(',','.')) || 0 }));
+  if (!S.data.d_vizity || !S.data.plan) return '<div class="empty">Загрузка данных дожима…</div>';
+  const planData = S.data.plan || [];
+  const planM    = getPlanMap(planData);
+  const dStats   = buildDozhimStats(S.data.d_vizity);
+
+  // Менеджеры дожима из ПЛАН с role=dozhim
+  const dozhimNames = planData.slice(1)
+    .filter(r => r && r[0])
+    .map(r => String(r[0]).trim())
+    .filter(name => getRoleByName(name.toLowerCase().trim()) === 'dozhim');
+
+  if (!dozhimNames.length) return '<div class="empty">Нет данных по дожиму</div>';
+
+  const withProg = dozhimNames.map(name => {
+    const nl     = name.toLowerCase();
+    const s      = dStats[nl] || {};
+    const allVis = (s.vis800||0) + (s.vis1000||0);
+    const plan   = planM[nl] || 1;
+    return { name, nl, s, allVis, plan, progNum: computeProgPct(allVis, plan, currentSuffix), factNum: computeFactPct(allVis, plan) };
+  });
   withProg.sort((a, b) => b.progNum - a.progNum);
   const total = withProg.length;
-  const cards = withProg.map(({ r, progNum }, idx) => {
-    const name  = (r[0]||'—').toUpperCase();
-    const plan  = num(r[3]);
-    const fact  = num(r[7]);
-    const daily = computeDailyPlan(plan, fact, progNum, currentSuffix, name);
-    const rplan = r[3]||'0', ost = r[4]||'0';
-    const prc   = r[5]||'0%', prog = r[6]||'0%';
-    const allV  = r[7]||'0';
+
+  const cards = withProg.map(({ name, nl, s, allVis, plan, progNum, factNum }, idx) => {
     const rs    = rankStyles(idx, total);
-    const fillGrad = `linear-gradient(90deg,${rs.color},${rs.color})`;
+    const ost   = Math.max(0, plan - allVis);
+    const daily = computeDailyPlan(plan, allVis, progNum, currentSuffix, name);
     const modalData = JSON.stringify({
-      type:'dozhim', name, v800:r[1], v1000:r[2], rplan, ost, prc, prog, allV,
-      kred800:r[8], nal800:r[9], td800:r[10], kom800:r[11],
-      kred1000:r[12], nal1000:r[13], kom1000:r[14], zadatok:r[15],
-      rs, medal: idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'', idx: idx+1
+      type:'dozhim', name: name.toUpperCase(),
+      v800: s.vis800||0, v1000: s.vis1000||0,
+      rplan: plan, ost, prc: factNum+'%', prog: progNum+'%', allV: allVis,
+      kred800:s.kred800||0, nal800:s.nal800||0, obmen800:s.obmen800||0, kom800:s.kom800||0,
+      kred1000:s.kred1000||0, nal1000:s.nal1000||0, kom1000:s.kom1000||0, zadatok:s.zadatok||0,
+      rs, medal: idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'', idx: idx+1,
     }).replace(/'/g,"&#39;");
     return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
-      <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${medalBtn(idx)}</div><button class="mop-info-btn" onclick="openDozhimModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
+      <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name.toUpperCase()}</span>${medalBtn(idx)}</div><button class="mop-info-btn" onclick="openDozhimModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
       <div class="mop-mini">
-        <div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
-        <div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div>
+        <div class="mm"><div class="ml">Визиты</div><div class="mv">${allVis}</div></div>
+        <div class="mm"><div class="ml">План</div><div class="mv">${plan}</div></div>
         <div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div>
         <div class="mm"><div class="ml">Дневной</div><div class="mv">${daily}</div></div>
       </div>
       <div class="mop-prog"><div class="mop-prog-labels"><span class="cur" style="color:${rs.color}">${progNum}%</span><span class="end">100%</span></div><div class="mop-prog-track"><div class="mop-prog-fill" style="width:${Math.min(progNum,100)}%;background:${pctClr(progNum)}"></div></div></div>
     </div>`;
   }).join('');
+
   return `<div class="sec-title">Менеджеры дожима</div><div class="mops">${cards}</div>`;
 }
 
@@ -2741,14 +2894,15 @@ function openDozhimModal(dataStr) {
 
 function setReportTab(tab) {
   S.reportTab = tab;
-  if (tab === 'dozhim' && !S.data.d_otchet) {
+  if (tab === 'dozhim' && !S.data.d_vizity) {
     const el = document.getElementById('c-otchet');
     el.innerHTML = loader();
-    api(SHEETS.d_otchet, 'A1:R20').then(data => {
-      S.data.d_otchet = data;
-      renderOtchet();
-    }).catch(() => {
-      S.data.d_otchet = [];
+    Promise.all([
+      api(SHEETS.d_vizity, 'A:L').catch(() => []),
+      S.data.plan ? Promise.resolve(S.data.plan) : api(SHEETS.plan, 'A:B').catch(() => []),
+    ]).then(([dv, pd]) => {
+      S.data.d_vizity = dv;
+      S.data.plan     = pd;
       renderOtchet();
     });
     return;
@@ -2794,26 +2948,26 @@ function renderDohod() {
   const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
 
   if (isDozhim) {
-    if (!S.data.d_otchet || !S.data.d_stavki) {
-      el.innerHTML = loader(); return;
-    }
-    const sal = calcSalaryDozhim(nameLow);
+    if (!S.data.d_vizity || !S.data.plan) { el.innerHTML = loader(); return; }
+    const sal = calcSalaryDozhimFromVizity(nameLow);
     if (!sal) { el.innerHTML = '<div class="empty">Нет данных по вашему доходу</div>'; return; }
     const det = {
       oklad: sal.detail.oklad, baseOklad: sal.detail.baseOklad,
       workedR: sal.detail.workedR, totalR: sal.detail.totalR,
       premium: sal.detail.premium, kotel: sal.detail.kotel,
       kotelTotal: sal.detail.kotelTotal, fundCount: sal.detail.fundCount,
-      inFund: sal.detail.inFund, fact: sal.fact, prognoz: sal.prognoz,
-      metrics: sal.detail.metrics,
+      inFund: sal.detail.inFund,
+      ch800: sal.detail.ch800, ch1000: sal.detail.ch1000,
+      earn800: sal.detail.earn800, earn1000: sal.detail.earn1000,
+      fact: sal.fact, prognoz: sal.prognoz,
     };
     el.innerHTML = `
       <div class="w" style="padding-top:16px">
         <div class="kpi-subtitle">Доход за месяц<button class="kpi-subtitle-info" onclick="openSalInfo()">i</button></div>
         <div class="kpi-income-panel" style="position:relative;text-align:center;cursor:pointer;background:rgba(${accR},${accG},${accB},0.15)"
              onclick="openDozhimIncomeModal(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="">
-          <div class="zl">Прогнозируемый</div>
-          <div class="zv">${fmtRub(Math.round(sal.prognoz.total))}</div>
+          <div class="zl">Фактический доход</div>
+          <div class="zv">${fmtRub(Math.round(sal.fact.total))}</div>
         </div>
       </div>`;
   } else {
@@ -2969,37 +3123,40 @@ function renderDohodCrm(el) {
 }
 
 function renderDohodDozhim(el) {
-  const otchet = S.data.d_otchet;
-  if (!otchet || otchet.length < 4) { el.innerHTML = '<div class="empty">Нет данных по дожиму</div>'; return; }
-  if (!S.data.d_stavki) { el.innerHTML = '<div class="loader"><div class="spin"></div><span>Загружаем ставки…</span></div>'; return; }
+  if (!S.data.d_vizity || !S.data.plan) { el.innerHTML = loader(); return; }
 
-  const KOTEL_NAMES = ['котел','котёл','kotel'];
-  const isKotel = n => KOTEL_NAMES.includes((n||'').toLowerCase().trim());
+  const planData = S.data.plan || [];
+  const planM    = getPlanMap(planData);
+  const dStats   = buildDozhimStats(S.data.d_vizity);
 
-  const mgrRows = otchet.slice(3, 20).filter(r => r[0] && r[0].trim() && !isKotel(r[0]));
-  if (!mgrRows.length) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
+  const dozhimNames = planData.slice(1)
+    .filter(r => r && r[0])
+    .map(r => String(r[0]).trim())
+    .filter(name => getRoleByName(name.toLowerCase().trim()) === 'dozhim');
 
-  const parsed = mgrRows.map(r => {
-    const nameLow = (r[0]||'').toLowerCase().trim();
-    const sal = calcSalaryDozhim(nameLow);
-    return { name: (r[0]||'—').toUpperCase(), nameLow, sal };
+  if (!dozhimNames.length) { el.innerHTML = '<div class="empty">Нет данных по дожиму</div>'; return; }
+
+  const parsed = dozhimNames.map(name => {
+    const nameLow = name.toLowerCase().trim();
+    const sal = calcSalaryDozhimFromVizity(nameLow);
+    return { name: name.toUpperCase(), nameLow, sal };
   });
   parsed.sort((a, b) => {
-    const aT = a.sal ? a.sal.prognoz.total : 0;
-    const bT = b.sal ? b.sal.prognoz.total : 0;
+    const aT = a.sal ? a.sal.fact.total : 0;
+    const bT = b.sal ? b.sal.fact.total : 0;
     return bT - aT;
   });
 
-  const totalFund = parsed.reduce((s, p) => s + (p.sal ? Math.round(p.sal.prognoz.total) : 0), 0);
-  const maxAmt = parsed[0]?.sal ? Math.round(parsed[0].sal.prognoz.total) : 0;
-  const total = parsed.length;
+  const totalFund = parsed.reduce((s, p) => s + (p.sal ? Math.round(p.sal.fact.total) : 0), 0);
+  const maxAmt = parsed[0]?.sal ? Math.round(parsed[0].sal.fact.total) : 0;
+  const total  = parsed.length;
   const isLight = document.body.classList.contains('light');
   const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
 
   const rows = parsed.map((item, idx) => {
     const rs = rankStyles(idx, total);
-    const progTotal = item.sal ? Math.round(item.sal.prognoz.total) : 0;
-    const w = maxAmt ? Math.round(progTotal / maxAmt * 100) : 0;
+    const factTotal = item.sal ? Math.round(item.sal.fact.total) : 0;
+    const w = maxAmt ? Math.round(factTotal / maxAmt * 100) : 0;
     let detailBtn = '';
     if (item.sal) {
       const det = {
@@ -3007,32 +3164,31 @@ function renderDohodDozhim(el) {
         workedR: item.sal.detail.workedR, totalR: item.sal.detail.totalR,
         premium: item.sal.detail.premium, kotel: item.sal.detail.kotel,
         kotelTotal: item.sal.detail.kotelTotal, fundCount: item.sal.detail.fundCount,
-        inFund: item.sal.detail.inFund, fact: item.sal.fact, prognoz: item.sal.prognoz,
-        metrics: item.sal.detail.metrics,
+        inFund: item.sal.detail.inFund,
+        ch800: item.sal.detail.ch800, ch1000: item.sal.detail.ch1000,
+        earn800: item.sal.detail.earn800, earn1000: item.sal.detail.earn1000,
+        fact: item.sal.fact, prognoz: item.sal.prognoz,
       };
       detailBtn = `<button class="mop-info-btn" style="position:absolute;top:10px;right:10px" onclick="openDozhimIncomeModal(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="">i</button>`;
     }
-    const incomeArea = item.sal
-      ? `<div style="text-align:right;margin:6px 0 4px"><span class="zp-a" style="color:var(--acc)">${fmtRub(Math.round(item.sal.prognoz.total))}</span></div>`
-      : `<div style="text-align:right;margin:6px 0 4px"><span class="zp-a" style="color:var(--txt3)">—</span></div>`;
-    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span></div>${incomeArea}<div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div></div>`;
+    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span></div><div style="text-align:right;margin:6px 0 4px"><span class="zp-a" style="color:var(--acc)">${fmtRub(factTotal)}</span></div><div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div></div>`;
   }).join('');
 
-  el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Прогноз фонда дожима</div><div class="zv">${fmtRub(totalFund)}</div></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`;
+  el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Фонд дожима (факт)</div><div class="zv">${fmtRub(totalFund)}</div></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`;
 }
 
 function setDohodTab(tab) {
   S.dohodTab = tab;
   const el = document.getElementById('c-dohod');
-  if (tab === 'dozhim' && (!S.data.d_otchet || !S.data.d_stavki || !S.data.grafik)) {
+  if (tab === 'dozhim' && (!S.data.d_vizity || !S.data.plan)) {
     el.innerHTML = loader();
     Promise.all([
-      S.data.d_otchet ? Promise.resolve(S.data.d_otchet) : api(SHEETS.d_otchet, 'A1:R20').catch(() => []),
-      S.data.d_stavki ? Promise.resolve(S.data.d_stavki) : api(SHEETS.d_stavki, 'A1:B25').catch(() => []),
-      S.data.grafik   ? Promise.resolve(S.data.grafik)   : api(SHEETS.grafik,    'A1:AI25').catch(() => []),
-    ]).then(([otchet, stavki, grafik]) => {
-      S.data.d_otchet = otchet;
-      S.data.d_stavki = stavki;
+      S.data.d_vizity ? Promise.resolve(S.data.d_vizity) : api(SHEETS.d_vizity, 'A:L').catch(() => []),
+      S.data.plan     ? Promise.resolve(S.data.plan)     : api(SHEETS.plan,     'A:B').catch(() => []),
+      S.data.grafik   ? Promise.resolve(S.data.grafik)   : api(SHEETS.grafik,   'A1:AI25').catch(() => []),
+    ]).then(([dvizity, plan, grafik]) => {
+      S.data.d_vizity = dvizity;
+      S.data.plan     = plan;
       S.data.grafik   = grafik;
       renderDohod();
     });
@@ -3466,15 +3622,37 @@ function openPlanEditor() {
   }
 
   const planNames = planData.slice(1).filter(r => r && r[0]);
-  body.innerHTML = planNames.map((row, i) => {
+
+  // Группируем по роли
+  const groups = { crm: [], dozhim: [], other: [] };
+  planNames.forEach((row, i) => {
     const name = String(row[0]).trim();
-    const plan = String(row[1] || '0');
-    return `<div class="pe-row">
-      <span class="pe-name">${name}</span>
+    const role = getRoleByName(name.toLowerCase().trim());
+    const item = { name, plan: String(row[1]||'0'), idx: i+1 };
+    if (role === 'dozhim') groups.dozhim.push(item);
+    else if (role === 'crm' || role === '') groups.crm.push(item);
+    else groups.other.push(item);
+  });
+
+  function makeRows(items) {
+    return items.map(it => `<div class="pe-row">
+      <span class="pe-name">${it.name}</span>
       <input class="pe-input" type="number" min="0" step="1"
-             data-name="${name}" data-idx="${i+1}" value="${plan}"/>
-    </div>`;
-  }).join('');
+             data-name="${it.name}" data-idx="${it.idx}" value="${it.plan}"/>
+    </div>`).join('');
+  }
+
+  let html = '';
+  if (groups.crm.length) {
+    html += `<details class="pe-spoiler" open><summary>CRM (${groups.crm.length} чел.)</summary><div class="pe-spoiler-body">${makeRows(groups.crm)}</div></details>`;
+  }
+  if (groups.dozhim.length) {
+    html += `<details class="pe-spoiler" open><summary>ДОЖИМ (${groups.dozhim.length} чел.)</summary><div class="pe-spoiler-body">${makeRows(groups.dozhim)}</div></details>`;
+  }
+  if (groups.other.length) {
+    html += `<details class="pe-spoiler"><summary>Прочие (${groups.other.length} чел.)</summary><div class="pe-spoiler-body">${makeRows(groups.other)}</div></details>`;
+  }
+  body.innerHTML = html || '<div class="empty">Нет данных</div>';
 
   if (status) status.textContent = '';
   document.getElementById('plan-editor-overlay').classList.add('open');
@@ -3678,11 +3856,8 @@ async function loadPersonal(matched) {
   const isDozhim = matched.role === 'dozhim';
   try {
     if (isDozhim) {
-      if (!S.data.d_otchet) S.data.d_otchet = await api(SHEETS.d_otchet, 'A1:R20');
-      if (!S.data.d_stavki) {
-        try { S.data.d_stavki = await api(SHEETS.d_stavki, 'A1:B25'); }
-        catch(e) { S.data.d_stavki = []; }
-      }
+      if (!S.data.d_vizity) S.data.d_vizity = await api(SHEETS.d_vizity, 'A:L').catch(() => []);
+      if (!S.data.plan)     S.data.plan     = await api(SHEETS.plan,   'A:B').catch(() => []);
     } else {
       if (!S.data.vizity) S.data.vizity = await api(SHEETS.vizity, 'A:J').catch(() => []);
       if (!S.data.plan)   S.data.plan   = await api(SHEETS.plan,   'A:B').catch(() => []);
@@ -3711,8 +3886,22 @@ function renderPersonal(matched) {
   let salObj = null;
 
   if (isDozhim) {
-    const dRaw = S.data.d_otchet || [];
-    mgrRow = dRaw.slice(3, 20).find(r => (r[0]||'').toLowerCase().trim() === nameLow);
+    const dStats = buildDozhimStats(S.data.d_vizity || []);
+    const planM  = getPlanMap(S.data.plan || []);
+    const s      = dStats[nameLow] || {};
+    const planVal = planM[nameLow] || 0;
+    const allVis  = (s.vis800||0) + (s.vis1000||0);
+    const synRow  = new Array(20).fill('');
+    synRow[0] = name;
+    synRow[1] = s.vis800||0;  synRow[2] = s.vis1000||0;
+    synRow[3] = planVal;      synRow[4] = Math.max(0, planVal - allVis);
+    synRow[7] = allVis;
+    synRow[8] = s.kred800||0; synRow[9] = s.nal800||0;
+    synRow[10]= s.obmen800||0; synRow[11]= s.kom800||0;
+    synRow[12]= s.kred1000||0; synRow[13]= s.nal1000||0;
+    synRow[14]= s.kom1000||0;  synRow[15]= s.zadatok||0;
+    mgrRow = synRow;
+    salObj = calcSalaryDozhimFromVizity(nameLow);
   } else {
     // Строим mgrRow из ВИЗИТЫ + ПЛАН
     const vizStats = buildCrmStats(S.data.vizity || []);
@@ -4166,37 +4355,31 @@ function calcSalaryDozhim(nameLow) {
 // ==================== DOZHIM INCOME MODAL ====================
 function openDozhimIncomeModal(btn) {
   const d = JSON.parse(btn.dataset.income.replace(/&#39;/g,"'"));
-  const m = d.metrics || {};
   function n(v) { return parseFloat(String(v||'0').replace(/[^\d.,-]/g,'').replace(',','.')) || 0; }
   function subtotal(lbl, sum) {
     return `<div class="income-subtotal"><span class="ist-lbl">${lbl}</span><span class="ist-val">${fmtRub(sum)}</span></div>`;
   }
   function dzBadge(lbl, count, earn) {
-    if (count === 0 && earn === 0) return '';
+    if (!count && !earn) return '';
     return `<div class="dz-badge"><div class="dzb-lbl">${lbl}</div><div class="dzb-count">${count}</div><div class="dzb-earn">${fmtRub(earn)}</div></div>`;
   }
 
-  const oklad   = n(d.oklad);
-  const premium = n(d.premium);
-  const kotel   = n(d.kotel);   // уже разделён на участников
+  const R = DOZHIM_RATES;
+  const oklad      = n(d.oklad);
+  const kotel      = n(d.kotel);
   const kotelTotal = n(d.kotelTotal);
   const fundCount  = d.fundCount || '—';
 
-  const okladLbl = d.workedR != null
-    ? `Оклад (${d.workedR}/${d.totalR} дн.)`
-    : 'Оклад';
+  // Пересчитываем премию из ch800/ch1000
+  const ch8  = d.ch800  || {};
+  const ch10 = d.ch1000 || {};
+  const p8   = Math.max(0, n(ch8.vis)  - n(ch8.kred)  - n(ch8.nal)  - n(ch8.obmen) - n(ch8.kom));
+  const p10  = Math.max(0, n(ch10.vis) - n(ch10.kred) - n(ch10.nal) - n(ch10.kom));
 
-  const premiumBadges = `
-    <div class="dz-badges">
-      ${dzBadge('Визиты',   n(m.vis?.count),     n(m.vis?.earn))}
-      ${dzBadge('Кредит',   n(m.kred?.count),    n(m.kred?.earn))}
-      ${dzBadge('Наличка',  n(m.nal?.count),     n(m.nal?.earn))}
-    </div>
-    <div class="dz-badges">
-      ${dzBadge('Обмен',    n(m.obmen?.count),   n(m.obmen?.earn))}
-      ${dzBadge('Комиссия', n(m.kom?.count),     n(m.kom?.earn))}
-      ${dzBadge('Задаток',  n(m.zadatok?.count), n(m.zadatok?.earn))}
-    </div>`;
+  const earn8  = n(d.earn800)  || (p8*R.r800Vis   + n(ch8.kred)*R.r800Kred  + n(ch8.nal)*R.r800Nal  + n(ch8.obmen)*R.r800Obmen  + n(ch8.kom)*R.r800Kom  + n(ch8.zadatok)*R.rZadatok);
+  const earn10 = n(d.earn1000) || (p10*R.r1000Vis + n(ch10.kred)*R.r1000Kred + n(ch10.nal)*R.r1000Nal + n(ch10.kom)*R.r1000Kom);
+
+  const okladLbl = d.workedR != null ? `Оклад (${d.workedR}/${d.totalR} дн.)` : 'Оклад';
 
   const kotelRow = (d.inFund && kotel > 0) ? `
     <div class="income-sec-title">Котёл</div>
@@ -4207,19 +4390,30 @@ function openDozhimIncomeModal(btn) {
 
   const mc = document.getElementById('income-modal-content');
   mc.setAttribute('data-modal', 'dozhim');
-  const noKoefTotalDz = Math.round(oklad + premium);
   mc.innerHTML = `
     <div class="income-sec-title">Оклад</div>
     ${subtotal(okladLbl, oklad)}
-    <div class="income-sec-title">Премия</div>
-    ${premiumBadges}
-    ${subtotal('Итого премия', Math.round(premium - kotel))}
+    <div class="income-sec-title">КАТ 800</div>
+    <div class="dz-badges">
+      ${dzBadge('Визиты',   p8,              Math.round(p8*R.r800Vis))}
+      ${dzBadge('Кредит',   n(ch8.kred),     Math.round(n(ch8.kred)*R.r800Kred))}
+      ${dzBadge('Наличка',  n(ch8.nal),      Math.round(n(ch8.nal)*R.r800Nal))}
+      ${dzBadge('Обмен',    n(ch8.obmen),    Math.round(n(ch8.obmen)*R.r800Obmen))}
+      ${dzBadge('Комиссия', n(ch8.kom),      Math.round(n(ch8.kom)*R.r800Kom))}
+      ${dzBadge('Задаток',  n(ch8.zadatok),  Math.round(n(ch8.zadatok)*R.rZadatok))}
+    </div>
+    ${subtotal('Итого КАТ 800', Math.round(earn8))}
+    <div class="income-sec-title">КАТ 1000</div>
+    <div class="dz-badges">
+      ${dzBadge('Визиты',   p10,             Math.round(p10*R.r1000Vis))}
+      ${dzBadge('Кредит',   n(ch10.kred),    Math.round(n(ch10.kred)*R.r1000Kred))}
+      ${dzBadge('Наличка',  n(ch10.nal),     Math.round(n(ch10.nal)*R.r1000Nal))}
+      ${dzBadge('Комиссия', n(ch10.kom),     Math.round(n(ch10.kom)*R.r1000Kom))}
+    </div>
+    ${subtotal('Итого КАТ 1000', Math.round(earn10))}
     ${kotelRow}
-    <div class="income-sec-title">Без коэффициентов</div>
-    ${subtotal('Оклад 100% + Премия + Котёл', noKoefTotalDz)}
     <div class="income-sec-title">Итого</div>
     ${subtotal('Фактический доход', Math.round(n(d.fact?.total)))}
-    ${subtotal('Прогнозируемый доход', Math.round(n(d.prognoz?.total)))}
   `;
   document.getElementById('income-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -4307,86 +4501,98 @@ function openIncomeDetail(btn) {
 }
 
 function openSalInfo(roleHint) {
-  const st = S.data.stavki || [];
-  const dst = S.data.d_stavki || [];
-  const parseR = v => parseFloat(String(v||'0').replace(/[^0-9.,-]/g,'').replace(',','.')) || 0;
-  const rub = v => v ? fmtRub(v) : '—';
+  const matched = findUserInSheet();
+  const role = roleHint || matched?.role || 'crm';
+  const isDozhim = role === 'dozhim';
 
-  // CRM ставки (calcSalary использует stavki)
-  const crmVis   = rub(parseR(st[8]?.[1]));
-  const crmKred  = rub(parseR(st[9]?.[1]));
-  const crmNal   = rub(parseR(st[10]?.[1]));
-  const crmObmen = rub(parseR(st[11]?.[1]));
-  const crmKom   = rub(parseR(st[12]?.[1]));
-  const crmZad   = rub(parseR(st[20]?.[1]));
-  // ТЛ ставки
-  const tlVis    = rub(parseR(st[14]?.[1]));
-  const tlKred   = rub(parseR(st[15]?.[1]));
-  const tlNal    = rub(parseR(st[16]?.[1]));
-  const tlObmen  = rub(parseR(st[17]?.[1]));
-  const tlKom    = rub(parseR(st[18]?.[1]));
+  const R = DOZHIM_RATES;
+  const rub = v => fmtRub(v);
 
-  const hasRates = st.length > 0;
+  let bodyHtml = '';
 
-  const ratesBlock = hasRates ? `
-    <div class="si-sec">Ставки — CRM</div>
-    <div class="si-row"><span class="si-key">Визит</span><span class="si-val">${crmVis}</span></div>
-    <div class="si-row"><span class="si-key">Кредит</span><span class="si-val">${crmKred}</span></div>
-    <div class="si-row"><span class="si-key">Наличка</span><span class="si-val">${crmNal}</span></div>
-    <div class="si-row"><span class="si-key">Обмен</span><span class="si-val">${crmObmen}</span></div>
-    <div class="si-row"><span class="si-key">Комиссия</span><span class="si-val">${crmKom}</span></div>
-    <div class="si-row"><span class="si-key">Задаток</span><span class="si-val">${crmZad}</span></div>
-    <div class="si-sec">Ставки — Тёплые лиды</div>
-    <div class="si-row"><span class="si-key">Визит</span><span class="si-val">${tlVis}</span></div>
-    <div class="si-row"><span class="si-key">Кредит</span><span class="si-val">${tlKred}</span></div>
-    <div class="si-row"><span class="si-key">Наличка</span><span class="si-val">${tlNal}</span></div>
-    <div class="si-row"><span class="si-key">Обмен</span><span class="si-val">${tlObmen}</span></div>
-    <div class="si-row"><span class="si-key">Комиссия</span><span class="si-val">${tlKom}</span></div>` : '';
+  if (isDozhim) {
+    bodyHtml = `
+      <div class="si-sec">Формула</div>
+      <div class="si-formula">Зарплата = Оклад + Премия + Доля котла</div>
+      <div class="si-note">Коэффициенты не применяются. Оклад начисляется пропорционально отработанным рабочим дням.</div>
 
-  document.getElementById('sal-info-body').innerHTML = `
-    <div class="si-sec">Формула</div>
-    <div class="si-formula">Зарплата = Оклад + (Премия × Коэффициент)</div>
-    <div class="si-note">Оклад начисляется пропорционально отработанным рабочим дням.<br>Премия = CRM + Тёплые лиды + Доля котла.</div>
+      <div class="si-sec">Оклад</div>
+      <div class="si-row"><span class="si-key">База</span><span class="si-val">${rub(R.baseOklad)}</span></div>
+      <div class="si-row"><span class="si-key">Расчёт</span><span class="si-val">Оклад ÷ раб.дней × отработано</span></div>
 
-    <div class="si-sec">Оклад</div>
-    <div class="si-row"><span class="si-key">База</span><span class="si-val">Фиксированный оклад по ставке</span></div>
-    <div class="si-row"><span class="si-key">Расчёт</span><span class="si-val">Оклад ÷ раб.дней × отработано</span></div>
+      <div class="si-sec">Ставки — КАТ 800</div>
+      <div class="si-row"><span class="si-key">Визит</span><span class="si-val">${rub(R.r800Vis)}</span></div>
+      <div class="si-row"><span class="si-key">Кредит</span><span class="si-val">${rub(R.r800Kred)}</span></div>
+      <div class="si-row"><span class="si-key">Наличка</span><span class="si-val">${rub(R.r800Nal)}</span></div>
+      <div class="si-row"><span class="si-key">Обмен</span><span class="si-val">${rub(R.r800Obmen)}</span></div>
+      <div class="si-row"><span class="si-key">Комиссия</span><span class="si-val">${rub(R.r800Kom)}</span></div>
+      <div class="si-row"><span class="si-key">Задаток</span><span class="si-val">${rub(R.rZadatok)}</span></div>
 
-    <div class="si-sec">Премия CRM</div>
-    <div class="si-row"><span class="si-key">Визит / Кредит / Наличка</span><span class="si-val">По ставке за действие</span></div>
-    <div class="si-row"><span class="si-key">Обмен / Комиссия / Задаток</span><span class="si-val">По ставке</span></div>
+      <div class="si-sec">Ставки — КАТ 1000</div>
+      <div class="si-row"><span class="si-key">Визит</span><span class="si-val">${rub(R.r1000Vis)}</span></div>
+      <div class="si-row"><span class="si-key">Кредит</span><span class="si-val">${rub(R.r1000Kred)}</span></div>
+      <div class="si-row"><span class="si-key">Наличка</span><span class="si-val">${rub(R.r1000Nal)}</span></div>
+      <div class="si-row"><span class="si-key">Комиссия</span><span class="si-val">${rub(R.r1000Kom)}</span></div>
 
-    <div class="si-sec">Премия Тёплые лиды</div>
-    <div class="si-row"><span class="si-key">Визит / Кредит / Наличка</span><span class="si-val">По ставке тёплых лидов</span></div>
-    <div class="si-row"><span class="si-key">Обмен / Комиссия</span><span class="si-val">По ставке тёплых лидов</span></div>
+      <div class="si-sec">Котёл</div>
+      <div class="si-row"><span class="si-key">Что это</span><span class="si-val">Общий фонд отдела дожима, делится поровну</span></div>
+      <div class="si-row"><span class="si-key">Доля</span><span class="si-val">Котёл ÷ кол-во участников</span></div>
 
-    <div class="si-sec">Котёл</div>
-    <div class="si-row"><span class="si-key">Что это</span><span class="si-val">Общий фонд отдела, делится поровну</span></div>
-    <div class="si-row"><span class="si-key">Доля</span><span class="si-val">Котёл ÷ кол-во участников</span></div>
-    <div class="si-row"><span class="si-key">Участие</span><span class="si-val">Только у включённых в котёл</span></div>
+      <div class="si-sec">Итого</div>
+      <div class="si-formula">Оклад + Премия КАТ800 + Премия КАТ1000 + Доля котла</div>
+    `;
+  } else {
+    const st = S.data.stavki || [];
+    const parseR = v => parseFloat(String(v||'0').replace(/[^0-9.,-]/g,'').replace(',','.')) || 0;
+    const rubSt = v => v ? fmtRub(v) : '—';
+    const crmVis   = rubSt(parseR(st[8]?.[1]));
+    const crmKred  = rubSt(parseR(st[9]?.[1]));
+    const crmNal   = rubSt(parseR(st[10]?.[1]));
+    const crmObmen = rubSt(parseR(st[11]?.[1]));
+    const crmKom   = rubSt(parseR(st[12]?.[1]));
+    const crmZad   = rubSt(parseR(st[20]?.[1]));
+    const tlVis    = rubSt(parseR(st[14]?.[1]));
+    const tlKred   = rubSt(parseR(st[15]?.[1]));
+    const tlNal    = rubSt(parseR(st[16]?.[1]));
+    const tlObmen  = rubSt(parseR(st[17]?.[1]));
+    const tlKom    = rubSt(parseR(st[18]?.[1]));
+    const hasRates = st.length > 0;
 
-    <div class="si-sec">Коэффициент (×К)</div>
-    <div class="si-row"><span class="si-key">×0.8</span><span class="si-val">Менее 80% плана</span></div>
-    <div class="si-row"><span class="si-key">×0.9</span><span class="si-val">80% — не более 100%</span></div>
-    <div class="si-row"><span class="si-key">×1.0</span><span class="si-val">100% — 130% включительно</span></div>
-    <div class="si-row"><span class="si-key">×1.1</span><span class="si-val">Более 130% и до 150% включ.</span></div>
-    <div class="si-row"><span class="si-key">×1.2</span><span class="si-val">Более 150% плана</span></div>
-    <div class="si-note">Коэффициент применяется к сумме всей премии (CRM + ТЛ + Котёл), но не к окладу.</div>
+    bodyHtml = `
+      <div class="si-sec">Формула</div>
+      <div class="si-formula">Зарплата = Оклад + (Премия × Коэффициент)</div>
+      <div class="si-note">Оклад начисляется пропорционально отработанным рабочим дням.<br>Премия = CRM + Тёплые лиды + Доля котла.</div>
+      <div class="si-sec">Оклад</div>
+      <div class="si-row"><span class="si-key">Расчёт</span><span class="si-val">Оклад ÷ раб.дней × отработано</span></div>
+      ${hasRates ? `
+      <div class="si-sec">Ставки — CRM</div>
+      <div class="si-row"><span class="si-key">Визит</span><span class="si-val">${crmVis}</span></div>
+      <div class="si-row"><span class="si-key">Кредит</span><span class="si-val">${crmKred}</span></div>
+      <div class="si-row"><span class="si-key">Наличка</span><span class="si-val">${crmNal}</span></div>
+      <div class="si-row"><span class="si-key">Обмен</span><span class="si-val">${crmObmen}</span></div>
+      <div class="si-row"><span class="si-key">Комиссия</span><span class="si-val">${crmKom}</span></div>
+      <div class="si-row"><span class="si-key">Задаток</span><span class="si-val">${crmZad}</span></div>
+      <div class="si-sec">Ставки — Тёплые лиды</div>
+      <div class="si-row"><span class="si-key">Визит</span><span class="si-val">${tlVis}</span></div>
+      <div class="si-row"><span class="si-key">Кредит</span><span class="si-val">${tlKred}</span></div>
+      <div class="si-row"><span class="si-key">Наличка</span><span class="si-val">${tlNal}</span></div>
+      <div class="si-row"><span class="si-key">Обмен</span><span class="si-val">${tlObmen}</span></div>
+      <div class="si-row"><span class="si-key">Комиссия</span><span class="si-val">${tlKom}</span></div>` : ''}
+      <div class="si-sec">Котёл</div>
+      <div class="si-row"><span class="si-key">Доля</span><span class="si-val">Котёл ÷ кол-во участников</span></div>
+      <div class="si-sec">Коэффициент</div>
+      <div class="si-row"><span class="si-key">×0.8</span><span class="si-val">Менее 80% плана</span></div>
+      <div class="si-row"><span class="si-key">×0.9</span><span class="si-val">80% — не более 100%</span></div>
+      <div class="si-row"><span class="si-key">×1.0</span><span class="si-val">100% — 130% включительно</span></div>
+      <div class="si-row"><span class="si-key">×1.1</span><span class="si-val">130% — 150% включительно</span></div>
+      <div class="si-row"><span class="si-key">×1.2</span><span class="si-val">Более 150% плана</span></div>
+      <div class="si-sec">Без коэффициентов</div>
+      <div class="si-formula">Оклад (100%) + Премия + Котёл</div>
+      <div class="si-note">Базовая сумма до применения поправки за план.</div>
+    `;
+  }
 
-    <div class="si-sec">Фактический доход</div>
-    <div class="si-formula">Оклад + (Премия × К_факт)</div>
-    <div class="si-note">К_факт рассчитан по текущему % выполнения плана на сегодня.</div>
-
-    <div class="si-sec">Прогнозируемый доход</div>
-    <div class="si-formula">Оклад + (Премия × К_прогноз)</div>
-    <div class="si-note">К_прогноз — экстраполяция текущего темпа до конца месяца.</div>
-
-    <div class="si-sec">Без коэффициентов</div>
-    <div class="si-formula">Оклад (100%) + Премия CRM + Премия ТЛ + Доля котла</div>
-    <div class="si-note">Базовый расчёт с К=1. Показывает «чистую» заработанную сумму до применения поправки за план.</div>
-
-    ${ratesBlock}
-  `;
+  document.getElementById('sal-info-body').innerHTML = bodyHtml;
   document.getElementById('sal-info-overlay').classList.add('open');
 }
 function closeSalInfo() {

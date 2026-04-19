@@ -1600,6 +1600,42 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
   100% { opacity:0;  transform:translateY(-12px) scaleX(2); }
 }
 /* ===== END BIRTHDAY BANNER ===== */
+/* ===== BIRTHDAY SELF CELEBRATION ===== */
+#bday-self {
+  display:none; position:fixed; inset:0; z-index:99999;
+  align-items:center; justify-content:center;
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  background:rgba(0,0,0,.45);
+}
+#bday-self.on { display:flex; }
+#bday-canvas {
+  position:absolute; inset:0; pointer-events:none;
+}
+.bday-self-text {
+  position:relative; z-index:2;
+  text-align:center; pointer-events:none;
+  opacity:0; transform:scale(.4);
+  transition:opacity .8s ease, transform .8s cubic-bezier(.175,.885,.32,1.275);
+}
+.bday-self-text.visible {
+  opacity:1; transform:scale(1);
+}
+.bday-self-text.exploding {
+  opacity:0; transition:opacity .4s ease;
+}
+.bday-letter {
+  display:inline-block;
+  font-family:'Unbounded',sans-serif;
+  font-size:clamp(32px, 8vw, 64px);
+  font-weight:900;
+  line-height:1.1;
+  background:linear-gradient(135deg, #fff 0%, #ffe066 40%, #ff9900 70%, #ff6b9d 100%);
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 12px rgba(255,200,50,.8));
+  transition:transform .3s ease, opacity .3s ease;
+}
+/* ===== END BIRTHDAY SELF CELEBRATION ===== */
 </style>
 </head>
 <body>
@@ -1777,6 +1813,11 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
   </div>
 </div>
 <audio id="bday-audio" src="https://frankiej13.github.io/crewcrm/dob.mp3" preload="auto"></audio>
+<!-- SELF BIRTHDAY CELEBRATION -->
+<div id="bday-self">
+  <canvas id="bday-canvas"></canvas>
+  <div class="bday-self-text" id="bday-self-text"></div>
+</div>
 <div class="mop-overlay" id="mop-overlay" onclick="closeMopModal(event)">
   <div class="mop-modal" id="mop-modal">
     <div class="mop-modal-hdr">
@@ -4111,6 +4152,185 @@ function closeBdayBanner() {
 
 // ==================== END BIRTHDAY NOTIFICATIONS ====================
 
+// ==================== SELF BIRTHDAY CELEBRATION ====================
+
+function checkSelfBirthday() {
+  if (!S.usersData) return;
+  const matched = findUserInSheet();
+  if (!matched || !matched.name) return;
+  const myNameLow = matched.name.toLowerCase().trim();
+
+  let selfDob = null;
+  for (let i = 1; i < S.usersData.length; i++) {
+    const row = S.usersData[i];
+    if (row && (row[1]||'').toLowerCase().trim() === myNameLow) {
+      selfDob = parseDOB(row[5]);
+      break;
+    }
+  }
+  if (!selfDob) return;
+
+  const now   = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const bday  = new Date(now.getFullYear(), selfDob.month - 1, selfDob.day);
+  const diff  = Math.round((today - bday) / 86400000);
+
+  // Показываем если ДР было сегодня или до 5 дней назад (не успел зайти)
+  if (diff < 0 || diff > 5) return;
+
+  const key = 'crm_bday_self_' + myNameLow + '_' + now.getFullYear();
+  if (localStorage.getItem(key)) return;
+  try { localStorage.setItem(key, '1'); } catch(e) {}
+
+  setTimeout(startBirthdayCelebration, 1200);
+}
+
+function startBirthdayCelebration() {
+  const overlay = document.getElementById('bday-self');
+  const canvas  = document.getElementById('bday-canvas');
+  const textEl  = document.getElementById('bday-self-text');
+  if (!overlay || !canvas || !textEl) return;
+
+  // Текст — разбиваем на буквы
+  const msg = 'С Днём Рождения!';
+  textEl.innerHTML = msg.split('').map((ch, i) =>
+    `<span class="bday-letter" style="transition-delay:${i * 40}ms">${ch === ' ' ? '&nbsp;' : ch}</span>`
+  ).join('');
+
+  overlay.classList.add('on');
+
+  // Настраиваем canvas
+  const W = canvas.width  = window.innerWidth;
+  const H = canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+
+  // ── КОНФЕТТИ ──────────────────────────────────────────────
+  const COLORS = ['#ff6b9d','#ff9f43','#ffeaa7','#55efc4','#74b9ff',
+                  '#a29bfe','#fd79a8','#e17055','#6c5ce7','#fff'];
+  const pieces = [];
+  for (let i = 0; i < 180; i++) {
+    pieces.push({
+      x:     Math.random() * W,
+      y:     -Math.random() * H * 0.5,
+      w:     6 + Math.random() * 8,
+      h:     10 + Math.random() * 6,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      rot:   Math.random() * Math.PI * 2,
+      rotV:  (Math.random() - .5) * .12,
+      vx:    (Math.random() - .5) * 1.5,
+      vy:    2.5 + Math.random() * 3.5,
+      wave:  Math.random() * Math.PI * 2,
+    });
+  }
+
+  // ── ЧАСТИЦЫ ВЗРЫВА ────────────────────────────────────────
+  let particles = [];
+  let exploded  = false;
+
+  function spawnExplosion() {
+    const letters = textEl.querySelectorAll('.bday-letter');
+    letters.forEach(el => {
+      const r = el.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top  + r.height / 2;
+      for (let i = 0; i < 18; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 4 + Math.random() * 9;
+        particles.push({
+          x: cx, y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 2,
+          color: COLORS[Math.floor(Math.random() * COLORS.length)],
+          size: 4 + Math.random() * 5,
+          life: 1,
+        });
+      }
+    });
+  }
+
+  let startT = null;
+  let running = true;
+
+  function frame(ts) {
+    if (!running) return;
+    if (!startT) startT = ts;
+    const t = (ts - startT) / 1000;
+    ctx.clearRect(0, 0, W, H);
+
+    // ── Конфетти ──
+    if (t < 8) {
+      for (const p of pieces) {
+        p.y  += p.vy;
+        p.x  += p.vx + Math.sin(p.wave + t) * 0.6;
+        p.rot += p.rotV;
+        if (p.y > H + 20) { p.y = -20; p.x = Math.random() * W; }
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = 0.85;
+        ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+        ctx.restore();
+      }
+    }
+
+    // ── Текст появляется на t=3 ──
+    if (t >= 3 && !textEl.classList.contains('visible') && !exploded) {
+      textEl.classList.add('visible');
+    }
+
+    // ── Взрыв на t=6 ──
+    if (t >= 6 && !exploded) {
+      exploded = true;
+      textEl.classList.add('exploding');
+      spawnExplosion();
+    }
+
+    // ── Частицы взрыва ──
+    for (const p of particles) {
+      p.x    += p.vx;
+      p.y    += p.vy;
+      p.vy   += 0.2; // гравитация
+      p.life -= 0.022;
+      if (p.life <= 0) continue;
+      ctx.save();
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle   = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // ── Закрываем на t=8.5 ──
+    if (t >= 8.5) {
+      running = false;
+      overlay.style.transition = 'opacity .6s';
+      overlay.style.opacity    = '0';
+      setTimeout(() => {
+        overlay.classList.remove('on');
+        overlay.style.opacity    = '';
+        overlay.style.transition = '';
+        textEl.classList.remove('visible','exploding');
+        particles = [];
+      }, 650);
+      return;
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  requestAnimationFrame(frame);
+
+  // Звук
+  try {
+    const a = document.getElementById('bday-audio');
+    if (a) { a.currentTime = 0; a.play().catch(()=>{}); }
+  } catch(e) {}
+}
+
+// ==================== END SELF BIRTHDAY CELEBRATION ====================
+
 function closeMopModal(e) {
   if (e && e.target !== document.getElementById('mop-overlay')) return;
   document.getElementById('mop-overlay').classList.remove('open');
@@ -4220,6 +4440,7 @@ async function loadUsersAndStart() {
     toast('Приветствую, ' + firstName + '!', 's');
     showPlanEditBtnIfCeo(matched);
     checkBirthdayNotifications();
+    checkSelfBirthday();
     if (matched.role === 'ceo') {
       goTab('otchet');
     } else {

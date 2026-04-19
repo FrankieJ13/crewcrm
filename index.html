@@ -5207,33 +5207,51 @@ function openSalInfo(roleHint) {
       <div class="si-sec">Формула</div>
       <div class="si-formula">Зарплата = Оклад + (Премия × Коэффициент)</div>
       <div class="si-note">Оклад начисляется пропорционально отработанным рабочим дням.<br>Премия = CRM + Тёплые лиды + Доля котла.</div>
+
       <div class="si-sec">Оклад</div>
+      <div class="si-row"><span class="si-key">База</span><span class="si-val">Фиксированный оклад по ставке</span></div>
       <div class="si-row"><span class="si-key">Расчёт</span><span class="si-val">Оклад ÷ раб.дней × отработано</span></div>
+
       ${hasRates ? `
-      <div class="si-sec">Ставки — CRM</div>
+      <div class="si-sec">Премия CRM</div>
       <div class="si-row"><span class="si-key">Визит</span><span class="si-val">${crmVis}</span></div>
       <div class="si-row"><span class="si-key">Кредит</span><span class="si-val">${crmKred}</span></div>
       <div class="si-row"><span class="si-key">Наличка</span><span class="si-val">${crmNal}</span></div>
       <div class="si-row"><span class="si-key">Обмен</span><span class="si-val">${crmObmen}</span></div>
       <div class="si-row"><span class="si-key">Комиссия</span><span class="si-val">${crmKom}</span></div>
       <div class="si-row"><span class="si-key">Задаток</span><span class="si-val">${crmZad}</span></div>
-      <div class="si-sec">Ставки — Тёплые лиды</div>
+
+      <div class="si-sec">Премия Тёплые лиды</div>
       <div class="si-row"><span class="si-key">Визит</span><span class="si-val">${tlVis}</span></div>
       <div class="si-row"><span class="si-key">Кредит</span><span class="si-val">${tlKred}</span></div>
       <div class="si-row"><span class="si-key">Наличка</span><span class="si-val">${tlNal}</span></div>
       <div class="si-row"><span class="si-key">Обмен</span><span class="si-val">${tlObmen}</span></div>
       <div class="si-row"><span class="si-key">Комиссия</span><span class="si-val">${tlKom}</span></div>` : ''}
+
       <div class="si-sec">Котёл</div>
+      <div class="si-row"><span class="si-key">Что это</span><span class="si-val">Общий фонд отдела, делится поровну</span></div>
       <div class="si-row"><span class="si-key">Доля</span><span class="si-val">Котёл ÷ кол-во участников</span></div>
-      <div class="si-sec">Коэффициент</div>
+      <div class="si-row"><span class="si-key">Участие</span><span class="si-val">Только у включённых в котёл</span></div>
+
+      <div class="si-sec">Коэффициент (×К)</div>
       <div class="si-row"><span class="si-key">×0.8</span><span class="si-val">Менее 80% плана</span></div>
       <div class="si-row"><span class="si-key">×0.9</span><span class="si-val">80% — не более 100%</span></div>
       <div class="si-row"><span class="si-key">×1.0</span><span class="si-val">100% — 130% включительно</span></div>
-      <div class="si-row"><span class="si-key">×1.1</span><span class="si-val">130% — 150% включительно</span></div>
+      <div class="si-row"><span class="si-key">×1.1</span><span class="si-val">Более 130% и до 150% включ.</span></div>
       <div class="si-row"><span class="si-key">×1.2</span><span class="si-val">Более 150% плана</span></div>
+      <div class="si-note">Коэффициент применяется к премии (CRM + ТЛ + Котёл), но не к окладу.</div>
+
+      <div class="si-sec">Фактический доход</div>
+      <div class="si-formula">Оклад + (Премия × К_факт)</div>
+      <div class="si-note">К_факт рассчитан по текущему % выполнения плана на сегодня.</div>
+
+      <div class="si-sec">Прогнозируемый доход</div>
+      <div class="si-formula">Оклад + (Премия × К_прогноз)</div>
+      <div class="si-note">К_прогноз — экстраполяция текущего темпа до конца месяца.</div>
+
       <div class="si-sec">Без коэффициентов</div>
-      <div class="si-formula">Оклад (100%) + Премия + Котёл</div>
-      <div class="si-note">Базовая сумма до применения поправки за план.</div>
+      <div class="si-formula">Оклад (100%) + Премия CRM + Премия ТЛ + Доля котла</div>
+      <div class="si-note">Базовый расчёт с К=1. Показывает «чистую» сумму без поправки за план.</div>
     `;
   }
 

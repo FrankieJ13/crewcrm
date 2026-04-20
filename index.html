@@ -193,6 +193,13 @@ body.tiffany .glass {
 body.tiffany .sched-cell.dr  { background:rgba(184,77,107,.15); color:var(--acc); }
 /* Коэффициенты */
 body.tiffany .ic-koef        { background:rgba(143,179,174,.2); color:#2a2a2a; }
+/* income-col карточки */
+body.tiffany .income-col {
+  background:#e8f3f1;
+  border-color:#9ec0bb;
+  backdrop-filter:none;
+}
+body.tiffany .ic-lbl         { color:#4e6b68; }
 /* ══ END TIFFANY ══ */
 body.light .m4 .ml { color:#fff }
 body.light .m4 .mv { color:#fff }
@@ -2060,7 +2067,8 @@ const S = {
   data:{ otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null },
   reportTab: 'dept',
   dohodTab: 'crm',
-  faqTab: 'instr'
+  faqTab: 'instr',
+  silentRefresh: false, // если true — не показываем лоадер при перерисовке
 };
 
 /* ══ THEME ══ */
@@ -2465,7 +2473,7 @@ async function loadTab(tab) {
   }
   if (tab === 'dohod') {
     const el = document.getElementById('c-dohod');
-    if (el) el.innerHTML = loader();  // показываем сразу
+    if (el && !S.silentRefresh) el.innerHTML = loader();  // показываем сразу при ручном переходе
     const matched = findUserInSheet();
     const role = matched?.role || '';
     const isCeo = role === 'ceo';
@@ -2849,7 +2857,7 @@ function renderOtchet() {
 
   // Ждём ВИЗИТЫ и ПЛАН
   if (!S.data.vizity || !S.data.plan) {
-    el.innerHTML = loader();
+    if (!S.silentRefresh) el.innerHTML = loader();
     return;
   }
 
@@ -3376,7 +3384,7 @@ function renderDohod() {
   const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
 
   if (isDozhim) {
-    if (!S.data.d_vizity || !S.data.plan) { el.innerHTML = loader(); return; }
+    if (!S.data.d_vizity || !S.data.plan) { if (!S.silentRefresh) el.innerHTML = loader(); return; }
     const sal = calcSalaryDozhimFromVizity(nameLow);
     if (!sal) { el.innerHTML = '<div class="empty">Нет данных по вашему доходу</div>'; return; }
     const det = {
@@ -3399,7 +3407,7 @@ function renderDohod() {
         </div>
       </div>`;
   } else {
-    if (!S.data.vizity || !S.data.stavki) { el.innerHTML = loader(); return; }
+    if (!S.data.vizity || !S.data.stavki) { if (!S.silentRefresh) el.innerHTML = loader(); return; }
     const sal = calcSalary(nameLow);
     if (!sal) { el.innerHTML = '<div class="empty">Нет данных по вашему доходу</div>'; return; }
 
@@ -3475,8 +3483,8 @@ function renderDohod() {
 }
 
 function renderDohodCrm(el) {
-  if (!S.data.vizity || !S.data.plan) { el.innerHTML = loader(); return; }
-  if (!S.data.stavki) { el.innerHTML = '<div class="loader"><div class="spin"></div><span>Синхронизация…</span></div>'; return; }
+  if (!S.data.vizity || !S.data.plan) { if (!S.silentRefresh) el.innerHTML = loader(); return; }
+  if (!S.data.stavki) { if (!S.silentRefresh) el.innerHTML = loader(); return; }
 
   const planData = S.data.plan || [];
   const planNames = planData.slice(1)
@@ -3551,7 +3559,7 @@ function renderDohodCrm(el) {
 }
 
 function renderDohodDozhim(el) {
-  if (!S.data.d_vizity || !S.data.plan) { el.innerHTML = loader(); return; }
+  if (!S.data.d_vizity || !S.data.plan) { if (!S.silentRefresh) el.innerHTML = loader(); return; }
 
   const planData = S.data.plan || [];
   const planM    = getPlanMap(planData);
@@ -4761,28 +4769,33 @@ async function backgroundPrefetch(matched) {
   const isCeo    = role === 'ceo';
   const isDozhim = role === 'dozhim';
 
-  // Загружаем по очереди с паузами чтобы не перегружать API
   const tasks = [];
-
-  // Общие для всех
-  if (!S.data.vizity)  tasks.push(() => api(SHEETS.vizity,  'A:J').then(d => S.data.vizity  = d).catch(()=>{}));
-  if (!S.data.plan)    tasks.push(() => api(SHEETS.plan,    'A:B').then(d => S.data.plan    = d).catch(()=>{}));
-  if (!S.data.grafik)  tasks.push(() => api(SHEETS.grafik,  'A1:AI25').then(d => S.data.grafik = d).catch(()=>{}));
-  if (!S.data.cnvrs)   tasks.push(() => api(SHEETS.cnvrs,   'A1:N40').then(d => S.data.cnvrs  = d).catch(()=>{}));
-  if (!S.data.stavki)  tasks.push(() => api(SHEETS.stavki,  'A1:B25').then(d => S.data.stavki = d).catch(()=>{}));
-
-  // Для CEO и ДОЖИМ
+  if (!S.data.vizity)      tasks.push(() => api(SHEETS.vizity,  'A:J').then(d => S.data.vizity  = d).catch(()=>{}));
+  if (!S.data.plan)        tasks.push(() => api(SHEETS.plan,    'A:B').then(d => S.data.plan    = d).catch(()=>{}));
+  if (!S.data.grafik)      tasks.push(() => api(SHEETS.grafik,  'A1:AI25').then(d => S.data.grafik = d).catch(()=>{}));
+  if (!S.data.cnvrs)       tasks.push(() => api(SHEETS.cnvrs,   'A1:N40').then(d => S.data.cnvrs  = d).catch(()=>{}));
+  if (!S.data.stavki)      tasks.push(() => api(SHEETS.stavki,  'A1:B25').then(d => S.data.stavki = d).catch(()=>{}));
   if (isCeo || isDozhim) {
-    if (!S.data.d_vizity) tasks.push(() => api(SHEETS.d_vizity, 'A:L').then(d => S.data.d_vizity = d).catch(()=>{}));
+    if (!S.data.d_vizity)  tasks.push(() => api(SHEETS.d_vizity, 'A:L').then(d => S.data.d_vizity = d).catch(()=>{}));
   }
-
-  // Инструкции
   if (!S.data.instruktsii) tasks.push(() => api(SHEETS.instruktsii, 'A1:C200').then(d => S.data.instruktsii = d).catch(()=>{}));
 
-  // Запускаем задачи последовательно с паузой 600мс
-  for (const task of tasks) {
-    await task();
-    await new Promise(r => setTimeout(r, 600));
+  if (!tasks.length) return;
+
+  // Тихий режим: не показываем лоадер
+  S.silentRefresh = true;
+  try {
+    for (const task of tasks) {
+      await task();
+      await new Promise(r => setTimeout(r, 600));
+    }
+    // Тихо перерисовываем текущий видимый экран
+    const activeTab = document.querySelector('.tab.on')?.dataset.tab;
+    if (activeTab) renderTab(activeTab);
+    const personalOn = document.getElementById('scr-personal')?.classList.contains('on');
+    if (personalOn) { const m = findUserInSheet(); if (m) renderPersonal(m); }
+  } finally {
+    S.silentRefresh = false;
   }
 }
 

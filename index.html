@@ -3485,47 +3485,116 @@ function renderGrafik() {
   const el  = document.getElementById('c-grafik');
   const raw = S.data.grafik;
   if (!raw || raw.length < 3) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
-  const mo  = parseInt(currentSuffix.slice(0,2));
-  const yr  = 2000 + parseInt(currentSuffix.slice(2,4));
+
+  const mo    = parseInt(currentSuffix.slice(0,2));
+  const yr    = 2000 + parseInt(currentSuffix.slice(2,4));
   const weeks = getWeeksForMonth(yr, mo - 1);
   if (_schedWeek === null) {
     const today = new Date();
-    const todayWeek = weeks.findIndex(w => w.some(d => d.day === today.getDate() && today.getMonth()+1 === mo && today.getFullYear() === yr));
-    _schedWeek = todayWeek >= 0 ? todayWeek : 0;
+    const tw = weeks.findIndex(w => w.some(d => d.day === today.getDate() && today.getMonth()+1 === mo && today.getFullYear() === yr));
+    _schedWeek = tw >= 0 ? tw : 0;
   }
   _schedWeek = Math.max(0, Math.min(_schedWeek, weeks.length-1));
-  const week = weeks[_schedWeek];
+  const week    = weeks[_schedWeek];
   const weekDays = week.map(d => d.day);
-  const crmRaw = raw.slice(3, 12);
-  const g1pre = parseGroup(crmRaw, raw[1], weekDays);
-  const warmRaw = raw.slice(19, 24);
-  const g2pre = parseGroup(warmRaw, raw[17], weekDays);
-  const crmPeople = g1pre;
-  const workerCounts = weekDays.map((_, wi) => crmPeople.filter(p => (p.cells[wi]||'').toLowerCase().trim() === 'р').length);
-  const hdrs = week.map((d, wi) => `<div class="sched-day-hdr${d.day === new Date().getDate() && new Date().getMonth()+1 === mo && new Date().getFullYear() === yr ? ' today' : ''}"><div class="sd-num">${d.day}</div><div class="sd-dow">${DOW[d.dow]}</div><div class="sd-workers">${workerCounts[wi]}</div></div>`).join('');
+  const today   = new Date();
+  const isToday = d => d === today.getDate() && today.getMonth()+1 === mo && today.getFullYear() === yr;
+
+  // 1. Строим индекс ГРАФИКИ: nameLow → { row, daysRow }
+  //    «строка дней» — ближайшая выше строка, в которой 20+ ячеек являются числами 1-31
+  function isDaysRow(r) {
+    return r && r.slice(1).filter(c => { const n = parseInt(c); return n >= 1 && n <= 31; }).length >= 20;
+  }
+  const schedIndex = {};
+  let lastDaysRow = raw[1] || [];
+  for (let i = 0; i < raw.length; i++) {
+    const r = raw[i];
+    if (!r) continue;
+    if (isDaysRow(r)) { lastDaysRow = r; continue; }
+    const name = (r[0]||'').trim();
+    if (!name) continue;
+    schedIndex[name.toLowerCase()] = { name, row: r, daysRow: lastDaysRow };
+  }
+
+  // 2. Собираем CRM и ДОЖИМ из USERS
+  const users = S.usersData || [];
+  const crmNames    = [];
+  const dozhimNames = [];
+  for (let i = 1; i < users.length; i++) {
+    const u = users[i];
+    if (!u || !u[1]) continue;
+    const name = u[1].trim();
+    const role = (u[2]||'crm').toLowerCase().trim();
+    if (role === 'ceo') continue;
+    if (role === 'dozhim') dozhimNames.push(name);
+    else crmNames.push(name);
+  }
+
+  // 3. Строим объект person для отображения
+  function makePerson(name) {
+    const entry = schedIndex[name.toLowerCase()];
+    const daysRow = entry ? entry.daysRow : [];
+    const cells = weekDays.map(dayNum => {
+      if (!entry) return '';
+      let colIdx = -1;
+      for (let c = 1; c < daysRow.length; c++) {
+        if (parseInt(daysRow[c]) === dayNum) { colIdx = c; break; }
+      }
+      return colIdx >= 0 ? (entry.row[colIdx] || '') : '';
+    });
+    return { name, cells, found: !!entry };
+  }
+
+  const crmPeople    = crmNames.map(makePerson);
+  const dozhimPeople = dozhimNames.map(makePerson);
+
+  // 4. Шапка с числами рабочих в день
+  const workerCounts = weekDays.map((_, wi) =>
+    crmPeople.filter(p => (p.cells[wi]||'').toLowerCase().trim() === 'р').length
+  );
+  const hdrs = week.map((d, wi) =>
+    `<div class="sched-day-hdr${isToday(d.day) ? ' today' : ''}"><div class="sd-num">${d.day}</div><div class="sd-dow">${DOW[d.dow]}</div><div class="sd-workers">${workerCounts[wi]}</div></div>`
+  ).join('');
   const weekHeader = `<div class="sched-week">${hdrs}</div>`;
+
+  // 5. Карточки
   function buildCards(people) {
     return people.map(p => {
       const cells = p.cells.map((val, wi) => {
-        const v = val.toLowerCase().trim();
+        const v   = val.toLowerCase().trim();
         const cls = v==='р'?'dr':v==='в'?'dv':v==='вс'?'dvs':val?'':'empty';
-        const isT = week[wi]?.day === new Date().getDate() && new Date().getMonth()+1 === mo && new Date().getFullYear() === yr;
-        return `<div class="sched-cell ${cls}${isT?' today-col':''}">${val||'·'}</div>`;
+        return `<div class="sched-cell ${cls}${isToday(week[wi]?.day)?' today-col':''}">${val||'·'}</div>`;
       }).join('');
       const sched = getWorkedAndTotalR(p.name.toLowerCase().trim());
-      const workedBadge = sched ? `<span style="font-family:'Unbounded',sans-serif;font-size:10px;font-weight:700;color:var(--acc);margin-left:auto">отработано ${sched.workedR}<span style="color:var(--txt3);font-weight:500"> / ${sched.totalR}</span></span>` : '';
-      return `<div class="sched-person"><div class="sched-person-name" style="display:flex;align-items:center;gap:8px"><span>${p.name}</span>${workedBadge}</div><div class="sched-cells">${cells}</div></div>`;
+      const workedBadge = sched
+        ? `<span style="font-family:'Unbounded',sans-serif;font-size:10px;font-weight:700;color:var(--acc);margin-left:auto">отработано ${sched.workedR}<span style="color:var(--txt3);font-weight:500"> / ${sched.totalR}</span></span>`
+        : '';
+      const missing = !p.found ? `<span style="font-size:10px;color:var(--txt3);margin-left:auto">нет в графике</span>` : '';
+      return `<div class="sched-person"><div class="sched-person-name" style="display:flex;align-items:center;gap:8px"><span>${p.name}</span>${workedBadge}${missing}</div><div class="sched-cells">${cells}</div></div>`;
     }).join('');
   }
-  const g1title = raw[0]?.[0] || 'Группа 1';
-  const g2title = raw[16]?.[0] || 'Группа 2';
-  el.innerHTML = `<div class="sched-group-title" style="margin-top:4px">${g1title}</div>${buildCards(g1pre)}<div class="sched-group-title">${g2title}</div>${buildCards(g2pre)}`;
-  const stickyEl = document.getElementById('grafik-sticky');
+
+  // 6. Заголовки групп берём из первой непустой строки-нечисла ГРАФИКИ
+  const groupTitles = [];
+  for (let i = 0; i < raw.length; i++) {
+    const r = raw[i];
+    if (!r || !r[0] || !r[0].trim()) continue;
+    if (!isDaysRow(r) && !schedIndex[r[0].trim().toLowerCase()]) {
+      groupTitles.push(r[0].trim());
+      if (groupTitles.length >= 2) break;
+    }
+  }
+  const g1title = groupTitles[0] || 'CRM';
+  const g2title = groupTitles[1] || 'ДОЖИМ';
+
+  el.innerHTML = `<div class="sched-group-title" style="margin-top:4px">${g1title}</div>${buildCards(crmPeople)}<div class="sched-group-title">${g2title}</div>${buildCards(dozhimPeople)}`;
+
+  const stickyEl    = document.getElementById('grafik-sticky');
   const stickyInner = document.getElementById('grafik-sticky-inner');
   if (stickyEl && stickyInner) {
     stickyEl.style.display = '';
     const wStart = week[0].day, wEnd = week[week.length-1].day;
-    const mName = new Date(yr, mo-1, 1).toLocaleString('ru',{month:'long'});
+    const mName  = new Date(yr, mo-1, 1).toLocaleString('ru',{month:'long'});
     const prevDis = _schedWeek === 0 ? 'disabled' : '';
     const nextDis = _schedWeek === weeks.length-1 ? 'disabled' : '';
     stickyInner.innerHTML = `<div class="sched-nav"><button class="sched-nav-btn" onclick="schedNav(-1)" ${prevDis}>‹</button><div class="sched-nav-title">${wStart}–${wEnd} ${mName}</div><button class="sched-nav-btn" onclick="schedNav(1)" ${nextDis}>›</button></div>${weekHeader}`;

@@ -69,49 +69,130 @@ body.light {
 body.tiffany {
   --bg:      #A9C7C3;
   --bg2:     #F4EFE7;
-  --bg3:     #e8e2d8;
+  --bg3:     #e5dfd4;
   --line:    #8FB3AE;
-  --line2:   #9bbfba;
-  --txt:     #3A3A3A;
-  --txt2:    #7A7A7A;
-  --txt3:    #aaa;
-  --acc:     #c0607a;
-  --acc-bg:  rgba(245,163,183,.18);
-  --acc-bdr: rgba(192,96,122,.35);
-  --red:     #c0607a;
-  --grn:     #4a9e70;
-  --blu:     #4a80a0;
-  --org:     #c08040;
+  --line2:   #9ec0bb;
+  --txt:     #2a2a2a;
+  --txt2:    #5a5a5a;
+  --txt3:    #8a8a8a;
+  --acc:     #b84d6b;
+  --acc-bg:  rgba(184,77,107,.14);
+  --acc-bdr: rgba(184,77,107,.38);
+  --red:     #b84d6b;
+  --grn:     #3d8f60;
+  --blu:     #3a6e95;
+  --org:     #b07030;
   --m4-bg:   #8FB3AE;
 }
-body.tiffany .m4 .ml { color:#3A3A3A }
-body.tiffany .m4 .mv { color:#3A3A3A }
-body.tiffany .zp-n,
-body.tiffany .zp-a,
-body.tiffany .zp-banner .zv { color:var(--acc); }
-body.tiffany header { background:var(--bg); border-bottom-color:var(--line); }
+/* Вкладки — неактивные темнее */
+body.tiffany .tab            { color:#4a6b67; }
+body.tiffany .tab:hover      { color:#2a4a46; }
+body.tiffany .tab.on         { color:var(--acc); }
+/* Вторичный текст — разборчивее */
+body.tiffany .txt2,
+body.tiffany .ib-lbl,
+body.tiffany .dzb-lbl,
+body.tiffany .ist-lbl,
+body.tiffany .si-key,
+body.tiffany .kb-lbl,
+body.tiffany .dc-lbl,
+body.tiffany .ml,
+body.tiffany .mc-l           { color:#4e6b68 !important; }
+/* Header */
+body.tiffany header          { background:#9ab8b4; border-bottom-color:#7fa5a0; }
+/* Карточки / строки */
 body.tiffany .dept-card,
 body.tiffany .mop,
-body.tiffany .zp-row { background:var(--bg2); border-color:var(--line2); }
-body.tiffany .modal-cell { background:rgba(169,199,195,.12); }
-body.tiffany .mop-modal { background:var(--bg2); border-color:var(--line2); }
-body.tiffany .income-modal { border-color:var(--line2); }
-body.tiffany .income-modal-body { background:rgba(244,239,231,0.7); }
-body.tiffany .income-badge { background:rgba(169,199,195,.15); }
-body.tiffany .kpi-income-panel { background:rgba(245,163,183,.12); border-color:rgba(192,96,122,.2); }
-body.tiffany .kpi-badge { background:rgba(169,199,195,.15); }
-body.tiffany #toast { background:var(--bg2); }
-body.tiffany .mm { background:rgba(169,199,195,.12); }
-body.tiffany .dept-cell { background:rgba(169,199,195,.1); }
-body.tiffany .base-path { stroke:rgba(58,58,58,0.1); }
-body.tiffany .inner-base-path { stroke:rgba(58,58,58,0.08); }
-body.tiffany .zp-row { background:var(--bg2); }
-body.tiffany #author { color:#8FB3AE; text-shadow:0 0 8px rgba(143,179,174,0.5); }
+body.tiffany .zp-row         { background:var(--bg2); border-color:var(--line); }
+body.tiffany .mm             { background:rgba(143,179,174,.18); }
+body.tiffany .modal-cell     { background:rgba(143,179,174,.18); }
+body.tiffany .dept-cell      { background:rgba(143,179,174,.14); }
+/* Бейджи в доходе — явный фон + рамка */
+body.tiffany .income-badge   {
+  background:#e8f3f1;
+  border:1px solid #9ec0bb;
+  box-shadow:none;
+}
+body.tiffany .income-badge .ib-lbl { color:#4e6b68; }
+body.tiffany .income-badge .ib-val { color:#2a2a2a; }
+body.tiffany .dz-badge       {
+  background:#e8f3f1;
+  border:1px solid #9ec0bb;
+  box-shadow:none;
+}
+body.tiffany .dz-badge .dzb-lbl  { color:#4e6b68; }
+body.tiffany .dz-badge .dzb-count { color:#2a2a2a; }
+body.tiffany .dz-badge .dzb-earn  { color:var(--acc); }
+/* income-subtotal */
+body.tiffany .income-subtotal {
+  background:rgba(184,77,107,.1);
+  border:1px solid rgba(184,77,107,.28);
+}
+body.tiffany .income-subtotal .ist-lbl { color:#4e6b68; }
+body.tiffany .income-subtotal .ist-val { color:var(--acc); }
+/* income-sec-title */
+body.tiffany .income-sec-title       { color:#4a6b67; }
+body.tiffany .income-sec-title::after { background:#9ec0bb; }
+/* Панель дохода */
+body.tiffany .kpi-income-panel {
+  background:rgba(184,77,107,.08);
+  border:1px solid rgba(184,77,107,.22);
+}
+body.tiffany .kpi-badge      { background:rgba(143,179,174,.2); border:1px solid #9ec0bb; }
+/* Модалка менеджеров ОТЧЁТ */
+body.tiffany .mop-modal      { background:var(--bg2); border-color:var(--line); }
+body.tiffany .mop-modal-hdr  { background:var(--bg3); border-bottom-color:var(--line); }
+body.tiffany .mop-modal-body { background:var(--bg2); }
+body.tiffany .mop-modal-body::before,
+body.tiffany .mop-modal-body::after { display:none; }
+/* Модалка дохода */
+body.tiffany .income-modal   { background:var(--bg2); border-color:var(--line); }
+body.tiffany .income-modal-hdr { background:var(--bg3); border-bottom-color:var(--line); }
+body.tiffany .income-modal-body { background:var(--bg2); }
+body.tiffany .income-modal-body::before,
+body.tiffany .income-modal-body::after { display:none; }
+/* Модалка инструкции */
+body.tiffany #sal-info-modal { background:var(--bg2); border-color:var(--line); }
+body.tiffany #sal-info-modal .si-hdr  { background:var(--bg3); border-bottom-color:var(--line); }
+body.tiffany #sal-info-modal .si-sec  { color:var(--acc); border-bottom-color:var(--line); }
+body.tiffany #sal-info-modal .si-row  { border-bottom-color:var(--line); }
+body.tiffany #sal-info-modal .si-key  { color:#4e6b68; }
+body.tiffany #sal-info-modal .si-val  { color:#2a2a2a; }
+body.tiffany #sal-info-modal .si-formula { background:var(--bg3); color:#2a2a2a; }
+body.tiffany #sal-info-modal .si-note { color:#5a5a5a; }
+/* Модалка плана */
+body.tiffany #plan-editor-overlay .plan-editor-modal { background:var(--bg2); border-color:var(--line); }
+body.tiffany .pe-spoiler     { border-color:var(--line); }
+body.tiffany .pe-spoiler summary { background:var(--bg3); color:#4a6b67; }
+body.tiffany .pe-row         { border-bottom-color:var(--line); }
+body.tiffany .pe-name        { color:#2a2a2a; }
+body.tiffany .pe-input       { background:var(--bg3); border:1px solid var(--line); color:#2a2a2a; }
+/* m4 */
+body.tiffany .m4 .ml { color:#4e6b68; }
+body.tiffany .m4 .mv { color:#2a2a2a; }
+/* Рейтинги */
+body.tiffany .zp-n,
+body.tiffany .zp-a           { color:#2a2a2a; }
+body.tiffany .zp-banner      { background:rgba(184,77,107,.1) !important; }
+body.tiffany .zp-banner .zl  { color:#4e6b68; }
+body.tiffany .zp-banner .zv  { color:var(--acc); }
+/* График */
+body.tiffany .base-path      { stroke:rgba(58,58,58,.12); }
+body.tiffany .inner-base-path { stroke:rgba(58,58,58,.09); }
+/* Toast */
+body.tiffany #toast          { background:var(--bg2); border-color:var(--line); }
+/* Author */
+body.tiffany #author         { color:#8FB3AE; text-shadow:0 0 8px rgba(143,179,174,.5); }
+/* Glass */
 body.tiffany .glass {
-  background:rgba(244,239,231,0.55);
-  border:1px solid rgba(143,179,174,0.4);
+  background:rgba(244,239,231,.55);
+  border:1px solid rgba(143,179,174,.4);
   backdrop-filter:blur(18px);
 }
+/* Спидометр */
+body.tiffany .sched-cell.dr  { background:rgba(184,77,107,.15); color:var(--acc); }
+/* Коэффициенты */
+body.tiffany .ic-koef        { background:rgba(143,179,174,.2); color:#2a2a2a; }
 /* ══ END TIFFANY ══ */
 body.light .m4 .ml { color:#fff }
 body.light .m4 .mv { color:#fff }

@@ -191,6 +191,8 @@ body.tiffany .glass {
 }
 /* Спидометр */
 body.tiffany .sched-cell.dr  { background:rgba(184,77,107,.15); color:var(--acc); }
+body.tiffany .sched-cell.dv  { background:rgba(143,192,187,.25); color:#3a6e6a; }
+body.tiffany .sched-cell.dvs { background:rgba(143,192,187,.12); color:#6a9a96; }
 /* Коэффициенты */
 body.tiffany .ic-koef        { background:rgba(143,179,174,.2); color:#2a2a2a; }
 /* income-col карточки */
@@ -283,6 +285,7 @@ header {
 .logo-img {
   width:40px; height:40px; border-radius:5px;
   object-fit:contain; flex-shrink:0;
+  margin-left:-4px;
   transition: opacity 0.4s ease;
 }
 .badge-month {
@@ -470,7 +473,7 @@ nav::-webkit-scrollbar { height:0 }
   padding:6px 0; white-space:nowrap;
   font-family:'Unbounded',sans-serif;
   font-size:12px; font-weight:800; letter-spacing:.03em;
-  color:var(--txt3); background:none; border:none;
+  color:var(--txt2); background:none; border:none;
   border-bottom:2px solid transparent;
   cursor:pointer; transition:color .15s, border-color .15s;
 }
@@ -825,7 +828,7 @@ body.light .inner-base-path { stroke:rgba(0,0,0,0.08); }
 .ti .tv { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:700 }
 .zp-banner {
   border-radius:var(--r2); padding:18px;
-  text-align:center; margin-bottom:16px;
+  text-align:center; margin-top:8px; margin-bottom:16px;
   backdrop-filter:blur(8px);
   border:1px solid var(--acc-bdr);
 }
@@ -1806,10 +1809,10 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
         </button>
         <div style="position:relative;flex-shrink:0" id="theme-btn-wrap">
           <button class="btn-icon" id="btn-theme" title="Тема оформления" onclick="toggleThemeDropdown(event)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 2a10 10 0 0 1 0 20"/>
-              <path d="M8 6.5c0 0 2 1.5 2 3s-2 2.5-2 4 2 3 4 3 4-1.5 4-3-2-2.5-2-4 2-3 2-3"/>
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M12 3a9 9 0 0 1 0 18V3z" fill="currentColor" opacity="0.85"/>
+              <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/>
             </svg>
           </button>
           <div class="theme-dropdown" id="theme-dropdown">
@@ -1865,8 +1868,8 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
       <button class="tab" data-tab="instruktsii"><span class="tab-dot"></span>FAQ</button>
     </div>
   </nav>
-  <div id="grafik-sticky" style="display:none;background:var(--bg);border-bottom:1px solid var(--line);z-index:50;position:sticky;top:80px">
-    <div class="w" style="padding-top:10px;padding-bottom:10px">
+  <div id="grafik-sticky" style="display:none;background:var(--bg);border-bottom:1px solid var(--line);z-index:50;position:sticky;top:96px">
+    <div class="w" style="padding-top:7px;padding-bottom:7px">
       <div id="grafik-sticky-inner"></div>
     </div>
   </div>

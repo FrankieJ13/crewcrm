@@ -3357,7 +3357,7 @@ function renderDohodCrm(el) {
     return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span>${medalBtn(idx)}</div>${incomeCols}<div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div></div>`;
   }).join('');
 
-  el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Прогноз фонда отдела</div><div class="zv">${fmtRub(totalFund)}</div></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`;
+  el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15);position:relative"><div class="zl">Прогноз фонда отдела</div><div class="zv">${fmtRub(totalFund)}</div><button class="income-modal-info-btn" onclick="openSalInfo('crm')" title="Как считается зарплата" style="position:absolute;top:10px;right:10px">i</button></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`;
 }
 
 function renderDohodDozhim(el) {
@@ -3412,7 +3412,7 @@ function renderDohodDozhim(el) {
     return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span></div><div style="text-align:right;margin:6px 0 4px"><span class="zp-a" style="color:var(--acc)">${fmtRub(factTotal)}</span></div><div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div></div>`;
   }).join('');
 
-  el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15)"><div class="zl">Фонд дожима (факт)</div><div class="zv">${fmtRub(totalFund)}</div></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`;
+  el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15);position:relative"><div class="zl">Фонд дожима (факт)</div><div class="zv">${fmtRub(totalFund)}</div><button class="income-modal-info-btn" onclick="openSalInfo('dozhim')" title="Как считается зарплата" style="position:absolute;top:10px;right:10px">i</button></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`;
 }
 
 function setDohodTab(tab) {
@@ -4558,8 +4558,41 @@ async function loadUsersAndStart() {
     } else {
       goPersonal();
     }
+    // Фоновая предзагрузка остальных данных через 3 сек после старта
+    setTimeout(() => backgroundPrefetch(matched), 3000);
   } else {
     toast('Приветствую, коллега!', 's');
+  }
+}
+
+// Фоновая предзагрузка данных всех вкладок после старта
+async function backgroundPrefetch(matched) {
+  const role = matched?.role || 'crm';
+  const isCeo    = role === 'ceo';
+  const isDozhim = role === 'dozhim';
+
+  // Загружаем по очереди с паузами чтобы не перегружать API
+  const tasks = [];
+
+  // Общие для всех
+  if (!S.data.vizity)  tasks.push(() => api(SHEETS.vizity,  'A:J').then(d => S.data.vizity  = d).catch(()=>{}));
+  if (!S.data.plan)    tasks.push(() => api(SHEETS.plan,    'A:B').then(d => S.data.plan    = d).catch(()=>{}));
+  if (!S.data.grafik)  tasks.push(() => api(SHEETS.grafik,  'A1:AI25').then(d => S.data.grafik = d).catch(()=>{}));
+  if (!S.data.cnvrs)   tasks.push(() => api(SHEETS.cnvrs,   'A1:N40').then(d => S.data.cnvrs  = d).catch(()=>{}));
+  if (!S.data.stavki)  tasks.push(() => api(SHEETS.stavki,  'A1:B25').then(d => S.data.stavki = d).catch(()=>{}));
+
+  // Для CEO и ДОЖИМ
+  if (isCeo || isDozhim) {
+    if (!S.data.d_vizity) tasks.push(() => api(SHEETS.d_vizity, 'A:L').then(d => S.data.d_vizity = d).catch(()=>{}));
+  }
+
+  // Инструкции
+  if (!S.data.instruktsii) tasks.push(() => api(SHEETS.instruktsii, 'A1:C200').then(d => S.data.instruktsii = d).catch(()=>{}));
+
+  // Запускаем задачи последовательно с паузой 600мс
+  for (const task of tasks) {
+    await task();
+    await new Promise(r => setTimeout(r, 600));
   }
 }
 
@@ -5221,8 +5254,17 @@ function openIncomeDetail(btn) {
 
 function openSalInfo(roleHint) {
   const matched = findUserInSheet();
-  const role = roleHint || matched?.role || 'crm';
-  const isDozhim = role === 'dozhim';
+  const role = matched?.role || 'crm';
+  let effectiveRole;
+  if (roleHint) {
+    effectiveRole = roleHint;
+  } else if (role === 'ceo') {
+    // CEO видит инструкцию того отдела, чья вкладка сейчас открыта
+    effectiveRole = S.dohodTab === 'dozhim' ? 'dozhim' : 'crm';
+  } else {
+    effectiveRole = role;
+  }
+  const isDozhim = effectiveRole === 'dozhim';
 
   const R = DOZHIM_RATES;
   const rub = v => fmtRub(v);

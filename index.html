@@ -2402,21 +2402,15 @@ function getManagerShiftCounts(name, suffix) {
   const mm = parseInt(suffix.slice(0,2));
   const yy = 2000 + parseInt(suffix.slice(2,4));
   const nameLow = (name||'').toLowerCase().trim();
-  const groups = [
-    { rows: raw.slice(3, 12),  daysRow: raw[1]  || [] },
-    { rows: raw.slice(19, 24), daysRow: raw[17] || [] },
-  ];
-  let mgrRow = null, daysRow = null;
-  for (const g of groups) {
-    const found = g.rows.find(r => (r[0]||'').toLowerCase().trim() === nameLow);
-    if (found) { mgrRow = found; daysRow = g.daysRow; break; }
-  }
-  if (!mgrRow) return null;
+  const idx = buildSchedIndex(raw);
+  const entry = idx[nameLow];
+  if (!entry) return null;
+  const { row: mgrRow, daysRow } = entry;
   const now = new Date();
   const isCurrent = (now.getFullYear() === yy && now.getMonth()+1 === mm);
   const today = isCurrent ? now.getDate() : 0;
   let total = 0, remaining = 0;
-  for (let c = 1; c <= 35; c++) {
+  for (let c = 1; c < daysRow.length; c++) {
     const dayNum = parseInt(daysRow[c]);
     if (!dayNum || dayNum < 1 || dayNum > 31) continue;
     const val = (mgrRow[c]||'').toLowerCase().trim();
@@ -3207,7 +3201,7 @@ function renderDohod() {
     };
     el.innerHTML = `
       <div class="w" style="padding-top:16px">
-        <div class="kpi-subtitle">Доход за месяц<button class="kpi-subtitle-info" onclick="openSalInfo()">i</button></div>
+        <div class="kpi-subtitle">Доход за месяц<button class="kpi-subtitle-info" onclick="openSalInfo('dozhim')">i</button></div>
         <div class="kpi-income-panel" style="position:relative;text-align:center;cursor:pointer;background:rgba(${accR},${accG},${accB},0.15)"
              onclick="openDozhimIncomeModal(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="">
           <div class="zl">Фактический доход</div>
@@ -3465,6 +3459,22 @@ function getWeeksForMonth(year, month) {
     }
   }
   return weeks;
+}
+
+// Строит индекс ГРАФИКИ: nameLow → { row, daysRow }
+// Строка дней = строка с 20+ числами 1-31, запоминается как ближайшая выше
+function buildSchedIndex(raw) {
+  const idx = {};
+  let lastDaysRow = [];
+  for (let i = 0; i < (raw||[]).length; i++) {
+    const r = raw[i];
+    if (!r) continue;
+    const nums = r.slice(1).filter(c => { const n = parseInt(c); return n >= 1 && n <= 31; }).length;
+    if (nums >= 20) { lastDaysRow = r; continue; }
+    const name = (r[0]||'').trim();
+    if (name) idx[name.toLowerCase()] = { row: r, daysRow: lastDaysRow };
+  }
+  return idx;
 }
 
 function parseGroup(rows, daysRow, weekDays) {
@@ -4805,27 +4815,22 @@ function getWorkedAndTotalR(nameLow) {
   const mo = parseInt(currentSuffix.slice(0, 2));
   const yr = 2000 + parseInt(currentSuffix.slice(2, 4));
   const now = new Date();
-  if (now.getFullYear() !== yr || now.getMonth() + 1 !== mo) return null; // только текущий месяц
+  if (now.getFullYear() !== yr || now.getMonth() + 1 !== mo) return null;
   const today = now.getDate();
-  const groups = [
-    { rows: raw.slice(3, 12),  daysRow: raw[1] },
-    { rows: raw.slice(19, 24), daysRow: raw[17] },
-  ];
-  for (const { rows, daysRow } of groups) {
-    const mgrRow = rows.find(r => (r[0] || '').toLowerCase().trim() === nameLow);
-    if (!mgrRow) continue;
-    let totalR = 0, workedR = 0;
-    for (let c = 1; c <= 31; c++) {
-      const dayNum = parseInt((daysRow || [])[c]);
-      if (!dayNum) continue;
-      if ((mgrRow[c] || '').toLowerCase().trim() === 'р') {
-        totalR++;
-        if (dayNum <= today) workedR++;
-      }
+  const idx   = buildSchedIndex(raw);
+  const entry = idx[nameLow];
+  if (!entry) return null;
+  const { row: mgrRow, daysRow } = entry;
+  let totalR = 0, workedR = 0;
+  for (let c = 1; c < daysRow.length; c++) {
+    const dayNum = parseInt(daysRow[c]);
+    if (!dayNum || dayNum < 1 || dayNum > 31) continue;
+    if ((mgrRow[c]||'').toLowerCase().trim() === 'р') {
+      totalR++;
+      if (dayNum <= today) workedR++;
     }
-    return { totalR, workedR };
   }
-  return null;
+  return { totalR, workedR };
 }
 
 function calcSalary(nameLow) {

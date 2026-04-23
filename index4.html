@@ -256,8 +256,17 @@ body.login-active .page-footer { position:fixed; bottom:0; left:0; right:0; z-in
 }
 .scr { display:none; padding:0 0 10px 0; animation:up .2s ease }
 .scr.on { display:block }
-#scr-login { padding:0 !important; }
-#scr-login.on { display:flex; flex-direction:column; min-height:calc(100vh - 60px); }
+/* scr-login всегда видим по умолчанию — не ждём JS */
+#scr-login {
+  display:flex !important;
+  flex-direction:column;
+  padding:0 !important;
+  min-height:calc(100vh - 60px);
+  position:relative;
+  overflow:hidden;
+}
+/* Скрываем когда залогинены */
+#scr-login.off { display:none !important; }
 @keyframes up { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 header {
   background:var(--bg); border-bottom:1px solid var(--line);
@@ -2048,7 +2057,7 @@ font-weight:800; cursor:pointer; letter-spacing:.04em;
   <div id="floating-faq-subtabs" class="faq-subtabs" style="display:none;"></div>
 
   <main>
-    <div id="scr-login" class="scr" style="position:relative;overflow:hidden">
+    <div id="scr-login" class="scr">
       <canvas id="login-canvas" style="position:absolute;inset:0;pointer-events:none;opacity:0.35;z-index:0"></canvas>
       <div class="gate" style="position:relative;z-index:1;flex:1">
         <div class="gate-icon">
@@ -2455,22 +2464,25 @@ const l = document.getElementById(‘silent-loader’);
 if (l) l.remove();
 if (window._silentFallback) { clearTimeout(window._silentFallback); window._silentFallback = null; }
 localStorage.removeItem(‘crm_user’);
-document.getElementById(‘scr-login’).style.display = ‘’;
-document.getElementById(‘scr-login’).classList.add(‘on’); document.body.classList.add(‘login-active’);
-toast(’Ошибка: ’+resp.error, ‘e’);
-return;
-}
-// Успех — убираем лоадер
-const l = document.getElementById(‘silent-loader’);
-if (l) l.remove();
-if (window._silentFallback) { clearTimeout(window._silentFallback); window._silentFallback = null; }
-S.token = resp.access_token;
-localStorage.setItem(‘crm_tok’, resp.access_token);
-localStorage.setItem(‘crm_exp’, Date.now()+(resp.expires_in-60)*1000);
-loadUser();
-onLogin();
-scheduleTokenRefresh(resp.expires_in);
+
+```
+    document.getElementById('scr-login').classList.remove('off'); document.body.classList.add('login-active');
+    toast('Ошибка: '+resp.error, 'e');
+    return;
+  }
+  // Успех — убираем лоадер
+  const l = document.getElementById('silent-loader');
+  if (l) l.remove();
+  if (window._silentFallback) { clearTimeout(window._silentFallback); window._silentFallback = null; }
+  S.token = resp.access_token;
+  localStorage.setItem('crm_tok', resp.access_token);
+  localStorage.setItem('crm_exp', Date.now()+(resp.expires_in-60)*1000);
+  loadUser();
+  onLogin();
+  scheduleTokenRefresh(resp.expires_in);
 },
+```
+
 });
 }
 
@@ -2518,7 +2530,7 @@ document.getElementById(‘main-nav’).style.display  = ‘flex’;
 const mainHdr = document.getElementById(‘main-hdr’);
 if (mainHdr) mainHdr.style.display = ‘’;
 const ls = document.getElementById(‘scr-login’);
-ls.classList.remove(‘on’); ls.style.display = ‘none’; document.body.classList.remove(‘login-active’);
+ls.classList.add(‘off’); document.body.classList.remove(‘login-active’); document.body.classList.remove(‘login-active’);
 toast(‘Приветствую!’, ‘s’);
 document.querySelectorAll(’.tab’).forEach(b => b.classList.toggle(‘on’, b.dataset.tab===‘otchet’));
 showScr(‘otchet’);
@@ -2589,8 +2601,8 @@ return false;
 
 function trySilentRefresh() {
 // Показываем лоадер вместо экрана входа
-document.getElementById(‘scr-login’).classList.remove(‘on’);
-document.getElementById(‘scr-login’).style.display = ‘none’; document.body.classList.remove(‘login-active’);
+// login hidden via .off class
+document.getElementById(‘scr-login’).classList.add(‘off’); document.body.classList.remove(‘login-active’);
 const loader = document.createElement(‘div’);
 loader.id = ‘silent-loader’;
 loader.className = ‘loader’;
@@ -2606,8 +2618,7 @@ const l = document.getElementById(‘silent-loader’);
 if (l) l.remove();
 if (!S.token) {
 localStorage.removeItem(‘crm_user’);
-document.getElementById(‘scr-login’).style.display = ‘’;
-document.getElementById(‘scr-login’).classList.add(‘on’); document.body.classList.add(‘login-active’);
+document.getElementById(‘scr-login’).classList.remove(‘off’); document.body.classList.add(‘login-active’);
 }
 }, 8000);
 
@@ -6385,7 +6396,7 @@ const btn = document.getElementById(‘center-login-btn’);
 if (btn) {
 btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 11h8.533c.044.385.067.78.067 1.184 0 3.37-1.17 6.22-3.207 8.154C15.553 22.124 13.9 23 12 23A11 11 0 1 1 12 1c2.95 0 5.56 1.113 7.522 2.934l-3.076 3.042C15.197 5.79 13.68 5 12 5a7 7 0 1 0 0 14c3.205 0 5.542-1.916 6.27-4.987H12v-3z"/></svg>Открыть в Chrome`;
 }
-document.getElementById(‘scr-login’).classList.add(‘on’); document.body.classList.add(‘login-active’);
+document.getElementById(‘scr-login’).classList.remove(‘off’); document.body.classList.add(‘login-active’);
 return;
 }
 
@@ -6394,8 +6405,7 @@ const gsiTimeout = setTimeout(() => {
 if (!tokenClient) {
 const l = document.getElementById(‘silent-loader’);
 if (l) l.remove();
-document.getElementById(‘scr-login’).style.display = ‘’;
-document.getElementById(‘scr-login’).classList.add(‘on’); document.body.classList.add(‘login-active’);
+document.getElementById(‘scr-login’).classList.remove(‘off’); document.body.classList.add(‘login-active’);
 }
 }, 6000);
 
@@ -6404,7 +6414,7 @@ if (typeof google !== ‘undefined’ && google.accounts) {
 clearTimeout(gsiTimeout);
 initAuth();
 if (!tryRestore()) {
-document.getElementById(‘scr-login’).classList.add(‘on’); document.body.classList.add(‘login-active’);
+document.getElementById(‘scr-login’).classList.remove(‘off’); document.body.classList.add(‘login-active’);
 }
 } else setTimeout(waitGoogle, 100);
 }

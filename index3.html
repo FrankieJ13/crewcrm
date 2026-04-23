@@ -1986,7 +1986,7 @@ font-weight:800; cursor:pointer; letter-spacing:.04em;
 <canvas id="bg-canvas"></canvas>
 <div class="glass"></div>
 <div id="app">
-  <header>
+  <header id="main-hdr" style="display:none">
     <div class="hdr-inner">
       <div class="hdr-left">
         <div class="logo" onclick="goHome()">
@@ -2562,6 +2562,8 @@ document.getElementById(‘user-wrap’).style.display = ‘flex’;
 function onLogin() {
 document.getElementById(‘btn-out’).style.display   = ‘’;
 document.getElementById(‘main-nav’).style.display  = ‘flex’;
+const mainHdr = document.getElementById(‘main-hdr’);
+if (mainHdr) mainHdr.style.display = ‘’;
 const ls = document.getElementById(‘scr-login’);
 ls.classList.remove(‘on’); ls.style.display = ‘none’; document.body.classList.remove(‘login-active’);
 toast(‘Приветствую!’, ‘s’);
@@ -2597,6 +2599,7 @@ S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null
 document.getElementById(‘user-wrap’).style.display = ‘none’;
 document.getElementById(‘btn-out’).style.display   = ‘none’;
 document.getElementById(‘main-nav’).style.display  = ‘none’;
+const _hdr = document.getElementById(‘main-hdr’); if(_hdr) _hdr.style.display=‘none’;
 [‘otchet’,‘dohod’,‘grafik’,‘instruktsii’,‘personal’].forEach(t => {
 const s = document.getElementById(‘scr-’+t);
 s.classList.remove(‘on’); s.style.display = ‘’;

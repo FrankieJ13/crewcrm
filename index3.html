@@ -2095,38 +2095,6 @@ font-weight:800; cursor:pointer; letter-spacing:.04em;
   <div id="floating-dohod-subtabs" class="report-subtabs" style="display:none;"></div>
   <div id="floating-faq-subtabs" class="faq-subtabs" style="display:none;"></div>
 
-  <!-- ══ VISITS TABLE (v2) ══ -->
-
-  <div id="scr-visits-v2">
-    <div class="vt2-dept-tabs" id="vt2-dept-tabs" style="display:none">
-      <button class="vt2-dept-tab on" onclick="vt2SetDept('crm')"   id="vt2-tab-crm">CRM</button>
-      <button class="vt2-dept-tab"   onclick="vt2SetDept('dozhim')" id="vt2-tab-dozhim">ДОЖИМ</button>
-    </div>
-    <div class="vt2-toolbar">
-      <button class="vt2-btn" onclick="vt2AddRow()">
-        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Добавить
-      </button>
-      <button class="vt2-btn" onclick="vt2OpenImport()">
-        <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Импорт
-      </button>
-      <div class="vt2-sep"></div>
-      <span id="vt2-closed-badge" class="vt2-closed" style="display:none">Месяц закрыт</span>
-      <button class="vt2-btn" onclick="vt2Reload()" title="Обновить">
-        <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-      </button>
-    </div>
-    <div class="vt2-scroll" id="vt2-scroll">
-      <div class="vt2-wrap" id="vt2-wrap">
-        <div class="loader"><div class="spin"></div><span>Загрузка визитов…</span></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ RATING SCREEN ══ -->
-
-  <div id="scr-rating" class="scr">
-    <div class="w"><div id="c-rating"></div></div>
-  </div>
   <main>
     <div id="scr-login" class="scr">
       <div class="gate">
@@ -2174,8 +2142,47 @@ font-weight:800; cursor:pointer; letter-spacing:.04em;
         © Бочаров Ю.С., 2026
     </div>
   </div>
+<!-- VISITS TABLE v2 -->
+<div id="scr-visits-v2">
+  <div class="vt2-dept-tabs" id="vt2-dept-tabs" style="display:none">
+    <button class="vt2-dept-tab on" onclick="vt2SetDept('crm')"   id="vt2-tab-crm">CRM</button>
+    <button class="vt2-dept-tab"   onclick="vt2SetDept('dozhim')" id="vt2-tab-dozhim">ДОЖИМ</button>
+  </div>
+  <div class="vt2-toolbar">
+    <button class="vt2-btn" onclick="vt2AddRow()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Добавить
+    </button>
+    <button class="vt2-btn" onclick="vt2OpenImport()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Импорт
+    </button>
+    <div class="vt2-sep"></div>
+    <span id="vt2-closed-badge" class="vt2-closed" style="display:none">Месяц закрыт</span>
+    <button class="vt2-btn" onclick="vt2Reload()" title="Обновить">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+    </button>
+  </div>
+  <div class="vt2-scroll" id="vt2-scroll">
+    <div class="vt2-wrap" id="vt2-wrap">
+      <div class="loader"><div class="spin"></div><span>Синхронизация…</span></div>
+    </div>
+  </div>
 </div>
+<!-- RATING SCREEN -->
+<div id="scr-rating" class="scr">
+  <div class="w"><div id="c-rating"></div></div>
+</div>
+<!-- VT2 HELPERS -->
+<div id="vt2-save" style="position:fixed;bottom:68px;right:12px;z-index:300;background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:5px 10px;font-size:10px;font-weight:600;color:var(--txt2);display:none;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(0,0,0,.2)">
+  <div class="vt2-spin"></div><span>Сохранение…</span>
+</div>
+<div id="vt2-undo" style="position:fixed;bottom:68px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--line2);border-radius:var(--r2);padding:10px 16px;display:none;align-items:center;gap:12px;box-shadow:0 6px 20px rgba(0,0,0,.3);z-index:600;font-size:12px;white-space:nowrap">
+  <span>Строка удалена</span>
+  <button id="vt2-undo-btn" style="background:var(--acc);color:#000;border:none;padding:5px 12px;border-radius:6px;font-family:'Unbounded',sans-serif;font-size:9px;font-weight:800;cursor:pointer;letter-spacing:.04em">ОТМЕНА</button>
+  <span id="vt2-undo-timer" style="color:var(--txt3);font-size:11px;min-width:18px">10</span>
+</div>
+
 <!-- BIRTHDAY BANNER -->
+
 <div id="bday-banner">
   <div class="bday-balloons" id="bday-balloons"></div>
   <div class="bday-content">
@@ -5814,13 +5821,13 @@ VT2.loading = false;
 
 async function vt2EnsureSheet() {
 try {
-const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?fields=sheets.properties`;
+const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}?fields=sheets.properties`;
 const r = await fetch(url, { headers:{ Authorization:’Bearer ’+S.token } });
 const meta = await r.json();
 const exists = (meta.sheets||[]).some(s => s.properties.title === VT2.sheetName);
 if (exists) return;
 // Create
-await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}:batchUpdate`, {
+await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`, {
 method:‘POST’, headers:{ Authorization:’Bearer ’+S.token, ‘Content-Type’:‘application/json’ },
 body: JSON.stringify({ requests:[{ addSheet:{ properties:{ title:VT2.sheetName } } }] })
 });
@@ -6037,7 +6044,7 @@ vt2GetCells(rowEl).forEach((c,i) => { if(c.textContent.trim()) newData[i]=c.text
 newData[ci] = val;
 vt2ShowSave(‘saving’);
 try {
-const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(VT2.sheetName+'!A:N')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(VT2.sheetName+'!A:N')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
 await fetch(url, { method:‘POST’, headers:{ Authorization:‘Bearer ‘+S.token,‘Content-Type’:‘application/json’ },
 body: JSON.stringify({ range:VT2.sheetName+’!A:N’, majorDimension:‘ROWS’, values:[newData] }) });
 const newSR = (VT2.rows.at(-1)?.sheetRow||1)+1;
@@ -6059,7 +6066,7 @@ const row = VT2.rows.find(r=>r.sheetRow===sr);
 if (!row || !row.dirty) return;
 const range = `${VT2.sheetName}!A${sr}:N${sr}`;
 try {
-const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
 await fetch(url, { method:‘PUT’, headers:{ Authorization:’Bearer ’+S.token,‘Content-Type’:‘application/json’ },
 body: JSON.stringify({ range, majorDimension:‘ROWS’, values:[row.data] }) });
 row.dirty = false;
@@ -6069,12 +6076,14 @@ vt2ShowSave(‘ok’);
 
 function vt2ShowSave(state) {
 const el = document.getElementById(‘vt2-save’);
-const txt = el.querySelector(‘span’) || el.appendChild(document.createElement(‘span’));
+if (!el) return;
 const spin = el.querySelector(’.vt2-spin’);
-el.className = ‘on ’ + state;
-if (state===‘saving’) { if(spin)spin.style.display=’’; txt.textContent=‘Сохранение…’; }
-if (state===‘ok’)  { if(spin)spin.style.display=‘none’; txt.textContent=‘✓ Сохранено’; setTimeout(()=>el.classList.remove(‘on’),2500); }
-if (state===‘err’) { if(spin)spin.style.display=‘none’; txt.textContent=‘Ошибка!’; }
+const txt  = el.querySelector(‘span’);
+el.style.display = ‘flex’;
+el.className = ‘’;
+if (state===‘saving’) { if(spin)spin.style.display=’’; if(txt)txt.textContent=‘Сохранение…’; }
+if (state===‘ok’)  { if(spin)spin.style.display=‘none’; if(txt)txt.textContent=‘✓ Сохранено’; setTimeout(()=>{el.style.display=‘none’;},2500); }
+if (state===‘err’) { if(spin)spin.style.display=‘none’; if(txt)txt.textContent=‘Ошибка!’; }
 }
 
 // ── ADD / INSERT / DELETE ────────────────────────
@@ -6091,18 +6100,18 @@ if (VT2.readonly && !isUserCeo()) return;
 if (sr <= 0) return;
 vt2ShowSave(‘saving’);
 try {
-const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?fields=sheets.properties`;
+const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}?fields=sheets.properties`;
 const metaR = await fetch(metaUrl, { headers:{ Authorization:‘Bearer ‘+S.token } });
 const meta = await metaR.json();
 const sheet = (meta.sheets||[]).find(s=>s.properties.title===VT2.sheetName);
 if (!sheet) throw new Error(‘Sheet not found’);
 const sid = sheet.properties.sheetId;
-await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}:batchUpdate`, {
+await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`, {
 method:‘POST’, headers:{ Authorization:‘Bearer ‘+S.token,‘Content-Type’:‘application/json’ },
 body: JSON.stringify({ requests:[{ insertDimension:{ range:{ sheetId:sid, dimension:‘ROWS’, startIndex:sr-1, endIndex:sr }, inheritFromBefore:true } }] })
 });
 const newData = vt2MakeEmptyRow();
-const rUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(VT2.sheetName+'!A'+sr+':N'+sr)}?valueInputOption=USER_ENTERED`;
+const rUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(VT2.sheetName+'!A'+sr+':N'+sr)}?valueInputOption=USER_ENTERED`;
 await fetch(rUrl, { method:‘PUT’, headers:{ Authorization:‘Bearer ‘+S.token,‘Content-Type’:‘application/json’ },
 body: JSON.stringify({ range:VT2.sheetName+’!A’+sr+’:N’+sr, majorDimension:‘ROWS’, values:[newData] }) });
 VT2.rows.forEach(r=>{ if(r.sheetRow>=sr) r.sheetRow++; });
@@ -6135,11 +6144,11 @@ document.getElementById(‘vt2-undo’).classList.remove(‘on’);
 if (!VT2.deletedRow) return;
 const { sr } = VT2.deletedRow; VT2.deletedRow = null;
 try {
-const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?fields=sheets.properties`;
+const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}?fields=sheets.properties`;
 const meta = await (await fetch(metaUrl, { headers:{ Authorization:’Bearer ’+S.token } })).json();
 const sheet = (meta.sheets||[]).find(s=>s.properties.title===VT2.sheetName);
 if (!sheet) throw new Error(‘Not found’);
-await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}:batchUpdate`, {
+await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`, {
 method:‘POST’, headers:{ Authorization:’Bearer ’+S.token,‘Content-Type’:‘application/json’ },
 body: JSON.stringify({ requests:[{ deleteDimension:{ range:{ sheetId:sheet.properties.sheetId, dimension:‘ROWS’, startIndex:sr-1, endIndex:sr } } }] })
 });
@@ -6219,7 +6228,7 @@ curRow = curRow.nextElementSibling?.classList.contains(‘vt2-row’) ? curRow.n
 if (newRowsData.length) {
 vt2ShowSave(‘saving’);
 try {
-const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(VT2.sheetName+'!A:N')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(VT2.sheetName+'!A:N')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
 await fetch(url, { method:‘POST’, headers:{ Authorization:‘Bearer ‘+S.token,‘Content-Type’:‘application/json’ },
 body: JSON.stringify({ range:VT2.sheetName+’!A:N’, majorDimension:‘ROWS’, values:newRowsData }) });
 vt2ShowSave(‘ok’); vt2Reload();
@@ -6238,7 +6247,7 @@ cols.forEach((v,i)=>{ if(i<VT2_NCOLS) d[i]=v.trim(); });
 return d;
 });
 vt2ShowSave(‘saving’);
-const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(VT2.sheetName+'!A:N')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(VT2.sheetName+'!A:N')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
 fetch(url, { method:‘POST’, headers:{ Authorization:‘Bearer ‘+S.token,‘Content-Type’:‘application/json’ },
 body: JSON.stringify({ range:VT2.sheetName+’!A:N’, majorDimension:‘ROWS’, values:rowsData }) })
 .then(()=>{ vt2ShowSave(‘ok’); vt2Reload(); })
@@ -6251,7 +6260,6 @@ return String(s||’’).replace(/&/g,’&’).replace(/</g,’<’).replace(/>/
 
 // ── UNDO BUTTON ─────────────────────────────────
 document.getElementById(‘vt2-undo-btn’)?.addEventListener(‘click’, vt2UndoDelete);
-document.getElementById(‘vt2-save’)?.insertAdjacentHTML(‘beforeend’, ‘’);
 
 // Close vt2 dropdown on outside click
 document.addEventListener(‘click’, e => {
@@ -6261,6 +6269,13 @@ if (!e.target.closest(’.vt2-drop, .vt2-cell[data-opts]’)) vt2CloseDropdown()
 // ══════════════════════════════════════════════════════
 //  RATING SCREEN v2
 // ══════════════════════════════════════════════════════
+function getCrmManagerNames() {
+return (S.usersData||[]).slice(1).filter(r=>r&&r[1]&&(r[2]||‘crm’).toLowerCase()===‘crm’).map(r=>r[1].trim());
+}
+function getDozhimManagerNames() {
+return (S.usersData||[]).slice(1).filter(r=>r&&r[1]&&(r[2]||’’).toLowerCase()===‘dozhim’).map(r=>r[1].trim());
+}
+
 async function renderRatingV2() {
 const el = document.getElementById(‘c-rating’);
 if (!el) return;
@@ -6288,13 +6303,6 @@ if(dep>=1000) stats[mgr].deposit++;
 const managers = dept===‘dozhim’ ? getDozhimManagerNames() : getCrmManagerNames();
 return managers.map(n=>({name:n,…(stats[n]||stats[Object.keys(stats).find(k=>k.toLowerCase()===n.toLowerCase())||’’]||{vis:0,deal:0,deposit:0})}))
 .sort((a,b)=>b.vis-a.vis);
-}
-
-function getCrmManagerNames() {
-return (S.usersData||[]).slice(1).filter(r=>r&&r[1]&&(r[2]||‘crm’).toLowerCase()===‘crm’).map(r=>r[1].trim());
-}
-function getDozhimManagerNames() {
-return (S.usersData||[]).slice(1).filter(r=>r&&r[1]&&(r[2]||’’).toLowerCase()===‘dozhim’).map(r=>r[1].trim());
 }
 
 const rankClr = [’#FFD700’,’#C0C0C0’,’#CD7F32’];
@@ -6326,8 +6334,6 @@ el.innerHTML = `<div class="w" style="padding-top:4px">${html}</div>`;
 // ══════════════════════════════════════════════════════
 //  SPREADSHEET_ID alias for vt2 (v1 uses SHEETS)
 // ══════════════════════════════════════════════════════
-const SPREADSHEET_ID = ‘1DeUsHB_O1SbIMR4p5yd64o_R0yllWvtnyNhjxjhipn8’;
-const API_BASE = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}`;
 
 document.getElementById(‘btn-refresh’).addEventListener(‘click’, reloadCurrent);
 document.addEventListener(‘click’, e => {

@@ -2058,7 +2058,7 @@ font-weight:800; cursor:pointer; letter-spacing:.04em;
 
   <main>
     <div id="scr-login" class="scr">
-      <canvas id="login-canvas" style="position:absolute;inset:0;pointer-events:none;opacity:0.35;z-index:0"></canvas>
+      <canvas id="login-canvas" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;opacity:0.5;z-index:0"></canvas>
       <div class="gate" style="position:relative;z-index:1;flex:1">
         <div class="gate-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -6313,12 +6313,25 @@ document.querySelectorAll(’.tab’).forEach(b => b.addEventListener(‘click�
 document.getElementById(‘badge-month’).addEventListener(‘click’, showMonthDropdown);
 document.getElementById(‘center-login-btn’).addEventListener(‘click’, () => {
 if (isAndroidWebView) {
-// Google блокирует OAuth в Android WebView — открываем в Chrome
 window.open(‘https://frankiej13.github.io/crewcrm/index.html’, ‘_system’);
 return;
 }
-if (!tokenClient) { toast(‘Загружается…’,‘i’); return; }
-tokenClient.requestAccessToken({ prompt:‘consent’ });
+// Если tokenClient ещё не готов — инициализируем и вызываем
+function doAuth() {
+tokenClient.requestAccessToken({ prompt: ‘’ });
+}
+if (!tokenClient) {
+if (typeof google === ‘undefined’ || !google.accounts) {
+toast(‘Google не загружен. Проверьте подключение.’, ‘e’);
+return;
+}
+initAuth();
+}
+if (tokenClient) {
+doAuth();
+} else {
+toast(‘Загружается…’, ‘i’);
+}
 });
 
 document.addEventListener(‘touchmove’, function(e) {
@@ -6363,8 +6376,8 @@ scene.add(new T.Mesh(new T.PlaneBufferGeometry(2,2), material));
 var renderer = new T.WebGLRenderer({ canvas:canvas, antialias:false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 function resize() {
-var w = canvas.parentElement ? canvas.parentElement.clientWidth  : window.innerWidth;
-var h = canvas.parentElement ? canvas.parentElement.clientHeight : window.innerHeight;
+var w = window.innerWidth;
+var h = window.innerHeight;
 renderer.setSize(w, h);
 uniforms.resolution.value.x = renderer.domElement.width;
 uniforms.resolution.value.y = renderer.domElement.height;
@@ -6381,7 +6394,13 @@ renderer.render(scene, camera);
 if (window.THREE) { setup(window.THREE); return; }
 var s  = document.createElement(‘script’);
 s.src  = ‘https://cdnjs.cloudflare.com/ajax/libs/three.js/89/three.min.js’;
-s.onload = function(){ setup(window.THREE); };
+s.onload = function(){
+// Подавляем версионный лог Three.js
+var _log = console.log;
+console.log = function(){};
+setup(window.THREE);
+console.log = _log;
+};
 document.head.appendChild(s);
 }
 

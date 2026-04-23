@@ -1,0 +1,2231 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>Crystal Motors · CRM 2.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;800;900&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* ═══════════════════════════════════════════════════
+   RESET & ROOT
+═══════════════════════════════════════════════════ */
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+html,body { height:100%; width:100%; overflow:hidden; }
+
+/* ═══════════════════════════════════════════════════
+THEMES
+═══════════════════════════════════════════════════ */
+:root {
+–bg:       #0d0d0d;
+–bg2:      #141414;
+–bg3:      #1c1c1c;
+–bg4:      #232323;
+–line:     #252525;
+–line2:    #2e2e2e;
+–txt:      #f0f0f0;
+–txt2:     #aaa;
+–txt3:     #555;
+–acc:      #e8ff47;
+–acc-bg:   rgba(232,255,71,.08);
+–acc-bdr:  rgba(232,255,71,.25);
+–red:      #ff4757;
+–grn:      #2ed573;
+–org:      #ffa502;
+–blu:      #1e90ff;
+–r:        10px;
+–r2:       16px;
+–dock-h:   64px;
+–hdr-h:    52px;
+}
+body.light {
+–bg:       #f3f3ee;
+–bg2:      #ffffff;
+–bg3:      #eaeae5;
+–bg4:      #e0e0da;
+–line:     #e0e0da;
+–line2:    #d0d0ca;
+–txt:      #111;
+–txt2:     #666;
+–txt3:     #aaa;
+–acc:      #5137dd;
+–acc-bg:   rgba(81,55,221,.1);
+–acc-bdr:  rgba(81,55,221,.35);
+–red:      #d93535;
+–grn:      #1a9e50;
+–org:      #c97800;
+–blu:      #1060cc;
+}
+body.tiffany {
+–bg:       #A9C7C3;
+–bg2:      #F4EFE7;
+–bg3:      #e5dfd4;
+–bg4:      #d8d2c6;
+–line:     #8FB3AE;
+–line2:    #9ec0bb;
+–txt:      #2a2a2a;
+–txt2:     #5a5a5a;
+–txt3:     #8a8a8a;
+–acc:      #b84d6b;
+–acc-bg:   rgba(184,77,107,.14);
+–acc-bdr:  rgba(184,77,107,.35);
+–red:      #b84d6b;
+–grn:      #3d8f60;
+–org:      #b07030;
+–blu:      #3a6e95;
+}
+
+/* ═══════════════════════════════════════════════════
+APP SHELL
+═══════════════════════════════════════════════════ */
+#app {
+display:flex; flex-direction:column;
+height:100%; background:var(–bg);
+color:var(–txt); font-family:‘Golos Text’,sans-serif;
+position:relative; overflow:hidden;
+}
+/* Header */
+#hdr {
+height:var(–hdr-h); flex-shrink:0;
+display:flex; align-items:center; justify-content:space-between;
+padding:0 16px;
+background:var(–bg); border-bottom:1px solid var(–line);
+position:relative; z-index:100;
+}
+.hdr-brand {
+display:flex; align-items:center; gap:10px;
+font-family:‘Unbounded’,sans-serif; font-size:11px; font-weight:800;
+letter-spacing:.06em; cursor:pointer;
+}
+.hdr-brand img { width:36px; height:36px; border-radius:6px; object-fit:contain; }
+.hdr-brand-name { display:flex; flex-direction:column; gap:1px; }
+.hdr-brand-name span:first-child { font-size:10px; opacity:.5; font-weight:400; }
+.hdr-right { display:flex; align-items:center; gap:8px; }
+.hdr-btn {
+width:32px; height:32px; border-radius:50%;
+background:var(–bg3); border:1px solid var(–line2);
+color:var(–txt2); cursor:pointer;
+display:flex; align-items:center; justify-content:center;
+transition:border-color .15s, color .15s; flex-shrink:0;
+}
+.hdr-btn:hover { border-color:var(–acc); color:var(–acc); }
+.hdr-btn svg { width:15px; height:15px; }
+/* Month badge */
+#badge-month {
+font-size:10px; font-family:‘Unbounded’,sans-serif; font-weight:700;
+padding:4px 10px; border-radius:20px;
+background:var(–bg3); border:1px solid var(–line2);
+color:var(–txt2); cursor:pointer;
+position:relative;
+}
+
+/* Scrollable content area */
+#main {
+flex:1; overflow-y:auto; overflow-x:hidden;
+-webkit-overflow-scrolling:touch;
+padding-bottom:calc(var(–dock-h) + 8px);
+}
+.screen { display:none; min-height:100%; }
+.screen.on { display:block; }
+.w { max-width:720px; margin:0 auto; padding:0 16px; }
+
+/* ═══════════════════════════════════════════════════
+BOTTOM DOCK
+═══════════════════════════════════════════════════ */
+#dock {
+height:var(–dock-h); flex-shrink:0;
+display:none; align-items:stretch;
+background:var(–bg2); border-top:1px solid var(–line);
+position:relative; z-index:100;
+padding-bottom:env(safe-area-inset-bottom);
+}
+#dock.on { display:flex; }
+.dock-item {
+flex:1; display:flex; flex-direction:column;
+align-items:center; justify-content:center; gap:3px;
+background:none; border:none; cursor:pointer;
+color:var(–txt3); font-family:‘Unbounded’,sans-serif;
+font-size:8.5px; font-weight:700; letter-spacing:.03em;
+transition:color .15s; padding:6px 2px; position:relative;
+}
+.dock-item svg { width:20px; height:20px; stroke:currentColor; stroke-width:1.8; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+.dock-item.on { color:var(–acc); }
+.dock-item .dock-label { line-height:1; }
+/* Dot indicator */
+.dock-item::after {
+content:’’; position:absolute; bottom:6px; left:50%; transform:translateX(-50%);
+width:4px; height:4px; border-radius:50%;
+background:var(–acc); opacity:0; transition:opacity .2s;
+}
+.dock-item.on::after { opacity:1; }
+
+/* ═══════════════════════════════════════════════════
+LOGIN SCREEN
+═══════════════════════════════════════════════════ */
+#scr-login {
+display:flex; flex-direction:column;
+align-items:center; justify-content:center;
+height:100%; gap:24px; padding:40px 24px;
+text-align:center;
+}
+.login-logo {
+width:72px; height:72px; border-radius:16px;
+background:var(–bg3); border:1px solid var(–line2);
+display:flex; align-items:center; justify-content:center;
+margin-bottom:8px;
+}
+.login-logo svg { width:32px; height:32px; color:var(–txt3); }
+.login-title {
+font-family:‘Unbounded’,sans-serif; font-size:18px; font-weight:900;
+letter-spacing:-.01em;
+}
+.login-sub { font-size:13px; color:var(–txt2); line-height:1.5; }
+.btn-login {
+display:flex; align-items:center; gap:10px;
+padding:13px 24px; border-radius:var(–r2);
+background:var(–acc); color:#000;
+font-family:‘Unbounded’,sans-serif; font-size:11px; font-weight:800;
+letter-spacing:.04em; border:none; cursor:pointer;
+transition:opacity .15s;
+}
+.btn-login:hover { opacity:.85; }
+.btn-login svg { width:18px; height:18px; fill:currentColor; }
+.login-footer {
+font-size:10px; color:var(–txt3); font-family:‘Golos Text’,sans-serif;
+}
+
+/* ═══════════════════════════════════════════════════
+SECTION TITLES & CARDS
+═══════════════════════════════════════════════════ */
+.sec-title {
+font-family:‘Unbounded’,sans-serif; font-size:9px; font-weight:800;
+letter-spacing:.08em; text-transform:uppercase;
+color:var(–txt3); margin:20px 0 10px;
+}
+.card {
+background:var(–bg2); border:1px solid var(–line2);
+border-radius:var(–r2); padding:16px; margin-bottom:10px;
+}
+.card-row {
+display:flex; align-items:center; justify-content:space-between;
+padding:8px 0; border-bottom:1px solid var(–line);
+font-size:13px;
+}
+.card-row:last-child { border-bottom:none; }
+.card-row-lbl { color:var(–txt2); font-size:12px; }
+.card-row-val { font-weight:600; color:var(–txt); }
+
+/* Stat grid */
+.stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+.stat-cell {
+background:var(–bg3); border-radius:var(–r);
+padding:12px 14px; display:flex; flex-direction:column; gap:4px;
+}
+.stat-lbl { font-size:9px; color:var(–txt2); text-transform:uppercase; letter-spacing:.06em; font-family:‘Unbounded’,sans-serif; font-weight:700; }
+.stat-val { font-family:‘Unbounded’,sans-serif; font-size:18px; font-weight:900; color:var(–txt); }
+.stat-sub { font-size:10px; color:var(–txt3); }
+
+/* Progress bar */
+.prog-bar { height:4px; background:var(–bg4); border-radius:2px; overflow:hidden; margin-top:8px; }
+.prog-fill { height:100%; border-radius:2px; transition:width .4s ease; }
+
+/* ═══════════════════════════════════════════════════
+HOME SCREEN
+═══════════════════════════════════════════════════ */
+.home-hero {
+padding:20px 16px 16px;
+display:flex; align-items:center; gap:14px;
+}
+.home-avatar {
+width:52px; height:52px; border-radius:50%;
+border:2px solid var(–acc-bdr); flex-shrink:0;
+background:var(–bg3); object-fit:cover;
+display:flex; align-items:center; justify-content:center;
+font-family:‘Unbounded’,sans-serif; font-size:16px; font-weight:800;
+color:var(–acc);
+}
+.home-name { font-family:‘Unbounded’,sans-serif; font-size:14px; font-weight:800; }
+.home-role { font-size:11px; color:var(–txt3); margin-top:3px; }
+.home-income-banner {
+margin:0 16px 16px; border-radius:var(–r2);
+background:var(–acc-bg); border:1px solid var(–acc-bdr);
+padding:16px 18px; display:flex; align-items:center; justify-content:space-between;
+}
+.hib-lbl { font-size:10px; color:var(–txt2); text-transform:uppercase; letter-spacing:.06em; font-family:‘Unbounded’,sans-serif; margin-bottom:6px; }
+.hib-val { font-family:‘Unbounded’,sans-serif; font-size:26px; font-weight:900; color:var(–acc); }
+.hib-badge { font-size:10px; font-weight:700; padding:3px 8px; border-radius:6px; font-family:‘Unbounded’,sans-serif; }
+
+/* ═══════════════════════════════════════════════════
+MANAGER CARD (KPI, Rating)
+═══════════════════════════════════════════════════ */
+.mgr-card {
+background:var(–bg2); border:1px solid var(–line2);
+border-radius:var(–r2); padding:14px 16px; margin-bottom:8px;
+position:relative;
+}
+.mgr-card-head { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.mgr-rank {
+width:26px; height:26px; border-radius:8px;
+display:flex; align-items:center; justify-content:center;
+font-family:‘Unbounded’,sans-serif; font-size:10px; font-weight:800;
+background:var(–bg3); color:var(–txt2); flex-shrink:0;
+}
+.mgr-name { font-family:‘Unbounded’,sans-serif; font-size:11px; font-weight:800; letter-spacing:.02em; }
+.mgr-prog-row { display:flex; align-items:center; gap:8px; }
+.mgr-pct { font-size:11px; font-weight:700; font-family:‘Unbounded’,sans-serif; width:42px; flex-shrink:0; }
+.mgr-mini { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:10px; }
+.mgr-mini-cell { text-align:center; }
+.mgr-mini-lbl { font-size:9px; color:var(–txt3); }
+.mgr-mini-val { font-size:12px; font-weight:700; font-family:‘Unbounded’,sans-serif; }
+
+/* ═══════════════════════════════════════════════════
+VISITS TABLE (ОТЧЁТ)
+═══════════════════════════════════════════════════ */
+#scr-visits { display:none; flex-direction:column; height:100%; }
+#scr-visits.on { display:flex; }
+
+.visits-toolbar {
+flex-shrink:0; padding:8px 12px;
+display:flex; align-items:center; gap:8px;
+border-bottom:1px solid var(–line);
+background:var(–bg);
+}
+.visits-toolbar-btn {
+display:flex; align-items:center; gap:5px;
+padding:5px 10px; border-radius:var(–r);
+background:var(–bg3); border:1px solid var(–line2);
+color:var(–txt2); font-size:11px; font-weight:600;
+cursor:pointer; transition:border-color .15s, color .15s; white-space:nowrap;
+}
+.visits-toolbar-btn:hover { border-color:var(–acc); color:var(–acc); }
+.visits-toolbar-btn svg { width:13px; height:13px; stroke:currentColor; stroke-width:2; fill:none; }
+.visits-toolbar-sep { flex:1; }
+.visits-closed-badge {
+padding:4px 10px; border-radius:6px;
+background:rgba(255,71,87,.12); color:var(–red);
+font-size:10px; font-weight:700; font-family:‘Unbounded’,sans-serif;
+letter-spacing:.04em; border:1px solid rgba(255,71,87,.25);
+}
+
+/* Dept tabs for CEO */
+.visits-dept-tabs {
+flex-shrink:0; display:flex; gap:0;
+border-bottom:1px solid var(–line);
+background:var(–bg);
+}
+.visits-dept-tab {
+flex:1; padding:10px; text-align:center;
+font-family:‘Unbounded’,sans-serif; font-size:9px; font-weight:800;
+letter-spacing:.06em; color:var(–txt3); background:none; border:none;
+border-bottom:2px solid transparent; cursor:pointer; transition:color .15s, border-color .15s;
+}
+.visits-dept-tab.on { color:var(–acc); border-bottom-color:var(–acc); }
+
+/* Table scroll container */
+.visits-scroll {
+flex:1; overflow:auto;
+-webkit-overflow-scrolling:touch;
+}
+
+/* The actual table */
+.vt-wrap { min-width:900px; }
+.vt-head {
+display:grid; position:sticky; top:0; z-index:10;
+background:var(–bg3); border-bottom:2px solid var(–line2);
+}
+.vt-head-cell {
+padding:8px 6px; font-family:‘Unbounded’,sans-serif;
+font-size:8px; font-weight:800; letter-spacing:.06em;
+color:var(–txt3); text-transform:uppercase; white-space:nowrap;
+overflow:hidden; text-overflow:ellipsis;
+border-right:1px solid var(–line);
+}
+.vt-head-cell:last-child { border-right:none; }
+
+/* Week group header */
+.vt-week-hdr {
+display:flex; align-items:center; gap:8px;
+padding:8px 12px; cursor:pointer;
+background:var(–bg3); border-bottom:1px solid var(–line);
+border-top:1px solid var(–line); user-select:none;
+position:sticky; top:33px; z-index:9;
+}
+.vt-week-hdr:hover { background:var(–bg4); }
+.vt-week-title {
+font-family:‘Unbounded’,sans-serif; font-size:9px; font-weight:800;
+letter-spacing:.06em; color:var(–txt2); text-transform:uppercase;
+flex:1;
+}
+.vt-week-count { font-size:10px; color:var(–txt3); }
+.vt-week-chev {
+width:14px; height:14px; color:var(–txt3);
+transition:transform .2s; flex-shrink:0;
+}
+.vt-week-hdr.collapsed .vt-week-chev { transform:rotate(-90deg); }
+.vt-week-body { overflow:hidden; }
+.vt-week-body.collapsed { display:none; }
+
+/* Row */
+.vt-row {
+display:grid; border-bottom:1px solid var(–line);
+transition:background .1s; position:relative;
+}
+.vt-row:hover { background:var(–bg3); }
+.vt-row.new-row { background:var(–acc-bg); }
+.vt-row.deleting { opacity:.4; pointer-events:none; }
+.vt-row.invalid .vt-cell.err { background:rgba(255,71,87,.08) !important; }
+
+/* Cell */
+.vt-cell {
+padding:6px 6px; min-height:34px;
+border-right:1px solid var(–line);
+font-size:12px; color:var(–txt);
+outline:none; cursor:text;
+display:flex; align-items:center;
+white-space:nowrap; overflow:hidden;
+position:relative;
+transition:background .1s;
+}
+.vt-cell:last-child { border-right:none; }
+.vt-cell:focus, .vt-cell.active {
+background:var(–acc-bg) !important;
+box-shadow:inset 0 0 0 2px var(–acc);
+z-index:2; overflow:visible; white-space:normal;
+}
+.vt-cell.err { box-shadow:inset 0 0 0 1.5px var(–red); }
+.vt-cell.locked { color:var(–txt3); cursor:default; }
+.vt-cell[contenteditable=“true”] { cursor:text; }
+.vt-cell-inner {
+width:100%; outline:none; min-height:20px;
+font-family:‘Golos Text’,sans-serif; font-size:12px;
+}
+
+/* Dropdown in cell */
+.vt-dropdown {
+position:fixed; z-index:1000;
+background:var(–bg2); border:1px solid var(–line2);
+border-radius:var(–r); box-shadow:0 8px 24px rgba(0,0,0,.3);
+min-width:160px; max-height:200px; overflow-y:auto;
+}
+.vt-dropdown-item {
+padding:8px 12px; font-size:12px; cursor:pointer;
+transition:background .1s; color:var(–txt);
+}
+.vt-dropdown-item:hover { background:var(–bg3); color:var(–acc); }
+.vt-dropdown-item.selected { color:var(–acc); font-weight:600; }
+
+/* Row number column */
+.vt-row-num {
+width:36px; flex-shrink:0; display:flex; align-items:center;
+justify-content:center; color:var(–txt3); font-size:10px;
+position:relative;
+}
+.vt-row-num:hover .vt-row-actions { display:flex; }
+.vt-row-actions {
+display:none; position:absolute; left:100%; top:50%;
+transform:translateY(-50%); z-index:20;
+background:var(–bg2); border:1px solid var(–line2);
+border-radius:6px; padding:2px;
+flex-direction:column; gap:2px;
+box-shadow:0 4px 12px rgba(0,0,0,.25);
+}
+.vt-row-action {
+width:24px; height:24px; display:flex; align-items:center; justify-content:center;
+background:none; border:none; cursor:pointer; border-radius:4px;
+color:var(–txt3); transition:background .1s, color .1s;
+}
+.vt-row-action:hover { background:var(–bg3); color:var(–acc); }
+.vt-row-action.del:hover { color:var(–red); }
+.vt-row-action svg { width:12px; height:12px; stroke:currentColor; stroke-width:2; fill:none; }
+
+/* Empty rows at bottom */
+.vt-empty-row { opacity:.4; }
+.vt-empty-row:hover { opacity:1; background:var(–bg3) !important; }
+
+/* Save indicator */
+#save-indicator {
+position:fixed; bottom:calc(var(–dock-h) + 12px); right:12px;
+background:var(–bg2); border:1px solid var(–line2);
+border-radius:8px; padding:5px 10px;
+font-size:10px; font-weight:600; color:var(–txt2);
+display:none; align-items:center; gap:6px; z-index:500;
+box-shadow:0 4px 12px rgba(0,0,0,.2);
+}
+#save-indicator.on { display:flex; }
+#save-indicator.saved { color:var(–grn); }
+#save-indicator.error { color:var(–red); }
+.save-spin {
+width:10px; height:10px; border-radius:50%;
+border:2px solid var(–line2); border-top-color:var(–acc);
+animation:spin .6s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* Undo toast */
+#undo-toast {
+position:fixed; bottom:calc(var(–dock-h) + 12px); left:50%;
+transform:translateX(-50%);
+background:var(–bg2); border:1px solid var(–line2);
+border-radius:var(–r2); padding:10px 16px;
+display:none; align-items:center; gap:12px;
+box-shadow:0 6px 20px rgba(0,0,0,.3); z-index:600;
+font-size:12px; color:var(–txt); white-space:nowrap;
+}
+#undo-toast.on { display:flex; }
+#undo-btn {
+background:var(–acc); color:#000; border:none;
+padding:5px 12px; border-radius:6px;
+font-family:‘Unbounded’,sans-serif; font-size:9px; font-weight:800;
+cursor:pointer; letter-spacing:.04em;
+}
+#undo-timer { color:var(–txt3); font-size:11px; min-width:20px; }
+
+/* ═══════════════════════════════════════════════════
+MORE SCREEN
+═══════════════════════════════════════════════════ */
+.more-link {
+display:flex; align-items:center; gap:14px;
+padding:14px 16px; background:var(–bg2);
+border-bottom:1px solid var(–line);
+cursor:pointer; transition:background .1s; text-decoration:none; color:var(–txt);
+}
+.more-link:hover { background:var(–bg3); }
+.more-link-icon {
+width:38px; height:38px; border-radius:10px;
+background:var(–acc-bg); border:1px solid var(–acc-bdr);
+display:flex; align-items:center; justify-content:center;
+flex-shrink:0; color:var(–acc);
+}
+.more-link-icon svg { width:18px; height:18px; stroke:currentColor; stroke-width:2; fill:none; }
+.more-link-title { font-weight:600; font-size:13px; }
+.more-link-sub { font-size:11px; color:var(–txt3); margin-top:2px; }
+.more-link-chev { margin-left:auto; color:var(–txt3); }
+
+/* ═══════════════════════════════════════════════════
+MONTH PICKER DROPDOWN
+═══════════════════════════════════════════════════ */
+.month-picker-drop {
+position:absolute; top:calc(100% + 4px); right:0;
+background:var(–bg2); border:1px solid var(–line2);
+border-radius:var(–r); z-index:300;
+min-width:140px; display:none; flex-direction:column;
+box-shadow:0 8px 20px rgba(0,0,0,.3);
+}
+.month-picker-drop.on { display:flex; }
+.month-picker-item {
+padding:9px 14px; font-size:12px; color:var(–txt);
+cursor:pointer; transition:background .1s;
+font-family:‘Golos Text’,sans-serif;
+}
+.month-picker-item:hover { background:var(–bg3); color:var(–acc); }
+.month-picker-item.active { color:var(–acc); font-weight:700; }
+
+/* Theme dropdown */
+.theme-drop {
+position:absolute; top:calc(100% + 4px); right:0;
+background:var(–bg2); border:1px solid var(–line2);
+border-radius:var(–r); z-index:300;
+min-width:160px; display:none; flex-direction:column;
+box-shadow:0 8px 20px rgba(0,0,0,.3);
+}
+.theme-drop.on { display:flex; }
+.theme-item {
+padding:9px 14px; font-size:12px; color:var(–txt);
+cursor:pointer; transition:background .1s;
+display:flex; align-items:center; gap:8px;
+}
+.theme-item:hover { background:var(–bg3); color:var(–acc); }
+.theme-item.active { color:var(–acc); font-weight:700; }
+.theme-swatch {
+width:12px; height:12px; border-radius:50%;
+border:1px solid rgba(128,128,128,.3); flex-shrink:0;
+}
+
+/* ═══════════════════════════════════════════════════
+LOADER & EMPTY
+═══════════════════════════════════════════════════ */
+.loader {
+display:flex; align-items:center; justify-content:center;
+gap:10px; padding:40px 20px; color:var(–txt3); font-size:13px;
+}
+.spin-ring {
+width:18px; height:18px; border-radius:50%;
+border:2px solid var(–line2); border-top-color:var(–acc);
+animation:spin .7s linear infinite; flex-shrink:0;
+}
+.empty { padding:40px 20px; text-align:center; color:var(–txt3); font-size:13px; }
+
+/* ═══════════════════════════════════════════════════
+TOAST
+═══════════════════════════════════════════════════ */
+#toast {
+position:fixed; bottom:calc(var(–dock-h) + 56px); left:50%;
+transform:translateX(-50%) translateY(8px);
+padding:8px 16px; border-radius:20px;
+font-size:12px; font-weight:600;
+opacity:0; transition:opacity .25s, transform .25s;
+pointer-events:none; z-index:9999; white-space:nowrap;
+}
+#toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
+#toast.s { background:rgba(46,213,115,.15); border:1px solid var(–grn); color:var(–grn); }
+#toast.e { background:rgba(255,71,87,.15); border:1px solid var(–red); color:var(–red); }
+#toast.i { background:var(–bg3); border:1px solid var(–line2); color:var(–txt); }
+
+/* ═══════════════════════════════════════════════════
+ANIMATIONS
+═══════════════════════════════════════════════════ */
+@keyframes fadeUp {
+from { opacity:0; transform:translateY(10px); }
+to   { opacity:1; transform:translateY(0); }
+}
+.screen.on > * { animation:fadeUp .2s ease; }
+
+/* ═══════════════════════════════════════════════════
+IMPORT OVERLAY
+═══════════════════════════════════════════════════ */
+#import-overlay {
+display:none; position:fixed; inset:0; z-index:2000;
+background:rgba(0,0,0,.6); align-items:flex-end;
+justify-content:center;
+}
+#import-overlay.on { display:flex; }
+#import-modal {
+background:var(–bg2); border-radius:var(–r2) var(–r2) 0 0;
+width:100%; max-width:720px; padding:20px 16px 32px;
+border-top:1px solid var(–line2);
+}
+#import-modal h3 {
+font-family:‘Unbounded’,sans-serif; font-size:12px; font-weight:800;
+margin-bottom:12px;
+}
+#import-textarea {
+width:100%; height:140px; background:var(–bg3);
+border:1px solid var(–line2); border-radius:var(–r);
+color:var(–txt); font-family:‘Golos Text’,sans-serif; font-size:12px;
+padding:10px; resize:none; outline:none;
+}
+#import-textarea:focus { border-color:var(–acc); }
+.import-hint { font-size:11px; color:var(–txt3); margin:8px 0 12px; line-height:1.5; }
+.import-btns { display:flex; gap:8px; }
+.btn-primary {
+flex:1; padding:11px; border-radius:var(–r);
+background:var(–acc); color:#000; border:none;
+font-family:‘Unbounded’,sans-serif; font-size:10px; font-weight:800;
+letter-spacing:.04em; cursor:pointer;
+}
+.btn-secondary {
+padding:11px 18px; border-radius:var(–r);
+background:var(–bg3); color:var(–txt); border:1px solid var(–line2);
+font-family:‘Unbounded’,sans-serif; font-size:10px; font-weight:700;
+cursor:pointer;
+}
+</style>
+
+</head>
+<body>
+<div id="app">
+  <!-- ══════════ LOGIN ══════════ -->
+  <div id="scr-login">
+    <div class="login-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="11" width="18" height="11" rx="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+    </div>
+    <div>
+      <div class="login-title">Crystal Motors</div>
+      <div style="font-family:'Unbounded',sans-serif;font-size:10px;color:var(--txt3);letter-spacing:.06em;margin-top:4px;text-align:center">CRM 2.0 BETA</div>
+    </div>
+    <div class="login-sub">Войдите через корпоративный Google-аккаунт для доступа к панели управления</div>
+    <button class="btn-login" id="btn-login">
+      <svg viewBox="0 0 24 24"><path d="M12 11h8.533c.044.385.067.78.067 1.184 0 3.37-1.17 6.22-3.207 8.154C15.553 22.124 13.9 23 12 23A11 11 0 1 1 12 1c2.95 0 5.56 1.113 7.522 2.934l-3.076 3.042C15.197 5.79 13.68 5 12 5a7 7 0 1 0 0 14c3.205 0 5.542-1.916 6.27-4.987H12v-3z"/></svg>
+      Войти через Google
+    </button>
+    <div class="login-footer">© Crystal Motors · CRM Dashboard 2.0</div>
+  </div>
+
+  <!-- ══════════ HEADER ══════════ -->
+
+  <div id="hdr" style="display:none">
+    <div class="hdr-brand" onclick="goScreen('home')">
+      <img src="logos/01.png" id="hdr-logo" alt="CM" style="display:none"/>
+      <div class="hdr-brand-name">
+        <span>Crystal Motors</span>
+        <span>CRM 2.0</span>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <!-- Month picker -->
+      <div style="position:relative">
+        <div id="badge-month" onclick="toggleMonthPicker()">—</div>
+        <div class="month-picker-drop" id="month-drop"></div>
+      </div>
+      <!-- Theme -->
+      <div style="position:relative">
+        <button class="hdr-btn" id="btn-theme" onclick="toggleThemeDrop(event)" title="Тема">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="15" height="15">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M12 3a9 9 0 0 1 0 18V3z" fill="currentColor" opacity=".85"/>
+            <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+        </button>
+        <div class="theme-drop" id="theme-drop">
+          <div class="theme-item" onclick="applyTheme('dark')"><span class="theme-swatch" style="background:#0d0d0d"></span>Glass Dark</div>
+          <div class="theme-item" onclick="applyTheme('light')"><span class="theme-swatch" style="background:#f3f3ee;border-color:#ccc"></span>Glass Light</div>
+          <div class="theme-item" onclick="applyTheme('tiffany')"><span class="theme-swatch" style="background:linear-gradient(135deg,#A9C7C3,#F5A3B7)"></span>Tiffany</div>
+        </div>
+      </div>
+      <!-- Logout -->
+      <button class="hdr-btn" id="btn-out" onclick="logout()" title="Выйти" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════ MAIN CONTENT ══════════ -->
+
+  <div id="main" style="display:none">
+    <!-- HOME -->
+    <div class="screen" id="scr-home">
+      <div class="home-hero w">
+        <img class="home-avatar" id="home-avatar" src="" alt=""/>
+        <div>
+          <div class="home-name" id="home-name">—</div>
+          <div class="home-role" id="home-role">—</div>
+        </div>
+      </div>
+      <div class="home-income-banner" id="home-income-banner" style="display:none">
+        <div>
+          <div class="hib-lbl">Доход за месяц</div>
+          <div class="hib-val" id="home-income-val">—</div>
+        </div>
+        <div class="hib-badge" id="home-income-badge"></div>
+      </div>
+      <div class="w">
+        <div class="sec-title">Текущий KPI</div>
+        <div class="stat-grid" id="home-kpi"></div>
+        <div class="sec-title">Сегодня</div>
+        <div id="home-today" class="card"><div class="loader"><div class="spin-ring"></div>Синхронизация…</div></div>
+      </div>
+    </div>
+
+```
+<!-- KPI (ОТЧЁТ) -->
+<div class="screen" id="scr-kpi">
+  <div class="w">
+    <!-- Subtabs for CEO -->
+    <div id="kpi-subtabs" style="display:none;gap:16px;padding:12px 0;border-bottom:1px solid var(--line);margin-bottom:16px">
+      <button class="visits-dept-tab on" onclick="setKpiDept('crm')" id="kpi-tab-crm">CRM</button>
+      <button class="visits-dept-tab" onclick="setKpiDept('dozhim')" id="kpi-tab-dozhim">ДОЖИМ</button>
+    </div>
+    <div id="kpi-content"><div class="loader"><div class="spin-ring"></div>Синхронизация…</div></div>
+  </div>
+</div>
+
+<!-- RATING -->
+<div class="screen" id="scr-rating">
+  <div class="w">
+    <div id="rating-subtabs" style="display:none;gap:16px;padding:12px 0;border-bottom:1px solid var(--line);margin-bottom:16px">
+      <button class="visits-dept-tab on" onclick="setRatingDept('crm')" id="rating-tab-crm">CRM</button>
+      <button class="visits-dept-tab" onclick="setRatingDept('dozhim')" id="rating-tab-dozhim">ДОЖИМ</button>
+    </div>
+    <div id="rating-content"><div class="loader"><div class="spin-ring"></div>Синхронизация…</div></div>
+  </div>
+</div>
+
+<!-- INCOME -->
+<div class="screen" id="scr-income">
+  <div class="w">
+    <div id="income-subtabs" style="display:none;gap:16px;padding:12px 0;border-bottom:1px solid var(--line);margin-bottom:16px">
+      <button class="visits-dept-tab on" onclick="setIncomeDept('crm')" id="income-tab-crm">CRM</button>
+      <button class="visits-dept-tab" onclick="setIncomeDept('dozhim')" id="income-tab-dozhim">ДОЖИМ</button>
+    </div>
+    <div id="income-content"><div class="loader"><div class="spin-ring"></div>Синхронизация…</div></div>
+  </div>
+</div>
+
+<!-- MORE -->
+<div class="screen" id="scr-more">
+  <div style="margin-top:12px">
+    <a class="more-link" href="https://frankiej13.github.io/crewcrm/" target="_blank">
+      <div class="more-link-icon">
+        <svg viewBox="0 0 24 24"><path d="M3 3h18v18H3z" stroke-width="1.5"/><path d="M3 9h18M9 21V9"/></svg>
+      </div>
+      <div><div class="more-link-title">CRM 1.0</div><div class="more-link-sub">Текущая версия дашборда</div></div>
+      <div class="more-link-chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+    </a>
+    <div class="more-link" onclick="goScreen('grafik')">
+      <div class="more-link-icon">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div><div class="more-link-title">График</div><div class="more-link-sub">Расписание смен по неделям</div></div>
+      <div class="more-link-chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="more-link" onclick="goScreen('faq')">
+      <div class="more-link-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div><div class="more-link-title">FAQ / Инструкции</div><div class="more-link-sub">База знаний и регламенты</div></div>
+      <div class="more-link-chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="more-link" onclick="logout()">
+      <div class="more-link-icon" style="background:rgba(255,71,87,.1);border-color:rgba(255,71,87,.25);color:var(--red)">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </div>
+      <div><div class="more-link-title" style="color:var(--red)">Выйти</div><div class="more-link-sub">Сменить аккаунт</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- GRAFIK placeholder -->
+<div class="screen" id="scr-grafik">
+  <div class="w"><div class="empty">График доступен в CRM 1.0</div></div>
+</div>
+<!-- FAQ placeholder -->
+<div class="screen" id="scr-faq">
+  <div class="w"><div class="empty">FAQ доступен в CRM 1.0</div></div>
+</div>
+```
+
+  </div>
+
+  <!-- ══════════ VISITS TABLE (separate flex screen) ══════════ -->
+
+  <div id="scr-visits">
+    <!-- Dept tabs (CEO only) -->
+    <div class="visits-dept-tabs" id="visits-dept-tabs" style="display:none">
+      <button class="visits-dept-tab on" onclick="setVisitsDept('crm')"  id="vdt-crm">CRM</button>
+      <button class="visits-dept-tab"    onclick="setVisitsDept('dozhim')" id="vdt-dozhim">ДОЖИМ</button>
+    </div>
+    <!-- Toolbar -->
+    <div class="visits-toolbar">
+      <button class="visits-toolbar-btn" onclick="addVisitRow()">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Добавить
+      </button>
+      <button class="visits-toolbar-btn" onclick="openImport()">
+        <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        Импорт
+      </button>
+      <div class="visits-toolbar-sep"></div>
+      <span id="visits-closed-badge" class="visits-closed-badge" style="display:none">Месяц закрыт</span>
+      <button class="visits-toolbar-btn" onclick="reloadVisits()" title="Обновить">
+        <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      </button>
+    </div>
+    <!-- Table scroll area -->
+    <div class="visits-scroll" id="visits-scroll">
+      <div class="vt-wrap" id="vt-wrap">
+        <div class="loader"><div class="spin-ring"></div>Загрузка визитов…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ DOCK ══════════ -->
+
+  <nav id="dock">
+    <button class="dock-item" onclick="goScreen('home')"   id="dock-home">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="dock-label">Главная</span>
+    </button>
+    <button class="dock-item" onclick="goScreen('kpi')"     id="dock-kpi">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span class="dock-label">KPI</span>
+    </button>
+    <button class="dock-item" onclick="goScreen('rating')"  id="dock-rating">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M20 21a8 8 0 1 0-16 0"/><path d="M12 11v10M8 17l4-4 4 4"/></svg>
+      <span class="dock-label">Рейтинг</span>
+    </button>
+    <button class="dock-item" onclick="goScreen('income')"  id="dock-income">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span class="dock-label">Доход</span>
+    </button>
+    <button class="dock-item" onclick="goScreen('visits')"  id="dock-visits">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      <span class="dock-label">Отчёт</span>
+    </button>
+    <button class="dock-item" onclick="goScreen('more')"    id="dock-more">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+      <span class="dock-label">Ещё</span>
+    </button>
+  </nav>
+
+  <!-- ══════════ HELPERS ══════════ -->
+
+  <div id="toast"></div>
+  <div id="save-indicator">
+    <div class="save-spin" id="save-spin"></div>
+    <span id="save-text">Сохранение…</span>
+  </div>
+  <div id="undo-toast">
+    <span id="undo-msg">Строка удалена</span>
+    <button id="undo-btn" onclick="undoDelete()">ОТМЕНА</button>
+    <span id="undo-timer">10</span>
+  </div>
+
+  <!-- ══════════ IMPORT OVERLAY ══════════ -->
+
+  <div id="import-overlay">
+    <div id="import-modal">
+      <h3>Импорт из Excel / CSV</h3>
+      <textarea id="import-textarea" placeholder="Вставьте данные из Excel (Ctrl+V)&#10;Порядок: Дата | ФИО | Телефон | Город | Комментарий | Источник | Категория | Способ покупки | Менеджер | Задаток | КСО | Кред. рейтинг | Авто | Сверка"></textarea>
+      <div class="import-hint">Скопируйте строки из Excel и вставьте сюда. Разделитель — Tab. Данные добавятся начиная с текущей позиции курсора в таблице.</div>
+      <div class="import-btns">
+        <button class="btn-secondary" onclick="closeImport()">Отмена</button>
+        <button class="btn-primary" onclick="doImport()">Импортировать</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+// ═══════════════════════════════════════════════════
+//   CONSTANTS
+// ═══════════════════════════════════════════════════
+const CLIENT_ID  = '364532815329-0j1lkobb1v9vcserj6artf64nd95a0la.apps.googleusercontent.com';
+const SHEET_ID   = '1DeUsHB_O1SbIMR4p5yd64o_R0yllWvtnyNhjxjhipn8';
+const SCOPE      = 'https://www.googleapis.com/auth/spreadsheets';
+const API_BASE   = 'https://sheets.googleapis.com/v4/spreadsheets/' + SHEET_ID;
+const THEMES     = ['dark','light','tiffany'];
+
+// Column definitions (A:N = 14 columns)
+const COLS = [
+  { key:'date',    label:'Дата',          w:80,  type:'date'   },
+  { key:'name',    label:'ФИО клиента',   w:140, type:'text'   },
+  { key:'phone',   label:'Телефон',       w:120, type:'phone'  },
+  { key:'city',    label:'Город',         w:90,  type:'text'   },
+  { key:'comment', label:'Комментарий',   w:160, type:'combo',
+    options:['В работе','Покупка (кредит)','Покупка (наличные)','Обмен','Комиссия','Перенос','Отказ'] },
+  { key:'source',  label:'Источник',      w:100, type:'combo',
+    options:['Яндекс','Авито','Авто.ру','Сарафан','Повторный','Холодный звонок','Instagram'] },
+  { key:'cat',     label:'Категория',     w:90,  type:'select',
+    options:['кат 800','кат 1200','кат 1000'] },
+  { key:'deal',    label:'Способ покупки',w:120, type:'select',
+    options:['Кредит','Наличные','Обмен','Комиссия'] },
+  { key:'mgr',     label:'Менеджер',      w:120, type:'mgr'   },
+  { key:'deposit', label:'Задаток',       w:80,  type:'money'  },
+  { key:'kso',     label:'КСО',           w:90,  type:'select',
+    options:['Был в КСО','Не был в КСО'] },
+  { key:'credit',  label:'Кред. рейтинг', w:90,  type:'text'  },
+  { key:'car',     label:'Авто',          w:120, type:'text'  },
+  { key:'check',   label:'Сверка',        w:70,  type:'select',
+    options:['ДА','НЕТ'] },
+];
+const NCOLS = COLS.length; // 14
+
+// ═══════════════════════════════════════════════════
+//   APP STATE
+// ═══════════════════════════════════════════════════
+const S = {
+  token: null, user: null, usersData: null,
+  currentSuffix: '',
+  currentScreen: '',
+  currentDept: 'crm',  // for visits
+  kpiDept: 'crm', ratingDept: 'crm', incomeDept: 'crm',
+  visitsDept: 'crm',
+  data: {
+    vizity: null,      // CRM visits rows
+    d_vizity: null,    // ДОЖИМ visits rows
+    users: null,
+    plan: null,
+    stavki: null,
+    cnvrs: null,
+    grafik: null,
+  },
+  visits: {            // parsed visits state
+    rows: [],          // { sheetRow, data:[14 cells], dirty, isNew }
+    sheetName: '',
+    dept: 'crm',
+    loading: false,
+    savePending: {},   // sheetRow → timeout
+    renderOffset: 0,   // for virtual scroll
+    CHUNK: 50,
+  },
+  isCeo: false,
+  isReadonly: false,
+};
+
+// ═══════════════════════════════════════════════════
+//   THEME
+// ═══════════════════════════════════════════════════
+function applyTheme(t) {
+  document.body.classList.remove('light','tiffany');
+  if (t === 'light')   document.body.classList.add('light');
+  if (t === 'tiffany') document.body.classList.add('tiffany');
+  localStorage.setItem('crm2_theme', t);
+  document.querySelectorAll('.theme-item').forEach(el => el.classList.remove('active'));
+  const idx = THEMES.indexOf(t);
+  document.querySelectorAll('.theme-item')[idx]?.classList.add('active');
+  document.getElementById('theme-drop').classList.remove('on');
+}
+function toggleThemeDrop(e) {
+  e.stopPropagation();
+  const d = document.getElementById('theme-drop');
+  d.classList.toggle('on');
+}
+(function() {
+  const t = localStorage.getItem('crm2_theme') || 'dark';
+  applyTheme(t);
+})();
+
+// ═══════════════════════════════════════════════════
+//   MONTH / SUFFIX
+// ═══════════════════════════════════════════════════
+function getSuffix(d) {
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const yy = String(d.getFullYear()).slice(-2);
+  return mm + yy;
+}
+function buildAvailableSuffixes() {
+  const now = new Date();
+  const list = [];
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    list.push({ suffix: getSuffix(d), label: d.toLocaleString('ru',{month:'long',year:'numeric'}) });
+  }
+  return list;
+}
+function initSuffix() {
+  const saved = localStorage.getItem('crm2_suffix');
+  const now   = getSuffix(new Date());
+  S.currentSuffix = saved || now;
+  updateMonthBadge();
+}
+function updateMonthBadge() {
+  const list = buildAvailableSuffixes();
+  const found = list.find(x => x.suffix === S.currentSuffix);
+  const mm = S.currentSuffix.slice(0,2), yy = '20' + S.currentSuffix.slice(2);
+  const d = new Date(parseInt(yy), parseInt(mm)-1, 1);
+  const lbl = d.toLocaleString('ru',{month:'short'}).replace('.','') + ' ' + yy;
+  document.getElementById('badge-month').textContent = lbl.toUpperCase();
+}
+function toggleMonthPicker() {
+  const drop = document.getElementById('month-drop');
+  const isOpen = drop.classList.contains('on');
+  closeAllDrops();
+  if (!isOpen) {
+    const list = buildAvailableSuffixes();
+    drop.innerHTML = list.map(x =>
+      `<div class="month-picker-item${x.suffix===S.currentSuffix?' active':''}" onclick="selectSuffix('${x.suffix}')">${x.label}</div>`
+    ).join('');
+    drop.classList.add('on');
+  }
+}
+function selectSuffix(s) {
+  S.currentSuffix = s;
+  localStorage.setItem('crm2_suffix', s);
+  updateMonthBadge();
+  closeAllDrops();
+  // Invalidate data
+  S.data.vizity = null; S.data.d_vizity = null;
+  S.data.plan = null; S.data.stavki = null; S.data.cnvrs = null;
+  // Reload current screen
+  renderCurrentScreen();
+}
+
+// ═══════════════════════════════════════════════════
+//   GOOGLE OAUTH
+// ═══════════════════════════════════════════════════
+function initTokenClient() {
+  window._tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID, scope: SCOPE,
+    callback: (resp) => {
+      if (resp.error) { toast('Ошибка авторизации', 'e'); return; }
+      S.token = resp.access_token;
+      onLogin();
+    }
+  });
+}
+function login() {
+  if (!window._tokenClient) { initTokenClient(); }
+  window._tokenClient.requestAccessToken({ prompt: 'consent' });
+}
+function logout() {
+  if (S.token) google.accounts.oauth2.revoke(S.token);
+  S.token = null; S.user = null; S.usersData = null;
+  Object.keys(S.data).forEach(k => S.data[k] = null);
+  document.getElementById('btn-out').style.display = 'none';
+  showLogin();
+}
+async function onLogin() {
+  try {
+    const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: 'Bearer ' + S.token }
+    });
+    S.user = await resp.json();
+  } catch(e) { S.user = {}; }
+
+  await loadUsers();
+  const matched = findUser();
+  S.isCeo = matched?.role === 'ceo';
+
+  // Show UI
+  document.getElementById('scr-login').style.display = 'none';
+  document.getElementById('hdr').style.display = '';
+  document.getElementById('main').style.display = '';
+  document.getElementById('dock').classList.add('on');
+  document.getElementById('btn-out').style.display = '';
+
+  // Try to load logo
+  const logo = document.getElementById('hdr-logo');
+  logo.src = 'logos/01.png';
+  logo.style.display = '';
+  logo.onerror = () => logo.style.display = 'none';
+
+  // CEO dock visits: show dept chooser on long press (handled in goScreen)
+  // Set default dept based on role
+  if (matched?.role === 'dozhim') {
+    S.visitsDept = 'dozhim'; S.kpiDept = 'dozhim'; S.ratingDept = 'dozhim'; S.incomeDept = 'dozhim';
+  }
+
+  // Check month closed
+  checkMonthClosed();
+
+  // Go to home
+  goScreen('home');
+
+  // Background prefetch
+  setTimeout(backgroundLoad, 2000);
+}
+
+// ═══════════════════════════════════════════════════
+//   USERS
+// ═══════════════════════════════════════════════════
+async function loadUsers() {
+  try {
+    const d = await apiGet('USERS!A1:F50');
+    S.data.users = d.values || [];
+    S.usersData  = d.values || [];
+  } catch(e) { S.usersData = []; }
+}
+function findUser() {
+  if (!S.usersData || !S.user?.email) return null;
+  const em = (S.user.email||'').toLowerCase();
+  for (let i=1;i<S.usersData.length;i++) {
+    const r = S.usersData[i];
+    const emails = (r[0]||'').split(/[,;\s]+/).map(e=>e.toLowerCase().trim());
+    if (emails.includes(em)) {
+      return { email:r[0], name:(r[1]||'').trim(), role:(r[2]||'crm').toLowerCase(),
+               fund:(r[3]||'').toLowerCase()==='да', rang:(r[4]||'manager').toLowerCase(), dob:r[5]||'' };
+    }
+  }
+  return null;
+}
+function getRoleByName(nameLow) {
+  if (!S.usersData) return 'crm';
+  for (let i=1;i<S.usersData.length;i++) {
+    if ((S.usersData[i][1]||'').toLowerCase().trim()===nameLow) return (S.usersData[i][2]||'crm').toLowerCase();
+  }
+  return 'crm';
+}
+function getCrmManagers() {
+  return (S.usersData||[]).slice(1).filter(r=>r&&r[1]&&(r[2]||'crm').toLowerCase()==='crm').map(r=>r[1].trim());
+}
+function getDozhimManagers() {
+  return (S.usersData||[]).slice(1).filter(r=>r&&r[1]&&(r[2]||'').toLowerCase()==='dozhim').map(r=>r[1].trim());
+}
+
+// ═══════════════════════════════════════════════════
+//   API HELPERS
+// ═══════════════════════════════════════════════════
+async function apiGet(range) {
+  const url = `${API_BASE}/values/${encodeURIComponent(range)}?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE`;
+  const r = await fetch(url, { headers: { Authorization: 'Bearer ' + S.token } });
+  if (!r.ok) { const e = await r.json(); throw new Error(e.error?.message || r.status); }
+  return r.json();
+}
+async function apiPut(range, values) {
+  const url = `${API_BASE}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+  const r = await fetch(url, {
+    method: 'PUT', headers: { Authorization:'Bearer '+S.token, 'Content-Type':'application/json' },
+    body: JSON.stringify({ range, majorDimension:'ROWS', values })
+  });
+  if (!r.ok) { const e = await r.json(); throw new Error(e.error?.message || r.status); }
+  return r.json();
+}
+async function apiAppend(range, values) {
+  const url = `${API_BASE}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+  const r = await fetch(url, {
+    method:'POST', headers:{ Authorization:'Bearer '+S.token,'Content-Type':'application/json' },
+    body: JSON.stringify({ range, majorDimension:'ROWS', values })
+  });
+  if (!r.ok) { const e = await r.json(); throw new Error(e.error?.message||r.status); }
+  return r.json();
+}
+async function apiBatch(requests) {
+  const url = `${API_BASE}:batchUpdate`;
+  const r = await fetch(url, {
+    method:'POST', headers:{ Authorization:'Bearer '+S.token,'Content-Type':'application/json' },
+    body: JSON.stringify({ requests })
+  });
+  if (!r.ok) { const e = await r.json(); throw new Error(e.error?.message||r.status); }
+  return r.json();
+}
+async function apiGetSheetMeta() {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties`;
+  const r = await fetch(url, { headers:{ Authorization:'Bearer '+S.token } });
+  if (!r.ok) throw new Error('meta error');
+  return r.json();
+}
+
+// ═══════════════════════════════════════════════════
+//   SHEET NAME HELPERS
+// ═══════════════════════════════════════════════════
+function getVisitSheetName(dept, suffix) {
+  return (dept==='dozhim' ? 'Д_ВИЗИТЫ' : 'ВИЗИТЫ') + (suffix || S.currentSuffix);
+}
+function getPlanSheetName(suffix) { return 'ПЛАН' + (suffix || S.currentSuffix); }
+
+// ═══════════════════════════════════════════════════
+//   ENSURE MONTHLY SHEET EXISTS
+// ═══════════════════════════════════════════════════
+async function ensureSheet(dept, suffix) {
+  const name = getVisitSheetName(dept, suffix);
+  try {
+    const meta = await apiGetSheetMeta();
+    const sheets = meta.sheets || [];
+    const exists = sheets.some(s => s.properties.title === name);
+    if (exists) return true;
+    // Create sheet
+    await apiBatch([{ addSheet: { properties: { title: name } } }]);
+    // Write headers
+    const headers = [COLS.map(c => c.label)];
+    await apiPut(`${name}!A1:N1`, headers);
+    toast('Создан лист ' + name, 's');
+    return true;
+  } catch(e) {
+    console.error('ensureSheet', e);
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//   MONTH CLOSED CHECK
+// ═══════════════════════════════════════════════════
+function checkMonthClosed() {
+  const now = new Date();
+  const curSuffix = getSuffix(now);
+  if (S.currentSuffix !== curSuffix) {
+    // Past month — always readonly for non-CEO
+    S.isReadonly = !S.isCeo;
+    return;
+  }
+  // Current month: close on 3rd for non-CEO (previous month data)
+  const prevDate = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  const prevSuffix = getSuffix(prevDate);
+  if (S.currentSuffix === prevSuffix && now.getDate() >= 3 && !S.isCeo) {
+    S.isReadonly = true;
+  } else {
+    S.isReadonly = false;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//   NAVIGATION
+// ═══════════════════════════════════════════════════
+function goScreen(name) {
+  // Hide all
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  document.getElementById('scr-visits').classList.remove('on');
+  document.getElementById('main').style.display = '';
+
+  // Dock active
+  document.querySelectorAll('.dock-item').forEach(b => b.classList.remove('on'));
+  const dockMap = { home:'dock-home', kpi:'dock-kpi', rating:'dock-rating',
+                    income:'dock-income', visits:'dock-visits', more:'dock-more',
+                    grafik:'dock-more', faq:'dock-more' };
+  document.getElementById(dockMap[name]||'dock-more')?.classList.add('on');
+
+  S.currentScreen = name;
+
+  if (name === 'visits') {
+    document.getElementById('main').style.display = 'none';
+    document.getElementById('scr-visits').classList.add('on');
+    initVisitsDept();
+    return;
+  }
+
+  document.getElementById('scr-'+name)?.classList.add('on');
+  renderCurrentScreen();
+}
+
+function renderCurrentScreen() {
+  switch (S.currentScreen) {
+    case 'home':    renderHome();   break;
+    case 'kpi':     renderKpi();    break;
+    case 'rating':  renderRating(); break;
+    case 'income':  renderIncome(); break;
+  }
+}
+
+function showLogin() {
+  document.getElementById('hdr').style.display = 'none';
+  document.getElementById('main').style.display = 'none';
+  document.getElementById('dock').classList.remove('on');
+  document.getElementById('scr-visits').classList.remove('on');
+  document.getElementById('scr-login').style.display = '';
+}
+
+// ═══════════════════════════════════════════════════
+//   HOME SCREEN
+// ═══════════════════════════════════════════════════
+async function renderHome() {
+  const matched = findUser();
+  if (!matched) return;
+
+  const parts = matched.name.split(/\s+/);
+  const displayName = parts.length >= 2 ? parts[1] + ' ' + parts[0] : matched.name;
+  const greeting = parts.length >= 2 ? parts[1] : parts[0];
+
+  document.getElementById('home-name').textContent = displayName;
+  document.getElementById('home-role').textContent = roleName(matched.role) + (matched.rang === 'rookie' ? ' · Rookie' : '');
+
+  // Avatar
+  const av = document.getElementById('home-avatar');
+  if (S.user?.picture) {
+    av.outerHTML = `<img class="home-avatar" id="home-avatar" src="${S.user.picture}" alt="${greeting}"/>`;
+  } else {
+    av.textContent = greeting[0]?.toUpperCase() || '?';
+  }
+
+  // KPI stats - load vizity if needed
+  if (!S.data.vizity) {
+    try { const d = await apiGet(getVisitSheetName('crm')+'!A:N'); S.data.vizity = d.values||[]; }
+    catch(e) { S.data.vizity = []; }
+  }
+  const dept = matched.role === 'dozhim' ? 'dozhim' : 'crm';
+  const sheet = dept === 'dozhim' ? 'д_визиты' : 'визиты';
+  const myVisits = (S.data[dept==='dozhim'?'d_vizity':'vizity']||[]).slice(1)
+    .filter(r => (r[8]||'').trim().toLowerCase() === matched.name.toLowerCase());
+
+  const today = new Date().toLocaleDateString('ru');
+  const todayV = myVisits.filter(r => {
+    const d = r[0];
+    return d && String(d).includes(String(new Date().getDate()).padStart(2,'0'));
+  });
+
+  document.getElementById('home-kpi').innerHTML = `
+    <div class="stat-cell">
+      <div class="stat-lbl">Визитов</div>
+      <div class="stat-val">${myVisits.length}</div>
+      <div class="stat-sub">за месяц</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-lbl">Сегодня</div>
+      <div class="stat-val">${todayV.length}</div>
+      <div class="stat-sub">визитов</div>
+    </div>
+  `;
+  document.getElementById('home-today').innerHTML = todayV.length
+    ? todayV.map(r=>`<div class="card-row"><span class="card-row-lbl">${r[1]||'—'}</span><span class="card-row-val">${r[4]||'—'}</span></div>`).join('')
+    : '<div style="color:var(--txt3);font-size:12px;padding:4px 0">Визитов сегодня нет</div>';
+}
+
+function roleName(r) {
+  if (r==='ceo') return 'Руководитель';
+  if (r==='dozhim') return 'Менеджер ДОЖИМ';
+  return 'Менеджер CRM';
+}
+
+// ═══════════════════════════════════════════════════
+//   KPI SCREEN
+// ═══════════════════════════════════════════════════
+function setKpiDept(d) {
+  S.kpiDept = d;
+  document.getElementById('kpi-tab-crm').classList.toggle('on', d==='crm');
+  document.getElementById('kpi-tab-dozhim').classList.toggle('on', d==='dozhim');
+  renderKpi();
+}
+async function renderKpi() {
+  const el = document.getElementById('kpi-content');
+  const subtabs = document.getElementById('kpi-subtabs');
+  if (S.isCeo) { subtabs.style.display='flex'; }
+
+  el.innerHTML = `<div class="loader"><div class="spin-ring"></div>Синхронизация…</div>`;
+
+  const dept = S.isCeo ? S.kpiDept : (findUser()?.role === 'dozhim' ? 'dozhim' : 'crm');
+  const key = dept==='dozhim' ? 'd_vizity' : 'vizity';
+
+  try {
+    if (!S.data[key]) {
+      const d = await apiGet(getVisitSheetName(dept)+'!A:N');
+      S.data[key] = d.values||[];
+    }
+    if (!S.data.plan) {
+      const d = await apiGet(getPlanSheetName()+'!A:B');
+      S.data.plan = d.values||[];
+    }
+  } catch(e) { el.innerHTML=`<div class="empty">Ошибка загрузки</div>`; return; }
+
+  const rows = (S.data[key]||[]).slice(1).filter(r=>r&&r[0]);
+  const planMap = {};
+  (S.data.plan||[]).slice(1).forEach(r => { if(r&&r[0]) planMap[String(r[0]).trim().toLowerCase()] = parseInt(r[1])||0; });
+
+  const managers = dept==='dozhim' ? getDozhimManagers() : getCrmManagers();
+  const stats = {};
+  rows.forEach(r => {
+    const mgr = (r[8]||'').trim();
+    if (!stats[mgr]) stats[mgr] = { vis:0, deal:0, deposit:0 };
+    stats[mgr].vis++;
+    const cmt = (r[4]||'').toLowerCase();
+    if (cmt.includes('покупка')||cmt.includes('обмен')||cmt.includes('комиссия')) stats[mgr].deal++;
+    const dep = parseFloat(String(r[9]||'0').replace(/\D/g,''))||0;
+    if (dep >= 1000) stats[mgr].deposit++;
+  });
+
+  const total = { vis:rows.length, deal:Object.values(stats).reduce((s,v)=>s+v.deal,0) };
+  const plan = managers.reduce((s,n)=>s+(planMap[n.toLowerCase()]||0),0);
+
+  el.innerHTML = `
+    <div class="stat-grid" style="margin-top:4px">
+      <div class="stat-cell">
+        <div class="stat-lbl">Всего визитов</div>
+        <div class="stat-val">${total.vis}</div>
+        <div class="stat-sub">план: ${plan||'—'}</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-lbl">Сделок</div>
+        <div class="stat-val">${total.deal}</div>
+        <div class="stat-sub">конверсия ${total.vis>0?Math.round(total.deal/total.vis*100):0}%</div>
+      </div>
+    </div>
+    <div class="sec-title">Менеджеры</div>
+    ${managers.map(name => {
+      const nl = name.toLowerCase().trim();
+      const s = stats[name]||stats[Object.keys(stats).find(k=>k.toLowerCase()===nl)||'']||{vis:0,deal:0};
+      const pl = planMap[nl]||0;
+      const pct = pl > 0 ? Math.round(s.vis/pl*100) : 0;
+      const clr = pct>=100?'var(--grn)':pct>=60?'var(--org)':'var(--red)';
+      return `<div class="mgr-card">
+        <div class="mgr-card-head">
+          <div class="mgr-name">${name.toUpperCase()}</div>
+          <div style="margin-left:auto;font-family:'Unbounded',sans-serif;font-size:11px;font-weight:800;color:${clr}">${pct}%</div>
+        </div>
+        <div class="mgr-prog-row">
+          <div style="flex:1"><div class="prog-bar"><div class="prog-fill" style="width:${Math.min(pct,100)}%;background:${clr}"></div></div></div>
+        </div>
+        <div class="mgr-mini">
+          <div class="mgr-mini-cell"><div class="mgr-mini-lbl">Визиты</div><div class="mgr-mini-val">${s.vis}</div></div>
+          <div class="mgr-mini-cell"><div class="mgr-mini-lbl">Сделки</div><div class="mgr-mini-val">${s.deal}</div></div>
+          <div class="mgr-mini-cell"><div class="mgr-mini-lbl">План</div><div class="mgr-mini-val">${pl||'—'}</div></div>
+          <div class="mgr-mini-cell"><div class="mgr-mini-lbl">Задатки</div><div class="mgr-mini-val">${s.deposit||0}</div></div>
+        </div>
+      </div>`;
+    }).join('')}
+  `;
+}
+
+// ═══════════════════════════════════════════════════
+//   RATING SCREEN
+// ═══════════════════════════════════════════════════
+function setRatingDept(d) {
+  S.ratingDept = d;
+  document.getElementById('rating-tab-crm').classList.toggle('on',d==='crm');
+  document.getElementById('rating-tab-dozhim').classList.toggle('on',d==='dozhim');
+  renderRating();
+}
+async function renderRating() {
+  const el = document.getElementById('rating-content');
+  if (S.isCeo) document.getElementById('rating-subtabs').style.display='flex';
+  el.innerHTML = `<div class="loader"><div class="spin-ring"></div>Синхронизация…</div>`;
+
+  const dept = S.isCeo ? S.ratingDept : (findUser()?.role==='dozhim'?'dozhim':'crm');
+  const key = dept==='dozhim'?'d_vizity':'vizity';
+
+  try {
+    if (!S.data[key]) {
+      const d = await apiGet(getVisitSheetName(dept)+'!A:N');
+      S.data[key] = d.values||[];
+    }
+  } catch(e) { el.innerHTML='<div class="empty">Ошибка</div>'; return; }
+
+  const rows = (S.data[key]||[]).slice(1).filter(r=>r&&r[0]);
+  const mgrs = dept==='dozhim'?getDozhimManagers():getCrmManagers();
+  const stats = {};
+  rows.forEach(r => {
+    const mgr=(r[8]||'').trim(); if(!mgr) return;
+    if(!stats[mgr]) stats[mgr]={vis:0,deal:0};
+    stats[mgr].vis++;
+    const cmt=(r[4]||'').toLowerCase();
+    if(cmt.includes('покупка')||cmt.includes('обмен')||cmt.includes('комиссия')) stats[mgr].deal++;
+  });
+
+  const sorted = mgrs.map(n=>({name:n,...(stats[n]||{vis:0,deal:0})}))
+    .sort((a,b)=>b.vis-a.vis);
+
+  const max = sorted[0]?.vis||1;
+  const rankColors = ['#FFD700','#C0C0C0','#CD7F32'];
+
+  el.innerHTML = `<div class="sec-title" style="margin-top:4px">Топ по визитам</div>` +
+    sorted.map((m,i)=>{
+      const w=Math.round(m.vis/max*100);
+      const clr=rankColors[i]||'var(--acc)';
+      return `<div class="mgr-card">
+        <div class="mgr-card-head">
+          <div class="mgr-rank" style="background:${i<3?clr+'20':'var(--bg3)'};color:${i<3?clr:'var(--txt3)'}">${i+1}</div>
+          <div class="mgr-name">${m.name.toUpperCase()}</div>
+          <div style="margin-left:auto;font-family:'Unbounded',sans-serif;font-size:14px;font-weight:900">${m.vis}</div>
+        </div>
+        <div class="prog-bar"><div class="prog-fill" style="width:${w}%;background:${clr}"></div></div>
+        <div class="mgr-mini" style="margin-top:8px">
+          <div class="mgr-mini-cell"><div class="mgr-mini-lbl">Визиты</div><div class="mgr-mini-val">${m.vis}</div></div>
+          <div class="mgr-mini-cell"><div class="mgr-mini-lbl">Сделки</div><div class="mgr-mini-val">${m.deal}</div></div>
+        </div>
+      </div>`;
+    }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+//   INCOME SCREEN (simplified)
+// ═══════════════════════════════════════════════════
+function setIncomeDept(d) {
+  S.incomeDept=d;
+  document.getElementById('income-tab-crm').classList.toggle('on',d==='crm');
+  document.getElementById('income-tab-dozhim').classList.toggle('on',d==='dozhim');
+  renderIncome();
+}
+async function renderIncome() {
+  const el = document.getElementById('income-content');
+  if (S.isCeo) document.getElementById('income-subtabs').style.display='flex';
+  el.innerHTML=`<div class="loader"><div class="spin-ring"></div>Синхронизация…</div>`;
+  el.innerHTML=`<div class="empty">Раздел доходов будет доступен в следующем обновлении.<br><br>Расчёт зарплаты доступен в <a href="https://frankiej13.github.io/crewcrm/" style="color:var(--acc)">CRM 1.0</a></div>`;
+}
+
+// ═══════════════════════════════════════════════════
+//   VISITS TABLE
+// ═══════════════════════════════════════════════════
+function initVisitsDept() {
+  const dept = S.isCeo ? S.visitsDept : (findUser()?.role==='dozhim'?'dozhim':'crm');
+  S.visitsDept = dept;
+
+  const dtabs = document.getElementById('visits-dept-tabs');
+  if (S.isCeo) {
+    dtabs.style.display='flex';
+    document.getElementById('vdt-crm').classList.toggle('on',dept==='crm');
+    document.getElementById('vdt-dozhim').classList.toggle('on',dept==='dozhim');
+  } else {
+    dtabs.style.display='none';
+  }
+
+  // Closed badge
+  checkMonthClosed();
+  const badge = document.getElementById('visits-closed-badge');
+  const addBtn = document.querySelector('.visits-toolbar-btn');
+  if (S.isReadonly) {
+    badge.style.display='';
+    // disable add button
+  } else {
+    badge.style.display='none';
+  }
+
+  loadVisits();
+}
+
+function setVisitsDept(d) {
+  S.visitsDept = d;
+  document.getElementById('vdt-crm').classList.toggle('on',d==='crm');
+  document.getElementById('vdt-dozhim').classList.toggle('on',d==='dozhim');
+  S.visits.rows = [];
+  loadVisits();
+}
+
+async function loadVisits() {
+  if (S.visits.loading) return;
+  S.visits.loading = true;
+  S.visits.dept = S.visitsDept;
+  const sheetName = getVisitSheetName(S.visitsDept);
+  S.visits.sheetName = sheetName;
+
+  const wrap = document.getElementById('vt-wrap');
+  wrap.innerHTML = `<div class="loader"><div class="spin-ring"></div>Загрузка визитов…</div>`;
+
+  // Ensure sheet exists for current month
+  const curSuffix = getSuffix(new Date());
+  if (S.currentSuffix === curSuffix) {
+    await ensureSheet(S.visitsDept, S.currentSuffix);
+  }
+
+  try {
+    const d = await apiGet(`${sheetName}!A:N`);
+    const raw = d.values || [];
+
+    // Build rows array (skip header row 1)
+    S.visits.rows = [];
+    for (let i=1; i<raw.length; i++) {
+      const r = raw[i];
+      // Pad to 14 cols
+      const data = Array.from({length:NCOLS}, (_,j)=>String(r[j]??''));
+      S.visits.rows.push({ sheetRow: i+1, data, dirty:false, isNew:false });
+    }
+    S.visits.renderOffset = Math.max(0, S.visits.rows.length - S.visits.CHUNK);
+    renderVisitsTable();
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty">Ошибка: ${e.message}</div>`;
+  }
+  S.visits.loading = false;
+}
+
+async function reloadVisits() {
+  S.visits.rows = [];
+  await loadVisits();
+}
+
+// ── RENDER TABLE ─────────────────────────────────
+function renderVisitsTable() {
+  const wrap = document.getElementById('vt-wrap');
+  const rows = S.visits.rows;
+
+  // Column widths
+  const totalW = COLS.reduce((s,c)=>s+c.w,0) + 36; // +36 for row num col
+  wrap.style.width = totalW + 'px';
+
+  const gridTpl = `36px ${COLS.map(c=>c.w+'px').join(' ')}`;
+
+  // Header
+  let html = `<div class="vt-head" style="grid-template-columns:${gridTpl}">
+    <div class="vt-head-cell" style="width:36px">#</div>
+    ${COLS.map(c=>`<div class="vt-head-cell">${c.label}</div>`).join('')}
+  </div>`;
+
+  // Group by weeks
+  const mm = parseInt(S.currentSuffix.slice(0,2));
+  const yy = 2000+parseInt(S.currentSuffix.slice(2));
+  const today = new Date();
+  const todayDay = today.getDate();
+  const isCurrentMonth = (today.getFullYear()===yy && today.getMonth()+1===mm);
+
+  const WEEKS = [
+    {label:'1 – 7', start:1, end:7},
+    {label:'8 – 14', start:8, end:14},
+    {label:'15 – 21', start:15, end:21},
+    {label:'22 – конец', start:22, end:31},
+  ];
+
+  // Assign rows to weeks by date field
+  const weekRows = WEEKS.map(()=>[]);
+  const unassigned = [];
+  rows.forEach(row => {
+    const raw = row.data[0]; // date
+    const d = parseDateDay(raw);
+    if (d === null) { unassigned.push(row); return; }
+    const w = WEEKS.findIndex(w => d>=w.start && d<=w.end);
+    if (w>=0) weekRows[w].push(row); else unassigned.push(row);
+  });
+
+  let rowIdx = 0; // display index
+  WEEKS.forEach((week, wi) => {
+    const wRows = weekRows[wi];
+    const weekEnd = week.end;
+    const isPast = isCurrentMonth ? todayDay > weekEnd : true;
+    const isCurrent = isCurrentMonth && todayDay >= week.start && todayDay <= weekEnd;
+    const collapsed = isPast && !isCurrent && wRows.length > 0;
+
+    // Add empty rows to current week at bottom
+    let displayRows = [...wRows];
+    if (isCurrent && !S.isReadonly) {
+      // Add 10 empty rows at the bottom of current week
+      for (let i=0; i<10; i++) {
+        displayRows.push({ sheetRow:-1, data:makeEmptyRow(), dirty:false, isNew:true, isEmpty:true });
+      }
+    }
+
+    html += `<div class="vt-week">
+      <div class="vt-week-hdr${collapsed?' collapsed':''}" onclick="toggleWeek(this)">
+        <svg class="vt-week-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        <span class="vt-week-title">${week.label} ${getMonthName(mm)}</span>
+        <span class="vt-week-count">${wRows.length} визитов</span>
+      </div>
+      <div class="vt-week-body${collapsed?' collapsed':''}">`;
+
+    displayRows.forEach(row => {
+      const isEmpty = row.isEmpty || row.data.every(c=>!c.trim());
+      html += renderRow(row, ++rowIdx, gridTpl, isEmpty);
+    });
+
+    html += `</div></div>`;
+  });
+
+  // Unassigned rows
+  if (unassigned.length) {
+    html += `<div class="vt-week">
+      <div class="vt-week-hdr" onclick="toggleWeek(this)">
+        <svg class="vt-week-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        <span class="vt-week-title">Без даты</span>
+        <span class="vt-week-count">${unassigned.length}</span>
+      </div>
+      <div class="vt-week-body">`;
+    unassigned.forEach(row => {
+      html += renderRow(row, ++rowIdx, gridTpl, false);
+    });
+    html += `</div></div>`;
+  }
+
+  wrap.innerHTML = html;
+
+  // Scroll to bottom (last filled row)
+  const scroll = document.getElementById('visits-scroll');
+  scroll.scrollTop = scroll.scrollHeight;
+
+  // Attach events
+  attachTableEvents();
+}
+
+function renderRow(row, idx, gridTpl, isEmpty) {
+  const matched = findUser();
+  const isLocked = S.isReadonly && !S.isCeo;
+
+  let cells = '';
+  COLS.forEach((col, ci) => {
+    const val = row.data[ci] ?? '';
+    const isMgr = col.key === 'mgr';
+    const mgrLocked = isMgr && !S.isCeo && matched?.name;
+    const locked = isLocked || mgrLocked;
+    const errClass = shouldValidate(col, val) ? ' err' : '';
+
+    cells += `<div class="vt-cell${errClass}${locked?' locked':''}" 
+      data-row="${row.sheetRow}" data-col="${ci}"
+      ${!locked?'contenteditable="true" spellcheck="false"':''}
+      ${col.type==='select'||col.type==='combo'?'data-dropdown="true"':''}
+      >${escHtml(val)}</div>`;
+  });
+
+  return `<div class="vt-row${isEmpty?' vt-empty-row':''}" style="grid-template-columns:36px ${COLS.map(c=>c.w+'px').join(' ')}" data-sheet-row="${row.sheetRow}">
+    <div class="vt-row-num">
+      <span>${isEmpty?'':idx}</span>
+      ${!isLocked?`<div class="vt-row-actions">
+        <button class="vt-row-action" onclick="insertRowBefore(${row.sheetRow})" title="Вставить строку выше">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button class="vt-row-action del" onclick="deleteRow(${row.sheetRow})" title="Удалить">
+          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+      </div>`:''}
+    </div>
+    ${cells}
+  </div>`;
+}
+
+function makeEmptyRow() {
+  const matched = findUser();
+  const row = Array(NCOLS).fill('');
+  // Auto-fill date
+  const today = new Date();
+  row[0] = String(today.getDate()).padStart(2,'0') + '.' + String(today.getMonth()+1).padStart(2,'0');
+  // Auto-fill manager (non-CEO)
+  if (matched && !S.isCeo) row[8] = matched.name;
+  return row;
+}
+
+function shouldValidate(col, val) {
+  if (!val || !val.trim()) return false; // empty is ok (just highlighted when touched)
+  if (col.key === 'phone') return val.trim().length < 10;
+  if (col.key === 'date') return !isValidDate(val);
+  return false;
+}
+
+function parseDateDay(s) {
+  if (!s) return null;
+  const str = String(s).trim();
+  // formats: "01.04", "1.4", "01.04.25", timestamp number
+  if (/^\d+$/.test(str)) return null; // skip serial numbers
+  const parts = str.split(/[.\-\/]/);
+  if (parts.length >= 1) {
+    const d = parseInt(parts[0]);
+    if (d >= 1 && d <= 31) return d;
+  }
+  return null;
+}
+
+function isValidDate(s) {
+  const d = parseDateDay(s);
+  return d !== null;
+}
+
+function getMonthName(m) {
+  return ['','янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'][m] || '';
+}
+
+function toggleWeek(hdr) {
+  hdr.classList.toggle('collapsed');
+  hdr.nextElementSibling.classList.toggle('collapsed');
+}
+
+// ── TABLE EVENTS ──────────────────────────────────
+let _activeDropdown = null;
+let _activeCell = null;
+
+function attachTableEvents() {
+  const wrap = document.getElementById('vt-wrap');
+
+  wrap.addEventListener('focusin', e => {
+    const cell = e.target.closest('.vt-cell');
+    if (!cell) return;
+    _activeCell = cell;
+    cell.classList.add('active');
+    closeDropdown();
+    // Select all text
+    const range = document.createRange();
+    range.selectNodeContents(cell);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    // Open dropdown for select/combo
+    if (cell.dataset.dropdown) showDropdown(cell);
+  });
+
+  wrap.addEventListener('focusout', e => {
+    const cell = e.target.closest('.vt-cell');
+    if (!cell) return;
+    cell.classList.remove('active');
+    onCellChange(cell);
+  });
+
+  wrap.addEventListener('keydown', e => {
+    const cell = e.target.closest('.vt-cell');
+    if (!cell) return;
+    if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey) {
+      e.preventDefault();
+      moveCellRight(cell);
+    } else if (e.key === 'Enter' && e.ctrlKey) {
+      e.preventDefault();
+      moveCellDown(cell);
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      e.shiftKey ? moveCellLeft(cell) : moveCellRight(cell);
+    } else if (e.key === 'Escape') {
+      closeDropdown();
+      cell.blur();
+    } else if (e.key === 'ArrowDown') {
+      if (_activeDropdown) { e.preventDefault(); moveDropdownSel(1); }
+    } else if (e.key === 'ArrowUp') {
+      if (_activeDropdown) { e.preventDefault(); moveDropdownSel(-1); }
+    }
+  });
+
+  // Paste handler
+  wrap.addEventListener('paste', e => {
+    const cell = e.target.closest('.vt-cell');
+    if (!cell) return;
+    const text = e.clipboardData.getData('text');
+    if (text.includes('\n') || text.includes('\t')) {
+      e.preventDefault();
+      handleTablePaste(cell, text);
+    }
+  });
+}
+
+function getCellCoords(cell) {
+  const col = parseInt(cell.dataset.col);
+  const row = cell.closest('.vt-row');
+  return { col, row };
+}
+
+function moveCellRight(cell) {
+  closeDropdown();
+  const col = parseInt(cell.dataset.col);
+  const row = cell.closest('.vt-row');
+  if (col < NCOLS - 1) {
+    const next = row.querySelectorAll('.vt-cell')[col+1];
+    if (next && !next.classList.contains('locked')) next.focus();
+  } else {
+    // Last col: go to next row first col, or create new row
+    const nextRow = row.nextElementSibling;
+    if (nextRow && nextRow.classList.contains('vt-row')) {
+      const first = nextRow.querySelectorAll('.vt-cell')[0];
+      if (first) { first.focus(); return; }
+    }
+    // Go back to first cell of current row (after filling last)
+    const firstCell = row.querySelectorAll('.vt-cell')[0];
+    if (firstCell) firstCell.focus();
+  }
+}
+
+function moveCellLeft(cell) {
+  const col = parseInt(cell.dataset.col);
+  const row = cell.closest('.vt-row');
+  if (col > 0) {
+    const prev = row.querySelectorAll('.vt-cell')[col-1];
+    if (prev && !prev.classList.contains('locked')) prev.focus();
+  }
+}
+
+function moveCellDown(cell) {
+  const col = parseInt(cell.dataset.col);
+  const row = cell.closest('.vt-row');
+  const nextRow = row.nextElementSibling;
+  if (nextRow && nextRow.classList.contains('vt-row')) {
+    const next = nextRow.querySelectorAll('.vt-cell')[col];
+    if (next && !next.classList.contains('locked')) next.focus();
+  }
+}
+
+function onCellChange(cell) {
+  const sheetRow = parseInt(cell.closest('.vt-row')?.dataset?.sheetRow || '0');
+  const col = parseInt(cell.dataset.col);
+  const val = cell.textContent.trim();
+
+  if (sheetRow <= 0) {
+    // New empty row — promote to real row
+    promoteNewRow(cell.closest('.vt-row'), val, col);
+    return;
+  }
+
+  // Update in-memory
+  const rowObj = S.visits.rows.find(r=>r.sheetRow===sheetRow);
+  if (rowObj) {
+    rowObj.data[col] = val;
+    rowObj.dirty = true;
+  }
+
+  // Debounced auto-save
+  scheduleSave(sheetRow);
+}
+
+async function promoteNewRow(rowEl, val, col) {
+  if (!val) return;
+  const matched = findUser();
+  const newData = makeEmptyRow();
+  newData[col] = val;
+  rowEl.querySelectorAll('.vt-cell').forEach((c,i) => {
+    if (c.textContent.trim()) newData[i] = c.textContent.trim();
+  });
+
+  // Append to sheet
+  showSaveIndicator('saving');
+  try {
+    await apiAppend(S.visits.sheetName+'!A:N', [newData]);
+    // Add to in-memory rows
+    const newSheetRow = (S.visits.rows.at(-1)?.sheetRow||1) + 1;
+    S.visits.rows.push({ sheetRow:newSheetRow, data:newData, dirty:false, isNew:false });
+    showSaveIndicator('saved');
+    // Re-render to get proper row number
+    renderVisitsTable();
+  } catch(e) {
+    showSaveIndicator('error');
+    toast('Ошибка сохранения: ' + e.message, 'e');
+  }
+}
+
+// ── SAVE ──────────────────────────────────────────
+const _saveTimers = {};
+function scheduleSave(sheetRow) {
+  clearTimeout(_saveTimers[sheetRow]);
+  showSaveIndicator('saving');
+  _saveTimers[sheetRow] = setTimeout(()=>saveRow(sheetRow), 800);
+}
+
+async function saveRow(sheetRow) {
+  const rowObj = S.visits.rows.find(r=>r.sheetRow===sheetRow);
+  if (!rowObj || !rowObj.dirty) return;
+  const range = `${S.visits.sheetName}!A${sheetRow}:N${sheetRow}`;
+  try {
+    await apiPut(range, [rowObj.data]);
+    rowObj.dirty = false;
+    showSaveIndicator('saved');
+  } catch(e) {
+    showSaveIndicator('error');
+    toast('Ошибка: ' + e.message, 'e');
+  }
+}
+
+function showSaveIndicator(state) {
+  const el = document.getElementById('save-indicator');
+  const spin = document.getElementById('save-spin');
+  const txt  = document.getElementById('save-text');
+  el.classList.add('on');
+  el.className = 'on';
+  if (state==='saving') { spin.style.display=''; txt.textContent='Сохранение…'; }
+  if (state==='saved')  { spin.style.display='none'; txt.textContent='✓ Сохранено'; el.classList.add('saved'); setTimeout(()=>el.classList.remove('on'),2000); }
+  if (state==='error')  { spin.style.display='none'; txt.textContent='Ошибка'; el.classList.add('error'); }
+}
+
+// ── ADD ROW ───────────────────────────────────────
+function addVisitRow() {
+  if (S.isReadonly && !S.isCeo) { toast('Месяц закрыт', 'e'); return; }
+  // Scroll to bottom and focus first empty row
+  const scroll = document.getElementById('visits-scroll');
+  scroll.scrollTop = scroll.scrollHeight;
+  const emptyRows = document.querySelectorAll('.vt-row.vt-empty-row');
+  if (emptyRows.length) {
+    const first = emptyRows[0].querySelector('.vt-cell:not(.locked)');
+    if (first) { first.focus(); return; }
+  }
+}
+
+// ── INSERT ROW BEFORE ──────────────────────────────
+async function insertRowBefore(sheetRow) {
+  if (S.isReadonly && !S.isCeo) return;
+  if (sheetRow <= 0) return;
+
+  showSaveIndicator('saving');
+  try {
+    // Find sheet ID
+    const meta = await apiGetSheetMeta();
+    const sheet = meta.sheets.find(s=>s.properties.title===S.visits.sheetName);
+    if (!sheet) throw new Error('Sheet not found');
+    const sheetId = sheet.properties.sheetId;
+
+    // Insert row
+    await apiBatch([{
+      insertDimension: {
+        range: { sheetId, dimension:'ROWS', startIndex: sheetRow-1, endIndex: sheetRow },
+        inheritFromBefore: true
+      }
+    }]);
+
+    // Write empty row with defaults
+    const newData = makeEmptyRow();
+    await apiPut(`${S.visits.sheetName}!A${sheetRow}:N${sheetRow}`, [newData]);
+
+    // Update in-memory: shift all rows >= sheetRow
+    S.visits.rows.forEach(r => { if(r.sheetRow >= sheetRow) r.sheetRow++; });
+    S.visits.rows.splice(S.visits.rows.findIndex(r=>r.sheetRow===sheetRow+1)||0, 0,
+      { sheetRow, data:newData, dirty:false, isNew:false });
+
+    showSaveIndicator('saved');
+    renderVisitsTable();
+    // Focus the new row
+    setTimeout(()=>{
+      const newRow = document.querySelector(`.vt-row[data-sheet-row="${sheetRow}"]`);
+      if (newRow) { const c=newRow.querySelector('.vt-cell:not(.locked)'); if(c)c.focus(); }
+    }, 100);
+  } catch(e) {
+    showSaveIndicator('error');
+    toast('Ошибка вставки: '+e.message, 'e');
+  }
+}
+
+// ── DELETE ROW ────────────────────────────────────
+let _deletedRow = null;
+let _deleteTimer = null;
+let _deleteCountdown = null;
+
+async function deleteRow(sheetRow) {
+  if (sheetRow <= 0) return;
+  const rowObj = S.visits.rows.find(r=>r.sheetRow===sheetRow);
+  if (!rowObj) return;
+
+  // Optimistic UI
+  const rowEl = document.querySelector(`.vt-row[data-sheet-row="${sheetRow}"]`);
+  if (rowEl) rowEl.classList.add('deleting');
+
+  // Save for undo
+  _deletedRow = { sheetRow, data:[...rowObj.data], rowEl };
+  clearTimeout(_deleteTimer);
+
+  // Show undo toast
+  let timeLeft = 10;
+  document.getElementById('undo-timer').textContent = timeLeft;
+  document.getElementById('undo-toast').classList.add('on');
+  _deleteCountdown = setInterval(()=>{
+    timeLeft--;
+    document.getElementById('undo-timer').textContent = timeLeft;
+    if (timeLeft <= 0) { clearInterval(_deleteCountdown); commitDelete(); }
+  }, 1000);
+  _deleteTimer = setTimeout(commitDelete, 10000);
+}
+
+async function commitDelete() {
+  clearInterval(_deleteCountdown);
+  clearTimeout(_deleteTimer);
+  document.getElementById('undo-toast').classList.remove('on');
+  if (!_deletedRow) return;
+
+  const { sheetRow } = _deletedRow;
+  _deletedRow = null;
+
+  try {
+    const meta = await apiGetSheetMeta();
+    const sheet = meta.sheets.find(s=>s.properties.title===S.visits.sheetName);
+    if (!sheet) throw new Error('Sheet not found');
+    await apiBatch([{
+      deleteDimension: {
+        range:{ sheetId:sheet.properties.sheetId, dimension:'ROWS', startIndex:sheetRow-1, endIndex:sheetRow }
+      }
+    }]);
+    const idx = S.visits.rows.findIndex(r=>r.sheetRow===sheetRow);
+    if (idx>=0) S.visits.rows.splice(idx,1);
+    S.visits.rows.forEach(r=>{ if(r.sheetRow>sheetRow) r.sheetRow--; });
+    renderVisitsTable();
+  } catch(e) { toast('Ошибка удаления: '+e.message,'e'); }
+}
+
+function undoDelete() {
+  clearInterval(_deleteCountdown);
+  clearTimeout(_deleteTimer);
+  document.getElementById('undo-toast').classList.remove('on');
+  if (_deletedRow?.rowEl) _deletedRow.rowEl.classList.remove('deleting');
+  _deletedRow = null;
+}
+
+// ── DROPDOWN ──────────────────────────────────────
+function showDropdown(cell) {
+  closeDropdown();
+  const col = parseInt(cell.dataset.col);
+  const colDef = COLS[col];
+  if (!colDef?.options) return;
+
+  const rect = cell.getBoundingClientRect();
+  const dp = document.createElement('div');
+  dp.className = 'vt-dropdown';
+  dp.style.cssText = `top:${rect.bottom}px;left:${rect.left}px;min-width:${rect.width}px`;
+  const cur = cell.textContent.trim();
+  dp.innerHTML = colDef.options.map(o=>
+    `<div class="vt-dropdown-item${o===cur?' selected':''}" onclick="selectDropdownItem(this,'${escHtml(o)}')">${o}</div>`
+  ).join('');
+  document.body.appendChild(dp);
+  _activeDropdown = dp;
+  _activeDropdownCell = cell;
+}
+
+let _activeDropdownCell = null;
+function selectDropdownItem(item, val) {
+  if (_activeDropdownCell) {
+    _activeDropdownCell.textContent = val;
+    onCellChange(_activeDropdownCell);
+    closeDropdown();
+    moveCellRight(_activeDropdownCell);
+  }
+}
+function closeDropdown() {
+  if (_activeDropdown) { _activeDropdown.remove(); _activeDropdown=null; _activeDropdownCell=null; }
+}
+function moveDropdownSel(dir) {
+  if (!_activeDropdown) return;
+  const items = [..._activeDropdown.querySelectorAll('.vt-dropdown-item')];
+  const cur = items.findIndex(i=>i.classList.contains('selected'));
+  const next = Math.max(0,Math.min(items.length-1,(cur<0?0:cur)+dir));
+  items.forEach(i=>i.classList.remove('selected'));
+  items[next]?.classList.add('selected');
+  items[next]?.scrollIntoView({block:'nearest'});
+}
+
+// ── PASTE FROM EXCEL ─────────────────────────────
+function handleTablePaste(anchorCell, text) {
+  const lines = text.trim().split('\n').map(l=>l.split('\t'));
+  const startCol = parseInt(anchorCell.dataset.col);
+  const startRow = anchorCell.closest('.vt-row');
+
+  // Get all rows from anchor position
+  let curRow = startRow;
+  let newRows = [];
+
+  lines.forEach((lineCols, li) => {
+    if (!curRow) {
+      // Need to add new rows
+      newRows.push(lineCols);
+      return;
+    }
+    const cells = [...curRow.querySelectorAll('.vt-cell')];
+    lineCols.forEach((val, ci) => {
+      const cell = cells[startCol+ci];
+      if (cell && !cell.classList.contains('locked')) {
+        cell.textContent = val.trim();
+        onCellChange(cell);
+      }
+    });
+    curRow = curRow.nextElementSibling?.classList.contains('vt-row')
+      ? curRow.nextElementSibling : null;
+  });
+
+  // Append remaining new rows
+  if (newRows.length) {
+    const matched = findUser();
+    const rowsData = newRows.map(cols => {
+      const data = makeEmptyRow();
+      cols.forEach((v,i) => { if(startCol+i<NCOLS) data[startCol+i]=v.trim(); });
+      return data;
+    });
+    showSaveIndicator('saving');
+    apiAppend(S.visits.sheetName+'!A:N', rowsData)
+      .then(()=>{ showSaveIndicator('saved'); reloadVisits(); })
+      .catch(e=>{ showSaveIndicator('error'); toast('Ошибка вставки: '+e.message,'e'); });
+  }
+}
+
+// ── IMPORT OVERLAY ────────────────────────────────
+function openImport() {
+  document.getElementById('import-overlay').classList.add('on');
+  document.getElementById('import-textarea').value = '';
+  document.getElementById('import-textarea').focus();
+}
+function closeImport() { document.getElementById('import-overlay').classList.remove('on'); }
+function doImport() {
+  const text = document.getElementById('import-textarea').value.trim();
+  if (!text) { closeImport(); return; }
+  closeImport();
+  const fake = document.createElement('div');
+  fake.dataset.col = '0';
+  const firstRow = document.querySelector('.vt-row');
+  if (firstRow) fake._row = firstRow;
+  handleTablePaste({ dataset:{col:'0'}, closest:()=>document.querySelector('.vt-row'), textContent:'' }, text);
+}
+
+// ═══════════════════════════════════════════════════
+//   BACKGROUND LOAD
+// ═══════════════════════════════════════════════════
+async function backgroundLoad() {
+  const matched = findUser();
+  const isDozhim = matched?.role==='dozhim';
+  const tasks = [];
+
+  if (!S.data.plan)   tasks.push(()=>apiGet(getPlanSheetName()+'!A:B').then(d=>S.data.plan=d.values||[]).catch(()=>{}));
+  if (!S.data.vizity) tasks.push(()=>apiGet(getVisitSheetName('crm')+'!A:N').then(d=>S.data.vizity=d.values||[]).catch(()=>{}));
+  if ((S.isCeo||isDozhim)&&!S.data.d_vizity)
+    tasks.push(()=>apiGet(getVisitSheetName('dozhim')+'!A:N').then(d=>S.data.d_vizity=d.values||[]).catch(()=>{}));
+
+  for (const t of tasks) { await t(); await new Promise(r=>setTimeout(r,500)); }
+  // Silent refresh of current screen
+  if (S.currentScreen && S.currentScreen!=='visits') renderCurrentScreen();
+}
+
+// ═══════════════════════════════════════════════════
+//   HELPERS
+// ═══════════════════════════════════════════════════
+let _tt;
+function toast(msg, type='i') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = type + ' on';
+  clearTimeout(_tt); _tt = setTimeout(()=>el.className='', 2800);
+}
+
+function closeAllDrops() {
+  document.querySelectorAll('.month-picker-drop,.theme-drop').forEach(d=>{d.classList.remove('on');});
+  closeDropdown();
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════════════════
+//   INIT
+// ═══════════════════════════════════════════════════
+document.addEventListener('click', e => {
+  if (!e.target.closest('#badge-month, .month-picker-drop'))
+    document.getElementById('month-drop')?.classList.remove('on');
+  if (!e.target.closest('#btn-theme, .theme-drop'))
+    document.getElementById('theme-drop')?.classList.remove('on');
+  if (!e.target.closest('.vt-dropdown, .vt-cell[data-dropdown]')) closeDropdown();
+});
+
+document.getElementById('btn-login').addEventListener('click', login);
+
+// Load Google API
+(function() {
+  const s = document.createElement('script');
+  s.src = 'https://accounts.google.com/gsi/client';
+  s.onload = initTokenClient;
+  document.head.appendChild(s);
+})();
+
+initSuffix();
+</script>
+
+</body>
+</html>

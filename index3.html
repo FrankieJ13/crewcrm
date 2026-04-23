@@ -6319,9 +6319,11 @@ e.preventDefault();
 function initLoginShader() {
 var canvas = document.getElementById(‘login-canvas’);
 if (!canvas) return;
+
 function setup(T) {
-var camera = new T.Camera(); camera.position.z = 1;
-var scene = new T.Scene();
+var camera   = new T.Camera();
+camera.position.z = 1;
+var scene    = new T.Scene();
 var uniforms = {
 time:       { type:‘f’,  value:1.0 },
 resolution: { type:‘v2’, value:new T.Vector2() }
@@ -6348,9 +6350,11 @@ fragmentShader: [
 });
 scene.add(new T.Mesh(new T.PlaneBufferGeometry(2,2), material));
 var renderer = new T.WebGLRenderer({ canvas:canvas, antialias:false });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 function resize() {
-renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+var w = canvas.parentElement ? canvas.parentElement.clientWidth  : window.innerWidth;
+var h = canvas.parentElement ? canvas.parentElement.clientHeight : window.innerHeight;
+renderer.setSize(w, h);
 uniforms.resolution.value.x = renderer.domElement.width;
 uniforms.resolution.value.y = renderer.domElement.height;
 }
@@ -6362,9 +6366,10 @@ uniforms.time.value += 0.05;
 renderer.render(scene, camera);
 })();
 }
+
 if (window.THREE) { setup(window.THREE); return; }
-var s = document.createElement(‘script’);
-s.src = ‘https://cdnjs.cloudflare.com/ajax/libs/three.js/89/three.min.js’;
+var s  = document.createElement(‘script’);
+s.src  = ‘https://cdnjs.cloudflare.com/ajax/libs/three.js/89/three.min.js’;
 s.onload = function(){ setup(window.THREE); };
 document.head.appendChild(s);
 }

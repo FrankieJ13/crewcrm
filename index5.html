@@ -1892,6 +1892,239 @@ body.light .rating-bar-track { background: rgba(0,0,0,.07); }
 .rating-stat b { color: var(--txt); font-weight: 700; }
 /* ===== END RATING SCREEN ===== */
 
+/* ===== VIZITY TABLE (Журнал визитов) ===== */
+#scr-vizity { padding-bottom: 88px; }
+.vt-toolbar {
+  position: sticky; top: 52px; z-index: 80;
+  background: var(--bg); border-bottom: 1px solid var(--line);
+  padding: 8px 16px; display: flex; align-items: center; gap: 8px;
+}
+.vt-dept-badge {
+  font-family: 'Unbounded', sans-serif; font-size: 9px; font-weight: 800;
+  letter-spacing: .08em; padding: 4px 10px; border-radius: 20px;
+  border: 1px solid var(--acc-bdr); background: var(--acc-bg); color: var(--acc);
+}
+.vt-lock-badge {
+  font-size: 10px; color: var(--red); display: flex; align-items: center; gap: 4px;
+  margin-left: auto;
+}
+.vt-add-btn {
+  margin-left: auto; display: flex; align-items: center; gap: 5px;
+  background: var(--acc); color: #000; border: none; border-radius: var(--r);
+  font-family: 'Unbounded', sans-serif; font-size: 10px; font-weight: 800;
+  padding: 6px 14px; cursor: pointer; transition: opacity .15s;
+}
+.vt-add-btn:hover { opacity: .85; }
+.vt-add-btn svg { width: 13px; height: 13px; }
+.vt-body { padding: 0 16px; }
+/* Week group */
+.vt-week { margin-bottom: 4px; }
+.vt-week-sum {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 4px; cursor: pointer; user-select: none;
+  font-family: 'Unbounded', sans-serif; font-size: 10px; font-weight: 800;
+  letter-spacing: .06em; color: var(--txt2);
+  border-bottom: 1px solid var(--line);
+  list-style: none;
+}
+.vt-week-sum::marker { display: none; }
+details[open] .vt-week-sum .vt-week-chevron { transform: rotate(90deg); }
+.vt-week-chevron { width: 14px; height: 14px; transition: transform .2s; flex-shrink: 0; }
+.vt-week-stats { display: flex; gap: 10px; font-size: 9px; color: var(--txt3); font-family: 'Golos Text', sans-serif; font-weight: 400; }
+.vt-week-stat b { color: var(--acc); }
+.vt-week-body { display: flex; flex-direction: column; padding-top: 4px; }
+/* Row */
+.vt-row { position: relative; }
+.vt-row-card {
+  background: var(--bg2); border: 1px solid var(--line);
+  border-radius: var(--r2); margin-bottom: 4px;
+  transition: border-color .15s;
+  overflow: hidden;
+}
+.vt-row-card:hover { border-color: var(--line2); }
+.vt-row-card.vt-expanded { border-color: var(--acc-bdr); }
+.vt-row-compact {
+  display: grid; grid-template-columns: 54px 1fr auto 32px;
+  align-items: center; gap: 8px; padding: 10px 12px;
+  cursor: pointer;
+}
+.vt-row-date {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  color: var(--txt2); flex-shrink: 0;
+}
+.vt-row-name {
+  font-size: 13px; font-weight: 600; color: var(--txt);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.vt-row-sub { font-size: 10px; color: var(--txt2); margin-top: 1px; }
+.vt-status-chip {
+  font-size: 9px; padding: 3px 7px; border-radius: 5px;
+  background: var(--bg3); border: 1px solid var(--line2);
+  color: var(--txt2); white-space: nowrap; flex-shrink: 0; max-width: 90px;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.vt-status-chip.deal  { border-color: rgba(30,144,255,.3); color: var(--blu); }
+.vt-status-chip.salon { border-color: rgba(46,213,115,.3); color: var(--grn); }
+.vt-expand-btn {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid var(--line2); background: var(--bg3); color: var(--txt3);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  flex-shrink: 0; transition: all .15s;
+}
+.vt-expand-btn svg { width: 12px; height: 12px; transition: transform .2s; }
+.vt-row-card.vt-expanded .vt-expand-btn { border-color: var(--acc); color: var(--acc); }
+.vt-row-card.vt-expanded .vt-expand-btn svg { transform: rotate(180deg); }
+/* Expanded form */
+.vt-row-form {
+  display: none; padding: 0 12px 12px; border-top: 1px solid var(--line);
+}
+.vt-row-card.vt-expanded .vt-row-form { display: block; }
+.vt-form-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;
+}
+.vt-form-grid .vt-field-full { grid-column: 1/-1; }
+.vt-field { display: flex; flex-direction: column; gap: 3px; }
+.vt-field-lbl {
+  font-size: 9px; color: var(--txt2); font-weight: 600;
+  text-transform: uppercase; letter-spacing: .05em;
+}
+.vt-field-lbl.required::after { content: ' *'; color: var(--red); }
+.vt-field input, .vt-field textarea, .vt-field select {
+  background: var(--bg3); border: 1px solid var(--line2);
+  border-radius: var(--r); color: var(--txt);
+  font-family: 'Golos Text', sans-serif; font-size: 13px;
+  padding: 7px 9px; width: 100%;
+  transition: border-color .15s;
+  outline: none; -webkit-appearance: none;
+}
+.vt-field input:focus, .vt-field textarea:focus, .vt-field select:focus {
+  border-color: var(--acc);
+}
+.vt-field input.invalid, .vt-field textarea.invalid {
+  border-color: var(--red); background: rgba(255,71,87,.06);
+}
+.vt-field textarea { resize: none; height: 54px; line-height: 1.4; }
+/* Status picker trigger */
+.vt-status-trigger {
+  background: var(--bg3); border: 1px solid var(--line2);
+  border-radius: var(--r); color: var(--txt);
+  font-family: 'Golos Text', sans-serif; font-size: 13px;
+  padding: 7px 9px; width: 100%; text-align: left;
+  cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+  transition: border-color .15s; min-height: 36px;
+}
+.vt-status-trigger:focus { border-color: var(--acc); outline: none; }
+.vt-status-trigger svg { width: 12px; height: 12px; color: var(--txt3); flex-shrink: 0; }
+/* Form action row */
+.vt-form-actions {
+  display: flex; align-items: center; gap: 8px; margin-top: 10px;
+  padding-top: 10px; border-top: 1px solid var(--line);
+}
+.vt-save-status { font-size: 10px; color: var(--txt3); }
+.vt-save-status.saving { color: var(--org); }
+.vt-save-status.saved  { color: var(--grn); }
+.vt-save-status.err    { color: var(--red); }
+.vt-del-btn {
+  margin-left: auto; background: none; border: 1px solid rgba(255,71,87,.3);
+  color: var(--red); border-radius: var(--r); padding: 5px 10px;
+  font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px;
+  transition: all .15s;
+}
+.vt-del-btn:hover { background: rgba(255,71,87,.08); }
+.vt-del-btn svg { width: 12px; height: 12px; }
+/* Insert zone */
+.vt-insert-zone {
+  height: 16px; display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .15s;
+  position: relative; cursor: pointer;
+  margin: -4px 0;
+}
+.vt-insert-zone:hover { opacity: 1; }
+.vt-insert-zone::before {
+  content: ''; position: absolute;
+  left: 0; right: 0; top: 50%; transform: translateY(-50%);
+  height: 1px; background: var(--acc); opacity: .4;
+}
+.vt-insert-zone-btn {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--acc); color: #000;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; line-height: 1;
+  position: relative; z-index: 1; flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,.3);
+}
+/* Status picker overlay */
+.vt-picker-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6);
+  backdrop-filter: blur(4px); z-index: 600;
+  display: none; align-items: flex-end; justify-content: center;
+  padding: 0 0 calc(88px + env(safe-area-inset-bottom, 0px)) 0;
+}
+.vt-picker-overlay.open { display: flex; animation: mFade .15s ease; }
+.vt-picker-modal {
+  background: var(--bg2); border: 1px solid var(--line2);
+  border-radius: var(--r2) var(--r2) 0 0;
+  width: 100%; max-width: 520px; max-height: 70vh;
+  display: flex; flex-direction: column;
+  animation: mUp .18s ease;
+}
+.vt-picker-hdr {
+  padding: 12px 16px; border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 8px;
+}
+.vt-picker-search {
+  flex: 1; background: var(--bg3); border: 1px solid var(--line2);
+  border-radius: var(--r); color: var(--txt); font-size: 13px;
+  padding: 7px 10px; outline: none;
+  font-family: 'Golos Text', sans-serif;
+}
+.vt-picker-search:focus { border-color: var(--acc); }
+.vt-picker-cancel {
+  background: none; border: none; color: var(--txt2); font-size: 13px;
+  cursor: pointer; padding: 4px 8px; border-radius: var(--r);
+}
+.vt-picker-cancel:hover { color: var(--acc); }
+.vt-picker-list { overflow-y: auto; flex: 1; }
+.vt-picker-item {
+  padding: 12px 16px; border-bottom: 1px solid var(--line);
+  cursor: pointer; font-size: 13px; color: var(--txt);
+  transition: background .1s, color .1s;
+}
+.vt-picker-item:hover { background: var(--bg3); color: var(--acc); }
+.vt-picker-item.selected { color: var(--acc); font-weight: 600; }
+/* New empty row highlight */
+.vt-row-card.vt-new {
+  border-color: var(--acc-bdr);
+  animation: vt-pulse .5s ease;
+}
+@keyframes vt-pulse {
+  0% { box-shadow: 0 0 0 0 var(--acc-bdr); }
+  70% { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: none; }
+}
+/* Undo toast overlay */
+.vt-undo-toast {
+  position: fixed; bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  left: 50%; transform: translateX(-50%);
+  background: var(--bg2); border: 1px solid var(--line2);
+  border-radius: var(--r); padding: 10px 16px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12px; color: var(--txt); z-index: 800;
+  box-shadow: 0 4px 16px rgba(0,0,0,.3); white-space: nowrap;
+  animation: up .2s ease;
+}
+.vt-undo-btn {
+  background: var(--acc); color: #000; border: none;
+  border-radius: 5px; padding: 4px 10px;
+  font-family: 'Unbounded', sans-serif; font-size: 10px; font-weight: 800;
+  cursor: pointer;
+}
+@media(max-width:420px) {
+  .vt-form-grid { grid-template-columns: 1fr; }
+  .vt-form-grid .vt-field-full { grid-column: 1; }
+}
+/* ===== END VIZITY TABLE ===== */
+
 /* ===== DOCK v2 ===== */
 /* Отступ снизу для контента */
 main { padding-bottom: 88px; }
@@ -2169,6 +2402,9 @@ body.tiffany .dock-btn:hover { background: rgba(143,179,174,0.22); }
         <div id="c-rating"></div>
       </div>
     </div>
+    <div id="scr-vizity" class="scr" style="padding:0">
+      <div id="c-vizity"></div>
+    </div>
   </main>
   <div class="page-footer">
     <div class="glitch" id="author" data-text="© Бочаров Ю.С., 2026">
@@ -2249,20 +2485,39 @@ body.tiffany .dock-btn:hover { background: rgba(143,179,174,0.22); }
       </button>
     </div>
 
-    <!-- FAQ -->
-    <div class="dock-item">
-      <button class="dock-btn" id="dock-btn-instruktsii" onclick="dockNav('instruktsii')" aria-label="FAQ">
+    <!-- FAQ — выпадающее меню -->
+    <div class="dock-item" id="dock-faq-wrap">
+      <button class="dock-btn" id="dock-btn-instruktsii" onclick="dockFaqToggle(event)" aria-label="FAQ">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 1 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17" stroke-width="2.5"/></svg>
         <span class="dock-btn-lbl">FAQ</span>
       </button>
+      <div class="dock-popup" id="dock-faq-popup">
+        <button class="dock-popup-btn" onclick="dockFaq('instr')">
+          <span class="dock-popup-dot" style="background:var(--acc)"></span>ИНСТРУКЦИИ
+        </button>
+        <button class="dock-popup-btn" onclick="dockFaq('mango')">
+          <span class="dock-popup-dot" style="background:#ff6b35"></span>MANGO
+        </button>
+        <button class="dock-popup-btn" onclick="dockFaq('links')">
+          <span class="dock-popup-dot" style="background:#2ed573"></span>ССЫЛКИ
+        </button>
+      </div>
     </div>
 
-    <!-- Отчёт (скоро) -->
-    <div class="dock-item">
-      <button class="dock-btn dock-btn-disabled" aria-label="Отчёт — скоро">
+    <!-- Отчёт (журнал визитов) -->
+    <div class="dock-item" id="dock-vizity-wrap">
+      <button class="dock-btn" id="dock-btn-vizity" onclick="dockVizityToggle(event)" aria-label="Отчёт">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
         <span class="dock-btn-lbl">Отчёт</span>
       </button>
+      <div class="dock-popup" id="dock-vizity-popup">
+        <button class="dock-popup-btn" onclick="dockVizity('crm')">
+          <span class="dock-popup-dot" style="background:#1e90ff"></span>CRM
+        </button>
+        <button class="dock-popup-btn" onclick="dockVizity('dozhim')">
+          <span class="dock-popup-dot" style="background:#ffa502"></span>ДОЖИМ
+        </button>
+      </div>
     </div>
 
   </div>
@@ -2473,23 +2728,19 @@ function toast(msg, type='i') {
 }
 
 function showScr(id) {
-  ['otchet','dohod','grafik','instruktsii','personal','rating'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity'].forEach(t => {
     const el = document.getElementById('scr-'+t);
     if (el) el.classList.remove('on');
   });
   document.getElementById('scr-'+id)?.classList.add('on');
   const gs = document.getElementById('grafik-sticky');
   if (gs) gs.style.display = id === 'grafik' ? '' : 'none';
-  // Верхние вкладки убраны — всегда скрываем
-  const floating = document.getElementById('floating-subtabs');
-  if (floating) floating.style.display = 'none';
-  const floatingDohod = document.getElementById('floating-dohod-subtabs');
-  if (floatingDohod) floatingDohod.style.display = 'none';
-  const floatingFaq = document.getElementById('floating-faq-subtabs');
-  if (floatingFaq) floatingFaq.style.display = id === 'instruktsii' ? 'flex' : 'none';
-  // Синхронизируем активную кнопку в доке
+  // Все верхние вкладки убраны
+  ['floating-subtabs','floating-dohod-subtabs','floating-faq-subtabs'].forEach(fid => {
+    const f = document.getElementById(fid); if (f) f.style.display = 'none';
+  });
   if (typeof dockSetActive === 'function') {
-    const dockId = id === 'personal' ? 'home' : (id === 'otchet' ? 'home' : id);
+    const dockId = id === 'personal' ? 'home' : id === 'otchet' ? 'home' : id;
     dockSetActive(dockId);
   }
 }
@@ -4182,8 +4433,7 @@ function schedNav(dir) {
 function renderInstruktsii() {
   const el  = document.getElementById('c-instruktsii');
   const floatingFaq = document.getElementById('floating-faq-subtabs');
-  const subtabs = `<span class="faq-subtab ${S.faqTab==='instr'?'active':''}" onclick="setFaqTab('instr')">ИНСТРУКЦИИ</span><span class="faq-subtab ${S.faqTab==='mango'?'active':''}" onclick="setFaqTab('mango')">MANGO</span><span class="faq-subtab ${S.faqTab==='links'?'active':''}" onclick="setFaqTab('links')">ССЫЛКИ</span>`;
-  if (floatingFaq) floatingFaq.innerHTML = subtabs;
+  if (floatingFaq) floatingFaq.style.display = 'none'; // вкладки убраны — управление через Dock
   if (S.faqTab === 'mango') { el.innerHTML = renderMangoTab(); return; }
   if (S.faqTab === 'links') { el.innerHTML = renderLinksTab(); initLinksTab(); return; }
   const raw = S.data.instruktsii;
@@ -6018,14 +6268,16 @@ else init();
 
 // ==================== DOCK NAVIGATION ====================
 function dockSetActive(id) {
-  ['home','kpi','rating','dohod','grafik','instruktsii'].forEach(k => {
+  ['home','kpi','rating','dohod','grafik','instruktsii','vizity'].forEach(k => {
     const btn = document.getElementById('dock-btn-' + k);
     if (btn) btn.classList.toggle('dock-active', k === id);
   });
 }
 
 function closeAllDockPopups() {
-  document.querySelectorAll('.dock-popup').forEach(p => p.classList.remove('open'));
+  ['dock-kpi-popup','dock-dohod-popup','dock-faq-popup','dock-vizity-popup'].forEach(pid => {
+    document.getElementById(pid)?.classList.remove('open');
+  });
 }
 
 // HOME = Отдел (для менеджеров — персональный экран)
@@ -6302,6 +6554,598 @@ function switchRatingDept(dept) {
     return;
   }
   renderRating();
+}
+
+// ==================== FAQ DOCK ====================
+function dockFaqToggle(e) {
+  e.stopPropagation();
+  document.getElementById('dock-kpi-popup').classList.remove('open');
+  document.getElementById('dock-dohod-popup').classList.remove('open');
+  document.getElementById('dock-vizity-popup').classList.remove('open');
+  document.getElementById('dock-faq-popup').classList.toggle('open');
+}
+function dockFaq(tab) {
+  closeAllDockPopups();
+  S.faqTab = tab;
+  goTab('instruktsii');
+  dockSetActive('instruktsii');
+}
+
+// ==================== VIZITY DOCK ====================
+function dockVizityToggle(e) {
+  e.stopPropagation();
+  const matched = findUserInSheet();
+  const isCeo = matched?.role === 'ceo';
+  if (!isCeo) {
+    closeAllDockPopups();
+    const dept = matched?.role === 'dozhim' ? 'dozhim' : 'crm';
+    dockVizity(dept);
+    return;
+  }
+  document.getElementById('dock-kpi-popup').classList.remove('open');
+  document.getElementById('dock-dohod-popup').classList.remove('open');
+  document.getElementById('dock-faq-popup').classList.remove('open');
+  document.getElementById('dock-vizity-popup').classList.toggle('open');
+}
+function dockVizity(dept) {
+  closeAllDockPopups();
+  S.vizDept = dept;
+  dockSetActive('vizity');
+  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity'].forEach(t => {
+    const el = document.getElementById('scr-'+t); if (el) el.classList.remove('on');
+  });
+  document.getElementById('scr-vizity').classList.add('on');
+  ['floating-subtabs','floating-dohod-subtabs','floating-faq-subtabs'].forEach(fid => {
+    const f = document.getElementById(fid); if (f) f.style.display = 'none';
+  });
+  const gs = document.getElementById('grafik-sticky'); if (gs) gs.style.display = 'none';
+  loadVizity();
+}
+
+// ==================== VISITS TABLE ENGINE ====================
+const VIZ_COLS = [
+  { k:'date',    lbl:'Дата',           type:'date',   req:true  },
+  { k:'name',    lbl:'ФИО',            type:'text',   req:true  },
+  { k:'phone',   lbl:'Телефон',        type:'tel',    req:false },
+  { k:'city',    lbl:'Город',          type:'text',   req:false },
+  { k:'comment', lbl:'Комментарий',    type:'text',   req:false },
+  { k:'source',  lbl:'Источник',       type:'select', req:false,
+    opts:['CRM','Тёплые лиды','Рекомендация','Повторный','Прочее'] },
+  { k:'cat',     lbl:'Категория',      type:'select', req:false,
+    opts:{ crm:['КАТ 800','КАТ 1200'], dozhim:['КАТ 800','КАТ 1000'] } },
+  { k:'deal',    lbl:'Способ покупки', type:'picker', req:false },
+  { k:'manager', lbl:'Менеджер',       type:'text',   req:true  },
+  { k:'zadatok', lbl:'Задаток',        type:'number', req:false },
+  { k:'kso',     lbl:'КСО',            type:'text',   req:false },
+  { k:'kredit',  lbl:'Кред. рейтинг',  type:'text',   req:false },
+  { k:'auto',    lbl:'Авто',           type:'text',   req:false },
+  { k:'sverka',  lbl:'Сверка',         type:'text',   req:false },
+];
+const VIZ_DEAL_OPTS = [
+  'Покупка (кредит)','Покупка (наличные)','Обмен','Комиссия',
+  'В салоне','В работе КСО','На рассмотрении банка','Подает заявку',
+  'ФССП не подаем','Отказ','Задаток','Повторный визит'
+];
+// State for vizity
+S.vizDept = null;
+S.vizRows = [];       // [{idx, data:[14 cells], _sheetRow}]
+S.vizRenderFrom = 0; // first rendered index (for virtual load)
+S._vizUndoTimer = null;
+S._vizSaveTimers = {};
+S._vizSheetIdCache = {};
+S._vizPickerCallback = null;
+
+function isVizLocked() {
+  const matched = findUserInSheet();
+  if (matched?.role === 'ceo') return false;
+  const mo = parseInt(currentSuffix.slice(0,2));
+  const yr = 2000 + parseInt(currentSuffix.slice(2,4));
+  const now = new Date();
+  if (now.getFullYear() > yr || (now.getFullYear() === yr && now.getMonth()+1 > mo)) {
+    return now.getDate() > 3;
+  }
+  return false;
+}
+
+function vizSheetName() {
+  const dept = S.vizDept || 'crm';
+  return dept === 'dozhim' ? SHEETS.d_vizity : SHEETS.vizity;
+}
+
+function todayStr() {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+}
+
+function parseVizDate(str) {
+  if (!str) return null;
+  const m = str.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  if (m) return new Date(+m[3], +m[2]-1, +m[1]);
+  const d = new Date(str);
+  return isNaN(d) ? null : d;
+}
+
+function vizWeekOf(d) {
+  if (!d) return 4;
+  const day = d.getDate();
+  if (day <= 7)  return 1;
+  if (day <= 14) return 2;
+  if (day <= 21) return 3;
+  return 4;
+}
+
+function currentWeekNum() {
+  const day = new Date().getDate();
+  if (day <= 7)  return 1;
+  if (day <= 14) return 2;
+  if (day <= 21) return 3;
+  return 4;
+}
+
+async function loadVizity() {
+  const el = document.getElementById('c-vizity');
+  if (!el) return;
+  const sheet = vizSheetName();
+  el.innerHTML = `<div class="loader"><div class="spin"></div><span>Загрузка визитов…</span></div>`;
+
+  // Ensure sheet exists
+  await ensureVizSheet(sheet);
+
+  let raw = [];
+  try { raw = await api(sheet, 'A:N'); }
+  catch(e) {
+    if (e.message !== 'auth') el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
+    return;
+  }
+  // raw[0] = headers, raw[1..] = data
+  S.vizRows = raw.slice(1).map((row, i) => ({
+    idx: i,
+    _sheetRow: i + 2, // 1-based: row 1 = header, row 2 = first data
+    data: Array.from({length:14}, (_, c) => row[c] || '')
+  }));
+  renderVizity();
+}
+
+async function ensureVizSheet(sheetName) {
+  // Try to get sheet list
+  try {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}?fields=sheets.properties`;
+    const r = await fetch(url, { headers:{ Authorization:'Bearer '+S.token }});
+    if (!r.ok) return;
+    const data = await r.json();
+    const exists = data.sheets?.some(s => s.properties.title === sheetName);
+    if (!exists) await createVizSheet(sheetName, data.sheets);
+    // Cache sheet IDs
+    (data.sheets || []).forEach(s => { S._vizSheetIdCache[s.properties.title] = s.properties.sheetId; });
+  } catch(e) {}
+}
+
+async function createVizSheet(sheetName) {
+  const headers = VIZ_COLS.map(c => c.lbl);
+  try {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`;
+    await fetch(url, {
+      method:'POST', headers:{ Authorization:'Bearer '+S.token, 'Content-Type':'application/json' },
+      body: JSON.stringify({ requests:[{ addSheet:{ properties:{ title:sheetName }}}] })
+    });
+    // Add headers
+    const hUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(sheetName+'!A1:N1')}?valueInputOption=RAW`;
+    await fetch(hUrl, {
+      method:'PUT', headers:{ Authorization:'Bearer '+S.token, 'Content-Type':'application/json' },
+      body: JSON.stringify({ values:[headers] })
+    });
+    // Re-cache
+    await ensureVizSheet(sheetName);
+    toast('Лист создан: '+sheetName, 's');
+  } catch(e) { toast('Ошибка создания листа', 'e'); }
+}
+
+async function getVizSheetId(sheetName) {
+  if (S._vizSheetIdCache[sheetName] !== undefined) return S._vizSheetIdCache[sheetName];
+  await ensureVizSheet(sheetName);
+  return S._vizSheetIdCache[sheetName] ?? null;
+}
+
+function renderVizity() {
+  const el = document.getElementById('c-vizity');
+  if (!el) return;
+  const dept = S.vizDept || 'crm';
+  const locked = isVizLocked();
+  const matched = findUserInSheet();
+  const myName = matched?.name || '';
+
+  // Determine week label
+  const mo = parseInt(currentSuffix.slice(0,2));
+  const yr = 2000 + parseInt(currentSuffix.slice(2,4));
+  const dim = new Date(yr, mo, 0).getDate();
+  const weekRanges = [[1,7],[8,14],[15,21],[22,dim]];
+  const nowWeek = currentWeekNum();
+  const curMo = new Date().getMonth()+1;
+  const curYr = new Date().getFullYear();
+  const isCurrentMonth = (curYr===yr && curMo===mo);
+
+  // Group rows by week
+  const groups = [[], [], [], []];
+  S.vizRows.forEach(row => {
+    const d = parseVizDate(row.data[0]);
+    const wk = d ? vizWeekOf(d) : 4;
+    groups[wk-1].push(row);
+  });
+
+  const weekHTML = weekRanges.map(([start, end], wi) => {
+    const wk = wi+1;
+    const isCurrentWk = isCurrentMonth && wk === nowWeek;
+    const isPastWk = isCurrentMonth ? wk < nowWeek : true;
+    const rows = groups[wi];
+    const visCount = rows.length;
+    const dealCount = rows.filter(r => ['Покупка (кредит)','Покупка (наличные)','Обмен','Комиссия'].some(d => r.data[7]?.includes(d.split(' ')[0]))).length;
+    const openAttr = (isCurrentWk || !isPastWk) ? 'open' : '';
+
+    const rowsHTML = rows.map(row => renderVizRow(row, dept, locked)).join('');
+    const insertZone = (isCurrentWk && !locked)
+      ? `<div class="vt-insert-zone" onclick="vizAddRow(${groups[wi].length > 0 ? groups[wi][groups[wi].length-1]._sheetRow : -1})"><div class="vt-insert-zone-btn">+</div></div>` : '';
+
+    const addBtn = isCurrentWk && !locked
+      ? `<div style="text-align:center;padding:8px 0 4px">
+           <button class="vt-add-btn" onclick="vizAddRow(-1)">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+             Добавить визит
+           </button>
+         </div>` : '';
+
+    const wkLabel = `${start}–${end}`;
+    const moName = new Date(yr,mo-1,1).toLocaleString('ru',{month:'long'});
+
+    return `<details class="vt-week" ${openAttr}>
+      <summary class="vt-week-sum">
+        <div style="display:flex;align-items:center;gap:8px">
+          <svg class="vt-week-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          ${wkLabel} ${moName}${isCurrentWk?' <span style="color:var(--acc);font-size:8px;margin-left:4px">● сейчас</span>':''}
+        </div>
+        <div class="vt-week-stats">
+          <span><b>${visCount}</b> визитов</span>
+          ${dealCount > 0 ? `<span><b>${dealCount}</b> сделок</span>` : ''}
+        </div>
+      </summary>
+      <div class="vt-week-body">
+        ${rowsHTML}
+        ${insertZone}
+        ${addBtn}
+      </div>
+    </details>`;
+  }).join('');
+
+  const lockedBadge = locked
+    ? `<span class="vt-lock-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Месяц закрыт</span>` : '';
+  const addBtnTop = !locked
+    ? `<button class="vt-add-btn" onclick="vizAddRow(-1)">
+         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Новый визит
+       </button>` : '';
+
+  el.innerHTML = `
+    <div class="vt-toolbar">
+      <span class="vt-dept-badge">${dept === 'dozhim' ? 'ДОЖИМ' : 'CRM'}</span>
+      ${lockedBadge}
+      ${addBtnTop}
+    </div>
+    <div class="vt-body">${weekHTML}</div>
+  `;
+}
+
+function renderVizRow(row, dept, locked) {
+  const d = row.data;
+  const name    = d[1] || '—';
+  const dateStr = d[0] || '—';
+  const deal    = d[7] || '';
+  const manager = d[8] || '';
+  const cat     = d[6] || '';
+  const dealChip = deal
+    ? `<span class="vt-status-chip ${['Покупка','Обмен','Комиссия'].some(x=>deal.includes(x))?'deal':deal.includes('салоне')?'salon':''}">${deal}</span>` : '';
+
+  const formHTML = locked ? '' : renderVizForm(row, dept);
+
+  return `
+    <div class="vt-row" id="vt-row-${row._sheetRow}">
+      <div class="vt-row-card" id="vt-card-${row._sheetRow}">
+        <div class="vt-row-compact" onclick="vizToggleExpand(${row._sheetRow})">
+          <span class="vt-row-date">${dateStr.slice(0,5)}</span>
+          <div>
+            <div class="vt-row-name">${name}</div>
+            <div class="vt-row-sub">${manager}${cat?' · '+cat:''}</div>
+          </div>
+          ${dealChip}
+          <button class="vt-expand-btn" onclick="event.stopPropagation();vizToggleExpand(${row._sheetRow})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+        </div>
+        ${formHTML}
+      </div>
+    </div>`;
+}
+
+function renderVizForm(row, dept) {
+  const d = row.data;
+  const catOpts = VIZ_COLS[6].opts[dept] || VIZ_COLS[6].opts.crm;
+
+  function field(idx, gridClass='') {
+    const col = VIZ_COLS[idx];
+    const val = d[idx] || '';
+    const lblCls = col.req ? 'vt-field-lbl required' : 'vt-field-lbl';
+    let input = '';
+    if (col.type === 'date') {
+      // Convert DD.MM.YYYY to YYYY-MM-DD for input type=date
+      let dateVal = '';
+      const m = val.match(/^(\d{2})\.(\d{2})\.(\d{4})/);
+      if (m) dateVal = `${m[3]}-${m[2]}-${m[1]}`;
+      else if (/^\d{4}-\d{2}-\d{2}/.test(val)) dateVal = val;
+      input = `<input type="date" value="${dateVal}" data-row="${row._sheetRow}" data-col="${idx}"
+        oninput="vizOnChange(this)" class="${!val?'invalid':''}">`;
+    } else if (col.type === 'select' && Array.isArray(col.opts)) {
+      input = `<select data-row="${row._sheetRow}" data-col="${idx}" onchange="vizOnChange(this)">
+        <option value=""></option>
+        ${col.opts.map(o=>`<option ${val===o?'selected':''}>${o}</option>`).join('')}
+      </select>`;
+    } else if (col.type === 'select' && typeof col.opts === 'object') {
+      input = `<select data-row="${row._sheetRow}" data-col="${idx}" onchange="vizOnChange(this)">
+        <option value=""></option>
+        ${catOpts.map(o=>`<option ${val===o?'selected':''}>${o}</option>`).join('')}
+      </select>`;
+    } else if (col.type === 'picker') {
+      input = `<button class="vt-status-trigger" onclick="openVizPicker(${row._sheetRow},${idx},this)"
+        data-row="${row._sheetRow}" data-col="${idx}" id="vtpick-${row._sheetRow}-${idx}">
+        <span>${val || '<span style=\'color:var(--txt3)\'>Выбрать…</span>'}</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>`;
+    } else if (col.type === 'number') {
+      input = `<input type="number" value="${val}" placeholder="0"
+        data-row="${row._sheetRow}" data-col="${idx}" oninput="vizOnChange(this)">`;
+    } else {
+      input = `<input type="text" value="${val}" placeholder="${col.lbl}"
+        data-row="${row._sheetRow}" data-col="${idx}" oninput="vizOnChange(this)"
+        class="${col.req && !val ? 'invalid' : ''}">`;
+    }
+    return `<div class="vt-field ${gridClass}">
+      <label class="${lblCls}">${col.lbl}</label>
+      ${input}
+    </div>`;
+  }
+
+  return `<div class="vt-row-form">
+    <div class="vt-form-grid">
+      ${field(0)}${field(8)}
+      ${field(1,'vt-field-full')}
+      ${field(2)}${field(3)}
+      ${field(6)}${field(7)}
+      ${field(5)}${field(9)}
+      ${field(4,'vt-field-full')}
+      ${field(10)}${field(11)}
+      ${field(12)}${field(13)}
+    </div>
+    <div class="vt-form-actions">
+      <span class="vt-save-status" id="vt-status-${row._sheetRow}">Изменения не сохранены</span>
+      <button class="vt-del-btn" onclick="vizDeleteRow(${row._sheetRow})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        Удалить
+      </button>
+    </div>
+  </div>`;
+}
+
+function vizToggleExpand(sheetRow) {
+  const card = document.getElementById('vt-card-'+sheetRow);
+  if (!card) return;
+  card.classList.toggle('vt-expanded');
+}
+
+function vizOnChange(el) {
+  const sheetRow = +el.dataset.row;
+  const col      = +el.dataset.col;
+  let val = el.value;
+  // Convert date back to DD.MM.YYYY
+  if (VIZ_COLS[col].type === 'date' && /^\d{4}-\d{2}-\d{2}/.test(val)) {
+    const p = val.split('-');
+    val = `${p[2]}.${p[1]}.${p[0]}`;
+  }
+  // Update local state
+  const row = S.vizRows.find(r => r._sheetRow === sheetRow);
+  if (row) row.data[col] = val;
+  // Validate required
+  if (VIZ_COLS[col].req && !val) el.classList.add('invalid');
+  else el.classList.remove('invalid');
+  // Debounce save
+  const statusEl = document.getElementById('vt-status-'+sheetRow);
+  if (statusEl) { statusEl.className='vt-save-status saving'; statusEl.textContent='Сохранение…'; }
+  clearTimeout(S._vizSaveTimers[sheetRow]);
+  S._vizSaveTimers[sheetRow] = setTimeout(() => vizSaveRow(sheetRow, statusEl), 800);
+}
+
+async function vizSaveRow(sheetRow, statusEl) {
+  const row = S.vizRows.find(r => r._sheetRow === sheetRow);
+  if (!row) return;
+  try {
+    await vizUpdateRow(vizSheetName(), sheetRow, row.data);
+    if (statusEl) { statusEl.className='vt-save-status saved'; statusEl.textContent='✓ Сохранено'; }
+    setTimeout(() => { if(statusEl) { statusEl.className='vt-save-status'; statusEl.textContent=''; } }, 2500);
+  } catch(e) {
+    if (statusEl) { statusEl.className='vt-save-status err'; statusEl.textContent='Ошибка сохранения'; }
+  }
+}
+
+async function vizUpdateRow(sheetName, sheetRow, rowData) {
+  const range = encodeURIComponent(sheetName + '!A' + sheetRow + ':N' + sheetRow);
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
+  const r = await fetch(url, {
+    method: 'PUT',
+    headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ values: [rowData] })
+  });
+  if (!r.ok) throw new Error('Sheets API error');
+}
+
+async function vizAddRow(afterSheetRow) {
+  if (isVizLocked()) return;
+  const matched = findUserInSheet();
+  const newData = Array(14).fill('');
+  newData[0] = todayStr();
+  newData[8] = matched?.name || '';
+
+  // Append to sheet
+  const sheet = vizSheetName();
+  let newSheetRow;
+  try {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(sheet+'!A:N')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: [newData] })
+    });
+    if (!r.ok) throw new Error();
+    const res = await r.json();
+    const updRange = res.updates?.updatedRange || '';
+    const m = updRange.match(/(\d+)$/);
+    newSheetRow = m ? +m[1] : (S.vizRows.length + 2);
+  } catch(e) { toast('Ошибка добавления строки', 'e'); return; }
+
+  const newRow = { idx: S.vizRows.length, _sheetRow: newSheetRow, data: newData };
+  S.vizRows.push(newRow);
+  renderVizity();
+
+  // Expand new row
+  setTimeout(() => {
+    const card = document.getElementById('vt-card-'+newSheetRow);
+    if (card) {
+      card.classList.add('vt-expanded','vt-new');
+      card.scrollIntoView({ behavior:'smooth', block:'center' });
+    }
+  }, 50);
+}
+
+async function vizDeleteRow(sheetRow) {
+  const rowEl = document.getElementById('vt-row-'+sheetRow);
+  if (!rowEl) return;
+  const row = S.vizRows.find(r => r._sheetRow === sheetRow);
+  if (!row) return;
+  const snapshot = { ...row, data: [...row.data] };
+
+  // Remove from DOM immediately
+  rowEl.style.opacity = '0.3';
+  rowEl.style.pointerEvents = 'none';
+
+  // Show undo toast
+  if (S._vizUndoTimer) { clearTimeout(S._vizUndoTimer); document.getElementById('vt-undo-toast')?.remove(); }
+  let undone = false;
+  const toastEl = document.createElement('div');
+  toastEl.id = 'vt-undo-toast'; toastEl.className = 'vt-undo-toast';
+  toastEl.innerHTML = `<span>Строка удалена</span><button class="vt-undo-btn" onclick="vizUndoDelete()">ОТМЕНА</button><span id="vt-undo-timer" style="color:var(--txt3);font-size:11px">10</span>`;
+  document.body.appendChild(toastEl);
+  let sec = 10;
+  const tick = setInterval(() => {
+    sec--; const tEl = document.getElementById('vt-undo-timer');
+    if (tEl) tEl.textContent = sec;
+    if (sec <= 0) { clearInterval(tick); if(!undone) commitVizDelete(sheetRow, snapshot); }
+  }, 1000);
+
+  S._vizUndoTimer = setTimeout(() => {}, 10500);
+  window._vizUndoPending = { sheetRow, snapshot, tick, rowEl };
+}
+
+async function vizUndoDelete() {
+  const p = window._vizUndoPending;
+  if (!p) return;
+  clearInterval(p.tick);
+  p.rowEl.style.opacity = '';
+  p.rowEl.style.pointerEvents = '';
+  document.getElementById('vt-undo-toast')?.remove();
+  window._vizUndoPending = null;
+}
+
+async function commitVizDelete(sheetRow, snapshot) {
+  document.getElementById('vt-undo-toast')?.remove();
+  window._vizUndoPending = null;
+  // Remove from local state
+  S.vizRows = S.vizRows.filter(r => r._sheetRow !== sheetRow);
+  // API delete
+  const sheet = vizSheetName();
+  const sheetId = await getVizSheetId(sheet);
+  if (sheetId === null) { renderVizity(); return; }
+  try {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`;
+    await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requests:[{
+        deleteDimension:{ range:{ sheetId, dimension:'ROWS', startIndex: sheetRow-1, endIndex: sheetRow }}
+      }]})
+    });
+    // Shift _sheetRow for rows below
+    S.vizRows.forEach(r => { if (r._sheetRow > sheetRow) r._sheetRow--; });
+  } catch(e) { toast('Ошибка удаления', 'e'); }
+  renderVizity();
+}
+
+// Status picker
+function openVizPicker(sheetRow, colIdx, btnEl) {
+  S._vizPickerCallback = (val) => {
+    const el = document.getElementById(`vtpick-${sheetRow}-${colIdx}`);
+    if (el) el.querySelector('span').innerHTML = val || `<span style='color:var(--txt3)'>Выбрать…</span>`;
+    const row = S.vizRows.find(r => r._sheetRow === sheetRow);
+    if (row) {
+      row.data[colIdx] = val;
+      const statusEl = document.getElementById('vt-status-'+sheetRow);
+      if (statusEl) { statusEl.className='vt-save-status saving'; statusEl.textContent='Сохранение…'; }
+      clearTimeout(S._vizSaveTimers[sheetRow]);
+      S._vizSaveTimers[sheetRow] = setTimeout(() => vizSaveRow(sheetRow, statusEl), 800);
+    }
+  };
+  const curVal = S.vizRows.find(r=>r._sheetRow===sheetRow)?.data[colIdx] || '';
+  renderVizPicker(VIZ_DEAL_OPTS, curVal);
+}
+
+function renderVizPicker(opts, curVal) {
+  let overlay = document.getElementById('vt-picker-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'vt-picker-overlay';
+    overlay.className = 'vt-picker-overlay';
+    overlay.onclick = (e) => { if (e.target === overlay) closeVizPicker(); };
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = `
+    <div class="vt-picker-modal">
+      <div class="vt-picker-hdr">
+        <input class="vt-picker-search" placeholder="Поиск или введите вручную…" oninput="filterVizPicker(this.value)" id="vt-picker-search" autofocus>
+        <button class="vt-picker-cancel" onclick="closeVizPicker()">Отмена</button>
+      </div>
+      <div class="vt-picker-list" id="vt-picker-list">
+        ${opts.map(o=>`<div class="vt-picker-item ${o===curVal?'selected':''}" onclick="selectVizPicker('${o.replace(/'/g,"\\'")}')">${o}</div>`).join('')}
+      </div>
+    </div>`;
+  overlay.classList.add('open');
+  setTimeout(() => overlay.querySelector('#vt-picker-search')?.focus(), 100);
+  overlay._opts = opts;
+  overlay._curVal = curVal;
+}
+
+function filterVizPicker(q) {
+  const overlay = document.getElementById('vt-picker-overlay');
+  const list = document.getElementById('vt-picker-list');
+  if (!list || !overlay) return;
+  const opts = overlay._opts || VIZ_DEAL_OPTS;
+  const ql = q.toLowerCase();
+  const filtered = opts.filter(o => o.toLowerCase().includes(ql));
+  const freeEntry = q && !opts.some(o => o.toLowerCase() === ql)
+    ? `<div class="vt-picker-item" onclick="selectVizPicker('${q.replace(/'/g,"\\'")}')">✏️ «${q}»</div>` : '';
+  list.innerHTML = filtered.map(o=>`<div class="vt-picker-item" onclick="selectVizPicker('${o.replace(/'/g,"\\'")}')">${o}</div>`).join('') + freeEntry;
+}
+
+function selectVizPicker(val) {
+  closeVizPicker();
+  if (S._vizPickerCallback) { S._vizPickerCallback(val); S._vizPickerCallback = null; }
+}
+
+function closeVizPicker() {
+  const overlay = document.getElementById('vt-picker-overlay');
+  if (overlay) overlay.classList.remove('open');
 }
 
 // ==================== BACKGROUND ORBS ====================

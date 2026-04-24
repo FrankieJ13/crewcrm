@@ -1072,8 +1072,8 @@ body.light #author {
     text-shadow: 0 0 5px rgba(26, 122, 46, 0.5);
 }
 #toast {
-  position:fixed; bottom:20px; left:50%;
-  transform:translateX(-50%) translateY(16px);
+  position:fixed; top:56px; left:50%;
+  transform:translateX(-50%) translateY(-12px);
   padding:9px 16px; border-radius:var(--r);
   font-size:13px; opacity:0; pointer-events:none;
   transition:all .25s; z-index:999; white-space:nowrap;
@@ -1955,14 +1955,15 @@ body.light .vt-undo-btn,
 body.light .center-login-btn,
 body.light .report-subtab.active,
 body.light .rating-dept-btn.on,
-body.light .dock-btn.dock-active,
 body.tiffany .vt-add-btn,
 body.tiffany .vt-insert-zone-btn,
 body.tiffany .vt-undo-btn,
 body.tiffany .center-login-btn,
 body.tiffany .report-subtab.active,
-body.tiffany .rating-dept-btn.on,
-body.tiffany .dock-btn.dock-active { color: #fff; }
+body.tiffany .rating-dept-btn.on { color: #fff; }
+/* Активный пункт дока в светлых темах — чёрный текст на acc-фоне */
+body.light .dock-btn.dock-active,
+body.tiffany .dock-btn.dock-active { color: #000 !important; }
 /* Кнопки с полной acc-заливкой */
 body.light button[style*="background:var(--acc)"],
 body.light [style*="background: var(--acc)"],
@@ -2195,27 +2196,27 @@ details[open] .vt-week-sum .vt-week-chevron { transform: rotate(90deg); }
 /* Scroll buttons */
 .vt-scroll-btns {
   position: fixed;
-  right: 12px;
-  bottom: calc(10px + env(safe-area-inset-bottom, 0px) + 8px);
+  right: 14px;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   display: none;
   flex-direction: row;
-  gap: 6px;
+  gap: 8px;
   z-index: 210;
   align-items: center;
 }
 .vt-scroll-btns.visible { display: flex; }
 .vt-scroll-btn {
-  width: 34px; height: 34px; border-radius: 50%;
-  background: var(--bg2); border: 1px solid var(--line2);
-  color: var(--txt2); cursor: pointer;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--bg2); border: 1.5px solid var(--acc-bdr);
+  color: var(--acc); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,.35);
-  transition: border-color .15s, color .15s, background .15s;
+  box-shadow: 0 3px 12px rgba(0,0,0,.4);
+  transition: border-color .15s, transform .15s, background .15s;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
-.vt-scroll-btn:hover { border-color: var(--acc); color: var(--acc); }
-.vt-scroll-btn svg { width: 14px; height: 14px; }
+.vt-scroll-btn:hover { background: var(--acc-bg); transform: scale(1.1); }
+.vt-scroll-btn svg { width: 15px; height: 15px; }
 /* ===== END VIZITY TABLE ===== */
 
 /* ===== DOCK v2 ===== */
@@ -6780,14 +6781,7 @@ function dockVizity(dept) {
   closeAllDockPopups();
   S.vizDept = dept;
   dockSetActive('vizity');
-  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity'].forEach(t => {
-    const el = document.getElementById('scr-'+t); if (el) el.classList.remove('on');
-  });
-  document.getElementById('scr-vizity').classList.add('on');
-  ['floating-subtabs','floating-dohod-subtabs','floating-faq-subtabs'].forEach(fid => {
-    const f = document.getElementById(fid); if (f) f.style.display = 'none';
-  });
-  const gs = document.getElementById('grafik-sticky'); if (gs) gs.style.display = 'none';
+  showScr('vizity');   // showScr управляет scroll-btns.visible
   loadVizity();
 }
 
@@ -7215,9 +7209,18 @@ function vizOnChange(el) {
   if (row) {
     row.data[col] = val;
     if (col === 0) row._dateChanged = true;
-    // Track which cells were changed for per-cell save
     if (!row._changedCols) row._changedCols = new Set();
     row._changedCols.add(col);
+
+    // Авто-категория при выборе источника (col=5)
+    if (col === 5) {
+      const autoKat = val === 'Теплый лид' ? 'кат 1200' : 'кат 800';
+      row.data[6] = autoKat;
+      row._changedCols.add(6);
+      // Обновляем select категории в DOM
+      const catSel = el.closest('.vt-row-form')?.querySelector(`select[data-col="6"]`);
+      if (catSel) catSel.value = autoKat;
+    }
   }
   if (VIZ_COLS[col].req && !val) el.classList.add('invalid');
   else el.classList.remove('invalid');
@@ -7359,7 +7362,7 @@ async function vizDeleteRow(sheetRow) {
   if (S._vizUndoTimer) { clearTimeout(S._vizUndoTimer); document.getElementById('vt-undo-toast')?.remove(); }
   const toastEl = document.createElement('div');
   toastEl.id = 'vt-undo-toast'; toastEl.className = 'vt-undo-toast';
-  toastEl.innerHTML = `<span>Строка удалена</span><button class="vt-undo-btn" onclick="vizUndoDelete()">ОТМЕНА</button><span id="vt-undo-timer" style="color:var(--txt3);font-size:11px;min-width:16px">10</span>`;
+  toastEl.innerHTML = `<span>Строка удалена</span><button class="vt-undo-btn" onclick="vizUndoDelete()">ОТМЕНА</button><button class="vt-undo-btn" style="background:var(--red)" onclick="vizConfirmDelete(${sheetRow})">ОК</button><span id="vt-undo-timer" style="color:var(--txt3);font-size:11px;min-width:16px">10</span>`;
   document.body.appendChild(toastEl);
   let sec = 10;
   const tick = setInterval(() => {
@@ -7375,6 +7378,14 @@ async function vizUndoDelete() {
   p.rowEl.style.opacity = ''; p.rowEl.style.pointerEvents = '';
   document.getElementById('vt-undo-toast')?.remove();
   window._vizUndoPending = null;
+}
+
+async function vizConfirmDelete(sheetRow) {
+  const p = window._vizUndoPending; if (!p) return;
+  clearInterval(p.tick);
+  document.getElementById('vt-undo-toast')?.remove();
+  window._vizUndoPending = null;
+  await commitVizDelete(sheetRow);
 }
 
 async function commitVizDelete(sheetRow) {
@@ -7408,6 +7419,14 @@ function openVizPicker(sheetRow, colIdx) {
       row.data[colIdx] = val;
       if (!row._changedCols) row._changedCols = new Set();
       row._changedCols.add(colIdx);
+      // Авто-категория при выборе источника (col=5)
+      if (colIdx === 5) {
+        const autoKat = val === 'Теплый лид' ? 'кат 1200' : 'кат 800';
+        row.data[6] = autoKat;
+        row._changedCols.add(6);
+        const catSel = document.querySelector(`#vt-card-${sheetRow} select[data-col="6"]`);
+        if (catSel) catSel.value = autoKat;
+      }
       const statusEl = document.getElementById('vt-status-'+sheetRow);
       if (statusEl) { statusEl.className='vt-save-status saving'; statusEl.textContent='Сохранение…'; }
       clearTimeout(S._vizSaveTimers[sheetRow]);

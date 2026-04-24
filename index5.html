@@ -1780,6 +1780,118 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
 }
 /* ===== END BIRTHDAY SELF CELEBRATION ===== */
 
+/* ===== RATING SCREEN ===== */
+.rating-header {
+  padding: 16px 0 10px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.rating-dept-toggle {
+  display: flex; gap: 6px;
+}
+.rating-dept-btn {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 9px; font-weight: 800; letter-spacing: .06em;
+  padding: 5px 12px; border-radius: 20px;
+  border: 1px solid var(--line2);
+  background: var(--bg3); color: var(--txt3);
+  cursor: pointer; transition: all .15s;
+}
+.rating-dept-btn.on {
+  background: var(--acc-bg); border-color: var(--acc); color: var(--acc);
+}
+.rating-summary {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 8px;
+  margin-bottom: 16px;
+}
+.rating-sum-cell {
+  background: var(--bg2); border: 1px solid var(--line);
+  border-radius: var(--r); padding: 10px 12px;
+  text-align: center;
+}
+.rating-sum-lbl {
+  font-size: 9px; color: var(--txt2); text-transform: uppercase;
+  letter-spacing: .06em; margin-bottom: 4px;
+}
+.rating-sum-val {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 16px; font-weight: 800; color: var(--txt);
+}
+.rating-sum-val.accent { color: var(--acc); }
+/* Bar chart */
+.rating-chart {
+  display: flex; flex-direction: column; gap: 10px;
+  margin-bottom: 20px;
+}
+.rating-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 60px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg2); border: 1px solid var(--line);
+  border-radius: var(--r2);
+  position: relative; overflow: hidden;
+  transition: border-color .15s, transform .1s;
+  cursor: pointer;
+}
+.rating-row:hover { border-color: var(--line2); transform: translateX(2px); }
+.rating-row.rank-1 { border-left: 3px solid #FFD700; }
+.rating-row.rank-2 { border-left: 3px solid #C0C0C0; }
+.rating-row.rank-3 { border-left: 3px solid #cd7f32; }
+.rating-row-bg {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  border-radius: inherit;
+  pointer-events: none; z-index: 0;
+  transition: width 1s cubic-bezier(.16,1,.3,1);
+}
+.rating-row > * { position: relative; z-index: 1; }
+.rating-name-col {
+  display: flex; align-items: center; gap: 6px;
+}
+.rating-rank-badge {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Unbounded', sans-serif; font-size: 9px; font-weight: 900;
+  flex-shrink: 0;
+}
+.rating-name {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 9px; font-weight: 800; letter-spacing: .03em;
+  color: var(--txt); text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rating-bar-col { display: flex; flex-direction: column; gap: 4px; }
+.rating-bar-meta {
+  display: flex; justify-content: space-between;
+  font-size: 9px; color: var(--txt2);
+}
+.rating-bar-track {
+  height: 6px; background: rgba(255,255,255,.07);
+  border-radius: 3px; overflow: hidden;
+}
+body.light .rating-bar-track { background: rgba(0,0,0,.07); }
+.rating-bar-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s cubic-bezier(.16,1,.3,1);
+}
+.rating-pct-col { text-align: right; }
+.rating-pct {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 15px; font-weight: 800;
+}
+.rating-sub-pct {
+  font-size: 9px; color: var(--txt2); margin-top: 1px;
+}
+.rating-medal { font-size: 14px; line-height: 1; }
+/* mini stats row */
+.rating-stats {
+  display: flex; gap: 12px; margin-top: 4px;
+  font-size: 9px; color: var(--txt2);
+}
+.rating-stat { display: flex; align-items: center; gap: 3px; }
+.rating-stat b { color: var(--txt); font-weight: 700; }
+/* ===== END RATING SCREEN ===== */
+
 /* ===== DOCK v2 ===== */
 /* Отступ снизу для контента */
 main { padding-bottom: 88px; }
@@ -1911,16 +2023,7 @@ body.tiffany .dock-btn:hover { background: rgba(143,179,174,0.22); }
 .dock-popup-dot {
   width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
 }
-/* Active indicator dot */
-.dock-btn.dock-active::after {
-  content: '';
-  position: absolute;
-  bottom: 4px;
-  left: 50%; transform: translateX(-50%);
-  width: 4px; height: 4px;
-  border-radius: 50%;
-  background: var(--acc);
-}
+/* no active dot - removed */
 /* ===== END DOCK v2 ===== */
 </style>
 </head>
@@ -2059,6 +2162,11 @@ body.tiffany .dock-btn:hover { background: rgba(143,179,174,0.22); }
     <div id="scr-personal" class="scr">
       <div class="w">
         <div id="c-personal"></div>
+      </div>
+    </div>
+    <div id="scr-rating" class="scr">
+      <div class="w">
+        <div id="c-rating"></div>
       </div>
     </div>
   </main>
@@ -2308,7 +2416,8 @@ const S = {
   reportTab: 'dept',
   dohodTab: 'crm',
   faqTab: 'instr',
-  silentRefresh: false, // если true — не показываем лоадер при перерисовке
+  ratingDept: null,
+  silentRefresh: false,
 };
 
 /* ══ THEME ══ */
@@ -2364,22 +2473,24 @@ function toast(msg, type='i') {
 }
 
 function showScr(id) {
-  ['otchet','dohod','grafik','instruktsii','personal'].forEach(t =>
-    document.getElementById('scr-'+t).classList.remove('on')
-  );
+  ['otchet','dohod','grafik','instruktsii','personal','rating'].forEach(t => {
+    const el = document.getElementById('scr-'+t);
+    if (el) el.classList.remove('on');
+  });
   document.getElementById('scr-'+id)?.classList.add('on');
   const gs = document.getElementById('grafik-sticky');
   if (gs) gs.style.display = id === 'grafik' ? '' : 'none';
+  // Верхние вкладки убраны — всегда скрываем
   const floating = document.getElementById('floating-subtabs');
-  if (floating) floating.style.display = id === 'otchet' ? 'flex' : 'none';
+  if (floating) floating.style.display = 'none';
   const floatingDohod = document.getElementById('floating-dohod-subtabs');
-  if (floatingDohod) floatingDohod.style.display = id === 'dohod' ? 'flex' : 'none';
+  if (floatingDohod) floatingDohod.style.display = 'none';
   const floatingFaq = document.getElementById('floating-faq-subtabs');
   if (floatingFaq) floatingFaq.style.display = id === 'instruktsii' ? 'flex' : 'none';
   // Синхронизируем активную кнопку в доке
   if (typeof dockSetActive === 'function') {
-    const dockId = id === 'personal' ? 'home' : (id === 'otchet' ? null : id);
-    if (dockId) dockSetActive(dockId);
+    const dockId = id === 'personal' ? 'home' : (id === 'otchet' ? 'home' : id);
+    dockSetActive(dockId);
   }
 }
 
@@ -3480,8 +3591,8 @@ function renderOtchet() {
 
   const mops_html = ranked + kotelHTML;
 
-  const subtabs = `<span class="report-subtab ${S.reportTab==='dept'?'active':''}" onclick="setReportTab('dept')">ОТДЕЛ</span><span class="report-subtab ${S.reportTab==='mgr'?'active':''}" onclick="setReportTab('mgr')">CRM</span><span class="report-subtab ${S.reportTab==='dozhim'?'active':''}" onclick="setReportTab('dozhim')">ДОЖИМ</span>`;
-  if (floating) floating.innerHTML = subtabs;
+  const subtabs = ``; // верхние вкладки убраны — управление через Dock
+  if (floating) floating.innerHTML = '';
 
   let content = '';
   if (S.reportTab === 'dept') content = deptCard + dozhimDeptCard + speedoCard;
@@ -3594,10 +3705,14 @@ function setReportTab(tab) {
 }
 
 function goHome() {
-  const tabBtn = document.querySelector('.tab[data-tab="otchet"]');
-  if (tabBtn) tabBtn.click();
-  S.reportTab = 'dept';
-  if (S.data.otchet) renderOtchet();
+  const matched = findUserInSheet();
+  if (matched && matched.role !== 'ceo') {
+    goPersonal();
+  } else {
+    S.reportTab = 'dept';
+    goTab('otchet');
+    dockSetActive('home');
+  }
 }
 
 // ==================== RENDER DOHOD ====================
@@ -3608,16 +3723,15 @@ function renderDohod() {
   const role = matched?.role || '';
   const isCeo = role === 'ceo';
 
-  // CEO — прежний формат с подвкладками
+  // CEO — без верхних вкладок, выбор через Dock
   if (isCeo) {
-    const subtabs = `<span class="report-subtab ${S.dohodTab !== 'dozhim' ? 'active' : ''}" onclick="setDohodTab('crm')">CRM</span><span class="report-subtab ${S.dohodTab === 'dozhim' ? 'active' : ''}" onclick="setDohodTab('dozhim')">ДОЖИМ</span>`;
-    if (floating) { floating.innerHTML = subtabs; floating.style.display = 'flex'; }
+    if (floating) { floating.innerHTML = ''; floating.style.display = 'none'; }
     if (S.dohodTab === 'dozhim') { renderDohodDozhim(el); return; }
     renderDohodCrm(el);
     return;
   }
 
-  // Обычный менеджер — скрываем подвкладки, показываем только свой доход
+  // Обычный менеджер — без подвкладок
   if (floating) { floating.innerHTML = ''; floating.style.display = 'none'; }
 
   if (!matched || !matched.name) {
@@ -4999,7 +5113,10 @@ async function loadUsersAndStart() {
     checkBirthdayNotifications();
     checkSelfBirthday();
     if (matched.role === 'ceo') {
+      S.reportTab = 'dept';
+      S.ratingDept = 'crm';
       goTab('otchet');
+      dockSetActive('home');
     } else {
       goPersonal();
     }
@@ -5911,57 +6028,73 @@ function closeAllDockPopups() {
   document.querySelectorAll('.dock-popup').forEach(p => p.classList.remove('open'));
 }
 
+// HOME = Отдел (для менеджеров — персональный экран)
 function dockNav(id) {
   closeAllDockPopups();
+
   if (id === 'home') {
     const matched = findUserInSheet();
     if (matched && matched.role !== 'ceo') {
       goPersonal();
     } else {
+      // CEO → Отдел (dept overview)
+      S.reportTab = 'dept';
       goTab('otchet');
-      dockSetActive('rating');
-      return;
+      dockSetActive('home');
     }
-    dockSetActive('home');
     return;
   }
+
   if (id === 'rating') {
-    // Рейтинг = отчёт с подвкладкой CRM (там рейтинг менеджеров)
-    goTab('otchet');
     dockSetActive('rating');
-    setTimeout(() => {
-      const btn = document.querySelector('.report-subtab');
-      if (btn && !btn.classList.contains('active')) btn.click();
-    }, 120);
+    ['otchet','dohod','grafik','instruktsii','personal','rating'].forEach(t => {
+      const s = document.getElementById('scr-'+t);
+      if (s) s.classList.remove('on');
+    });
+    document.getElementById('scr-rating').classList.add('on');
+    // hide floating subtabs
+    const fs = document.getElementById('floating-subtabs');
+    if (fs) fs.style.display = 'none';
+    const fds = document.getElementById('floating-dohod-subtabs');
+    if (fds) fds.style.display = 'none';
+    const gs = document.getElementById('grafik-sticky');
+    if (gs) gs.style.display = 'none';
+    loadRating();
     return;
   }
+
   goTab(id);
   dockSetActive(id);
 }
 
+// KPI: авто-определение роли, CEO → попап
 function dockKpiToggle(e) {
   e.stopPropagation();
-  const pop = document.getElementById('dock-kpi-popup');
+  const matched = findUserInSheet();
+  const isCeo = matched && matched.role === 'ceo';
+  if (!isCeo) {
+    // Менеджер → сразу переходим на свой отдел без попапа
+    const dept = matched && matched.role === 'dozhim' ? 'dozhim' : 'crm';
+    dockKpi(dept);
+    return;
+  }
+  // CEO → показываем выпадашку
   document.getElementById('dock-dohod-popup').classList.remove('open');
-  pop.classList.toggle('open');
+  document.getElementById('dock-kpi-popup').classList.toggle('open');
 }
 
 function dockKpi(dept) {
   closeAllDockPopups();
+  S.reportTab = dept === 'dozhim' ? 'dozhim' : 'mgr';
   goTab('otchet');
   dockSetActive('kpi');
-  // Переключаем подвкладку отдела после рендера
-  setTimeout(() => {
-    const btns = document.querySelectorAll('.report-subtab');
-    btns.forEach(b => {
-      const txt = b.textContent.trim().toLowerCase();
-      if ((dept === 'crm' && txt === 'crm') || (dept === 'dozhim' && (txt === 'дожим' || txt === 'dozhim'))) {
-        if (!b.classList.contains('active')) b.click();
-      }
-    });
-  }, 120);
+  // Если дожим и нет данных — loadTab это обработает через setReportTab
+  if (dept === 'dozhim' && !S.data.d_vizity) {
+    setReportTab('dozhim');
+  }
 }
 
+// ДОХОД: менеджер → прямо, CEO → попап
 function dockDohodToggle(e) {
   e.stopPropagation();
   const matched = findUserInSheet();
@@ -5972,30 +6105,204 @@ function dockDohodToggle(e) {
     dockSetActive('dohod');
     return;
   }
-  // CEO: показываем выпадашку по отделам
   document.getElementById('dock-kpi-popup').classList.remove('open');
   document.getElementById('dock-dohod-popup').classList.toggle('open');
 }
 
 function dockDohod(dept) {
   closeAllDockPopups();
+  S.dohodTab = dept;
   goTab('dohod');
   dockSetActive('dohod');
-  setTimeout(() => {
-    const btns = document.querySelectorAll('#floating-dohod-subtabs .report-subtab, #c-dohod .report-subtab');
-    btns.forEach(b => {
-      const txt = b.textContent.trim().toLowerCase();
-      if ((dept === 'crm' && txt === 'crm') || (dept === 'dozhim' && (txt === 'дожим' || txt === 'dozhim'))) {
-        if (!b.classList.contains('active')) b.click();
-      }
-    });
-  }, 120);
 }
 
 // Закрываем попапы при клике вне дока
 document.addEventListener('click', (e) => {
   if (!e.target.closest('#main-dock')) closeAllDockPopups();
 });
+
+// ==================== RATING SCREEN ====================
+async function loadRating() {
+  const el = document.getElementById('c-rating');
+  if (!el) return;
+
+  const matched = findUserInSheet();
+  const role = matched?.role || 'crm';
+  const isCeo = role === 'ceo';
+
+  // Определяем какой отдел показывать
+  // S.ratingDept: 'crm' | 'dozhim' (только для CEO)
+  if (!S.ratingDept) S.ratingDept = isCeo ? 'crm' : role === 'dozhim' ? 'dozhim' : 'crm';
+
+  if (!S.data.vizity || !S.data.plan) {
+    el.innerHTML = loader();
+    try {
+      const [vd, pd] = await Promise.all([
+        S.data.vizity ? Promise.resolve(S.data.vizity) : api(SHEETS.vizity, 'A:J'),
+        S.data.plan   ? Promise.resolve(S.data.plan)   : api(SHEETS.plan,   'A:B'),
+      ]);
+      S.data.vizity = vd; S.data.plan = pd;
+    } catch(e) {
+      if (e.message !== 'auth') el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
+      return;
+    }
+  }
+  if (S.ratingDept === 'dozhim' && !S.data.d_vizity) {
+    el.innerHTML = loader();
+    try { S.data.d_vizity = await api(SHEETS.d_vizity, 'A:L'); }
+    catch(e) { S.data.d_vizity = []; }
+  }
+  renderRating();
+}
+
+function renderRating() {
+  const el = document.getElementById('c-rating');
+  if (!el) return;
+  const matched = findUserInSheet();
+  const isCeo = matched?.role === 'ceo';
+  const dept = S.ratingDept || 'crm';
+
+  const isLight = document.body.classList.contains('light') || document.body.classList.contains('tiffany');
+  const planData = S.data.plan || [];
+  const planM    = getPlanMap(planData);
+
+  // Собираем данные по выбранному отделу
+  let managers = [];
+  if (dept === 'dozhim') {
+    const dStats = buildDozhimStats(S.data.d_vizity || []);
+    managers = planData.slice(1)
+      .filter(r => r && r[0] && getRoleByName(String(r[0]).trim().toLowerCase()) === 'dozhim')
+      .map(r => {
+        const name = String(r[0]).trim();
+        const nl   = name.toLowerCase();
+        const s    = dStats[nl] || {};
+        const vis  = (s.vis800||0) + (s.vis1000||0);
+        const plan = planM[nl] || 0;
+        const kred = (s.kred800||0) + (s.kred1000||0);
+        const nal  = (s.nal800||0)  + (s.nal1000||0);
+        const kom  = (s.kom800||0)  + (s.kom1000||0);
+        return { name, vis, plan, kred, nal, kom,
+          progNum: computeProgPct(vis, plan||1, currentSuffix),
+          factNum: computeFactPct(vis, plan||1) };
+      });
+  } else {
+    const crmStats = buildCrmStats(S.data.vizity || []);
+    managers = planData.slice(1)
+      .filter(r => r && r[0] && (getRoleByName(String(r[0]).trim().toLowerCase()) === 'crm' || getRoleByName(String(r[0]).trim().toLowerCase()) === ''))
+      .map(r => {
+        const name = String(r[0]).trim();
+        const nl   = name.toLowerCase();
+        const s    = crmStats[nl] || {};
+        const vis  = (s.vis800||0) + (s.vis1200||0);
+        const plan = planM[nl] || 0;
+        const kred = (s.kred800||0) + (s.kred1200||0);
+        const nal  = (s.nal800||0)  + (s.nal1200||0);
+        const kom  = (s.kom800||0)  + (s.kom1200||0);
+        return { name, vis, plan, kred, nal, kom,
+          progNum: computeProgPct(vis, plan||1, currentSuffix),
+          factNum: computeFactPct(vis, plan||1) };
+      });
+  }
+
+  managers.sort((a, b) => b.progNum - a.progNum);
+  const total = managers.length;
+  const totalVis  = managers.reduce((s, m) => s + m.vis, 0);
+  const totalPlan = managers.reduce((s, m) => s + m.plan, 0);
+  const avgProg   = total > 0 ? Math.round(managers.reduce((s,m) => s+m.progNum,0)/total) : 0;
+  const maxProg   = total > 0 ? Math.max(...managers.map(m => m.progNum)) : 1;
+
+  // Toggle для CEO
+  const deptToggle = isCeo ? `
+    <div class="rating-dept-toggle">
+      <button class="rating-dept-btn ${dept==='crm'?'on':''}" onclick="switchRatingDept('crm')">CRM</button>
+      <button class="rating-dept-btn ${dept==='dozhim'?'on':''}" onclick="switchRatingDept('dozhim')">ДОЖИМ</button>
+    </div>` : `<div style="font-family:'Unbounded',sans-serif;font-size:9px;font-weight:800;letter-spacing:.1em;color:var(--txt3)">${dept === 'dozhim' ? 'ДОЖИМ' : 'CRM'}</div>`;
+
+  const summaryHTML = `
+    <div class="rating-summary">
+      <div class="rating-sum-cell">
+        <div class="rating-sum-lbl">Визиты</div>
+        <div class="rating-sum-val accent">${totalVis || '—'}</div>
+      </div>
+      <div class="rating-sum-cell">
+        <div class="rating-sum-lbl">Прогноз ср.</div>
+        <div class="rating-sum-val" style="color:${pctClr(avgProg)}">${avgProg}%</div>
+      </div>
+      <div class="rating-sum-cell">
+        <div class="rating-sum-lbl">План отдела</div>
+        <div class="rating-sum-val">${totalPlan || '—'}</div>
+      </div>
+    </div>`;
+
+  const medals = ['🥇','🥈','🥉'];
+  const barsHTML = managers.map((m, idx) => {
+    const rs = rankStyles(idx, total);
+    const barPct = maxProg > 0 ? Math.min(Math.round(m.progNum / maxProg * 100), 100) : 0;
+    const rankClass = idx < 3 ? `rank-${idx+1}` : '';
+    const medal = idx < 3 ? `<span class="rating-medal">${medals[idx]}</span>` : '';
+    const bgAlpha = isLight ? 0.05 : 0.08;
+    return `
+      <div class="rating-row ${rankClass}" style="border-color:${rs.border}">
+        <div class="rating-row-bg" style="width:${barPct}%;background:rgba(${rs.r},${rs.g},${rs.b},${bgAlpha})"></div>
+        <div class="rating-name-col">
+          <span class="rating-rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span>
+          <div>
+            <div class="rating-name">${m.name.toUpperCase()}</div>
+            <div class="rating-stats">
+              <div class="rating-stat">Вз <b>${m.vis}</b></div>
+              <div class="rating-stat">Пл <b>${m.plan||'—'}</b></div>
+              ${m.kred ? `<div class="rating-stat">Кр <b>${m.kred}</b></div>` : ''}
+            </div>
+          </div>
+        </div>
+        <div class="rating-bar-col">
+          <div class="rating-bar-meta">
+            <span>0</span><span>${m.plan||'—'}</span>
+          </div>
+          <div class="rating-bar-track">
+            <div class="rating-bar-fill" data-w="${Math.min(m.factNum,100)}" style="width:0%;background:${pctClr(m.progNum)}"></div>
+          </div>
+        </div>
+        <div class="rating-pct-col">
+          <div class="rating-pct" style="color:${pctClr(m.progNum)}">${m.progNum}%</div>
+          <div class="rating-sub-pct">${m.factNum}% факт</div>
+          ${medal}
+        </div>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="rating-header">
+      <div class="sec-title" style="margin:0">РЕЙТИНГ</div>
+      ${deptToggle}
+    </div>
+    ${summaryHTML}
+    <div class="rating-chart">${barsHTML || '<div class="empty">Нет данных</div>'}</div>
+  `;
+
+  // Анимируем бары с задержкой
+  requestAnimationFrame(() => {
+    el.querySelectorAll('.rating-bar-fill').forEach((bar, i) => {
+      setTimeout(() => { bar.style.width = bar.dataset.w + '%'; }, i * 60);
+    });
+    el.querySelectorAll('.rating-row-bg').forEach((bg, i) => {
+      const w = bg.style.width;
+      bg.style.width = '0%';
+      setTimeout(() => { bg.style.transition = 'width 0.8s cubic-bezier(.16,1,.3,1)'; bg.style.width = w; }, i * 60);
+    });
+  });
+}
+
+function switchRatingDept(dept) {
+  S.ratingDept = dept;
+  if (dept === 'dozhim' && !S.data.d_vizity) {
+    const el = document.getElementById('c-rating');
+    if (el) el.innerHTML = loader();
+    api(SHEETS.d_vizity, 'A:L').then(d => { S.data.d_vizity = d; renderRating(); }).catch(() => { S.data.d_vizity = []; renderRating(); });
+    return;
+  }
+  renderRating();
+}
 
 // ==================== BACKGROUND ORBS ====================
 (function() {

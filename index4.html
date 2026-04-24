@@ -5641,6 +5641,15 @@ document.getElementById(‘scr-login’).classList.add(‘on’); document.body.
 return;
 }
 
+// ★ Показываем экран логина НЕМЕДЛЕННО — onLogin/trySilentRefresh скроют его когда нужно.
+// Это исключает чёрный экран пока грузится Google GSI или идёт проверка токена.
+const hasValidToken = localStorage.getItem(‘crm_tok’) && parseInt(localStorage.getItem(‘crm_exp’)||‘0’) > Date.now();
+if (!hasValidToken) {
+document.getElementById(‘scr-login’).style.display = ‘’;
+document.getElementById(‘scr-login’).classList.add(‘on’);
+document.body.classList.add(‘login-active’);
+}
+
 // Таймаут: показываем вход если GSI не загрузился за 6 секунд
 const gsiTimeout = setTimeout(() => {
 if (!tokenClient) {

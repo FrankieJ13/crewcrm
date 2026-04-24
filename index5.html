@@ -1948,14 +1948,26 @@ body.light .rating-card-bar-track { background: rgba(0,0,0,.06); }
 }
 .vt-add-btn:hover { opacity: .85; }
 .vt-add-btn svg { width: 13px; height: 13px; }
-/* Light + Tiffany: accent is dark color → white text on acc buttons */
+/* Light + Tiffany: accent is dark → white text on all filled accent elements */
 body.light .vt-add-btn,
 body.light .vt-insert-zone-btn,
 body.light .vt-undo-btn,
+body.light .center-login-btn,
+body.light .report-subtab.active,
+body.light .rating-dept-btn.on,
+body.light .dock-btn.dock-active,
 body.tiffany .vt-add-btn,
 body.tiffany .vt-insert-zone-btn,
-body.tiffany .vt-undo-btn { color: #fff; }
-body.light .center-login-btn { color: #fff; }
+body.tiffany .vt-undo-btn,
+body.tiffany .center-login-btn,
+body.tiffany .report-subtab.active,
+body.tiffany .rating-dept-btn.on,
+body.tiffany .dock-btn.dock-active { color: #fff; }
+/* Кнопки с полной acc-заливкой */
+body.light button[style*="background:var(--acc)"],
+body.light [style*="background: var(--acc)"],
+body.tiffany button[style*="background:var(--acc)"],
+body.tiffany [style*="background: var(--acc)"] { color: #fff !important; }
 .vt-body { padding: 8px 16px 0; }
 /* Week group */
 .vt-week { margin-bottom: 4px; scroll-margin-top: 98px; }
@@ -1995,7 +2007,7 @@ details[open] .vt-week-sum .vt-week-chevron { transform: rotate(90deg); }
 .vt-row-name {
   font-size: 13px; font-weight: 600; color: var(--txt);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  max-width: clamp(80px, calc(100vw - 210px), 360px);
+  max-width: clamp(60px, calc(100vw - 230px), 320px);
   transition: max-width 0.2s ease;
 }
 .vt-row-sub { font-size: 10px; color: var(--txt2); margin-top: 1px; }
@@ -2183,22 +2195,24 @@ details[open] .vt-week-sum .vt-week-chevron { transform: rotate(90deg); }
 /* Scroll buttons */
 .vt-scroll-btns {
   position: fixed;
-  left: 12px;
-  bottom: calc(88px + env(safe-area-inset-bottom, 0px) + 12px);
+  right: 12px;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px) + 8px);
   display: none;
-  flex-direction: column;
+  flex-direction: row;
   gap: 6px;
-  z-index: 190;
+  z-index: 210;
+  align-items: center;
 }
-#scr-vizity.on ~ * .vt-scroll-btns,
 .vt-scroll-btns.visible { display: flex; }
 .vt-scroll-btn {
   width: 34px; height: 34px; border-radius: 50%;
   background: var(--bg2); border: 1px solid var(--line2);
   color: var(--txt2); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,.35);
   transition: border-color .15s, color .15s, background .15s;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 .vt-scroll-btn:hover { border-color: var(--acc); color: var(--acc); }
 .vt-scroll-btn svg { width: 14px; height: 14px; }
@@ -2251,11 +2265,11 @@ body.tiffany .dock-container {
   content: '';
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  height: calc(100% + 12px);
+  height: calc(100% + 22px);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  mask-image: linear-gradient(to top, black 60%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to top, black 60%, transparent 100%);
+  mask-image: linear-gradient(to top, black 55%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to top, black 55%, transparent 100%);
   pointer-events: none;
   z-index: -1;
 }
@@ -2516,14 +2530,6 @@ body.tiffany .dock-btn:hover { background: rgba(143,179,174,0.22); }
     </div>
     <div id="scr-vizity" class="scr" style="padding:0">
       <div id="c-vizity"></div>
-      <div class="vt-scroll-btns" id="vt-scroll-btns">
-        <button class="vt-scroll-btn" onclick="vizScrollTo('top')" title="В начало">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
-        </button>
-        <button class="vt-scroll-btn" onclick="vizScrollTo('bottom')" title="В конец">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-      </div>
     </div>
   </main>
   <div class="page-footer">
@@ -2532,6 +2538,17 @@ body.tiffany .dock-btn:hover { background: rgba(143,179,174,0.22); }
     </div>
   </div>
 </div>
+
+<!-- Scroll shortcuts — показываются только на странице визитов -->
+<div class="vt-scroll-btns" id="vt-scroll-btns">
+  <button class="vt-scroll-btn" onclick="vizScrollTo('top')" title="В начало">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+  </button>
+  <button class="vt-scroll-btn" onclick="vizScrollTo('bottom')" title="В конец">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
+</div>
+
 <!-- ===== BOTTOM DOCK v2 ===== -->
 <div id="main-dock" style="display:none">
   <div class="dock-container">

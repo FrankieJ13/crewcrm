@@ -2193,30 +2193,7 @@ details[open] .vt-week-sum .vt-week-chevron { transform: rotate(90deg); }
   font-family:'Golos Text',sans-serif;
 }
 .vt-week-sum-line2 b { color:var(--txt2); }
-/* Scroll buttons */
-.vt-scroll-btns {
-  position: fixed;
-  left: 12px;
-  bottom: calc(10px + env(safe-area-inset-bottom, 0px) + 66px);
-  display: none;
-  flex-direction: row;
-  gap: 6px;
-  z-index: 210;
-  align-items: center;
-}
-.vt-scroll-btns.visible { display: flex; }
-.vt-scroll-btn {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: var(--bg2); border: 1.5px solid var(--line2);
-  color: var(--txt2); cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 2px 10px rgba(0,0,0,.35);
-  transition: border-color .15s, color .15s, transform .15s;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-.vt-scroll-btn:hover { border-color: var(--acc); color: var(--acc); transform: scale(1.08); }
-.vt-scroll-btn svg { width: 14px; height: 14px; }
+/* Scroll buttons — removed */
 /* ===== END VIZITY TABLE ===== */
 
 /* ===== DOCK v2 ===== */
@@ -2547,16 +2524,6 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
         © Бочаров Ю.С., 2026
     </div>
   </div>
-</div>
-
-<!-- Scroll shortcuts — показываются только на странице визитов -->
-<div class="vt-scroll-btns" id="vt-scroll-btns">
-  <button class="vt-scroll-btn" onclick="vizScrollTo('top')" title="В начало">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
-  </button>
-  <button class="vt-scroll-btn" onclick="vizScrollTo('bottom')" title="В конец">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
-  </button>
 </div>
 
 <!-- ===== BOTTOM DOCK v2 ===== -->
@@ -2894,9 +2861,7 @@ function showScr(id) {
   ['floating-subtabs','floating-dohod-subtabs','floating-faq-subtabs'].forEach(fid => {
     const f = document.getElementById(fid); if (f) f.style.display = 'none';
   });
-  // Scroll кнопки — только на vizity
-  const sb = document.getElementById('vt-scroll-btns');
-  if (sb) sb.classList.toggle('visible', id === 'vizity');
+  // Dock active
   if (typeof dockSetActive === 'function') {
     const dockId = id === 'personal' ? 'home' : id === 'otchet' ? 'home' : id;
     dockSetActive(dockId);
@@ -7556,15 +7521,6 @@ function vizScrollTo(dir) {
   if (dir === 'top') target.scrollTo({ top: 0, behavior: 'smooth' });
   else target.scrollTo({ top: target.scrollHeight, behavior: 'smooth' });
 }
-
-// Сброс hover-состояния кнопок дока на тач-устройствах
-document.getElementById('main-dock')?.addEventListener('touchend', e => {
-  const btn = e.target.closest('.dock-btn');
-  if (!btn) return;
-  // Кратко убираем pointer-events чтобы сбросить :hover
-  btn.style.pointerEvents = 'none';
-  requestAnimationFrame(() => { btn.style.pointerEvents = ''; });
-}, { passive: true });
 
 // ==================== HAMBURGER MENU ====================
 function toggleHamburger(e) {

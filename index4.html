@@ -245,7 +245,9 @@ html,body {
 }
 main { flex:1; overflow-y:auto; position: relative; padding-bottom:68px; }
 /* Когда показан экран авторизации — блокируем скролл */
-body.login-active main { overflow-y:hidden; }
+body.login-active main { overflow-y:hidden; padding-bottom:0; }
+body.login-active nav { display:none !important; }
+body.login-active #scr-visits { display:none !important; }
 body.login-active .page-footer { position:fixed; bottom:0; left:0; right:0; z-index:50; background:var(--bg); }
 .w {
   width:100%;
@@ -1961,7 +1963,7 @@ margin:10px 14px; text-align:center;
     </div>
   </div>
 
-  <nav id="main-nav">
+  <nav id="main-nav" style="display:none">
     <div class="nav-inner">
       <button class="tab on" data-tab="otchet">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -2448,7 +2450,9 @@ document.getElementById(‘user-wrap’).style.display = ‘flex’;
 
 function onLogin() {
 document.getElementById(‘btn-out’).style.display   = ‘’;
-document.getElementById(‘main-nav’).classList.add(‘nav-visible’);
+const mnav = document.getElementById(‘main-nav’);
+mnav.style.display = ‘flex’;
+mnav.classList.add(‘nav-visible’);
 const ls = document.getElementById(‘scr-login’);
 ls.classList.remove(‘on’); ls.style.display = ‘none’; document.body.classList.remove(‘login-active’);
 toast(‘Приветствую!’, ‘s’);
@@ -2483,7 +2487,9 @@ S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null
 [‘crm_tok’,‘crm_exp’,‘crm_user’].forEach(k => localStorage.removeItem(k));
 document.getElementById(‘user-wrap’).style.display = ‘none’;
 document.getElementById(‘btn-out’).style.display   = ‘none’;
-document.getElementById(‘main-nav’).classList.remove(‘nav-visible’);
+const mnav = document.getElementById(‘main-nav’);
+mnav.style.display = ‘none’;
+mnav.classList.remove(‘nav-visible’);
 [‘otchet’,‘dohod’,‘grafik’,‘instruktsii’,‘personal’,‘rating’].forEach(t => {
 const s = document.getElementById(‘scr-’+t);
 s.classList.remove(‘on’); s.style.display = ‘’;

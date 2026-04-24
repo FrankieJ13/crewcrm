@@ -289,17 +289,23 @@ header {
   transition: opacity 0.4s ease;
 }
 .badge-month {
-  font-size:11px; padding:3px 9px; border-radius:20px;
-  background:var(--bg3); border:1px solid var(--line2);
-  color:var(--txt2); font-weight:500;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--bg3); border: 1px solid var(--line2);
+  color: var(--txt2); cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
   font-family: 'Unbounded', sans-serif;
-  cursor:pointer;
-  transition:background .2s, border-color .2s;
+  font-size: 10px; font-weight: 800; letter-spacing: -.02em;
+  transition: border-color .15s, color .15s, background .15s;
+  user-select: none; position: relative;
 }
 .badge-month:hover {
-  background:var(--acc-bg);
-  border-color:var(--acc);
-  color:var(--acc);
+  border-color: var(--acc);
+  color: var(--acc);
+  background: var(--acc-bg);
+}
+.badge-month.current-month {
+  border-color: var(--acc-bdr);
+  color: var(--acc);
 }
 .theme-dropdown {
   position:absolute; top:100%; right:0; margin-top:4px;
@@ -321,18 +327,19 @@ header {
   flex-shrink:0; border:1px solid rgba(128,128,128,.3);
 }
 .month-dropdown {
-  position:absolute;
-  top:100%;
-  right:0;
-  margin-top:4px;
-  background:var(--bg2);
-  border:1px solid var(--line2);
-  border-radius:var(--r);
-  z-index:200;
-  min-width:140px;
-  display:none;
-  flex-direction:column;
-  box-shadow:0 8px 20px rgba(0,0,0,0.3);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg2);
+  border: 1px solid var(--line2);
+  border-radius: var(--r);
+  z-index: 300;
+  min-width: 150px;
+  display: none;
+  flex-direction: column;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  animation: up .15s ease;
 }
 .month-dropdown button {
   background:none;
@@ -2310,9 +2317,11 @@ body.tiffany .dock-btn:hover { background: rgba(143,179,174,0.22); }
         </div>
       </div>
       <div class="hdr-right">
-        <span class="badge-month" id="badge-month">—</span>
         <div id="user-wrap">
           <img id="user-avatar" src="" alt=""/>
+          <div id="month-wrap" style="position:relative;flex-shrink:0">
+            <span class="badge-month" id="badge-month">—</span>
+          </div>
           <span id="user-name"></span>
         </div>
         <button class="btn-icon" id="btn-refresh" title="Обновить">
@@ -2695,7 +2704,15 @@ function getSheetNames(suffix) {
 let SHEETS = getSheetNames(currentSuffix);
 
 function updateBadge() {
-  document.getElementById('badge-month').textContent = currentSuffix.slice(0,2)+'/'+currentSuffix.slice(2);
+  const el = document.getElementById('badge-month');
+  if (!el) return;
+  // Показываем только номер месяца (01–12)
+  el.textContent = currentSuffix.slice(0, 2);
+  // Подсвечиваем если выбранный месяц = текущий
+  const now = new Date();
+  const curMm = String(now.getMonth() + 1).padStart(2, '0');
+  const curYy = now.getFullYear().toString().slice(-2);
+  el.classList.toggle('current-month', currentSuffix === curMm + curYy);
 }
 updateBadge();
 
@@ -5306,32 +5323,42 @@ function closeMopModal(e) {
 // ==================== MONTH DROPDOWN ====================
 function showMonthDropdown() {
   const existing = document.querySelector('.month-dropdown');
-  if (existing) existing.remove();
+  if (existing) { existing.remove(); return; } // toggle
   const dropdown = document.createElement('div');
   dropdown.className = 'month-dropdown';
   const months = [];
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 6; i++) {
     const d = new Date();
+    d.setDate(1);
     d.setMonth(d.getMonth() - i);
     const yy = d.getFullYear().toString().slice(-2);
-    const mm = (d.getMonth() + 1).toString().padStart(2,'0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
     const suffix = mm + yy;
-    months.push({ suffix, name: getMonthName(suffix) });
+    months.push({ suffix, name: getMonthName(suffix), num: mm, year: '20'+yy });
   }
   months.forEach(m => {
     const btn = document.createElement('button');
-    btn.textContent = m.name;
-    btn.onclick = () => {
-      setCurrentMonth(m.suffix);
-      dropdown.remove();
-    };
+    const isActive = m.suffix === currentSuffix;
+    btn.innerHTML = `<span style="font-family:'Unbounded',sans-serif;font-size:12px;font-weight:800;min-width:22px;text-align:center;${isActive?'color:var(--acc)':''}">${m.num}</span><span style="flex:1;${isActive?'color:var(--acc)':''}">${m.name} ${m.year}</span>${isActive?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>':''}`;
+    btn.style.cssText = 'display:flex;align-items:center;gap:8px;';
+    btn.onclick = () => { setCurrentMonth(m.suffix); dropdown.remove(); };
     dropdown.appendChild(btn);
   });
-  const badge = document.getElementById('badge-month');
-  badge.parentNode.style.position = 'relative';
-  badge.parentNode.appendChild(dropdown);
+
+  // Крепим к month-wrap
+  const wrap = document.getElementById('month-wrap');
+  if (wrap) {
+    wrap.appendChild(dropdown);
+  } else {
+    // fallback
+    const badge = document.getElementById('badge-month');
+    badge.parentNode.style.position = 'relative';
+    badge.parentNode.appendChild(dropdown);
+  }
   dropdown.style.display = 'flex';
+
   const closeDropdown = (e) => {
+    const badge = document.getElementById('badge-month');
     if (!dropdown.contains(e.target) && e.target !== badge) {
       dropdown.remove();
       document.removeEventListener('click', closeDropdown);

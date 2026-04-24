@@ -29,13 +29,13 @@ html, body {
 }
 :root {
   --bg:      #0d0d0d;
-  --bg2:     #141414;
-  --bg3:     #1c1c1c;
-  --line:    #252525;
-  --line2:   #2e2e2e;
+  --bg2:     #1a1a1a;
+  --bg3:     #242424;
+  --line:    #2a2a2a;
+  --line2:   #363636;
   --txt:     #f0f0f0;
-  --txt2:    #aaa;
-  --txt3:    #444;
+  --txt2:    #c0c0c0;
+  --txt3:    #5a5a5a;
   --acc:     #e8ff47;
   --acc-bg:  rgba(232,255,71,.08);
   --acc-bdr: rgba(232,255,71,.25);
@@ -1895,7 +1895,7 @@ body.light .rating-bar-track { background: rgba(0,0,0,.07); }
 /* ===== VIZITY TABLE (Журнал визитов) ===== */
 #scr-vizity { padding-bottom: 88px; }
 .vt-toolbar {
-  position: sticky; top: 52px; z-index: 80;
+  position: sticky; top: 0; z-index: 80;
   background: var(--bg); border-bottom: 1px solid var(--line);
   padding: 8px 16px; display: flex; align-items: center; gap: 8px;
 }
@@ -1970,8 +1970,10 @@ details[open] .vt-week-sum .vt-week-chevron { transform: rotate(90deg); }
 .vt-status-chip {
   font-size: 9px; padding: 3px 7px; border-radius: 5px;
   background: var(--bg3); border: 1px solid var(--line2);
-  color: var(--txt2); white-space: nowrap; flex-shrink: 0; max-width: 90px;
+  color: var(--txt2); white-space: nowrap; flex-shrink: 0;
+  min-width: 90px; max-width: 110px; width: 100px;
   overflow: hidden; text-overflow: ellipsis;
+  text-align: center;
 }
 .vt-status-chip.deal  { border-color: rgba(30,144,255,.3); color: var(--blu); }
 .vt-status-chip.salon { border-color: rgba(46,213,115,.3); color: var(--grn); }
@@ -2947,6 +2949,8 @@ function onLogin() {
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
   autoRefreshTimer = setInterval(() => {
     if (!S.token) return;
+    // Не обновляем пока открыт журнал визитов — пользователь может вводить данные
+    if (document.getElementById('scr-vizity')?.classList.contains('on')) return;
     const isPersonal = document.getElementById('scr-personal')?.classList.contains('on');
     const activeTab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
     if (!isPersonal && activeTab === 'instruktsii') return;
@@ -3182,6 +3186,12 @@ async function loadTab(tab) {
 }
 
 function reloadCurrent() {
+  // На странице Отчёта — перезагружаем только журнал визитов
+  if (document.getElementById('scr-vizity')?.classList.contains('on')) {
+    S.vizRows = [];
+    loadVizity().then(() => toast('Обновлено','s'));
+    return;
+  }
   const isPersonal = document.getElementById('scr-personal')?.classList.contains('on');
   if (isPersonal) {
     const matched = findUserInSheet();
@@ -5438,6 +5448,8 @@ async function backgroundPrefetch(matched) {
       await task();
       await new Promise(r => setTimeout(r, 600));
     }
+    // Не перерисовываем если открыт журнал визитов (пользователь вводит данные)
+    if (document.getElementById('scr-vizity')?.classList.contains('on')) return;
     // Тихо перерисовываем текущий видимый экран
     const activeTab = document.querySelector('.tab.on')?.dataset.tab;
     if (activeTab) renderTab(activeTab);

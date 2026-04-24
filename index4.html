@@ -243,7 +243,7 @@ html,body {
   position: relative;
   z-index: 10;
 }
-main { flex:1; overflow-y:auto; position: relative; }
+main { flex:1; overflow-y:auto; position: relative; padding-bottom:68px; }
 /* Когда показан экран авторизации — блокируем скролл */
 body.login-active main { overflow-y:hidden; }
 body.login-active .page-footer { position:fixed; bottom:0; left:0; right:0; z-index:50; background:var(--bg); }
@@ -256,17 +256,6 @@ body.login-active .page-footer { position:fixed; bottom:0; left:0; right:0; z-in
 }
 .scr { display:none; padding:0 0 10px 0; animation:up .2s ease }
 .scr.on { display:block }
-/* scr-login всегда видим по умолчанию — не ждём JS */
-#scr-login {
-  display:flex !important;
-  flex-direction:column;
-  padding:0 !important;
-  min-height:calc(100vh - 60px);
-  position:relative;
-  overflow:hidden;
-}
-/* Скрываем когда залогинены */
-#scr-login.off { display:none !important; }
 @keyframes up { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 header {
   background:var(--bg); border-bottom:1px solid var(--line);
@@ -403,31 +392,37 @@ header {
 .btn-out:hover { border-color:var(--red); color:var(--red) }
 nav {
   background:var(--bg);
-  border-bottom:1px solid var(--line);
-  overflow-x:auto; flex-shrink:0;
-  position:sticky;
-  top:52px;
+  border-top:1px solid var(--line);
+  overflow-x:hidden; flex-shrink:0;
+  position:fixed;
+  bottom:0; left:0; right:0;
+  height:60px;
   z-index:99;
+  display:none; /* управляется JS через onLogin */
 }
-nav::-webkit-scrollbar { height:0 }
+nav.nav-visible { display:flex !important; align-items:stretch; }
 .nav-inner {
   max-width:720px;
   margin:0 auto;
-  padding:0 20px;
+  padding:0;
   display:flex;
+  width:100%;
+  align-items:stretch;
 }
 .tab {
-  padding:11px 16px; white-space:nowrap;
+  padding:4px 0 6px; white-space:nowrap;
   font-family:'Unbounded',sans-serif;
-  font-size:15px; font-weight:800; letter-spacing:.03em;
+  font-size:8px; font-weight:800; letter-spacing:.03em;
   color:var(--txt3); background:none; border:none;
-  border-bottom:2px solid transparent;
+  border-top:2px solid transparent;
   cursor:pointer; transition:color .15s, border-color .15s;
-  display:flex; align-items:center; gap:5px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:3px; flex:1; min-width:0;
 }
 .tab:hover { color:var(--txt2) }
-.tab.on { color:var(--acc); border-bottom-color:var(--acc) }
-.tab-dot { width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.5 }
+.tab.on { color:var(--acc); border-top-color:var(--acc) }
+.tab-dot { display:none }
+.tab-icon { width:20px; height:20px; flex-shrink:0; }
 .gate {
   display:flex; flex-direction:column; align-items:center;
   justify-content:center; gap:14px; min-height:65vh;
@@ -471,7 +466,7 @@ nav::-webkit-scrollbar { height:0 }
 #floating-faq-subtabs {
   display: none;
   position: sticky;
-  top: 90px;
+  top: 52px;
   background: var(--bg);
   border-bottom: 1px solid var(--line);
   z-index: 90;
@@ -1741,205 +1736,148 @@ filter:drop-shadow(0 0 12px rgba(255,200,50,.8));
 transition:transform .3s ease, opacity .3s ease;
 }
 /* ===== END BIRTHDAY SELF CELEBRATION ===== */
-/* ═══════════ BOTTOM DOCK v2.0 ═══════════ */
-#main-nav {
-order:999; /* в конец flex-колонки #app */
-overflow-x:visible !important; /* override v1 */
-position:fixed !important;
-bottom:0; left:0; right:0;
-top:auto !important;
-height:60px;
-background:var(–bg2);
-border-top:1px solid var(–line);
-border-bottom:none !important;
-display:none;
-align-items:stretch;
-justify-content:stretch;
-z-index:200;
-padding-bottom:env(safe-area-inset-bottom);
+
+/* ===== RATING SCREEN ===== */
+#scr-rating { padding-bottom:68px; }
+.rating-card {
+background:var(–bg2); border:1px solid var(–line2);
+border-radius:var(–r2); margin-bottom:10px;
+padding:14px 16px; display:flex; align-items:center; gap:12px;
+backdrop-filter:blur(12px); position:relative; overflow:hidden;
 }
-body.login-active #main-nav { display:none !important; }
-.nav-inner {
-flex:1; display:flex;
-max-width:720px; margin:0 auto; padding:0 4px;
+.rating-card::before {
+content:’’; position:absolute; inset:0;
+background:linear-gradient(120deg,rgba(255,255,255,.12) 0%,transparent 60%);
+pointer-events:none;
 }
-/* Dock tabs */
-.tab {
-flex:1; display:flex; flex-direction:column;
-align-items:center; justify-content:center;
-gap:3px; padding:6px 2px !important;
-font-size:8px !important; letter-spacing:.03em;
-border-bottom:none !important;
-border-top:2px solid transparent;
-transition:color .15s, border-color .15s;
-min-width:0;
+.rating-medal { font-size:22px; flex-shrink:0; width:32px; text-align:center; }
+.rating-rank {
+width:26px; height:26px; border-radius:50%; flex-shrink:0;
+display:flex; align-items:center; justify-content:center;
+font-family:‘Unbounded’,sans-serif; font-size:10px; font-weight:900;
 }
-.tab.on {
-border-bottom:none !important;
-border-top-color:var(–acc);
+.rating-info { flex:1; min-width:0; }
+.rating-name {
+font-family:‘Unbounded’,sans-serif; font-size:12px; font-weight:800;
+text-transform:uppercase; margin-bottom:5px; white-space:nowrap;
+overflow:hidden; text-overflow:ellipsis;
 }
-.tab-dot { display:none !important; } /* hide dot in dock mode */
-.tab-icon { width:20px; height:20px; stroke:currentColor; stroke-width:1.8; fill:none; stroke-linecap:round; stroke-linejoin:round; }
-.tab-lbl { line-height:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:56px; }
-/* Смещаем main вниз чтобы dock не перекрывал контент */
-main { padding-bottom:68px !important; }
-/* grafik-sticky — поднимаем чуть ниже хедера (nav теперь снизу) */
-#grafik-sticky { top:52px !important; }
-/* Скрываем tab-dot везде в v2 */
-/* ═══ VISITS SCREEN ═══ */
-#scr-visits-v2 {
-display:none; flex-direction:column;
-position:fixed; inset:0; bottom:60px; top:52px;
-background:var(–bg); z-index:50;
+.rating-bar-wrap { height:5px; background:rgba(255,255,255,.1); border-radius:3px; overflow:hidden; }
+.rating-bar { height:100%; border-radius:3px; transition:width .8s ease; }
+.rating-stats {
+display:flex; gap:14px; margin-top:5px;
+font-size:10px; color:var(–txt2);
 }
-#scr-visits-v2.on { display:flex; }
-.vt2-toolbar {
-flex-shrink:0; display:flex; align-items:center; gap:8px;
-padding:7px 12px; border-bottom:1px solid var(–line);
-background:var(–bg); flex-wrap:wrap;
+.rating-val { font-family:‘Unbounded’,sans-serif; font-size:18px; font-weight:900; }
+.rating-dept-tabs {
+display:flex; gap:8px; padding:10px 0 4px;
+border-bottom:1px solid var(–line);
+margin-bottom:14px;
 }
-.vt2-btn {
-display:flex; align-items:center; gap:4px;
-padding:5px 10px; border-radius:var(–r);
-background:var(–bg3); border:1px solid var(–line2);
-color:var(–txt2); font-size:11px; font-weight:600;
-cursor:pointer; white-space:nowrap;
+.rating-dept-tab {
+padding:4px 12px; border-radius:20px;
+font-family:‘Unbounded’,sans-serif; font-size:9px; font-weight:800;
+border:1px solid var(–line2); background:none; color:var(–txt2);
+cursor:pointer; transition:all .15s;
 }
-.vt2-btn:hover { border-color:var(–acc); color:var(–acc); }
-.vt2-btn svg { width:13px; height:13px; stroke:currentColor; stroke-width:2; fill:none; stroke-linecap:round; }
-.vt2-sep { flex:1; }
-.vt2-closed {
-padding:3px 9px; border-radius:5px; font-size:10px; font-weight:700;
-font-family:‘Unbounded’,sans-serif; letter-spacing:.04em;
-background:rgba(255,71,87,.1); color:var(–red); border:1px solid rgba(255,71,87,.2);
+.rating-dept-tab.on { background:var(–acc-bg); border-color:var(–acc); color:var(–acc); }
+/* ===== VISITS TABLE v2 ===== */
+#scr-visits {
+display:none; position:fixed; inset:0;
+background:var(–bg); z-index:200;
+overflow:hidden; flex-direction:column;
 }
-.vt2-dept-tabs {
-flex-shrink:0; display:flex;
-border-bottom:1px solid var(–line); background:var(–bg);
+#scr-visits.on { display:flex; }
+.vt2-head {
+display:flex; align-items:center; padding:10px 14px 0; gap:10px; flex-shrink:0;
+border-bottom:1px solid var(–line); padding-bottom:10px;
+}
+.vt2-back {
+background:var(–bg3); border:1px solid var(–line2); border-radius:8px;
+padding:5px 10px; color:var(–txt2); font-size:11px; cursor:pointer;
+font-family:‘Golos Text’,sans-serif; flex-shrink:0;
+}
+.vt2-title {
+font-family:‘Unbounded’,sans-serif; font-size:11px; font-weight:800; color:var(–txt);
 }
 .vt2-dept-tab {
-flex:1; padding:9px; text-align:center;
+padding:4px 10px; border-radius:20px;
 font-family:‘Unbounded’,sans-serif; font-size:9px; font-weight:800;
-letter-spacing:.06em; color:var(–txt3); background:none; border:none;
-border-bottom:2px solid transparent; cursor:pointer; transition:color .15s, border-color .15s;
+border:1px solid var(–line2); background:none; color:var(–txt2);
+cursor:pointer; transition:all .15s;
 }
-.vt2-dept-tab.on { color:var(–acc); border-bottom-color:var(–acc); }
-.vt2-scroll { flex:1; overflow:auto; -webkit-overflow-scrolling:touch; }
-.vt2-wrap { display:inline-block; min-width:100%; }
-/* Table grid */
-.vt2-head {
-display:grid; position:sticky; top:0; z-index:10;
-background:var(–bg3); border-bottom:2px solid var(–line2);
-}
-.vt2-hcell {
-padding:7px 6px; font-family:‘Unbounded’,sans-serif;
-font-size:7.5px; font-weight:800; letter-spacing:.05em; color:var(–txt3);
-text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-border-right:1px solid var(–line);
-}
-.vt2-hcell:last-child { border-right:none; }
-/* Week grouping */
+.vt2-dept-tab.on { background:var(–acc-bg); border-color:var(–acc); color:var(–acc); }
+.vt2-body { flex:1; overflow:auto; padding-bottom:56px; }
 .vt2-week-hdr {
-display:flex; align-items:center; gap:8px;
-padding:7px 12px; cursor:pointer; user-select:none;
-background:var(–bg3); border-bottom:1px solid var(–line);
-border-top:1px solid var(–line); position:sticky; top:30px; z-index:9;
+position:sticky; top:0; z-index:10;
+background:var(–bg2); border-bottom:1px solid var(–line);
+padding:7px 14px; display:flex; align-items:center; gap:10px;
+font-family:‘Unbounded’,sans-serif; font-size:9px; font-weight:800;
+letter-spacing:.06em; color:var(–acc); cursor:pointer; user-select:none;
 }
-.vt2-week-hdr:hover { background:var(–bg4, var(–bg3)); }
-.vt2-week-title { font-family:‘Unbounded’,sans-serif; font-size:9px; font-weight:800; letter-spacing:.05em; color:var(–txt2); flex:1; text-transform:uppercase; }
-.vt2-week-cnt { font-size:10px; color:var(–txt3); }
-.vt2-week-chev { width:14px; height:14px; stroke:var(–txt3); stroke-width:2.5; fill:none; transition:transform .2s; }
-.vt2-week-hdr.collapsed .vt2-week-chev { transform:rotate(-90deg); }
-.vt2-week-body.collapsed { display:none; }
-/* Row */
-.vt2-row { display:grid; border-bottom:1px solid var(–line); transition:background .1s; }
-.vt2-row:hover { background:var(–bg3); }
-.vt2-row.vt2-empty { opacity:.45; }
-.vt2-row.vt2-empty:hover { opacity:1; background:var(–bg3); }
-.vt2-row.vt2-deleting { opacity:.3; pointer-events:none; }
-/* Cell */
-.vt2-rn {
-display:flex; align-items:center; justify-content:center;
-color:var(–txt3); font-size:9px; min-height:32px; position:relative;
-border-right:1px solid var(–line);
+.vt2-week-arrow { font-size:10px; color:var(–txt2); margin-left:auto; }
+.vt2-table-wrap { overflow-x:auto; }
+.vt2-table {
+border-collapse:collapse; width:100%;
+font-size:11px; font-family:‘Golos Text’,sans-serif;
 }
-.vt2-rn:hover .vt2-row-actions { display:flex; }
-.vt2-row-actions {
-display:none; position:absolute; left:100%; top:50%; transform:translateY(-50%);
-z-index:20; background:var(–bg2); border:1px solid var(–line2);
-border-radius:6px; padding:2px; flex-direction:column; gap:2px;
-box-shadow:0 4px 12px rgba(0,0,0,.25);
+.vt2-table th {
+position:sticky; top:0; z-index:5;
+background:var(–bg3); border:1px solid var(–line2);
+padding:5px 8px; text-align:left;
+font-family:‘Unbounded’,sans-serif; font-size:8px; font-weight:800;
+color:var(–txt2); white-space:nowrap; letter-spacing:.04em;
 }
-.vt2-row-act {
-width:24px; height:24px; display:flex; align-items:center; justify-content:center;
-background:none; border:none; cursor:pointer; border-radius:4px;
-color:var(–txt3); transition:background .1s, color .1s;
+.vt2-table td {
+border:1px solid var(–line); padding:0;
+background:var(–bg2); min-width:80px; max-width:180px;
+vertical-align:middle;
 }
-.vt2-row-act:hover { background:var(–bg3); color:var(–acc); }
-.vt2-row-act.del:hover { color:var(–red); }
-.vt2-row-act svg { width:12px; height:12px; stroke:currentColor; stroke-width:2; fill:none; }
+.vt2-table td.vt2-empty-row { opacity:.35; }
 .vt2-cell {
-padding:5px 6px; min-height:32px; min-width:0;
-border-right:1px solid var(–line);
-font-size:11px; color:var(–txt); outline:none; cursor:text;
-display:flex; align-items:center; overflow:hidden; white-space:nowrap;
-transition:background .1s;
+display:block; width:100%; min-height:30px;
+padding:5px 7px; outline:none; background:transparent;
+color:var(–txt); font-size:11px; font-family:‘Golos Text’,sans-serif;
+border:none; box-sizing:border-box; white-space:nowrap;
 }
-.vt2-cell:last-child { border-right:none; }
-.vt2-cell[contenteditable=“true”]:focus, .vt2-cell.vt2-active {
-background:var(–acc-bg) !important;
-box-shadow:inset 0 0 0 2px var(–acc);
-z-index:2; overflow:visible; white-space:normal;
+.vt2-cell:focus { background:var(–acc-bg); outline:2px solid var(–acc); outline-offset:-2px; }
+.vt2-cell.select-cell { cursor:pointer; }
+td.vt2-rownum {
+min-width:28px; max-width:28px; text-align:center;
+font-size:9px; color:var(–txt3); background:var(–bg3);
+cursor:pointer; padding:0;
 }
-.vt2-cell.vt2-err { box-shadow:inset 0 0 0 1.5px var(–red) !important; }
-.vt2-cell.vt2-locked { color:var(–txt2); cursor:default; background:rgba(0,0,0,.02); }
-/* Dropdown */
-.vt2-drop {
-position:fixed; z-index:9999;
-background:var(–bg2); border:1px solid var(–line2);
-border-radius:var(–r); box-shadow:0 8px 24px rgba(0,0,0,.3);
-min-width:160px; max-height:220px; overflow-y:auto; display:none;
+td.vt2-rownum:hover { background:rgba(255,71,87,.12); color:var(–red); }
+.vt2-footer {
+position:fixed; bottom:60px; left:0; right:0;
+padding:8px 14px; background:var(–bg);
+border-top:1px solid var(–line);
+display:flex; align-items:center; gap:8px; z-index:201;
 }
-.vt2-drop.on { display:block; }
-.vt2-drop-item {
-padding:8px 12px; font-size:12px; cursor:pointer;
-transition:background .1s; color:var(–txt); display:flex; align-items:center; gap:8px;
+.vt2-add-btn {
+flex:1; padding:7px; background:var(–acc-bg);
+border:1px solid var(–acc-bdr); border-radius:8px;
+color:var(–acc); font-size:11px; cursor:pointer;
+font-family:‘Unbounded’,sans-serif; font-weight:800;
 }
-.vt2-drop-item:hover { background:var(–bg3); color:var(–acc); }
-.vt2-drop-item.sel { color:var(–acc); font-weight:600; }
-/* Save indicator */
-#vt2-save {
-position:fixed; bottom:68px; right:12px; z-index:300;
-background:var(–bg2); border:1px solid var(–line2);
-border-radius:8px; padding:5px 10px; font-size:10px; font-weight:600;
-color:var(–txt2); display:none; align-items:center; gap:6px;
-box-shadow:0 4px 12px rgba(0,0,0,.2);
+.vt2-save-status { font-size:10px; color:var(–txt2); }
+.vt2-select-popup {
+position:fixed; background:var(–bg2); border:1px solid var(–line2);
+border-radius:var(–r); z-index:9999; min-width:140px; max-width:220px;
+box-shadow:0 8px 24px rgba(0,0,0,.35); overflow:hidden;
 }
-#vt2-save.on { display:flex; }
-#vt2-save.ok { color:var(–grn); }
-#vt2-save.err { color:var(–red); }
-.vt2-spin {
-width:10px; height:10px; border-radius:50%;
-border:2px solid var(–line2); border-top-color:var(–acc);
-animation:vspin .6s linear infinite;
+.vt2-select-popup button {
+display:block; width:100%; padding:8px 12px; text-align:left;
+background:none; border:none; color:var(–txt); font-size:12px;
+font-family:‘Golos Text’,sans-serif; cursor:pointer; transition:background .1s;
 }
-@keyframes vspin { to { transform:rotate(360deg); } }
-/* Undo toast */
-#vt2-undo {
-position:fixed; bottom:68px; left:50%; transform:translateX(-50%);
-background:var(–bg2); border:1px solid var(–line2); border-radius:var(–r2);
-padding:10px 16px; display:none; align-items:center; gap:12px;
-box-shadow:0 6px 20px rgba(0,0,0,.3); z-index:600; font-size:12px; white-space:nowrap;
+.vt2-select-popup button:hover { background:var(–bg3); color:var(–acc); }
+.vt2-closed-notice {
+background:rgba(255,71,87,.08); border:1px solid rgba(255,71,87,.25);
+border-radius:var(–r); padding:10px 14px; font-size:12px; color:var(–red);
+margin:10px 14px; text-align:center;
 }
-#vt2-undo.on { display:flex; }
-#vt2-undo-btn {
-background:var(–acc); color:#000; border:none; padding:5px 12px;
-border-radius:6px; font-family:‘Unbounded’,sans-serif; font-size:9px;
-font-weight:800; cursor:pointer; letter-spacing:.04em;
-}
-/* Rating screen */
-#scr-rating { display:none; padding:0 0 10px 0; animation:up .2s ease; }
-#scr-rating.on { display:block; }
+/* ===== END VISITS TABLE v2 ===== */
 </style>
 
 </head>
@@ -1947,7 +1885,7 @@ font-weight:800; cursor:pointer; letter-spacing:.04em;
 <canvas id="bg-canvas"></canvas>
 <div class="glass"></div>
 <div id="app">
-  <header id="main-hdr" style="display:none">
+  <header>
     <div class="hdr-inner">
       <div class="hdr-left">
         <div class="logo" onclick="goHome()">
@@ -2023,31 +1961,31 @@ font-weight:800; cursor:pointer; letter-spacing:.04em;
     </div>
   </div>
 
-  <nav id="main-nav" style="display:none">
+  <nav id="main-nav">
     <div class="nav-inner">
       <button class="tab on" data-tab="otchet">
-        <svg class="tab-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        <span class="tab-lbl">Главная</span>
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        ГЛАВНАЯ
       </button>
       <button class="tab" data-tab="dohod">
-        <svg class="tab-icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        <span class="tab-lbl">KPI</span>
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        KPI
       </button>
       <button class="tab" data-tab="rating">
-        <svg class="tab-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        <span class="tab-lbl">Рейтинг</span>
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6l4-4 4 4"/><path d="M12 2v10"/><path d="M3 20h18"/><rect x="5" y="12" width="4" height="8" rx="1"/><rect x="10" y="10" width="4" height="10" rx="1"/><rect x="15" y="14" width="4" height="6" rx="1"/></svg>
+        РЕЙТИНГ
       </button>
       <button class="tab" data-tab="visits">
-        <svg class="tab-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        <span class="tab-lbl">Отчёт</span>
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        ВИЗИТЫ
       </button>
       <button class="tab" data-tab="instruktsii">
-        <svg class="tab-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-        <span class="tab-lbl">Ещё</span>
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        ЕЩЁ
       </button>
     </div>
   </nav>
-  <div id="grafik-sticky" style="display:none;background:var(--bg);border-bottom:1px solid var(--line);z-index:50;position:sticky;top:96px">
+  <div id="grafik-sticky" style="display:none;background:var(--bg);border-bottom:1px solid var(--line);z-index:50;position:sticky;top:52px">
     <div class="w" style="padding-top:7px;padding-bottom:7px">
       <div id="grafik-sticky-inner"></div>
     </div>
@@ -2055,11 +1993,9 @@ font-weight:800; cursor:pointer; letter-spacing:.04em;
   <div id="floating-subtabs" class="report-subtabs" style="display:none;"></div>
   <div id="floating-dohod-subtabs" class="report-subtabs" style="display:none;"></div>
   <div id="floating-faq-subtabs" class="faq-subtabs" style="display:none;"></div>
-
   <main>
     <div id="scr-login" class="scr">
-      <canvas id="login-canvas" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;opacity:0.5;z-index:0"></canvas>
-      <div class="gate" style="position:relative;z-index:1;flex:1">
+      <div class="gate">
         <div class="gate-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <rect x="3" y="11" width="18" height="11" rx="2"/>
@@ -2099,52 +2035,38 @@ font-weight:800; cursor:pointer; letter-spacing:.04em;
       </div>
     </div>
   </main>
+
+  <!-- ===== RATING SCREEN ===== -->
+
+  <div id="scr-rating" class="scr">
+    <div class="w">
+      <div id="c-rating"></div>
+    </div>
+  </div>
+
+  <!-- ===== VISITS TABLE v2 ===== -->
+
+  <div id="scr-visits">
+    <div class="vt2-head">
+      <button class="vt2-back" onclick="closeVisitsScreen()">← Назад</button>
+      <span class="vt2-title">ВИЗИТЫ</span>
+      <div id="vt2-dept-tabs" style="display:flex;gap:6px;margin-left:auto"></div>
+    </div>
+    <div class="vt2-body" id="vt2-body">
+      <div class="loader"><div class="spin"></div><span>Загрузка…</span></div>
+    </div>
+    <div class="vt2-footer">
+      <button class="vt2-add-btn" onclick="vt2AddRow()">+ СТРОКА</button>
+      <span class="vt2-save-status" id="vt2-save-status"></span>
+    </div>
+  </div>
   <div class="page-footer">
     <div class="glitch" id="author" data-text="© Бочаров Ю.С., 2026">
         © Бочаров Ю.С., 2026
     </div>
   </div>
-<!-- VISITS TABLE v2 -->
-<div id="scr-visits-v2">
-  <div class="vt2-dept-tabs" id="vt2-dept-tabs" style="display:none">
-    <button class="vt2-dept-tab on" onclick="vt2SetDept('crm')"   id="vt2-tab-crm">CRM</button>
-    <button class="vt2-dept-tab"   onclick="vt2SetDept('dozhim')" id="vt2-tab-dozhim">ДОЖИМ</button>
-  </div>
-  <div class="vt2-toolbar">
-    <button class="vt2-btn" onclick="vt2AddRow()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Добавить
-    </button>
-    <button class="vt2-btn" onclick="vt2OpenImport()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Импорт
-    </button>
-    <div class="vt2-sep"></div>
-    <span id="vt2-closed-badge" class="vt2-closed" style="display:none">Месяц закрыт</span>
-    <button class="vt2-btn" onclick="vt2Reload()" title="Обновить">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-    </button>
-  </div>
-  <div class="vt2-scroll" id="vt2-scroll">
-    <div class="vt2-wrap" id="vt2-wrap">
-      <div class="loader"><div class="spin"></div><span>Синхронизация…</span></div>
-    </div>
-  </div>
 </div>
-<!-- RATING SCREEN -->
-<div id="scr-rating" class="scr">
-  <div class="w"><div id="c-rating"></div></div>
-</div>
-<!-- VT2 HELPERS -->
-<div id="vt2-save" style="position:fixed;bottom:68px;right:12px;z-index:300;background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:5px 10px;font-size:10px;font-weight:600;color:var(--txt2);display:none;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(0,0,0,.2)">
-  <div class="vt2-spin"></div><span>Сохранение…</span>
-</div>
-<div id="vt2-undo" style="position:fixed;bottom:68px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--line2);border-radius:var(--r2);padding:10px 16px;display:none;align-items:center;gap:12px;box-shadow:0 6px 20px rgba(0,0,0,.3);z-index:600;font-size:12px;white-space:nowrap">
-  <span>Строка удалена</span>
-  <button id="vt2-undo-btn" style="background:var(--acc);color:#000;border:none;padding:5px 12px;border-radius:6px;font-family:'Unbounded',sans-serif;font-size:9px;font-weight:800;cursor:pointer;letter-spacing:.04em">ОТМЕНА</button>
-  <span id="vt2-undo-timer" style="color:var(--txt3);font-size:11px;min-width:18px">10</span>
-</div>
-
 <!-- BIRTHDAY BANNER -->
-
 <div id="bday-banner">
   <div class="bday-balloons" id="bday-balloons"></div>
   <div class="bday-content">
@@ -2348,17 +2270,20 @@ clearTimeout(_tt); _tt = setTimeout(() => el.className=’’, 2600);
 }
 
 function showScr(id) {
-[‘otchet’,‘dohod’,‘grafik’,‘instruktsii’,‘personal’,‘rating’].forEach(t =>
-document.getElementById(‘scr-’+t)?.classList.remove(‘on’)
-);
-// Visits screen is special — separate fixed overlay
-const visitsEl = document.getElementById(‘scr-visits-v2’);
+[‘otchet’,‘dohod’,‘grafik’,‘instruktsii’,‘personal’,‘rating’].forEach(t => {
+const el = document.getElementById(‘scr-’+t);
+if (el) el.classList.remove(‘on’);
+});
+// visits — отдельный fixed экран
+const visEl = document.getElementById(‘scr-visits’);
+if (visEl) visEl.classList.remove(‘on’);
+
 if (id === ‘visits’) {
-visitsEl?.classList.add(‘on’);
+if (visEl) visEl.classList.add(‘on’);
 } else {
-visitsEl?.classList.remove(‘on’);
 document.getElementById(‘scr-’+id)?.classList.add(‘on’);
 }
+
 const gs = document.getElementById(‘grafik-sticky’);
 if (gs) gs.style.display = id === ‘grafik’ ? ‘’ : ‘none’;
 const floating = document.getElementById(‘floating-subtabs’);
@@ -2464,25 +2389,22 @@ const l = document.getElementById(‘silent-loader’);
 if (l) l.remove();
 if (window._silentFallback) { clearTimeout(window._silentFallback); window._silentFallback = null; }
 localStorage.removeItem(‘crm_user’);
-
-```
-    document.getElementById('scr-login').classList.remove('off'); document.body.classList.add('login-active');
-    toast('Ошибка: '+resp.error, 'e');
-    return;
-  }
-  // Успех — убираем лоадер
-  const l = document.getElementById('silent-loader');
-  if (l) l.remove();
-  if (window._silentFallback) { clearTimeout(window._silentFallback); window._silentFallback = null; }
-  S.token = resp.access_token;
-  localStorage.setItem('crm_tok', resp.access_token);
-  localStorage.setItem('crm_exp', Date.now()+(resp.expires_in-60)*1000);
-  loadUser();
-  onLogin();
-  scheduleTokenRefresh(resp.expires_in);
+document.getElementById(‘scr-login’).style.display = ‘’;
+document.getElementById(‘scr-login’).classList.add(‘on’); document.body.classList.add(‘login-active’);
+toast(’Ошибка: ’+resp.error, ‘e’);
+return;
+}
+// Успех — убираем лоадер
+const l = document.getElementById(‘silent-loader’);
+if (l) l.remove();
+if (window._silentFallback) { clearTimeout(window._silentFallback); window._silentFallback = null; }
+S.token = resp.access_token;
+localStorage.setItem(‘crm_tok’, resp.access_token);
+localStorage.setItem(‘crm_exp’, Date.now()+(resp.expires_in-60)*1000);
+loadUser();
+onLogin();
+scheduleTokenRefresh(resp.expires_in);
 },
-```
-
 });
 }
 
@@ -2526,11 +2448,9 @@ document.getElementById(‘user-wrap’).style.display = ‘flex’;
 
 function onLogin() {
 document.getElementById(‘btn-out’).style.display   = ‘’;
-document.getElementById(‘main-nav’).style.display  = ‘flex’;
-const mainHdr = document.getElementById(‘main-hdr’);
-if (mainHdr) mainHdr.style.display = ‘’;
+document.getElementById(‘main-nav’).classList.add(‘nav-visible’);
 const ls = document.getElementById(‘scr-login’);
-ls.classList.add(‘off’); document.body.classList.remove(‘login-active’); document.body.classList.remove(‘login-active’);
+ls.classList.remove(‘on’); ls.style.display = ‘none’; document.body.classList.remove(‘login-active’);
 toast(‘Приветствую!’, ‘s’);
 document.querySelectorAll(’.tab’).forEach(b => b.classList.toggle(‘on’, b.dataset.tab===‘otchet’));
 showScr(‘otchet’);
@@ -2563,9 +2483,8 @@ S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null
 [‘crm_tok’,‘crm_exp’,‘crm_user’].forEach(k => localStorage.removeItem(k));
 document.getElementById(‘user-wrap’).style.display = ‘none’;
 document.getElementById(‘btn-out’).style.display   = ‘none’;
-document.getElementById(‘main-nav’).style.display  = ‘none’;
-const _hdr = document.getElementById(‘main-hdr’); if(_hdr) _hdr.style.display=‘none’;
-[‘otchet’,‘dohod’,‘grafik’,‘instruktsii’,‘personal’].forEach(t => {
+document.getElementById(‘main-nav’).classList.remove(‘nav-visible’);
+[‘otchet’,‘dohod’,‘grafik’,‘instruktsii’,‘personal’,‘rating’].forEach(t => {
 const s = document.getElementById(‘scr-’+t);
 s.classList.remove(‘on’); s.style.display = ‘’;
 });
@@ -2601,8 +2520,8 @@ return false;
 
 function trySilentRefresh() {
 // Показываем лоадер вместо экрана входа
-// login hidden via .off class
-document.getElementById(‘scr-login’).classList.add(‘off’); document.body.classList.remove(‘login-active’);
+document.getElementById(‘scr-login’).classList.remove(‘on’);
+document.getElementById(‘scr-login’).style.display = ‘none’; document.body.classList.remove(‘login-active’);
 const loader = document.createElement(‘div’);
 loader.id = ‘silent-loader’;
 loader.className = ‘loader’;
@@ -2618,7 +2537,8 @@ const l = document.getElementById(‘silent-loader’);
 if (l) l.remove();
 if (!S.token) {
 localStorage.removeItem(‘crm_user’);
-document.getElementById(‘scr-login’).classList.remove(‘off’); document.body.classList.add(‘login-active’);
+document.getElementById(‘scr-login’).style.display = ‘’;
+document.getElementById(‘scr-login’).classList.add(‘on’); document.body.classList.add(‘login-active’);
 }
 }, 8000);
 
@@ -2656,10 +2576,19 @@ loadTab(activeTab);
 }
 
 function goTab(tab) {
+if (tab === ‘visits’) {
+document.querySelectorAll(’.tab’).forEach(b => b.classList.toggle(‘on’, b.dataset.tab === ‘visits’));
+showScr(‘visits’);
+vt2Init();
+return;
+}
+if (tab === ‘rating’) {
+document.querySelectorAll(’.tab’).forEach(b => b.classList.toggle(‘on’, b.dataset.tab === ‘rating’));
+showScr(‘rating’);
+renderRatingV2();
+return;
+}
 document.querySelectorAll(’.tab’).forEach(b => b.classList.toggle(‘on’, b.dataset.tab===tab));
-// visits и rating — обрабатываем отдельно
-if (tab === ‘visits’) { showScr(‘visits’); vt2Init(); return; }
-if (tab === ‘rating’) { showScr(‘rating’); renderRatingV2(); return; }
 showScr(tab);
 loadTab(tab);
 }
@@ -4105,7 +4034,7 @@ let linksOpenInApp = true;
 const LINKS_DATA = {
 “Барнаул”:     { autocred:“https://barnaul.autocred1.ru/”, autohouse:“https://barnaul.autohouse24.ru/”, crystal:“https://barnaul.crystal-motors.ru/avtomobili_s_probegom”, drom:“https://auto.drom.ru/crystalmotors-barnaul/”, autoru:“https://auto.ru/diler/cars/all/crystal_motors_barnaul/”, avito:“https://www.avito.ru/brands/i280950426/all/avtomobili?sellerId=e149edb207990686ae688c910d846ab0”, gis:“https://2gis.ru/barnaul/geo/563585608610081”, select:“https://selectauto24.ru/barnaul”, addr:“Правобережный тракт 26”, photo:“https://i.ibb.co/Xfk4QxpC/image.jpg” },
 “Кемерово”:    { autocred:“https://kemerovo.autocred1.ru/”, autohouse:“https://kemerovo.autohouse24.ru/”, crystal:“https://kemerovo.crystal-motors.ru/avtomobili_s_probegom”, drom:“https://auto.drom.ru/crystalmotors_kemerovo/”, autoru:“https://auto.ru/diler/cars/all/crystal_motors_kemerovo/”, avito:“https://www.avito.ru/brands/crystal-motors-kemerovo/all/avtomobili?sellerId=855dfcc5d6b5a0aa07927b9db17e5347”, gis:“https://2gis.ru/kemerovo/firm/70000001057296192”, select:“https://selectauto24.ru/kemerovo”, addr:“Тухачевского 64”, photo:“https://i.ibb.co/35DvZ0fg/image.jpg” },
-“Красноярск”:  { autocred:“https://krasnoyarsk.autocred1.ru/”, autohouse:“https://krasnoyarsk.autohouse24.ru/”, crystal:“https://krasnoyarsk.crystal-motors.ru/avtomobili_s_probegom”, drom:“https://auto.drom.ru/crystalmotorskr/”, autoru:“https://auto.ru/diler/cars/all/crystal_motors_krasnoyarsk/”, avito:“https://www.avito.ru/brands/crystal-motors-kras/all/avtomobili?sellerId=8c19b51265e7679874976435ee10bd67”, gis:“https://2gis.ru/krasnoyarsk/firm/70000001067133445”, select:“https://selectauto24.ru/krasnoyarsk”, addr:“Караульная 47”, photo:“https://i.ibb.co/zTrR9gLF/image.jpg” },
+“Красноярск”:  { autocred:“https://krasnoyarsk.autocred1.ru/”, autohouse:“https://krasnoyarsk.autohouse24.ru/”, crystal:“https://krasnoyarsk.crystal-motors.ru/avtomobili_s_probegom”, drom:“https://auto.drom.ru/crystalmotorskr/”, autoru:“https://auto.ru/diler/cars/all/crystal_motors_krasnoyarsk/”, avito:“https://www.avito.ru/brands/crystal-motors-kras/all/avtomobili?sellerId=8c19b51265e7679874976435ee10bd67”, gis:“https://2gis.ru/krasnoyarsk/firm/70000001067133445”, select:“https://selectauto24.ru/krasnoyarsk”, addr:“Караульная 47”, photo:“https://i.ibb.co/1YwKcMXp/new.jpg” },
 “Новокузнецк”: { autocred:“https://nkz.autocred1.ru/”, autohouse:“https://nkz.autohouse24.ru/”, crystal:“https://nkz.crystal-motors.ru/avtomobili_s_probegom”, drom:“https://auto.drom.ru/crystalmotors-nkz/”, autoru:“https://auto.ru/diler/cars/all/crystal_motors_novokuzneck/”, avito:“https://www.avito.ru/brands/i194658258”, gis:“https://2gis.ru/novokuznetsk/firm/70000001047205820”, select:“https://selectauto24.ru/nkz”, addr:“Байдаевское шоссе 22”, photo:“https://i.ibb.co/t1J4rfM/image.jpg” },
 “Новосибирск”: { autocred:“https://novosib.autocred1.ru/”, autohouse:“https://novosib.autohouse24.ru/”, crystal:“https://novosib.crystal-motors.ru/avtomobili_s_probegom”, drom:“https://auto.drom.ru/crystalmotors-novosib/”, autoru:“https://auto.ru/diler/cars/all/crystal_motors_novosibirsk/”, avito:“https://www.avito.ru/brands/i191016697”, gis:“https://2gis.ru/novosibirsk/firm/70000001101740462”, select:“https://selectauto24.ru/novosib”, addr:“Большевистская 276”, photo:“https://i.ibb.co/dw5JjnBF/image.jpg” },
 “Омск”:        { autocred:“https://omsk.autocred1.ru/”, autohouse:“https://omsk.autohouse24.ru/”, crystal:“https://omsk.crystal-motors.ru/avtomobili_s_probegom”, drom:“https://auto.drom.ru/crystalmotors-omsk/”, autoru:“https://auto.ru/diler/cars/all/crystal_motors_omsk_omsk/”, avito:“https://www.avito.ru/brands/i168486683/all/avtomobili?sellerId=e82822bbd8cff3c4cb55135813d60568”, gis:“https://2gis.ru/omsk/firm/70000001038741636”, select:“https://selectauto24.ru/omsk”, addr:“Енисейская 18/1”, photo:“https://i.ibb.co/hRRGHS40/image.jpg” },
@@ -5668,641 +5597,6 @@ document.body.style.overflow = ‘’;
 
 // ==================== INIT ====================
 document.getElementById(‘btn-refresh’).addEventListener(‘click’, reloadCurrent);
-
-// ══════════════════════════════════════════════════════
-//  VISITS TABLE v2 — полная реализация
-// ══════════════════════════════════════════════════════
-const VT2_COLS = [
-{ key:‘date’,    label:‘Дата’,         w:72,  type:‘date’   },
-{ key:‘name’,    label:‘ФИО клиента’,  w:130, type:‘text’   },
-{ key:‘phone’,   label:‘Телефон’,      w:110, type:‘phone’  },
-{ key:‘city’,    label:‘Город’,        w:80,  type:‘text’   },
-{ key:‘comment’, label:‘Комментарий’,  w:150, type:‘combo’,
-opts:[‘В работе’,‘Покупка (кредит)’,‘Покупка (наличные)’,‘Обмен’,‘Комиссия’,‘Перенос’,‘Отказ’] },
-{ key:‘source’,  label:‘Источник’,     w:100, type:‘combo’,
-opts:[‘Яндекс’,‘Авито’,‘Авто.ру’,‘Сарафан’,‘Повторный’,‘Холодный звонок’,‘Instagram’] },
-{ key:‘cat’,     label:‘Категория’,    w:90,  type:‘select’,
-opts:[‘кат 800’,‘кат 1200’,‘кат 1000’] },
-{ key:‘deal’,    label:‘Способ’,       w:110, type:‘select’,
-opts:[‘Кредит’,‘Наличные’,‘Обмен’,‘Комиссия’] },
-{ key:‘mgr’,     label:‘Менеджер’,     w:110, type:‘mgr’    },
-{ key:‘deposit’, label:‘Задаток’,      w:75,  type:‘money’  },
-{ key:‘kso’,     label:‘КСО’,          w:85,  type:‘select’,
-opts:[‘Был в КСО’,‘Не был в КСО’] },
-{ key:‘credit’,  label:‘Кред.рейтинг’,w:90,  type:‘text’   },
-{ key:‘car’,     label:‘Авто’,         w:110, type:‘text’   },
-{ key:‘check’,   label:‘Сверка’,       w:65,  type:‘select’,
-opts:[‘ДА’,‘НЕТ’] },
-];
-const VT2_NCOLS = VT2_COLS.length;
-
-const VT2 = {
-dept: ‘crm’, rows: [], sheetName: ‘’,
-loading: false, readonly: false,
-deletedRow: null, deleteTimer: null, deleteCountdown: null,
-activeDropEl: null, activeCellEl: null,
-saveTimers: {},
-};
-
-function vt2GetSheetName(dept) {
-const d = dept || VT2.dept;
-const name = d === ‘dozhim’ ? ‘Д_ВИЗИТЫ’ : ‘ВИЗИТЫ’;
-return name + currentSuffix;
-}
-
-function vt2MakeEmptyRow() {
-const matched = findUserInSheet();
-const row = Array(VT2_NCOLS).fill(’’);
-const today = new Date();
-row[0] = String(today.getDate()).padStart(2,‘0’) + ‘.’ + String(today.getMonth()+1).padStart(2,‘0’);
-if (matched && !isUserCeo()) row[8] = matched.name;
-return row;
-}
-
-function isUserCeo() {
-return (findUserInSheet()?.role || ‘’) === ‘ceo’;
-}
-
-function vt2IsReadonly() {
-const now = new Date();
-const curSuf = String(now.getMonth()+1).padStart(2,‘0’) + String(now.getFullYear()).slice(-2);
-if (currentSuffix !== curSuf) return !isUserCeo(); // архив
-return false; // текущий месяц всегда открыт (закрытие 3-го реализовать позже)
-}
-
-function vt2Init() {
-const isCeo = isUserCeo();
-const matched = findUserInSheet();
-const dept = matched?.role === ‘dozhim’ ? ‘dozhim’ : ‘crm’;
-VT2.dept = isCeo ? (VT2.dept || ‘crm’) : dept;
-VT2.readonly = vt2IsReadonly();
-
-// Dept tabs (CEO only)
-const dtabs = document.getElementById(‘vt2-dept-tabs’);
-dtabs.style.display = isCeo ? ‘flex’ : ‘none’;
-document.getElementById(‘vt2-tab-crm’).classList.toggle(‘on’, VT2.dept===‘crm’);
-document.getElementById(‘vt2-tab-dozhim’).classList.toggle(‘on’, VT2.dept===‘dozhim’);
-
-// Closed badge
-document.getElementById(‘vt2-closed-badge’).style.display = VT2.readonly ? ‘’ : ‘none’;
-
-vt2Load();
-}
-
-function vt2SetDept(d) {
-VT2.dept = d;
-VT2.rows = [];
-document.getElementById(‘vt2-tab-crm’).classList.toggle(‘on’, d===‘crm’);
-document.getElementById(‘vt2-tab-dozhim’).classList.toggle(‘on’, d===‘dozhim’);
-vt2Load();
-}
-
-async function vt2Load() {
-if (VT2.loading) return;
-VT2.loading = true;
-VT2.sheetName = vt2GetSheetName();
-const wrap = document.getElementById(‘vt2-wrap’);
-wrap.innerHTML = `<div class="loader"><div class="spin"></div><span>Синхронизация…</span></div>`;
-
-try {
-// Ensure sheet exists for current month
-const curSuf = String(new Date().getMonth()+1).padStart(2,‘0’) + String(new Date().getFullYear()).slice(-2);
-if (currentSuffix === curSuf) await vt2EnsureSheet();
-
-```
-const resp = await api(VT2.sheetName, 'A:N');
-VT2.rows = [];
-const raw = resp || [];
-for (let i = 1; i < raw.length; i++) {
-  const data = Array.from({length:VT2_NCOLS}, (_,j) => String(raw[i][j] ?? ''));
-  VT2.rows.push({ sheetRow: i+1, data, dirty: false });
-}
-vt2Render();
-```
-
-} catch(e) {
-wrap.innerHTML = `<div class="empty">Ошибка: ${e.message}</div>`;
-}
-VT2.loading = false;
-}
-
-async function vt2EnsureSheet() {
-try {
-const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}?fields=sheets.properties`;
-const r = await fetch(url, { headers:{ Authorization:’Bearer ’+S.token } });
-const meta = await r.json();
-const exists = (meta.sheets||[]).some(s => s.properties.title === VT2.sheetName);
-if (exists) return;
-// Create
-await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`, {
-method:‘POST’, headers:{ Authorization:’Bearer ’+S.token, ‘Content-Type’:‘application/json’ },
-body: JSON.stringify({ requests:[{ addSheet:{ properties:{ title:VT2.sheetName } } }] })
-});
-// Write headers
-const headers = [VT2_COLS.map(c=>c.label)];
-await fetch(`${API_BASE}/values/${encodeURIComponent(VT2.sheetName+'!A1:N1')}?valueInputOption=USER_ENTERED`, {
-method:‘PUT’, headers:{ Authorization:‘Bearer ‘+S.token,‘Content-Type’:‘application/json’ },
-body: JSON.stringify({ range:VT2.sheetName+’!A1:N1’, majorDimension:‘ROWS’, values:headers })
-});
-toast(’Создан лист ’ + VT2.sheetName, ‘s’);
-} catch(e) { console.warn(‘ensureSheet:’, e); }
-}
-
-async function vt2Reload() { VT2.rows = []; await vt2Load(); }
-
-// ── RENDER ──────────────────────────────────────
-const VT2_WEEKS = [
-{label:‘1 – 7’,      start:1,  end:7 },
-{label:‘8 – 14’,     start:8,  end:14},
-{label:‘15 – 21’,    start:15, end:21},
-{label:‘22 – конец’, start:22, end:31},
-];
-const VT2_MONTH_RU = [’’,‘янв’,‘фев’,‘мар’,‘апр’,‘май’,‘июн’,‘июл’,‘авг’,‘сен’,‘окт’,‘ноя’,‘дек’];
-
-function vt2Render() {
-const wrap = document.getElementById(‘vt2-wrap’);
-const mm = parseInt(currentSuffix.slice(0,2));
-const yy = 2000 + parseInt(currentSuffix.slice(2));
-const today = new Date();
-const todayDay = today.getDate();
-const isCurMo = (today.getFullYear()===yy && today.getMonth()+1===mm);
-
-const totalW = 36 + VT2_COLS.reduce((s,c)=>s+c.w, 0);
-const gridTpl = `36px ${VT2_COLS.map(c=>c.w+'px').join(' ')}`;
-wrap.style.width = totalW + ‘px’;
-
-// Header
-let html = `<div class="vt2-head" style="grid-template-columns:${gridTpl}"> <div class="vt2-hcell">#</div> ${VT2_COLS.map(c=>`<div class="vt2-hcell">${c.label}</div>`).join(’’)}
-
-  </div>`;
-
-// Group rows by week
-const weekBuckets = VT2_WEEKS.map(()=>[]);
-const orphans = [];
-VT2.rows.forEach(row => {
-const parts = String(row.data[0]||’’).split(/[.-/]/);
-const d = parts.length >= 1 ? parseInt(parts[0]) : NaN;
-const wi = isNaN(d) ? -1 : VT2_WEEKS.findIndex(w => d>=w.start && d<=w.end);
-if (wi>=0) weekBuckets[wi].push(row); else orphans.push(row);
-});
-
-let dispIdx = 0;
-VT2_WEEKS.forEach((week, wi) => {
-const wRows = weekBuckets[wi];
-const isPast  = isCurMo ? todayDay > week.end  : true;
-const isCurWk = isCurMo && todayDay >= week.start && todayDay <= week.end;
-const collapsed = isPast && !isCurWk && wRows.length > 0;
-
-```
-// Combine data rows + empty rows for current week
-let displayRows = [...wRows];
-if (isCurWk && !VT2.readonly) {
-  for (let i=0;i<10;i++) displayRows.push({ sheetRow:-1, data:vt2MakeEmptyRow(), _empty:true });
-}
-
-html += `<div>
-  <div class="vt2-week-hdr${collapsed?' collapsed':''}" onclick="vt2ToggleWeek(this)">
-    <svg class="vt2-week-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-    <span class="vt2-week-title">${week.label} ${VT2_MONTH_RU[mm]}</span>
-    <span class="vt2-week-cnt">${wRows.length} визитов</span>
-  </div>
-  <div class="vt2-week-body${collapsed?' collapsed':''}">`;
-
-displayRows.forEach(row => {
-  const isEmpty = !!row._empty || row.data.every(c=>!String(c).trim());
-  if (!isEmpty) dispIdx++;
-  html += vt2RenderRow(row, isEmpty ? '' : dispIdx, gridTpl, isEmpty);
-});
-
-html += `</div></div>`;
-```
-
-});
-
-if (orphans.length) {
-html += `<div><div class="vt2-week-hdr" onclick="vt2ToggleWeek(this)"> <svg class="vt2-week-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg> <span class="vt2-week-title">Без даты</span> <span class="vt2-week-cnt">${orphans.length}</span> </div><div class="vt2-week-body">`;
-orphans.forEach(r => { dispIdx++; html += vt2RenderRow(r, dispIdx, gridTpl, false); });
-html += `</div></div>`;
-}
-
-wrap.innerHTML = html;
-// Scroll to bottom (latest entries)
-const scroll = document.getElementById(‘vt2-scroll’);
-scroll.scrollTop = scroll.scrollHeight;
-vt2AttachEvents();
-}
-
-function vt2RenderRow(row, idx, gridTpl, isEmpty) {
-const matched = findUserInSheet();
-const locked = VT2.readonly && !isUserCeo();
-
-let cells = ‘’;
-VT2_COLS.forEach((col, ci) => {
-const val = String(row.data[ci] ?? ‘’);
-const isMgrLocked = col.key===‘mgr’ && !isUserCeo() && matched?.name;
-const isLocked = locked || isMgrLocked;
-const hasOpts = col.type===‘select’ || col.type===‘combo’;
-cells += `<div class="vt2-cell${isLocked?' vt2-locked':''}"  data-row="${row.sheetRow}" data-ci="${ci}" ${!isLocked?'contenteditable="true" spellcheck="false"':''} ${hasOpts?'data-opts="1"':''} >${vt2Esc(val)}</div>`;
-});
-
-const rowActions = !locked ? `<div class="vt2-row-actions">
-<button class="vt2-row-act" onclick="vt2InsertBefore(${row.sheetRow})" title="Вставить выше">
-<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-</button>
-<button class="vt2-row-act del" onclick="vt2DeleteRow(${row.sheetRow})" title="Удалить">
-<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-</button>
-
-  </div>` : '';
-
-return `<div class="vt2-row${isEmpty?' vt2-empty':''}" style="grid-template-columns:${gridTpl}" data-sr="${row.sheetRow}">
-<div class="vt2-rn">${isEmpty?’’:idx}${rowActions}</div>
-${cells}
-
-  </div>`;
-}
-
-function vt2ToggleWeek(hdr) {
-hdr.classList.toggle(‘collapsed’);
-hdr.nextElementSibling.classList.toggle(‘collapsed’);
-}
-
-// ── EVENTS ──────────────────────────────────────
-function vt2AttachEvents() {
-const wrap = document.getElementById(‘vt2-wrap’);
-
-wrap.addEventListener(‘focusin’, e => {
-const cell = e.target.closest(’.vt2-cell’);
-if (!cell) return;
-VT2.activeCellEl = cell;
-vt2CloseDropdown();
-if (cell.dataset.opts) vt2ShowDropdown(cell);
-});
-
-wrap.addEventListener(‘focusout’, e => {
-const cell = e.target.closest(’.vt2-cell’);
-if (!cell) return;
-vt2OnChange(cell);
-});
-
-wrap.addEventListener(‘keydown’, e => {
-const cell = e.target.closest(’.vt2-cell’);
-if (!cell) return;
-if (e.key===‘Enter’ && !e.ctrlKey) { e.preventDefault(); vt2MoveRight(cell); }
-else if (e.key===‘Enter’ && e.ctrlKey) { e.preventDefault(); vt2MoveDown(cell); }
-else if (e.key===‘Tab’) { e.preventDefault(); e.shiftKey ? vt2MoveLeft(cell) : vt2MoveRight(cell); }
-else if (e.key===‘Escape’) { vt2CloseDropdown(); cell.blur(); }
-else if (e.key===‘ArrowDown’ && VT2.activeDropEl) { e.preventDefault(); vt2MoveDrop(1); }
-else if (e.key===‘ArrowUp’ && VT2.activeDropEl) { e.preventDefault(); vt2MoveDrop(-1); }
-});
-
-wrap.addEventListener(‘paste’, e => {
-const cell = e.target.closest(’.vt2-cell’);
-if (!cell) return;
-const text = e.clipboardData.getData(‘text’);
-if (text.includes(’\n’) || text.includes(’\t’)) { e.preventDefault(); vt2Paste(cell, text); }
-});
-}
-
-function vt2GetCells(row) { return […row.querySelectorAll(’.vt2-cell’)]; }
-
-function vt2MoveRight(cell) {
-vt2CloseDropdown();
-const ci = parseInt(cell.dataset.ci);
-const row = cell.closest(’.vt2-row’);
-if (ci < VT2_NCOLS - 1) {
-const next = vt2GetCells(row)[ci+1];
-if (next && !next.classList.contains(‘vt2-locked’)) { next.focus(); return; }
-}
-// Last col → go back to first cell of same row
-const first = vt2GetCells(row).find(c=>!c.classList.contains(‘vt2-locked’));
-if (first) first.focus();
-}
-function vt2MoveLeft(cell) {
-const ci = parseInt(cell.dataset.ci);
-if (ci > 0) {
-const prev = vt2GetCells(cell.closest(’.vt2-row’))[ci-1];
-if (prev && !prev.classList.contains(‘vt2-locked’)) prev.focus();
-}
-}
-function vt2MoveDown(cell) {
-const ci = parseInt(cell.dataset.ci);
-const nextRow = cell.closest(’.vt2-row’)?.nextElementSibling;
-if (nextRow?.classList.contains(‘vt2-row’)) {
-const c = vt2GetCells(nextRow)[ci];
-if (c && !c.classList.contains(‘vt2-locked’)) c.focus();
-}
-}
-
-function vt2OnChange(cell) {
-const sr = parseInt(cell.closest(’.vt2-row’)?.dataset.sr || ‘0’);
-const ci = parseInt(cell.dataset.ci);
-const val = cell.textContent.trim();
-if (sr <= 0) { vt2PromoteRow(cell.closest(’.vt2-row’), val, ci); return; }
-const row = VT2.rows.find(r=>r.sheetRow===sr);
-if (row) { row.data[ci] = val; row.dirty = true; }
-vt2ScheduleSave(sr);
-}
-
-async function vt2PromoteRow(rowEl, val, ci) {
-if (!val) return;
-const newData = vt2MakeEmptyRow();
-vt2GetCells(rowEl).forEach((c,i) => { if(c.textContent.trim()) newData[i]=c.textContent.trim(); });
-newData[ci] = val;
-vt2ShowSave(‘saving’);
-try {
-const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(VT2.sheetName+'!A:N')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
-await fetch(url, { method:‘POST’, headers:{ Authorization:‘Bearer ‘+S.token,‘Content-Type’:‘application/json’ },
-body: JSON.stringify({ range:VT2.sheetName+’!A:N’, majorDimension:‘ROWS’, values:[newData] }) });
-const newSR = (VT2.rows.at(-1)?.sheetRow||1)+1;
-VT2.rows.push({ sheetRow:newSR, data:newData, dirty:false });
-vt2ShowSave(‘ok’);
-vt2Render();
-} catch(e) { vt2ShowSave(‘err’); toast(’Ошибка: ’+e.message,‘e’); }
-}
-
-// ── SAVE ─────────────────────────────────────────
-function vt2ScheduleSave(sr) {
-clearTimeout(VT2.saveTimers[sr]);
-vt2ShowSave(‘saving’);
-VT2.saveTimers[sr] = setTimeout(()=>vt2SaveRow(sr), 800);
-}
-
-async function vt2SaveRow(sr) {
-const row = VT2.rows.find(r=>r.sheetRow===sr);
-if (!row || !row.dirty) return;
-const range = `${VT2.sheetName}!A${sr}:N${sr}`;
-try {
-const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
-await fetch(url, { method:‘PUT’, headers:{ Authorization:’Bearer ’+S.token,‘Content-Type’:‘application/json’ },
-body: JSON.stringify({ range, majorDimension:‘ROWS’, values:[row.data] }) });
-row.dirty = false;
-vt2ShowSave(‘ok’);
-} catch(e) { vt2ShowSave(‘err’); toast(’Ошибка: ’+e.message,‘e’); }
-}
-
-function vt2ShowSave(state) {
-const el = document.getElementById(‘vt2-save’);
-if (!el) return;
-const spin = el.querySelector(’.vt2-spin’);
-const txt  = el.querySelector(‘span’);
-el.style.display = ‘flex’;
-el.className = ‘’;
-if (state===‘saving’) { if(spin)spin.style.display=’’; if(txt)txt.textContent=‘Сохранение…’; }
-if (state===‘ok’)  { if(spin)spin.style.display=‘none’; if(txt)txt.textContent=‘✓ Сохранено’; setTimeout(()=>{el.style.display=‘none’;},2500); }
-if (state===‘err’) { if(spin)spin.style.display=‘none’; if(txt)txt.textContent=‘Ошибка!’; }
-}
-
-// ── ADD / INSERT / DELETE ────────────────────────
-function vt2AddRow() {
-if (VT2.readonly && !isUserCeo()) { toast(‘Месяц закрыт’,‘e’); return; }
-const scroll = document.getElementById(‘vt2-scroll’);
-scroll.scrollTop = scroll.scrollHeight;
-const empties = document.querySelectorAll(’.vt2-row.vt2-empty’);
-if (empties.length) { const c=empties[0].querySelector(’.vt2-cell:not(.vt2-locked)’); if(c){c.focus();return;} }
-}
-
-async function vt2InsertBefore(sr) {
-if (VT2.readonly && !isUserCeo()) return;
-if (sr <= 0) return;
-vt2ShowSave(‘saving’);
-try {
-const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}?fields=sheets.properties`;
-const metaR = await fetch(metaUrl, { headers:{ Authorization:‘Bearer ‘+S.token } });
-const meta = await metaR.json();
-const sheet = (meta.sheets||[]).find(s=>s.properties.title===VT2.sheetName);
-if (!sheet) throw new Error(‘Sheet not found’);
-const sid = sheet.properties.sheetId;
-await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`, {
-method:‘POST’, headers:{ Authorization:‘Bearer ‘+S.token,‘Content-Type’:‘application/json’ },
-body: JSON.stringify({ requests:[{ insertDimension:{ range:{ sheetId:sid, dimension:‘ROWS’, startIndex:sr-1, endIndex:sr }, inheritFromBefore:true } }] })
-});
-const newData = vt2MakeEmptyRow();
-const rUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(VT2.sheetName+'!A'+sr+':N'+sr)}?valueInputOption=USER_ENTERED`;
-await fetch(rUrl, { method:‘PUT’, headers:{ Authorization:‘Bearer ‘+S.token,‘Content-Type’:‘application/json’ },
-body: JSON.stringify({ range:VT2.sheetName+’!A’+sr+’:N’+sr, majorDimension:‘ROWS’, values:[newData] }) });
-VT2.rows.forEach(r=>{ if(r.sheetRow>=sr) r.sheetRow++; });
-VT2.rows.splice(VT2.rows.findIndex(r=>r.sheetRow===sr+1)||0, 0, { sheetRow:sr, data:newData, dirty:false });
-vt2ShowSave(‘ok’); vt2Render();
-setTimeout(()=>{ const r=document.querySelector(`.vt2-row[data-sr="${sr}"]`); const c=r?.querySelector(’.vt2-cell:not(.vt2-locked)’); if(c)c.focus(); }, 100);
-} catch(e) { vt2ShowSave(‘err’); toast(’Ошибка: ’+e.message,‘e’); }
-}
-
-function vt2DeleteRow(sr) {
-if (sr <= 0) return;
-const rowEl = document.querySelector(`.vt2-row[data-sr="${sr}"]`);
-if (rowEl) rowEl.classList.add(‘vt2-deleting’);
-const rowObj = VT2.rows.find(r=>r.sheetRow===sr);
-VT2.deletedRow = { sr, data: rowObj ? […rowObj.data] : [], rowEl };
-clearTimeout(VT2.deleteTimer); clearInterval(VT2.deleteCountdown);
-let left = 10;
-document.getElementById(‘vt2-undo’).classList.add(‘on’);
-document.getElementById(‘vt2-undo-timer’).textContent = left;
-VT2.deleteCountdown = setInterval(()=>{
-left–; document.getElementById(‘vt2-undo-timer’).textContent = left;
-if (left<=0) { clearInterval(VT2.deleteCountdown); vt2CommitDelete(); }
-}, 1000);
-VT2.deleteTimer = setTimeout(vt2CommitDelete, 10000);
-}
-
-async function vt2CommitDelete() {
-clearInterval(VT2.deleteCountdown); clearTimeout(VT2.deleteTimer);
-document.getElementById(‘vt2-undo’).classList.remove(‘on’);
-if (!VT2.deletedRow) return;
-const { sr } = VT2.deletedRow; VT2.deletedRow = null;
-try {
-const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}?fields=sheets.properties`;
-const meta = await (await fetch(metaUrl, { headers:{ Authorization:’Bearer ’+S.token } })).json();
-const sheet = (meta.sheets||[]).find(s=>s.properties.title===VT2.sheetName);
-if (!sheet) throw new Error(‘Not found’);
-await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`, {
-method:‘POST’, headers:{ Authorization:’Bearer ’+S.token,‘Content-Type’:‘application/json’ },
-body: JSON.stringify({ requests:[{ deleteDimension:{ range:{ sheetId:sheet.properties.sheetId, dimension:‘ROWS’, startIndex:sr-1, endIndex:sr } } }] })
-});
-const idx = VT2.rows.findIndex(r=>r.sheetRow===sr);
-if (idx>=0) VT2.rows.splice(idx,1);
-VT2.rows.forEach(r=>{ if(r.sheetRow>sr) r.sheetRow–; });
-vt2Render();
-} catch(e) { toast(’Ошибка: ’+e.message,‘e’); }
-}
-
-function vt2UndoDelete() {
-clearInterval(VT2.deleteCountdown); clearTimeout(VT2.deleteTimer);
-document.getElementById(‘vt2-undo’).classList.remove(‘on’);
-if (VT2.deletedRow?.rowEl) VT2.deletedRow.rowEl.classList.remove(‘vt2-deleting’);
-VT2.deletedRow = null;
-}
-
-// ── DROPDOWN ─────────────────────────────────────
-function vt2ShowDropdown(cell) {
-vt2CloseDropdown();
-const ci = parseInt(cell.dataset.ci);
-const col = VT2_COLS[ci];
-if (!col?.opts) return;
-const rect = cell.getBoundingClientRect();
-const dp = document.createElement(‘div’);
-dp.className = ‘vt2-drop on’;
-dp.style.cssText = `top:${rect.bottom+2}px;left:${rect.left}px;min-width:${Math.max(rect.width,160)}px`;
-const cur = cell.textContent.trim();
-dp.innerHTML = col.opts.map(o=>
-`<div class="vt2-drop-item${o===cur?' sel':''}" onmousedown="vt2PickOption(event,'${vt2Esc(o)}')">${o}</div>`
-).join(’’);
-document.body.appendChild(dp);
-VT2.activeDropEl = dp;
-VT2.activeCellEl = cell;
-}
-
-function vt2PickOption(e, val) {
-e.preventDefault();
-if (VT2.activeCellEl) {
-VT2.activeCellEl.textContent = val;
-vt2OnChange(VT2.activeCellEl);
-vt2CloseDropdown();
-vt2MoveRight(VT2.activeCellEl);
-}
-}
-
-function vt2CloseDropdown() {
-if (VT2.activeDropEl) { VT2.activeDropEl.remove(); VT2.activeDropEl=null; }
-}
-
-function vt2MoveDrop(dir) {
-if (!VT2.activeDropEl) return;
-const items = […VT2.activeDropEl.querySelectorAll(’.vt2-drop-item’)];
-const ci = items.findIndex(i=>i.classList.contains(‘sel’));
-const ni = Math.max(0, Math.min(items.length-1, (ci<0?0:ci)+dir));
-items.forEach(i=>i.classList.remove(‘sel’));
-items[ni]?.classList.add(‘sel’);
-items[ni]?.scrollIntoView({block:‘nearest’});
-}
-
-// ── PASTE ────────────────────────────────────────
-async function vt2Paste(anchorCell, text) {
-const lines = text.trim().split(’\n’).map(l=>l.split(’\t’));
-const startCi = parseInt(anchorCell.dataset.ci);
-let curRow = anchorCell.closest(’.vt2-row’);
-const newRowsData = [];
-
-lines.forEach(cols => {
-if (!curRow) { const d=vt2MakeEmptyRow(); cols.forEach((v,i)=>{ if(startCi+i<VT2_NCOLS)d[startCi+i]=v.trim(); }); newRowsData.push(d); return; }
-vt2GetCells(curRow).forEach((cell,i) => {
-const v = cols[i-startCi]; if(v===undefined||cell.classList.contains(‘vt2-locked’)) return;
-cell.textContent = v.trim(); vt2OnChange(cell);
-});
-curRow = curRow.nextElementSibling?.classList.contains(‘vt2-row’) ? curRow.nextElementSibling : null;
-});
-
-if (newRowsData.length) {
-vt2ShowSave(‘saving’);
-try {
-const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(VT2.sheetName+'!A:N')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
-await fetch(url, { method:‘POST’, headers:{ Authorization:‘Bearer ‘+S.token,‘Content-Type’:‘application/json’ },
-body: JSON.stringify({ range:VT2.sheetName+’!A:N’, majorDimension:‘ROWS’, values:newRowsData }) });
-vt2ShowSave(‘ok’); vt2Reload();
-} catch(e) { vt2ShowSave(‘err’); }
-}
-}
-
-// ── IMPORT ───────────────────────────────────────
-function vt2OpenImport() {
-const text = prompt(‘Вставьте данные из Excel (Tab-разделённые строки):’);
-if (!text?.trim()) return;
-const lines = text.trim().split(’\n’).map(l=>l.split(’\t’));
-const rowsData = lines.map(cols => {
-const d = vt2MakeEmptyRow();
-cols.forEach((v,i)=>{ if(i<VT2_NCOLS) d[i]=v.trim(); });
-return d;
-});
-vt2ShowSave(‘saving’);
-const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(VT2.sheetName+'!A:N')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
-fetch(url, { method:‘POST’, headers:{ Authorization:‘Bearer ‘+S.token,‘Content-Type’:‘application/json’ },
-body: JSON.stringify({ range:VT2.sheetName+’!A:N’, majorDimension:‘ROWS’, values:rowsData }) })
-.then(()=>{ vt2ShowSave(‘ok’); vt2Reload(); })
-.catch(e=>{ vt2ShowSave(‘err’); toast(’Ошибка: ’+e.message,‘e’); });
-}
-
-function vt2Esc(s) {
-return String(s||’’).replace(/&/g,’&’).replace(/</g,’<’).replace(/>/g,’>’).replace(/”/g,’"’);
-}
-
-// ── UNDO BUTTON ─────────────────────────────────
-document.getElementById(‘vt2-undo-btn’)?.addEventListener(‘click’, vt2UndoDelete);
-
-// Close vt2 dropdown on outside click
-document.addEventListener(‘click’, e => {
-if (!e.target.closest(’.vt2-drop, .vt2-cell[data-opts]’)) vt2CloseDropdown();
-});
-
-// ══════════════════════════════════════════════════════
-//  RATING SCREEN v2
-// ══════════════════════════════════════════════════════
-function getCrmManagerNames() {
-return (S.usersData||[]).slice(1).filter(r=>r&&r[1]&&(r[2]||‘crm’).toLowerCase()===‘crm’).map(r=>r[1].trim());
-}
-function getDozhimManagerNames() {
-return (S.usersData||[]).slice(1).filter(r=>r&&r[1]&&(r[2]||’’).toLowerCase()===‘dozhim’).map(r=>r[1].trim());
-}
-
-async function renderRatingV2() {
-const el = document.getElementById(‘c-rating’);
-if (!el) return;
-el.innerHTML = `<div class="loader"><div class="spin"></div><span>Синхронизация…</span></div>`;
-
-// Load data if needed
-try {
-if (!S.data.vizity) S.data.vizity = await api(SHEETS.vizity, ‘A:J’);
-if (!S.data.d_vizity) S.data.d_vizity = await api(SHEETS.d_vizity, ‘A:L’).catch(()=>[]);
-} catch(e) { el.innerHTML=`<div class="empty">Ошибка загрузки</div>`; return; }
-
-function buildRating(dept) {
-const key = dept===‘dozhim’ ? ‘d_vizity’ : ‘vizity’;
-const rows = (S.data[key]||[]).slice(1).filter(r=>r&&r[0]);
-const stats = {};
-rows.forEach(r => {
-const mgr = (r[8]||’’).trim(); if(!mgr) return;
-if(!stats[mgr]) stats[mgr]={vis:0,deal:0,deposit:0};
-stats[mgr].vis++;
-const cmt=(r[4]||r[7]||’’).toLowerCase();
-if(cmt.includes(‘покупка’)||cmt.includes(‘обмен’)||cmt.includes(‘комиссия’)) stats[mgr].deal++;
-const dep=parseFloat(String(r[9]||‘0’).replace(/\D/g,’’))||0;
-if(dep>=1000) stats[mgr].deposit++;
-});
-const managers = dept===‘dozhim’ ? getDozhimManagerNames() : getCrmManagerNames();
-return managers.map(n=>({name:n,…(stats[n]||stats[Object.keys(stats).find(k=>k.toLowerCase()===n.toLowerCase())||’’]||{vis:0,deal:0,deposit:0})}))
-.sort((a,b)=>b.vis-a.vis);
-}
-
-const rankClr = [’#FFD700’,’#C0C0C0’,’#CD7F32’];
-
-function renderSection(title, list) {
-if (!list.length) return ‘’;
-const max = list[0]?.vis || 1;
-return `<div class="sec-title">${title}</div>` +
-list.map((m,i)=>{
-const w=Math.round(m.vis/max*100);
-const c=rankClr[i]||‘var(–acc)’;
-const medal=i===0?‘🥇’:i===1?‘🥈’:i===2?‘🥉’:’’;
-return `<div class="zp-row" style="--rank-r:0;--rank-g:0;--rank-b:0"> <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"> <span class="rank-badge" style="background:${i<3?c+'22':'var(--bg3)'};color:${i<3?c:'var(--txt3)'}">${i+1}</span> <span style="font-family:'Unbounded',sans-serif;font-size:11px;font-weight:800">${m.name.toUpperCase()}</span> <span style="margin-left:auto;font-family:'Unbounded',sans-serif;font-size:16px;font-weight:900">${m.vis} ${medal}</span> </div> <div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${c}"></div></div> <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px"> <div style="text-align:center"><div style="font-size:9px;color:var(--txt3)">Визиты</div><div style="font-family:'Unbounded',sans-serif;font-size:13px;font-weight:800">${m.vis}</div></div> <div style="text-align:center"><div style="font-size:9px;color:var(--txt3)">Сделки</div><div style="font-family:'Unbounded',sans-serif;font-size:13px;font-weight:800">${m.deal}</div></div> <div style="text-align:center"><div style="font-size:9px;color:var(--txt3)">Задатки</div><div style="font-family:'Unbounded',sans-serif;font-size:13px;font-weight:800">${m.deposit}</div></div> </div> </div>`;
-}).join(’’);
-}
-
-const crmList = buildRating(‘crm’);
-const dzhList = buildRating(‘dozhim’);
-const isCeo = isUserCeo();
-const role = findUserInSheet()?.role || ‘crm’;
-
-let html = ‘’;
-if (isCeo || role===‘crm’) html += renderSection(‘🏆 Рейтинг CRM’, crmList);
-if (isCeo || role===‘dozhim’) html += renderSection(‘🏆 Рейтинг ДОЖИМ’, dzhList);
-
-el.innerHTML = `<div class="w" style="padding-top:4px">${html}</div>`;
-}
-
-// ══════════════════════════════════════════════════════
-//  SPREADSHEET_ID alias for vt2 (v1 uses SHEETS)
-// ══════════════════════════════════════════════════════
-
-document.getElementById(‘btn-refresh’).addEventListener(‘click’, reloadCurrent);
 document.addEventListener(‘click’, e => {
 const wrap = document.getElementById(‘theme-btn-wrap’);
 const dd   = document.getElementById(‘theme-dropdown’);
@@ -6313,25 +5607,12 @@ document.querySelectorAll(’.tab’).forEach(b => b.addEventListener(‘click�
 document.getElementById(‘badge-month’).addEventListener(‘click’, showMonthDropdown);
 document.getElementById(‘center-login-btn’).addEventListener(‘click’, () => {
 if (isAndroidWebView) {
+// Google блокирует OAuth в Android WebView — открываем в Chrome
 window.open(‘https://frankiej13.github.io/crewcrm/index.html’, ‘_system’);
 return;
 }
-// Если tokenClient ещё не готов — инициализируем и вызываем
-function doAuth() {
-tokenClient.requestAccessToken({ prompt: ‘’ });
-}
-if (!tokenClient) {
-if (typeof google === ‘undefined’ || !google.accounts) {
-toast(‘Google не загружен. Проверьте подключение.’, ‘e’);
-return;
-}
-initAuth();
-}
-if (tokenClient) {
-doAuth();
-} else {
-toast(‘Загружается…’, ‘i’);
-}
+if (!tokenClient) { toast(‘Загружается…’,‘i’); return; }
+tokenClient.requestAccessToken({ prompt:‘consent’ });
 });
 
 document.addEventListener(‘touchmove’, function(e) {
@@ -6340,74 +5621,9 @@ e.preventDefault();
 }
 }, { passive: false });
 
-function initLoginShader() {
-var canvas = document.getElementById(‘login-canvas’);
-if (!canvas) return;
-
-function setup(T) {
-var camera   = new T.Camera();
-camera.position.z = 1;
-var scene    = new T.Scene();
-var uniforms = {
-time:       { type:‘f’,  value:1.0 },
-resolution: { type:‘v2’, value:new T.Vector2() }
-};
-var material = new T.ShaderMaterial({
-uniforms: uniforms,
-vertexShader: ‘void main(){gl_Position=vec4(position,1.0);}’,
-fragmentShader: [
-‘precision highp float;’,
-‘uniform vec2 resolution; uniform float time;’,
-‘float rnd(float x){return fract(sin(x)*1e4);}’,
-‘void main(){’,
-’  vec2 uv=(gl_FragCoord.xy*2.0-resolution.xy)/min(resolution.x,resolution.y);’,
-’  vec2 ms=vec2(4.0,2.0),ss=vec2(256.0);’,
-’  uv.x=floor(uv.x*ss.x/ms.x)/(ss.x/ms.x);’,
-’  uv.y=floor(uv.y*ss.y/ms.y)/(ss.y/ms.y);’,
-’  float t=time*0.06+rnd(uv.x)*0.4, lw=0.0008;’,
-’  vec3 c=vec3(0.0);’,
-’  for(int j=0;j<3;j++) for(int i=0;i<5;i++)’,
-’    c[j]+=lw*float(i*i)/abs(fract(t-0.01*float(j)+float(i)*0.01)*1.0-length(uv));’,
-’  gl_FragColor=vec4(c[2],c[1],c[0],1.0);’,
-‘}’
-].join(’\n’)
-});
-scene.add(new T.Mesh(new T.PlaneBufferGeometry(2,2), material));
-var renderer = new T.WebGLRenderer({ canvas:canvas, antialias:false });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-function resize() {
-var w = window.innerWidth;
-var h = window.innerHeight;
-renderer.setSize(w, h);
-uniforms.resolution.value.x = renderer.domElement.width;
-uniforms.resolution.value.y = renderer.domElement.height;
-}
-resize();
-window.addEventListener(‘resize’, resize);
-(function animate(){
-requestAnimationFrame(animate);
-uniforms.time.value += 0.05;
-renderer.render(scene, camera);
-})();
-}
-
-if (window.THREE) { setup(window.THREE); return; }
-var s  = document.createElement(‘script’);
-s.src  = ‘https://cdnjs.cloudflare.com/ajax/libs/three.js/89/three.min.js’;
-s.onload = function(){
-// Подавляем версионный лог Three.js
-var _log = console.log;
-console.log = function(){};
-setup(window.THREE);
-console.log = _log;
-};
-document.head.appendChild(s);
-}
-
 function init() {
 syncTheme();
 initLogoRotation();
-initLoginShader();
 
 // На Android WebView сразу показываем экран входа с подсказкой
 if (isAndroidWebView) {
@@ -6415,7 +5631,7 @@ const btn = document.getElementById(‘center-login-btn’);
 if (btn) {
 btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 11h8.533c.044.385.067.78.067 1.184 0 3.37-1.17 6.22-3.207 8.154C15.553 22.124 13.9 23 12 23A11 11 0 1 1 12 1c2.95 0 5.56 1.113 7.522 2.934l-3.076 3.042C15.197 5.79 13.68 5 12 5a7 7 0 1 0 0 14c3.205 0 5.542-1.916 6.27-4.987H12v-3z"/></svg>Открыть в Chrome`;
 }
-document.getElementById(‘scr-login’).classList.remove(‘off’); document.body.classList.add(‘login-active’);
+document.getElementById(‘scr-login’).classList.add(‘on’); document.body.classList.add(‘login-active’);
 return;
 }
 
@@ -6424,7 +5640,8 @@ const gsiTimeout = setTimeout(() => {
 if (!tokenClient) {
 const l = document.getElementById(‘silent-loader’);
 if (l) l.remove();
-document.getElementById(‘scr-login’).classList.remove(‘off’); document.body.classList.add(‘login-active’);
+document.getElementById(‘scr-login’).style.display = ‘’;
+document.getElementById(‘scr-login’).classList.add(‘on’); document.body.classList.add(‘login-active’);
 }
 }, 6000);
 
@@ -6433,7 +5650,7 @@ if (typeof google !== ‘undefined’ && google.accounts) {
 clearTimeout(gsiTimeout);
 initAuth();
 if (!tryRestore()) {
-document.getElementById(‘scr-login’).classList.remove(‘off’); document.body.classList.add(‘login-active’);
+document.getElementById(‘scr-login’).classList.add(‘on’); document.body.classList.add(‘login-active’);
 }
 } else setTimeout(waitGoogle, 100);
 }
@@ -6441,6 +5658,542 @@ waitGoogle();
 }
 if (document.readyState===‘loading’) document.addEventListener(‘DOMContentLoaded’, init);
 else init();
+
+// ==================== RATING SCREEN v2 ====================
+let _ratingDept = ‘crm’; // ‘crm’ | ‘dozhim’ | ‘all’
+
+function renderRatingV2() {
+const el = document.getElementById(‘c-rating’);
+if (!el) return;
+
+const matched = findUserInSheet();
+const role = matched?.role || ‘’;
+const isCeo = role === ‘ceo’;
+
+// Гарантируем наличие данных
+if (!S.data.vizity || !S.data.plan) {
+el.innerHTML = ‘<div class="loader"><div class="spin"></div><span>Загрузка данных…</span></div>’;
+Promise.all([
+S.data.vizity ? Promise.resolve(S.data.vizity) : api(SHEETS.vizity, ‘A:J’).catch(()=>[]),
+S.data.plan   ? Promise.resolve(S.data.plan)   : api(SHEETS.plan,   ‘A:B’).catch(()=>[]),
+S.data.d_vizity ? Promise.resolve(S.data.d_vizity) : api(SHEETS.d_vizity, ‘A:L’).catch(()=>[]),
+]).then(([vd, pd, dv]) => {
+S.data.vizity   = vd;
+S.data.plan     = pd;
+S.data.d_vizity = dv;
+_drawRating(el, isCeo, role);
+});
+return;
+}
+if (isCeo && !S.data.d_vizity) {
+api(SHEETS.d_vizity, ‘A:L’).catch(()=>[]).then(dv => { S.data.d_vizity = dv; _drawRating(el, isCeo, role); });
+return;
+}
+_drawRating(el, isCeo, role);
+}
+
+function _drawRating(el, isCeo, role) {
+const planData  = S.data.plan     || [];
+const vizData   = S.data.vizity   || [];
+const dVizData  = S.data.d_vizity || [];
+const planMap   = getPlanMap(planData);
+
+// CRM stats: суммируем визиты из ВИЗИТЫ по менеджеру (col I = индекс 8)
+const crmStats = {};
+for (let i = 1; i < vizData.length; i++) {
+const row = vizData[i];
+if (!row || !row[0]) continue;
+const mgr = String(row[8]||’’).trim().toLowerCase();
+if (!mgr) continue;
+if (!crmStats[mgr]) crmStats[mgr] = { vis: 0, deals: 0 };
+crmStats[mgr].vis++;
+const status = String(row[4]||’’).toLowerCase();
+if (status.includes(‘продажа’) || status.includes(‘сделка’) || status.includes(‘продан’)) crmStats[mgr].deals++;
+}
+
+// DOZHIM stats
+const dozhimStats = {};
+if (dVizData.length > 1) {
+const ds = buildDozhimStats(dVizData);
+Object.entries(ds).forEach(([n, s]) => {
+dozhimStats[n] = { vis: (s.vis800||0)+(s.vis1000||0), deals: (s.kred800||0)+(s.kred1000||0)+(s.nal800||0)+(s.nal1000||0) };
+});
+}
+
+// Имена менеджеров из ПЛАН
+const crmNames    = planData.slice(1).filter(r=>r&&r[0]).map(r=>String(r[0]).trim()).filter(n=>{ const rl=getRoleByName(n.toLowerCase()); return rl===‘crm’||rl===’’; });
+const dozhimNames = planData.slice(1).filter(r=>r&&r[0]).map(r=>String(r[0]).trim()).filter(n=>getRoleByName(n.toLowerCase())===‘dozhim’);
+
+// Кто видит что
+let showCrm    = isCeo || role === ‘crm’ || role === ‘’;
+let showDozhim = isCeo || role === ‘dozhim’;
+
+// Dept tabs для CEO
+let deptTabsHTML = ‘’;
+if (isCeo) {
+deptTabsHTML = ` <div class="rating-dept-tabs"> <button class="rating-dept-tab ${_ratingDept==='crm'?'on':''}" onclick="_ratingDept='crm';_drawRating(document.getElementById('c-rating'),true,'ceo')">CRM</button> <button class="rating-dept-tab ${_ratingDept==='dozhim'?'on':''}" onclick="_ratingDept='dozhim';_drawRating(document.getElementById('c-rating'),true,'ceo')">ДОЖИМ</button> <button class="rating-dept-tab ${_ratingDept==='all'?'on':''}" onclick="_ratingDept='all';_drawRating(document.getElementById('c-rating'),true,'ceo')">ВСЕ</button> </div>`;
+}
+
+function makeCards(names, statsMap) {
+const entries = names.map(name => {
+const nl  = name.toLowerCase();
+const s   = statsMap[nl] || { vis:0, deals:0 };
+const plan = planMap[nl] || 1;
+const pct  = Math.round(s.vis / plan * 100);
+return { name, vis:s.vis, deals:s.deals, plan, pct };
+});
+entries.sort((a,b) => b.vis - a.vis || b.deals - a.deals);
+const maxVis = Math.max(…entries.map(e=>e.vis), 1);
+
+```
+return entries.map((e, idx) => {
+  const medal = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'';
+  const { color, border, badgeBg, r, g, b } = rankStyles(idx, entries.length);
+  const barW = Math.round(e.vis / maxVis * 100);
+  return `<div class="rating-card" style="border-color:${border};background:rgba(${r},${g},${b},.07)">
+    ${medal ? `<div class="rating-medal">${medal}</div>` : `<div class="rating-rank" style="background:${badgeBg};color:${color}">${idx+1}</div>`}
+    <div class="rating-info">
+      <div class="rating-name">${e.name.toUpperCase()}</div>
+      <div class="rating-bar-wrap"><div class="rating-bar" style="width:${barW}%;background:${color}"></div></div>
+      <div class="rating-stats">
+        <span>Визиты: <b>${e.vis}</b></span>
+        <span>Сделки: <b>${e.deals}</b></span>
+        <span>План: ${e.pct}%</span>
+      </div>
+    </div>
+    <div class="rating-val" style="color:${color}">${e.vis}</div>
+  </div>`;
+}).join('');
+```
+
+}
+
+let html = deptTabsHTML;
+
+if (isCeo) {
+if (_ratingDept === ‘crm’ || _ratingDept === ‘all’) {
+html += `<div class="sec-title">CRM</div><div class="mops">${makeCards(crmNames, crmStats)}</div>`;
+}
+if (_ratingDept === ‘dozhim’ || _ratingDept === ‘all’) {
+html += `<div class="sec-title">ДОЖИМ</div><div class="mops">${makeCards(dozhimNames, dozhimStats)}</div>`;
+}
+} else if (showDozhim) {
+html += `<div class="sec-title">РЕЙТИНГ — ДОЖИМ</div><div class="mops">${makeCards(dozhimNames, dozhimStats)}</div>`;
+} else {
+html += `<div class="sec-title">РЕЙТИНГ — CRM</div><div class="mops">${makeCards(crmNames, crmStats)}</div>`;
+}
+
+el.innerHTML = html;
+}
+
+// ==================== VISITS TABLE v2 ====================
+const VT2_COLS = [‘Дата’,‘ФИО’,‘Телефон’,‘Город’,‘Комментарий’,‘Источник’,‘Категория’,‘Способ покупки’,‘Менеджер’,‘Задаток’,‘КСО’,‘Кред.рейтинг’,‘Авто’,‘Сверка’];
+const VT2_SELECTS = {
+5: [‘CRM’,‘Тёплый лид’,‘Холодный звонок’,‘Реклама’,‘Рекомендация’,‘Повторный’],
+6: [‘Целевой’,‘Нецелевой’,‘В работе’],
+7: [‘Кредит’,‘Наличные’,‘Трейд-ин’,‘Лизинг’],
+10: [‘Подает заявку’,‘В работе КСО’,‘На рассмотрении банка’,‘Одобрен’,‘Отказ’],
+11: [‘Хороший’,‘Средний’,‘Плохой’],
+};
+
+let _vt2Dept = ‘crm’; // ‘crm’ | ‘dozhim’
+let _vt2Data = {}; // { crm: [[…rows]], dozhim: [[…rows]] }
+let _vt2SaveTimer = null;
+let _vt2Popup = null;
+let _vt2UndoTimer = null;
+
+function vt2GetSheetName() {
+return _vt2Dept === ‘dozhim’ ? SHEETS.d_vizity : SHEETS.vizity;
+}
+
+function closeVisitsScreen() {
+document.getElementById(‘scr-visits’).classList.remove(‘on’);
+// Возвращаем активную вкладку
+const prev = document.querySelector(’.tab:not([data-tab=“visits”]).on’)?.dataset.tab || ‘otchet’;
+document.querySelectorAll(’.tab’).forEach(b => b.classList.toggle(‘on’, b.dataset.tab === ‘otchet’));
+showScr(‘otchet’);
+}
+
+async function vt2Init() {
+const matched = findUserInSheet();
+const role    = matched?.role || ‘’;
+const isCeo   = role === ‘ceo’;
+const isDozhim = role === ‘dozhim’;
+
+// Dept tabs
+const dtEl = document.getElementById(‘vt2-dept-tabs’);
+if (isCeo) {
+dtEl.innerHTML = ` <button class="vt2-dept-tab ${_vt2Dept==='crm'?'on':''}" onclick="vt2SwitchDept('crm')">CRM</button> <button class="vt2-dept-tab ${_vt2Dept==='dozhim'?'on':''}" onclick="vt2SwitchDept('dozhim')">ДОЖИМ</button>`;
+} else {
+dtEl.innerHTML = ‘’;
+_vt2Dept = isDozhim ? ‘dozhim’ : ‘crm’;
+}
+
+// Check lock: 3-е число — закрыто для менеджеров
+const today = new Date();
+const isLocked = !isCeo && today.getDate() === 3;
+
+await vt2LoadAndRender(isLocked, isCeo);
+}
+
+async function vt2SwitchDept(dept) {
+_vt2Dept = dept;
+document.querySelectorAll(’.vt2-dept-tab’).forEach(b => b.classList.toggle(‘on’, b.textContent.trim().toLowerCase() === dept));
+const matched = findUserInSheet();
+const isCeo = (matched?.role||’’) === ‘ceo’;
+await vt2LoadAndRender(false, isCeo);
+}
+
+async function vt2LoadAndRender(isLocked, isCeo) {
+const body = document.getElementById(‘vt2-body’);
+if (!_vt2Data[_vt2Dept]) {
+body.innerHTML = ‘<div class="loader"><div class="spin"></div><span>Загрузка…</span></div>’;
+try {
+const rows = await api(vt2GetSheetName(), ‘A:N’);
+_vt2Data[_vt2Dept] = rows;
+} catch(e) {
+if (e.message === ‘NOT_FOUND’) _vt2Data[_vt2Dept] = [VT2_COLS];
+else { body.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`; return; }
+}
+}
+vt2Render(isLocked, isCeo);
+}
+
+function vt2Render(isLocked, isCeo) {
+const body = document.getElementById(‘vt2-body’);
+const rows  = _vt2Data[_vt2Dept] || [VT2_COLS];
+
+// Группировка по неделям
+const now = new Date();
+const dim = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+const weeks = [
+{ label:‘Неделя 1 (1–7)’,       from:1, to:7 },
+{ label:‘Неделя 2 (8–14)’,      from:8, to:14 },
+{ label:‘Неделя 3 (15–21)’,     from:15, to:21 },
+{ label:`Неделя 4 (22–${dim})`, from:22, to:dim },
+];
+
+// Собираем строки данных (без заголовка)
+const dataRows = rows.slice(1);
+
+function getDay(row) {
+const d = String(row[0]||’’).trim();
+const n = parseInt(d);
+if (!isNaN(n) && n >= 1 && n <= 31) return n;
+// dd.mm.yyyy or similar
+const m = d.match(/^(\d{1,2})[.-/]/);
+if (m) return parseInt(m[1]);
+return 0;
+}
+
+function rowToWeek(row) {
+const d = getDay(row);
+for (let i = 0; i < weeks.length; i++) {
+if (d >= weeks[i].from && d <= weeks[i].to) return i;
+}
+return weeks.length - 1; // в последнюю
+}
+
+const currentWeek = weeks.findIndex(w => now.getDate() >= w.from && now.getDate() <= w.to);
+
+if (isLocked) {
+body.innerHTML = ‘<div class="vt2-closed-notice">🔒 Таблица закрыта для редактирования (3-е число месяца)</div>’ + vt2BuildTable(dataRows, weeks, currentWeek, true, rowToWeek);
+return;
+}
+body.innerHTML = vt2BuildTable(dataRows, weeks, currentWeek, false, rowToWeek);
+}
+
+function vt2BuildTable(dataRows, weeks, currentWeek, readOnly, rowToWeek) {
+// Распределяем строки по неделям
+const weekRows = weeks.map(() => []);
+dataRows.forEach((row, absIdx) => {
+const wk = rowToWeek(row);
+weekRows[wk].push({ row, absIdx: absIdx + 1 }); // +1 т.к. есть заголовок
+});
+
+// В текущую неделю добавляем 10 пустых строк
+const EMPTY_COUNT = 10;
+const emptyRow = VT2_COLS.map(() => ‘’);
+
+let html = ‘’;
+weeks.forEach((w, wi) => {
+const isCurrentWeek = wi === currentWeek;
+const collapsed = !isCurrentWeek;
+const collClass = collapsed ? ‘collapsed’ : ‘’;
+
+```
+html += `<div class="vt2-week" id="vt2-week-${wi}">
+  <div class="vt2-week-hdr" onclick="vt2ToggleWeek(${wi})">
+    <span>${w.label}</span>
+    <span style="color:var(--txt2);font-size:9px;font-family:'Golos Text',sans-serif;">${weekRows[wi].length} строк</span>
+    <span class="vt2-week-arrow" id="vt2-arr-${wi}">${collapsed ? '▶' : '▼'}</span>
+  </div>
+  <div id="vt2-wcontent-${wi}" style="display:${collapsed?'none':'block'}">
+    <div class="vt2-table-wrap">
+      <table class="vt2-table">
+        <thead><tr>
+          <th style="min-width:28px;max-width:28px">#</th>
+          ${VT2_COLS.map((c,ci) => `<th>${c}</th>`).join('')}
+        </tr></thead>
+        <tbody>`;
+
+weekRows[wi].forEach(({ row, absIdx }) => {
+  html += vt2BuildRow(row, absIdx, readOnly);
+});
+
+if (isCurrentWeek) {
+  for (let e = 0; e < EMPTY_COUNT; e++) {
+    html += vt2BuildEmptyRow(readOnly);
+  }
+}
+
+html += `</tbody></table></div></div></div>`;
+```
+
+});
+return html;
+}
+
+function vt2BuildRow(row, absIdx, readOnly, extraClass=’’) {
+const cols = VT2_COLS.map((col, ci) => {
+const val = String(row[ci]||’’);
+if (readOnly) return `<td><div class="vt2-cell">${val}</div></td>`;
+if (VT2_SELECTS[ci]) {
+return `<td><div class="vt2-cell select-cell" contenteditable="false" data-row="${absIdx}" data-col="${ci}" onclick="vt2OpenSelect(this,'${ci}')" tabindex="0">${val}</div></td>`;
+}
+return `<td><div class="vt2-cell" contenteditable="true" data-row="${absIdx}" data-col="${ci}" onkeydown="vt2KeyNav(event,this)" oninput="vt2CellChange(this)" tabindex="0">${val}</div></td>`;
+});
+return `<tr class="${extraClass}"><td class="vt2-rownum" title="Удалить строку" onclick="vt2DeleteRow(${absIdx},this)">${absIdx}</td>${cols.join('')}</tr>`;
+}
+
+function vt2BuildEmptyRow(readOnly) {
+if (readOnly) return `<tr class="vt2-empty-row"><td class="vt2-rownum">—</td>${VT2_COLS.map(()=>'<td><div class="vt2-cell"></div></td>').join('')}</tr>`;
+const cols = VT2_COLS.map((col, ci) => {
+if (VT2_SELECTS[ci]) return `<td><div class="vt2-cell select-cell" contenteditable="false" data-row="-1" data-col="${ci}" onclick="vt2OpenSelect(this,'${ci}')" tabindex="0"></div></td>`;
+return `<td class="vt2-empty-row"><div class="vt2-cell" contenteditable="true" data-row="-1" data-col="${ci}" onkeydown="vt2KeyNav(event,this)" oninput="vt2EmptyInput(this)" tabindex="0"></div></td>`;
+});
+return `<tr class="vt2-empty-row"><td class="vt2-rownum">—</td>${cols.join('')}</tr>`;
+}
+
+function vt2ToggleWeek(wi) {
+const content = document.getElementById(‘vt2-wcontent-’+wi);
+const arr = document.getElementById(‘vt2-arr-’+wi);
+if (!content) return;
+const hidden = content.style.display === ‘none’;
+content.style.display = hidden ? ‘block’ : ‘none’;
+if (arr) arr.textContent = hidden ? ‘▼’ : ‘▶’;
+}
+
+function vt2KeyNav(e, cell) {
+const row = parseInt(cell.dataset.row);
+const col = parseInt(cell.dataset.col);
+if (e.key === ‘Enter’ && !e.ctrlKey) {
+e.preventDefault();
+// следующая ячейка вправо
+const next = document.querySelector(`[data-row="${row}"][data-col="${col+1}"]`);
+if (next) next.focus();
+} else if (e.key === ‘Enter’ && e.ctrlKey) {
+e.preventDefault();
+const next = document.querySelector(`[data-row="${row+1}"][data-col="${col}"]`);
+if (next) next.focus();
+} else if (e.key === ‘Tab’) {
+e.preventDefault();
+const nextCol = e.shiftKey ? col - 1 : col + 1;
+let next = document.querySelector(`[data-row="${row}"][data-col="${nextCol}"]`);
+if (!next && !e.shiftKey) next = document.querySelector(`[data-row="${row+1}"][data-col="0"]`);
+if (next) next.focus();
+}
+}
+
+function vt2EmptyInput(cell) {
+// Пустая строка получила ввод — превращаем в реальную строку
+const rows = _vt2Data[_vt2Dept] || [VT2_COLS];
+const newRow = VT2_COLS.map(() => ‘’);
+rows.push(newRow);
+_vt2Data[_vt2Dept] = rows;
+const newIdx = rows.length - 1;
+cell.dataset.row = newIdx;
+cell.closest(‘tr’).querySelectorAll(’[data-row]’).forEach(c => c.dataset.row = newIdx);
+cell.closest(‘tr’).querySelector(’.vt2-rownum’).textContent = newIdx;
+cell.closest(‘tr’).classList.remove(‘vt2-empty-row’);
+vt2CellChange(cell);
+}
+
+function vt2CellChange(cell) {
+const rowIdx = parseInt(cell.dataset.row);
+const colIdx = parseInt(cell.dataset.col);
+if (isNaN(rowIdx) || rowIdx < 1) return;
+const rows = _vt2Data[_vt2Dept];
+if (!rows || !rows[rowIdx]) return;
+rows[rowIdx][colIdx] = cell.textContent.trim();
+vt2ScheduleSave(rowIdx);
+}
+
+function vt2ScheduleSave(rowIdx) {
+const statusEl = document.getElementById(‘vt2-save-status’);
+if (statusEl) statusEl.textContent = ‘●’;
+clearTimeout(_vt2SaveTimer);
+_vt2SaveTimer = setTimeout(() => vt2SaveRow(rowIdx), 800);
+}
+
+async function vt2SaveRow(rowIdx) {
+const statusEl = document.getElementById(‘vt2-save-status’);
+const rows = _vt2Data[_vt2Dept];
+if (!rows || !rows[rowIdx]) return;
+const rowData = rows[rowIdx];
+const sheetName = vt2GetSheetName();
+const range = `${sheetName}!A${rowIdx+1}:N${rowIdx+1}`;
+try {
+const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+await fetch(url, {
+method: ‘PUT’,
+headers: { Authorization:‘Bearer ‘+S.token, ‘Content-Type’:‘application/json’ },
+body: JSON.stringify({ range, majorDimension:‘ROWS’, values:[rowData] })
+});
+if (statusEl) { statusEl.textContent = ‘✓ Сохранено’; setTimeout(()=>{ if(statusEl) statusEl.textContent=’’; }, 2000); }
+} catch(e) {
+if (statusEl) statusEl.textContent = ‘✗ Ошибка’;
+}
+}
+
+function vt2OpenSelect(cell, colIdx) {
+ci = parseInt(colIdx);
+const opts = VT2_SELECTS[ci] || [];
+if (_vt2Popup) _vt2Popup.remove();
+const popup = document.createElement(‘div’);
+popup.className = ‘vt2-select-popup’;
+const rect = cell.getBoundingClientRect();
+popup.style.cssText = `top:${Math.min(rect.bottom+4, window.innerHeight-200)}px;left:${Math.max(rect.left,4)}px;`;
+opts.forEach(opt => {
+const btn = document.createElement(‘button’);
+btn.textContent = opt;
+btn.onclick = () => {
+cell.textContent = opt;
+popup.remove();
+_vt2Popup = null;
+vt2CellChange(cell);
+};
+popup.appendChild(btn);
+});
+document.body.appendChild(popup);
+_vt2Popup = popup;
+const closePopup = (e) => { if (!popup.contains(e.target)) { popup.remove(); _vt2Popup=null; document.removeEventListener(‘click’, closePopup); } };
+setTimeout(() => document.addEventListener(‘click’, closePopup), 10);
+}
+
+function vt2AddRow() {
+const rows = _vt2Data[_vt2Dept];
+if (!rows) return;
+const newRow = VT2_COLS.map(() => ‘’);
+rows.push(newRow);
+// Прокручиваем к последней строке — просто снова рендерим
+const matched = findUserInSheet();
+const isCeo = (matched?.role||’’) === ‘ceo’;
+const today = new Date();
+const isLocked = !isCeo && today.getDate() === 3;
+vt2Render(isLocked, isCeo);
+// Фокус на первую ячейку новой строки
+setTimeout(() => {
+const lastRow = document.querySelector(`[data-row="${rows.length-1}"][data-col="0"]`);
+if (lastRow) { lastRow.scrollIntoView({behavior:‘smooth’,block:‘center’}); lastRow.focus(); }
+}, 100);
+}
+
+function vt2DeleteRow(rowIdx, numCell) {
+const rows = _vt2Data[_vt2Dept];
+if (!rows || !rows[rowIdx]) return;
+const backup = rows[rowIdx].slice();
+const tr = numCell.closest(‘tr’);
+tr.style.opacity = ‘0.3’;
+tr.style.transition = ‘opacity .3s’;
+
+let countdown = 10;
+const toastEl = document.getElementById(‘toast’);
+toastEl.textContent = `Удаление через ${countdown}с (отмена — нажмите)`;
+toastEl.className = ‘e on’;
+toastEl.style.cursor = ‘pointer’;
+
+if (_vt2UndoTimer) clearInterval(_vt2UndoTimer);
+_vt2UndoTimer = setInterval(() => {
+countdown–;
+if (countdown > 0) {
+toastEl.textContent = `Удаление через ${countdown}с (отмена — нажмите)`;
+} else {
+clearInterval(_vt2UndoTimer);
+toastEl.className = ‘’;
+toastEl.style.cursor = ‘’;
+// Физически удаляем строку из данных и из Sheets
+rows.splice(rowIdx, 1);
+_vt2SaveAll();
+}
+}, 1000);
+
+// Клик по тосту = отмена
+const cancelFn = () => {
+clearInterval(_vt2UndoTimer);
+toastEl.className = ‘’;
+toastEl.style.cursor = ‘’;
+tr.style.opacity = ‘1’;
+toastEl.removeEventListener(‘click’, cancelFn);
+};
+toastEl.addEventListener(‘click’, cancelFn);
+}
+
+async function _vt2SaveAll() {
+const rows = _vt2Data[_vt2Dept];
+if (!rows) return;
+const sheetName = vt2GetSheetName();
+const range = `${sheetName}!A1:N${rows.length+50}`;
+try {
+// Сначала очищаем диапазон
+await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(range)}:clear`, {
+method: ‘POST’, headers: { Authorization:‘Bearer ‘+S.token }
+});
+// Затем пишем все строки
+const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(sheetName+'!A1')}?valueInputOption=USER_ENTERED`;
+await fetch(url, {
+method: ‘PUT’,
+headers: { Authorization:‘Bearer ‘+S.token, ‘Content-Type’:‘application/json’ },
+body: JSON.stringify({ range: sheetName+’!A1’, majorDimension:‘ROWS’, values: rows })
+});
+toast(‘Строка удалена’, ‘s’);
+// Перерендериваем
+const matched = findUserInSheet();
+const isCeo = (matched?.role||’’) === ‘ceo’;
+vt2Render(false, isCeo);
+} catch(e) {
+toast(’Ошибка сохранения: ’+e.message, ‘e’);
+}
+}
+
+// Вставка из Excel (paste)
+document.addEventListener(‘paste’, (e) => {
+const scrVisits = document.getElementById(‘scr-visits’);
+if (!scrVisits || !scrVisits.classList.contains(‘on’)) return;
+const focused = document.activeElement;
+if (!focused || !focused.classList.contains(‘vt2-cell’)) return;
+e.preventDefault();
+const text = (e.clipboardData || window.clipboardData).getData(‘text’);
+const pasteRows = text.split(’\n’).map(r => r.split(’\t’));
+let startRow = parseInt(focused.dataset.row);
+let startCol = parseInt(focused.dataset.col);
+const rows = _vt2Data[_vt2Dept];
+if (!rows) return;
+pasteRows.forEach((pr, ri) => {
+const absRow = startRow + ri;
+if (!rows[absRow]) rows[absRow] = VT2_COLS.map(()=>’’);
+pr.forEach((val, ci) => {
+if (startCol + ci < VT2_COLS.length) {
+rows[absRow][startCol+ci] = val.trim();
+}
+});
+vt2ScheduleSave(absRow);
+});
+const matched = findUserInSheet();
+const isCeo = (matched?.role||’’) === ‘ceo’;
+vt2Render(false, isCeo);
+toast(‘Вставлено ‘+pasteRows.length+’ строк’, ‘s’);
+});
 
 // ==================== BACKGROUND ORBS ====================
 (function() {

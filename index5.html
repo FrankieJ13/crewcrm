@@ -1916,9 +1916,17 @@ body.light .rating-bar-track { background: rgba(0,0,0,.07); }
 }
 .vt-add-btn:hover { opacity: .85; }
 .vt-add-btn svg { width: 13px; height: 13px; }
-.vt-body { padding: 0 16px; }
+/* Light + Tiffany: accent is dark color → white text on acc buttons */
+body.light .vt-add-btn,
+body.light .vt-insert-zone-btn,
+body.light .vt-undo-btn,
+body.tiffany .vt-add-btn,
+body.tiffany .vt-insert-zone-btn,
+body.tiffany .vt-undo-btn { color: #fff; }
+body.light .center-login-btn { color: #fff; }
+.vt-body { padding: 8px 16px 0; }
 /* Week group */
-.vt-week { margin-bottom: 4px; }
+.vt-week { margin-bottom: 4px; scroll-margin-top: 98px; }
 .vt-week-sum {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 4px; cursor: pointer; user-select: none;
@@ -1955,6 +1963,8 @@ details[open] .vt-week-sum .vt-week-chevron { transform: rotate(90deg); }
 .vt-row-name {
   font-size: 13px; font-weight: 600; color: var(--txt);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: clamp(80px, calc(100vw - 210px), 360px);
+  transition: max-width 0.2s ease;
 }
 .vt-row-sub { font-size: 10px; color: var(--txt2); margin-top: 1px; }
 .vt-status-chip {
@@ -2229,24 +2239,36 @@ body.tiffany .dock-btn:hover { background: rgba(143,179,174,0.22); }
 /* Popup dropdowns */
 .dock-popup {
   position: absolute;
-  bottom: calc(100% + 8px);
+  bottom: 100%;
   left: 50%;
   transform: translateX(-50%) translateY(4px);
   background: var(--bg2);
   border: 1px solid var(--line2);
   border-radius: var(--r2);
-  display: none;
+  display: flex;           /* always flex */
   flex-direction: column;
   min-width: 130px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.4);
   overflow: hidden;
   z-index: 400;
   opacity: 0;
-  transition: opacity 0.15s, transform 0.15s;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+  padding-bottom: 8px;     /* bridge gap between popup and button */
+}
+@media (hover: hover) {
+  .dock-item:hover .dock-popup {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: all;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 .dock-popup.open {
-  display: flex;
   opacity: 1;
+  visibility: visible;
+  pointer-events: all;
   transform: translateX(-50%) translateY(0);
   animation: dockPopIn 0.18s ease forwards;
 }
@@ -6625,7 +6647,7 @@ const VIZ_COLS = [
   { k:'comment', lbl:'Комментарий',    type:'picker', req:false, free:true },
   { k:'source',  lbl:'Источник',       type:'picker', req:false },
   { k:'cat',     lbl:'Категория',      type:'select', req:false,
-    opts:{ crm:['КАТ 800','КАТ 1200'], dozhim:['КАТ 800','КАТ 1000'] } },
+    opts:{ crm:['кат 800','кат 1200'], dozhim:['кат 800','кат 1000'] } },
   { k:'deal',    lbl:'Способ покупки', type:'picker', req:false },
   { k:'manager', lbl:'Менеджер',       type:'mgr',    req:true  },
   { k:'zadatok', lbl:'Задаток',        type:'number', req:false },
@@ -6682,7 +6704,7 @@ function buildManagerList(dept) {
       if (name) list.push(name);
     }
   }
-  list.push('Котел');
+  list.push('КОТЁЛ');
   return list;
 }
 
@@ -6831,7 +6853,13 @@ function renderVizity() {
     const otk     = rows.filter(r=>(r.data[4]||'').includes('ОТКАЗ') || (r.data[4]||'').includes('ФССП')).length;
     const statsLine2 = visCount > 0
       ? `<div class="vt-week-sum-line2">` +
-        [salon && `В салоне: <b>${salon}</b>`, kred && `Кред: <b>${kred}</b>`, nal && `Нал: <b>${nal}</b>`, kom && `Ком: <b>${kom}</b>`, otk && `Отказы: <b>${otk}</b>`].filter(Boolean).join(' · ') +
+        [
+          salon > 0 && `<span style="color:#ED1C24;font-weight:700">В салоне: ${salon}</span>`,
+          kred  > 0 && `Кред: <b>${kred}</b>`,
+          nal   > 0 && `Нал: <b>${nal}</b>`,
+          kom   > 0 && `Ком: <b>${kom}</b>`,
+          otk   > 0 && `Отказы: <b>${otk}</b>`
+        ].filter(Boolean).join(' · ') +
         `</div>` : '';
 
     const openAttr = (isCurrentWk || !isPastWk) ? 'open' : '';
@@ -7032,6 +7060,9 @@ function vizOnChange(el) {
   if (row) {
     row.data[col] = val;
     if (col === 0) row._dateChanged = true;
+    // Track which cells were changed for per-cell save
+    if (!row._changedCols) row._changedCols = new Set();
+    row._changedCols.add(col);
   }
   if (VIZ_COLS[col].req && !val) el.classList.add('invalid');
   else el.classList.remove('invalid');
@@ -7044,14 +7075,28 @@ function vizOnChange(el) {
 async function vizSaveRow(sheetRow, statusEl) {
   const row = S.vizRows.find(r => r._sheetRow === sheetRow);
   if (!row) return;
+  const changedCols = row._changedCols ? [...row._changedCols] : null;
+  row._changedCols = new Set();
   const dateChanged = row._dateChanged;
   row._dateChanged = false;
   try {
-    await vizUpdateRow(vizSheetName(), sheetRow, row.data);
+    const sheet = vizSheetName();
+    if (changedCols && changedCols.length > 0) {
+      // Per-cell updates — prevents overwriting concurrent edits in other columns
+      const COLS = 'ABCDEFGHIJKLMN';
+      await Promise.all(changedCols.map(c => {
+        const colLetter = COLS[c];
+        const range = encodeURIComponent(sheet+'!'+colLetter+sheetRow+':'+colLetter+sheetRow);
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
+        return fetch(url, { method:'PUT', headers:{ Authorization:'Bearer '+S.token,'Content-Type':'application/json' }, body:JSON.stringify({ values:[[row.data[c]]] }) });
+      }));
+    } else {
+      // Fallback: full row update (e.g., new row)
+      await vizUpdateRow(sheet, sheetRow, row.data);
+    }
     if (statusEl) { statusEl.className='vt-save-status saved'; statusEl.textContent='✓ Сохранено'; }
     setTimeout(() => { if(statusEl) { statusEl.className='vt-save-status'; statusEl.textContent=''; } }, 2500);
     if (dateChanged) {
-      // Re-render to move row to correct week group, preserving expanded state
       const expanded = new Set([...document.querySelectorAll('.vt-row-card.vt-expanded')].map(el=>+el.id.replace('vt-card-','')));
       renderVizity();
       expanded.forEach(sr => { document.getElementById('vt-card-'+sr)?.classList.add('vt-expanded'); });
@@ -7202,6 +7247,8 @@ function openVizPicker(sheetRow, colIdx) {
     const row = S.vizRows.find(r => r._sheetRow === sheetRow);
     if (row) {
       row.data[colIdx] = val;
+      if (!row._changedCols) row._changedCols = new Set();
+      row._changedCols.add(colIdx);
       const statusEl = document.getElementById('vt-status-'+sheetRow);
       if (statusEl) { statusEl.className='vt-save-status saving'; statusEl.textContent='Сохранение…'; }
       clearTimeout(S._vizSaveTimers[sheetRow]);

@@ -2123,6 +2123,19 @@ details[open] .vt-week-sum .vt-week-chevron { transform: rotate(90deg); }
   .vt-form-grid { grid-template-columns: 1fr; }
   .vt-form-grid .vt-field-full { grid-column: 1; }
 }
+#scr-vizity { padding: 0 !important; }
+.vt-week-sum { align-items: flex-start; }
+.vt-week-sum-left { display:flex; align-items:flex-start; gap:8px; flex:1; min-width:0; }
+.vt-week-sum-right { flex-shrink:0; text-align:right; }
+.vt-week-sum-line1 {
+  font-family:'Unbounded',sans-serif; font-size:10px; font-weight:800;
+  letter-spacing:.06em; color:var(--txt2); display:flex; align-items:center; gap:6px;
+}
+.vt-week-sum-line2 {
+  font-size:9px; color:var(--txt3); margin-top:3px; line-height:1.5;
+  font-family:'Golos Text',sans-serif;
+}
+.vt-week-sum-line2 b { color:var(--txt2); }
 /* ===== END VIZITY TABLE ===== */
 
 /* ===== DOCK v2 ===== */
@@ -6606,34 +6619,85 @@ function dockVizity(dept) {
 const VIZ_COLS = [
   { k:'date',    lbl:'Дата',           type:'date',   req:true  },
   { k:'name',    lbl:'ФИО',            type:'text',   req:true  },
-  { k:'phone',   lbl:'Телефон',        type:'tel',    req:false },
-  { k:'city',    lbl:'Город',          type:'text',   req:false },
-  { k:'comment', lbl:'Комментарий',    type:'text',   req:false },
-  { k:'source',  lbl:'Источник',       type:'select', req:false,
-    opts:['CRM','Тёплые лиды','Рекомендация','Повторный','Прочее'] },
+  { k:'phone',   lbl:'Телефон',        type:'phone',  req:false },
+  { k:'city',    lbl:'Город',          type:'select', req:false,
+    opts:['Барнаул','Кемерово','Красноярск','Новокузнецк','Новосибирск','Омск','Оренбург','Пермь','Сургут','Томск','Тюмень','Челябинск'] },
+  { k:'comment', lbl:'Комментарий',    type:'picker', req:false, free:true },
+  { k:'source',  lbl:'Источник',       type:'picker', req:false },
   { k:'cat',     lbl:'Категория',      type:'select', req:false,
     opts:{ crm:['КАТ 800','КАТ 1200'], dozhim:['КАТ 800','КАТ 1000'] } },
   { k:'deal',    lbl:'Способ покупки', type:'picker', req:false },
-  { k:'manager', lbl:'Менеджер',       type:'text',   req:true  },
+  { k:'manager', lbl:'Менеджер',       type:'mgr',    req:true  },
   { k:'zadatok', lbl:'Задаток',        type:'number', req:false },
-  { k:'kso',     lbl:'КСО',            type:'text',   req:false },
+  { k:'kso',     lbl:'КСО',            type:'select', req:false,
+    opts:['Был в КСО','Не был в КСО'] },
   { k:'kredit',  lbl:'Кред. рейтинг',  type:'text',   req:false },
   { k:'auto',    lbl:'Авто',           type:'text',   req:false },
-  { k:'sverka',  lbl:'Сверка',         type:'text',   req:false },
+  { k:'sverka',  lbl:'Сверка',         type:'select', req:false,
+    opts:['Да','Нет'] },
 ];
 const VIZ_DEAL_OPTS = [
-  'Покупка (кредит)','Покупка (наличные)','Обмен','Комиссия',
-  'В салоне','В работе КСО','На рассмотрении банка','Подает заявку',
-  'ФССП не подаем','Отказ','Задаток','Повторный визит'
+  'Кредит','Наличные','Комиссия','Обмен','Выкуп',
+  'Оценка авто','Трейдин+кредит','Трейдин+наличные','Лизинг','Не уточнили'
 ];
+const VIZ_SOURCE_OPTS = [
+  'Теплый лид','Рекламный (Манго)','Официальный сайт','Рекламный (Автокред)',
+  'Рекламный (Автохаус)','Рекламный (Селектавто)','Рекламный (АБ-Клаб)',
+  'Рекламный (Автотрейд)','Рекламный (Автокредитс)','Дром','Авито','Авто.ру',
+  'Автоброкер','Рекомендация','Холодный лид','БОТ','VK','Телеграм','Радио',
+  'Автокод','2ГИС','Я.Карты','Google Maps','Яндекс Директ',
+  'Звонок с сайта СМ','Звонок с сайта АН','Звонок с сайта АК',
+  'Звонок с сайта СЛ','Звонок с сайта КК'
+];
+const VIZ_COMMENT_OPTS = [
+  'В салоне','ПОКУПКА (кредит)','ПОКУПКА (наличные)','КОМИССИЯ','ОБМЕН','ВЫКУП',
+  'ФССП не подаем','ОТКАЗ','Подает заявку','В работе КСО','на рассмотрении банка',
+  'Одобрено банком','Одобрено банком, но не купил','не подобрали авто',
+  'не устроила оценка его авто','не устроило состояние нашего авто',
+  'его автомобиль нам не интересен','Не устроила оценка','в течении дня',
+  'в течении часа','в первой половине дня','во второй половине дня',
+  'в пути','скоро будет','после обеда','Клиент внес задаток',
+  'ожидается визит','КОМИССИЯ (визит)'
+];
+
 // State for vizity
 S.vizDept = null;
-S.vizRows = [];       // [{idx, data:[14 cells], _sheetRow}]
-S.vizRenderFrom = 0; // first rendered index (for virtual load)
+S.vizRows = [];
+S._vizAdding = false;
 S._vizUndoTimer = null;
 S._vizSaveTimers = {};
 S._vizSheetIdCache = {};
 S._vizPickerCallback = null;
+
+function buildManagerList(dept) {
+  const list = [];
+  if (S.usersData && S.usersData.length > 1) {
+    for (let i = 1; i < S.usersData.length; i++) {
+      const row = S.usersData[i];
+      const role = (row[2]||'').toLowerCase().trim();
+      if (role === 'ceo') continue;
+      if (dept === 'dozhim' && role !== 'dozhim') continue;
+      if (dept === 'crm' && role !== 'crm' && role !== '') continue;
+      const name = (row[1]||'').trim();
+      if (name) list.push(name);
+    }
+  }
+  list.push('Котел');
+  return list;
+}
+
+function formatPhone(raw) {
+  if (!raw) return raw;
+  const digits = raw.replace(/\D/g,'');
+  if (!digits) return raw;
+  if (digits.length === 10) return '7' + digits;
+  if (digits.length === 11) {
+    if (digits[0] === '7' || digits[0] === '8') return '7' + digits.slice(1);
+    return '7' + digits.slice(-10);
+  }
+  if (digits.length > 11) return '7' + digits.slice(-10);
+  return digits;
+}
 
 function isVizLocked() {
   const matched = findUserInSheet();
@@ -6648,8 +6712,7 @@ function isVizLocked() {
 }
 
 function vizSheetName() {
-  const dept = S.vizDept || 'crm';
-  return dept === 'dozhim' ? SHEETS.d_vizity : SHEETS.vizity;
+  return (S.vizDept||'crm') === 'dozhim' ? SHEETS.d_vizity : SHEETS.vizity;
 }
 
 function todayStr() {
@@ -6687,54 +6750,40 @@ async function loadVizity() {
   if (!el) return;
   const sheet = vizSheetName();
   el.innerHTML = `<div class="loader"><div class="spin"></div><span>Загрузка визитов…</span></div>`;
-
-  // Ensure sheet exists
   await ensureVizSheet(sheet);
-
   let raw = [];
   try { raw = await api(sheet, 'A:N'); }
-  catch(e) {
-    if (e.message !== 'auth') el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
-    return;
-  }
-  // raw[0] = headers, raw[1..] = data
+  catch(e) { if (e.message !== 'auth') el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`; return; }
   S.vizRows = raw.slice(1).map((row, i) => ({
-    idx: i,
-    _sheetRow: i + 2, // 1-based: row 1 = header, row 2 = first data
-    data: Array.from({length:14}, (_, c) => row[c] || '')
+    idx: i, _sheetRow: i + 2,
+    data: Array.from({length:14}, (_,c) => row[c] || '')
   }));
   renderVizity();
 }
 
 async function ensureVizSheet(sheetName) {
-  // Try to get sheet list
   try {
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}?fields=sheets.properties`;
     const r = await fetch(url, { headers:{ Authorization:'Bearer '+S.token }});
     if (!r.ok) return;
     const data = await r.json();
+    (data.sheets||[]).forEach(s => { S._vizSheetIdCache[s.properties.title] = s.properties.sheetId; });
     const exists = data.sheets?.some(s => s.properties.title === sheetName);
-    if (!exists) await createVizSheet(sheetName, data.sheets);
-    // Cache sheet IDs
-    (data.sheets || []).forEach(s => { S._vizSheetIdCache[s.properties.title] = s.properties.sheetId; });
+    if (!exists) await createVizSheet(sheetName);
   } catch(e) {}
 }
 
 async function createVizSheet(sheetName) {
   const headers = VIZ_COLS.map(c => c.lbl);
   try {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`;
-    await fetch(url, {
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`, {
       method:'POST', headers:{ Authorization:'Bearer '+S.token, 'Content-Type':'application/json' },
       body: JSON.stringify({ requests:[{ addSheet:{ properties:{ title:sheetName }}}] })
     });
-    // Add headers
-    const hUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(sheetName+'!A1:N1')}?valueInputOption=RAW`;
-    await fetch(hUrl, {
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(sheetName+'!A1:N1')}?valueInputOption=RAW`, {
       method:'PUT', headers:{ Authorization:'Bearer '+S.token, 'Content-Type':'application/json' },
       body: JSON.stringify({ values:[headers] })
     });
-    // Re-cache
     await ensureVizSheet(sheetName);
     toast('Лист создан: '+sheetName, 's');
   } catch(e) { toast('Ошибка создания листа', 'e'); }
@@ -6751,26 +6800,22 @@ function renderVizity() {
   if (!el) return;
   const dept = S.vizDept || 'crm';
   const locked = isVizLocked();
-  const matched = findUserInSheet();
-  const myName = matched?.name || '';
 
-  // Determine week label
   const mo = parseInt(currentSuffix.slice(0,2));
   const yr = 2000 + parseInt(currentSuffix.slice(2,4));
   const dim = new Date(yr, mo, 0).getDate();
   const weekRanges = [[1,7],[8,14],[15,21],[22,dim]];
   const nowWeek = currentWeekNum();
-  const curMo = new Date().getMonth()+1;
-  const curYr = new Date().getFullYear();
-  const isCurrentMonth = (curYr===yr && curMo===mo);
+  const isCurrentMonth = (new Date().getFullYear()===yr && new Date().getMonth()+1===mo);
 
-  // Group rows by week
-  const groups = [[], [], [], []];
+  // Group rows by week, preserve sheet order
+  const groups = [[],[],[],[]];
   S.vizRows.forEach(row => {
     const d = parseVizDate(row.data[0]);
-    const wk = d ? vizWeekOf(d) : 4;
-    groups[wk-1].push(row);
+    groups[d ? vizWeekOf(d)-1 : 3].push(row);
   });
+
+  const moName = new Date(yr,mo-1,1).toLocaleString('ru',{month:'long'});
 
   const weekHTML = weekRanges.map(([start, end], wi) => {
     const wk = wi+1;
@@ -6778,82 +6823,95 @@ function renderVizity() {
     const isPastWk = isCurrentMonth ? wk < nowWeek : true;
     const rows = groups[wi];
     const visCount = rows.length;
-    const dealCount = rows.filter(r => ['Покупка (кредит)','Покупка (наличные)','Обмен','Комиссия'].some(d => r.data[7]?.includes(d.split(' ')[0]))).length;
+    // Stats for summary
+    const salon   = rows.filter(r=>(r.data[4]||'').includes('В салоне')).length;
+    const kred    = rows.filter(r=>(r.data[4]||'').includes('ПОКУПКА (кредит)') || (r.data[7]||'').includes('Кредит')).length;
+    const nal     = rows.filter(r=>(r.data[4]||'').includes('ПОКУПКА (наличные)') || (r.data[7]||'').includes('Наличные')).length;
+    const kom     = rows.filter(r=>(r.data[4]||'').includes('КОМИССИЯ') || (r.data[7]||'').includes('Комиссия')).length;
+    const otk     = rows.filter(r=>(r.data[4]||'').includes('ОТКАЗ') || (r.data[4]||'').includes('ФССП')).length;
+    const statsLine2 = visCount > 0
+      ? `<div class="vt-week-sum-line2">` +
+        [salon && `В салоне: <b>${salon}</b>`, kred && `Кред: <b>${kred}</b>`, nal && `Нал: <b>${nal}</b>`, kom && `Ком: <b>${kom}</b>`, otk && `Отказы: <b>${otk}</b>`].filter(Boolean).join(' · ') +
+        `</div>` : '';
+
     const openAttr = (isCurrentWk || !isPastWk) ? 'open' : '';
 
-    const rowsHTML = rows.map(row => renderVizRow(row, dept, locked)).join('');
-    const insertZone = (isCurrentWk && !locked)
-      ? `<div class="vt-insert-zone" onclick="vizAddRow(${groups[wi].length > 0 ? groups[wi][groups[wi].length-1]._sheetRow : -1})"><div class="vt-insert-zone-btn">+</div></div>` : '';
+    // Build insert zones + rows
+    function makeInsertZone(afterRow, label='') {
+      if (locked) return '';
+      return `<div class="vt-insert-zone" onclick="vizManualInsert(${afterRow})" title="Вставить визит${label}"><div class="vt-insert-zone-btn">+</div></div>`;
+    }
+
+    let bodyHTML = '';
+    // Zone before first row of group
+    const prevRows = wi > 0 ? groups[wi-1] : [];
+    const beforeFirst = prevRows.length > 0 ? prevRows[prevRows.length-1]._sheetRow
+                      : (rows.length > 0 ? rows[0]._sheetRow - 1 : 1);
+    bodyHTML += makeInsertZone(beforeFirst);
+    rows.forEach((row) => {
+      bodyHTML += renderVizRow(row, dept, locked);
+      bodyHTML += makeInsertZone(row._sheetRow);
+    });
 
     const addBtn = isCurrentWk && !locked
-      ? `<div style="text-align:center;padding:8px 0 4px">
-           <button class="vt-add-btn" onclick="vizAddRow(-1)">
+      ? `<div style="text-align:center;padding:6px 0 4px">
+           <button class="vt-add-btn" onclick="vizAddRow()" id="vt-main-add-btn">
              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
              Добавить визит
            </button>
          </div>` : '';
 
-    const wkLabel = `${start}–${end}`;
-    const moName = new Date(yr,mo-1,1).toLocaleString('ru',{month:'long'});
-
     return `<details class="vt-week" ${openAttr}>
       <summary class="vt-week-sum">
-        <div style="display:flex;align-items:center;gap:8px">
+        <div class="vt-week-sum-left">
           <svg class="vt-week-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-          ${wkLabel} ${moName}${isCurrentWk?' <span style="color:var(--acc);font-size:8px;margin-left:4px">● сейчас</span>':''}
+          <div>
+            <div class="vt-week-sum-line1">${start}–${end} ${moName}${isCurrentWk?' <span style="color:var(--acc);font-size:8px">● сейчас</span>':''}</div>
+            ${statsLine2}
+          </div>
         </div>
-        <div class="vt-week-stats">
-          <span><b>${visCount}</b> визитов</span>
-          ${dealCount > 0 ? `<span><b>${dealCount}</b> сделок</span>` : ''}
-        </div>
+        <div class="vt-week-sum-right vt-week-stats"><b>${visCount}</b> визитов</div>
       </summary>
-      <div class="vt-week-body">
-        ${rowsHTML}
-        ${insertZone}
-        ${addBtn}
-      </div>
+      <div class="vt-week-body">${bodyHTML}${addBtn}</div>
     </details>`;
   }).join('');
 
   const lockedBadge = locked
     ? `<span class="vt-lock-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Месяц закрыт</span>` : '';
   const addBtnTop = !locked
-    ? `<button class="vt-add-btn" onclick="vizAddRow(-1)">
+    ? `<button class="vt-add-btn" onclick="vizAddRow()">
          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Новый визит
        </button>` : '';
 
   el.innerHTML = `
     <div class="vt-toolbar">
-      <span class="vt-dept-badge">${dept === 'dozhim' ? 'ДОЖИМ' : 'CRM'}</span>
-      ${lockedBadge}
-      ${addBtnTop}
+      <span class="vt-dept-badge">${dept==='dozhim'?'ДОЖИМ':'CRM'}</span>
+      ${lockedBadge}${addBtnTop}
     </div>
-    <div class="vt-body">${weekHTML}</div>
-  `;
+    <div class="vt-body">${weekHTML}</div>`;
 }
 
 function renderVizRow(row, dept, locked) {
   const d = row.data;
-  const name    = d[1] || '—';
-  const dateStr = d[0] || '—';
-  const deal    = d[7] || '';
-  const manager = d[8] || '';
-  const cat     = d[6] || '';
-  const dealChip = deal
-    ? `<span class="vt-status-chip ${['Покупка','Обмен','Комиссия'].some(x=>deal.includes(x))?'deal':deal.includes('салоне')?'salon':''}">${deal}</span>` : '';
-
+  const comment = d[4] || '';
+  const deal = d[7] || '';
+  const label = comment || deal;
+  const isDeal = ['ПОКУПКА','КОМИССИЯ','ОБМЕН','ВЫКУП','Кредит','Наличные','Комиссия','Обмен'].some(x=>label.includes(x));
+  const isSalon = label.includes('В салоне');
+  const chipClass = isDeal ? 'deal' : isSalon ? 'salon' : '';
+  const chip = label
+    ? `<span class="vt-status-chip ${chipClass}" title="${label}">${label.slice(0,18)}${label.length>18?'…':''}</span>` : '';
   const formHTML = locked ? '' : renderVizForm(row, dept);
-
   return `
     <div class="vt-row" id="vt-row-${row._sheetRow}">
       <div class="vt-row-card" id="vt-card-${row._sheetRow}">
         <div class="vt-row-compact" onclick="vizToggleExpand(${row._sheetRow})">
-          <span class="vt-row-date">${dateStr.slice(0,5)}</span>
+          <span class="vt-row-date">${(d[0]||'—').slice(0,5)}</span>
           <div>
-            <div class="vt-row-name">${name}</div>
-            <div class="vt-row-sub">${manager}${cat?' · '+cat:''}</div>
+            <div class="vt-row-name">${d[1]||'—'}</div>
+            <div class="vt-row-sub">${d[8]||''}${d[6]?' · '+d[6]:''}</div>
           </div>
-          ${dealChip}
+          ${chip}
           <button class="vt-expand-btn" onclick="event.stopPropagation();vizToggleExpand(${row._sheetRow})">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -6866,48 +6924,59 @@ function renderVizRow(row, dept, locked) {
 function renderVizForm(row, dept) {
   const d = row.data;
   const catOpts = VIZ_COLS[6].opts[dept] || VIZ_COLS[6].opts.crm;
+  const mgrList = buildManagerList(dept);
 
   function field(idx, gridClass='') {
     const col = VIZ_COLS[idx];
     const val = d[idx] || '';
     const lblCls = col.req ? 'vt-field-lbl required' : 'vt-field-lbl';
     let input = '';
+
     if (col.type === 'date') {
-      // Convert DD.MM.YYYY to YYYY-MM-DD for input type=date
       let dateVal = '';
-      const m = val.match(/^(\d{2})\.(\d{2})\.(\d{4})/);
-      if (m) dateVal = `${m[3]}-${m[2]}-${m[1]}`;
+      const m = val.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+      if (m) dateVal = `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
       else if (/^\d{4}-\d{2}-\d{2}/.test(val)) dateVal = val;
-      input = `<input type="date" value="${dateVal}" data-row="${row._sheetRow}" data-col="${idx}"
-        oninput="vizOnChange(this)" class="${!val?'invalid':''}">`;
+      input = `<input type="date" value="${dateVal}" data-row="${row._sheetRow}" data-col="${idx}" oninput="vizOnChange(this)" class="${!val?'invalid':''}">`;
+
+    } else if (col.type === 'phone') {
+      input = `<input type="tel" value="${val}" placeholder="79000000000" data-row="${row._sheetRow}" data-col="${idx}"
+        oninput="vizOnChange(this)" onblur="vizFormatPhone(this)">`;
+
     } else if (col.type === 'select' && Array.isArray(col.opts)) {
+      const opts = col.opts;
       input = `<select data-row="${row._sheetRow}" data-col="${idx}" onchange="vizOnChange(this)">
         <option value=""></option>
-        ${col.opts.map(o=>`<option ${val===o?'selected':''}>${o}</option>`).join('')}
+        ${opts.map(o=>`<option${val===o?' selected':''}>${o}</option>`).join('')}
       </select>`;
+
     } else if (col.type === 'select' && typeof col.opts === 'object') {
       input = `<select data-row="${row._sheetRow}" data-col="${idx}" onchange="vizOnChange(this)">
         <option value=""></option>
-        ${catOpts.map(o=>`<option ${val===o?'selected':''}>${o}</option>`).join('')}
+        ${catOpts.map(o=>`<option${val===o?' selected':''}>${o}</option>`).join('')}
       </select>`;
+
     } else if (col.type === 'picker') {
+      const displayVal = val ? `<span>${val}</span>` : `<span style='color:var(--txt3)'>Выбрать…</span>`;
       input = `<button class="vt-status-trigger" onclick="openVizPicker(${row._sheetRow},${idx},this)"
-        data-row="${row._sheetRow}" data-col="${idx}" id="vtpick-${row._sheetRow}-${idx}">
-        <span>${val || '<span style=\'color:var(--txt3)\'>Выбрать…</span>'}</span>
+        id="vtpick-${row._sheetRow}-${idx}">
+        ${displayVal}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
       </button>`;
+
+    } else if (col.type === 'mgr') {
+      input = `<select data-row="${row._sheetRow}" data-col="${idx}" onchange="vizOnChange(this)">
+        <option value=""></option>
+        ${mgrList.map(o=>`<option${val===o?' selected':''}>${o}</option>`).join('')}
+      </select>`;
+
     } else if (col.type === 'number') {
-      input = `<input type="number" value="${val}" placeholder="0"
-        data-row="${row._sheetRow}" data-col="${idx}" oninput="vizOnChange(this)">`;
+      input = `<input type="number" value="${val}" placeholder="0" data-row="${row._sheetRow}" data-col="${idx}" oninput="vizOnChange(this)">`;
+
     } else {
-      input = `<input type="text" value="${val}" placeholder="${col.lbl}"
-        data-row="${row._sheetRow}" data-col="${idx}" oninput="vizOnChange(this)"
-        class="${col.req && !val ? 'invalid' : ''}">`;
+      input = `<input type="text" value="${val}" placeholder="${col.lbl}" data-row="${row._sheetRow}" data-col="${idx}" oninput="vizOnChange(this)" class="${col.req&&!val?'invalid':''}">`;
     }
-    return `<div class="vt-field ${gridClass}">
-      <label class="${lblCls}">${col.lbl}</label>
-      ${input}
-    </div>`;
+    return `<div class="vt-field ${gridClass}"><label class="${lblCls}">${col.lbl}</label>${input}</div>`;
   }
 
   return `<div class="vt-row-form">
@@ -6918,11 +6987,11 @@ function renderVizForm(row, dept) {
       ${field(6)}${field(7)}
       ${field(5)}${field(9)}
       ${field(4,'vt-field-full')}
-      ${field(10)}${field(11)}
-      ${field(12)}${field(13)}
+      ${field(10)}${field(13)}
+      ${field(11)}${field(12)}
     </div>
     <div class="vt-form-actions">
-      <span class="vt-save-status" id="vt-status-${row._sheetRow}">Изменения не сохранены</span>
+      <span class="vt-save-status" id="vt-status-${row._sheetRow}"></span>
       <button class="vt-del-btn" onclick="vizDeleteRow(${row._sheetRow})">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
         Удалить
@@ -6932,27 +7001,40 @@ function renderVizForm(row, dept) {
 }
 
 function vizToggleExpand(sheetRow) {
-  const card = document.getElementById('vt-card-'+sheetRow);
-  if (!card) return;
-  card.classList.toggle('vt-expanded');
+  document.getElementById('vt-card-'+sheetRow)?.classList.toggle('vt-expanded');
+}
+
+function vizFormatPhone(el) {
+  const formatted = formatPhone(el.value);
+  if (formatted !== el.value) {
+    el.value = formatted;
+    const sheetRow = +el.dataset.row;
+    const col = +el.dataset.col;
+    const row = S.vizRows.find(r => r._sheetRow === sheetRow);
+    if (row) {
+      row.data[col] = formatted;
+      const statusEl = document.getElementById('vt-status-'+sheetRow);
+      if (statusEl) { statusEl.className='vt-save-status saving'; statusEl.textContent='Сохранение…'; }
+      clearTimeout(S._vizSaveTimers[sheetRow]);
+      S._vizSaveTimers[sheetRow] = setTimeout(() => vizSaveRow(sheetRow, statusEl), 800);
+    }
+  }
 }
 
 function vizOnChange(el) {
   const sheetRow = +el.dataset.row;
   const col      = +el.dataset.col;
   let val = el.value;
-  // Convert date back to DD.MM.YYYY
   if (VIZ_COLS[col].type === 'date' && /^\d{4}-\d{2}-\d{2}/.test(val)) {
-    const p = val.split('-');
-    val = `${p[2]}.${p[1]}.${p[0]}`;
+    const p = val.split('-'); val = `${p[2]}.${p[1]}.${p[0]}`;
   }
-  // Update local state
   const row = S.vizRows.find(r => r._sheetRow === sheetRow);
-  if (row) row.data[col] = val;
-  // Validate required
+  if (row) {
+    row.data[col] = val;
+    if (col === 0) row._dateChanged = true;
+  }
   if (VIZ_COLS[col].req && !val) el.classList.add('invalid');
   else el.classList.remove('invalid');
-  // Debounce save
   const statusEl = document.getElementById('vt-status-'+sheetRow);
   if (statusEl) { statusEl.className='vt-save-status saving'; statusEl.textContent='Сохранение…'; }
   clearTimeout(S._vizSaveTimers[sheetRow]);
@@ -6962,62 +7044,106 @@ function vizOnChange(el) {
 async function vizSaveRow(sheetRow, statusEl) {
   const row = S.vizRows.find(r => r._sheetRow === sheetRow);
   if (!row) return;
+  const dateChanged = row._dateChanged;
+  row._dateChanged = false;
   try {
     await vizUpdateRow(vizSheetName(), sheetRow, row.data);
     if (statusEl) { statusEl.className='vt-save-status saved'; statusEl.textContent='✓ Сохранено'; }
     setTimeout(() => { if(statusEl) { statusEl.className='vt-save-status'; statusEl.textContent=''; } }, 2500);
+    if (dateChanged) {
+      // Re-render to move row to correct week group, preserving expanded state
+      const expanded = new Set([...document.querySelectorAll('.vt-row-card.vt-expanded')].map(el=>+el.id.replace('vt-card-','')));
+      renderVizity();
+      expanded.forEach(sr => { document.getElementById('vt-card-'+sr)?.classList.add('vt-expanded'); });
+    }
   } catch(e) {
     if (statusEl) { statusEl.className='vt-save-status err'; statusEl.textContent='Ошибка сохранения'; }
   }
 }
 
 async function vizUpdateRow(sheetName, sheetRow, rowData) {
-  const range = encodeURIComponent(sheetName + '!A' + sheetRow + ':N' + sheetRow);
+  const range = encodeURIComponent(sheetName+'!A'+sheetRow+':N'+sheetRow);
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
-  const r = await fetch(url, {
-    method: 'PUT',
-    headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ values: [rowData] })
-  });
+  const r = await fetch(url, { method:'PUT', headers:{ Authorization:'Bearer '+S.token,'Content-Type':'application/json' }, body:JSON.stringify({ values:[rowData] }) });
   if (!r.ok) throw new Error('Sheets API error');
 }
 
-async function vizAddRow(afterSheetRow) {
-  if (isVizLocked()) return;
+// Main add button — auto-sort: places new row after last row of same manager+today
+async function vizAddRow() {
+  if (isVizLocked() || S._vizAdding) return;
+  S._vizAdding = true;
+  const btn = document.getElementById('vt-main-add-btn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+  const matched = findUserInSheet();
+  const myName  = matched?.name || '';
+  const today   = todayStr();
+  const newData = Array(14).fill('');
+  newData[0] = today;
+  newData[8] = myName;
+
+  // Find last row with same manager+date for auto-sort
+  const sameRows = S.vizRows.filter(r => r.data[0] === today && r.data[8].toLowerCase() === myName.toLowerCase());
+  const insertAfter = sameRows.length > 0 ? sameRows[sameRows.length-1]._sheetRow : -1;
+
+  try {
+    const newSheetRow = await vizWriteNewRow(insertAfter, newData);
+    S.vizRows.sort((a,b) => a._sheetRow - b._sheetRow);
+    renderVizity();
+    setTimeout(() => {
+      const card = document.getElementById('vt-card-'+newSheetRow);
+      if (card) { card.classList.add('vt-expanded','vt-new'); card.scrollIntoView({ behavior:'smooth', block:'center' }); }
+    }, 60);
+  } catch(e) { toast('Ошибка добавления визита', 'e'); }
+  finally { S._vizAdding = false; }
+}
+
+// Manual "+" insert at specific position
+async function vizManualInsert(afterSheetRow) {
+  if (isVizLocked() || S._vizAdding) return;
+  S._vizAdding = true;
   const matched = findUserInSheet();
   const newData = Array(14).fill('');
   newData[0] = todayStr();
   newData[8] = matched?.name || '';
+  try {
+    const newSheetRow = await vizWriteNewRow(afterSheetRow, newData);
+    S.vizRows.sort((a,b) => a._sheetRow - b._sheetRow);
+    renderVizity();
+    setTimeout(() => {
+      const card = document.getElementById('vt-card-'+newSheetRow);
+      if (card) { card.classList.add('vt-expanded','vt-new'); card.scrollIntoView({ behavior:'smooth', block:'center' }); }
+    }, 60);
+  } catch(e) { toast('Ошибка вставки строки', 'e'); }
+  finally { S._vizAdding = false; }
+}
 
-  // Append to sheet
+// Core write: either append (afterSheetRow=-1) or insertDimension+update
+async function vizWriteNewRow(afterSheetRow, newData) {
   const sheet = vizSheetName();
   let newSheetRow;
-  try {
+  if (afterSheetRow === -1 || afterSheetRow >= S.vizRows.reduce((mx,r)=>Math.max(mx,r._sheetRow),1)) {
+    // Append
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(sheet+'!A:N')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
-    const r = await fetch(url, {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ values: [newData] })
-    });
+    const r = await fetch(url, { method:'POST', headers:{ Authorization:'Bearer '+S.token,'Content-Type':'application/json' }, body:JSON.stringify({ values:[newData] }) });
     if (!r.ok) throw new Error();
     const res = await r.json();
-    const updRange = res.updates?.updatedRange || '';
-    const m = updRange.match(/(\d+)$/);
-    newSheetRow = m ? +m[1] : (S.vizRows.length + 2);
-  } catch(e) { toast('Ошибка добавления строки', 'e'); return; }
-
-  const newRow = { idx: S.vizRows.length, _sheetRow: newSheetRow, data: newData };
-  S.vizRows.push(newRow);
-  renderVizity();
-
-  // Expand new row
-  setTimeout(() => {
-    const card = document.getElementById('vt-card-'+newSheetRow);
-    if (card) {
-      card.classList.add('vt-expanded','vt-new');
-      card.scrollIntoView({ behavior:'smooth', block:'center' });
-    }
-  }, 50);
+    const m = (res.updates?.updatedRange||'').match(/(\d+)$/);
+    newSheetRow = m ? +m[1] : S.vizRows.length + 2;
+  } else {
+    // Insert at position
+    const sheetId = await getVizSheetId(sheet);
+    if (sheetId === null) throw new Error('Sheet ID not found');
+    newSheetRow = afterSheetRow + 1;
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`, {
+      method:'POST', headers:{ Authorization:'Bearer '+S.token,'Content-Type':'application/json' },
+      body: JSON.stringify({ requests:[{ insertDimension:{ range:{ sheetId, dimension:'ROWS', startIndex:afterSheetRow, endIndex:afterSheetRow+1 }, inheritFromBefore:false }}] })
+    });
+    await vizUpdateRow(sheet, newSheetRow, newData);
+    S.vizRows.forEach(r => { if (r._sheetRow >= newSheetRow) r._sheetRow++; });
+  }
+  S.vizRows.push({ idx: S.vizRows.length, _sheetRow: newSheetRow, data: newData });
+  return newSheetRow;
 }
 
 async function vizDeleteRow(sheetRow) {
@@ -7025,69 +7151,54 @@ async function vizDeleteRow(sheetRow) {
   if (!rowEl) return;
   const row = S.vizRows.find(r => r._sheetRow === sheetRow);
   if (!row) return;
-  const snapshot = { ...row, data: [...row.data] };
-
-  // Remove from DOM immediately
-  rowEl.style.opacity = '0.3';
-  rowEl.style.pointerEvents = 'none';
-
-  // Show undo toast
+  rowEl.style.opacity = '0.3'; rowEl.style.pointerEvents = 'none';
   if (S._vizUndoTimer) { clearTimeout(S._vizUndoTimer); document.getElementById('vt-undo-toast')?.remove(); }
-  let undone = false;
   const toastEl = document.createElement('div');
   toastEl.id = 'vt-undo-toast'; toastEl.className = 'vt-undo-toast';
-  toastEl.innerHTML = `<span>Строка удалена</span><button class="vt-undo-btn" onclick="vizUndoDelete()">ОТМЕНА</button><span id="vt-undo-timer" style="color:var(--txt3);font-size:11px">10</span>`;
+  toastEl.innerHTML = `<span>Строка удалена</span><button class="vt-undo-btn" onclick="vizUndoDelete()">ОТМЕНА</button><span id="vt-undo-timer" style="color:var(--txt3);font-size:11px;min-width:16px">10</span>`;
   document.body.appendChild(toastEl);
   let sec = 10;
   const tick = setInterval(() => {
-    sec--; const tEl = document.getElementById('vt-undo-timer');
-    if (tEl) tEl.textContent = sec;
-    if (sec <= 0) { clearInterval(tick); if(!undone) commitVizDelete(sheetRow, snapshot); }
+    sec--; const tEl = document.getElementById('vt-undo-timer'); if (tEl) tEl.textContent = sec;
+    if (sec <= 0) { clearInterval(tick); commitVizDelete(sheetRow); }
   }, 1000);
-
-  S._vizUndoTimer = setTimeout(() => {}, 10500);
-  window._vizUndoPending = { sheetRow, snapshot, tick, rowEl };
+  window._vizUndoPending = { sheetRow, tick, rowEl };
 }
 
 async function vizUndoDelete() {
-  const p = window._vizUndoPending;
-  if (!p) return;
+  const p = window._vizUndoPending; if (!p) return;
   clearInterval(p.tick);
-  p.rowEl.style.opacity = '';
-  p.rowEl.style.pointerEvents = '';
+  p.rowEl.style.opacity = ''; p.rowEl.style.pointerEvents = '';
   document.getElementById('vt-undo-toast')?.remove();
   window._vizUndoPending = null;
 }
 
-async function commitVizDelete(sheetRow, snapshot) {
+async function commitVizDelete(sheetRow) {
   document.getElementById('vt-undo-toast')?.remove();
   window._vizUndoPending = null;
-  // Remove from local state
   S.vizRows = S.vizRows.filter(r => r._sheetRow !== sheetRow);
-  // API delete
   const sheet = vizSheetName();
   const sheetId = await getVizSheetId(sheet);
-  if (sheetId === null) { renderVizity(); return; }
-  try {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`;
-    await fetch(url, {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ requests:[{
-        deleteDimension:{ range:{ sheetId, dimension:'ROWS', startIndex: sheetRow-1, endIndex: sheetRow }}
-      }]})
-    });
-    // Shift _sheetRow for rows below
-    S.vizRows.forEach(r => { if (r._sheetRow > sheetRow) r._sheetRow--; });
-  } catch(e) { toast('Ошибка удаления', 'e'); }
+  if (sheetId !== null) {
+    try {
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`, {
+        method:'POST', headers:{ Authorization:'Bearer '+S.token,'Content-Type':'application/json' },
+        body: JSON.stringify({ requests:[{ deleteDimension:{ range:{ sheetId, dimension:'ROWS', startIndex:sheetRow-1, endIndex:sheetRow }}}] })
+      });
+      S.vizRows.forEach(r => { if (r._sheetRow > sheetRow) r._sheetRow--; });
+    } catch(e) { toast('Ошибка удаления', 'e'); }
+  }
   renderVizity();
 }
 
-// Status picker
-function openVizPicker(sheetRow, colIdx, btnEl) {
+function openVizPicker(sheetRow, colIdx) {
   S._vizPickerCallback = (val) => {
-    const el = document.getElementById(`vtpick-${sheetRow}-${colIdx}`);
-    if (el) el.querySelector('span').innerHTML = val || `<span style='color:var(--txt3)'>Выбрать…</span>`;
+    const btn = document.getElementById(`vtpick-${sheetRow}-${colIdx}`);
+    if (btn) {
+      const sp = btn.querySelector('span');
+      if (sp) sp.innerHTML = val || `<span style='color:var(--txt3)'>Выбрать…</span>`;
+      else btn.innerHTML = `<span>${val}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+    }
     const row = S.vizRows.find(r => r._sheetRow === sheetRow);
     if (row) {
       row.data[colIdx] = val;
@@ -7097,45 +7208,48 @@ function openVizPicker(sheetRow, colIdx, btnEl) {
       S._vizSaveTimers[sheetRow] = setTimeout(() => vizSaveRow(sheetRow, statusEl), 800);
     }
   };
-  const curVal = S.vizRows.find(r=>r._sheetRow===sheetRow)?.data[colIdx] || '';
-  renderVizPicker(VIZ_DEAL_OPTS, curVal);
+  const curVal = S.vizRows.find(r=>r._sheetRow===sheetRow)?.data[colIdx]||'';
+  let opts, free = false;
+  if (colIdx === 4) { opts = VIZ_COMMENT_OPTS; free = true; }
+  else if (colIdx === 5) { opts = VIZ_SOURCE_OPTS; }
+  else { opts = VIZ_DEAL_OPTS; }
+  renderVizPicker(opts, curVal, free);
 }
 
-function renderVizPicker(opts, curVal) {
+function renderVizPicker(opts, curVal, allowFree) {
   let overlay = document.getElementById('vt-picker-overlay');
   if (!overlay) {
     overlay = document.createElement('div');
-    overlay.id = 'vt-picker-overlay';
-    overlay.className = 'vt-picker-overlay';
-    overlay.onclick = (e) => { if (e.target === overlay) closeVizPicker(); };
+    overlay.id = 'vt-picker-overlay'; overlay.className = 'vt-picker-overlay';
+    overlay.onclick = e => { if (e.target === overlay) closeVizPicker(); };
     document.body.appendChild(overlay);
   }
-  overlay.innerHTML = `
-    <div class="vt-picker-modal">
-      <div class="vt-picker-hdr">
-        <input class="vt-picker-search" placeholder="Поиск или введите вручную…" oninput="filterVizPicker(this.value)" id="vt-picker-search" autofocus>
-        <button class="vt-picker-cancel" onclick="closeVizPicker()">Отмена</button>
-      </div>
-      <div class="vt-picker-list" id="vt-picker-list">
-        ${opts.map(o=>`<div class="vt-picker-item ${o===curVal?'selected':''}" onclick="selectVizPicker('${o.replace(/'/g,"\\'")}')">${o}</div>`).join('')}
-      </div>
-    </div>`;
+  const ph = allowFree ? 'Поиск или введите вручную…' : 'Поиск…';
+  overlay.innerHTML = `<div class="vt-picker-modal">
+    <div class="vt-picker-hdr">
+      <input class="vt-picker-search" placeholder="${ph}" oninput="filterVizPicker(this.value,${allowFree})" id="vt-picker-search">
+      <button class="vt-picker-cancel" onclick="closeVizPicker()">Отмена</button>
+    </div>
+    <div class="vt-picker-list" id="vt-picker-list">
+      ${opts.map(o=>`<div class="vt-picker-item${o===curVal?' selected':''}" onclick="selectVizPicker('${o.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">${o}</div>`).join('')}
+    </div>
+  </div>`;
+  overlay._opts = opts; overlay._allowFree = allowFree;
   overlay.classList.add('open');
-  setTimeout(() => overlay.querySelector('#vt-picker-search')?.focus(), 100);
-  overlay._opts = opts;
-  overlay._curVal = curVal;
+  setTimeout(() => document.getElementById('vt-picker-search')?.focus(), 100);
 }
 
-function filterVizPicker(q) {
-  const overlay = document.getElementById('vt-picker-overlay');
+function filterVizPicker(q, allowFree) {
   const list = document.getElementById('vt-picker-list');
+  const overlay = document.getElementById('vt-picker-overlay');
   if (!list || !overlay) return;
-  const opts = overlay._opts || VIZ_DEAL_OPTS;
+  const opts = overlay._opts || [];
+  const af = allowFree !== undefined ? allowFree : overlay._allowFree;
   const ql = q.toLowerCase();
   const filtered = opts.filter(o => o.toLowerCase().includes(ql));
-  const freeEntry = q && !opts.some(o => o.toLowerCase() === ql)
-    ? `<div class="vt-picker-item" onclick="selectVizPicker('${q.replace(/'/g,"\\'")}')">✏️ «${q}»</div>` : '';
-  list.innerHTML = filtered.map(o=>`<div class="vt-picker-item" onclick="selectVizPicker('${o.replace(/'/g,"\\'")}')">${o}</div>`).join('') + freeEntry;
+  const freeEntry = af && q && !opts.some(o => o.toLowerCase() === ql)
+    ? `<div class="vt-picker-item" onclick="selectVizPicker('${q.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">✏️ «${q}»</div>` : '';
+  list.innerHTML = filtered.map(o=>`<div class="vt-picker-item" onclick="selectVizPicker('${o.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">${o}</div>`).join('') + freeEntry;
 }
 
 function selectVizPicker(val) {
@@ -7144,8 +7258,7 @@ function selectVizPicker(val) {
 }
 
 function closeVizPicker() {
-  const overlay = document.getElementById('vt-picker-overlay');
-  if (overlay) overlay.classList.remove('open');
+  document.getElementById('vt-picker-overlay')?.classList.remove('open');
 }
 
 // ==================== BACKGROUND ORBS ====================

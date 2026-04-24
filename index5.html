@@ -3029,10 +3029,11 @@ function renderUser() {
 }
 
 function onLogin() {
-  document.getElementById('btn-out').style.display   = '';
+  const _bo = document.getElementById('btn-out');
+  if (_bo) _bo.style.display = '';
   document.getElementById('main-nav').style.display  = 'none';
   document.getElementById('main-dock').style.display = 'flex';
-  // Hamburger: показываем Выйти
+  // Hamburger: сразу показываем Выйти
   const hmbl = document.getElementById('hmb-logout'); if (hmbl) hmbl.style.display = '';
   const ls = document.getElementById('scr-login');
   ls.classList.remove('on'); ls.style.display = 'none'; document.body.classList.remove('login-active');
@@ -3069,7 +3070,8 @@ function onLogout() {
   S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null };
   ['crm_tok','crm_exp','crm_user'].forEach(k => localStorage.removeItem(k));
   document.getElementById('user-wrap').style.display = 'none';
-  document.getElementById('btn-out').style.display   = 'none';
+  const _bo2 = document.getElementById('btn-out');
+  if (_bo2) _bo2.style.display = 'none';
   document.getElementById('main-nav').style.display  = 'none';
   document.getElementById('main-dock').style.display = 'none';
   const hmbl = document.getElementById('hmb-logout'); if (hmbl) hmbl.style.display = 'none';

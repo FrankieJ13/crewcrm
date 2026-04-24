@@ -2940,7 +2940,7 @@ function medalBtn(idx) {
 let tokenClient;
 let refreshTimer = null;
 let autoRefreshTimer = null;
-const AUTO_REFRESH_INTERVAL = 3 * 60 * 1000; // 3 минуты
+const AUTO_REFRESH_INTERVAL = 7 * 60 * 1000; // 7 минут
 
 // Определяем Android WebView (Capacitor) — Google OAuth там не работает
 const isAndroidWebView = /Android/.test(navigator.userAgent) && /wv\b/.test(navigator.userAgent);
@@ -3156,22 +3156,73 @@ function trySilentRefresh() {
   window._silentFallback = fallback;
 }
 
+// ==================== API LAYER ====================
+const _apiInflight = {};   // key → Promise (дедупликация одновременных запросов)
+const _apiCache    = {};   // key → {ts, data} (TTL-кеш: не перезапрашиваем в течение TTL)
+const API_TTL_MS   = 45_000; // 45 сек — минимальный интервал повторной загрузки одного листа
+
 async function api(sheet, range) {
+  const key = sheet + '!' + range;
+
+  // TTL-кеш: если данные свежие — отдаём из кеша без сетевого запроса
+  const cached = _apiCache[key];
+  if (cached && (Date.now() - cached.ts) < API_TTL_MS) {
+    return cached.data;
+  }
+
+  // Дедупликация: если уже идёт запрос с тем же ключом — возвращаем тот же Promise
+  if (_apiInflight[key]) return _apiInflight[key];
+
+  _apiInflight[key] = _apiFetch(sheet, range, key);
+  try {
+    const result = await _apiInflight[key];
+    return result;
+  } finally {
+    delete _apiInflight[key];
+  }
+}
+
+async function _apiFetch(sheet, range, key, retryCount = 0) {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/`
-            + encodeURIComponent(sheet+'!'+range);
-  const r = await fetch(url, { headers:{ Authorization:'Bearer '+S.token } });
+            + encodeURIComponent(sheet + '!' + range);
+  const r = await fetch(url, { headers: { Authorization: 'Bearer ' + S.token } });
+
+  if (r.status === 429) {
+    // Quota exceeded — ждём и повторяем (до 3 раз)
+    if (retryCount < 3) {
+      const wait = (retryCount + 1) * 8000; // 8s, 16s, 24s
+      if (retryCount === 0) toast('Лимит запросов — повтор через ' + (wait/1000) + 'с…', 'i');
+      await new Promise(res => setTimeout(res, wait));
+      return _apiFetch(sheet, range, key, retryCount + 1);
+    }
+    toast('Превышен лимит Sheets API — подождите минуту', 'e');
+    throw new Error('QUOTA_EXCEEDED');
+  }
+
   if (!r.ok) {
     const e = await r.json();
     const msg = e.error?.message || r.statusText;
-    if (r.status===401 || r.status===403 || msg.includes('insufficient')) {
+    if (r.status === 401 || r.status === 403 || msg.includes('insufficient')) {
       ['crm_tok','crm_exp','crm_user'].forEach(k => localStorage.removeItem(k));
-      S.token=null; onLogout(); toast('Сессия истекла — войдите снова','e');
+      S.token = null; onLogout(); toast('Сессия истекла — войдите снова', 'e');
       throw new Error('auth');
     }
     if (r.status === 404) throw new Error('NOT_FOUND');
     throw new Error(msg);
   }
-  return (await r.json()).values || [];
+
+  const data = (await r.json()).values || [];
+  _apiCache[key] = { ts: Date.now(), data };
+  return data;
+}
+
+// Инвалидируем кеш при смене месяца или явном pull-to-refresh
+function apiCacheInvalidate(sheetName) {
+  if (sheetName) {
+    Object.keys(_apiCache).forEach(k => { if (k.startsWith(sheetName + '!')) delete _apiCache[k]; });
+  } else {
+    Object.keys(_apiCache).forEach(k => delete _apiCache[k]);
+  }
 }
 
 function setCurrentMonth(newSuffix) {
@@ -3180,6 +3231,7 @@ function setCurrentMonth(newSuffix) {
   updateBadge();
   SHEETS = getSheetNames(currentSuffix);
   S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null };
+  apiCacheInvalidate(); // сбрасываем кеш при смене месяца
   _schedWeek = null;
   const activeTab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
   loadTab(activeTab);
@@ -3306,6 +3358,7 @@ async function loadTab(tab) {
 function reloadCurrent() {
   // На странице Отчёта — перезагружаем только журнал визитов
   if (document.getElementById('scr-vizity')?.classList.contains('on')) {
+    apiCacheInvalidate(vizSheetName());
     S.vizRows = [];
     loadVizity().then(() => toast('Обновлено','s'));
     return;
@@ -3315,14 +3368,15 @@ function reloadCurrent() {
     const matched = findUserInSheet();
     if (matched) {
       const isDozhim = matched.role === 'dozhim';
-      if (isDozhim) { S.data.d_vizity = null; S.data.plan = null; }
-      else { S.data.vizity = null; S.data.plan = null; S.data.stavki = null; S.data.cnvrs = null; }
+      if (isDozhim) { apiCacheInvalidate(); S.data.d_vizity = null; S.data.plan = null; }
+      else { apiCacheInvalidate(); S.data.vizity = null; S.data.plan = null; S.data.stavki = null; S.data.cnvrs = null; }
       loadPersonal(matched).then(() => toast('Обновлено','s'));
     }
     return;
   }
   const tab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
   if (tab === 'grafik') _schedWeek = null;
+  apiCacheInvalidate(); // полный сброс кеша при ручном обновлении
   S.data[tab] = null;
   if (tab === 'otchet') { S.data.d_vizity = null; S.data.cnvrs = null; S.data.vizity = null; S.data.plan = null; }
   if (tab === 'dohod') { S.data.vizity = null; S.data.plan = null; S.data.stavki = null; S.data.d_dohod = null; }
@@ -5547,8 +5601,8 @@ async function loadUsersAndStart() {
     } else {
       goPersonal();
     }
-    // Фоновая предзагрузка остальных данных через 3 сек после старта
-    setTimeout(() => backgroundPrefetch(matched), 3000);
+    // Фоновая предзагрузка остальных данных через 8 сек (не перегружаем API при старте)
+    setTimeout(() => backgroundPrefetch(matched), 8000);
   } else {
     toast('Приветствую, коллега!', 's');
   }
@@ -5578,7 +5632,7 @@ async function backgroundPrefetch(matched) {
   try {
     for (const task of tasks) {
       await task();
-      await new Promise(r => setTimeout(r, 600));
+      await new Promise(r => setTimeout(r, 1500));
     }
     // Не перерисовываем если открыт журнал визитов (пользователь вводит данные)
     if (document.getElementById('scr-vizity')?.classList.contains('on')) return;

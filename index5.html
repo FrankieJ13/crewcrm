@@ -685,9 +685,14 @@ body.light .mop {
   flex-shrink:0; transition:all .15s;
 }
 .mop-info-btn:hover { border-color:var(--acc); color:var(--acc) }
-.mop-mini {
-  display:grid; grid-template-columns:repeat(4,1fr);
-  gap:6px; margin-bottom:12px;
+/* Базово: 2 колонки (смартфон < 400px) */
+.mop-mini { display:grid; grid-template-columns:repeat(2,1fr); gap:6px; margin-bottom:12px; }
+/* ≥ 400px — 4 в ряд */
+@media(min-width:400px) {
+  .mop-mini { grid-template-columns:repeat(4,1fr); }
+}
+@media(max-width:480px) {
+  .mop-grid4 { grid-template-columns:repeat(2,1fr) }
 }
 .mm {
   background:rgba(255,255,255,0.05); border-radius:8px;
@@ -828,7 +833,6 @@ body.light .mop-modal-body {
 .chip.c1200 { border-color:rgba(255,165,2,.3) }
 @media(max-width:480px) {
   .mop-grid4 { grid-template-columns:repeat(2,1fr) }
-  .mop-mini { grid-template-columns:repeat(2,1fr); }
 }
 .dept-card {
   background: rgba(var(--acc-r), var(--acc-g), var(--acc-b), 0.08);

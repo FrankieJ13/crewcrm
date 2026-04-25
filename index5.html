@@ -1764,7 +1764,24 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
 #author { cursor: pointer; }
 /* ===== END TEASER OVERLAY ===== */
 /* ===== PLAN EDITOR ===== */
-#plan-editor-overlay {
+.cfg-spoiler { border-bottom: 1px solid var(--line); }
+.cfg-spoiler:last-child { border-bottom: none; }
+.cfg-spoiler-hdr {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; cursor: pointer;
+  font-family: 'Unbounded', sans-serif; font-size: 10px;
+  font-weight: 800; letter-spacing: .05em; color: var(--txt);
+  list-style: none; user-select: none;
+  transition: color .15s;
+}
+.cfg-spoiler-hdr:hover { color: var(--acc); }
+.cfg-spoiler-hdr svg { flex-shrink: 0; transition: transform .2s; }
+.cfg-spoiler[open] .cfg-spoiler-hdr svg { transform: rotate(90deg); }
+.cfg-spoiler-body { padding: 0 16px 14px; }
+.cfg-placeholder {
+  font-size: 12px; color: var(--txt3); text-align: center;
+  padding: 12px 0; font-style: italic;
+}
   display:none; position:fixed; inset:0; z-index:9999;
   background:rgba(0,0,0,.6); align-items:center; justify-content:center;
 }
@@ -2668,7 +2685,12 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
               <span>Конфигурация</span>
             </button>
-            <div class="hmb-sep" id="hmb-sep-plan" style="display:none"></div>
+            <div class="hmb-sep"></div>
+            <button class="hmb-item" onclick="openAbout();closeHamburger()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16" stroke-width="2.5"/></svg>
+              <span>О проекте</span>
+            </button>
+            <div class="hmb-sep"></div>
             <button class="hmb-item hmb-danger" id="hmb-logout" onclick="onLogout();closeHamburger()" style="display:none">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
               <span>Выйти</span>
@@ -2683,14 +2705,151 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
   <div id="plan-editor-overlay" onclick="if(event.target===this)closePlanEditor()">
     <div id="plan-editor-modal">
       <div class="pe-hdr">
-        <span class="pe-title">Планы по менеджерам</span>
+        <span class="pe-title">Конфигурация</span>
         <button class="pe-close" onclick="closePlanEditor()">×</button>
       </div>
-      <div class="pe-body" id="pe-body"></div>
+      <div class="pe-body" id="pe-body">
+        <!-- Спойлер 1: Планы -->
+        <details class="cfg-spoiler" open>
+          <summary class="cfg-spoiler-hdr">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            Планы по менеджерам
+          </summary>
+          <div class="cfg-spoiler-body" id="pe-plans-body"></div>
+        </details>
+        <!-- Спойлер 2: Штрафы -->
+        <details class="cfg-spoiler">
+          <summary class="cfg-spoiler-hdr">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            Штрафы
+          </summary>
+          <div class="cfg-spoiler-body">
+            <div class="cfg-placeholder">Раздел в разработке</div>
+          </div>
+        </details>
+        <!-- Спойлер 3: Корректировки -->
+        <details class="cfg-spoiler">
+          <summary class="cfg-spoiler-hdr">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            Корректировки
+          </summary>
+          <div class="cfg-spoiler-body">
+            <div class="cfg-placeholder">Раздел в разработке</div>
+          </div>
+        </details>
+        <!-- Спойлер 4: Обновления -->
+        <details class="cfg-spoiler">
+          <summary class="cfg-spoiler-hdr">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            Обновления
+          </summary>
+          <div class="cfg-spoiler-body">
+            <div class="cfg-placeholder">Раздел в разработке</div>
+          </div>
+        </details>
+      </div>
       <div class="pe-footer">
         <button class="pe-save" id="pe-save-btn" onclick="savePlan()">Сохранить</button>
         <button class="pe-cancel" onclick="closePlanEditor()">Отмена</button>
         <span class="pe-status" id="pe-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- О нас -->
+  <div id="about-overlay" onclick="if(event.target===this)closeAbout()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);z-index:600;align-items:center;justify-content:center;padding:16px">
+    <div id="about-modal" style="background:var(--bg2);border:1px solid var(--line2);border-radius:var(--r2);max-width:480px;width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden">
+      <div class="pe-hdr">
+        <span class="pe-title">О проекте</span>
+        <button class="pe-close" onclick="closeAbout()">×</button>
+      </div>
+      <div style="overflow-y:auto;padding:20px 16px;flex:1">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <!-- О проекте -->
+          <div>
+            <div style="font-family:'Unbounded',sans-serif;font-size:11px;font-weight:800;color:var(--acc);letter-spacing:.06em;margin-bottom:8px">Crystal Motors CRM Dashboard</div>
+            <p style="font-size:13px;color:var(--txt2);line-height:1.6;margin:0">
+              Внутренний дашборд для команды Crystal Motors — сети автосалонов с 12 городами присутствия. Создан как замена ручным отчётам и разрозненным таблицам.
+            </p>
+          </div>
+          <div>
+            <div style="font-family:'Unbounded',sans-serif;font-size:10px;font-weight:800;color:var(--txt);letter-spacing:.05em;margin-bottom:8px">Цель</div>
+            <p style="font-size:13px;color:var(--txt2);line-height:1.6;margin:0">
+              Дать каждому менеджеру и руководителю единое окно для мониторинга KPI, динамики продаж, рейтингов, зарплаты и расписания — в реальном времени, с любого устройства.
+            </p>
+          </div>
+          <div>
+            <div style="font-family:'Unbounded',sans-serif;font-size:10px;font-weight:800;color:var(--txt);letter-spacing:.05em;margin-bottom:8px">Возможности</div>
+            <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--txt2)">
+              <div>📊 <b style="color:var(--txt)">KPI</b> — визиты, кредиты, наличные, комиссии по каждому менеджеру</div>
+              <div>🏆 <b style="color:var(--txt)">Рейтинг</b> — топ менеджеров с анимированными барами и медалями</div>
+              <div>💰 <b style="color:var(--txt)">Доход</b> — расчёт зарплаты с коэффициентами и котлом</div>
+              <div>📅 <b style="color:var(--txt)">График</b> — расписание смен, просмотр по неделям</div>
+              <div>📋 <b style="color:var(--txt)">Визиты</b> — онлайн-журнал с автосохранением в Google Sheets</div>
+              <div>🎂 <b style="color:var(--txt)">Дни рождения</b> — уведомления о праздниках коллег</div>
+              <div>🎨 <b style="color:var(--txt)">Темы</b> — Glass Dark, Glass Light, Tiffany, Cinematic</div>
+              <div>📱 <b style="color:var(--txt)">PWA</b> — работает как приложение на iOS и Android</div>
+            </div>
+          </div>
+          <div>
+            <div style="font-family:'Unbounded',sans-serif;font-size:10px;font-weight:800;color:var(--txt);letter-spacing:.05em;margin-bottom:6px">Стек</div>
+            <p style="font-size:12px;color:var(--txt2);margin:0">Single-file HTML · Google Sheets API v4 · Google OAuth2 · Three.js · WebGL GLSL</p>
+          </div>
+          <div style="background:var(--bg3);border-radius:var(--r);padding:10px 12px;border:1px solid var(--line)">
+            <div style="font-size:10px;color:var(--txt3)">Автор</div>
+            <div style="font-family:'Unbounded',sans-serif;font-size:12px;font-weight:800;color:var(--acc);margin-top:2px">Бочаров Ю.С.</div>
+            <div style="font-size:11px;color:var(--txt2);margin-top:2px">frankiej13 · Crystal Motors · 2026</div>
+          </div>
+          <!-- Чейнджлист -->
+          <details class="cfg-spoiler" style="margin:0">
+            <summary class="cfg-spoiler-hdr" style="padding:10px 0">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+              Чейнджлист
+            </summary>
+            <div class="cfg-spoiler-body" style="padding:12px 0 0">
+              <div style="display:flex;flex-direction:column;gap:12px;font-size:12px;color:var(--txt2)">
+                <div>
+                  <div style="font-family:'Unbounded',sans-serif;font-size:10px;font-weight:900;color:var(--acc)">v2.0 — 2026 апрель</div>
+                  <ul style="margin:6px 0 0 16px;line-height:1.8">
+                    <li>Новый Bottom Dock — 7 пунктов меню вместо вкладок</li>
+                    <li>Журнал Визитов — онлайн-редактор Google Sheets прямо из приложения</li>
+                    <li>Рейтинг — отдельный экран с анимированными карточками и медалями</li>
+                    <li>Тема Cinematic — WebGL liquid gradient + виньетка + зерно плёнки</li>
+                    <li>Анимированный экран авторизации с Three.js liquid gradient</li>
+                    <li>Гамбургер-меню — тема, месяц, аккаунт, конфигурация в одном месте</li>
+                    <li>Aurora-текст «ДАШБОРД / Привет, {Имя}!» в хедере</li>
+                    <li>Попапы с авто-позиционированием по краям экрана</li>
+                    <li>API-кеш 45 сек + дедупликация запросов + retry при 429</li>
+                  </ul>
+                </div>
+                <div>
+                  <div style="font-family:'Unbounded',sans-serif;font-size:10px;font-weight:900;color:var(--txt2)">v1.5 — 2026 март</div>
+                  <ul style="margin:6px 0 0 16px;line-height:1.8">
+                    <li>Дни рождения — баннеры, свечи, шары, аудио, персональный оверлей</li>
+                    <li>Multi-theme: Glass Dark, Glass Light, Tiffany</li>
+                    <li>Бейдж месяца с выбором периода (до 6 мес. назад)</li>
+                    <li>Фоновый prefetch + silent refresh каждые 7 мин</li>
+                    <li>Экран «Персональная страница» с KPI, доходом и расписанием</li>
+                    <li>Отдел ДОЖИМ: отдельные данные, коэффициенты, менеджеры</li>
+                    <li>WPF-приложение обёртка на .NET 8 / WebView2</li>
+                  </ul>
+                </div>
+                <div>
+                  <div style="font-family:'Unbounded',sans-serif;font-size:10px;font-weight:900;color:var(--txt3)">v1.0 — 2025 декабрь</div>
+                  <ul style="margin:6px 0 0 16px;line-height:1.8">
+                    <li>Первый релиз: ОТЧЁТ, ДОХОД, ГРАФИК, FAQ</li>
+                    <li>Google OAuth2 + Sheets API v4</li>
+                    <li>KPI по менеджерам CRM: визиты, кредиты, наличные, комиссии</li>
+                    <li>Расчёт зарплаты с коэффициентами (кат 800 / кат 1200)</li>
+                    <li>Модалка дохода с детализацией по дням</li>
+                    <li>Расписание смен из Google Sheets</li>
+                    <li>Роли: CRM, ДОЖИМ, CEO — разные права и данные</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
       </div>
     </div>
   </div>
@@ -5242,7 +5401,7 @@ function phoneLookup() {
 
 function openPlanEditor() {
   const planData = S.data.plan || [];
-  const body = document.getElementById('pe-body');
+  const body = document.getElementById('pe-plans-body') || document.getElementById('pe-body');
   const status = document.getElementById('pe-status');
   if (!body) return;
 
@@ -7869,6 +8028,15 @@ function hmbGoPersonal() {
   closeHamburger();
   const m = findUserInSheet();
   if (m && m.role !== 'ceo') goPersonal();
+}
+
+function openAbout() {
+  const overlay = document.getElementById('about-overlay');
+  if (overlay) { overlay.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+}
+function closeAbout() {
+  const overlay = document.getElementById('about-overlay');
+  if (overlay) { overlay.style.display = 'none'; document.body.style.overflow = ''; }
 }
 
 // ==================== HAMBURGER MENU ====================

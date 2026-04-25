@@ -6839,11 +6839,11 @@ const VIZ_DEAL_OPTS = [
   'Оценка авто','Трейдин+кредит','Трейдин+наличные','Лизинг','Не уточнили'
 ];
 const VIZ_SOURCE_OPTS = [
-  'Теплый лид','Рекламный (Манго)','Официальный сайт','Рекламный (Автокред)',
-  'Рекламный (Автохаус)','Рекламный (Селектавто)','Рекламный (АБ-Клаб)',
-  'Рекламный (Автотрейд)','Рекламный (Автокредитс)','Дром','Авито','Авто.ру',
-  'Автоброкер','Рекомендация','Холодный лид','БОТ','VK','Телеграм','Радио',
-  'Автокод','2ГИС','Я.Карты','Google Maps','Яндекс Директ',
+  'теплый лид','рекламный (манго)','официальный сайт','рекламный (автокред)',
+  'рекламный (автохаус)','рекламный (селектавто)','рекламный (аб-клаб)',
+  'рекламный (автотрейд)','рекламный (автокредитс)','дром','авито','авто.ру',
+  'автоброкер','рекомендация','холодный лид','БОТ','VK','Телеграм','Радио',
+  'автокод','2ГИС','Я.Карты','Google Maps','Яндекс Директ',
   'Звонок с сайта СМ','Звонок с сайта АН','Звонок с сайта АК',
   'Звонок с сайта СЛ','Звонок с сайта КК'
 ];
@@ -6957,6 +6957,11 @@ async function loadVizity() {
     data: Array.from({length:14}, (_,c) => row[c] || '')
   }));
   renderVizity();
+  // Открываем страницу снизу — последние визиты актуальнее
+  requestAnimationFrame(() => {
+    const main = document.querySelector('main');
+    if (main) main.scrollTop = main.scrollHeight;
+  });
 }
 
 async function ensureVizSheet(sheetName) {
@@ -6998,7 +7003,6 @@ function renderVizity() {
   if (!el) return;
   const dept = S.vizDept || 'crm';
   const locked = isVizLocked();
-
   const mo = parseInt(currentSuffix.slice(0,2));
   const yr = 2000 + parseInt(currentSuffix.slice(2,4));
   const dim = new Date(yr, mo, 0).getDate();
@@ -7048,13 +7052,16 @@ function renderVizity() {
     }
 
     let bodyHTML = '';
-    // Zone before first row of group
     const prevRows = wi > 0 ? groups[wi-1] : [];
     const beforeFirst = prevRows.length > 0 ? prevRows[prevRows.length-1]._sheetRow
                       : (rows.length > 0 ? rows[0]._sheetRow - 1 : 1);
     bodyHTML += makeInsertZone(beforeFirst);
+    let lastDate = null;
     rows.forEach((row) => {
-      bodyHTML += renderVizRow(row, dept, locked);
+      const rowDate = (row.data[0] || '').slice(0,5);
+      const isFirstOfDate = rowDate !== lastDate;
+      if (rowDate) lastDate = rowDate;
+      bodyHTML += renderVizRow(row, dept, locked, isFirstOfDate);
       bodyHTML += makeInsertZone(row._sheetRow);
     });
 
@@ -7096,7 +7103,7 @@ function renderVizity() {
     <div class="vt-body">${weekHTML}</div>`;
 }
 
-function renderVizRow(row, dept, locked) {
+function renderVizRow(row, dept, locked, isFirstOfDate) {
   const d = row.data;
   const comment = d[4] || '';
   const deal = d[7] || '';
@@ -7107,11 +7114,12 @@ function renderVizRow(row, dept, locked) {
   const chip = label
     ? `<span class="vt-status-chip ${chipClass}" title="${label}">${label.slice(0,18)}${label.length>18?'…':''}</span>` : '';
   const formHTML = locked ? '' : renderVizForm(row, dept);
+  const dateStyle = isFirstOfDate ? 'font-weight:700;color:var(--txt)' : '';
   return `
     <div class="vt-row" id="vt-row-${row._sheetRow}">
       <div class="vt-row-card" id="vt-card-${row._sheetRow}">
         <div class="vt-row-compact" onclick="vizToggleExpand(${row._sheetRow})">
-          <span class="vt-row-date">${(d[0]||'—').slice(0,5)}</span>
+          <span class="vt-row-date" style="${dateStyle}">${(d[0]||'—').slice(0,5)}</span>
           <div>
             <div class="vt-row-name">${d[1]||'—'}</div>
             <div class="vt-row-sub">${d[8]||''}${d[6]?' · '+d[6]:''}</div>
@@ -7242,7 +7250,7 @@ function vizOnChange(el) {
 
     // Авто-категория при выборе источника (col=5)
     if (col === 5) {
-      const autoKat = val === 'Теплый лид' ? 'кат 1200' : 'кат 800';
+      const autoKat = val === 'теплый лид' ? 'кат 1200' : 'кат 800';
       row.data[6] = autoKat;
       row._changedCols.add(6);
       // Обновляем select категории в DOM
@@ -7379,13 +7387,15 @@ async function vizWriteNewRow(afterSheetRow, newData) {
 
 async function vizDeleteRow(sheetRow) {
   const me = findUserInSheet();
-  if (!me || me.role !== 'ceo') {
-    toast('Удаление доступно только CEO', 'e'); return;
+  if (!me) return;
+  const row = S.vizRows.find(r => r._sheetRow === sheetRow);
+  const isCeo = me.role === 'ceo';
+  const isOwn = row && (row.data[8] || '').trim().toLowerCase() === (me.name || '').trim().toLowerCase();
+  if (!isCeo && !isOwn) {
+    toast('Можно удалять только свои визиты', 'e'); return;
   }
   const rowEl = document.getElementById('vt-row-'+sheetRow);
-  if (!rowEl) return;
-  const row = S.vizRows.find(r => r._sheetRow === sheetRow);
-  if (!row) return;
+  if (!rowEl || !row) return;
   rowEl.style.opacity = '0.3'; rowEl.style.pointerEvents = 'none';
   if (S._vizUndoTimer) { clearTimeout(S._vizUndoTimer); document.getElementById('vt-undo-toast')?.remove(); }
   const toastEl = document.createElement('div');
@@ -7435,41 +7445,15 @@ async function commitVizDelete(sheetRow) {
 }
 
 function openVizPicker(sheetRow, colIdx) {
-  S._vizPickerCallback = (val) => {
-    const btn = document.getElementById(`vtpick-${sheetRow}-${colIdx}`);
-    if (btn) {
-      const sp = btn.querySelector('span');
-      if (sp) sp.innerHTML = val || `<span style='color:var(--txt3)'>Выбрать…</span>`;
-      else btn.innerHTML = `<span>${val}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>`;
-    }
-    const row = S.vizRows.find(r => r._sheetRow === sheetRow);
-    if (row) {
-      row.data[colIdx] = val;
-      if (!row._changedCols) row._changedCols = new Set();
-      row._changedCols.add(colIdx);
-      // Авто-категория при выборе источника (col=5)
-      if (colIdx === 5) {
-        const autoKat = val === 'Теплый лид' ? 'кат 1200' : 'кат 800';
-        row.data[6] = autoKat;
-        row._changedCols.add(6);
-        const catSel = document.querySelector(`#vt-card-${sheetRow} select[data-col="6"]`);
-        if (catSel) catSel.value = autoKat;
-      }
-      const statusEl = document.getElementById('vt-status-'+sheetRow);
-      if (statusEl) { statusEl.className='vt-save-status saving'; statusEl.textContent='Сохранение…'; }
-      clearTimeout(S._vizSaveTimers[sheetRow]);
-      S._vizSaveTimers[sheetRow] = setTimeout(() => vizSaveRow(sheetRow, statusEl), 800);
-    }
-  };
-  const curVal = S.vizRows.find(r=>r._sheetRow===sheetRow)?.data[colIdx]||'';
+  const curVal = S.vizRows.find(r => r._sheetRow === sheetRow)?.data[colIdx] || '';
   let opts, free = false;
   if (colIdx === 4) { opts = VIZ_COMMENT_OPTS; free = true; }
   else if (colIdx === 5) { opts = VIZ_SOURCE_OPTS; }
   else { opts = VIZ_DEAL_OPTS; }
-  renderVizPicker(opts, curVal, free);
+  renderVizPicker(opts, curVal, free, sheetRow, colIdx);
 }
 
-function renderVizPicker(opts, curVal, allowFree) {
+function renderVizPicker(opts, curVal, allowFree, sheetRow, colIdx) {
   let overlay = document.getElementById('vt-picker-overlay');
   if (!overlay) {
     overlay = document.createElement('div');
@@ -7477,37 +7461,70 @@ function renderVizPicker(opts, curVal, allowFree) {
     overlay.onclick = e => { if (e.target === overlay) closeVizPicker(); };
     document.body.appendChild(overlay);
   }
+  // Сохраняем целевую строку/колонку прямо на элементе — не в глобальной переменной
+  overlay._sheetRow = sheetRow;
+  overlay._colIdx = colIdx;
+  overlay._opts = opts;
+  overlay._allowFree = allowFree;
+
   const ph = allowFree ? 'Поиск или введите вручную…' : 'Поиск…';
   overlay.innerHTML = `<div class="vt-picker-modal">
     <div class="vt-picker-hdr">
-      <input class="vt-picker-search" placeholder="${ph}" oninput="filterVizPicker(this.value,${allowFree})" id="vt-picker-search">
+      <input class="vt-picker-search" placeholder="${ph}" oninput="filterVizPicker(this.value)" id="vt-picker-search">
       <button class="vt-picker-cancel" onclick="closeVizPicker()">Отмена</button>
     </div>
     <div class="vt-picker-list" id="vt-picker-list">
       ${opts.map(o=>`<div class="vt-picker-item${o===curVal?' selected':''}" onclick="selectVizPicker('${o.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">${o}</div>`).join('')}
     </div>
   </div>`;
-  overlay._opts = opts; overlay._allowFree = allowFree;
   overlay.classList.add('open');
   setTimeout(() => document.getElementById('vt-picker-search')?.focus(), 100);
 }
 
-function filterVizPicker(q, allowFree) {
-  const list = document.getElementById('vt-picker-list');
+function filterVizPicker(q) {
   const overlay = document.getElementById('vt-picker-overlay');
+  const list = document.getElementById('vt-picker-list');
   if (!list || !overlay) return;
   const opts = overlay._opts || [];
-  const af = allowFree !== undefined ? allowFree : overlay._allowFree;
+  const af = overlay._allowFree;
   const ql = q.toLowerCase();
   const filtered = opts.filter(o => o.toLowerCase().includes(ql));
   const freeEntry = af && q && !opts.some(o => o.toLowerCase() === ql)
     ? `<div class="vt-picker-item" onclick="selectVizPicker('${q.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">✏️ «${q}»</div>` : '';
-  list.innerHTML = filtered.map(o=>`<div class="vt-picker-item" onclick="selectVizPicker('${o.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">${o}</div>`).join('') + freeEntry;
+  list.innerHTML = filtered.map(o => `<div class="vt-picker-item" onclick="selectVizPicker('${o.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}' )">${o}</div>`).join('') + freeEntry;
 }
 
 function selectVizPicker(val) {
+  const overlay = document.getElementById('vt-picker-overlay');
+  const sheetRow = overlay?._sheetRow;
+  const colIdx   = overlay?._colIdx;
   closeVizPicker();
-  if (S._vizPickerCallback) { S._vizPickerCallback(val); S._vizPickerCallback = null; }
+  if (sheetRow == null || colIdx == null) return;
+
+  // Обновляем кнопку в DOM
+  const btn = document.getElementById(`vtpick-${sheetRow}-${colIdx}`);
+  if (btn) {
+    const sp = btn.querySelector('span');
+    if (sp) sp.innerHTML = val || `<span style='color:var(--txt3)'>Выбрать…</span>`;
+  }
+  // Обновляем данные строки
+  const row = S.vizRows.find(r => r._sheetRow === sheetRow);
+  if (!row) return;
+  row.data[colIdx] = val;
+  if (!row._changedCols) row._changedCols = new Set();
+  row._changedCols.add(colIdx);
+  // Авто-категория при выборе источника
+  if (colIdx === 5) {
+    const autoKat = val === 'теплый лид' ? 'кат 1200' : 'кат 800';
+    row.data[6] = autoKat;
+    row._changedCols.add(6);
+    const catSel = document.querySelector(`#vt-card-${sheetRow} select[data-col="6"]`);
+    if (catSel) catSel.value = autoKat;
+  }
+  const statusEl = document.getElementById('vt-status-' + sheetRow);
+  if (statusEl) { statusEl.className = 'vt-save-status saving'; statusEl.textContent = 'Сохранение…'; }
+  clearTimeout(S._vizSaveTimers[sheetRow]);
+  S._vizSaveTimers[sheetRow] = setTimeout(() => vizSaveRow(sheetRow, statusEl), 800);
 }
 
 function closeVizPicker() {

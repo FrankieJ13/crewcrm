@@ -65,9 +65,113 @@ body.light {
   --org:     #c97800;
   --m4-bg:   #8a8a8a;
 }
+/* ══ CINEMATIC THEME ══ */
+body.cinematic {
+  --bg:      #080808;
+  --bg2:     #101010;
+  --bg3:     #181818;
+  --line:    #1e1e1e;
+  --line2:   #2a2520;
+  --txt:     #e8dcc8;
+  --txt2:    #9a8f7e;
+  --txt3:    #4a4035;
+  --acc:     #c8a96e;
+  --acc-bg:  rgba(200,169,110,.1);
+  --acc-bdr: rgba(200,169,110,.3);
+  --red:     #c0392b;
+  --grn:     #27ae60;
+  --blu:     #2980b9;
+  --org:     #e67e22;
+  --r:       6px;
+  --r2:      10px;
+  --m4-bg:   #1a1812;
+}
+
+/* Grain overlay — поверх всего */
+body.cinematic::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 9999;
+  pointer-events: none;
+  opacity: .045;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  mix-blend-mode: overlay;
+}
+
+/* Виньетка */
+body.cinematic::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 9998;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,.55) 100%);
+}
+
+/* Хедер — тонкая янтарная граница снизу */
+body.cinematic header {
+  background: rgba(8,8,8,.96);
+  border-bottom: 1px solid rgba(200,169,110,.18);
+  backdrop-filter: blur(20px);
+}
+
+/* Карточки — глубже, с тёплой гранью */
+body.cinematic .dept-card,
+body.cinematic .mop,
+body.cinematic .zp-row,
+body.cinematic .vt-row-card,
+body.cinematic .rating-card {
+  background: var(--bg2);
+  border-color: #1e1c18;
+}
+
+/* Фоновый канвас — чище */
+body.cinematic #bg-canvas { opacity: .18; }
+
+/* Метрики — тёплый акцент */
+body.cinematic .mv         { color: var(--acc); }
+body.cinematic .ml         { color: var(--txt2); }
+
+/* Dock — плёночный стиль */
+body.cinematic .dock-container {
+  background: rgba(8,8,8,.92);
+  border: 1px solid rgba(200,169,110,.2);
+  box-shadow: 0 -2px 24px rgba(0,0,0,.8), inset 0 1px 0 rgba(200,169,110,.08);
+}
+body.cinematic .dock-btn.dock-active {
+  color: var(--acc);
+  background: var(--acc-bg);
+}
+body.cinematic .dock-btn-lbl { letter-spacing: .06em; }
+
+/* Активный статус — янтарный */
+body.cinematic .prog-fill   { background: linear-gradient(90deg, #8a6e3a, #c8a96e) !important; }
+
+/* Badge */
+body.cinematic .badge-month { font-variant-numeric: tabular-nums; }
+body.cinematic .rating-card-strip { box-shadow: inset -1px 0 6px rgba(200,169,110,.15); }
+
+/* Инпуты */
+body.cinematic .vt-field input,
+body.cinematic .vt-field textarea,
+body.cinematic .vt-field select,
+body.cinematic .vt-status-trigger {
+  background: #0c0b09;
+  border-color: #2a2520;
+  color: var(--txt);
+}
+body.cinematic .vt-field input:focus,
+body.cinematic .vt-field textarea:focus,
+body.cinematic .vt-field select:focus { border-color: var(--acc); }
+
+/* Текст кнопок (acc-bg) — тёплый */
+body.cinematic .vt-add-btn,
+body.cinematic .center-login-btn { color: #080808; }
+
+/* Скролл */
+body.cinematic ::-webkit-scrollbar-thumb { background: #2a2520; }
+body.cinematic ::-webkit-scrollbar-thumb:hover { background: var(--acc); }
+
 /* ══ TIFFANY THEME ══ */
-body.tiffany {
-  --bg:      #A9C7C3;
+body.tiffany {  --bg:      #A9C7C3;
   --bg2:     #F4EFE7;
   --bg3:     #e5dfd4;
   --line:    #8FB3AE;
@@ -1948,7 +2052,7 @@ body.light .rating-card-bar-track { background: rgba(0,0,0,.06); }
 }
 .vt-add-btn:hover { opacity: .85; }
 .vt-add-btn svg { width: 13px; height: 13px; }
-/* Light + Tiffany: accent is dark → white text on all filled accent elements */
+/* Light + Tiffany + Cinematic: accent needs readable text */
 body.light .vt-add-btn,
 body.light .vt-insert-zone-btn,
 body.light .vt-undo-btn,
@@ -1961,7 +2065,12 @@ body.tiffany .vt-undo-btn,
 body.tiffany .center-login-btn,
 body.tiffany .report-subtab.active,
 body.tiffany .rating-dept-btn.on { color: #fff; }
-/* Активный пункт дока в светлых темах — чёрный текст на acc-фоне */
+/* Cinematic: тёмный текст на янтарном фоне */
+body.cinematic .vt-add-btn,
+body.cinematic .vt-insert-zone-btn,
+body.cinematic .vt-undo-btn,
+body.cinematic .center-login-btn { color: #080808; }
+/* Активный пункт дока в светлых темах — чёрный текст */
 body.light .dock-btn.dock-active,
 body.tiffany .dock-btn.dock-active { color: #000 !important; }
 /* Кнопки с полной acc-заливкой */
@@ -1969,6 +2078,8 @@ body.light button[style*="background:var(--acc)"],
 body.light [style*="background: var(--acc)"],
 body.tiffany button[style*="background:var(--acc)"],
 body.tiffany [style*="background: var(--acc)"] { color: #fff !important; }
+body.cinematic button[style*="background:var(--acc)"],
+body.cinematic [style*="background: var(--acc)"] { color: #080808 !important; }
 .vt-body { padding: 8px 16px 0; }
 /* Week group */
 .vt-week { margin-bottom: 4px; scroll-margin-top: 98px; }
@@ -2415,6 +2526,9 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
               <button class="hmb-item hmb-sub-item" onclick="applyTheme('tiffany');closeHamburger()" id="htd-tiffany">
                 <span class="theme-swatch" style="background:linear-gradient(135deg,#A9C7C3,#F5A3B7)"></span>Tiffany
               </button>
+              <button class="hmb-item hmb-sub-item" onclick="applyTheme('cinematic');closeHamburger()" id="htd-cinematic">
+                <span class="theme-swatch" style="background:linear-gradient(135deg,#080808,#c8a96e)"></span>Cinematic
+              </button>
             </div>
             <div class="hmb-sep"></div>
             <button class="hmb-item" id="hmb-plan-edit" onclick="openPlanEditor();closeHamburger()" style="display:none">
@@ -2822,12 +2936,13 @@ const S = {
 };
 
 /* ══ THEME ══ */
-const THEMES = ['dark', 'light', 'tiffany'];
+const THEMES = ['dark', 'light', 'tiffany', 'cinematic'];
 
 function applyTheme(theme) {
-  document.body.classList.remove('light', 'tiffany');
-  if (theme === 'light')   document.body.classList.add('light');
-  if (theme === 'tiffany') document.body.classList.add('tiffany');
+  document.body.classList.remove('light', 'tiffany', 'cinematic');
+  if (theme === 'light')      document.body.classList.add('light');
+  if (theme === 'tiffany')    document.body.classList.add('tiffany');
+  if (theme === 'cinematic')  document.body.classList.add('cinematic');
   localStorage.setItem('crm_theme', theme);
   // Обновляем активный пункт в дропдауне
   THEMES.forEach(t => {
@@ -2852,12 +2967,18 @@ function toggleThemeDropdown(e) {
 }
 
 function syncTheme() {
-  // Синхронизируем тему-зависимые элементы (логотип и т.д.)
-  const isLight = (document.body.classList.contains('light')||document.body.classList.contains('tiffany')) || document.body.classList.contains('tiffany');
+  const b = document.body.classList;
+  const isLight = b.contains('light') || b.contains('tiffany');
+  // Cinematic — тёмная тема, используем тёмный логотип
   const logoD = document.getElementById('logo-dark');
   const logoL = document.getElementById('logo-light');
   if (logoD) logoD.style.display = isLight ? 'none' : '';
   if (logoL) logoL.style.display = isLight ? '' : 'none';
+  // Обновляем активную кнопку темы в гамбургере
+  THEMES.forEach(t => {
+    const btn = document.getElementById('htd-' + t);
+    if (btn) btn.style.fontWeight = b.contains(t) || (t === 'dark' && !b.contains('light') && !b.contains('tiffany') && !b.contains('cinematic')) ? '900' : '';
+  });
 }
 
 // Инициализация при загрузке

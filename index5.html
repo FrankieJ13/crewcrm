@@ -2308,36 +2308,25 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
 /* Popup dropdowns */
 .dock-popup {
   position: absolute;
-  bottom: 100%;
+  bottom: calc(100% + 8px);
   left: 50%;
-  transform: translateX(-50%) translateY(4px);
+  transform: translateX(-50%);
   background: var(--bg2);
   border: 1px solid var(--line2);
   border-radius: var(--r2);
-  display: flex;
+  display: none;
   flex-direction: column;
   min-width: 140px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.4);
   overflow: hidden;
   z-index: 400;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
-  padding-bottom: 8px;
 }
-/* Hover popup только на desktop — но только если попап visible (CEO) */
 .dock-popup.open {
-  opacity: 1; visibility: visible; pointer-events: all;
-  transform: translateX(-50%) translateY(0);
+  display: flex;
+  animation: dockPopIn 0.15s ease forwards;
 }
-/* Edge-clamp: правые попапы прижимаются к правому краю */
-.dock-popup.edge-right { left: auto; right: 0; transform: translateY(4px); }
-.dock-popup.edge-right.open,
-@media (hover: hover) { .dock-item:hover .dock-popup.edge-right { transform: translateY(0); } }
-.dock-popup.edge-right.open { transform: translateY(0); }
 @keyframes dockPopIn {
-  from { opacity:0; transform: translateX(-50%) translateY(8px); }
+  from { opacity:0; transform: translateX(-50%) translateY(6px); }
   to   { opacity:1; transform: translateX(-50%) translateY(0); }
 }
 .dock-popup-btn {
@@ -3059,17 +3048,6 @@ function onLogin() {
   const hmbm = document.getElementById('hmb-month-trigger'); if (hmbm) hmbm.style.display = '';
   const hmbms = document.getElementById('hmb-sep-month'); if (hmbms) hmbms.style.display = '';
   updateBadge();
-  // Скрываем попапы дока для не-CEO
-  const _matched = findUserInSheet();
-  const _isCeo = _matched?.role === 'ceo';
-  ['dock-vizity-popup','dock-dohod-popup'].forEach(pid => {
-    const p = document.getElementById(pid);
-    if (p) p.style.display = _isCeo ? '' : 'none';
-  });
-  ['dock-kpi-popup'].forEach(pid => {
-    const p = document.getElementById(pid);
-    if (p) p.style.display = _isCeo ? '' : 'none';
-  });
   const ls = document.getElementById('scr-login');
   ls.classList.remove('on'); ls.style.display = 'none'; document.body.classList.remove('login-active');
   toast('Приветствую!', 's');
@@ -6538,38 +6516,15 @@ function dockSetActive(id) {
 
 function closeAllDockPopups() {
   ['dock-kpi-popup','dock-dohod-popup','dock-faq-popup','dock-vizity-popup'].forEach(pid => {
-    const p = document.getElementById(pid);
-    if (!p) return;
-    p.classList.remove('open');
-    p.style.cssText = ''; // сбрасываем JS-позиционирование
+    document.getElementById(pid)?.classList.remove('open');
   });
 }
 
 function openDockPopup(id) {
+  const isAlreadyOpen = document.getElementById(id)?.classList.contains('open');
   closeAllDockPopups();
-  const pop = document.getElementById(id);
-  if (!pop) return;
-  const btn = pop.closest('.dock-item')?.querySelector('.dock-btn');
-  if (!btn) { pop.classList.add('open'); return; }
-  const btnRect = btn.getBoundingClientRect();
-  // Временно показываем для измерения
-  pop.style.cssText = 'visibility:hidden;display:flex;position:fixed;bottom:auto;left:auto;transform:none;';
-  const popW = pop.offsetWidth;
-  pop.style.cssText = '';
-  // Позиция: над кнопкой, выровнен по центру, но не за экран
-  const idealLeft = btnRect.left + btnRect.width / 2 - popW / 2;
-  const clampedLeft = Math.max(8, Math.min(idealLeft, window.innerWidth - popW - 8));
-  const top = btnRect.top - pop.offsetHeight - 8;
-  pop.style.position = 'fixed';
-  pop.style.left = clampedLeft + 'px';
-  pop.style.top = (btnRect.top - 8) + 'px'; // временно, пересчитаем после open
-  pop.style.bottom = 'auto';
-  pop.style.transform = 'none';
-  pop.classList.add('open');
-  requestAnimationFrame(() => {
-    const popH = pop.offsetHeight;
-    pop.style.top = (btnRect.top - popH - 8) + 'px';
-  });
+  if (isAlreadyOpen) return; // toggle: повторный клик закрывает
+  document.getElementById(id)?.classList.add('open');
 }
 
 // HOME = Отдел (для менеджеров — персональный экран)

@@ -5089,8 +5089,8 @@ function showPlanEditBtnIfCeo(matched) {
   const isCeo = matched && matched.role === 'ceo';
   if (hmb) hmb.style.display = isCeo ? '' : 'none';
   if (sep) sep.style.display = isCeo ? '' : 'none';
-  // Скрываем попапы в доке для не-CEO — делается ЗДЕСЬ, после загрузки роли
-  ['dock-vizity-popup','dock-dohod-popup','dock-kpi-popup'].forEach(pid => {
+  // Скрываем попапы Визиты и Доход для не-CEO
+  ['dock-vizity-popup','dock-dohod-popup'].forEach(pid => {
     const p = document.getElementById(pid);
     if (p) p.style.display = isCeo ? '' : 'none';
   });

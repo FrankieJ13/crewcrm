@@ -913,7 +913,7 @@ body.light .zp-row {
 #scr-grafik .w { padding-top:8px }
 .sched-nav {
   display:flex; align-items:center; justify-content:space-between;
-  padding-top:10px; margin-bottom:10px; gap:12px;
+  padding-top:0; margin-bottom:10px; gap:12px;
 }
 .sched-nav-title {
   font-family:'Unbounded',sans-serif;
@@ -2008,8 +2008,7 @@ details[open] .vt-week-sum .vt-week-chevron { transform: rotate(90deg); }
 .vt-row-name {
   font-size: 13px; font-weight: 600; color: var(--txt);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  max-width: clamp(60px, calc(100vw - 230px), 320px);
-  transition: max-width 0.2s ease;
+  max-width: 22ch;
 }
 .vt-row-sub { font-size: 10px; color: var(--txt2); margin-top: 1px; }
 .vt-status-chip {
@@ -2315,9 +2314,9 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
   background: var(--bg2);
   border: 1px solid var(--line2);
   border-radius: var(--r2);
-  display: flex;           /* always flex */
+  display: flex;
   flex-direction: column;
-  min-width: 130px;
+  min-width: 140px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.4);
   overflow: hidden;
   z-index: 400;
@@ -2325,23 +2324,23 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
   visibility: hidden;
   pointer-events: none;
   transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
-  padding-bottom: 8px;     /* bridge gap between popup and button */
+  padding-bottom: 8px;
 }
 @media (hover: hover) {
   .dock-item:hover .dock-popup {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: all;
+    opacity: 1; visibility: visible; pointer-events: all;
     transform: translateX(-50%) translateY(0);
   }
 }
 .dock-popup.open {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: all;
+  opacity: 1; visibility: visible; pointer-events: all;
   transform: translateX(-50%) translateY(0);
-  animation: dockPopIn 0.18s ease forwards;
 }
+/* Edge-clamp: правые попапы прижимаются к правому краю */
+.dock-popup.edge-right { left: auto; right: 0; transform: translateY(4px); }
+.dock-popup.edge-right.open,
+@media (hover: hover) { .dock-item:hover .dock-popup.edge-right { transform: translateY(0); } }
+.dock-popup.edge-right.open { transform: translateY(0); }
 @keyframes dockPopIn {
   from { opacity:0; transform: translateX(-50%) translateY(8px); }
   to   { opacity:1; transform: translateX(-50%) translateY(0); }
@@ -2380,7 +2379,7 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
       <div class="hdr-right">
         <div id="user-wrap">
           <img id="user-avatar" src="" alt=""/>
-          <div id="month-wrap" style="position:relative;flex-shrink:0">
+          <div id="month-wrap" style="display:none;position:relative;flex-shrink:0">
             <span class="badge-month" id="badge-month">—</span>
           </div>
           <span id="user-name"></span>
@@ -2393,7 +2392,6 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
             <path d="M8 16H3v5"/>
           </svg>
         </button>
-        <!-- Hamburger -->
         <div style="position:relative;flex-shrink:0" id="hamburger-wrap">
           <button class="btn-icon" id="btn-hamburger" onclick="toggleHamburger(event)" title="Меню">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -2402,8 +2400,16 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
               <line x1="4" y1="17" x2="20" y2="17"/>
             </svg>
           </button>
+        <!-- Hamburger -->
           <div class="hamburger-dropdown" id="hamburger-dropdown">
-            <!-- Theme submenu trigger -->
+            <!-- Месяц -->
+            <div class="hmb-item" onclick="toggleHmbMonth(event)" id="hmb-month-trigger" style="display:none">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>Месяц: <b id="hmb-month-label">—</b></span>
+              <svg class="hmb-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="hmb-theme-sub" id="hmb-month-sub" style="display:none"></div>
+            <div class="hmb-sep" id="hmb-sep-month" style="display:none"></div>
             <div class="hmb-item hmb-theme-trigger" onclick="toggleHmbTheme(event)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18V3z" fill="currentColor" opacity=".7"/></svg>
               <span>Тема</span>
@@ -2620,9 +2626,9 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
 
     <!-- Отчёт (журнал визитов) -->
     <div class="dock-item" id="dock-vizity-wrap">
-      <button class="dock-btn" id="dock-btn-vizity" onclick="dockVizityToggle(event)" aria-label="Отчёт">
+      <button class="dock-btn" id="dock-btn-vizity" onclick="dockVizityToggle(event)" aria-label="Визиты">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
-        <span class="dock-btn-lbl">Отчёт</span>
+        <span class="dock-btn-lbl">Визиты</span>
       </button>
       <div class="dock-popup" id="dock-vizity-popup">
         <button class="dock-popup-btn" onclick="dockVizity('crm')">
@@ -2773,14 +2779,42 @@ let SHEETS = getSheetNames(currentSuffix);
 
 function updateBadge() {
   const el = document.getElementById('badge-month');
-  if (!el) return;
-  // Показываем только номер месяца (01–12)
-  el.textContent = currentSuffix.slice(0, 2);
-  // Подсвечиваем если выбранный месяц = текущий
-  const now = new Date();
-  const curMm = String(now.getMonth() + 1).padStart(2, '0');
-  const curYy = now.getFullYear().toString().slice(-2);
-  el.classList.toggle('current-month', currentSuffix === curMm + curYy);
+  if (el) {
+    el.textContent = currentSuffix.slice(0, 2);
+    const now = new Date();
+    const curMm = String(now.getMonth() + 1).padStart(2, '0');
+    const curYy = now.getFullYear().toString().slice(-2);
+    el.classList.toggle('current-month', currentSuffix === curMm + curYy);
+  }
+  // Обновляем лейбл в гамбургере
+  const lbl = document.getElementById('hmb-month-label');
+  if (lbl) lbl.textContent = getMonthName(currentSuffix);
+}
+
+function toggleHmbMonth(e) {
+  e.stopPropagation();
+  const sub = document.getElementById('hmb-month-sub');
+  const trigger = document.getElementById('hmb-month-trigger');
+  if (!sub) return;
+  const isOpen = sub.style.display !== 'none';
+  if (isOpen) { sub.style.display = 'none'; trigger.classList.remove('expanded'); return; }
+  // Строим список месяцев
+  sub.innerHTML = '';
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
+    const yy = d.getFullYear().toString().slice(-2);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const suffix = mm + yy;
+    const btn = document.createElement('button');
+    btn.className = 'hmb-item hmb-sub-item';
+    const isActive = suffix === currentSuffix;
+    btn.innerHTML = `<span style="font-family:'Unbounded',sans-serif;font-size:11px;font-weight:800;min-width:20px;${isActive?'color:var(--acc)':''}">${mm}</span><span style="${isActive?'color:var(--acc)':''}">${getMonthName(suffix)}</span>${isActive?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>':''}`;
+    btn.onclick = () => { setCurrentMonth(suffix); closeHamburger(); };
+    sub.appendChild(btn);
+  }
+  sub.style.display = 'flex';
+  sub.style.flexDirection = 'column';
+  trigger.classList.add('expanded');
 }
 updateBadge();
 
@@ -3025,8 +3059,11 @@ function onLogin() {
   if (_bo) _bo.style.display = '';
   document.getElementById('main-nav').style.display  = 'none';
   document.getElementById('main-dock').style.display = 'flex';
-  // Hamburger: сразу показываем Выйти
+  // Hamburger: сразу показываем Выйти + Месяц
   const hmbl = document.getElementById('hmb-logout'); if (hmbl) hmbl.style.display = '';
+  const hmbm = document.getElementById('hmb-month-trigger'); if (hmbm) hmbm.style.display = '';
+  const hmbms = document.getElementById('hmb-sep-month'); if (hmbms) hmbms.style.display = '';
+  updateBadge();
   const ls = document.getElementById('scr-login');
   ls.classList.remove('on'); ls.style.display = 'none'; document.body.classList.remove('login-active');
   toast('Приветствую!', 's');
@@ -6488,6 +6525,19 @@ function closeAllDockPopups() {
   });
 }
 
+function openDockPopup(id) {
+  closeAllDockPopups();
+  const pop = document.getElementById(id);
+  if (!pop) return;
+  // Edge-clamp: если попап выходит за правый край — прижать вправо
+  pop.classList.remove('edge-right');
+  pop.classList.add('open');
+  requestAnimationFrame(() => {
+    const rect = pop.getBoundingClientRect();
+    if (rect.right > window.innerWidth - 8) pop.classList.add('edge-right');
+  });
+}
+
 // HOME = Отдел (для менеджеров — персональный экран)
 function dockNav(id) {
   closeAllDockPopups();
@@ -6533,14 +6583,10 @@ function dockKpiToggle(e) {
   const matched = findUserInSheet();
   const isCeo = matched && matched.role === 'ceo';
   if (!isCeo) {
-    // Менеджер → сразу переходим на свой отдел без попапа
     const dept = matched && matched.role === 'dozhim' ? 'dozhim' : 'crm';
-    dockKpi(dept);
-    return;
+    dockKpi(dept); return;
   }
-  // CEO → показываем выпадашку
-  document.getElementById('dock-dohod-popup').classList.remove('open');
-  document.getElementById('dock-kpi-popup').classList.toggle('open');
+  openDockPopup('dock-kpi-popup');
 }
 
 function dockKpi(dept) {
@@ -6565,8 +6611,7 @@ function dockDohodToggle(e) {
     dockSetActive('dohod');
     return;
   }
-  document.getElementById('dock-kpi-popup').classList.remove('open');
-  document.getElementById('dock-dohod-popup').classList.toggle('open');
+  openDockPopup('dock-dohod-popup');
 }
 
 function dockDohod(dept) {
@@ -6777,10 +6822,7 @@ function switchRatingDept(dept) {
 // ==================== FAQ DOCK ====================
 function dockFaqToggle(e) {
   e.stopPropagation();
-  document.getElementById('dock-kpi-popup').classList.remove('open');
-  document.getElementById('dock-dohod-popup').classList.remove('open');
-  document.getElementById('dock-vizity-popup').classList.remove('open');
-  document.getElementById('dock-faq-popup').classList.toggle('open');
+  openDockPopup('dock-faq-popup');
 }
 function dockFaq(tab) {
   closeAllDockPopups();
@@ -6800,10 +6842,7 @@ function dockVizityToggle(e) {
     dockVizity(dept);
     return;
   }
-  document.getElementById('dock-kpi-popup').classList.remove('open');
-  document.getElementById('dock-dohod-popup').classList.remove('open');
-  document.getElementById('dock-faq-popup').classList.remove('open');
-  document.getElementById('dock-vizity-popup').classList.toggle('open');
+  openDockPopup('dock-vizity-popup');
 }
 function dockVizity(dept) {
   closeAllDockPopups();
@@ -6957,11 +6996,11 @@ async function loadVizity() {
     data: Array.from({length:14}, (_,c) => row[c] || '')
   }));
   renderVizity();
-  // Открываем страницу снизу — последние визиты актуальнее
-  requestAnimationFrame(() => {
+  // Скроллим вниз после того как браузер раскроет <details> текущей недели
+  setTimeout(() => {
     const main = document.querySelector('main');
     if (main) main.scrollTop = main.scrollHeight;
-  });
+  }, 120);
 }
 
 async function ensureVizSheet(sheetName) {
@@ -7032,6 +7071,7 @@ function renderVizity() {
     const nal     = rows.filter(r => exactComment(r,'ПОКУПКА (наличные)')).length;
     const kom     = rows.filter(r => exactComment(r,'КОМИССИЯ') || exactComment(r,'КОМИССИЯ (визит)')).length;
     const otk     = rows.filter(r => exactComment(r,'ОТКАЗ') || exactComment(r,'ФССП не подаем')).length;
+    const kso     = rows.filter(r => exactComment(r,'В работе КСО') || exactComment(r,'Подает заявку') || exactComment(r,'на рассмотрении банка') || exactComment(r,'Одобрено банком')).length;
     const statsLine2 = visCount > 0
       ? `<div class="vt-week-sum-line2">` +
         [
@@ -7039,6 +7079,7 @@ function renderVizity() {
           kred  > 0 && `Кред: <b>${kred}</b>`,
           nal   > 0 && `Нал: <b>${nal}</b>`,
           kom   > 0 && `Ком: <b>${kom}</b>`,
+          kso   > 0 && `КСО: <b style="color:var(--blu)">${kso}</b>`,
           otk   > 0 && `Отказы: <b>${otk}</b>`
         ].filter(Boolean).join(' · ') +
         `</div>` : '';

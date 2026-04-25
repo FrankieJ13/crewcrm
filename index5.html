@@ -600,12 +600,13 @@ nav::-webkit-scrollbar { height:0 }
 }
 /* Login liquid background */
 #scr-login {
-  position: relative; overflow: hidden;
+  position: relative; overflow: hidden; min-height: 100vh;
 }
 #login-liquid-canvas {
-  position: absolute;
-  inset: 0; width: 100%; height: 100%;
+  position: fixed;
+  inset: 0; width: 100vw; height: 100vh;
   z-index: 0; pointer-events: none;
+  display: none;
 }
 /* Gate card overlay */
 .gate-card {
@@ -2532,6 +2533,7 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
 /* no active dot - removed */
 /* ===== END DOCK v2 ===== */
 </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 <canvas id="bg-canvas"></canvas>
@@ -3191,7 +3193,7 @@ function initAuth() {
         if (window._silentFallback) { clearTimeout(window._silentFallback); window._silentFallback = null; }
         localStorage.removeItem('crm_user');
         document.getElementById('scr-login').style.display = '';
-        document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active');
+        document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active'); if(window._loginLiquidInit) window._loginLiquidInit();
         toast('Ошибка: '+resp.error, 'e');
         return;
       }
@@ -3370,7 +3372,7 @@ function trySilentRefresh() {
     if (!S.token) {
       localStorage.removeItem('crm_user');
       document.getElementById('scr-login').style.display = '';
-      document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active');
+      document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active'); if(window._loginLiquidInit) window._loginLiquidInit();
     }
   }, 8000);
 
@@ -6714,7 +6716,7 @@ function init() {
     if (btn) {
       btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 11h8.533c.044.385.067.78.067 1.184 0 3.37-1.17 6.22-3.207 8.154C15.553 22.124 13.9 23 12 23A11 11 0 1 1 12 1c2.95 0 5.56 1.113 7.522 2.934l-3.076 3.042C15.197 5.79 13.68 5 12 5a7 7 0 1 0 0 14c3.205 0 5.542-1.916 6.27-4.987H12v-3z"/></svg>Открыть в Chrome`;
     }
-    document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active');
+    document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active'); if(window._loginLiquidInit) window._loginLiquidInit();
     return;
   }
 
@@ -6724,7 +6726,7 @@ function init() {
       const l = document.getElementById('silent-loader');
       if (l) l.remove();
       document.getElementById('scr-login').style.display = '';
-      document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active');
+      document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active'); if(window._loginLiquidInit) window._loginLiquidInit();
     }
   }, 6000);
 
@@ -6733,7 +6735,7 @@ function init() {
       clearTimeout(gsiTimeout);
       initAuth();
       if (!tryRestore()) {
-        document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active');
+        document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active'); if(window._loginLiquidInit) window._loginLiquidInit();
       }
     } else setTimeout(waitGoogle, 100);
   }
@@ -7847,261 +7849,204 @@ function toggleHmbTheme(e) {
   }
 
   function initLiquid() {
+    if (!window.THREE) return;
     const canvas = document.getElementById('login-liquid-canvas');
-    if (!canvas || !window.THREE) return;
+    if (!canvas) return;
     if (_app) { _app.cleanup(); _app = null; }
 
+    // Show canvas
+    canvas.style.display = 'block';
+
     const T = window.THREE;
-    const scr = document.getElementById('scr-login');
-    const W = scr ? scr.clientWidth  || window.innerWidth  : window.innerWidth;
-    const H = scr ? scr.clientHeight || window.innerHeight : window.innerHeight;
+    const W = window.innerWidth, H = window.innerHeight;
 
-    // Touch texture
-    const ttCanvas = document.createElement('canvas');
-    ttCanvas.width = ttCanvas.height = 64;
-    const ttCtx = ttCanvas.getContext('2d');
-    ttCtx.fillStyle = 'black';
-    ttCtx.fillRect(0, 0, 64, 64);
-    const ttTexture = new T.Texture(ttCanvas);
-    let trail = [], ttLast = null;
+    // ---- Touch texture ----
+    const ttC = document.createElement('canvas');
+    ttC.width = ttC.height = 64;
+    const ttCtx = ttC.getContext('2d');
+    ttCtx.fillStyle='black'; ttCtx.fillRect(0,0,64,64);
+    const ttTex = new T.Texture(ttC);
+    let trail=[], ttLast=null;
 
-    function drawTTPoint(p) {
-      const px = p.x * 64, py = (1 - p.y) * 64;
-      let intensity = p.age < 64 * 0.3
-        ? Math.sin((p.age / (64 * 0.3)) * (Math.PI / 2))
-        : -((1 - (p.age - 64*0.3)/(64*0.7)) * ((1 - (p.age - 64*0.3)/(64*0.7)) - 2));
-      intensity *= p.force;
-      const color = `${((p.vx+1)/2)*255}, ${((p.vy+1)/2)*255}, ${intensity*255}`;
-      ttCtx.shadowOffsetX = ttCtx.shadowOffsetY = 320;
-      ttCtx.shadowBlur = 6.4;
-      ttCtx.shadowColor = `rgba(${color},${0.2*intensity})`;
-      ttCtx.beginPath(); ttCtx.fillStyle = 'rgba(255,0,0,1)';
-      ttCtx.arc(px - 320, py - 320, 6.4, 0, Math.PI*2);
-      ttCtx.fill();
+    function ttDraw(p) {
+      const px=p.x*64, py=(1-p.y)*64;
+      let inten = p.age<19.2 ? Math.sin((p.age/19.2)*(Math.PI/2))
+        : -((1-(p.age-19.2)/44.8)*((1-(p.age-19.2)/44.8)-2));
+      inten *= p.force;
+      const col=`${((p.vx+1)/2)*255},${((p.vy+1)/2)*255},${inten*255}`;
+      ttCtx.shadowOffsetX=ttCtx.shadowOffsetY=320; ttCtx.shadowBlur=6.4;
+      ttCtx.shadowColor=`rgba(${col},${0.2*inten})`;
+      ttCtx.beginPath(); ttCtx.fillStyle='rgba(255,0,0,1)';
+      ttCtx.arc(px-320,py-320,6.4,0,Math.PI*2); ttCtx.fill();
     }
 
-    function updateTT() {
-      ttCtx.fillStyle = 'black';
-      ttCtx.fillRect(0, 0, 64, 64);
-      for (let i = trail.length - 1; i >= 0; i--) {
-        const p = trail[i];
-        const f = p.force * (1/64) * (1 - p.age/64);
-        p.x += p.vx * f; p.y += p.vy * f; p.age++;
-        if (p.age > 64) trail.splice(i, 1);
-        else drawTTPoint(p);
+    function ttUpdate() {
+      ttCtx.fillStyle='black'; ttCtx.fillRect(0,0,64,64);
+      for(let i=trail.length-1;i>=0;i--){
+        const p=trail[i], f=p.force*(1/64)*(1-p.age/64);
+        p.x+=p.vx*f; p.y+=p.vy*f; p.age++;
+        if(p.age>64) trail.splice(i,1); else ttDraw(p);
       }
-      ttTexture.needsUpdate = true;
+      ttTex.needsUpdate=true;
     }
 
     function addTouch(pt) {
-      let force = 0, vx = 0, vy = 0;
-      if (ttLast) {
-        const dx = pt.x - ttLast.x, dy = pt.y - ttLast.y;
-        if (dx === 0 && dy === 0) return;
-        const d = Math.sqrt(dx*dx + dy*dy);
-        vx = dx/d; vy = dy/d;
-        force = Math.min((dx*dx + dy*dy) * 20000, 2.0);
+      let force=0,vx=0,vy=0;
+      if(ttLast){
+        const dx=pt.x-ttLast.x, dy=pt.y-ttLast.y;
+        if(!dx&&!dy) return;
+        const d=Math.sqrt(dx*dx+dy*dy); vx=dx/d; vy=dy/d;
+        force=Math.min((dx*dx+dy*dy)*20000,2);
       }
-      ttLast = { x: pt.x, y: pt.y };
-      trail.push({ x: pt.x, y: pt.y, age: 0, force, vx, vy });
+      ttLast={x:pt.x,y:pt.y};
+      trail.push({x:pt.x,y:pt.y,age:0,force,vx,vy});
     }
 
-    // Three.js setup
-    const renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: false });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(W, H);
+    // ---- Three.js ----
+    const renderer = new T.WebGLRenderer({canvas, antialias:true, alpha:false});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    renderer.setSize(W,H);
 
-    const camera = new T.PerspectiveCamera(45, W / H, 0.1, 10000);
-    camera.position.z = 50;
+    const camera = new T.PerspectiveCamera(45,W/H,0.1,10000);
+    camera.position.z=50;
     const scene = new T.Scene();
 
-    function getViewSize() {
-      const fov = (camera.fov * Math.PI) / 180;
-      const h = Math.abs(camera.position.z * Math.tan(fov/2) * 2);
-      return { width: h * camera.aspect, height: h };
+    function getVS() {
+      const fov=(camera.fov*Math.PI)/180;
+      const h=Math.abs(camera.position.z*Math.tan(fov/2)*2);
+      return {width:h*camera.aspect,height:h};
     }
 
-    const light = isLightTheme();
-    const uniforms = {
-      uTime:          { value: 0 },
-      uResolution:    { value: new T.Vector2(W, H) },
-      uColor1:        { value: new T.Vector3(light ? 1.0  : 0.945, light ? 0.5  : 0.353, light ? 0.35 : 0.133) },
-      uColor2:        { value: new T.Vector3(light ? 0.9  : 0.039, light ? 0.95 : 0.055, light ? 1.0  : 0.153) },
-      uColor3:        { value: new T.Vector3(light ? 1.0  : 0.945, light ? 0.5  : 0.353, light ? 0.35 : 0.133) },
-      uColor4:        { value: new T.Vector3(light ? 0.9  : 0.039, light ? 0.95 : 0.055, light ? 1.0  : 0.153) },
-      uColor5:        { value: new T.Vector3(light ? 1.0  : 0.945, light ? 0.5  : 0.353, light ? 0.35 : 0.133) },
-      uColor6:        { value: new T.Vector3(light ? 0.9  : 0.039, light ? 0.95 : 0.055, light ? 1.0  : 0.153) },
-      uDarkNavy:      { value: new T.Vector3(light ? 0.95 : 0.039, light ? 0.97 : 0.055, light ? 1.0  : 0.153) },
-      uSpeed:         { value: 1.2 },
-      uIntensity:     { value: 1.8 },
-      uGrainIntensity:{ value: 0.06 },
-      uGradientSize:  { value: 0.45 },
-      uColor1Weight:  { value: 0.5 },
-      uColor2Weight:  { value: 1.8 },
-      uTouchTexture:  { value: ttTexture },
+    function getColors() {
+      const lm=isLightTheme();
+      return lm
+        ? {c1:[1.0,0.5,0.35],c2:[0.9,0.95,1.0],navy:[0.95,0.97,1.0],bg:0xf5f7ff}
+        : {c1:[0.945,0.353,0.133],c2:[0.039,0.055,0.153],navy:[0.039,0.055,0.153],bg:0x0a0e27};
+    }
+
+    const cols=getColors();
+    const uniforms={
+      uTime:{value:0}, uResolution:{value:new T.Vector2(W,H)},
+      uColor1:{value:new T.Vector3(...cols.c1)}, uColor2:{value:new T.Vector3(...cols.c2)},
+      uColor3:{value:new T.Vector3(...cols.c1)}, uColor4:{value:new T.Vector3(...cols.c2)},
+      uColor5:{value:new T.Vector3(...cols.c1)}, uColor6:{value:new T.Vector3(...cols.c2)},
+      uDarkNavy:{value:new T.Vector3(...cols.navy)},
+      uSpeed:{value:1.2}, uIntensity:{value:1.8},
+      uGrainIntensity:{value:0.06}, uGradientSize:{value:0.45},
+      uColor1Weight:{value:0.5}, uColor2Weight:{value:1.8},
+      uTouchTexture:{value:ttTex}
     };
+    scene.background=new T.Color(cols.bg);
 
-    scene.background = new T.Color(light ? 0xf5f7ff : 0x0a0e27);
-
-    const vs = `varying vec2 vUv; void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); vUv = uv; }`;
-    const fs = `
-      uniform float uTime, uSpeed, uIntensity, uGrainIntensity, uGradientSize, uColor1Weight, uColor2Weight;
+    const vs=`varying vec2 vUv;void main(){gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);vUv=uv;}`;
+    const fs=`
+      uniform float uTime,uSpeed,uIntensity,uGrainIntensity,uGradientSize,uColor1Weight,uColor2Weight;
       uniform vec2 uResolution;
-      uniform vec3 uColor1, uColor2, uColor3, uColor4, uColor5, uColor6, uDarkNavy;
+      uniform vec3 uColor1,uColor2,uColor3,uColor4,uColor5,uColor6,uDarkNavy;
       uniform sampler2D uTouchTexture;
       varying vec2 vUv;
-      float grain(vec2 uv, float t) {
-        return fract(sin(dot(uv * uResolution * 0.5 + t, vec2(12.9898,78.233))) * 43758.5453) * 2.0 - 1.0;
-      }
-      vec3 getGrad(vec2 uv, float time) {
-        vec2 c1 = vec2(0.5+sin(time*uSpeed*0.4)*0.4, 0.5+cos(time*uSpeed*0.5)*0.4);
-        vec2 c2 = vec2(0.5+cos(time*uSpeed*0.6)*0.5, 0.5+sin(time*uSpeed*0.45)*0.5);
-        vec2 c3 = vec2(0.5+sin(time*uSpeed*0.35)*0.45,0.5+cos(time*uSpeed*0.55)*0.45);
-        vec2 c4 = vec2(0.5+cos(time*uSpeed*0.5)*0.4, 0.5+sin(time*uSpeed*0.4)*0.4);
-        vec2 c5 = vec2(0.5+sin(time*uSpeed*0.7)*0.35, 0.5+cos(time*uSpeed*0.6)*0.35);
-        vec2 c6 = vec2(0.5+cos(time*uSpeed*0.45)*0.5,0.5+sin(time*uSpeed*0.65)*0.5);
+      float grain(vec2 uv,float t){return fract(sin(dot(uv*uResolution*0.5+t,vec2(12.9898,78.233)))*43758.5453)*2.0-1.0;}
+      vec3 getGrad(vec2 uv,float time){
+        vec2 c1=vec2(0.5+sin(time*uSpeed*0.4)*0.4,0.5+cos(time*uSpeed*0.5)*0.4);
+        vec2 c2=vec2(0.5+cos(time*uSpeed*0.6)*0.5,0.5+sin(time*uSpeed*0.45)*0.5);
+        vec2 c3=vec2(0.5+sin(time*uSpeed*0.35)*0.45,0.5+cos(time*uSpeed*0.55)*0.45);
+        vec2 c4=vec2(0.5+cos(time*uSpeed*0.5)*0.4,0.5+sin(time*uSpeed*0.4)*0.4);
+        vec2 c5=vec2(0.5+sin(time*uSpeed*0.7)*0.35,0.5+cos(time*uSpeed*0.6)*0.35);
+        vec2 c6=vec2(0.5+cos(time*uSpeed*0.45)*0.5,0.5+sin(time*uSpeed*0.65)*0.5);
         float i1=1.0-smoothstep(0.0,uGradientSize,length(uv-c1));
         float i2=1.0-smoothstep(0.0,uGradientSize,length(uv-c2));
         float i3=1.0-smoothstep(0.0,uGradientSize,length(uv-c3));
         float i4=1.0-smoothstep(0.0,uGradientSize,length(uv-c4));
         float i5=1.0-smoothstep(0.0,uGradientSize,length(uv-c5));
         float i6=1.0-smoothstep(0.0,uGradientSize,length(uv-c6));
-        vec3 col = vec3(0.0);
-        col += uColor1*i1*(0.55+0.45*sin(time*uSpeed))*uColor1Weight;
-        col += uColor2*i2*(0.55+0.45*cos(time*uSpeed*1.2))*uColor2Weight;
-        col += uColor3*i3*(0.55+0.45*sin(time*uSpeed*0.8))*uColor1Weight;
-        col += uColor4*i4*(0.55+0.45*cos(time*uSpeed*1.3))*uColor2Weight;
-        col += uColor5*i5*(0.55+0.45*sin(time*uSpeed*1.1))*uColor1Weight;
-        col += uColor6*i6*(0.55+0.45*cos(time*uSpeed*0.9))*uColor2Weight;
-        col = clamp(col,vec3(0.0),vec3(1.0))*uIntensity;
-        float lum = dot(col,vec3(0.299,0.587,0.114));
-        col = mix(vec3(lum),col,1.35);
-        col = pow(col,vec3(0.92));
-        float br = length(col);
-        col = mix(uDarkNavy,col,max(br*1.2,0.15));
+        vec3 col=vec3(0.0);
+        col+=uColor1*i1*(0.55+0.45*sin(time*uSpeed))*uColor1Weight;
+        col+=uColor2*i2*(0.55+0.45*cos(time*uSpeed*1.2))*uColor2Weight;
+        col+=uColor3*i3*(0.55+0.45*sin(time*uSpeed*0.8))*uColor1Weight;
+        col+=uColor4*i4*(0.55+0.45*cos(time*uSpeed*1.3))*uColor2Weight;
+        col+=uColor5*i5*(0.55+0.45*sin(time*uSpeed*1.1))*uColor1Weight;
+        col+=uColor6*i6*(0.55+0.45*cos(time*uSpeed*0.9))*uColor2Weight;
+        col=clamp(col,vec3(0.0),vec3(1.0))*uIntensity;
+        float lum=dot(col,vec3(0.299,0.587,0.114));
+        col=mix(vec3(lum),col,1.35); col=pow(col,vec3(0.92));
+        col=mix(uDarkNavy,col,max(length(col)*1.2,0.15));
         return col;
       }
-      void main() {
-        vec2 uv = vUv;
-        vec4 tt = texture2D(uTouchTexture, uv);
-        uv.x -= (tt.r*2.0-1.0)*0.8*tt.b;
-        uv.y -= (tt.g*2.0-1.0)*0.8*tt.b;
-        float dist = length(uv - vec2(0.5));
-        float ripple = sin(dist*20.0 - uTime*3.0)*0.04*tt.b;
-        uv += vec2(ripple);
-        vec3 col = getGrad(uv, uTime);
-        col += grain(uv, uTime)*uGrainIntensity;
-        col = clamp(col,vec3(0.0),vec3(1.0));
-        gl_FragColor = vec4(col,1.0);
+      void main(){
+        vec2 uv=vUv;
+        vec4 tt=texture2D(uTouchTexture,uv);
+        uv.x-=(tt.r*2.0-1.0)*0.8*tt.b; uv.y-=(tt.g*2.0-1.0)*0.8*tt.b;
+        float ripple=sin(length(uv-vec2(0.5))*20.0-uTime*3.0)*0.04*tt.b;
+        uv+=vec2(ripple);
+        vec3 col=getGrad(uv,uTime);
+        col+=grain(uv,uTime)*uGrainIntensity;
+        gl_FragColor=vec4(clamp(col,vec3(0.0),vec3(1.0)),1.0);
       }
     `;
 
-    const vs_ = getViewSize();
-    const mesh = new T.Mesh(
-      new T.PlaneGeometry(vs_.width, vs_.height, 1, 1),
-      new T.ShaderMaterial({ uniforms, vertexShader: vs, fragmentShader: fs })
-    );
+    const vs_=getVS();
+    let mesh=new T.Mesh(new T.PlaneGeometry(vs_.width,vs_.height,1,1),
+      new T.ShaderMaterial({uniforms,vertexShader:vs,fragmentShader:fs}));
     scene.add(mesh);
 
-    let animId = null;
-    const clock = new T.Clock();
-
-    function tick() {
-      const delta = Math.min(clock.getDelta(), 0.1);
-      uniforms.uTime.value += delta;
-      updateTT();
-      renderer.render(scene, camera);
-      animId = requestAnimationFrame(tick);
+    let animId=null, lastTime=performance.now();
+    function tick(){
+      animId=requestAnimationFrame(tick);
+      const now=performance.now(), delta=Math.min((now-lastTime)/1000,0.1); lastTime=now;
+      uniforms.uTime.value+=delta;
+      ttUpdate();
+      renderer.render(scene,camera);
     }
     tick();
 
-    // Mouse/touch interaction
-    function onMove(x, y) {
-      addTouch({ x: x / canvas.clientWidth, y: 1 - y / canvas.clientHeight });
-    }
-    const scrEl = document.getElementById('scr-login');
-    if (scrEl) {
-      scrEl.addEventListener('mousemove', e => {
-        const r = scrEl.getBoundingClientRect();
-        onMove(e.clientX - r.left, e.clientY - r.top);
-      });
-      scrEl.addEventListener('touchmove', e => {
-        const r = scrEl.getBoundingClientRect();
-        onMove(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top);
-      }, { passive: true });
-    }
+    // Interaction
+    const scrEl=document.getElementById('scr-login');
+    function onMove(x,y){addTouch({x:x/window.innerWidth,y:1-y/window.innerHeight});}
+    const mvH=e=>{const r=scrEl.getBoundingClientRect();onMove(e.clientX-r.left,e.clientY-r.top);};
+    const tmH=e=>{const r=scrEl.getBoundingClientRect();onMove(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top);};
+    document.addEventListener('mousemove',mvH);
+    document.addEventListener('touchmove',tmH,{passive:true});
 
     // Resize
-    function onResize() {
-      const nW = scrEl ? scrEl.clientWidth || window.innerWidth : window.innerWidth;
-      const nH = scrEl ? scrEl.clientHeight || window.innerHeight : window.innerHeight;
-      camera.aspect = nW / nH;
-      camera.updateProjectionMatrix();
-      renderer.setSize(nW, nH);
-      uniforms.uResolution.value.set(nW, nH);
-      const vs2 = getViewSize();
-      mesh.geometry.dispose();
-      mesh.geometry = new T.PlaneGeometry(vs2.width, vs2.height, 1, 1);
+    function onResize(){
+      const nW=window.innerWidth,nH=window.innerHeight;
+      camera.aspect=nW/nH; camera.updateProjectionMatrix();
+      renderer.setSize(nW,nH); uniforms.uResolution.value.set(nW,nH);
+      const vs2=getVS(); scene.remove(mesh); mesh.geometry.dispose();
+      mesh=new T.Mesh(new T.PlaneGeometry(vs2.width,vs2.height,1,1),mesh.material);
+      scene.add(mesh);
     }
-    window.addEventListener('resize', onResize);
+    window.addEventListener('resize',onResize);
 
-    // Theme observer
-    const themeObs = new MutationObserver(() => {
-      const lm = isLightTheme();
-      if (lm) {
-        uniforms.uColor1.value.set(1.0, 0.5, 0.35);
-        uniforms.uColor2.value.set(0.9, 0.95, 1.0);
-        uniforms.uColor3.value.set(1.0, 0.5, 0.35);
-        uniforms.uColor4.value.set(0.9, 0.95, 1.0);
-        uniforms.uColor5.value.set(1.0, 0.5, 0.35);
-        uniforms.uColor6.value.set(0.9, 0.95, 1.0);
-        uniforms.uDarkNavy.value.set(0.95, 0.97, 1.0);
-        scene.background = new T.Color(0xf5f7ff);
-      } else {
-        uniforms.uColor1.value.set(0.945, 0.353, 0.133);
-        uniforms.uColor2.value.set(0.039, 0.055, 0.153);
-        uniforms.uColor3.value.set(0.945, 0.353, 0.133);
-        uniforms.uColor4.value.set(0.039, 0.055, 0.153);
-        uniforms.uColor5.value.set(0.945, 0.353, 0.133);
-        uniforms.uColor6.value.set(0.039, 0.055, 0.153);
-        uniforms.uDarkNavy.value.set(0.039, 0.055, 0.153);
-        scene.background = new T.Color(0x0a0e27);
-      }
+    // Theme watcher
+    const thObs=new MutationObserver(()=>{
+      const c2=getColors();
+      ['uColor1','uColor3','uColor5'].forEach(k=>uniforms[k].value.set(...c2.c1));
+      ['uColor2','uColor4','uColor6'].forEach(k=>uniforms[k].value.set(...c2.c2));
+      uniforms.uDarkNavy.value.set(...c2.navy);
+      scene.background=new T.Color(c2.bg);
     });
-    themeObs.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    thObs.observe(document.body,{attributes:true,attributeFilter:['class']});
 
-    _app = {
-      cleanup() {
-        if (animId) cancelAnimationFrame(animId);
-        themeObs.disconnect();
-        window.removeEventListener('resize', onResize);
-        renderer.dispose();
-        ttTexture.dispose();
-        trail = [];
+    _app={
+      cleanup(){
+        if(animId) cancelAnimationFrame(animId);
+        document.removeEventListener('mousemove',mvH);
+        document.removeEventListener('touchmove',tmH);
+        window.removeEventListener('resize',onResize);
+        thObs.disconnect();
+        renderer.dispose(); ttTex.dispose();
+        canvas.style.display='none';
+        trail=[]; ttLast=null;
       }
     };
   }
 
-  // Запускаем когда Three.js загружен и login screen видим
-  function tryInit() {
-    if (window.THREE) { initLiquid(); return; }
-    // Three.js грузится лениво (MATRIX effect), ждём
-    const iv = setInterval(() => {
-      if (window.THREE) { clearInterval(iv); initLiquid(); }
-    }, 200);
-  }
-
-  // Инициализация: при старте если login виден, или при показе login
-  window._loginLiquidInit = tryInit;
-  window._loginLiquidCleanup = function() { if (_app) { _app.cleanup(); _app = null; } };
-
-  // Запускаем после DOMContentLoaded
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', tryInit);
-  } else {
-    setTimeout(tryInit, 100);
-  }
+  window._loginLiquidInit    = initLiquid;
+  window._loginLiquidCleanup = function(){ if(_app){_app.cleanup();_app=null;} };
 })();
+
+
 
 // ==================== BACKGROUND ORBS ====================
 (function() {

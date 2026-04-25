@@ -1782,6 +1782,7 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
   font-size: 12px; color: var(--txt3); text-align: center;
   padding: 12px 0; font-style: italic;
 }
+#plan-editor-overlay {
   display:none; position:fixed; inset:0; z-index:9999;
   background:rgba(0,0,0,.6); align-items:center; justify-content:center;
 }
@@ -2702,7 +2703,7 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
   </header>
 
   <!-- PLAN EDITOR OVERLAY -->
-  <div id="plan-editor-overlay" onclick="if(event.target===this)closePlanEditor()">
+  <div id="plan-editor-overlay" style="display:none" onclick="if(event.target===this)closePlanEditor()">
     <div id="plan-editor-modal">
       <div class="pe-hdr">
         <span class="pe-title">Конфигурация</span>
@@ -2710,7 +2711,7 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
       </div>
       <div class="pe-body" id="pe-body">
         <!-- Спойлер 1: Планы -->
-        <details class="cfg-spoiler" open>
+        <details class="cfg-spoiler">
           <summary class="cfg-spoiler-hdr">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
             Планы по менеджерам

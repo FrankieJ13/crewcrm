@@ -5408,7 +5408,7 @@ function openPlanEditor() {
 
   if (!planData.length) {
     body.innerHTML = '<div class="empty">Лист ПЛАН не загружен. Обновите страницу.</div>';
-    document.getElementById('plan-editor-overlay').classList.add('open');
+    document.getElementById('plan-editor-overlay').style.display = 'flex'; document.getElementById('plan-editor-overlay').classList.add('open');
     document.body.style.overflow = 'hidden';
     return;
   }
@@ -5447,12 +5447,14 @@ function openPlanEditor() {
   body.innerHTML = html || '<div class="empty">Нет данных</div>';
 
   if (status) status.textContent = '';
-  document.getElementById('plan-editor-overlay').classList.add('open');
+  document.getElementById('plan-editor-overlay').style.display = 'flex'; document.getElementById('plan-editor-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
 function closePlanEditor() {
-  document.getElementById('plan-editor-overlay').classList.remove('open');
+  const overlay = document.getElementById('plan-editor-overlay');
+  overlay.classList.remove('open');
+  overlay.style.display = 'none';
   document.body.style.overflow = '';
 }
 

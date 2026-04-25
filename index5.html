@@ -2325,6 +2325,12 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
   display: flex;
   animation: dockPopIn 0.15s ease forwards;
 }
+@media (hover: hover) {
+  .dock-item:hover .dock-popup {
+    display: flex;
+    animation: dockPopIn 0.15s ease forwards;
+  }
+}
 @keyframes dockPopIn {
   from { opacity:0; transform: translateX(-50%) translateY(6px); }
   to   { opacity:1; transform: translateX(-50%) translateY(0); }

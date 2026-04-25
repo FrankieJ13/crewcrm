@@ -347,31 +347,45 @@ html,body {
   z-index: 10;
 }
 main { flex:1; overflow-y:auto; position: relative; }
-/* ===== LOGIN-ACTIVE: полная блокировка скролла, фикс хедера ===== */
-body.login-active {
+/* ===== LOGIN-ACTIVE ===== */
+body.login-active,
+html:has(body.login-active) {
   overflow: hidden;
   height: 100%;
+  position: fixed; /* iOS safari scroll lock */
+  width: 100%;
 }
-html:has(body.login-active) { overflow: hidden; height: 100%; }
 body.login-active main { overflow: hidden; }
-body.login-active header {
-  position: fixed;
+/* Хедер — всегда fixed (и при логине и после) */
+header {
+  position: fixed !important;
   top: 0; left: 0; right: 0;
   z-index: 200;
 }
+/* Компенсируем фиксированный хедер */
+main { padding-top: 52px; }
 body.login-active #scr-login {
   position: fixed;
-  inset: 0;
+  top: 52px; left: 0; right: 0;
+  bottom: 0;
   display: flex !important;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   z-index: 100;
-  padding-top: 52px; /* хедер высотой 52px */
 }
-body.login-active .page-footer { position:fixed; bottom:0; left:0; right:0; z-index:50; background:var(--bg); }
-body.login-active .page-footer .glitch { display: none; }
-/* Авторство скрыто когда пользователь авторизован */
+/* Авторство на экране логина — снизу */
+body.login-active .page-footer {
+  position: fixed;
+  bottom: env(safe-area-inset-bottom, 8px);
+  left: 0; right: 0;
+  z-index: 150;
+  text-align: center;
+  background: transparent;
+  border: none;
+  padding: 6px 0;
+}
+/* Авторство скрыто после авторизации */
 body:not(.login-active) .page-footer { display: none; }
 .w {
   width:100%;
@@ -385,7 +399,8 @@ body:not(.login-active) .page-footer { display: none; }
 @keyframes up { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 header {
   background:var(--bg); border-bottom:1px solid var(--line);
-  position:sticky; top:0; z-index:100; flex-shrink:0;
+  flex-shrink:0;
+  /* position managed by login-active overrides above */
 }
 .hdr-inner {
   max-width:720px;
@@ -431,6 +446,9 @@ body.tiffany .hdr-greeting.aurora {
     drop-shadow(0 0 10px rgba(0, 140, 220, .9))
     drop-shadow(0 2px 6px rgba(0,0,0,.45))
     drop-shadow(0 0 24px rgba(51, 200, 120, .6));
+  /* Светлая обводка через paint-order + stroke эмуляция */
+  -webkit-text-stroke: 0.4px rgba(255,255,255,0.7);
+  paint-order: stroke fill;
 }
 .hdr-greeting {
   font-family: 'Unbounded', cursive;

@@ -6521,7 +6521,10 @@ function dockSetActive(id) {
 
 function closeAllDockPopups() {
   ['dock-kpi-popup','dock-dohod-popup','dock-faq-popup','dock-vizity-popup'].forEach(pid => {
-    document.getElementById(pid)?.classList.remove('open');
+    const p = document.getElementById(pid);
+    if (!p) return;
+    p.classList.remove('open');
+    p.style.cssText = ''; // сбрасываем JS-позиционирование
   });
 }
 
@@ -6529,12 +6532,26 @@ function openDockPopup(id) {
   closeAllDockPopups();
   const pop = document.getElementById(id);
   if (!pop) return;
-  // Edge-clamp: если попап выходит за правый край — прижать вправо
-  pop.classList.remove('edge-right');
+  const btn = pop.closest('.dock-item')?.querySelector('.dock-btn');
+  if (!btn) { pop.classList.add('open'); return; }
+  const btnRect = btn.getBoundingClientRect();
+  // Временно показываем для измерения
+  pop.style.cssText = 'visibility:hidden;display:flex;position:fixed;bottom:auto;left:auto;transform:none;';
+  const popW = pop.offsetWidth;
+  pop.style.cssText = '';
+  // Позиция: над кнопкой, выровнен по центру, но не за экран
+  const idealLeft = btnRect.left + btnRect.width / 2 - popW / 2;
+  const clampedLeft = Math.max(8, Math.min(idealLeft, window.innerWidth - popW - 8));
+  const top = btnRect.top - pop.offsetHeight - 8;
+  pop.style.position = 'fixed';
+  pop.style.left = clampedLeft + 'px';
+  pop.style.top = (btnRect.top - 8) + 'px'; // временно, пересчитаем после open
+  pop.style.bottom = 'auto';
+  pop.style.transform = 'none';
   pop.classList.add('open');
   requestAnimationFrame(() => {
-    const rect = pop.getBoundingClientRect();
-    if (rect.right > window.innerWidth - 8) pop.classList.add('edge-right');
+    const popH = pop.offsetHeight;
+    pop.style.top = (btnRect.top - popH - 8) + 'px';
   });
 }
 
@@ -6604,8 +6621,7 @@ function dockKpi(dept) {
 function dockDohodToggle(e) {
   e.stopPropagation();
   const matched = findUserInSheet();
-  const isCeo = matched && matched.role === 'ceo';
-  if (!isCeo) {
+  if (!matched || matched.role !== 'ceo') {
     closeAllDockPopups();
     goTab('dohod');
     dockSetActive('dohod');
@@ -6835,8 +6851,8 @@ function dockFaq(tab) {
 function dockVizityToggle(e) {
   e.stopPropagation();
   const matched = findUserInSheet();
-  const isCeo = matched?.role === 'ceo';
-  if (!isCeo) {
+  // Попап только для CEO. Все остальные — прямо на свой отдел
+  if (!matched || matched.role !== 'ceo') {
     closeAllDockPopups();
     const dept = matched?.role === 'dozhim' ? 'dozhim' : 'crm';
     dockVizity(dept);
@@ -6996,11 +7012,11 @@ async function loadVizity() {
     data: Array.from({length:14}, (_,c) => row[c] || '')
   }));
   renderVizity();
-  // Скроллим вниз после того как браузер раскроет <details> текущей недели
-  setTimeout(() => {
+  // Скроллим к последнему визиту. Используем double-rAF чтобы layout успел посчитаться
+  requestAnimationFrame(() => requestAnimationFrame(() => {
     const main = document.querySelector('main');
     if (main) main.scrollTop = main.scrollHeight;
-  }, 120);
+  }));
 }
 
 async function ensureVizSheet(sheetName) {

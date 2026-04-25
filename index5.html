@@ -376,9 +376,18 @@ header {
 }
 .hdr-left  { display:flex; align-items:center; gap:8px }
 .hdr-right { display:flex; align-items:center; gap:6px; position:relative; }
-.hdr-title {
+.hdr-title-wrap {
+  display: flex; flex-direction: column; gap: 1px;
+}
+.hdr-title-main {
   font-family: 'Unbounded', cursive;
-  font-size: 12px; font-weight: 800; letter-spacing: .06em;
+  font-size: 11px; font-weight: 800; letter-spacing: .06em;
+  color: var(--txt);
+  white-space: nowrap;
+}
+/* Aurora включается только после логина через класс .aurora */
+.hdr-title-main.aurora,
+.hdr-greeting.aurora {
   background: linear-gradient(
     90deg, #00c2ff, #33ff8c, #ffc640, #e54cff, #00c2ff, #33ff8c, #ffc640, #e54cff, #00c2ff
   );
@@ -387,10 +396,14 @@ header {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   animation: aurora-text-flow 30s linear infinite;
-  white-space: nowrap;
-  max-width: 160px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  filter: drop-shadow(0 0 8px rgba(0, 194, 255, .35));
+}
+.hdr-greeting {
+  font-family: 'Unbounded', cursive;
+  font-size: 9px; font-weight: 700; letter-spacing: .04em;
+  white-space: nowrap; max-width: 160px;
+  overflow: hidden; text-overflow: ellipsis;
+  color: var(--txt2);
 }
 @keyframes aurora-text-flow {
   0%   { background-position: 0% center; }
@@ -2500,7 +2513,10 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
       <div class="hdr-left">
         <div class="logo" onclick="goHome()">
           <img id="logo-img" src="logos/01.png" class="logo-img" alt="logo"/>
-          <span id="hdr-title" class="hdr-title">ДАШБОРД</span>
+          <div class="hdr-title-wrap">
+            <span id="hdr-title" class="hdr-title-main">ДАШБОРД</span>
+            <span id="hdr-greeting" class="hdr-greeting" style="display:none"></span>
+          </div>
         </div>
       </div>
       <div class="hdr-right">
@@ -3241,8 +3257,10 @@ function onLogout() {
   document.getElementById('main-nav').style.display  = 'none';
   document.getElementById('main-dock').style.display = 'none';
   const hmbl2 = document.getElementById('hmb-logout'); if (hmbl2) hmbl2.style.display = 'none';
-  const hdrTitle = document.getElementById('hdr-title');
-  if (hdrTitle) hdrTitle.textContent = 'ДАШБОРД';
+  const hdrMain2 = document.getElementById('hdr-title');
+  const hdrGreeting2 = document.getElementById('hdr-greeting');
+  if (hdrMain2) hdrMain2.classList.remove('aurora');
+  if (hdrGreeting2) { hdrGreeting2.style.display = 'none'; hdrGreeting2.classList.remove('aurora'); }
   closeHamburger();
   ['otchet','dohod','grafik','instruktsii','personal'].forEach(t => {
     const s = document.getElementById('scr-'+t);
@@ -5751,9 +5769,15 @@ async function loadUsersAndStart() {
     const parts = matched.name.trim().split(/\s+/);
     const firstName = parts.length >= 2 ? parts[1] : parts[0];
     toast('Приветствую, ' + firstName + '!', 's');
-    // Обновляем заголовок хедера
-    const hdrTitle = document.getElementById('hdr-title');
-    if (hdrTitle) hdrTitle.textContent = 'Привет, ' + firstName + '!';
+    // Активируем aurora и показываем приветствие
+    const hdrMain = document.getElementById('hdr-title');
+    const hdrGreeting = document.getElementById('hdr-greeting');
+    if (hdrMain) hdrMain.classList.add('aurora');
+    if (hdrGreeting) {
+      hdrGreeting.textContent = 'Привет, ' + firstName + '!';
+      hdrGreeting.classList.add('aurora');
+      hdrGreeting.style.display = '';
+    }
     showPlanEditBtnIfCeo(matched);
     checkBirthdayNotifications();
     checkSelfBirthday();

@@ -350,6 +350,9 @@ main { flex:1; overflow-y:auto; position: relative; }
 /* Когда показан экран авторизации — блокируем скролл */
 body.login-active main { overflow-y:hidden; }
 body.login-active .page-footer { position:fixed; bottom:0; left:0; right:0; z-index:50; background:var(--bg); }
+body.login-active .page-footer .glitch { display: none; }
+/* Авторство скрыто когда пользователь авторизован */
+body:not(.login-active) .page-footer { display: none; }
 .w {
   width:100%;
   max-width:720px;
@@ -396,7 +399,18 @@ header {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   animation: aurora-text-flow 30s linear infinite;
-  filter: drop-shadow(0 0 8px rgba(0, 194, 255, .35));
+  filter:
+    drop-shadow(0 0 14px rgba(0, 194, 255, .7))
+    drop-shadow(0 0 28px rgba(51, 255, 140, .4));
+}
+body.light .hdr-title-main.aurora,
+body.light .hdr-greeting.aurora,
+body.tiffany .hdr-title-main.aurora,
+body.tiffany .hdr-greeting.aurora {
+  filter:
+    drop-shadow(0 0 10px rgba(0, 140, 220, .9))
+    drop-shadow(0 2px 6px rgba(0,0,0,.45))
+    drop-shadow(0 0 24px rgba(51, 200, 120, .6));
 }
 .hdr-greeting {
   font-family: 'Unbounded', cursive;
@@ -2614,7 +2628,7 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
             <div class="hmb-sep"></div>
             <button class="hmb-item" id="hmb-plan-edit" onclick="openPlanEditor();closeHamburger()" style="display:none">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-              <span>Настройки плана</span>
+              <span>Конфигурация</span>
             </button>
             <div class="hmb-sep" id="hmb-sep-plan" style="display:none"></div>
             <button class="hmb-item hmb-danger" id="hmb-logout" onclick="onLogout();closeHamburger()" style="display:none">

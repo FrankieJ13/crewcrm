@@ -376,8 +376,27 @@ header {
 }
 .hdr-left  { display:flex; align-items:center; gap:8px }
 .hdr-right { display:flex; align-items:center; gap:6px; position:relative; }
+.hdr-title {
+  font-family: 'Unbounded', cursive;
+  font-size: 12px; font-weight: 800; letter-spacing: .06em;
+  background: linear-gradient(
+    90deg, #00c2ff, #33ff8c, #ffc640, #e54cff, #00c2ff, #33ff8c, #ffc640, #e54cff, #00c2ff
+  );
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: aurora-text-flow 30s linear infinite;
+  white-space: nowrap;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@keyframes aurora-text-flow {
+  0%   { background-position: 0% center; }
+  100% { background-position: 300% center; }
+}
 .logo {
-  font-family:'Unbounded',sans-serif;
   font-size:12px; font-weight:800; letter-spacing:.06em;
   display:flex; align-items:center; gap:8px;
   cursor:pointer;
@@ -2481,7 +2500,7 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
       <div class="hdr-left">
         <div class="logo" onclick="goHome()">
           <img id="logo-img" src="logos/01.png" class="logo-img" alt="logo"/>
-          ДАШБОРД
+          <span id="hdr-title" class="hdr-title">ДАШБОРД</span>
         </div>
       </div>
       <div class="hdr-right">
@@ -2513,7 +2532,7 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
             <!-- Месяц -->
             <div class="hmb-item" onclick="toggleHmbMonth(event)" id="hmb-month-trigger" style="display:none">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              <span>Месяц: <b id="hmb-month-label">—</b></span>
+              <span><b id="hmb-month-label">—</b></span>
               <svg class="hmb-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
             <div class="hmb-theme-sub" id="hmb-month-sub" style="display:none"></div>
@@ -3221,7 +3240,9 @@ function onLogout() {
   if (_bo2) _bo2.style.display = 'none';
   document.getElementById('main-nav').style.display  = 'none';
   document.getElementById('main-dock').style.display = 'none';
-  const hmbl = document.getElementById('hmb-logout'); if (hmbl) hmbl.style.display = 'none';
+  const hmbl2 = document.getElementById('hmb-logout'); if (hmbl2) hmbl2.style.display = 'none';
+  const hdrTitle = document.getElementById('hdr-title');
+  if (hdrTitle) hdrTitle.textContent = 'ДАШБОРД';
   closeHamburger();
   ['otchet','dohod','grafik','instruktsii','personal'].forEach(t => {
     const s = document.getElementById('scr-'+t);
@@ -5730,6 +5751,9 @@ async function loadUsersAndStart() {
     const parts = matched.name.trim().split(/\s+/);
     const firstName = parts.length >= 2 ? parts[1] : parts[0];
     toast('Приветствую, ' + firstName + '!', 's');
+    // Обновляем заголовок хедера
+    const hdrTitle = document.getElementById('hdr-title');
+    if (hdrTitle) hdrTitle.textContent = 'Привет, ' + firstName + '!';
     showPlanEditBtnIfCeo(matched);
     checkBirthdayNotifications();
     checkSelfBirthday();

@@ -2520,7 +2520,7 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
         </div>
       </div>
       <div class="hdr-right">
-        <div id="user-wrap">
+        <div id="user-wrap" style="display:none">
           <img id="user-avatar" src="" alt=""/>
           <div id="month-wrap" style="display:none;position:relative;flex-shrink:0">
             <span class="badge-month" id="badge-month">—</span>
@@ -2545,7 +2545,15 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
           </button>
         <!-- Hamburger -->
           <div class="hamburger-dropdown" id="hamburger-dropdown">
-            <!-- Месяц -->
+            <!-- Аккаунт -->
+            <div class="hmb-item hmb-account" id="hmb-account-btn" onclick="hmbGoPersonal()" style="display:none;cursor:pointer">
+              <img id="hmb-avatar" src="" alt="" style="width:28px;height:28px;border-radius:50%;border:1.5px solid var(--line2);flex-shrink:0;object-fit:cover">
+              <div style="display:flex;flex-direction:column;gap:1px;min-width:0">
+                <span id="hmb-account-name" style="font-size:12px;font-weight:700;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+                <span style="font-size:10px;color:var(--txt3)">Личная страница</span>
+              </div>
+            </div>
+            <div class="hmb-sep" id="hmb-sep-account" style="display:none"></div>
             <div class="hmb-item" onclick="toggleHmbMonth(event)" id="hmb-month-trigger" style="display:none">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               <span><b id="hmb-month-label">—</b></span>
@@ -3192,7 +3200,11 @@ async function loadUser() {
 function renderUser() {
   if (!S.user) return;
   const av = document.getElementById('user-avatar');
-  if (S.user.picture) av.src = S.user.picture;
+  if (S.user.picture) {
+    av.src = S.user.picture;
+    const hmbAv = document.getElementById('hmb-avatar');
+    if (hmbAv) hmbAv.src = S.user.picture;
+  }
   av.style.cursor = 'pointer';
   av.title = 'Мой KPI';
   av.onclick = function() {
@@ -3203,8 +3215,15 @@ function renderUser() {
   if (S.user.name) {
     const nameParts = S.user.name.split(' ');
     document.getElementById('user-name').textContent = nameParts[0];
+    const hmbName = document.getElementById('hmb-account-name');
+    if (hmbName) hmbName.textContent = S.user.name;
   }
-  document.getElementById('user-wrap').style.display = 'flex';
+  // Показываем аккаунт-блок в гамбургере
+  const hmbAcc = document.getElementById('hmb-account-btn');
+  const hmbAccSep = document.getElementById('hmb-sep-account');
+  if (hmbAcc) hmbAcc.style.display = '';
+  if (hmbAccSep) hmbAccSep.style.display = '';
+  document.getElementById('user-wrap').style.display = 'none'; // скрыт из хедера
 }
 
 function onLogin() {
@@ -3257,6 +3276,8 @@ function onLogout() {
   document.getElementById('main-nav').style.display  = 'none';
   document.getElementById('main-dock').style.display = 'none';
   const hmbl2 = document.getElementById('hmb-logout'); if (hmbl2) hmbl2.style.display = 'none';
+  const hmbAcc2 = document.getElementById('hmb-account-btn'); if (hmbAcc2) hmbAcc2.style.display = 'none';
+  const hmbAccSep2 = document.getElementById('hmb-sep-account'); if (hmbAccSep2) hmbAccSep2.style.display = 'none';
   const hdrMain2 = document.getElementById('hdr-title');
   const hdrGreeting2 = document.getElementById('hdr-greeting');
   if (hdrMain2) hdrMain2.classList.remove('aurora');
@@ -7748,6 +7769,12 @@ function vizScrollTo(dir) {
   const target = (main && main.scrollHeight > main.clientHeight) ? main : document.scrollingElement || document.documentElement;
   if (dir === 'top') target.scrollTo({ top: 0, behavior: 'smooth' });
   else target.scrollTo({ top: target.scrollHeight, behavior: 'smooth' });
+}
+
+function hmbGoPersonal() {
+  closeHamburger();
+  const m = findUserInSheet();
+  if (m && m.role !== 'ceo') goPersonal();
 }
 
 // ==================== HAMBURGER MENU ====================

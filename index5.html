@@ -5469,8 +5469,8 @@ function openPlanEditor() {
 
   if (!planData.length) {
     body.innerHTML = '<div class="empty">Лист ПЛАН не загружен. Обновите страницу.</div>';
-    document.getElementById('plan-editor-overlay').style.display = 'flex'; document.getElementById('plan-editor-overlay').classList.add('open');
-    document.body.style.overflow = 'hidden';
+    document.getElementById('plan-editor-overlay').style.display = 'flex';
+    document.getElementById('plan-editor-overlay').classList.add('open');
     return;
   }
 
@@ -5506,10 +5506,9 @@ function openPlanEditor() {
     html += `<details class="pe-spoiler"><summary>Прочие (${groups.other.length} чел.)</summary><div class="pe-spoiler-body">${makeRows(groups.other)}</div></details>`;
   }
   body.innerHTML = html || '<div class="empty">Нет данных</div>';
-
   if (status) status.textContent = '';
-  document.getElementById('plan-editor-overlay').style.display = 'flex'; document.getElementById('plan-editor-overlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  document.getElementById('plan-editor-overlay').style.display = 'flex';
+  document.getElementById('plan-editor-overlay').classList.add('open');
 }
 
 function closePlanEditor() {
@@ -7051,7 +7050,6 @@ async function savePlanAndSverka() {
   if (cb && S.token) {
     S.sverkaMode = cb.checked;
     const newMode = S.sverkaMode ? 'Bad' : 'Good';
-    // Сохраняем только в J2 — глобальный флаг
     try {
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent('USERS!J2')}?valueInputOption=RAW`;
       await fetch(url, {
@@ -7064,7 +7062,41 @@ async function savePlanAndSverka() {
       S.data.vizity = null; S.data.d_vizity = null; S.data.otchet = null;
     } catch(e) { console.warn('sverka save', e); }
   }
-  savePlan();
+
+  // Сохраняем планы только если есть поля (спойлер открыт)
+  const inputs = document.querySelectorAll('.pe-input');
+  if (inputs.length > 0) {
+    // Запускаем savePlan но перехватываем его закрытие
+    const btn = document.getElementById('pe-save-btn');
+    const status = document.getElementById('pe-status');
+    const values = [['Менеджер', 'План']];
+    inputs.forEach(inp => values.push([inp.dataset.name, parseInt(inp.value) || 0]));
+    if (btn) btn.disabled = true;
+    if (status) status.textContent = 'Сохраняем…';
+    try {
+      const sheetName = SHEETS.plan;
+      const range = `'${sheetName}'!A1:B${values.length}`;
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+      const resp = await fetch(url, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${S.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ range, majorDimension: 'ROWS', values })
+      });
+      if (resp.ok) {
+        S.data.plan = values;
+        if (status) { status.style.color = 'var(--grn)'; status.textContent = '✓ Сохранено'; }
+      }
+    } catch(e) {
+      if (status) { status.style.color = 'var(--red)'; status.textContent = '✗ ' + e.message; }
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+    setTimeout(() => closePlanEditorFull(), 800);
+  } else {
+    // Планы не редактировались — просто закрываем
+    toast('Сохранено', 's');
+    closePlanEditorFull();
+  }
 }
 
 function openPlanEditorWithSverka() {
@@ -7219,7 +7251,7 @@ async function loadRating() {
     el.innerHTML = loader();
     try {
       const [vd, pd] = await Promise.all([
-        S.data.vizity ? Promise.resolve(S.data.vizity) : api(SHEETS.vizity, 'A:J'),
+        S.data.vizity ? Promise.resolve(S.data.vizity) : api(SHEETS.vizity, 'A:N'),
         S.data.plan   ? Promise.resolve(S.data.plan)   : api(SHEETS.plan,   'A:B'),
       ]);
       S.data.vizity = vd; S.data.plan = pd;
@@ -7230,7 +7262,7 @@ async function loadRating() {
   }
   if (S.ratingDept === 'dozhim' && !S.data.d_vizity) {
     el.innerHTML = loader();
-    try { S.data.d_vizity = await api(SHEETS.d_vizity, 'A:L'); }
+    try { S.data.d_vizity = await api(SHEETS.d_vizity, 'A:N'); }
     catch(e) { S.data.d_vizity = []; }
   }
   renderRating();

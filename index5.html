@@ -7393,6 +7393,8 @@ function renderRating() {
     { strip:'#cd7f32', bg:'rgba(205,127,50,0.08)', num:'rgba(205,127,50,0.15)', numTxt:'#cd7f32' },
   ];
 
+  const medals = ['🥇','🥈','🥉'];
+
   const cardsHTML = managers.map((m, idx) => {
     const isTop = idx < 3;
     const rc = isTop ? rankColors[idx] : null;

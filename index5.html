@@ -3752,7 +3752,7 @@ async function loadTab(tab) {
       if (el) el.innerHTML = loader();
       try {
         const [vd, pd] = await Promise.all([
-          S.data.vizity ? Promise.resolve(S.data.vizity) : api(SHEETS.vizity, 'A:J'),
+          S.data.vizity ? Promise.resolve(S.data.vizity) : api(SHEETS.vizity, 'A:N'),
           S.data.plan   ? Promise.resolve(S.data.plan)   : api(SHEETS.plan,   'A:B'),
         ]);
         S.data.vizity = vd;
@@ -3768,13 +3768,13 @@ async function loadTab(tab) {
     // Д_ВИЗИТЫ — фоновая загрузка для вкладки ДОЖИМ
     if (S.reportTab === 'dozhim' && !S.data.d_vizity) {
       Promise.all([
-        api(SHEETS.d_vizity, 'A:L').catch(() => []),
+        api(SHEETS.d_vizity, 'A:N').catch(() => []),
         S.data.plan ? Promise.resolve(S.data.plan) : api(SHEETS.plan, 'A:B').catch(() => []),
       ]).then(([dv, pd]) => { S.data.d_vizity = dv; S.data.plan = pd; renderOtchet(); });
     }
     if (S.reportTab === 'dept' && !S.data.d_vizity) {
       Promise.all([
-        api(SHEETS.d_vizity, 'A:L').catch(() => []),
+        api(SHEETS.d_vizity, 'A:N').catch(() => []),
       ]).then(([dv]) => { S.data.d_vizity = dv; if (S.reportTab === 'dept') renderOtchet(); });
     }
     if (!S.data.cnvrs) {
@@ -3800,7 +3800,7 @@ async function loadTab(tab) {
         if (el) el.innerHTML = loader();
         try {
           const [vd, pd] = await Promise.all([
-            S.data.vizity ? Promise.resolve(S.data.vizity) : api(SHEETS.vizity, 'A:J'),
+            S.data.vizity ? Promise.resolve(S.data.vizity) : api(SHEETS.vizity, 'A:N'),
             S.data.plan   ? Promise.resolve(S.data.plan)   : api(SHEETS.plan,   'A:B'),
           ]);
           S.data.vizity = vd; S.data.plan = pd;
@@ -3827,7 +3827,7 @@ async function loadTab(tab) {
       if (!S.data.d_vizity || !S.data.plan || !S.data.grafik) {
         if (el) el.innerHTML = loader();
         await Promise.all([
-          S.data.d_vizity ? Promise.resolve() : api(SHEETS.d_vizity, 'A:L').then(d => S.data.d_vizity = d).catch(() => S.data.d_vizity = []),
+          S.data.d_vizity ? Promise.resolve() : api(SHEETS.d_vizity, 'A:N').then(d => S.data.d_vizity = d).catch(() => S.data.d_vizity = []),
           S.data.plan     ? Promise.resolve() : api(SHEETS.plan,     'A:B').then(d => S.data.plan     = d).catch(() => S.data.plan     = []),
           S.data.grafik   ? Promise.resolve() : api(SHEETS.grafik,   'A1:AI25').then(d => S.data.grafik = d).catch(() => S.data.grafik = []),
         ]);
@@ -4664,7 +4664,7 @@ function setReportTab(tab) {
     const el = document.getElementById('c-otchet');
     el.innerHTML = loader();
     Promise.all([
-      api(SHEETS.d_vizity, 'A:L').catch(() => []),
+      api(SHEETS.d_vizity, 'A:N').catch(() => []),
       S.data.plan ? Promise.resolve(S.data.plan) : api(SHEETS.plan, 'A:B').catch(() => []),
     ]).then(([dv, pd]) => {
       S.data.d_vizity = dv;
@@ -4952,7 +4952,7 @@ function setDohodTab(tab) {
   if (tab === 'dozhim' && (!S.data.d_vizity || !S.data.plan)) {
     el.innerHTML = loader();
     Promise.all([
-      S.data.d_vizity ? Promise.resolve(S.data.d_vizity) : api(SHEETS.d_vizity, 'A:L').catch(() => []),
+      S.data.d_vizity ? Promise.resolve(S.data.d_vizity) : api(SHEETS.d_vizity, 'A:N').catch(() => []),
       S.data.plan     ? Promise.resolve(S.data.plan)     : api(SHEETS.plan,     'A:B').catch(() => []),
       S.data.grafik   ? Promise.resolve(S.data.grafik)   : api(SHEETS.grafik,   'A1:AI25').catch(() => []),
     ]).then(([dvizity, plan, grafik]) => {
@@ -6142,13 +6142,13 @@ async function backgroundPrefetch(matched) {
   const isDozhim = role === 'dozhim';
 
   const tasks = [];
-  if (!S.data.vizity)      tasks.push(() => api(SHEETS.vizity,  'A:J').then(d => S.data.vizity  = d).catch(()=>{}));
+  if (!S.data.vizity)      tasks.push(() => api(SHEETS.vizity,  'A:N').then(d => S.data.vizity  = d).catch(()=>{}));
   if (!S.data.plan)        tasks.push(() => api(SHEETS.plan,    'A:B').then(d => S.data.plan    = d).catch(()=>{}));
   if (!S.data.grafik)      tasks.push(() => api(SHEETS.grafik,  'A1:AI25').then(d => S.data.grafik = d).catch(()=>{}));
   if (!S.data.cnvrs)       tasks.push(() => api(SHEETS.cnvrs,   'A1:N40').then(d => S.data.cnvrs  = d).catch(()=>{}));
   if (!S.data.stavki)      tasks.push(() => api(SHEETS.stavki,  'A1:B25').then(d => S.data.stavki = d).catch(()=>{}));
   if (isCeo || isDozhim) {
-    if (!S.data.d_vizity)  tasks.push(() => api(SHEETS.d_vizity, 'A:L').then(d => S.data.d_vizity = d).catch(()=>{}));
+    if (!S.data.d_vizity)  tasks.push(() => api(SHEETS.d_vizity, 'A:N').then(d => S.data.d_vizity = d).catch(()=>{}));
   }
   if (!S.data.instruktsii) tasks.push(() => api(SHEETS.instruktsii, 'A1:C200').then(d => S.data.instruktsii = d).catch(()=>{}));
 
@@ -6189,10 +6189,10 @@ async function loadPersonal(matched) {
   const isDozhim = matched.role === 'dozhim';
   try {
     if (isDozhim) {
-      if (!S.data.d_vizity) S.data.d_vizity = await api(SHEETS.d_vizity, 'A:L').catch(() => []);
+      if (!S.data.d_vizity) S.data.d_vizity = await api(SHEETS.d_vizity, 'A:N').catch(() => []);
       if (!S.data.plan)     S.data.plan     = await api(SHEETS.plan,   'A:B').catch(() => []);
     } else {
-      if (!S.data.vizity) S.data.vizity = await api(SHEETS.vizity, 'A:J').catch(() => []);
+      if (!S.data.vizity) S.data.vizity = await api(SHEETS.vizity, 'A:N').catch(() => []);
       if (!S.data.plan)   S.data.plan   = await api(SHEETS.plan,   'A:B').catch(() => []);
       if (!S.data.stavki) {
         try { S.data.stavki = await api(SHEETS.stavki, 'A1:B25'); }
@@ -7054,7 +7054,7 @@ async function savePlanAndSverka() {
     S.sverkaMode = cb.checked;
     const newMode = S.sverkaMode ? 'Bad' : 'Good';
     try {
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent('USERS!J2')}?valueInputOption=RAW`;
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/USERS!J2?valueInputOption=RAW`;
       await fetch(url, {
         method: 'PUT',
         headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' },
@@ -7063,6 +7063,7 @@ async function savePlanAndSverka() {
       if (S.usersData && S.usersData[1]) S.usersData[1][9] = newMode;
       apiCacheInvalidate();
       S.data.vizity = null; S.data.d_vizity = null; S.data.otchet = null;
+      S.data.dohod = null; S.data.d_dohod = null;
     } catch(e) { console.warn('sverka save', e); }
   }
 
@@ -7463,7 +7464,7 @@ function switchRatingDept(dept) {
   if (dept === 'dozhim' && !S.data.d_vizity) {
     const el = document.getElementById('c-rating');
     if (el) el.innerHTML = loader();
-    api(SHEETS.d_vizity, 'A:L').then(d => { S.data.d_vizity = d; renderRating(); }).catch(() => { S.data.d_vizity = []; renderRating(); });
+    api(SHEETS.d_vizity, 'A:N').then(d => { S.data.d_vizity = d; renderRating(); }).catch(() => { S.data.d_vizity = []; renderRating(); });
     return;
   }
   renderRating();

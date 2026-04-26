@@ -1773,6 +1773,13 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
 /* ===== END TEASER OVERLAY ===== */
 /* ===== PLAN EDITOR ===== */
 .cfg-spoiler { border-bottom: 1px solid var(--line); }
+/* Toggle switch */
+.sverka-toggle { position:relative;display:inline-block;width:36px;height:20px;cursor:pointer;flex-shrink:0 }
+.sverka-toggle input { opacity:0;width:0;height:0;position:absolute }
+.sverka-slider { position:absolute;inset:0;background:var(--bg3);border:1px solid var(--line2);border-radius:20px;transition:background .2s }
+.sverka-slider::before { content:'';position:absolute;width:14px;height:14px;left:2px;top:2px;background:var(--txt3);border-radius:50%;transition:transform .2s,background .2s }
+.sverka-toggle input:checked + .sverka-slider { background:var(--acc-bg);border-color:var(--acc-bdr) }
+.sverka-toggle input:checked + .sverka-slider::before { transform:translateX(16px);background:var(--acc) }
 .cfg-spoiler:last-child { border-bottom: none; }
 .cfg-spoiler-hdr {
   display: flex; align-items: center; gap: 8px;
@@ -2212,11 +2219,18 @@ body.tiffany .vt-undo-btn,
 body.tiffany .center-login-btn,
 body.tiffany .report-subtab.active,
 body.tiffany .rating-dept-btn.on { color: #fff; }
-/* Cinematic: тёмный текст на янтарном фоне */
+/* Универсально: всегда белый текст на acc-заливке */
+.center-login-btn,
+.vt-add-btn,
+.vt-insert-zone-btn,
+.vt-undo-btn,
+.pe-save,
+.dock-popup-btn,
+[class*="btn"].btn-acc,
+button.acc-btn { color: #fff; }
+body.cinematic .center-login-btn,
 body.cinematic .vt-add-btn,
-body.cinematic .vt-insert-zone-btn,
-body.cinematic .vt-undo-btn,
-body.cinematic .center-login-btn { color: #080808; }
+body.cinematic .pe-save { color: #080808; }
 /* Активный пункт дока в светлых темах — чёрный текст */
 body.light .dock-btn.dock-active,
 body.tiffany .dock-btn.dock-active { color: #000 !important; }
@@ -2566,7 +2580,7 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
 /* Popup dropdowns */
 .dock-popup {
   position: absolute;
-  bottom: calc(100% + 8px);
+  bottom: calc(100% + 2px);
   left: 50%;
   transform: translateX(-50%);
   background: var(--bg2);
@@ -2576,8 +2590,15 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
   flex-direction: column;
   min-width: 140px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.4);
-  overflow: hidden;
+  overflow: visible;
   z-index: 400;
+}
+/* Невидимый мост между кнопкой и попапом — предотвращает исчезновение при движении мышью */
+.dock-popup::after {
+  content: '';
+  position: absolute;
+  bottom: -10px; left: 0; right: 0;
+  height: 12px;
 }
 .dock-popup.open {
   display: flex;
@@ -2716,6 +2737,13 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
     <div id="plan-editor-modal">
       <div class="pe-hdr">
         <span class="pe-title">Конфигурация</span>
+        <div style="display:flex;align-items:center;gap:10px;margin-left:auto;margin-right:12px">
+          <span style="font-size:10px;color:var(--txt2);font-family:'Unbounded',sans-serif;font-weight:700;letter-spacing:.04em">Сверка</span>
+          <label class="sverka-toggle" id="sverka-toggle-label" title="Режим сверки: считать только визиты с отметкой Да">
+            <input type="checkbox" id="sverka-toggle-cb" onchange="onSverkaToggle(this.checked)">
+            <span class="sverka-slider"></span>
+          </label>
+        </div>
         <button class="pe-close" onclick="closePlanEditor()">×</button>
       </div>
       <div class="pe-body" id="pe-body">
@@ -2767,13 +2795,13 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
   </div>
 
   <!-- О нас -->
-  <div id="about-overlay" onclick="if(event.target===this)closeAbout()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);z-index:600;align-items:center;justify-content:center;padding:16px">
-    <div id="about-modal" style="background:var(--bg2);border:1px solid var(--line2);border-radius:var(--r2);max-width:480px;width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden">
+  <div id="about-overlay" onclick="if(event.target===this)closeAbout()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);z-index:700;align-items:center;justify-content:center;padding:16px 16px calc(88px + env(safe-area-inset-bottom,0px) + 16px)">
+    <div id="about-modal" style="background:var(--bg2);border:1px solid var(--line2);border-radius:var(--r2);max-width:480px;width:100%;max-height:100%;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden">
       <div class="pe-hdr">
         <span class="pe-title">О проекте</span>
         <button class="pe-close" onclick="closeAbout()">×</button>
       </div>
-      <div style="overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 16px;flex:1">
+      <div style="overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 16px calc(20px + env(safe-area-inset-bottom, 0px));flex:1;touch-action:pan-y">
         <div style="display:flex;flex-direction:column;gap:16px">
           <!-- О проекте -->
           <div>
@@ -2845,7 +2873,7 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
                   </ul>
                 </div>
                 <div>
-                  <div style="font-family:'Unbounded',sans-serif;font-size:10px;font-weight:900;color:var(--txt3)">v1.0 — 2025 декабрь</div>
+                  <div style="font-family:'Unbounded',sans-serif;font-size:10px;font-weight:900;color:var(--txt3)">v1.0 — 2026 март</div>
                   <ul style="margin:6px 0 0 16px;line-height:1.8">
                     <li>Первый релиз: ОТЧЁТ, ДОХОД, ГРАФИК, FAQ</li>
                     <li>Google OAuth2 + Sheets API v4</li>
@@ -2965,6 +2993,9 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
         </button>
         <button class="dock-popup-btn" onclick="dockKpi('dozhim')">
           <span class="dock-popup-dot" style="background:#ffa502"></span>ДОЖИМ
+        </button>
+        <button class="dock-popup-btn" id="dock-kpi-itogi-btn" onclick="dockKpiItogi()">
+          <span class="dock-popup-dot" style="background:var(--grn)"></span>Итоги
         </button>
       </div>
     </div>
@@ -3205,8 +3236,19 @@ function toggleHmbMonth(e) {
   const sub = document.getElementById('hmb-month-sub');
   const trigger = document.getElementById('hmb-month-trigger');
   if (!sub) return;
-  const isOpen = sub.style.display !== 'none';
-  if (isOpen) { sub.style.display = 'none'; trigger.classList.remove('expanded'); return; }
+  const isOpen = sub.style.display === 'flex';
+  if (isOpen) {
+    sub.style.display = 'none';
+    if (trigger) trigger.classList.remove('expanded');
+    return;
+  }
+  // Закрываем тему если открыта
+  const tSub = document.getElementById('hmb-theme-sub');
+  const tTrig = document.querySelector('.hmb-theme-trigger');
+  if (tSub && tSub.classList.contains('open')) {
+    tSub.classList.remove('open');
+    if (tTrig) tTrig.classList.remove('expanded');
+  }
   // Строим список месяцев
   sub.innerHTML = '';
   for (let i = 0; i < 6; i++) {
@@ -3223,7 +3265,7 @@ function toggleHmbMonth(e) {
   }
   sub.style.display = 'flex';
   sub.style.flexDirection = 'column';
-  trigger.classList.add('expanded');
+  if (trigger) trigger.classList.add('expanded');
 }
 updateBadge();
 
@@ -3949,7 +3991,8 @@ function buildCrmStats(vizData) {
 
   for (let i = 1; i < vizData.length; i++) {
     const row = vizData[i];
-    if (!row || !row[8]) continue; // col I = менеджер (0-based: 8)
+    if (!row || !row[8]) continue;
+    if (!isSverkaRow(row)) continue; // фильтр сверки
     const mgr  = String(row[8]).trim();
     const mgrL = mgr.toLowerCase();
     if (!mgr) continue;
@@ -4012,7 +4055,8 @@ function buildDozhimStats(dVizData) {
 
   for (let i = 1; i < dVizData.length; i++) {
     const row = dVizData[i];
-    if (!row || !row[8]) continue; // col I = менеджер
+    if (!row || !row[8]) continue;
+    if (!isSverkaRow(row)) continue; // фильтр сверки
     const mgr  = String(row[8]).trim();
     const mgrL = mgr.toLowerCase();
     if (!mgr) continue;
@@ -6067,6 +6111,7 @@ async function loadUsersAndStart() {
       hdrGreeting.style.display = '';
     }
     showPlanEditBtnIfCeo(matched);
+    initSverkaToggle();
     checkBirthdayNotifications();
     checkSelfBirthday();
     if (matched.role === 'ceo') {
@@ -6976,7 +7021,63 @@ function init() {
 if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
 else init();
 
-// ==================== DOCK NAVIGATION ====================
+// ==================== SVERKA MODE ====================
+S.sverkaMode = false;
+
+function getSverkaMode() {
+  if (!S.usersData) return false;
+  const row = S.usersData[0]; // header row ignored; check row 1 for global mode
+  // Look for any row with 'Mode' column J (col index 9)
+  for (let i = 1; i < S.usersData.length; i++) {
+    const r = S.usersData[i];
+    const mode = (r[9]||'').trim().toLowerCase();
+    if (mode === 'good' || mode === 'bad') return mode === 'bad'; // bad = sverka on
+  }
+  return false;
+}
+
+function initSverkaToggle() {
+  S.sverkaMode = getSverkaMode();
+  const cb = document.getElementById('sverka-toggle-cb');
+  if (cb) cb.checked = S.sverkaMode;
+}
+
+async function onSverkaToggle(checked) {
+  S.sverkaMode = checked;
+  // Save to USERS sheet col J for all rows (set global mode in row 1)
+  if (!S.usersData || !S.token) return;
+  const newMode = checked ? 'Bad' : 'Good';
+  try {
+    // Update col J for all data rows
+    const updates = [];
+    for (let i = 1; i < S.usersData.length; i++) {
+      S.usersData[i][9] = newMode;
+      updates.push({
+        range: `USERS!J${i+1}`,
+        values: [[newMode]]
+      });
+    }
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values:batchUpdate`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ valueInputOption: 'RAW', data: updates })
+    });
+    toast('Режим сверки ' + (checked ? 'включён' : 'выключён'), 's');
+    // Сбрасываем кеш данных чтобы пересчитать
+    apiCacheInvalidate();
+    S.data.vizity = null; S.data.d_vizity = null;
+    S.data.otchet = null; S.data.d_otchet = null;
+  } catch(e) { toast('Ошибка сохранения', 'e'); }
+}
+
+// Добавляем фильтр сверки в buildCrmStats и buildDozhimStats через wrapper
+const _origBuildCrmStats = typeof buildCrmStats === 'function' ? buildCrmStats : null;
+
+function isSverkaRow(row) {
+  if (!S.sverkaMode) return true; // режим выкл — все строки
+  const sverka = (row[13]||'').trim().toLowerCase();
+  return sverka === 'да' || sverka === 'yes';
+}
 function dockSetActive(id) {
   ['home','kpi','rating','dohod','grafik','instruktsii','vizity'].forEach(k => {
     const btn = document.getElementById('dock-btn-' + k);
@@ -7046,6 +7147,13 @@ function dockKpiToggle(e) {
     dockKpi(dept); return;
   }
   openDockPopup('dock-kpi-popup');
+}
+
+function dockKpiItogi() {
+  closeAllDockPopups();
+  S.reportTab = 'dept';
+  goTab('otchet');
+  dockSetActive('kpi');
 }
 
 function dockKpi(dept) {
@@ -7181,13 +7289,20 @@ function renderRating() {
   // Доход менеджера (CRM only — dozhim calcSalaryDozhimFromVizity)
   function getMgrSalary(nameLow) {
     try {
+      let sal;
       if (dept === 'dozhim') {
-        const sal = calcSalaryDozhimFromVizity ? calcSalaryDozhimFromVizity(nameLow) : null;
-        return sal ? sal.fact : null;
+        sal = calcSalaryDozhimFromVizity(nameLow);
+        return sal ? Math.round(sal.fact.total) : null;
       }
-      const sal = calcSalary(nameLow);
-      return sal ? sal.fact.total : null;
+      sal = calcSalary(nameLow);
+      return sal ? Math.round(sal.fact.total) : null;
     } catch(e) { return null; }
+  }
+
+  function blurSalary(v) {
+    // Заменяем каждую цифру на похожую цифру (имитация затёртого числа)
+    const s = String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `<span style="filter:blur(4px);user-select:none;letter-spacing:1px;color:var(--txt3)">${s} ₽</span>`;
   }
 
   // Toggle для CEO
@@ -7213,7 +7328,23 @@ function renderRating() {
       </div>
     </div>`;
 
-  const medals = ['🥇','🥈','🥉'];
+  function getMgrLinks(nameLow) {
+    if (!S.usersData) return { tg: null, max: null };
+    for (let i = 1; i < S.usersData.length; i++) {
+      const row = S.usersData[i];
+      if ((row[1]||'').toLowerCase().trim() === nameLow) {
+        return { tg: (row[7]||'').trim() || null, max: (row[8]||'').trim() || null };
+      }
+    }
+    return { tg: null, max: null };
+  }
+
+  function messengerIcons(links) {
+    let html = '';
+    if (links.tg) html += `<a href="${links.tg}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Telegram" style="color:var(--txt3);transition:color .15s;text-decoration:none" onmouseover="this.style.color='#2CA5E0'" onmouseout="this.style.color='var(--txt3)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8l-1.68 7.93c-.12.55-.44.69-.9.43l-2.48-1.83-1.2 1.16c-.13.13-.25.25-.5.25l.18-2.52 4.56-4.12c.2-.18-.04-.27-.3-.1L7.92 14.45l-2.42-.75c-.52-.17-.53-.52.11-.77l9.48-3.66c.43-.16.82.11.55.53z"/></svg></a>`;
+    if (links.max) html += `<a href="${links.max}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="MAX" style="color:var(--txt3);transition:color .15s;text-decoration:none;margin-left:4px" onmouseover="this.style.color='#7B61FF'" onmouseout="this.style.color='var(--txt3)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg></a>`;
+    return html ? `<span style="display:inline-flex;align-items:center;gap:2px;margin-left:4px">${html}</span>` : '';
+  }
   const rankColors = [
     { strip:'#FFD700', bg:'rgba(255,215,0,0.12)', num:'rgba(255,215,0,0.2)', numTxt:'#FFD700' },
     { strip:'#C0C0C0', bg:'rgba(192,192,192,0.08)', num:'rgba(192,192,192,0.15)', numTxt:'#C0C0C0' },
@@ -7234,8 +7365,10 @@ function renderRating() {
     const nl = m.name.toLowerCase();
     const isMe = nl === myName;
     const sal = getMgrSalary(nl);
+    const links = getMgrLinks(nl);
+    const messengerHtml = messengerIcons(links);
     const salDisplay = sal !== null
-      ? (isCeo || isMe) ? fmtRub(sal) : '★★★★'
+      ? (isCeo || isMe) ? fmtRub(Math.round(sal)) : blurSalary(sal)
       : null;
 
     return `
@@ -7244,7 +7377,7 @@ function renderRating() {
         <div class="rating-card-top">
           <div class="rating-rank-num" style="background:${rankNumBg};color:${rankNumColor}">${idx+1}</div>
           <div class="rating-card-name">
-            <div class="rating-card-name-text">${m.name.toUpperCase()}</div>
+            <div class="rating-card-name-text" style="display:flex;align-items:center;gap:4px">${m.name.toUpperCase()}${messengerHtml}</div>
             ${salDisplay ? `<div style="font-size:10px;color:var(--acc);margin-top:2px;font-weight:700">${salDisplay}</div>` : ''}
           </div>
           ${medal}
@@ -8109,8 +8242,21 @@ function toggleHmbTheme(e) {
   e.stopPropagation();
   const sub = document.getElementById('hmb-theme-sub');
   const trigger = e.currentTarget;
-  sub.classList.toggle('open');
-  trigger.classList.toggle('expanded');
+  const isOpen = sub.classList.contains('open');
+  if (isOpen) {
+    sub.classList.remove('open');
+    trigger.classList.remove('expanded');
+  } else {
+    // Закрываем месяц если открыт
+    const mSub = document.getElementById('hmb-month-sub');
+    const mTrig = document.getElementById('hmb-month-trigger');
+    if (mSub && mSub.style.display !== 'none') {
+      mSub.style.display = 'none';
+      if (mTrig) mTrig.classList.remove('expanded');
+    }
+    sub.classList.add('open');
+    trigger.classList.add('expanded');
+  }
 }
 
 // ==================== LOGIN LIQUID GRADIENT ====================

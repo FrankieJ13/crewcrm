@@ -7031,15 +7031,12 @@ else init();
 document.getElementById('dock-block-overlay')?.remove();
 
 // ==================== SVERKA MODE ====================
+// Читаем режим сверки из localStorage при старте
+S.sverkaMode = localStorage.getItem('crm_sverka') === '1';
 
 function getSverkaMode() {
-  if (!S.usersData) return false;
-  for (let i = 1; i < S.usersData.length; i++) {
-    const mode = (S.usersData[i][9]||'').trim().toLowerCase();
-    if (mode === 'bad') return true;
-    if (mode === 'good') return false;
-  }
-  return false;
+  // Читаем из localStorage — мгновенно доступно
+  return localStorage.getItem('crm_sverka') === '1';
 }
 
 function initSverkaToggle() {
@@ -7050,21 +7047,13 @@ function initSverkaToggle() {
 
 async function savePlanAndSverka() {
   const cb = document.getElementById('sverka-toggle-cb');
-  if (cb && S.token) {
+  if (cb) {
     S.sverkaMode = cb.checked;
-    const newMode = S.sverkaMode ? 'Bad' : 'Good';
-    try {
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/USERS!J2?valueInputOption=RAW`;
-      await fetch(url, {
-        method: 'PUT',
-        headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ values: [[newMode]] })
-      });
-      if (S.usersData && S.usersData[1]) S.usersData[1][9] = newMode;
-      apiCacheInvalidate();
-      S.data.vizity = null; S.data.d_vizity = null; S.data.otchet = null;
-      S.data.dohod = null; S.data.d_dohod = null;
-    } catch(e) { console.warn('sverka save', e); }
+    // Сохраняем в localStorage — мгновенно, надёжно
+    localStorage.setItem('crm_sverka', S.sverkaMode ? '1' : '0');
+    apiCacheInvalidate();
+    S.data.vizity = null; S.data.d_vizity = null;
+    S.data.otchet = null; S.data.dohod = null; S.data.d_dohod = null;
   }
 
   // Сохраняем планы только если есть поля (спойлер открыт)
@@ -7377,7 +7366,7 @@ function renderRating() {
   function messengerIcons(links) {
     let html = '';
     if (links.tg) html += `<a href="${links.tg}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Telegram" style="color:var(--txt3);transition:color .15s;text-decoration:none" onmouseover="this.style.color='#2CA5E0'" onmouseout="this.style.color='var(--txt3)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8l-1.68 7.93c-.12.55-.44.69-.9.43l-2.48-1.83-1.2 1.16c-.13.13-.25.25-.5.25l.18-2.52 4.56-4.12c.2-.18-.04-.27-.3-.1L7.92 14.45l-2.42-.75c-.52-.17-.53-.52.11-.77l9.48-3.66c.43-.16.82.11.55.53z"/></svg></a>`;
-    if (links.max) html += `<a href="${links.max}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="MAX" style="color:var(--txt3);transition:color .15s;text-decoration:none;margin-left:4px" onmouseover="this.style.color='#7B61FF'" onmouseout="this.style.color='var(--txt3)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg></a>`;
+    if (links.max) html += `<a href="${links.max}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="MAX" style="display:inline-flex;text-decoration:none;margin-left:4px" onmouseover="this.querySelector('svg').style.opacity='1'" onmouseout="this.querySelector('svg').style.opacity='0.5'"><svg width="14" height="14" viewBox="0 0 100 100" style="opacity:0.5;transition:opacity .15s" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="22" fill="#005FF9"/><path d="M18 75V25l18 0 14 20 14-20 18 0V75H66V48L50 68 34 48v27Z" fill="#fff"/></svg></a>`;
     return html ? `<span style="display:inline-flex;align-items:center;gap:2px;margin-left:4px">${html}</span>` : '';
   }
   const rankColors = [

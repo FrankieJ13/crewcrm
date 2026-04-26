@@ -2093,6 +2093,12 @@ body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.
 .rating-dept-btn.on {
   background: var(--acc-bg); border-color: var(--acc); color: var(--acc);
 }
+body.light .rating-dept-btn.on {
+  background: rgba(81,55,221,0.12); border-color: #5137dd; color: #5137dd;
+}
+body.tiffany .rating-dept-btn.on {
+  background: rgba(143,179,174,0.25); border-color: #5CACBD; color: #5CACBD;
+}
 .rating-summary {
   display: grid; grid-template-columns: repeat(3,1fr); gap: 8px;
   margin-bottom: 16px;
@@ -2465,7 +2471,11 @@ details[open] .vt-week-sum .vt-week-chevron { transform: rotate(90deg); }
   font-family:'Golos Text',sans-serif;
 }
 .vt-week-sum-line2 b { color:var(--txt2); }
-/* Scroll buttons — removed */
+@media (hover: none) {
+  /* Запрет копирования текста на тач-устройствах */
+  .rating-card-stat, .rating-card-name-text, .rating-card-pct,
+  .mop-name, .mop-mini, .dept-card { -webkit-user-select: none; user-select: none; }
+}
 /* ===== END VIZITY TABLE ===== */
 
 /* ===== DOCK v2 ===== */
@@ -2591,7 +2601,7 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
   flex-direction: column;
   min-width: 140px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.4);
-  overflow: visible;
+  overflow: hidden;
   z-index: 400;
 }
 /* Невидимый мост между кнопкой и попапом — предотвращает исчезновение при движении мышью */
@@ -2994,7 +3004,7 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
         <button class="dock-popup-btn" onclick="dockKpi('dozhim')">
           <span class="dock-popup-dot" style="background:#ffa502"></span>ДОЖИМ
         </button>
-        <button class="dock-popup-btn" onclick="dockKpiItogi()">
+        <button class="dock-popup-btn" id="dock-kpi-itogi" onclick="dockKpiItogi()">
           <span class="dock-popup-dot" style="background:var(--grn)"></span>Итоги
         </button>
       </div>
@@ -3538,7 +3548,6 @@ function onLogin() {
   const ls = document.getElementById('scr-login');
   ls.classList.remove('on'); ls.style.display = 'none'; document.body.classList.remove('login-active');
   if (window._loginLiquidCleanup) window._loginLiquidCleanup();
-  toast('Приветствую!', 's');
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab==='otchet'));
   showScr('otchet');
   loadTab('otchet');
@@ -3854,6 +3863,13 @@ async function loadTab(tab) {
 
 function reloadCurrent() {
   // На странице Отчёта — перезагружаем только журнал визитов
+  if (document.getElementById('scr-rating')?.classList.contains('on')) {
+    apiCacheInvalidate();
+    S.data.vizity=null; S.data.d_vizity=null; S.data.plan=null;
+    S.data.stavki=null; S.data.d_stavki=null;
+    loadRating().then(() => toast('Обновлено','s'));
+    return;
+  }
   if (document.getElementById('scr-vizity')?.classList.contains('on')) {
     apiCacheInvalidate(vizSheetName());
     S.vizRows = [];
@@ -5578,7 +5594,7 @@ function showPlanEditBtnIfCeo(matched) {
   if (hmb) hmb.style.display = isCeo ? '' : 'none';
   if (sep) sep.style.display = isCeo ? '' : 'none';
   // Показываем/скрываем "Итоги" в KPI — только для НЕ-CEO
-  const itogiBtn = document.querySelector('#dock-kpi-popup .dock-popup-btn:last-child');
+  const itogiBtn = document.getElementById('dock-kpi-itogi');
   if (itogiBtn) itogiBtn.style.display = isCeo ? 'none' : '';
   ['dock-vizity-popup','dock-dohod-popup'].forEach(pid => {
     const p = document.getElementById(pid);
@@ -7031,11 +7047,18 @@ else init();
 document.getElementById('dock-block-overlay')?.remove();
 
 // ==================== SVERKA MODE ====================
-// Читаем режим сверки из localStorage при старте
+// Читаем режим сверки из localStorage при старте (до загрузки USERS)
 S.sverkaMode = localStorage.getItem('crm_sverka') === '1';
 
 function getSverkaMode() {
-  // Читаем из localStorage — мгновенно доступно
+  if (S.usersData) {
+    for (let i = 1; i < S.usersData.length; i++) {
+      const mode = (S.usersData[i][9]||'').trim().toLowerCase();
+      if (mode === 'bad') return true;
+      if (mode === 'good') return false;
+    }
+  }
+  // Фолбэк: localStorage
   return localStorage.getItem('crm_sverka') === '1';
 }
 
@@ -7047,13 +7070,31 @@ function initSverkaToggle() {
 
 async function savePlanAndSverka() {
   const cb = document.getElementById('sverka-toggle-cb');
-  if (cb) {
+  if (cb && S.token) {
     S.sverkaMode = cb.checked;
-    // Сохраняем в localStorage — мгновенно, надёжно
-    localStorage.setItem('crm_sverka', S.sverkaMode ? '1' : '0');
-    apiCacheInvalidate();
-    S.data.vizity = null; S.data.d_vizity = null;
-    S.data.otchet = null; S.data.dohod = null; S.data.d_dohod = null;
+    const newMode = S.sverkaMode ? 'Bad' : 'Good';
+    try {
+      const resp = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values:batchUpdate`,
+        {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            valueInputOption: 'RAW',
+            data: [{ range: 'USERS!J2', values: [[newMode]] }]
+          })
+        }
+      );
+      if (!resp.ok) { const t=await resp.text(); console.error('sverka',resp.status,t); }
+      else {
+        if (S.usersData && S.usersData[1]) S.usersData[1][9] = newMode;
+        // localStorage как резерв
+        localStorage.setItem('crm_sverka', S.sverkaMode ? '1' : '0');
+        apiCacheInvalidate();
+        S.data.vizity=null; S.data.d_vizity=null;
+        S.data.otchet=null; S.data.dohod=null; S.data.d_dohod=null;
+      }
+    } catch(e) { console.error('sverka save',e); }
   }
 
   // Сохраняем планы только если есть поля (спойлер открыт)
@@ -7324,9 +7365,8 @@ function renderRating() {
   }
 
   function blurSalary(v) {
-    // Заменяем каждую цифру на похожую цифру (имитация затёртого числа)
     const s = String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `<span style="filter:blur(4px);user-select:none;letter-spacing:1px;color:var(--txt3)">${s} ₽</span>`;
+    return `<span style="filter:blur(4px);user-select:none;-webkit-user-select:none;pointer-events:none;letter-spacing:1px;color:var(--txt3)">${s} ₽</span>`;
   }
 
   // Toggle для CEO
@@ -7366,7 +7406,7 @@ function renderRating() {
   function messengerIcons(links) {
     let html = '';
     if (links.tg) html += `<a href="${links.tg}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Telegram" style="color:var(--txt3);transition:color .15s;text-decoration:none" onmouseover="this.style.color='#2CA5E0'" onmouseout="this.style.color='var(--txt3)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8l-1.68 7.93c-.12.55-.44.69-.9.43l-2.48-1.83-1.2 1.16c-.13.13-.25.25-.5.25l.18-2.52 4.56-4.12c.2-.18-.04-.27-.3-.1L7.92 14.45l-2.42-.75c-.52-.17-.53-.52.11-.77l9.48-3.66c.43-.16.82.11.55.53z"/></svg></a>`;
-    if (links.max) html += `<a href="${links.max}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="MAX" style="display:inline-flex;text-decoration:none;margin-left:4px" onmouseover="this.querySelector('svg').style.opacity='1'" onmouseout="this.querySelector('svg').style.opacity='0.5'"><svg width="14" height="14" viewBox="0 0 100 100" style="opacity:0.5;transition:opacity .15s" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="22" fill="#005FF9"/><path d="M18 75V25l18 0 14 20 14-20 18 0V75H66V48L50 68 34 48v27Z" fill="#fff"/></svg></a>`;
+    if (links.max) html += `<a href="${links.max}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="MAX" style="display:inline-flex;text-decoration:none;margin-left:4px;opacity:0.7;transition:opacity .15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'"><svg width="14" height="14" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#7B61FF"/><text x="50" y="67" text-anchor="middle" font-family="Arial Black,sans-serif" font-size="52" font-weight="900" fill="#fff" letter-spacing="-2">M</text></svg></a>`;
     return html ? `<span style="display:inline-flex;align-items:center;gap:2px;margin-left:4px">${html}</span>` : '';
   }
   const rankColors = [
@@ -7401,7 +7441,7 @@ function renderRating() {
       <div class="rating-card ${rankClass}">
         <div class="rating-card-strip" style="background:${stripColor}"></div>
         <div class="rating-card-top">
-          <div class="rating-rank-num" style="background:${rankNumBg};color:${rankNumColor}">${idx+1}</div>
+          <div class="rating-rank-num" style="background:${rankNumBg};color:${rankNumColor};font-size:${isTop?'16px':'10px'}">${isTop ? medals[idx] : idx+1}</div>
           <div class="rating-card-name">
             <div class="rating-card-name-text" style="display:flex;align-items:center;gap:4px">${m.name.toUpperCase()}${messengerHtml}</div>
             ${salDisplay ? `<div style="font-size:10px;color:var(--acc);margin-top:2px;font-weight:700">${salDisplay}</div>` : ''}

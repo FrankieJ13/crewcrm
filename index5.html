@@ -3280,6 +3280,7 @@ const S = {
   faqTab: 'instr',
   ratingDept: null,
   silentRefresh: false,
+  sverkaMode: false,
 };
 
 /* ══ THEME ══ */
@@ -7027,7 +7028,6 @@ if (document.readyState==='loading') document.addEventListener('DOMContentLoaded
 else init();
 
 // ==================== SVERKA MODE ====================
-S.sverkaMode = false;
 
 function getSverkaMode() {
   if (!S.usersData) return false;
@@ -7047,26 +7047,21 @@ function initSverkaToggle() {
 
 async function savePlanAndSverka() {
   const cb = document.getElementById('sverka-toggle-cb');
-  if (cb && S.token && S.usersData) {
+  if (cb && S.token) {
     S.sverkaMode = cb.checked;
     const newMode = S.sverkaMode ? 'Bad' : 'Good';
-    const updates = [];
-    for (let i = 1; i < S.usersData.length; i++) {
-      S.usersData[i][9] = newMode;
-      updates.push({ range: `USERS!J${i+1}`, values: [[newMode]] });
-    }
-    if (updates.length) {
-      try {
-        await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values:batchUpdate`, {
-          method: 'POST',
-          headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ valueInputOption: 'RAW', data: updates })
-        });
-        apiCacheInvalidate();
-        S.data.vizity = null; S.data.d_vizity = null;
-        S.data.otchet = null;
-      } catch(e) { console.warn('sverka save', e); }
-    }
+    // Сохраняем только в J2 — глобальный флаг
+    try {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent('USERS!J2')}?valueInputOption=RAW`;
+      await fetch(url, {
+        method: 'PUT',
+        headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: [[newMode]] })
+      });
+      if (S.usersData && S.usersData[1]) S.usersData[1][9] = newMode;
+      apiCacheInvalidate();
+      S.data.vizity = null; S.data.d_vizity = null; S.data.otchet = null;
+    } catch(e) { console.warn('sverka save', e); }
   }
   savePlan();
 }
@@ -7074,17 +7069,23 @@ async function savePlanAndSverka() {
 function openPlanEditorWithSverka() {
   openPlanEditor();
   initSverkaToggle();
-  const dock = document.getElementById('main-dock');
-  if (dock) { dock.style.pointerEvents = 'none'; dock.style.opacity = '0.35'; }
+  // Блокируем dock через overlay а не opacity — opacity вызывает layout issues
+  let dockOverlay = document.getElementById('dock-block-overlay');
+  if (!dockOverlay) {
+    dockOverlay = document.createElement('div');
+    dockOverlay.id = 'dock-block-overlay';
+    dockOverlay.style.cssText = 'position:fixed;inset:0;z-index:199;';
+    document.body.appendChild(dockOverlay);
+  }
+  dockOverlay.style.display = 'block';
 }
 
 function closePlanEditorFull() {
   const overlay = document.getElementById('plan-editor-overlay');
-  overlay.classList.remove('open');
-  overlay.style.display = 'none';
+  if (overlay) { overlay.classList.remove('open'); overlay.style.display = 'none'; }
   document.body.style.overflow = '';
-  const dock = document.getElementById('main-dock');
-  if (dock) { dock.style.pointerEvents = ''; dock.style.opacity = ''; }
+  const dockOverlay = document.getElementById('dock-block-overlay');
+  if (dockOverlay) dockOverlay.style.display = 'none';
 }
 function dockSetActive(id) {
   ['home','kpi','rating','dohod','grafik','instruktsii','vizity'].forEach(k => {
@@ -8210,11 +8211,12 @@ function hmbGoPersonal() {
 
 function openAbout() {
   const overlay = document.getElementById('about-overlay');
-  if (overlay) { overlay.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+  if (overlay) { overlay.style.display = 'flex'; }
+  // НЕ трогаем body.overflow — это ломает position:fixed на iOS
 }
 function closeAbout() {
   const overlay = document.getElementById('about-overlay');
-  if (overlay) { overlay.style.display = 'none'; document.body.style.overflow = ''; }
+  if (overlay) { overlay.style.display = 'none'; }
 }
 
 // ==================== HAMBURGER MENU ====================

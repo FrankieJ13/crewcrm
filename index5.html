@@ -7027,6 +7027,9 @@ function init() {
 if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
 else init();
 
+// Убираем возможные висящие оверлеи от предыдущих сессий
+document.getElementById('dock-block-overlay')?.remove();
+
 // ==================== SVERKA MODE ====================
 
 function getSverkaMode() {
@@ -7102,23 +7105,12 @@ async function savePlanAndSverka() {
 function openPlanEditorWithSverka() {
   openPlanEditor();
   initSverkaToggle();
-  // Блокируем dock через overlay а не opacity — opacity вызывает layout issues
-  let dockOverlay = document.getElementById('dock-block-overlay');
-  if (!dockOverlay) {
-    dockOverlay = document.createElement('div');
-    dockOverlay.id = 'dock-block-overlay';
-    dockOverlay.style.cssText = 'position:fixed;inset:0;z-index:199;';
-    document.body.appendChild(dockOverlay);
-  }
-  dockOverlay.style.display = 'block';
 }
 
 function closePlanEditorFull() {
   const overlay = document.getElementById('plan-editor-overlay');
   if (overlay) { overlay.classList.remove('open'); overlay.style.display = 'none'; }
   document.body.style.overflow = '';
-  const dockOverlay = document.getElementById('dock-block-overlay');
-  if (dockOverlay) dockOverlay.style.display = 'none';
 }
 function dockSetActive(id) {
   ['home','kpi','rating','dohod','grafik','instruktsii','vizity'].forEach(k => {

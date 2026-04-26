@@ -536,7 +536,6 @@ body.tiffany .hdr-greeting.aurora {
 .hmb-chevron { margin-left: auto; flex-shrink: 0; transition: transform .15s; }
 .hmb-theme-trigger.expanded .hmb-chevron { transform: rotate(90deg); }
 .hmb-theme-sub { display: none; flex-direction: column; background: var(--bg3); }
-.hmb-theme-sub.open { display: flex; }
 .hmb-sub-item { padding-left: 28px; font-size: 12px; }
 /* Hamburger backdrop blur */
 #hamburger-backdrop {
@@ -2219,15 +2218,17 @@ body.tiffany .vt-undo-btn,
 body.tiffany .center-login-btn,
 body.tiffany .report-subtab.active,
 body.tiffany .rating-dept-btn.on { color: #fff; }
-/* Универсально: всегда белый текст на acc-заливке */
-.center-login-btn,
-.vt-add-btn,
-.vt-insert-zone-btn,
-.vt-undo-btn,
-.pe-save,
-.dock-popup-btn,
-[class*="btn"].btn-acc,
-button.acc-btn { color: #fff; }
+/* Светлые темы: белый текст на acc-заливке */
+body.light .center-login-btn,
+body.light .vt-add-btn,
+body.light .vt-insert-zone-btn,
+body.light .vt-undo-btn,
+body.light .pe-save,
+body.tiffany .center-login-btn,
+body.tiffany .vt-add-btn,
+body.tiffany .vt-insert-zone-btn,
+body.tiffany .vt-undo-btn,
+body.tiffany .pe-save { color: #fff; }
 body.cinematic .center-login-btn,
 body.cinematic .vt-add-btn,
 body.cinematic .pe-save { color: #080808; }
@@ -2665,7 +2666,6 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
             <path d="M8 16H3v5"/>
           </svg>
         </button>
-        <div id="hamburger-backdrop" onclick="closeHamburger()"></div>
         <div style="position:relative;flex-shrink:0" id="hamburger-wrap">
           <button class="btn-icon" id="btn-hamburger" onclick="toggleHamburger(event)" title="Меню">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -2712,7 +2712,7 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
               </button>
             </div>
             <div class="hmb-sep" id="hmb-sep-plan" style="display:none"></div>
-            <button class="hmb-item" id="hmb-plan-edit" onclick="openPlanEditor();closeHamburger()" style="display:none">
+            <button class="hmb-item" id="hmb-plan-edit" onclick="openPlanEditorWithSverka();closeHamburger()" style="display:none">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
               <span>Конфигурация</span>
             </button>
@@ -2733,18 +2733,18 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
   </header>
 
   <!-- PLAN EDITOR OVERLAY -->
-  <div id="plan-editor-overlay" style="display:none" onclick="if(event.target===this)closePlanEditor()">
+  <div id="plan-editor-overlay" style="display:none" onclick="if(event.target===this)closePlanEditorFull()">
     <div id="plan-editor-modal">
       <div class="pe-hdr">
         <span class="pe-title">Конфигурация</span>
         <div style="display:flex;align-items:center;gap:10px;margin-left:auto;margin-right:12px">
           <span style="font-size:10px;color:var(--txt2);font-family:'Unbounded',sans-serif;font-weight:700;letter-spacing:.04em">Сверка</span>
           <label class="sverka-toggle" id="sverka-toggle-label" title="Режим сверки: считать только визиты с отметкой Да">
-            <input type="checkbox" id="sverka-toggle-cb" onchange="onSverkaToggle(this.checked)">
+            <input type="checkbox" id="sverka-toggle-cb">
             <span class="sverka-slider"></span>
           </label>
         </div>
-        <button class="pe-close" onclick="closePlanEditor()">×</button>
+        <button class="pe-close" onclick="closePlanEditorFull()">×</button>
       </div>
       <div class="pe-body" id="pe-body">
         <!-- Спойлер 1: Планы -->
@@ -2787,8 +2787,8 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
         </details>
       </div>
       <div class="pe-footer">
-        <button class="pe-save" id="pe-save-btn" onclick="savePlan()">Сохранить</button>
-        <button class="pe-cancel" onclick="closePlanEditor()">Отмена</button>
+        <button class="pe-save" id="pe-save-btn" onclick="savePlanAndSverka()">Сохранить</button>
+        <button class="pe-cancel" onclick="closePlanEditorFull()">Отмена</button>
         <span class="pe-status" id="pe-status"></span>
       </div>
     </div>
@@ -2994,7 +2994,7 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
         <button class="dock-popup-btn" onclick="dockKpi('dozhim')">
           <span class="dock-popup-dot" style="background:#ffa502"></span>ДОЖИМ
         </button>
-        <button class="dock-popup-btn" id="dock-kpi-itogi-btn" onclick="dockKpiItogi()">
+        <button class="dock-popup-btn" onclick="dockKpiItogi()">
           <span class="dock-popup-dot" style="background:var(--grn)"></span>Итоги
         </button>
       </div>
@@ -3969,9 +3969,14 @@ function computeDailyPlan(plan, fact, progNum, suffix, name) {
 
 // ==================== RENDER OTCHET ====================
 // ==================== CRM STATS FROM ВИЗИТЫ ====================
+// Фильтр сверки — должен быть ДО buildCrmStats/buildDozhimStats
+function isSverkaRow(row) {
+  if (!S || !S.sverkaMode) return true;
+  const sverka = (row[13]||'').trim().toLowerCase();
+  return sverka === 'да' || sverka === 'yes';
+}
+
 // Строит агрегат по каждому менеджеру из листа ВИЗИТЫ
-// Возвращает Map: nameLow → { vis800, vis1200, kred800, nal800, obmen800, kom800,
-//   kred1200, nal1200, obmen1200, kom1200, zadatok, vsalone, vkso, vfssп, vbanke, otkaz }
 function buildCrmStats(vizData) {
   const mgrs = {};
   if (!vizData || vizData.length < 2) return mgrs;
@@ -7026,12 +7031,10 @@ S.sverkaMode = false;
 
 function getSverkaMode() {
   if (!S.usersData) return false;
-  const row = S.usersData[0]; // header row ignored; check row 1 for global mode
-  // Look for any row with 'Mode' column J (col index 9)
   for (let i = 1; i < S.usersData.length; i++) {
-    const r = S.usersData[i];
-    const mode = (r[9]||'').trim().toLowerCase();
-    if (mode === 'good' || mode === 'bad') return mode === 'bad'; // bad = sverka on
+    const mode = (S.usersData[i][9]||'').trim().toLowerCase();
+    if (mode === 'bad') return true;
+    if (mode === 'good') return false;
   }
   return false;
 }
@@ -7042,41 +7045,46 @@ function initSverkaToggle() {
   if (cb) cb.checked = S.sverkaMode;
 }
 
-async function onSverkaToggle(checked) {
-  S.sverkaMode = checked;
-  // Save to USERS sheet col J for all rows (set global mode in row 1)
-  if (!S.usersData || !S.token) return;
-  const newMode = checked ? 'Bad' : 'Good';
-  try {
-    // Update col J for all data rows
+async function savePlanAndSverka() {
+  const cb = document.getElementById('sverka-toggle-cb');
+  if (cb && S.token && S.usersData) {
+    S.sverkaMode = cb.checked;
+    const newMode = S.sverkaMode ? 'Bad' : 'Good';
     const updates = [];
     for (let i = 1; i < S.usersData.length; i++) {
       S.usersData[i][9] = newMode;
-      updates.push({
-        range: `USERS!J${i+1}`,
-        values: [[newMode]]
-      });
+      updates.push({ range: `USERS!J${i+1}`, values: [[newMode]] });
     }
-    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values:batchUpdate`, {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ valueInputOption: 'RAW', data: updates })
-    });
-    toast('Режим сверки ' + (checked ? 'включён' : 'выключён'), 's');
-    // Сбрасываем кеш данных чтобы пересчитать
-    apiCacheInvalidate();
-    S.data.vizity = null; S.data.d_vizity = null;
-    S.data.otchet = null; S.data.d_otchet = null;
-  } catch(e) { toast('Ошибка сохранения', 'e'); }
+    if (updates.length) {
+      try {
+        await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values:batchUpdate`, {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ valueInputOption: 'RAW', data: updates })
+        });
+        apiCacheInvalidate();
+        S.data.vizity = null; S.data.d_vizity = null;
+        S.data.otchet = null;
+      } catch(e) { console.warn('sverka save', e); }
+    }
+  }
+  savePlan();
 }
 
-// Добавляем фильтр сверки в buildCrmStats и buildDozhimStats через wrapper
-const _origBuildCrmStats = typeof buildCrmStats === 'function' ? buildCrmStats : null;
+function openPlanEditorWithSverka() {
+  openPlanEditor();
+  initSverkaToggle();
+  const dock = document.getElementById('main-dock');
+  if (dock) { dock.style.pointerEvents = 'none'; dock.style.opacity = '0.35'; }
+}
 
-function isSverkaRow(row) {
-  if (!S.sverkaMode) return true; // режим выкл — все строки
-  const sverka = (row[13]||'').trim().toLowerCase();
-  return sverka === 'да' || sverka === 'yes';
+function closePlanEditorFull() {
+  const overlay = document.getElementById('plan-editor-overlay');
+  overlay.classList.remove('open');
+  overlay.style.display = 'none';
+  document.body.style.overflow = '';
+  const dock = document.getElementById('main-dock');
+  if (dock) { dock.style.pointerEvents = ''; dock.style.opacity = ''; }
 }
 function dockSetActive(id) {
   ['home','kpi','rating','dohod','grafik','instruktsii','vizity'].forEach(k => {
@@ -8242,19 +8250,21 @@ function toggleHmbTheme(e) {
   e.stopPropagation();
   const sub = document.getElementById('hmb-theme-sub');
   const trigger = e.currentTarget;
-  const isOpen = sub.classList.contains('open');
+  if (!sub) return;
+  const isOpen = sub.style.display === 'flex';
   if (isOpen) {
-    sub.classList.remove('open');
+    sub.style.display = 'none';
     trigger.classList.remove('expanded');
   } else {
     // Закрываем месяц если открыт
     const mSub = document.getElementById('hmb-month-sub');
     const mTrig = document.getElementById('hmb-month-trigger');
-    if (mSub && mSub.style.display !== 'none') {
+    if (mSub && mSub.style.display === 'flex') {
       mSub.style.display = 'none';
       if (mTrig) mTrig.classList.remove('expanded');
     }
-    sub.classList.add('open');
+    sub.style.display = 'flex';
+    sub.style.flexDirection = 'column';
     trigger.classList.add('expanded');
   }
 }
@@ -8655,5 +8665,6 @@ function toggleHmbTheme(e) {
 })();
 </script>
 <!-- ===== END TEASER OVERLAY ===== -->
+<div id="hamburger-backdrop" onclick="closeHamburger()"></div>
 </body>
 </html>

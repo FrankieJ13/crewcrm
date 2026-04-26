@@ -435,8 +435,8 @@ header {
   -webkit-text-fill-color: transparent;
   animation: aurora-text-flow 30s linear infinite;
   filter:
-    drop-shadow(0 0 14px rgba(0, 194, 255, .7))
-    drop-shadow(0 0 28px rgba(51, 255, 140, .4));
+    drop-shadow(0 0 7px rgba(0, 194, 255, .35))
+    drop-shadow(0 0 14px rgba(51, 255, 140, .2));
 }
 /* Светлые темы: белое внешнее свечение для читаемости */
 body.light .hdr-title-main.aurora,
@@ -538,6 +538,14 @@ body.tiffany .hdr-greeting.aurora {
 .hmb-theme-sub { display: none; flex-direction: column; background: var(--bg3); }
 .hmb-theme-sub.open { display: flex; }
 .hmb-sub-item { padding-left: 28px; font-size: 12px; }
+/* Hamburger backdrop blur */
+#hamburger-backdrop {
+  display: none;
+  position: fixed; inset: 0; z-index: 299;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  background: rgba(0,0,0,.15);
+}
 /* hide old standalone buttons still referenced by JS */
 #btn-out, #btn-plan-edit { display: none !important; }
 #theme-btn-wrap { display: none !important; }
@@ -2636,6 +2644,7 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
             <path d="M8 16H3v5"/>
           </svg>
         </button>
+        <div id="hamburger-backdrop" onclick="closeHamburger()"></div>
         <div style="position:relative;flex-shrink:0" id="hamburger-wrap">
           <button class="btn-icon" id="btn-hamburger" onclick="toggleHamburger(event)" title="Меню">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -2681,7 +2690,7 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
                 <span class="theme-swatch" style="background:linear-gradient(135deg,#080808,#c8a96e)"></span>Cinematic
               </button>
             </div>
-            <div class="hmb-sep"></div>
+            <div class="hmb-sep" id="hmb-sep-plan" style="display:none"></div>
             <button class="hmb-item" id="hmb-plan-edit" onclick="openPlanEditor();closeHamburger()" style="display:none">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
               <span>Конфигурация</span>
@@ -2691,7 +2700,7 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16" stroke-width="2.5"/></svg>
               <span>О проекте</span>
             </button>
-            <div class="hmb-sep"></div>
+            <div class="hmb-sep" id="hmb-sep-logout" style="display:none"></div>
             <button class="hmb-item hmb-danger" id="hmb-logout" onclick="onLogout();closeHamburger()" style="display:none">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
               <span>Выйти</span>
@@ -2764,7 +2773,7 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
         <span class="pe-title">О проекте</span>
         <button class="pe-close" onclick="closeAbout()">×</button>
       </div>
-      <div style="overflow-y:auto;padding:20px 16px;flex:1">
+      <div style="overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 16px;flex:1">
         <div style="display:flex;flex-direction:column;gap:16px">
           <!-- О проекте -->
           <div>
@@ -3479,6 +3488,7 @@ function onLogin() {
   document.getElementById('main-dock').style.display = 'flex';
   // Hamburger: сразу показываем Выйти + Месяц
   const hmbl = document.getElementById('hmb-logout'); if (hmbl) hmbl.style.display = '';
+  const hmbsl = document.getElementById('hmb-sep-logout'); if (hmbsl) hmbsl.style.display = '';
   const hmbm = document.getElementById('hmb-month-trigger'); if (hmbm) hmbm.style.display = '';
   const hmbms = document.getElementById('hmb-sep-month'); if (hmbms) hmbms.style.display = '';
   updateBadge();
@@ -3523,6 +3533,7 @@ function onLogout() {
   document.getElementById('main-nav').style.display  = 'none';
   document.getElementById('main-dock').style.display = 'none';
   const hmbl2 = document.getElementById('hmb-logout'); if (hmbl2) hmbl2.style.display = 'none';
+  const hmbsl2 = document.getElementById('hmb-sep-logout'); if (hmbsl2) hmbsl2.style.display = 'none';
   const hmbAcc2 = document.getElementById('hmb-account-btn'); if (hmbAcc2) hmbAcc2.style.display = 'none';
   const hmbAccSep2 = document.getElementById('hmb-sep-account'); if (hmbAccSep2) hmbAccSep2.style.display = 'none';
   const hdrMain2 = document.getElementById('hdr-title');
@@ -7157,11 +7168,27 @@ function renderRating() {
   }
 
   managers.sort((a, b) => b.progNum - a.progNum);
-  const total = managers.length;
+  // Фильтруем тех у кого нет визитов вообще
+  managers = managers.filter(m => m.vis > 0 || m.plan > 0);
+  const total    = managers.length;
   const totalVis  = managers.reduce((s, m) => s + m.vis, 0);
   const totalPlan = managers.reduce((s, m) => s + m.plan, 0);
   const avgProg   = total > 0 ? Math.round(managers.reduce((s,m) => s+m.progNum,0)/total) : 0;
   const maxProg   = total > 0 ? Math.max(...managers.map(m => m.progNum)) : 1;
+
+  const myName = (matched?.name || '').toLowerCase();
+
+  // Доход менеджера (CRM only — dozhim calcSalaryDozhimFromVizity)
+  function getMgrSalary(nameLow) {
+    try {
+      if (dept === 'dozhim') {
+        const sal = calcSalaryDozhimFromVizity ? calcSalaryDozhimFromVizity(nameLow) : null;
+        return sal ? sal.fact : null;
+      }
+      const sal = calcSalary(nameLow);
+      return sal ? sal.fact.total : null;
+    } catch(e) { return null; }
+  }
 
   // Toggle для CEO
   const deptToggle = isCeo ? `
@@ -7173,16 +7200,16 @@ function renderRating() {
   const summaryHTML = `
     <div class="rating-summary">
       <div class="rating-sum-cell">
+        <div class="rating-sum-lbl">План</div>
+        <div class="rating-sum-val">${totalPlan || '—'}</div>
+      </div>
+      <div class="rating-sum-cell">
         <div class="rating-sum-lbl">Визиты</div>
         <div class="rating-sum-val accent">${totalVis || '—'}</div>
       </div>
       <div class="rating-sum-cell">
-        <div class="rating-sum-lbl">Прогноз ср.</div>
+        <div class="rating-sum-lbl">Прогноз</div>
         <div class="rating-sum-val" style="color:${pctClr(avgProg)}">${avgProg}%</div>
-      </div>
-      <div class="rating-sum-cell">
-        <div class="rating-sum-lbl">План отдела</div>
-        <div class="rating-sum-val">${totalPlan || '—'}</div>
       </div>
     </div>`;
 
@@ -7204,6 +7231,13 @@ function renderRating() {
     const medal = isTop ? `<span class="rating-card-medal">${medals[idx]}</span>` : '';
     const rankClass = isTop ? `rank-${idx+1}` : '';
 
+    const nl = m.name.toLowerCase();
+    const isMe = nl === myName;
+    const sal = getMgrSalary(nl);
+    const salDisplay = sal !== null
+      ? (isCeo || isMe) ? fmtRub(sal) : '★★★★'
+      : null;
+
     return `
       <div class="rating-card ${rankClass}">
         <div class="rating-card-strip" style="background:${stripColor}"></div>
@@ -7211,6 +7245,7 @@ function renderRating() {
           <div class="rating-rank-num" style="background:${rankNumBg};color:${rankNumColor}">${idx+1}</div>
           <div class="rating-card-name">
             <div class="rating-card-name-text">${m.name.toUpperCase()}</div>
+            ${salDisplay ? `<div style="font-size:10px;color:var(--acc);margin-top:2px;font-weight:700">${salDisplay}</div>` : ''}
           </div>
           ${medal}
           <div>
@@ -7222,8 +7257,7 @@ function renderRating() {
           <div class="rating-card-bar-fill" data-w="${barW}" style="width:0%;background:${pctColor}"></div>
         </div>
         <div class="rating-card-stats">
-          <div class="rating-card-stat highlight"><span>Визитов</span><b>${m.vis}</b></div>
-          <div class="rating-card-stat"><span>План</span><b>${m.plan||'—'}</b></div>
+          <div class="rating-card-stat highlight"><span>Визитов</span><b>${m.vis}/${m.plan||'—'}</b></div>
           ${m.kred ? `<div class="rating-card-stat"><span>Кред.</span><b>${m.kred}</b></div>` : ''}
           ${m.nal  ? `<div class="rating-card-stat"><span>Нал.</span><b>${m.nal}</b></div>` : ''}
           ${m.kom  ? `<div class="rating-card-stat"><span>Ком.</span><b>${m.kom}</b></div>` : ''}
@@ -8046,10 +8080,9 @@ function closeAbout() {
 function toggleHamburger(e) {
   e.stopPropagation();
   const dd = document.getElementById('hamburger-dropdown');
+  const bd = document.getElementById('hamburger-backdrop');
   dd.classList.toggle('open');
-  if (dd.classList.contains('open')) {
-    setTimeout(() => document.addEventListener('click', closeHamburgerOutside), 0);
-  }
+  if (bd) bd.classList.toggle('open', dd.classList.contains('open'));
 }
 function closeHamburgerOutside(e) {
   const wrap = document.getElementById('hamburger-wrap');
@@ -8060,6 +8093,16 @@ function closeHamburgerOutside(e) {
 }
 function closeHamburger() {
   document.getElementById('hamburger-dropdown')?.classList.remove('open');
+  document.getElementById('hamburger-backdrop')?.classList.remove('open');
+  // Сворачиваем подменю при закрытии
+  const themeSub = document.getElementById('hmb-theme-sub');
+  const monthSub = document.getElementById('hmb-month-sub');
+  const themeTrigger = document.querySelector('.hmb-theme-trigger');
+  const monthTrigger = document.getElementById('hmb-month-trigger');
+  if (themeSub) themeSub.style.display = 'none';
+  if (monthSub) monthSub.style.display = 'none';
+  if (themeTrigger) themeTrigger.classList.remove('expanded');
+  if (monthTrigger) monthTrigger.classList.remove('expanded');
   document.removeEventListener('click', closeHamburgerOutside);
 }
 function toggleHmbTheme(e) {

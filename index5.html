@@ -65,7 +65,219 @@ body.light {
   --org:     #c97800;
   --m4-bg:   #8a8a8a;
 }
-/* ══ CINEMATIC THEME ══ */
+/* ══ NEUMORPHISM DARK THEME ══ */
+body.neo-dark {
+  /* Базовые цвета */
+  --bg:      #1e2028;
+  --bg2:     #242731;
+  --bg3:     #1a1d25;
+  --line:    #2a2d38;
+  --line2:   #32364a;
+  --txt:     #e2e4ef;
+  --txt2:    #8b8fa8;
+  --txt3:    #4a4d62;
+  --acc:     #7c6af7;
+  --acc-bg:  rgba(124,106,247,.12);
+  --acc-bdr: rgba(124,106,247,.35);
+  --red:     #f05d6a;
+  --grn:     #4ecb84;
+  --blu:     #4ea8f5;
+  --org:     #f5a442;
+  --r:       12px;
+  --r2:      18px;
+  --m4-bg:   #1a1d25;
+
+  /* Тени неоморфизма — тёмная тема */
+  --shadow-light:       3px 3px 8px rgba(255,255,255,.04);
+  --shadow-dark:        -3px -3px 8px rgba(0,0,0,.55);
+  --shadow-inset-light:  inset 2px 2px 5px rgba(255,255,255,.04);
+  --shadow-inset-dark:   inset -2px -2px 5px rgba(0,0,0,.5);
+
+  /* Комбо-тень raised */
+  --neo-shadow-raised:
+    4px 4px 10px rgba(0,0,0,.55),
+    -4px -4px 10px rgba(255,255,255,.04);
+
+  /* Комбо-тень pressed/inset */
+  --neo-shadow-inset:
+    inset 3px 3px 7px rgba(0,0,0,.5),
+    inset -3px -3px 7px rgba(255,255,255,.04);
+}
+
+/* ══ NEUMORPHISM LIGHT THEME ══ */
+body.neo-light {
+  /* Базовые цвета */
+  --bg:      #e8ecf1;
+  --bg2:     #eef2f7;
+  --bg3:     #dde3ec;
+  --line:    #d2d8e4;
+  --line2:   #c4ccdb;
+  --txt:     #2d3148;
+  --txt2:    #6b7494;
+  --txt3:    #a0a8c0;
+  --acc:     #5a7ef0;
+  --acc-bg:  rgba(90,126,240,.1);
+  --acc-bdr: rgba(90,126,240,.4);
+  --red:     #e04a5a;
+  --grn:     #2eba72;
+  --blu:     #3a82e8;
+  --org:     #e09030;
+  --r:       12px;
+  --r2:      18px;
+  --m4-bg:   #8a8a8a;
+
+  /* Тени неоморфизма — светлая тема (классический soft UI) */
+  --shadow-light:       -4px -4px 10px rgba(255,255,255,.85);
+  --shadow-dark:         4px 4px 10px rgba(180,190,210,.6);
+  --shadow-inset-light:  inset -3px -3px 7px rgba(255,255,255,.8);
+  --shadow-inset-dark:   inset 3px 3px 7px rgba(180,190,210,.55);
+
+  /* Комбо-тень raised */
+  --neo-shadow-raised:
+    -5px -5px 12px rgba(255,255,255,.85),
+     5px  5px 12px rgba(180,190,210,.6);
+
+  /* Комбо-тень pressed/inset */
+  --neo-shadow-inset:
+    inset -4px -4px 8px rgba(255,255,255,.8),
+    inset  4px  4px 8px rgba(180,190,210,.55);
+}
+
+/* ══ NEUMORPHISM UI КЛАССЫ ══ */
+
+/* Raised card — приподнятый блок */
+body.neo-dark .neo-card,
+body.neo-light .neo-card {
+  background: var(--bg);
+  border-radius: var(--r2);
+  border: none;
+  box-shadow: var(--neo-shadow-raised);
+  transition: box-shadow .2s ease;
+}
+body.neo-dark .neo-card:hover,
+body.neo-light .neo-card:hover {
+  box-shadow:
+    var(--neo-shadow-raised),
+    0 0 0 1px var(--acc-bdr);
+}
+
+/* Inset block — вдавленный блок */
+body.neo-dark .neo-inset,
+body.neo-light .neo-inset {
+  background: var(--bg);
+  border-radius: var(--r);
+  border: none;
+  box-shadow: var(--neo-shadow-inset);
+}
+
+/* Button */
+body.neo-dark .neo-btn,
+body.neo-light .neo-btn {
+  background: var(--bg);
+  color: var(--txt);
+  border: none;
+  border-radius: var(--r);
+  padding: 10px 18px;
+  cursor: pointer;
+  box-shadow: var(--neo-shadow-raised);
+  transition: box-shadow .15s ease, transform .1s ease;
+  font-family: 'Golos Text', sans-serif;
+  font-size: 13px;
+}
+body.neo-dark .neo-btn:hover,
+body.neo-light .neo-btn:hover {
+  box-shadow:
+    6px 6px 14px rgba(0,0,0,.6),
+    -6px -6px 14px rgba(255,255,255,.06);
+}
+body.neo-light .neo-btn:hover {
+  box-shadow:
+    -7px -7px 16px rgba(255,255,255,.9),
+     7px  7px 16px rgba(180,190,210,.7);
+}
+body.neo-dark .neo-btn:active,
+body.neo-light .neo-btn:active {
+  box-shadow: var(--neo-shadow-inset);
+  transform: scale(.98);
+}
+body.neo-dark .neo-btn.accent,
+body.neo-light .neo-btn.accent {
+  color: var(--acc);
+}
+
+/* Input */
+body.neo-dark .neo-input,
+body.neo-light .neo-input {
+  background: var(--bg);
+  color: var(--txt);
+  border: none;
+  border-radius: var(--r);
+  padding: 9px 14px;
+  box-shadow: var(--neo-shadow-inset);
+  outline: none;
+  width: 100%;
+  font-family: 'Golos Text', sans-serif;
+  font-size: 13px;
+  transition: box-shadow .15s ease;
+}
+body.neo-dark .neo-input:focus,
+body.neo-light .neo-input:focus {
+  box-shadow:
+    var(--neo-shadow-inset),
+    0 0 0 2px var(--acc-bdr);
+}
+
+/* Применяем neo-card к стандартным карточкам в neo-темах */
+body.neo-dark .dept-card,
+body.neo-dark .mop,
+body.neo-dark .zp-row,
+body.neo-dark .rating-card,
+body.neo-light .dept-card,
+body.neo-light .mop,
+body.neo-light .zp-row,
+body.neo-light .rating-card {
+  border: none !important;
+  box-shadow: var(--neo-shadow-raised);
+  background: var(--bg);
+}
+
+/* Inset для полей ввода */
+body.neo-dark .vt-field input,
+body.neo-dark .vt-field select,
+body.neo-dark .vt-field textarea,
+body.neo-light .vt-field input,
+body.neo-light .vt-field select,
+body.neo-light .vt-field textarea {
+  border: none !important;
+  box-shadow: var(--neo-shadow-inset);
+  background: var(--bg);
+}
+
+/* Dock */
+body.neo-dark .dock-container,
+body.neo-light .dock-container {
+  border: none !important;
+  box-shadow: var(--neo-shadow-raised);
+  background: var(--bg);
+}
+
+/* Header */
+body.neo-dark header,
+body.neo-light header {
+  border-bottom: none !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15), var(--shadow-dark);
+  background: var(--bg);
+}
+
+/* Хэндлы активного состояния кнопок */
+body.neo-dark .dock-btn.dock-active,
+body.neo-light .dock-btn.dock-active {
+  box-shadow: var(--neo-shadow-inset);
+  color: var(--acc);
+  background: var(--bg);
+}
+
+/* ══ КОНЕЦ NEUMORPHISM ══ */
 body.cinematic {
   --bg:      #080808;
   --bg2:     #101010;
@@ -2728,6 +2940,12 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
               <button class="hmb-item hmb-sub-item" onclick="applyTheme('cinematic');closeHamburger()" id="htd-cinematic">
                 <span class="theme-swatch" style="background:linear-gradient(135deg,#080808,#c8a96e)"></span>Cinematic
               </button>
+              <button class="hmb-item hmb-sub-item" onclick="applyTheme('neo-dark');closeHamburger()" id="htd-neo-dark">
+                <span class="theme-swatch" style="background:linear-gradient(135deg,#1e2028,#7c6af7)"></span>Neo Dark
+              </button>
+              <button class="hmb-item hmb-sub-item" onclick="applyTheme('neo-light');closeHamburger()" id="htd-neo-light">
+                <span class="theme-swatch" style="background:linear-gradient(135deg,#e8ecf1,#5a7ef0)"></span>Neo Light
+              </button>
             </div>
             <div class="hmb-sep" id="hmb-sep-plan" style="display:none"></div>
             <button class="hmb-item" id="hmb-plan-edit" onclick="openPlanEditorWithSverka();closeHamburger()" style="display:none">
@@ -3318,13 +3536,15 @@ const S = {
 };
 
 /* ══ THEME ══ */
-const THEMES = ['dark', 'light', 'tiffany', 'cinematic'];
+const THEMES = ['dark', 'light', 'tiffany', 'cinematic', 'neo-dark', 'neo-light'];
 
 function applyTheme(theme) {
-  document.body.classList.remove('light', 'tiffany', 'cinematic');
+  document.body.classList.remove('light', 'tiffany', 'cinematic', 'neo-dark', 'neo-light');
   if (theme === 'light')      document.body.classList.add('light');
   if (theme === 'tiffany')    document.body.classList.add('tiffany');
   if (theme === 'cinematic')  document.body.classList.add('cinematic');
+  if (theme === 'neo-dark')   document.body.classList.add('neo-dark');
+  if (theme === 'neo-light')  document.body.classList.add('neo-light');
   localStorage.setItem('crm_theme', theme);
   // Обновляем активный пункт в дропдауне
   THEMES.forEach(t => {
@@ -3350,7 +3570,7 @@ function toggleThemeDropdown(e) {
 
 function syncTheme() {
   const b = document.body.classList;
-  const isLight = b.contains('light') || b.contains('tiffany');
+  const isLight = b.contains('light') || b.contains('tiffany') || b.contains('neo-light');
   // Cinematic — тёмная тема, используем тёмный логотип
   const logoD = document.getElementById('logo-dark');
   const logoL = document.getElementById('logo-light');

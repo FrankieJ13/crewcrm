@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0"/>
 <meta name="theme-color" content="#0d0d0d"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<title>CRM Dashboard</title>
+<title>CRM Crew Dashboard / CM66</title>
 <link rel="manifest" href="manifest.json"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -1181,6 +1181,13 @@ body.light .zp-row {
   font-size:10px; font-weight:700; color:var(--acc);
   margin-top:3px; border-top:1px solid var(--line);
   padding-top:3px;
+}
+.sched-day-hdr.understaffed {
+  animation: understaffedBlink 1.4s ease-in-out infinite;
+}
+@keyframes understaffedBlink {
+  0%,100% { background: rgba(220,38,38,0.18); }
+  50%      { background: rgba(37,99,235,0.18); }
 }
 .sched-day-hdr.today { background:var(--acc-bg); border:1px solid var(--acc-bdr); }
 .sched-day-hdr.today .sd-num { color:var(--acc) }
@@ -2827,7 +2834,7 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
         <div style="display:flex;flex-direction:column;gap:16px">
           <!-- О проекте -->
           <div>
-            <div style="font-family:'Unbounded',sans-serif;font-size:11px;font-weight:800;color:var(--acc);letter-spacing:.06em;margin-bottom:8px">Crystal Motors CRM Dashboard</div>
+            <div style="font-family:'Unbounded',sans-serif;font-size:11px;font-weight:800;color:var(--acc);letter-spacing:.06em;margin-bottom:8px">CRM Crew Dashboard / CM66</div>
             <p style="font-size:13px;color:var(--txt2);line-height:1.6;margin:0">
               Внутренний дашборд для команды Crystal Motors — сети автосалонов с 12 городами присутствия. Создан как замена ручным отчётам и разрозненным таблицам.
             </p>
@@ -2857,9 +2864,13 @@ body.light .dock-btn:active { background: rgba(0,0,0,0.06); }
           </div>
           <div style="background:var(--bg3);border-radius:var(--r);padding:10px 12px;border:1px solid var(--line)">
             <div style="font-size:10px;color:var(--txt3)">Автор</div>
-            <div style="font-family:'Unbounded',sans-serif;font-size:12px;font-weight:800;color:var(--acc);margin-top:2px">Бочаров Ю.С.</div>
-            <div style="font-size:11px;color:var(--txt2);margin-top:2px">frankiej13 · Crystal Motors · 2026</div>
-            <div id="about-author-links" style="display:none;margin-top:8px;gap:8px;align-items:center"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px">
+              <div>
+                <div style="font-family:'Unbounded',sans-serif;font-size:12px;font-weight:800;color:var(--acc)">Бочаров Ю.С.</div>
+                <div style="font-size:11px;color:var(--txt2);margin-top:2px">frankiej13 · Crystal Motors · 2026</div>
+              </div>
+              <div id="about-author-links" style="display:none;gap:6px;align-items:center;flex-shrink:0;margin-left:10px"></div>
+            </div>
           </div>
           <!-- Чейнджлист -->
           <details class="cfg-spoiler" style="margin:0">
@@ -4212,7 +4223,8 @@ function getPlanMap(planData) {
 
 // Глобальная функция иконок мессенджеров по имени менеджера
 function maxIconSvg(size) {
-  return `<svg width="${size}" height="${size}" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg"><use href="#maxIconSymbol"/></svg>`;
+  const path = "M508.211 878.328c-75.007 0-109.864-10.95-170.453-54.75-38.325 49.275-159.686 87.783-164.979 21.9 0-49.456-10.95-91.248-23.36-136.873-14.782-56.21-31.572-118.807-31.572-209.508 0-216.626 177.754-379.597 388.357-379.597 210.786 0 375.947 171.001 375.947 381.604.707 207.347-166.595 376.118-373.94 377.224m3.103-571.585c-102.564-5.292-182.499 65.7-200.201 177.024-14.6 92.162 11.315 204.398 33.397 210.238 10.585 2.555 37.23-18.98 53.837-35.587a189.8 189.8 0 0 0 92.71 33.032c106.273 5.112 197.08-75.794 204.215-181.95 4.154-106.382-77.67-196.486-183.958-202.574z";
+  return `<svg width="${size}" height="${size}" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg"><circle class="max-circle" cx="500" cy="500" r="500"/><path fill="#fff" fill-rule="evenodd" d="${path}" clip-rule="evenodd"/></svg>`;
 }
 
 function getMgrMessengerHtml(name) {
@@ -5145,9 +5157,12 @@ function renderGrafik() {
   const workerCounts = weekDays.map((_, wi) =>
     crmPeople.filter(p => (p.cells[wi]||'').toLowerCase().trim() === 'р').length
   );
-  const hdrs = week.map((d, wi) =>
-    `<div class="sched-day-hdr${isToday(d.day) ? ' today' : ''}"><div class="sd-num">${d.day}</div><div class="sd-dow">${DOW[d.dow]}</div><div class="sd-workers">${workerCounts[wi]}</div></div>`
-  ).join('');
+  const hdrs = week.map((d, wi) => {
+    const cnt = workerCounts[wi];
+    const under = cnt < 6 && cnt > 0 ? ' understaffed' : '';
+    const today = isToday(d.day) ? ' today' : '';
+    return `<div class="sched-day-hdr${today}${under}"><div class="sd-num">${d.day}</div><div class="sd-dow">${DOW[d.dow]}</div><div class="sd-workers">${cnt}</div></div>`;
+  }).join('');
   const weekHeader = `<div class="sched-week">${hdrs}</div>`;
 
   // 5. Карточки
@@ -8667,7 +8682,7 @@ function toggleHmbTheme(e) {
   <div class="t-vignette"></div>
   <div class="t-scanlines"></div>
   <header class="t-topbar">
-    <span class="t-brand">Crystal Motors — CRM System</span>
+    <span class="t-brand">CRM Crew Dashboard / CM66</span>
     <div class="t-status"><div class="t-dot"></div><span>В разработке</span></div>
   </header>
   <div class="t-stage">
@@ -8785,10 +8800,6 @@ function toggleHmbTheme(e) {
       <stop offset="0%" stop-color="#44CCFF" stop-opacity="0.45"/>
       <stop offset="100%" stop-color="#9933DD" stop-opacity="0.45"/>
     </linearGradient>
-    <symbol id="maxIconSymbol" viewBox="0 0 1000 1000">
-      <circle class="max-circle" cx="500" cy="500" r="500"/>
-      <path fill="#fff" fill-rule="evenodd" d="M508.211 878.328c-75.007 0-109.864-10.95-170.453-54.75-38.325 49.275-159.686 87.783-164.979 21.9 0-49.456-10.95-91.248-23.36-136.873-14.782-56.21-31.572-118.807-31.572-209.508 0-216.626 177.754-379.597 388.357-379.597 210.786 0 375.947 171.001 375.947 381.604.707 207.347-166.595 376.118-373.94 377.224m3.103-571.585c-102.564-5.292-182.499 65.7-200.201 177.024-14.6 92.162 11.315 204.398 33.397 210.238 10.585 2.555 37.23-18.98 53.837-35.587a189.8 189.8 0 0 0 92.71 33.032c106.273 5.112 197.08-75.794 204.215-181.95 4.154-106.382-77.67-196.486-183.958-202.574z" clip-rule="evenodd"/>
-    </symbol>
   </defs>
 </svg>
 <div id="hamburger-backdrop" onclick="closeHamburger()"></div>

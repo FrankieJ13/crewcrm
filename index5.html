@@ -7081,20 +7081,28 @@ async function savePlanAndSverka() {
     S.sverkaMode = newMode === 'On';
     localStorage.setItem('crm_sverka', S.sverkaMode ? '1' : '0');
     try {
-      const resp = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values:batchUpdate`,
-        {
-          method: 'POST',
-          headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ valueInputOption: 'RAW', data: [{ range: 'USERS!J2', values: [[newMode]] }] })
-        }
-      );
+      // Точно такой же PUT как при сохранении визитов
+      const range = encodeURIComponent('USERS!J2:J2');
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
+      const resp = await fetch(url, {
+        method: 'PUT',
+        headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: [[newMode]] })
+      });
       if (resp.ok) {
         if (S.usersData && S.usersData[1]) S.usersData[1][9] = newMode;
         apiCacheInvalidate();
         S.data.vizity=null; S.data.d_vizity=null; S.data.otchet=null; S.data.dohod=null; S.data.d_dohod=null;
+        toast('Режим сверки: ' + (S.sverkaMode ? 'Вкл' : 'Выкл'), 's');
+      } else {
+        const err = await resp.text();
+        console.error('sverka PUT', resp.status, err);
+        toast('Ошибка сохранения сверки', 'e');
       }
-    } catch(e) { console.error('sverka save', e); }
+    } catch(e) {
+      console.error('sverka save', e);
+      toast('Ошибка сохранения сверки', 'e');
+    }
   }
 
   // Сохраняем планы только если есть поля (спойлер открыт)

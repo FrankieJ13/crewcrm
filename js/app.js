@@ -10,7 +10,7 @@ const CFG = {
   CLIENT_ID: '364532815329-0j1lkobb1v9vcserj6artf64nd95a0la.apps.googleusercontent.com',
   SHEET_ID:  '1DeUsHB_O1SbIMR4p5yd64o_R0yllWvtnyNhjxjhipn8',
 };
-const ASSET_BASE = './logos/';
+const ASSET_BASE = new URL('./logos/', document.baseURI).href;
 const DEFAULT_ICON_BASE = ASSET_BASE + 'default/';
 
 /* ══ MONTH STATE ══ */

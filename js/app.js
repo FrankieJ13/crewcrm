@@ -5275,12 +5275,12 @@ function renderVizRow(row, dept, locked, isFirstOfDate) {
 function getVizSverkaMark(value) {
   const s = String(value || '').trim().toLowerCase();
   if (s === 'да' || s === 'yes') {
-    return `<span class="vt-sverka-mark yes" title="Сверено">✓</span>`;
+    return `<span class="vt-sverka-mark yes" title="Сверено" aria-label="Сверено" style="--sverka-icon:url('${DEFAULT_ICON_BASE}s_verified.svg')"><i></i></span>`;
   }
   if (s === 'нет' || s === 'no') {
-    return `<span class="vt-sverka-mark no" title="Не прошел сверку">×</span>`;
+    return `<span class="vt-sverka-mark no" title="Не прошел сверку" aria-label="Не прошел сверку" style="--sverka-icon:url('${DEFAULT_ICON_BASE}s_not-verified.svg')"><i></i></span>`;
   }
-  return `<span class="vt-sverka-mark empty" title="Визит проверяется...">!</span>`;
+  return `<span class="vt-sverka-mark empty" title="Визит проверяется..." aria-label="Визит проверяется" style="--sverka-icon:url('${DEFAULT_ICON_BASE}s_check.svg')"><i></i></span>`;
 }
 
 function getVizChipTone(label) {

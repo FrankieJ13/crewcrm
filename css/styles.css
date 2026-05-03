@@ -3260,9 +3260,13 @@ body.neo-light .vt-row-card:nth-child(even) {
   width:14px; height:14px; min-width:14px; max-width:14px;
   border-radius:999px; box-sizing:border-box; padding:0;
   display:inline-flex; align-items:center; justify-content:center;
-  font-family:'Unbounded',sans-serif; font-size:8px; font-weight:900;
   line-height:14px; flex:0 0 14px; border:1px solid currentColor;
   justify-self:center;
+}
+.vt-sverka-mark i {
+  width:10px; height:10px; display:block; background:currentColor;
+  -webkit-mask:var(--sverka-icon) center/contain no-repeat;
+  mask:var(--sverka-icon) center/contain no-repeat;
 }
 .vt-sverka-mark.yes { color:var(--grn); background:rgba(46,213,115,.14); }
 .vt-sverka-mark.no { color:var(--red); background:rgba(255,71,87,.13); }

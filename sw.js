@@ -1,10 +1,5 @@
-const CACHE_NAME = 'crm-crew-dashboard-v1';
-const APP_SHELL = [
-  './',
-  './index.html',
-  './manifest.json',
-  './css/styles.css',
-  './js/app.js',
+const CACHE_NAME = 'crm-crew-dashboard-v2';
+const STATIC_ASSETS = [
   './logos/pwa-192.png',
   './logos/pwa-512.png',
 ];
@@ -12,7 +7,7 @@ const APP_SHELL = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
+      .then(cache => cache.addAll(STATIC_ASSETS))
       .then(() => self.skipWaiting())
   );
 });
@@ -31,13 +26,21 @@ self.addEventListener('fetch', event => {
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
 
+  if (req.mode === 'navigate') {
+    event.respondWith(fetch(req).catch(() => caches.match('./index.html')));
+    return;
+  }
+
+  if (url.pathname.endsWith('.html') || url.pathname.endsWith('.js') || url.pathname.endsWith('.css') || url.pathname.endsWith('.json')) {
+    event.respondWith(fetch(req));
+    return;
+  }
+
   event.respondWith(
-    fetch(req)
-      .then(resp => {
-        const copy = resp.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
-        return resp;
-      })
-      .catch(() => caches.match(req).then(cached => cached || caches.match('./index.html')))
+    caches.match(req).then(cached => cached || fetch(req).then(resp => {
+      const copy = resp.clone();
+      caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+      return resp;
+    }))
   );
 });

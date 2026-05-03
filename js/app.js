@@ -420,8 +420,9 @@ function showLoginScreen() {
   if (window._loginLiquidInit) window._loginLiquidInit();
 }
 
-function requestGoogleToken({ prompt = '', mode = 'ensure' } = {}) {
+function requestGoogleToken({ prompt = '', mode = 'ensure', force = false } = {}) {
   if (!tokenClient) return Promise.reject(new Error('oauth_not_ready'));
+  if (force && tokenRequest) cleanupTokenRequest();
   if (tokenRequest) return tokenRequest.promise;
 
   let resolveRequest, rejectRequest;
@@ -473,6 +474,15 @@ function initAuth() {
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CFG.CLIENT_ID,
     scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+    error_callback: (err) => {
+      const pending = tokenRequest;
+      cleanupTokenRequest();
+      if (pending) pending.reject(new Error(err?.type || 'oauth_popup_error'));
+      if (pending?.mode === 'login') {
+        showLoginScreen();
+        toast('Окно авторизации не завершилось. Попробуйте войти еще раз', 'e');
+      }
+    },
     callback: async (resp) => {
       const pending = tokenRequest;
       const mode = pending?.mode || 'refresh';
@@ -4340,7 +4350,7 @@ document.getElementById('center-login-btn').addEventListener('click', () => {
     return;
   }
   if (!tokenClient) { toast('Загружается…','i'); return; }
-  requestGoogleToken({ prompt:'consent', mode:'login' }).catch(() => {
+  requestGoogleToken({ prompt:'consent', mode:'login', force:true }).catch(() => {
     toast('Не удалось войти через Google', 'e');
   });
 });

@@ -350,7 +350,7 @@ let refreshTimer = null;
 let autoRefreshTimer = null;
 let tokenExpiresAt = 0;
 let tokenRequest = null;
-const AUTO_REFRESH_INTERVAL = 7 * 60 * 1000; // 7 минут
+const AUTO_REFRESH_INTERVAL = 60 * 1000; // 1 минута
 
 // Определяем Android WebView (Capacitor) — Google OAuth там не работает
 const isAndroidWebView = /Android/.test(navigator.userAgent) && /wv\b/.test(navigator.userAgent);

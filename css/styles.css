@@ -2452,6 +2452,14 @@ body.light .kpi-badge { background:rgba(0,0,0,0.03); }
 .kpi-badge .kb-val {
   font-family:'Unbounded',sans-serif; font-size:15px; font-weight:800; color:var(--txt);
 }
+.live-value-updated {
+  animation: liveValueTick .42s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes liveValueTick {
+  0%   { transform: translateY(-3px); filter: brightness(1.25); }
+  55%  { transform: translateY(1px); }
+  100% { transform: translateY(0); filter: brightness(1); }
+}
 /* ---- instr-table: alternating rows ---- */
 .instr-table tbody tr:nth-child(odd) td  { background:var(--bg2); }
 .instr-table tbody tr:nth-child(even) td { background:var(--bg3); }

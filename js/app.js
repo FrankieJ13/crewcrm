@@ -576,16 +576,12 @@ function onLogin() {
     // Не обновляем пока открыт журнал визитов — пользователь может вводить данные
     if (document.getElementById('scr-vizity')?.classList.contains('on')) return;
     const isPersonal = document.getElementById('scr-personal')?.classList.contains('on');
-    const activeTab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
+    const ratingOn = document.getElementById('scr-rating')?.classList.contains('on');
+    const activeTab = ratingOn ? 'rating' : (document.querySelector('.tab.on')?.dataset.tab || 'otchet');
     if (!isPersonal && activeTab === 'instruktsii') return;
-    S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null };
-    if (isPersonal) {
-      const matched = findUserInSheet();
-      if (matched) loadPersonal(matched);
-    } else {
-      if (activeTab === 'grafik') _schedWeek = null;
-      loadTab(activeTab);
-    }
+    refreshVisibleDataLive().catch(err => {
+      if (err?.message !== 'auth') console.warn('silent live refresh failed', err);
+    });
   }, AUTO_REFRESH_INTERVAL);
 }
 
@@ -924,6 +920,161 @@ function renderTab(tab) {
   else if (tab==='dohod')       renderDohod();
   else if (tab==='grafik')      renderGrafik();
   else if (tab==='instruktsii') renderInstruktsii();
+}
+
+function liveTextUpdate(node, nextText) {
+  if (node.nodeValue === nextText) return;
+  const parent = node.parentElement;
+  node.nodeValue = nextText;
+  if (!parent || !S.silentRefresh) return;
+  parent.classList.remove('live-value-updated');
+  void parent.offsetWidth;
+  parent.classList.add('live-value-updated');
+}
+
+function canMorphElement(a, b) {
+  if (!a || !b || a.nodeType !== b.nodeType) return false;
+  if (a.nodeType !== Node.ELEMENT_NODE) return true;
+  if (a.tagName !== b.tagName) return false;
+  const stableA = a.id || a.getAttribute('data-live-key') || '';
+  const stableB = b.id || b.getAttribute('data-live-key') || '';
+  if (stableA || stableB) return stableA === stableB;
+  return a.className === b.className;
+}
+
+function syncAttributes(cur, next) {
+  [...cur.attributes].forEach(attr => {
+    if (!next.hasAttribute(attr.name)) cur.removeAttribute(attr.name);
+  });
+  [...next.attributes].forEach(attr => {
+    if (cur.getAttribute(attr.name) !== attr.value) cur.setAttribute(attr.name, attr.value);
+  });
+}
+
+function morphLiveNode(cur, next) {
+  if (cur.nodeType === Node.TEXT_NODE && next.nodeType === Node.TEXT_NODE) {
+    liveTextUpdate(cur, next.nodeValue);
+    return;
+  }
+  if (!canMorphElement(cur, next)) {
+    cur.replaceWith(next.cloneNode(true));
+    return;
+  }
+  if (cur.nodeType !== Node.ELEMENT_NODE) return;
+  syncAttributes(cur, next);
+  const curChildren = [...cur.childNodes];
+  const nextChildren = [...next.childNodes];
+  if (curChildren.length !== nextChildren.length) {
+    cur.replaceChildren(...nextChildren.map(ch => ch.cloneNode(true)));
+    return;
+  }
+  for (let i = 0; i < nextChildren.length; i++) {
+    morphLiveNode(curChildren[i], nextChildren[i]);
+  }
+}
+
+function setLiveHTML(el, html) {
+  if (!el) return;
+  if (!S.silentRefresh || !el.children.length) {
+    el.innerHTML = html;
+    return;
+  }
+  const tpl = document.createElement('template');
+  tpl.innerHTML = html.trim();
+  const curChildren = [...el.childNodes];
+  const nextChildren = [...tpl.content.childNodes];
+  if (curChildren.length !== nextChildren.length) {
+    el.replaceChildren(...nextChildren.map(ch => ch.cloneNode(true)));
+    return;
+  }
+  for (let i = 0; i < nextChildren.length; i++) {
+    morphLiveNode(curChildren[i], nextChildren[i]);
+  }
+}
+
+async function refreshVisibleDataLive() {
+  if (document.getElementById('scr-vizity')?.classList.contains('on')) return;
+  const personalOn = document.getElementById('scr-personal')?.classList.contains('on');
+  const ratingOn = document.getElementById('scr-rating')?.classList.contains('on');
+  const activeTab = ratingOn ? 'rating' : (document.querySelector('.tab.on')?.dataset.tab || (personalOn ? null : 'otchet'));
+  const matched = findUserInSheet();
+  const role = matched?.role || '';
+
+  apiCacheInvalidate();
+  S.silentRefresh = true;
+  try {
+    if (personalOn) {
+      if (!matched) return;
+      if (role === 'dozhim') {
+        const [dv, pd, gr] = await Promise.all([
+          api(SHEETS.d_vizity, 'A:N').catch(() => []),
+          api(SHEETS.plan, 'A:B').catch(() => []),
+          api(SHEETS.grafik, 'A1:AI25').catch(() => []),
+        ]);
+        S.data.d_vizity = dv; S.data.plan = pd; S.data.grafik = gr;
+      } else {
+        const [vd, pd, st, cn, gr] = await Promise.all([
+          api(SHEETS.vizity, 'A:N').catch(() => []),
+          api(SHEETS.plan, 'A:B').catch(() => []),
+          api(SHEETS.stavki, 'A1:B25').catch(() => []),
+          api(SHEETS.cnvrs, 'A1:N40').catch(() => []),
+          api(SHEETS.grafik, 'A1:AI25').catch(() => []),
+        ]);
+        S.data.vizity = vd; S.data.plan = pd; S.data.stavki = st; S.data.cnvrs = cn; S.data.grafik = gr;
+      }
+      renderPersonal(matched);
+      return;
+    }
+
+    if (activeTab === 'otchet') {
+      const tasks = [
+        api(SHEETS.vizity, 'A:N').catch(() => []),
+        api(SHEETS.plan, 'A:B').catch(() => []),
+        api(SHEETS.cnvrs, 'A1:N40').catch(() => []),
+      ];
+      if (S.reportTab === 'dozhim' || S.reportTab === 'dept') tasks.push(api(SHEETS.d_vizity, 'A:N').catch(() => []));
+      const [vd, pd, cn, dv] = await Promise.all(tasks);
+      S.data.vizity = vd; S.data.plan = pd; S.data.cnvrs = cn;
+      if (dv) S.data.d_vizity = dv;
+      renderOtchet();
+    } else if (activeTab === 'dohod') {
+      const isCeo = role === 'ceo';
+      const isDozhim = role === 'dozhim' || (isCeo && S.dohodTab === 'dozhim');
+      if (isDozhim) {
+        const [dv, pd, gr] = await Promise.all([
+          api(SHEETS.d_vizity, 'A:N').catch(() => []),
+          api(SHEETS.plan, 'A:B').catch(() => []),
+          api(SHEETS.grafik, 'A1:AI25').catch(() => []),
+        ]);
+        S.data.d_vizity = dv; S.data.plan = pd; S.data.grafik = gr;
+      } else {
+        const [vd, pd, st, gr] = await Promise.all([
+          api(SHEETS.vizity, 'A:N').catch(() => []),
+          api(SHEETS.plan, 'A:B').catch(() => []),
+          api(SHEETS.stavki, 'A1:B25').catch(() => []),
+          api(SHEETS.grafik, 'A1:AI25').catch(() => []),
+        ]);
+        S.data.vizity = vd; S.data.plan = pd; S.data.stavki = st; S.data.grafik = gr;
+      }
+      renderDohod();
+    } else if (activeTab === 'rating') {
+      const isDozhimRating = S.ratingDept === 'dozhim';
+      const [pd, vd, st] = await Promise.all([
+        api(SHEETS.plan, 'A:B').catch(() => []),
+        api(isDozhimRating ? SHEETS.d_vizity : SHEETS.vizity, 'A:N').catch(() => []),
+        isDozhimRating ? api(SHEETS.d_stavki, 'A1:B25').catch(() => []) : Promise.resolve(S.data.stavki || []),
+      ]);
+      S.data.plan = pd;
+      if (isDozhimRating) { S.data.d_vizity = vd; S.data.d_stavki = st; }
+      else S.data.vizity = vd;
+      renderRating();
+    } else if (activeTab === 'grafik') {
+      S.data.grafik = await api(SHEETS.grafik, 'A1:AI25').catch(() => []);
+      renderGrafik();
+    }
+  } finally {
+    S.silentRefresh = false;
+  }
 }
 
 // ==================== HELPER: дни в месяце / отработанные дни ====================
@@ -1642,7 +1793,7 @@ function renderOtchet() {
   else if (S.reportTab === 'mgr') content = `<div class="sec-title">Менеджеры CRM</div><div class="mops">${mops_html}</div>`;
   else if (S.reportTab === 'dozhim') content = renderDozhimCards();
 
-  el.innerHTML = content;
+  setLiveHTML(el, content);
 
   if (S.reportTab === 'dept') {
     managerStats.forEach((item, idx) => {
@@ -1801,7 +1952,7 @@ function renderDohod() {
       earn800: sal.detail.earn800, earn1000: sal.detail.earn1000,
       fact: sal.fact, prognoz: sal.prognoz,
     };
-    el.innerHTML = `
+    setLiveHTML(el, `
       <div class="w" style="padding-top:16px">
         <div class="kpi-subtitle">Доход за месяц<button class="kpi-subtitle-info" onclick="openSalInfo('dozhim')">i</button></div>
         <div class="kpi-income-panel" style="position:relative;text-align:center;cursor:pointer;background:rgba(${accR},${accG},${accB},0.15)"
@@ -1809,7 +1960,7 @@ function renderDohod() {
           <div class="zl">Фактический доход</div>
           <div class="zv">${fmtRub(Math.round(sal.fact.total))}</div>
         </div>
-      </div>`;
+      </div>`);
   } else {
     if (!S.data.vizity || !S.data.stavki) { if (!S.silentRefresh) el.innerHTML = loader(); return; }
     const sal = calcSalary(nameLow);
@@ -1840,7 +1991,7 @@ function renderDohod() {
     const noKoefTotal = Math.round(oklad + crmSum + warmSum + kotel);
     const noKoefRow = `<div class="income-sec-title">Без коэффициентов</div>${subtotal('Оклад 100% + Премия + Котёл', noKoefTotal)}`;
 
-    el.innerHTML = `
+    setLiveHTML(el, `
       <div class="w" style="padding-top:16px">
         <div class="kpi-subtitle">Доход за месяц<button class="kpi-subtitle-info" onclick="openSalInfo()">i</button></div>
         <div class="kpi-income-panel" style="background:rgba(${accR},${accG},${accB},0.15)">
@@ -1882,7 +2033,7 @@ function renderDohod() {
           ${kotelRow}
           ${noKoefRow}
         </div>
-      </div>`;
+      </div>`);
   }
 }
 
@@ -1960,7 +2111,7 @@ function renderDohodCrm(el) {
     return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span>${getMgrMessengerHtml(item.name)}${medalBtn(idx)}</div>${incomeCols}<div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div></div>`;
   }).join('');
 
-  el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15);position:relative"><div class="zl">Прогноз фонда отдела</div><div class="zv">${fmtRub(totalFund)}</div><button class="income-modal-info-btn" onclick="openSalInfo('crm')" title="Как считается зарплата" style="position:absolute;top:10px;right:10px">i</button></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`;
+  setLiveHTML(el, `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15);position:relative"><div class="zl">Прогноз фонда отдела</div><div class="zv">${fmtRub(totalFund)}</div><button class="income-modal-info-btn" onclick="openSalInfo('crm')" title="Как считается зарплата" style="position:absolute;top:10px;right:10px">i</button></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`);
 }
 
 function renderDohodDozhim(el) {
@@ -2019,7 +2170,7 @@ function renderDohodDozhim(el) {
     return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span>${getMgrMessengerHtml(item.name)}</div>${incomeCols}<div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div></div>`;
   }).join('');
 
-  el.innerHTML = `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15);position:relative"><div class="zl">Фонд дожима (факт)</div><div class="zv">${fmtRub(totalFund)}</div><button class="income-modal-info-btn" onclick="openSalInfo('dozhim')" title="Как считается зарплата" style="position:absolute;top:10px;right:10px">i</button></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`;
+  setLiveHTML(el, `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15);position:relative"><div class="zl">Фонд дожима (факт)</div><div class="zv">${fmtRub(totalFund)}</div><button class="income-modal-info-btn" onclick="openSalInfo('dozhim')" title="Как считается зарплата" style="position:absolute;top:10px;right:10px">i</button></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`);
 }
 
 function setDohodTab(tab) {
@@ -2207,7 +2358,7 @@ function renderGrafik() {
   const g1title = groupTitles[0] || 'CRM';
   const g2title = groupTitles[1] || 'ДОЖИМ';
 
-  el.innerHTML = `<div class="sched-group-title" style="margin-top:4px">${g1title}</div>${buildCards(crmPeople)}<div class="sched-group-title">${g2title}</div>${buildCards(dozhimPeople)}`;
+  setLiveHTML(el, `<div class="sched-group-title" style="margin-top:4px">${g1title}</div>${buildCards(crmPeople)}<div class="sched-group-title">${g2title}</div>${buildCards(dozhimPeople)}`);
 
   const stickyEl    = document.getElementById('grafik-sticky');
   const stickyInner = document.getElementById('grafik-sticky-inner');
@@ -3432,7 +3583,7 @@ function renderPersonal(matched) {
     incomePanelContent = `<div class="zl">Доход за месяц</div><div class="zv">—</div>`;
   }
 
-  el.innerHTML = `
+  setLiveHTML(el, `
     <div class="kpi-manager-name">${name.toUpperCase()}</div>
     <div class="kpi-divider"></div>
     <div class="kpi-subtitle">Доход за месяц<button class="kpi-subtitle-info" onclick="openSalInfo()">i</button></div>
@@ -3458,7 +3609,7 @@ function renderPersonal(matched) {
       <div class="kpi-badge"><div class="kb-lbl">Комиссия CRM/ТЛ</div><div class="kb-val">${kom}</div><div class="kb-sub">${komSub}</div></div>
     </div>
     ${convRow}
-  `;
+  `);
 }
 
 // ==================== SALARY CALC ====================
@@ -4716,14 +4867,14 @@ function renderRating() {
       </div>`;
   }).join('');
 
-  el.innerHTML = `
+  setLiveHTML(el, `
     <div class="rating-header">
       <div class="sec-title" style="margin:0">РЕЙТИНГ</div>
       ${deptToggle}
     </div>
     ${summaryHTML}
     <div class="rating-chart">${cardsHTML || '<div class="empty">Нет данных</div>'}</div>
-  `;
+  `);
 
   // Анимируем бары
   requestAnimationFrame(() => {

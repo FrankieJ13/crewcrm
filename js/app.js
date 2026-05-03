@@ -347,6 +347,8 @@ function medalBtn(idx) {
 let tokenClient;
 let refreshTimer = null;
 let autoRefreshTimer = null;
+let tokenExpiresAt = 0;
+let tokenRequest = null;
 const AUTO_REFRESH_INTERVAL = 7 * 60 * 1000; // 7 минут
 
 // Определяем Android WebView (Capacitor) — Google OAuth там не работает
@@ -392,13 +394,78 @@ function initLogoRotation() {
 
 function scheduleTokenRefresh(expiresIn) {
   if (refreshTimer) clearTimeout(refreshTimer);
-  const delay = Math.max((expiresIn - 300) * 1000, 0);
+  const delay = Math.max(Math.min((expiresIn - 300) * 1000, 8 * 60 * 1000), 60 * 1000);
   refreshTimer = setTimeout(() => {
-    if (tokenClient && S.token) {
-      tokenClient.requestAccessToken({ prompt: '' });
-    }
+    if (tokenClient && S.user) requestGoogleToken({ prompt: '', mode: 'refresh' }).catch(() => {});
     refreshTimer = null;
   }, delay);
+}
+
+function cleanupTokenRequest() {
+  if (!tokenRequest) return;
+  if (tokenRequest.timer) clearTimeout(tokenRequest.timer);
+  tokenRequest = null;
+}
+
+function showLoginScreen() {
+  const l = document.getElementById('silent-loader');
+  if (l) l.remove();
+  const login = document.getElementById('scr-login');
+  if (login) {
+    login.style.display = '';
+    login.classList.add('on');
+  }
+  document.body.classList.add('login-active');
+  if (window._loginLiquidInit) window._loginLiquidInit();
+}
+
+function requestGoogleToken({ prompt = '', mode = 'ensure' } = {}) {
+  if (!tokenClient) return Promise.reject(new Error('oauth_not_ready'));
+  if (tokenRequest) return tokenRequest.promise;
+
+  let resolveRequest, rejectRequest;
+  const promise = new Promise((resolve, reject) => {
+    resolveRequest = resolve;
+    rejectRequest = reject;
+  });
+
+  tokenRequest = {
+    mode,
+    promise,
+    resolve: resolveRequest,
+    reject: rejectRequest,
+    timer: setTimeout(() => {
+      const current = tokenRequest;
+      cleanupTokenRequest();
+      if (current) current.reject(new Error('oauth_timeout'));
+    }, 15000),
+  };
+
+  try {
+    tokenClient.requestAccessToken({ prompt });
+  } catch (err) {
+    const current = tokenRequest;
+    cleanupTokenRequest();
+    if (current) current.reject(err);
+  }
+
+  return promise;
+}
+
+async function ensureToken({ interactive = false } = {}) {
+  if (S.token && Date.now() < tokenExpiresAt - 60_000) return S.token;
+  try {
+    const resp = await requestGoogleToken({ prompt: interactive ? 'consent' : '', mode: 'ensure' });
+    return resp.access_token;
+  } catch (err) {
+    err.isAuthError = true;
+    throw err;
+  }
+}
+
+async function authHeaders(extra = {}, opts = {}) {
+  const token = await ensureToken(opts);
+  return { Authorization: 'Bearer ' + token, ...extra };
 }
 
 function initAuth() {
@@ -406,37 +473,41 @@ function initAuth() {
     client_id: CFG.CLIENT_ID,
     scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
     callback: async (resp) => {
+      const pending = tokenRequest;
+      const mode = pending?.mode || 'refresh';
       if (resp.error) {
-        // Тихий рефреш не удался — показываем экран входа
-        const l = document.getElementById('silent-loader');
-        if (l) l.remove();
-        if (window._silentFallback) { clearTimeout(window._silentFallback); window._silentFallback = null; }
-        localStorage.removeItem('crm_user');
-        document.getElementById('scr-login').style.display = '';
-        document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active'); if(window._loginLiquidInit) window._loginLiquidInit();
-        toast('Ошибка: '+resp.error, 'e');
+        cleanupTokenRequest();
+        if (mode === 'login' || mode === 'restore') showLoginScreen();
+        if (mode === 'login') toast('Ошибка: '+resp.error, 'e');
+        if (pending) pending.reject(new Error(resp.error));
         return;
       }
-      // Успех — убираем лоадер
       const l = document.getElementById('silent-loader');
       if (l) l.remove();
-      if (window._silentFallback) { clearTimeout(window._silentFallback); window._silentFallback = null; }
       S.token = resp.access_token;
-      localStorage.setItem('crm_tok', resp.access_token);
-      localStorage.setItem('crm_exp', Date.now()+(resp.expires_in-60)*1000);
-      loadUser();
-      onLogin();
+      tokenExpiresAt = Date.now() + Math.max((resp.expires_in || 3600) - 60, 60) * 1000;
+      localStorage.removeItem('crm_tok');
+      localStorage.removeItem('crm_exp');
       scheduleTokenRefresh(resp.expires_in);
+      if (mode === 'login' || mode === 'restore') {
+        await loadUser();
+        onLogin();
+      } else if (!S.user) {
+        await loadUser();
+      }
+      cleanupTokenRequest();
+      if (pending) pending.resolve(resp);
     },
   });
 }
 
 async function loadUser() {
   try {
+    const token = S.token || await ensureToken();
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 8000);
     const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo',
-      { headers:{ Authorization:'Bearer '+S.token }, signal: ctrl.signal });
+      { headers:{ Authorization:'Bearer '+token }, signal: ctrl.signal });
     clearTimeout(timer);
     if (!r.ok) return;
     S.user = await r.json();
@@ -521,7 +592,9 @@ function onLogin() {
 function onLogout() {
   if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
   if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
+  cleanupTokenRequest();
   if (S.token) google.accounts.oauth2.revoke(S.token, ()=>{});
+  tokenExpiresAt = 0;
   S.token=null; S.user=null; S.usersData=null;
   S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null };
   ['crm_tok','crm_exp','crm_user'].forEach(k => localStorage.removeItem(k));
@@ -556,32 +629,20 @@ function onLogout() {
 }
 
 function tryRestore() {
-  const tok = localStorage.getItem('crm_tok');
-  const exp = parseInt(localStorage.getItem('crm_exp')||'0');
-  const u   = localStorage.getItem('crm_user');
-
-  if (tok && exp > Date.now()) {
-    // Токен живой — входим сразу
-    S.token = tok;
-    if (u) { S.user = JSON.parse(u); renderUser(); }
-    const remaining = Math.max(Math.floor((exp - Date.now()) / 1000), 0);
-    scheduleTokenRefresh(remaining);
-    onLogin();
-    return true;
-  }
+  localStorage.removeItem('crm_tok');
+  localStorage.removeItem('crm_exp');
+  const u = localStorage.getItem('crm_user');
 
   if (u) {
-    // Токен истёк, но пользователь известен — тихий рефреш без UI
-    S.user = JSON.parse(u);
+    try { S.user = JSON.parse(u); renderUser(); } catch(e) { localStorage.removeItem('crm_user'); return false; }
     trySilentRefresh();
-    return true; // не показываем экран входа
+    return true;
   }
 
   return false;
 }
 
 function trySilentRefresh() {
-  // Показываем лоадер вместо экрана входа
   document.getElementById('scr-login').classList.remove('on');
   document.getElementById('scr-login').style.display = 'none'; document.body.classList.remove('login-active');
   const loader = document.createElement('div');
@@ -590,22 +651,9 @@ function trySilentRefresh() {
   loader.innerHTML = '<div class="spin"></div><div>Восстановление сессии…</div>';
   document.querySelector('main').prepend(loader);
 
-  // prompt:'' — Google не показывает никакого UI если сессия жива в профиле
-  tokenClient.requestAccessToken({ prompt: '' });
-
-  // Если через 8 секунд ответа нет — показываем экран входа
-  const fallback = setTimeout(() => {
-    const l = document.getElementById('silent-loader');
-    if (l) l.remove();
-    if (!S.token) {
-      localStorage.removeItem('crm_user');
-      document.getElementById('scr-login').style.display = '';
-      document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active'); if(window._loginLiquidInit) window._loginLiquidInit();
-    }
-  }, 8000);
-
-  // Сохраняем таймер чтобы отменить при успехе (в initAuth callback)
-  window._silentFallback = fallback;
+  requestGoogleToken({ prompt: '', mode: 'restore' }).catch(() => {
+    showLoginScreen();
+  });
 }
 
 // ==================== API LAYER ====================
@@ -639,8 +687,12 @@ async function _apiFetch(sheet, range, key, retryCount = 0) {
             + encodeURIComponent(sheet + '!' + range);
   let r;
   try {
-    r = await fetch(url, { headers: { Authorization: 'Bearer ' + S.token } });
+    r = await fetch(url, { headers: await authHeaders() });
   } catch (err) {
+    if (err.isAuthError) {
+      showLoginScreen();
+      throw new Error('auth');
+    }
     if (retryCount < 2) {
       const wait = (retryCount + 1) * 3000;
       if (retryCount === 0) toast('Связь с Google нестабильна — повторяю…', 'i');
@@ -667,8 +719,17 @@ async function _apiFetch(sheet, range, key, retryCount = 0) {
     const e = await r.json();
     const msg = e.error?.message || r.statusText;
     if (r.status === 401 || r.status === 403 || msg.includes('insufficient')) {
-      ['crm_tok','crm_exp','crm_user'].forEach(k => localStorage.removeItem(k));
-      S.token = null; onLogout(); toast('Сессия истекла — войдите снова', 'e');
+      if (retryCount < 3) {
+        S.token = null;
+        tokenExpiresAt = 0;
+        try {
+          await ensureToken();
+          return _apiFetch(sheet, range, key, retryCount + 1);
+        } catch(authErr) {
+          toast('Сессия требует повторного входа', 'e');
+        }
+      }
+      showLoginScreen();
       throw new Error('auth');
     }
     if (r.status === 404) throw new Error('NOT_FOUND');
@@ -2558,10 +2619,7 @@ async function savePlan() {
 
     const resp = await fetch(url, {
       method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${S.token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: await authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ range, majorDimension: 'ROWS', values })
     });
 
@@ -4130,7 +4188,9 @@ document.getElementById('center-login-btn').addEventListener('click', () => {
     return;
   }
   if (!tokenClient) { toast('Загружается…','i'); return; }
-  tokenClient.requestAccessToken({ prompt:'consent' });
+  requestGoogleToken({ prompt:'consent', mode:'login' }).catch(() => {
+    toast('Не удалось войти через Google', 'e');
+  });
 });
 
 document.addEventListener('touchmove', function(e) {
@@ -4202,7 +4262,7 @@ function initSverkaToggle() {
 
 async function savePlanAndSverka() {
   const cb = document.getElementById('sverka-toggle-cb');
-  if (cb && S.token) {
+  if (cb) {
     S.sverkaMode = cb.checked;
     const newMode = S.sverkaMode ? 'On' : 'Off';
     localStorage.setItem('crm_sverka', S.sverkaMode ? '1' : '0');
@@ -4211,7 +4271,7 @@ async function savePlanAndSverka() {
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
       const resp = await fetch(url, {
         method: 'PUT',
-        headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' },
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ values: [[newMode]] })
       });
       if (resp.ok) {
@@ -4246,7 +4306,7 @@ async function savePlanAndSverka() {
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
       const resp = await fetch(url, {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${S.token}`, 'Content-Type': 'application/json' },
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ range, majorDimension: 'ROWS', values })
       });
       if (resp.ok) {
@@ -4879,7 +4939,7 @@ async function loadVizity() {
 async function ensureVizSheet(sheetName) {
   try {
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}?fields=sheets.properties`;
-    const r = await fetch(url, { headers:{ Authorization:'Bearer '+S.token }});
+    const r = await fetch(url, { headers: await authHeaders() });
     if (!r.ok) return;
     const data = await r.json();
     (data.sheets||[]).forEach(s => { S._vizSheetIdCache[s.properties.title] = s.properties.sheetId; });
@@ -4892,11 +4952,11 @@ async function createVizSheet(sheetName) {
   const headers = VIZ_COLS.map(c => c.lbl);
   try {
     await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`, {
-      method:'POST', headers:{ Authorization:'Bearer '+S.token, 'Content-Type':'application/json' },
+      method:'POST', headers: await authHeaders({ 'Content-Type':'application/json' }),
       body: JSON.stringify({ requests:[{ addSheet:{ properties:{ title:sheetName }}}] })
     });
     await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(sheetName+'!A1:N1')}?valueInputOption=RAW`, {
-      method:'PUT', headers:{ Authorization:'Bearer '+S.token, 'Content-Type':'application/json' },
+      method:'PUT', headers: await authHeaders({ 'Content-Type':'application/json' }),
       body: JSON.stringify({ values:[headers] })
     });
     await ensureVizSheet(sheetName);
@@ -5241,7 +5301,9 @@ async function vizSaveRow(sheetRow, statusEl) {
         const colLetter = COLS[c];
         const range = encodeURIComponent(sheet+'!'+colLetter+sheetRow+':'+colLetter+sheetRow);
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
-        return fetch(url, { method:'PUT', headers:{ Authorization:'Bearer '+S.token,'Content-Type':'application/json' }, body:JSON.stringify({ values:[[row.data[c]]] }) });
+        return authHeaders({ 'Content-Type':'application/json' }).then(headers =>
+          fetch(url, { method:'PUT', headers, body:JSON.stringify({ values:[[row.data[c]]] }) })
+        );
       }));
     } else {
       // Fallback: full row update (e.g., new row)
@@ -5262,7 +5324,7 @@ async function vizSaveRow(sheetRow, statusEl) {
 async function vizUpdateRow(sheetName, sheetRow, rowData) {
   const range = encodeURIComponent(sheetName+'!A'+sheetRow+':N'+sheetRow);
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
-  const r = await fetch(url, { method:'PUT', headers:{ Authorization:'Bearer '+S.token,'Content-Type':'application/json' }, body:JSON.stringify({ values:[rowData] }) });
+  const r = await fetch(url, { method:'PUT', headers: await authHeaders({ 'Content-Type':'application/json' }), body:JSON.stringify({ values:[rowData] }) });
   if (!r.ok) throw new Error('Sheets API error');
 }
 
@@ -5323,7 +5385,7 @@ async function vizWriteNewRow(afterSheetRow, newData) {
   if (afterSheetRow === -1 || afterSheetRow >= S.vizRows.reduce((mx,r)=>Math.max(mx,r._sheetRow),1)) {
     // Append
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(sheet+'!A:N')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
-    const r = await fetch(url, { method:'POST', headers:{ Authorization:'Bearer '+S.token,'Content-Type':'application/json' }, body:JSON.stringify({ values:[newData] }) });
+    const r = await fetch(url, { method:'POST', headers: await authHeaders({ 'Content-Type':'application/json' }), body:JSON.stringify({ values:[newData] }) });
     if (!r.ok) throw new Error();
     const res = await r.json();
     const m = (res.updates?.updatedRange||'').match(/(\d+)$/);
@@ -5334,7 +5396,7 @@ async function vizWriteNewRow(afterSheetRow, newData) {
     if (sheetId === null) throw new Error('Sheet ID not found');
     newSheetRow = afterSheetRow + 1;
     await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`, {
-      method:'POST', headers:{ Authorization:'Bearer '+S.token,'Content-Type':'application/json' },
+      method:'POST', headers: await authHeaders({ 'Content-Type':'application/json' }),
       body: JSON.stringify({ requests:[{ insertDimension:{ range:{ sheetId, dimension:'ROWS', startIndex:afterSheetRow, endIndex:afterSheetRow+1 }, inheritFromBefore:false }}] })
     });
     await vizUpdateRow(sheet, newSheetRow, newData);
@@ -5394,7 +5456,7 @@ async function commitVizDelete(sheetRow) {
   if (sheetId !== null) {
     try {
       await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`, {
-        method:'POST', headers:{ Authorization:'Bearer '+S.token,'Content-Type':'application/json' },
+        method:'POST', headers: await authHeaders({ 'Content-Type':'application/json' }),
         body: JSON.stringify({ requests:[{ deleteDimension:{ range:{ sheetId, dimension:'ROWS', startIndex:sheetRow-1, endIndex:sheetRow }}}] })
       });
       S.vizRows.forEach(r => { if (r._sheetRow > sheetRow) r._sheetRow--; });

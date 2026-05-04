@@ -10,6 +10,13 @@ if ('serviceWorker' in navigator && ['http:', 'https:'].includes(location.protoc
 const CFG = {
   CLIENT_ID: '364532815329-0j1lkobb1v9vcserj6artf64nd95a0la.apps.googleusercontent.com',
   SHEET_ID:  '1DeUsHB_O1SbIMR4p5yd64o_R0yllWvtnyNhjxjhipn8',
+  FIREBASE: {
+    apiKey: '',
+    authDomain: '',
+    databaseURL: '',
+    projectId: '',
+    appId: '',
+  },
 };
 const ASSET_BASE = new URL('./logos/', document.baseURI).href;
 const DEFAULT_ICON_BASE = ASSET_BASE + 'default/';
@@ -353,6 +360,18 @@ let tokenExpiresAt = 0;
 let tokenRequest = null;
 const AUTO_REFRESH_INTERVAL = 60 * 1000; // 1 минута
 
+const firebasePresence = {
+  app: null,
+  auth: null,
+  db: null,
+  uid: null,
+  userRef: null,
+  connectionsRef: null,
+  connectionRef: null,
+  connectedHandler: null,
+  connectionsHandler: null,
+};
+
 // Определяем Android WebView (Capacitor) — Google OAuth там не работает
 const isAndroidWebView = /Android/.test(navigator.userAgent) && /wv\b/.test(navigator.userAgent);
 
@@ -392,6 +411,142 @@ function initLogoRotation() {
   if (el) setLogoByIndex(_logoIdx);
   if (_logoTimer) clearInterval(_logoTimer);
   _logoTimer = setInterval(rotateLogo, 5 * 60 * 1000);
+}
+
+function firebaseConfigured() {
+  const cfg = CFG.FIREBASE || {};
+  return !!(cfg.apiKey && cfg.authDomain && cfg.databaseURL && cfg.projectId && cfg.appId);
+}
+
+function initFirebasePresence() {
+  if (firebasePresence.app) return firebasePresence;
+  if (!firebaseConfigured()) return null;
+  if (!window.firebase?.initializeApp || !firebase.auth || !firebase.database) {
+    console.warn('Firebase SDK не загружен: presence отключен');
+    return null;
+  }
+  firebasePresence.app = firebase.apps?.length ? firebase.app() : firebase.initializeApp(CFG.FIREBASE);
+  firebasePresence.auth = firebase.auth();
+  firebasePresence.db = firebase.database();
+  return firebasePresence;
+}
+
+function firebaseProfile(user) {
+  const profile = S.user || {};
+  return {
+    uid: user.uid,
+    name: user.displayName || profile.name || '',
+    email: user.email || profile.email || '',
+    photoURL: user.photoURL || profile.picture || '',
+    page: location.pathname || '/',
+    userAgent: navigator.userAgent,
+  };
+}
+
+function detachFirebasePresence() {
+  const p = firebasePresence;
+  try {
+    if (p.connectedHandler && p.db) p.db.ref('.info/connected').off('value', p.connectedHandler);
+    if (p.connectionsHandler && p.connectionsRef) p.connectionsRef.off('value', p.connectionsHandler);
+    if (p.connectionRef) p.connectionRef.remove().catch?.(() => {});
+  } catch(e) {}
+  p.uid = null;
+  p.userRef = null;
+  p.connectionsRef = null;
+  p.connectionRef = null;
+  p.connectedHandler = null;
+  p.connectionsHandler = null;
+}
+
+function markFirebaseOffline(signOut = false) {
+  const p = firebasePresence;
+  if (!p.userRef || !window.firebase?.database) {
+    if (signOut && p.auth) p.auth.signOut().catch(() => {});
+    return;
+  }
+  const offline = {
+    status: 'offline',
+    lastSeen: firebase.database.ServerValue.TIMESTAMP,
+    updatedAt: firebase.database.ServerValue.TIMESTAMP,
+  };
+  if (p.connectionRef) p.connectionRef.remove().catch(() => {});
+  p.userRef.update(offline).finally(() => {
+    detachFirebasePresence();
+    if (signOut && p.auth) p.auth.signOut().catch(() => {});
+  });
+}
+
+function startFirebasePresence(user) {
+  const p = initFirebasePresence();
+  if (!p || !user) return;
+  if (p.uid === user.uid && p.connectionRef) return;
+  detachFirebasePresence();
+
+  const uid = user.uid;
+  const profile = firebaseProfile(user);
+  p.uid = uid;
+  p.userRef = p.db.ref(`presence/users/${uid}`);
+  p.connectionsRef = p.db.ref(`presence/connections/${uid}`);
+
+  const connectedRef = p.db.ref('.info/connected');
+  p.connectedHandler = snap => {
+    if (snap.val() !== true) return;
+    const con = p.connectionsRef.push();
+    p.connectionRef = con;
+    const online = {
+      ...profile,
+      status: 'online',
+      updatedAt: firebase.database.ServerValue.TIMESTAMP,
+    };
+    const offline = {
+      ...profile,
+      status: 'offline',
+      lastSeen: firebase.database.ServerValue.TIMESTAMP,
+      updatedAt: firebase.database.ServerValue.TIMESTAMP,
+    };
+
+    con.onDisconnect().remove();
+    p.userRef.onDisconnect().update(offline);
+    con.set({
+      status: 'online',
+      connectedAt: firebase.database.ServerValue.TIMESTAMP,
+      page: profile.page,
+      userAgent: profile.userAgent,
+    });
+    p.userRef.update(online);
+  };
+
+  p.connectionsHandler = snap => {
+    if (snap.exists()) {
+      p.userRef.update({
+        ...profile,
+        status: 'online',
+        updatedAt: firebase.database.ServerValue.TIMESTAMP,
+      });
+    }
+  };
+
+  connectedRef.on('value', p.connectedHandler);
+  p.connectionsRef.on('value', p.connectionsHandler);
+}
+
+async function syncFirebaseAuth(accessToken) {
+  const p = initFirebasePresence();
+  if (!p || !accessToken) return null;
+  try {
+    const current = p.auth.currentUser;
+    if (current) {
+      startFirebasePresence(current);
+      return current;
+    }
+    const credential = firebase.auth.GoogleAuthProvider.credential(null, accessToken);
+    const result = await p.auth.signInWithCredential(credential);
+    startFirebasePresence(result.user);
+    return result.user;
+  } catch(e) {
+    console.warn('Firebase Auth/Presence не запущен', e);
+    return null;
+  }
 }
 
 function scheduleTokenRefresh(expiresIn) {
@@ -511,6 +666,7 @@ function initAuth() {
       localStorage.setItem('crm_tok', resp.access_token);
       localStorage.setItem('crm_exp', tokenExpiresAt);
       loadUser();
+      syncFirebaseAuth(resp.access_token);
       onLogin();
       scheduleTokenRefresh(resp.expires_in);
       cleanupTokenRequest();
@@ -607,6 +763,7 @@ function onLogout() {
   if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
   if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
   cleanupTokenRequest();
+  markFirebaseOffline(true);
   if (S.token) google.accounts.oauth2.revoke(S.token, ()=>{});
   tokenExpiresAt = 0;
   S.token=null; S.user=null; S.usersData=null;
@@ -653,6 +810,7 @@ function tryRestore() {
     if (u) { try { S.user = JSON.parse(u); renderUser(); } catch(e) { localStorage.removeItem('crm_user'); } }
     const remaining = Math.max(Math.floor((exp - Date.now()) / 1000), 0);
     scheduleTokenRefresh(remaining);
+    syncFirebaseAuth(tok);
     onLogin();
     return true;
   }

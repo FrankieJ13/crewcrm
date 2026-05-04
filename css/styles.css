@@ -2354,8 +2354,8 @@ body.light .income-modal-body { background:rgba(255,255,255,0.6); }
   position:absolute;
   top:calc(100% + 8px);
   right:-38px;
-  width:min(340px, calc(100vw - 24px));
-  max-height:min(420px, calc(100vh - 76px));
+  width:min(280px, calc(100vw - 24px));
+  max-height:min(340px, calc(100vh - 76px));
   display:none; flex-direction:column;
   background:var(--bg2);
   border:1px solid var(--line2);
@@ -2386,42 +2386,42 @@ body.light .income-modal-body { background:rgba(255,255,255,0.6); }
 .presence-hdr {
   display:flex; align-items:center; justify-content:space-between;
   gap:12px;
-  padding:14px 16px;
+  padding:10px 12px;
   background:var(--bg3);
   border-bottom:1px solid var(--line);
 }
 .presence-title {
   font-family:'Unbounded',sans-serif;
-  font-size:13px;
+  font-size:11px;
   font-weight:900;
   color:var(--txt);
 }
 .presence-close {
-  width:26px; height:26px; border-radius:50%;
+  width:22px; height:22px; border-radius:50%;
   background:transparent; border:1px solid var(--line2);
   color:var(--txt2); cursor:pointer;
-  font-size:18px; line-height:1;
+  font-size:15px; line-height:1;
   display:flex; align-items:center; justify-content:center;
 }
 .presence-close:hover { border-color:var(--red); color:var(--red); }
 .presence-body {
-  padding:14px 16px 16px;
-  display:flex; flex-direction:column; gap:10px;
+  padding:10px 12px 12px;
+  display:flex; flex-direction:column; gap:7px;
   overflow-y:auto;
 }
 .presence-total {
   font-family:'Unbounded',sans-serif;
-  font-size:16px; font-weight:900;
+  font-size:11px; font-weight:900;
   color:var(--txt);
-  margin-bottom:2px;
+  margin-bottom:1px;
 }
 .presence-row {
-  display:flex; align-items:center; gap:9px;
-  padding:10px 12px;
+  display:flex; align-items:center; gap:7px;
+  padding:7px 9px;
   border:1px solid var(--line);
-  border-radius:14px;
+  border-radius:10px;
   background:rgba(255,255,255,.04);
-  min-height:42px;
+  min-height:32px;
 }
 body.light .presence-row,
 body.tiffany .presence-row,
@@ -2429,16 +2429,16 @@ body.neo-light .presence-row {
   background:rgba(0,0,0,.035);
 }
 .presence-dot {
-  width:9px; height:9px;
+  width:7px; height:7px;
   border-radius:50%;
   background:var(--grn);
-  box-shadow:0 0 0 4px rgba(46,213,115,.14);
+  box-shadow:0 0 0 3px rgba(46,213,115,.14);
   flex-shrink:0;
 }
 .presence-name {
   min-width:0;
   font-family:'Golos Text',sans-serif;
-  font-size:14px;
+  font-size:12px;
   font-weight:800;
   color:var(--txt);
   overflow:hidden;
@@ -2450,17 +2450,17 @@ body.neo-light .presence-row {
   flex-shrink:0;
   max-width:42%;
   color:var(--txt2);
-  font-size:13px;
+  font-size:11px;
   font-weight:700;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
 }
 .presence-empty {
-  padding:18px 10px;
+  padding:12px 8px;
   text-align:center;
   color:var(--txt2);
-  font-size:13px;
+  font-size:12px;
 }
 body.cosmic #presence-popover {
   background:rgba(255,255,255,.92);
@@ -2493,7 +2493,7 @@ body.cosmic #presence-popover::before {
 @media(max-width:420px) {
   #presence-popover {
     right:-76px;
-    width:calc(100vw - 24px);
+    width:min(280px, calc(100vw - 24px));
   }
   #presence-popover::before { right:86px; }
 }

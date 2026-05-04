@@ -395,9 +395,11 @@ function initLogoRotation() {
 
 function scheduleTokenRefresh(expiresIn) {
   if (refreshTimer) clearTimeout(refreshTimer);
-  const delay = Math.max(Math.min((expiresIn - 300) * 1000, 8 * 60 * 1000), 60 * 1000);
+  const delay = Math.max((expiresIn - 300) * 1000, 0);
   refreshTimer = setTimeout(() => {
-    if (tokenClient && S.user) requestGoogleToken({ prompt: '', mode: 'refresh' }).catch(() => {});
+    if (tokenClient && S.token) {
+      tokenClient.requestAccessToken({ prompt: '' });
+    }
     refreshTimer = null;
   }, delay);
 }
@@ -456,6 +458,13 @@ function requestGoogleToken({ prompt = '', mode = 'ensure', force = false } = {}
 
 async function ensureToken({ interactive = false } = {}) {
   if (S.token && Date.now() < tokenExpiresAt - 60_000) return S.token;
+  const tok = localStorage.getItem('crm_tok');
+  const exp = parseInt(localStorage.getItem('crm_exp') || '0');
+  if (tok && exp > Date.now()) {
+    S.token = tok;
+    tokenExpiresAt = exp;
+    return tok;
+  }
   try {
     const resp = await requestGoogleToken({ prompt: interactive ? 'consent' : '', mode: 'ensure' });
     return resp.access_token;
@@ -485,27 +494,24 @@ function initAuth() {
     },
     callback: async (resp) => {
       const pending = tokenRequest;
-      const mode = pending?.mode || 'refresh';
       if (resp.error) {
         cleanupTokenRequest();
-        if (mode === 'login' || mode === 'restore') showLoginScreen();
-        if (mode === 'login') toast('Ошибка: '+resp.error, 'e');
+        if (window._silentFallback) { clearTimeout(window._silentFallback); window._silentFallback = null; }
+        showLoginScreen();
+        toast('Ошибка: '+resp.error, 'e');
         if (pending) pending.reject(new Error(resp.error));
         return;
       }
       const l = document.getElementById('silent-loader');
       if (l) l.remove();
+      if (window._silentFallback) { clearTimeout(window._silentFallback); window._silentFallback = null; }
       S.token = resp.access_token;
       tokenExpiresAt = Date.now() + Math.max((resp.expires_in || 3600) - 60, 60) * 1000;
-      localStorage.removeItem('crm_tok');
-      localStorage.removeItem('crm_exp');
+      localStorage.setItem('crm_tok', resp.access_token);
+      localStorage.setItem('crm_exp', tokenExpiresAt);
+      loadUser();
+      onLogin();
       scheduleTokenRefresh(resp.expires_in);
-      if (mode === 'login' || mode === 'restore') {
-        await loadUser();
-        onLogin();
-      } else if (!S.user) {
-        await loadUser();
-      }
       cleanupTokenRequest();
       if (pending) pending.resolve(resp);
     },
@@ -514,7 +520,7 @@ function initAuth() {
 
 async function loadUser() {
   try {
-    const token = S.token || await ensureToken();
+    const token = S.token || localStorage.getItem('crm_tok');
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 8000);
     const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo',
@@ -636,9 +642,19 @@ function onLogout() {
 }
 
 function tryRestore() {
-  localStorage.removeItem('crm_tok');
-  localStorage.removeItem('crm_exp');
+  const tok = localStorage.getItem('crm_tok');
+  const exp = parseInt(localStorage.getItem('crm_exp') || '0');
   const u = localStorage.getItem('crm_user');
+
+  if (tok && exp > Date.now()) {
+    S.token = tok;
+    tokenExpiresAt = exp;
+    if (u) { try { S.user = JSON.parse(u); renderUser(); } catch(e) { localStorage.removeItem('crm_user'); } }
+    const remaining = Math.max(Math.floor((exp - Date.now()) / 1000), 0);
+    scheduleTokenRefresh(remaining);
+    onLogin();
+    return true;
+  }
 
   if (u) {
     try { S.user = JSON.parse(u); renderUser(); } catch(e) { localStorage.removeItem('crm_user'); return false; }
@@ -658,9 +674,18 @@ function trySilentRefresh() {
   loader.innerHTML = '<div class="spin"></div><div>Восстановление сессии…</div>';
   document.querySelector('main').prepend(loader);
 
-  requestGoogleToken({ prompt: '', mode: 'restore' }).catch(() => {
-    showLoginScreen();
-  });
+  tokenClient.requestAccessToken({ prompt: '' });
+
+  const fallback = setTimeout(() => {
+    const l = document.getElementById('silent-loader');
+    if (l) l.remove();
+    if (!S.token) {
+      localStorage.removeItem('crm_user');
+      showLoginScreen();
+    }
+  }, 8000);
+
+  window._silentFallback = fallback;
 }
 
 // ==================== API LAYER ====================

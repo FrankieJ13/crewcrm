@@ -2540,15 +2540,29 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
 .inc-day-spoiler[open] summary svg { transform:rotate(90deg); }
 .inc-day-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; padding-bottom:12px; }
 .inc-day-cell {
-  display:flex; flex-direction:column; align-items:center;
-  padding:5px 2px; border-radius:8px; background:var(--bg3); min-height:50px;
+  height:50px;
+  box-sizing:border-box;
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+  padding:5px 2px; border-radius:8px; background:var(--bg3); overflow:hidden;
 }
 .inc-day-cell.has-income { background:var(--acc-bg); border:1px solid var(--acc-bdr); }
 .inc-day-cell.empty { opacity:.3; }
 .inc-day-dow { font-size:8px; color:var(--txt3); margin-bottom:1px; font-family:'Golos Text',sans-serif; }
 .inc-day-num { font-family:'Unbounded',sans-serif; font-size:10px; font-weight:700; color:var(--txt2); }
 .inc-day-cell.has-income .inc-day-num { color:var(--acc); }
-.inc-day-sum { font-size:6.5px; font-weight:800; color:var(--acc); text-align:center; line-height:1.2; margin-top:3px; font-family:'Unbounded',sans-serif; word-break:break-all; }
+.inc-day-sum {
+  width:100%;
+  font-size:6px;
+  font-weight:800;
+  color:var(--acc);
+  text-align:center;
+  line-height:1.05;
+  margin-top:2px;
+  font-family:'Unbounded',sans-serif;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
 .kpi-info-btn {
   position:absolute; top:10px; right:10px;
   width:22px; height:22px; border-radius:50%;

@@ -13,7 +13,7 @@ const CFG = {
   FIREBASE: {
     apiKey: 'AIzaSyAmXoyZdIuxmbWyFHTKfdYRbYLcKxgVbWE',
     authDomain: 'crm-crew.firebaseapp.com',
-    databaseURL: '',
+    databaseURL: 'https://crm-crew-default-rtdb.europe-west1.firebasedatabase.app',
     projectId: 'crm-crew',
     appId: '1:1062620277496:web:c59852f529351fbc1b290d',
   },

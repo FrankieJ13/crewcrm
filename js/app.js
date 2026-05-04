@@ -3783,6 +3783,26 @@ function findUserInSheet() {
   return null;
 }
 
+function showAccessDenied() {
+  const email = escapeHtml(normalizeEmail(S.user?.email) || 'email не получен');
+  closeAllDockPopups?.();
+  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity'].forEach(t => {
+    const s = document.getElementById('scr-'+t);
+    if (s) s.classList.remove('on');
+  });
+  const scr = document.getElementById('scr-otchet');
+  const el = document.getElementById('c-otchet');
+  if (scr) scr.classList.add('on');
+  if (el) {
+    el.innerHTML = `<div class="empty">
+      Пользователь не найден в листе USERS.<br>
+      Проверьте, что почта <b>${email}</b> указана в колонке A, а ФИО — в колонке B.
+    </div>`;
+  }
+  dockSetActive?.('home');
+  updateFirebasePage();
+}
+
 async function loadUsersAndStart() {
   try {
     if (!S.usersData) {
@@ -3828,7 +3848,8 @@ async function loadUsersAndStart() {
     // Фоновая предзагрузка остальных данных через 8 сек (не перегружаем API при старте)
     setTimeout(() => backgroundPrefetch(matched), 8000);
   } else {
-    toast('Приветствую, коллега!', 's');
+    showAccessDenied();
+    toast('Почта не найдена в USERS', 'e');
   }
 }
 
@@ -3872,7 +3893,8 @@ async function backgroundPrefetch(matched) {
 
 function goPersonal() {
   const matched = findUserInSheet();
-  if (!matched || !matched.name || matched.role === 'ceo') { goTab('otchet'); return; }
+  if (!matched || !matched.name) { showAccessDenied(); return; }
+  if (matched.role === 'ceo') { goTab('otchet'); return; }
   document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
   if (typeof dockSetActive === 'function') dockSetActive('home');
   showScr('personal');
@@ -5029,12 +5051,14 @@ function dockNav(id) {
     const matched = findUserInSheet();
     if (matched && matched.role !== 'ceo') {
       goPersonal();
-    } else {
+    } else if (matched && matched.role === 'ceo') {
       // CEO → Отдел (dept overview)
       S.reportTab = 'dept';
       updateFirebasePage();
       goTab('otchet');
       dockSetActive('home');
+    } else {
+      showAccessDenied();
     }
     return;
   }

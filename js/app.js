@@ -3783,31 +3783,43 @@ function findUserInSheet() {
   return null;
 }
 
-function showAccessDenied() {
-  const email = escapeHtml(normalizeEmail(S.user?.email) || 'email не получен');
+function showAccessDenied(reason = 'Почта не найдена в USERS') {
+  const email = normalizeEmail(S.user?.email) || 'email не получен';
   closeAllDockPopups?.();
+  closePresenceModal?.();
+  if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+  if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
+  markFirebaseOffline(true);
+  tokenExpiresAt = 0;
+  S.token = null;
+  S.user = null;
+  S.usersData = null;
+  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null };
+  ['crm_tok','crm_exp','crm_user'].forEach(k => localStorage.removeItem(k));
+  document.getElementById('main-nav').style.display = 'none';
+  document.getElementById('main-dock').style.display = 'none';
+  document.getElementById('user-wrap').style.display = 'none';
+  const hmbl = document.getElementById('hmb-logout'); if (hmbl) hmbl.style.display = 'none';
+  const hmbsl = document.getElementById('hmb-sep-logout'); if (hmbsl) hmbsl.style.display = 'none';
+  const hmbAcc = document.getElementById('hmb-account-btn'); if (hmbAcc) hmbAcc.style.display = 'none';
+  const hmbAccSep = document.getElementById('hmb-sep-account'); if (hmbAccSep) hmbAccSep.style.display = 'none';
   ['otchet','dohod','grafik','instruktsii','personal','rating','vizity'].forEach(t => {
     const s = document.getElementById('scr-'+t);
-    if (s) s.classList.remove('on');
+    if (s) { s.classList.remove('on'); s.style.display = ''; }
   });
-  const scr = document.getElementById('scr-otchet');
-  const el = document.getElementById('c-otchet');
-  if (scr) scr.classList.add('on');
-  if (el) {
-    el.innerHTML = `<div class="empty">
-      Пользователь не найден в листе USERS.<br>
-      Проверьте, что почта <b>${email}</b> указана в колонке A, а ФИО — в колонке B.
-    </div>`;
-  }
-  dockSetActive?.('home');
-  updateFirebasePage();
+  closeHamburger?.();
+  const ls = document.getElementById('scr-login');
+  if (ls) { ls.style.display = ''; ls.classList.add('on'); }
+  document.body.classList.add('login-active');
+  if (window._loginLiquidInit) window._loginLiquidInit();
+  toast(`${reason}: ${email}`, 'e');
 }
 
 async function loadUsersAndStart() {
   try {
     apiCacheInvalidate('USERS');
     S.usersData = await api('USERS', 'A1:K500');
-  } catch(e) { S.usersData = []; }
+  } catch(e) { S.usersData = []; showAccessDenied('Нет доступа к таблице'); return; }
   const matched = findUserInSheet();
   refreshFirebaseProfile();
   if (matched && matched.name) {

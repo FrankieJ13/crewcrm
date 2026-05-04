@@ -3805,9 +3805,8 @@ function showAccessDenied() {
 
 async function loadUsersAndStart() {
   try {
-    if (!S.usersData) {
-      S.usersData = await api('USERS', 'A1:K50');
-    }
+    apiCacheInvalidate('USERS');
+    S.usersData = await api('USERS', 'A1:K500');
   } catch(e) { S.usersData = []; }
   const matched = findUserInSheet();
   refreshFirebaseProfile();

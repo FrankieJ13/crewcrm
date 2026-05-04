@@ -1787,11 +1787,11 @@ function renderOtchet() {
       warmDolya:warmCnvrs[8]||'—', warmKoef:warmCnvrs[12]||'—',
       genConVis:genCnvrs[6]||'—', genConKred:genCnvrs[7]||'—',
       genDolya:genCnvrs[8]||'—', genKoef:genCnvrs[12]||'—',
-      rs, medal: idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'', idx: idx+1
+      rs, idx: idx+1
     }).replace(/'/g,"&#39;");
 
     return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
-      <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${getMgrMessengerHtml(name)}${medalBtn(idx)}</div><button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
+      <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${getMgrMessengerHtml(name)}</div><button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
       <div class="mop-mini">
         <div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
         <div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div>
@@ -1890,10 +1890,10 @@ function renderDozhimCards() {
       rplan: plan, ost, prc: factNum+'%', prog: progNum+'%', allV: allVis,
       kred800:s.kred800||0, nal800:s.nal800||0, obmen800:s.obmen800||0, kom800:s.kom800||0,
       kred1000:s.kred1000||0, nal1000:s.nal1000||0, kom1000:s.kom1000||0, zadatok:s.zadatok||0,
-      rs, medal: idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'', idx: idx+1,
+      rs, idx: idx+1,
     }).replace(/'/g,"&#39;");
     return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
-      <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name.toUpperCase()}</span>${getMgrMessengerHtml(name)}${medalBtn(idx)}</div><button class="mop-info-btn" onclick="openDozhimModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
+      <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name.toUpperCase()}</span>${getMgrMessengerHtml(name)}</div><button class="mop-info-btn" onclick="openDozhimModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
       <div class="mop-mini">
         <div class="mm"><div class="ml">Визиты</div><div class="mv">${allVis}</div></div>
         <div class="mm"><div class="ml">План</div><div class="mv">${plan}</div></div>
@@ -1911,7 +1911,7 @@ function openDozhimModal(dataStr) {
   const d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"'));
   const p = num(d.prc);
   const rs = d.rs;
-  document.getElementById('mop-modal-title').innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>${d.medal?' '+d.medal:''}`;
+  document.getElementById('mop-modal-title').innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>`;
   document.getElementById('mop-modal-body').innerHTML = `<div class="mop-grid4"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div></div><div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div><div class="modal-sec"><div class="modal-sec-title">КАТ 800</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Обмен</div><div class="mc-v">${d.obmen800||0}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">КАТ 1000</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1000}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1000}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1000}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1000}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div></div></div>`;
   document.getElementById('mop-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -2145,7 +2145,7 @@ function renderDohodCrm(el) {
         </div>
       </div>` : `<div style="text-align:right"><span class="zp-a" style="color:${rs.color}">—</span></div>`;
 
-    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span>${getMgrMessengerHtml(item.name)}${medalBtn(idx)}</div>${incomeCols}<div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div></div>`;
+    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span>${getMgrMessengerHtml(item.name)}</div>${incomeCols}<div class="zp-bg"><div class="zp-fill" style="width:${w}%;background:${rs.color}"></div></div></div>`;
   }).join('');
 
   setLiveHTML(el, `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15);position:relative"><div class="zl">Прогноз фонда отдела</div><div class="zv">${fmtRub(totalFund)}</div><button class="income-modal-info-btn" onclick="openSalInfo('crm')" title="Как считается зарплата" style="position:absolute;top:10px;right:10px">i</button></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`);
@@ -2500,7 +2500,7 @@ function openMopModal(dataStr) {
   const factPct = d.rplan && num(d.rplan) > 0
     ? Math.min(Math.round(num(d.allV) / num(d.rplan) * 100), 100)
     : parseFloat(String(d.prc||'0').replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
-  document.getElementById('mop-modal-title').innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>${d.medal?' '+d.medal:''}`;
+  document.getElementById('mop-modal-title').innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>`;
   document.getElementById('mop-modal-body').innerHTML = `<div class="mop-grid4" style="grid-template-columns:repeat(3,1fr)"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Дневной</div><div class="mv">${d.daily||'—'}</div></div><div class="m4"><div class="ml">Прогноз, шт</div><div class="mv" style="color:${pctClr(progPct)}">${progVis}</div></div><div class="m4"><div class="ml">Прогноз, %</div><div class="mv" style="color:${pctClr(progPct)}">${d.prog}</div></div></div><div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${factPct}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div><div class="modal-sec"><div class="modal-sec-title">CRM</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td800}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.crmConVis}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.crmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.crmDolya}</div></div><div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.crmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТЁПЛЫЕ ЛИДЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1200}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1200}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1200}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td1200}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1200}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.warmConVis}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.warmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.warmDolya}</div></div><div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.warmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ОБЩИЙ РЕЗУЛЬТАТ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.genConVis}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.genConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.genDolya}</div></div><div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.genKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТРЕБУЮТ АКТУАЛИЗАЦИИ / ОТКАЗЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">В салоне</div><div class="mc-v">${d.vsalone}</div></div><div class="modal-cell"><div class="mc-l">В КСО</div><div class="mc-v">${d.vkso}</div></div><div class="modal-cell"><div class="mc-l">В банке</div><div class="mc-v">${d.vbanke}</div></div><div class="modal-cell"><div class="mc-l">ФССП</div><div class="mc-v">${d.vfSSP}</div></div><div class="modal-cell"><div class="mc-l">Отказ</div><div class="mc-v">${d.otkaz}</div></div></div></div>`;
   document.getElementById('mop-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -4801,7 +4801,6 @@ function renderRating() {
     { strip:'#cd7f32', bg:'rgba(205,127,50,0.08)', num:'rgba(205,127,50,0.15)', numTxt:'#cd7f32' },
   ];
 
-  const medals = ['🥇','🥈','🥉'];
   const rand = (a, b) => Math.round(a + Math.random() * (b - a));
   function randomizeRatingPetals(card) {
     const rect = card.getBoundingClientRect();
@@ -4882,7 +4881,7 @@ function renderRating() {
         ${petalsHtml}
         <div class="rating-card-strip" style="background:${stripColor}"></div>
         <div class="rating-card-top">
-          <div class="rating-rank-num" style="background:${rankNumBg};color:${rankNumColor};font-size:${isTop?'16px':'10px'}">${isTop ? medals[idx] : idx+1}</div>
+          <div class="rating-rank-num" style="background:${rankNumBg};color:${rankNumColor};font-size:${isTop?'16px':'10px'}">${isTop ? medalBtn(idx) : idx+1}</div>
           <div class="rating-card-name">
             <div class="rating-card-name-text" style="display:flex;align-items:center;gap:4px">${m.name.toUpperCase()}${messengerHtml}</div>
             ${salDisplay ? `<div style="font-size:10px;color:var(--acc);margin-top:2px;font-weight:700">${salDisplay}</div>` : ''}

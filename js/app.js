@@ -13,6 +13,7 @@ const CFG = {
 };
 const ASSET_BASE = new URL('./logos/', document.baseURI).href;
 const DEFAULT_ICON_BASE = ASSET_BASE + 'default/';
+const COSMIC_ICON_BASE = ASSET_BASE + 'cosmic/';
 
 /* ══ MONTH STATE ══ */
 let currentSuffix = (() => {
@@ -162,20 +163,20 @@ function syncTheme() {
 
   // Cosmic: подменяем иконки в доке и гамбургере
   const COSMIC_ICONS = {
-    'dock-btn-home':        ASSET_BASE + 'cosmic_home.svg',
-    'dock-btn-kpi':         ASSET_BASE + 'cosmic_kpi.svg',
-    'dock-btn-rating':      ASSET_BASE + 'cosmic_rang.svg',
-    'dock-btn-dohod':       ASSET_BASE + 'cosmic_money.svg',
-    'dock-btn-grafik':      ASSET_BASE + 'cosmic_grafik.svg',
-    'dock-btn-instruktsii': ASSET_BASE + 'cosmic_faq.svg',
-    'dock-btn-vizity':      ASSET_BASE + 'cosmic_vizity.svg',
-    'btn-refresh':          ASSET_BASE + 'cosmic_refresh.svg',
-    'btn-hamburger':        ASSET_BASE + 'cosmic_menu.svg',
+    'dock-btn-home':        COSMIC_ICON_BASE + 'cosmic_home.svg',
+    'dock-btn-kpi':         COSMIC_ICON_BASE + 'cosmic_kpi.svg',
+    'dock-btn-rating':      COSMIC_ICON_BASE + 'cosmic_rang.svg',
+    'dock-btn-dohod':       COSMIC_ICON_BASE + 'cosmic_money.svg',
+    'dock-btn-grafik':      COSMIC_ICON_BASE + 'cosmic_grafik.svg',
+    'dock-btn-instruktsii': COSMIC_ICON_BASE + 'cosmic_faq.svg',
+    'dock-btn-vizity':      COSMIC_ICON_BASE + 'cosmic_vizity.svg',
+    'btn-refresh':          COSMIC_ICON_BASE + 'cosmic_refresh.svg',
+    'btn-hamburger':        COSMIC_ICON_BASE + 'cosmic_menu.svg',
     // Гамбургер
-    'hmb-month-trigger':    ASSET_BASE + 'cosmic_base.svg',
-    'hmb-plan-edit':        ASSET_BASE + 'cosmic_config.svg',
-    'hmb-logout':           ASSET_BASE + 'cosmic_exit.svg',
-    'hmb-about-btn':        ASSET_BASE + 'cosmic_about.svg',
+    'hmb-month-trigger':    COSMIC_ICON_BASE + 'cosmic_base.svg',
+    'hmb-plan-edit':        COSMIC_ICON_BASE + 'cosmic_config.svg',
+    'hmb-logout':           COSMIC_ICON_BASE + 'cosmic_exit.svg',
+    'hmb-about-btn':        COSMIC_ICON_BASE + 'cosmic_about.svg',
   };
   const DEFAULT_ICONS = {
     'dock-btn-home':        DEFAULT_ICON_BASE + 'home.svg',
@@ -217,7 +218,7 @@ function syncTheme() {
 
   if (isCosmic) {
     Object.entries(COSMIC_ICONS).forEach(([id, src]) => setAppIcon(document.getElementById(id), src, 'cosmic'));
-    if (themeTrigger) setAppIcon(themeTrigger, ASSET_BASE + 'cosmic_themes.svg', 'cosmic');
+    if (themeTrigger) setAppIcon(themeTrigger, COSMIC_ICON_BASE + 'cosmic_themes.svg', 'cosmic');
     // Аккаунт
     const acc = document.getElementById('hmb-account-btn');
     if (acc) { const img = acc.querySelector('img:not(.app-icon)'); if(img) img.style.opacity='.7'; }
@@ -5299,13 +5300,16 @@ function renderVizRow(row, dept, locked, isFirstOfDate) {
 
 function getVizSverkaMark(value) {
   const s = String(value || '').trim().toLowerCase();
+  const isCosmic = document.body.classList.contains('cosmic');
+  const iconBase = isCosmic ? COSMIC_ICON_BASE : DEFAULT_ICON_BASE;
+  const iconPrefix = isCosmic ? 'cosmic-' : '';
   if (s === 'да' || s === 'yes') {
-    return `<span class="vt-sverka-mark yes" title="Сверено" aria-label="Сверено" style="--sverka-icon:url('${DEFAULT_ICON_BASE}s_verified.svg')"><i></i></span>`;
+    return `<span class="vt-sverka-mark yes" title="Сверено" aria-label="Сверено" style="--sverka-icon:url('${iconBase}${iconPrefix}s_verified.svg')"><i></i></span>`;
   }
   if (s === 'нет' || s === 'no') {
-    return `<span class="vt-sverka-mark no" title="Не прошел сверку" aria-label="Не прошел сверку" style="--sverka-icon:url('${DEFAULT_ICON_BASE}s_not-verified.svg')"><i></i></span>`;
+    return `<span class="vt-sverka-mark no" title="Не прошел сверку" aria-label="Не прошел сверку" style="--sverka-icon:url('${iconBase}${iconPrefix}s_not-verified.svg')"><i></i></span>`;
   }
-  return `<span class="vt-sverka-mark empty" title="Визит проверяется..." aria-label="Визит проверяется" style="--sverka-icon:url('${DEFAULT_ICON_BASE}s_check.svg')"><i></i></span>`;
+  return `<span class="vt-sverka-mark empty" title="Визит проверяется..." aria-label="Визит проверяется" style="--sverka-icon:url('${iconBase}${iconPrefix}s_check.svg')"><i></i></span>`;
 }
 
 function getVizChipTone(label) {

@@ -11,11 +11,11 @@ const CFG = {
   CLIENT_ID: '364532815329-0j1lkobb1v9vcserj6artf64nd95a0la.apps.googleusercontent.com',
   SHEET_ID:  '1DeUsHB_O1SbIMR4p5yd64o_R0yllWvtnyNhjxjhipn8',
   FIREBASE: {
-    apiKey: '',
-    authDomain: '',
+    apiKey: 'AIzaSyAmXoyZdIuxmbWyFHTKfdYRbYLcKxgVbWE',
+    authDomain: 'crm-crew.firebaseapp.com',
     databaseURL: '',
-    projectId: '',
-    appId: '',
+    projectId: 'crm-crew',
+    appId: '1:1062620277496:web:c59852f529351fbc1b290d',
   },
 };
 const ASSET_BASE = new URL('./logos/', document.baseURI).href;

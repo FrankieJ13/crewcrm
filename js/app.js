@@ -454,16 +454,27 @@ function normalizePresenceUser(user) {
 
 function getPresencePageLabel() {
   const deptLabel = dept => dept === 'dozhim' ? 'Дожим' : 'CRM';
+  const matched = findUserInSheet();
+  const role = matched?.role || 'crm';
+  const isCeo = role === 'ceo';
+  const roleDept = role === 'dozhim' ? 'dozhim' : 'crm';
+  const effectiveRatingDept = isCeo ? S.ratingDept : roleDept;
+  const effectiveDohodDept = isCeo ? S.dohodTab : roleDept;
   if (document.getElementById('scr-personal')?.classList.contains('on')) return 'Мой KPI';
-  if (document.getElementById('scr-rating')?.classList.contains('on')) return `Рейтинг ${deptLabel(S.ratingDept)}`;
+  if (document.getElementById('scr-rating')?.classList.contains('on')) {
+    return isCeo ? `Рейтинг ${deptLabel(effectiveRatingDept)}` : 'Рейтинг';
+  }
   if (document.getElementById('scr-grafik')?.classList.contains('on')) return 'График';
-  if (document.getElementById('scr-dohod')?.classList.contains('on')) return `Доход ${deptLabel(S.dohodTab)}`;
-  if (document.getElementById('scr-vizity')?.classList.contains('on')) return `Визиты ${deptLabel(S.vizDept)}`;
+  if (document.getElementById('scr-dohod')?.classList.contains('on')) {
+    return isCeo ? `Доход ${deptLabel(effectiveDohodDept)}` : 'Мой доход';
+  }
+  if (document.getElementById('scr-vizity')?.classList.contains('on')) return `Визиты ${deptLabel(S.vizDept || roleDept)}`;
   if (document.getElementById('scr-instruktsii')?.classList.contains('on')) {
     const faq = S.faqTab === 'mango' ? 'MANGO' : S.faqTab === 'links' ? 'Ссылки' : 'Инструкции';
     return `FAQ ${faq}`;
   }
   if (document.getElementById('scr-otchet')?.classList.contains('on')) {
+    if (!isCeo) return 'Главная';
     if (S.reportTab === 'mgr') return 'KPI CRM';
     if (S.reportTab === 'dozhim') return 'KPI Дожим';
     return 'Главная';
@@ -4974,6 +4985,7 @@ function dockNav(id) {
     } else {
       // CEO → Отдел (dept overview)
       S.reportTab = 'dept';
+      updateFirebasePage();
       goTab('otchet');
       dockSetActive('home');
     }
@@ -4994,6 +5006,7 @@ function dockNav(id) {
     if (fds) fds.style.display = 'none';
     const gs = document.getElementById('grafik-sticky');
     if (gs) gs.style.display = 'none';
+    updateFirebasePage();
     loadRating();
     return;
   }
@@ -5066,6 +5079,7 @@ async function loadRating() {
   // Определяем какой отдел показывать
   // S.ratingDept: 'crm' | 'dozhim' (только для CEO)
   if (!S.ratingDept) S.ratingDept = isCeo ? 'crm' : role === 'dozhim' ? 'dozhim' : 'crm';
+  updateFirebasePage();
 
   if (!S.data.vizity || !S.data.plan) {
     el.innerHTML = loader();

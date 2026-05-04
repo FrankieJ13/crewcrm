@@ -466,6 +466,8 @@ function renderPresenceState() {
     countEl.textContent = users.length;
     countEl.style.display = users.length ? 'flex' : 'none';
   }
+  const titleEl = document.getElementById('presence-title');
+  if (titleEl) titleEl.textContent = `Сейчас онлайн: ${users.length}`;
 
   const body = document.getElementById('presence-body');
   if (!body) return;
@@ -475,7 +477,7 @@ function renderPresenceState() {
   }
   if (!users.length) {
     const msg = firebasePresence.error || 'Пока никого онлайн не видно';
-    body.innerHTML = `<div class="presence-total">Сейчас онлайн: 0</div><div class="presence-empty">${escapeHtml(msg)}</div>`;
+    body.innerHTML = `<div class="presence-empty">${escapeHtml(msg)}</div>`;
     return;
   }
   const rows = users.map(u => `
@@ -488,7 +490,7 @@ function renderPresenceState() {
   const note = firebasePresence.error
     ? `<div class="presence-empty">${escapeHtml(firebasePresence.error)}</div>`
     : '';
-  body.innerHTML = `<div class="presence-total">Сейчас онлайн: ${users.length}</div>${rows}${note}`;
+  body.innerHTML = `${rows}${note}`;
 }
 
 function subscribeFirebaseUsers() {
@@ -513,17 +515,39 @@ function subscribeFirebaseUsers() {
 
 function updateFirebasePage() {
   const p = firebasePresence;
-  if (!p.userRef || !window.firebase?.database) return;
   const page = getPresencePageLabel();
   if (p.selfUser) {
     p.selfUser = { ...p.selfUser, page };
-    renderPresenceState();
   }
+  if (p.onlineUsers?.length && p.uid) {
+    p.onlineUsers = p.onlineUsers.map(u => u.uid === p.uid ? { ...u, page } : u);
+  }
+  renderPresenceState();
+  if (!p.userRef || !window.firebase?.database) return;
   p.userRef.update({
     page,
     updatedAt: firebase.database.ServerValue.TIMESTAMP,
   }).catch(() => {});
   if (p.connectionRef) p.connectionRef.update({ page }).catch(() => {});
+}
+
+function refreshFirebaseProfile() {
+  const p = firebasePresence;
+  if (!p.userRef || !p.uid || !window.firebase?.database) return;
+  const profile = firebaseProfile({ uid: p.uid });
+  if (p.selfUser) {
+    p.selfUser = { ...p.selfUser, ...profile, status: 'online' };
+  }
+  if (p.onlineUsers?.length) {
+    p.onlineUsers = p.onlineUsers.map(u => u.uid === p.uid ? { ...u, ...profile, status: 'online' } : u);
+    renderPresenceState();
+  }
+  p.userRef.update({
+    ...profile,
+    status: 'online',
+    updatedAt: firebase.database.ServerValue.TIMESTAMP,
+  }).catch(() => {});
+  if (p.connectionRef) p.connectionRef.update({ page: profile.page }).catch(() => {});
 }
 
 function openPresenceModal() {
@@ -640,8 +664,9 @@ function startFirebasePresence(user) {
 
   p.connectionsHandler = snap => {
     if (snap.exists()) {
+      const currentProfile = firebaseProfile({ uid: p.uid });
       p.userRef.update({
-        ...profile,
+        ...currentProfile,
         status: 'online',
         updatedAt: firebase.database.ServerValue.TIMESTAMP,
       });
@@ -836,6 +861,7 @@ async function loadUser() {
     S.user = await r.json();
     localStorage.setItem('crm_user', JSON.stringify(S.user));
     renderUser();
+    refreshFirebaseProfile();
     if (S.usersData !== null &&
         document.getElementById('scr-otchet')?.classList.contains('on') &&
         !document.getElementById('scr-personal')?.classList.contains('on')) {

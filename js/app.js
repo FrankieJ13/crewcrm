@@ -4378,6 +4378,33 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
   const R = ratesObj || {};
 
   const dayMap = {};
+  const dayStats = {};
+  const BUY_KREDIT = 'покупка (кредит)';
+  const BUY_NAL    = 'покупка (наличные)';
+  const BUY_OBMEN  = 'обмен';
+  const BUY_KOM    = 'комиссия';
+
+  function ensureDayStats(day) {
+    if (!dayStats[day]) {
+      dayStats[day] = isDozhim
+        ? {
+            ch800:  { vis:0, kred:0, nal:0, obmen:0, kom:0, zadatok:0 },
+            ch1000: { vis:0, kred:0, nal:0, obmen:0, kom:0 },
+          }
+        : {
+            crm:  { vis:0, kred:0, nal:0, obmen:0, kom:0, zadatok:0 },
+            warm: { vis:0, kred:0, nal:0, obmen:0, kom:0 },
+          };
+    }
+    return dayStats[day];
+  }
+
+  function addDealCounters(bucket, status) {
+    if (status === BUY_KREDIT) bucket.kred++;
+    if (status === BUY_NAL)    bucket.nal++;
+    if (status === BUY_OBMEN && Object.prototype.hasOwnProperty.call(bucket, 'obmen')) bucket.obmen++;
+    if (status === BUY_KOM)    bucket.kom++;
+  }
 
   if (vizData) {
     for (let i = 1; i < vizData.length; i++) {
@@ -4394,59 +4421,72 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
       if (!day || day < 1 || day > 31) continue;
 
       const cat  = (row[6]||'').trim().toLowerCase();
-      const deal = (row[7]||'').trim().toLowerCase();
+      const deal = (row[4]||'').trim().toLowerCase();
       const zadSum = parseFloat(String(row[9]||'0').replace(/[^\d.]/g,'')) || 0;
-
-      let earn = 0;
 
       if (!isDozhim) {
         const is800  = cat === 'кат 800';
         const is1200 = cat === 'кат 1200';
-        const isKred  = deal === 'покупка (кредит)';
-        const isNal   = deal === 'покупка (наличные)';
-        const isObmen = deal === 'обмен';
-        const isKom   = deal === 'комиссия';
-
+        const stat = ensureDayStats(day);
         if (is800) {
-          if      (isKred)  earn = R.rCrmKred;
-          else if (isNal)   earn = R.rCrmNal;
-          else if (isObmen) earn = R.rCrmObmen;
-          else if (isKom)   earn = R.rCrmKom;
-          else              earn = R.rCrmVis;
+          stat.crm.vis++;
+          addDealCounters(stat.crm, deal);
+          if (zadSum > 1000) stat.crm.zadatok++;
         } else if (is1200) {
-          if      (isKred)  earn = R.rWarmKred;
-          else if (isNal)   earn = R.rWarmNal;
-          else if (isObmen) earn = R.rWarmObmen;
-          else if (isKom)   earn = R.rWarmKom;
-          else              earn = R.rWarmVis;
+          stat.warm.vis++;
+          addDealCounters(stat.warm, deal);
         }
-        if (zadSum > 1000) earn += R.rZadatok || 0;
 
       } else {
         const is800  = cat === 'кат 800';
         const is1000 = cat === 'кат 1000';
-        const isKred  = deal === 'покупка (кредит)';
-        const isNal   = deal === 'покупка (наличные)';
-        const isObmen = deal === 'обмен';
-        const isKom   = deal === 'комиссия';
-
+        const stat = ensureDayStats(day);
         if (is800) {
-          if      (isKred)  earn = R.r800Kred;
-          else if (isNal)   earn = R.r800Nal;
-          else if (isObmen) earn = R.r800Obmen;
-          else if (isKom)   earn = R.r800Kom;
-          else              earn = R.r800Vis;
+          stat.ch800.vis++;
+          addDealCounters(stat.ch800, deal);
+          if (zadSum >= 1000) stat.ch800.zadatok++;
         } else if (is1000) {
-          if      (isKred)  earn = R.r1000Kred;
-          else if (isNal)   earn = R.r1000Nal;
-          else if (isKom)   earn = R.r1000Kom;
-          else              earn = R.r1000Vis;
+          stat.ch1000.vis++;
+          addDealCounters(stat.ch1000, deal);
         }
       }
-
-      if (earn > 0) dayMap[day] = (dayMap[day] || 0) + earn;
     }
   }
+
+  Object.entries(dayStats).forEach(([day, stat]) => {
+    let earn = 0;
+    if (!isDozhim) {
+      const crmPure  = Math.max(0, stat.crm.vis  - stat.crm.kred  - stat.crm.nal  - stat.crm.obmen  - stat.crm.kom);
+      const warmPure = Math.max(0, stat.warm.vis - stat.warm.kred - stat.warm.nal - stat.warm.obmen - stat.warm.kom);
+      earn =
+        crmPure * (R.rCrmVis || 0) +
+        stat.crm.kred * (R.rCrmKred || 0) +
+        stat.crm.nal * (R.rCrmNal || 0) +
+        stat.crm.obmen * (R.rCrmObmen || 0) +
+        stat.crm.kom * (R.rCrmKom || 0) +
+        stat.crm.zadatok * (R.rZadatok || 0) +
+        warmPure * (R.rWarmVis || 0) +
+        stat.warm.kred * (R.rWarmKred || 0) +
+        stat.warm.nal * (R.rWarmNal || 0) +
+        stat.warm.obmen * (R.rWarmObmen || 0) +
+        stat.warm.kom * (R.rWarmKom || 0);
+    } else {
+      const pure800  = Math.max(0, stat.ch800.vis  - stat.ch800.kred  - stat.ch800.nal  - stat.ch800.obmen  - stat.ch800.kom);
+      const pure1000 = Math.max(0, stat.ch1000.vis - stat.ch1000.kred - stat.ch1000.nal - stat.ch1000.obmen - stat.ch1000.kom);
+      earn =
+        pure800 * (R.r800Vis || 0) +
+        stat.ch800.kred * (R.r800Kred || 0) +
+        stat.ch800.nal * (R.r800Nal || 0) +
+        stat.ch800.obmen * (R.r800Obmen || 0) +
+        stat.ch800.kom * (R.r800Kom || 0) +
+        stat.ch800.zadatok * (R.rZadatok || 0) +
+        pure1000 * (R.r1000Vis || 0) +
+        stat.ch1000.kred * (R.r1000Kred || 0) +
+        stat.ch1000.nal * (R.r1000Nal || 0) +
+        stat.ch1000.kom * (R.r1000Kom || 0);
+    }
+    if (earn > 0) dayMap[day] = earn;
+  });
 
   const fmtShort = v => Math.round(v).toLocaleString('ru');
 

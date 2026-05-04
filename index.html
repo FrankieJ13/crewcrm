@@ -46,6 +46,16 @@
           </div>
           <span id="user-name"></span>
         </div>
+        <button class="btn-icon presence-btn" id="btn-presence" title="Кто онлайн" aria-label="Кто онлайн">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 11.5a4 4 0 1 0-8 0"/>
+            <path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>
+            <circle cx="18.5" cy="6.5" r="3"/>
+            <path d="M22 13.5a4.5 4.5 0 0 0-2.2-3.86"/>
+            <path d="M2 13.5a4.5 4.5 0 0 1 2.2-3.86"/>
+          </svg>
+          <span class="presence-count" id="presence-count" style="display:none">0</span>
+        </button>
         <button class="btn-icon" id="btn-refresh" title="Обновить">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/>
@@ -590,6 +600,15 @@
       <button class="si-close" onclick="closeSalInfo()">×</button>
     </div>
     <div class="si-body" id="sal-info-body"></div>
+  </div>
+</div>
+<div id="presence-overlay" onclick="if(event.target===this)closePresenceModal()">
+  <div id="presence-modal">
+    <div class="presence-hdr">
+      <span class="presence-title">Сейчас онлайн</span>
+      <button class="presence-close" onclick="closePresenceModal()">×</button>
+    </div>
+    <div class="presence-body" id="presence-body"></div>
   </div>
 </div>
 <div id="toast"></div>

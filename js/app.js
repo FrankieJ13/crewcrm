@@ -282,6 +282,7 @@ function showScr(id) {
     const dockId = id === 'personal' ? 'home' : id === 'otchet' ? 'home' : id;
     dockSetActive(dockId);
   }
+  updateFirebasePage();
 }
 
 function num(v) { return parseInt(v)||0 }
@@ -370,6 +371,9 @@ const firebasePresence = {
   connectionRef: null,
   connectedHandler: null,
   connectionsHandler: null,
+  usersRef: null,
+  usersHandler: null,
+  onlineUsers: [],
 };
 
 // Определяем Android WebView (Capacitor) — Google OAuth там не работает
@@ -418,6 +422,23 @@ function firebaseConfigured() {
   return !!(cfg.apiKey && cfg.authDomain && cfg.databaseURL && cfg.projectId && cfg.appId);
 }
 
+function escapeHtml(v) {
+  return String(v ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+
+function getPresencePageLabel() {
+  if (document.getElementById('scr-rating')?.classList.contains('on')) return 'Рейтинг';
+  if (document.getElementById('scr-grafik')?.classList.contains('on')) return 'График';
+  if (document.getElementById('scr-dohod')?.classList.contains('on')) return 'Доход';
+  if (document.getElementById('scr-vizity')?.classList.contains('on')) return 'Визиты';
+  if (document.getElementById('scr-instruktsii')?.classList.contains('on')) return 'FAQ';
+  if (document.getElementById('scr-personal')?.classList.contains('on')) return 'KPI';
+  if (document.getElementById('scr-otchet')?.classList.contains('on')) return 'KPI';
+  return 'Главная';
+}
+
 function initFirebasePresence() {
   if (firebasePresence.app) return firebasePresence;
   if (!firebaseConfigured()) return null;
@@ -431,6 +452,68 @@ function initFirebasePresence() {
   return firebasePresence;
 }
 
+function renderPresenceState() {
+  const users = firebasePresence.onlineUsers || [];
+  const countEl = document.getElementById('presence-count');
+  if (countEl) {
+    countEl.textContent = users.length;
+    countEl.style.display = users.length ? 'flex' : 'none';
+  }
+
+  const body = document.getElementById('presence-body');
+  if (!body) return;
+  if (!firebaseConfigured()) {
+    body.innerHTML = '<div class="presence-empty">Firebase еще не настроен</div>';
+    return;
+  }
+  if (!users.length) {
+    body.innerHTML = '<div class="presence-total">Сейчас онлайн: 0</div><div class="presence-empty">Пока никого онлайн не видно</div>';
+    return;
+  }
+  const rows = users.map(u => `
+    <div class="presence-row">
+      <span class="presence-dot"></span>
+      <span class="presence-name">${escapeHtml(u.name || u.email || 'Без имени')}</span>
+      <span class="presence-page">${escapeHtml(u.page || 'Сайт')}</span>
+    </div>
+  `).join('');
+  body.innerHTML = `<div class="presence-total">Сейчас онлайн: ${users.length}</div>${rows}`;
+}
+
+function subscribeFirebaseUsers() {
+  const p = firebasePresence;
+  if (!p.db || p.usersRef) return;
+  p.usersRef = p.db.ref('presence/users');
+  p.usersHandler = snap => {
+    const raw = snap.val() || {};
+    p.onlineUsers = Object.values(raw)
+      .filter(u => u && u.status === 'online')
+      .sort((a, b) => String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'ru'));
+    renderPresenceState();
+  };
+  p.usersRef.on('value', p.usersHandler);
+}
+
+function updateFirebasePage() {
+  const p = firebasePresence;
+  if (!p.userRef || !window.firebase?.database) return;
+  const page = getPresencePageLabel();
+  p.userRef.update({
+    page,
+    updatedAt: firebase.database.ServerValue.TIMESTAMP,
+  }).catch(() => {});
+  if (p.connectionRef) p.connectionRef.update({ page }).catch(() => {});
+}
+
+function openPresenceModal() {
+  renderPresenceState();
+  document.getElementById('presence-overlay')?.classList.add('open');
+}
+
+function closePresenceModal() {
+  document.getElementById('presence-overlay')?.classList.remove('open');
+}
+
 function firebaseProfile(user) {
   const profile = S.user || {};
   return {
@@ -438,7 +521,7 @@ function firebaseProfile(user) {
     name: user.displayName || profile.name || '',
     email: user.email || profile.email || '',
     photoURL: user.photoURL || profile.picture || '',
-    page: location.pathname || '/',
+    page: getPresencePageLabel(),
     userAgent: navigator.userAgent,
   };
 }
@@ -448,6 +531,7 @@ function detachFirebasePresence() {
   try {
     if (p.connectedHandler && p.db) p.db.ref('.info/connected').off('value', p.connectedHandler);
     if (p.connectionsHandler && p.connectionsRef) p.connectionsRef.off('value', p.connectionsHandler);
+    if (p.usersHandler && p.usersRef) p.usersRef.off('value', p.usersHandler);
     if (p.connectionRef) p.connectionRef.remove().catch?.(() => {});
   } catch(e) {}
   p.uid = null;
@@ -456,6 +540,10 @@ function detachFirebasePresence() {
   p.connectionRef = null;
   p.connectedHandler = null;
   p.connectionsHandler = null;
+  p.usersRef = null;
+  p.usersHandler = null;
+  p.onlineUsers = [];
+  renderPresenceState();
 }
 
 function markFirebaseOffline(signOut = false) {
@@ -487,6 +575,7 @@ function startFirebasePresence(user) {
   p.uid = uid;
   p.userRef = p.db.ref(`presence/users/${uid}`);
   p.connectionsRef = p.db.ref(`presence/connections/${uid}`);
+  subscribeFirebaseUsers();
 
   const connectedRef = p.db.ref('.info/connected');
   p.connectedHandler = snap => {
@@ -4518,6 +4607,7 @@ function closeIncomeDetail(e) {
 
 // ==================== INIT ====================
 document.getElementById('btn-refresh').addEventListener('click', reloadCurrent);
+document.getElementById('btn-presence')?.addEventListener('click', openPresenceModal);
 document.addEventListener('click', e => {
   // Hamburger
   if (!e.target.closest('#hamburger-wrap')) closeHamburger();

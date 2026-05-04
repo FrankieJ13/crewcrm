@@ -376,6 +376,8 @@ const firebasePresence = {
   usersRef: null,
   usersHandler: null,
   onlineUsers: [],
+  selfUser: null,
+  error: '',
 };
 
 // Определяем Android WebView (Capacitor) — Google OAuth там не работает
@@ -455,7 +457,10 @@ function initFirebasePresence() {
 }
 
 function renderPresenceState() {
-  const users = firebasePresence.onlineUsers || [];
+  const listed = firebasePresence.onlineUsers || [];
+  const self = firebasePresence.selfUser;
+  const hasSelf = self && listed.some(u => u.uid === self.uid);
+  const users = self && !hasSelf ? [self, ...listed] : listed;
   const countEl = document.getElementById('presence-count');
   if (countEl) {
     countEl.textContent = users.length;
@@ -469,7 +474,8 @@ function renderPresenceState() {
     return;
   }
   if (!users.length) {
-    body.innerHTML = '<div class="presence-total">Сейчас онлайн: 0</div><div class="presence-empty">Пока никого онлайн не видно</div>';
+    const msg = firebasePresence.error || 'Пока никого онлайн не видно';
+    body.innerHTML = `<div class="presence-total">Сейчас онлайн: 0</div><div class="presence-empty">${escapeHtml(msg)}</div>`;
     return;
   }
   const rows = users.map(u => `
@@ -479,7 +485,10 @@ function renderPresenceState() {
       <span class="presence-page">${escapeHtml(u.page || 'Сайт')}</span>
     </div>
   `).join('');
-  body.innerHTML = `<div class="presence-total">Сейчас онлайн: ${users.length}</div>${rows}`;
+  const note = firebasePresence.error
+    ? `<div class="presence-empty">${escapeHtml(firebasePresence.error)}</div>`
+    : '';
+  body.innerHTML = `<div class="presence-total">Сейчас онлайн: ${users.length}</div>${rows}${note}`;
 }
 
 function subscribeFirebaseUsers() {
@@ -488,18 +497,28 @@ function subscribeFirebaseUsers() {
   p.usersRef = p.db.ref('presence/users');
   p.usersHandler = snap => {
     const raw = snap.val() || {};
+    p.error = '';
     p.onlineUsers = Object.values(raw)
       .filter(u => u && u.status === 'online')
       .sort((a, b) => String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'ru'));
     renderPresenceState();
   };
-  p.usersRef.on('value', p.usersHandler);
+  p.usersRef.on('value', p.usersHandler, err => {
+    p.error = err?.code === 'PERMISSION_DENIED'
+      ? 'Нет доступа к списку онлайн. Проверь Rules для presence/users.'
+      : 'Онлайн-список временно недоступен';
+    renderPresenceState();
+  });
 }
 
 function updateFirebasePage() {
   const p = firebasePresence;
   if (!p.userRef || !window.firebase?.database) return;
   const page = getPresencePageLabel();
+  if (p.selfUser) {
+    p.selfUser = { ...p.selfUser, page };
+    renderPresenceState();
+  }
   p.userRef.update({
     page,
     updatedAt: firebase.database.ServerValue.TIMESTAMP,
@@ -545,6 +564,8 @@ function detachFirebasePresence() {
   p.usersRef = null;
   p.usersHandler = null;
   p.onlineUsers = [];
+  p.selfUser = null;
+  p.error = '';
   renderPresenceState();
 }
 
@@ -574,10 +595,13 @@ function startFirebasePresence(user) {
 
   const uid = user.uid;
   const profile = firebaseProfile(user);
+  p.selfUser = { ...profile, status: 'online' };
+  p.error = '';
   p.uid = uid;
   p.userRef = p.db.ref(`presence/users/${uid}`);
   p.connectionsRef = p.db.ref(`presence/connections/${uid}`);
   subscribeFirebaseUsers();
+  renderPresenceState();
 
   const connectedRef = p.db.ref('.info/connected');
   p.connectedHandler = snap => {
@@ -596,15 +620,22 @@ function startFirebasePresence(user) {
       updatedAt: firebase.database.ServerValue.TIMESTAMP,
     };
 
-    con.onDisconnect().remove();
-    p.userRef.onDisconnect().update(offline);
+    con.onDisconnect().remove().catch?.(() => {});
+    p.userRef.onDisconnect().update(offline).catch?.(() => {});
     con.set({
       status: 'online',
       connectedAt: firebase.database.ServerValue.TIMESTAMP,
       page: profile.page,
       userAgent: profile.userAgent,
+    }).catch(err => {
+      p.error = err?.code === 'PERMISSION_DENIED' ? 'Нет доступа к записи соединения online' : 'Не удалось записать online-соединение';
+      renderPresenceState();
     });
-    p.userRef.update(online);
+    p.userRef.update(online).catch(err => {
+      p.error = err?.code === 'PERMISSION_DENIED' ? 'Нет доступа к записи online-статуса' : 'Не удалось записать online-статус';
+      renderPresenceState();
+    });
+    renderPresenceState();
   };
 
   p.connectionsHandler = snap => {
@@ -636,6 +667,8 @@ async function syncFirebaseAuth(accessToken) {
     return result.user;
   } catch(e) {
     console.warn('Firebase Auth/Presence не запущен', e);
+    firebasePresence.error = 'Firebase Auth не подключился';
+    renderPresenceState();
     return null;
   }
 }
@@ -4655,6 +4688,9 @@ document.getElementById('btn-presence')?.addEventListener('click', e => {
   if (pop?.classList.contains('open')) closePresenceModal();
   else openPresenceModal();
 });
+document.addEventListener('pointerdown', e => {
+  if (!e.target.closest('#presence-wrap')) closePresenceModal();
+}, true);
 document.addEventListener('click', e => {
   // Hamburger
   if (!e.target.closest('#hamburger-wrap')) closeHamburger();

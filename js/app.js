@@ -432,6 +432,26 @@ function escapeHtml(v) {
   }[ch]));
 }
 
+function getUserSheetNameByEmail(email) {
+  const target = String(email || '').toLowerCase().trim();
+  if (!target || !S.usersData) return '';
+  for (let i = 1; i < S.usersData.length; i++) {
+    const row = S.usersData[i] || [];
+    const emails = String(row[0] || '')
+      .split(/[,;\s]+/)
+      .map(e => e.toLowerCase().trim())
+      .filter(Boolean);
+    if (emails.includes(target)) return String(row[1] || '').trim();
+  }
+  return '';
+}
+
+function normalizePresenceUser(user) {
+  if (!user) return user;
+  const sheetName = getUserSheetNameByEmail(user.email);
+  return sheetName ? { ...user, name: sheetName } : user;
+}
+
 function getPresencePageLabel() {
   if (document.getElementById('scr-rating')?.classList.contains('on')) return 'Рейтинг';
   if (document.getElementById('scr-grafik')?.classList.contains('on')) return 'График';
@@ -457,8 +477,8 @@ function initFirebasePresence() {
 }
 
 function renderPresenceState() {
-  const listed = firebasePresence.onlineUsers || [];
-  const self = firebasePresence.selfUser;
+  const listed = (firebasePresence.onlineUsers || []).map(normalizePresenceUser);
+  const self = normalizePresenceUser(firebasePresence.selfUser);
   const hasSelf = self && listed.some(u => u.uid === self.uid);
   const users = self && !hasSelf ? [self, ...listed] : listed;
   const countEl = document.getElementById('presence-count');
@@ -561,10 +581,12 @@ function closePresenceModal() {
 
 function firebaseProfile(user) {
   const profile = S.user || {};
+  const email = profile.email || user.email || '';
+  const sheetName = getUserSheetNameByEmail(email);
   return {
     uid: user.uid,
-    name: profile.name || user.displayName || '',
-    email: profile.email || user.email || '',
+    name: sheetName || profile.name || user.displayName || '',
+    email,
     photoURL: profile.picture || user.photoURL || '',
     page: getPresencePageLabel(),
     userAgent: navigator.userAgent,
@@ -3699,6 +3721,7 @@ async function loadUsersAndStart() {
     }
   } catch(e) { S.usersData = []; }
   const matched = findUserInSheet();
+  refreshFirebaseProfile();
   if (matched && matched.name) {
     const parts = matched.name.trim().split(/\s+/);
     const firstName = parts.length >= 2 ? parts[1] : parts[0];

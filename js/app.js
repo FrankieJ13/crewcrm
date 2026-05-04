@@ -509,11 +509,11 @@ function updateFirebasePage() {
 
 function openPresenceModal() {
   renderPresenceState();
-  document.getElementById('presence-overlay')?.classList.add('open');
+  document.getElementById('presence-popover')?.classList.add('open');
 }
 
 function closePresenceModal() {
-  document.getElementById('presence-overlay')?.classList.remove('open');
+  document.getElementById('presence-popover')?.classList.remove('open');
 }
 
 function firebaseProfile(user) {
@@ -4649,10 +4649,16 @@ function closeIncomeDetail(e) {
 
 // ==================== INIT ====================
 document.getElementById('btn-refresh').addEventListener('click', reloadCurrent);
-document.getElementById('btn-presence')?.addEventListener('click', openPresenceModal);
+document.getElementById('btn-presence')?.addEventListener('click', e => {
+  e.stopPropagation();
+  const pop = document.getElementById('presence-popover');
+  if (pop?.classList.contains('open')) closePresenceModal();
+  else openPresenceModal();
+});
 document.addEventListener('click', e => {
   // Hamburger
   if (!e.target.closest('#hamburger-wrap')) closeHamburger();
+  if (!e.target.closest('#presence-wrap')) closePresenceModal();
 });
 // btn-out переехал в hamburger, но слушатель оставляем для совместимости
 const _btnOut = document.getElementById('btn-out');

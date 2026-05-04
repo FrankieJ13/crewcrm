@@ -453,13 +453,21 @@ function normalizePresenceUser(user) {
 }
 
 function getPresencePageLabel() {
-  if (document.getElementById('scr-rating')?.classList.contains('on')) return 'Рейтинг';
+  const deptLabel = dept => dept === 'dozhim' ? 'Дожим' : 'CRM';
+  if (document.getElementById('scr-personal')?.classList.contains('on')) return 'Мой KPI';
+  if (document.getElementById('scr-rating')?.classList.contains('on')) return `Рейтинг ${deptLabel(S.ratingDept)}`;
   if (document.getElementById('scr-grafik')?.classList.contains('on')) return 'График';
-  if (document.getElementById('scr-dohod')?.classList.contains('on')) return 'Доход';
-  if (document.getElementById('scr-vizity')?.classList.contains('on')) return 'Визиты';
-  if (document.getElementById('scr-instruktsii')?.classList.contains('on')) return 'FAQ';
-  if (document.getElementById('scr-personal')?.classList.contains('on')) return 'KPI';
-  if (document.getElementById('scr-otchet')?.classList.contains('on')) return 'KPI';
+  if (document.getElementById('scr-dohod')?.classList.contains('on')) return `Доход ${deptLabel(S.dohodTab)}`;
+  if (document.getElementById('scr-vizity')?.classList.contains('on')) return `Визиты ${deptLabel(S.vizDept)}`;
+  if (document.getElementById('scr-instruktsii')?.classList.contains('on')) {
+    const faq = S.faqTab === 'mango' ? 'MANGO' : S.faqTab === 'links' ? 'Ссылки' : 'Инструкции';
+    return `FAQ ${faq}`;
+  }
+  if (document.getElementById('scr-otchet')?.classList.contains('on')) {
+    if (S.reportTab === 'mgr') return 'KPI CRM';
+    if (S.reportTab === 'dozhim') return 'KPI Дожим';
+    return 'Главная';
+  }
   return 'Главная';
 }
 
@@ -2274,6 +2282,7 @@ function openDozhimModal(dataStr) {
 
 function setReportTab(tab) {
   S.reportTab = tab;
+  updateFirebasePage();
   if (tab === 'dozhim' && !S.data.d_vizity) {
     const el = document.getElementById('c-otchet');
     el.innerHTML = loader();
@@ -2567,6 +2576,7 @@ function renderDohodDozhim(el) {
 
 function setDohodTab(tab) {
   S.dohodTab = tab;
+  updateFirebasePage();
   const el = document.getElementById('c-dohod');
   if (tab === 'dozhim' && (!S.data.d_vizity || !S.data.plan)) {
     el.innerHTML = loader();
@@ -2863,6 +2873,7 @@ function openMopModal(dataStr) {
 
 function setFaqTab(tab) {
   S.faqTab = tab;
+  updateFirebasePage();
   renderInstruktsii();
 }
 
@@ -5000,6 +5011,7 @@ function dockKpiToggle(e) {
 function dockKpiItogi() {
   closeAllDockPopups();
   S.reportTab = 'dept';
+  updateFirebasePage();
   goTab('otchet');
   dockSetActive('kpi');
 }
@@ -5007,6 +5019,7 @@ function dockKpiItogi() {
 function dockKpi(dept) {
   closeAllDockPopups();
   S.reportTab = dept === 'dozhim' ? 'dozhim' : 'mgr';
+  updateFirebasePage();
   goTab('otchet');
   dockSetActive('kpi');
   // Если дожим и нет данных — loadTab это обработает через setReportTab
@@ -5031,6 +5044,7 @@ function dockDohodToggle(e) {
 function dockDohod(dept) {
   closeAllDockPopups();
   S.dohodTab = dept;
+  updateFirebasePage();
   goTab('dohod');
   dockSetActive('dohod');
 }
@@ -5338,6 +5352,7 @@ function renderRating() {
 
 function switchRatingDept(dept) {
   S.ratingDept = dept;
+  updateFirebasePage();
   if (dept === 'dozhim' && !S.data.d_vizity) {
     const el = document.getElementById('c-rating');
     if (el) el.innerHTML = loader();
@@ -5355,6 +5370,7 @@ function dockFaqToggle(e) {
 function dockFaq(tab) {
   closeAllDockPopups();
   S.faqTab = tab;
+  updateFirebasePage();
   goTab('instruktsii');
   dockSetActive('instruktsii');
 }
@@ -5375,6 +5391,7 @@ function dockVizityToggle(e) {
 function dockVizity(dept) {
   closeAllDockPopups();
   S.vizDept = dept;
+  updateFirebasePage();
   dockSetActive('vizity');
   showScr('vizity');   // showScr управляет scroll-btns.visible
   loadVizity();

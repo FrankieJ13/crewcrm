@@ -432,15 +432,26 @@ function escapeHtml(v) {
   }[ch]));
 }
 
+function normalizeEmail(v) {
+  return String(v || '')
+    .replace(/\u00a0/g, ' ')
+    .toLowerCase()
+    .trim();
+}
+
+function splitEmails(v) {
+  return String(v || '')
+    .split(/[,;|\s]+/)
+    .map(normalizeEmail)
+    .filter(Boolean);
+}
+
 function getUserSheetNameByEmail(email) {
-  const target = String(email || '').toLowerCase().trim();
+  const target = normalizeEmail(email);
   if (!target || !S.usersData) return '';
   for (let i = 1; i < S.usersData.length; i++) {
     const row = S.usersData[i] || [];
-    const emails = String(row[0] || '')
-      .split(/[,;\s]+/)
-      .map(e => e.toLowerCase().trim())
-      .filter(Boolean);
+    const emails = splitEmails(row[0]);
     if (emails.includes(target)) return String(row[1] || '').trim();
   }
   return '';
@@ -1032,9 +1043,9 @@ function tryRestore() {
   }
 
   if (u) {
-    try { S.user = JSON.parse(u); renderUser(); } catch(e) { localStorage.removeItem('crm_user'); return false; }
+    localStorage.removeItem('crm_user');
     trySilentRefresh();
-    return true;
+    return false;
   }
 
   return false;
@@ -3718,11 +3729,10 @@ function getRoleByName(nameLow) {
 
 function findUserInSheet() {
   if (!S.usersData || !S.user) return null;
-  const email = (S.user.email || '').toLowerCase().trim();
+  const email = normalizeEmail(S.user.email);
   for (let i = 1; i < S.usersData.length; i++) {
     const row = S.usersData[i];
-    const rawEmails = (row[0]||'');
-    const emails = rawEmails.split(/[,;\s]+/).map(e => e.toLowerCase().trim()).filter(Boolean);
+    const emails = splitEmails(row[0]);
     if (emails.includes(email)) {
       return {
         email: row[0],

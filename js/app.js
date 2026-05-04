@@ -668,7 +668,33 @@ async function syncFirebaseAuth(accessToken) {
   } catch(e) {
     console.warn('Firebase Auth/Presence не запущен', e);
     const code = e?.code || e?.message || 'unknown';
-    firebasePresence.error = `Firebase Auth не подключился: ${code}`;
+    firebasePresence.error = code === 'auth/invalid-credential'
+      ? 'Firebase Auth не принял токен. Нажми онлайн еще раз для входа Firebase.'
+      : `Firebase Auth не подключился: ${code}`;
+    renderPresenceState();
+    return null;
+  }
+}
+
+async function signInFirebaseWithPopup() {
+  const p = initFirebasePresence();
+  if (!p) return null;
+  try {
+    if (p.auth.currentUser) {
+      startFirebasePresence(p.auth.currentUser);
+      return p.auth.currentUser;
+    }
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.addScope('profile');
+    provider.addScope('email');
+    const result = await p.auth.signInWithPopup(provider);
+    p.error = '';
+    startFirebasePresence(result.user);
+    return result.user;
+  } catch(e) {
+    console.warn('Firebase popup auth failed', e);
+    const code = e?.code || e?.message || 'unknown';
+    firebasePresence.error = `Firebase popup не подключился: ${code}`;
     renderPresenceState();
     return null;
   }
@@ -4687,7 +4713,13 @@ document.getElementById('btn-presence')?.addEventListener('click', e => {
   e.stopPropagation();
   const pop = document.getElementById('presence-popover');
   if (pop?.classList.contains('open')) closePresenceModal();
-  else openPresenceModal();
+  else {
+    const needsPopup = firebaseConfigured() &&
+      !firebasePresence.auth?.currentUser &&
+      String(firebasePresence.error || '').includes('не принял токен');
+    if (needsPopup) signInFirebaseWithPopup().finally(openPresenceModal);
+    openPresenceModal();
+  }
 });
 document.addEventListener('pointerdown', e => {
   if (!e.target.closest('#presence-wrap')) closePresenceModal();

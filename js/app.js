@@ -539,9 +539,9 @@ function firebaseProfile(user) {
   const profile = S.user || {};
   return {
     uid: user.uid,
-    name: user.displayName || profile.name || '',
-    email: user.email || profile.email || '',
-    photoURL: user.photoURL || profile.picture || '',
+    name: profile.name || user.displayName || '',
+    email: profile.email || user.email || '',
+    photoURL: profile.picture || user.photoURL || '',
     page: getPresencePageLabel(),
     userAgent: navigator.userAgent,
   };
@@ -668,15 +668,14 @@ async function syncFirebaseAuth(accessToken) {
   } catch(e) {
     console.warn('Firebase Auth/Presence не запущен', e);
     const code = e?.code || e?.message || 'unknown';
-    firebasePresence.error = code === 'auth/invalid-credential'
-      ? 'Firebase Auth не принял токен. Нажми онлайн еще раз для входа Firebase.'
-      : `Firebase Auth не подключился: ${code}`;
+    if (code === 'auth/invalid-credential') return signInFirebaseAnonymously();
+    firebasePresence.error = `Firebase Auth не подключился: ${code}`;
     renderPresenceState();
     return null;
   }
 }
 
-async function signInFirebaseWithPopup() {
+async function signInFirebaseAnonymously() {
   const p = initFirebasePresence();
   if (!p) return null;
   try {
@@ -684,17 +683,16 @@ async function signInFirebaseWithPopup() {
       startFirebasePresence(p.auth.currentUser);
       return p.auth.currentUser;
     }
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.addScope('profile');
-    provider.addScope('email');
-    const result = await p.auth.signInWithPopup(provider);
+    const result = await p.auth.signInAnonymously();
     p.error = '';
     startFirebasePresence(result.user);
     return result.user;
   } catch(e) {
-    console.warn('Firebase popup auth failed', e);
+    console.warn('Firebase anonymous auth failed', e);
     const code = e?.code || e?.message || 'unknown';
-    firebasePresence.error = `Firebase popup не подключился: ${code}`;
+    firebasePresence.error = code === 'auth/operation-not-allowed'
+      ? 'В Firebase Auth включи Anonymous provider для online.'
+      : `Firebase online не подключился: ${code}`;
     renderPresenceState();
     return null;
   }
@@ -4714,10 +4712,6 @@ document.getElementById('btn-presence')?.addEventListener('click', e => {
   const pop = document.getElementById('presence-popover');
   if (pop?.classList.contains('open')) closePresenceModal();
   else {
-    const needsPopup = firebaseConfigured() &&
-      !firebasePresence.auth?.currentUser &&
-      String(firebasePresence.error || '').includes('не принял токен');
-    if (needsPopup) signInFirebaseWithPopup().finally(openPresenceModal);
     openPresenceModal();
   }
 });

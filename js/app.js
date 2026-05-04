@@ -5303,13 +5303,14 @@ function getVizSverkaMark(value) {
   const isCosmic = document.body.classList.contains('cosmic');
   const iconBase = isCosmic ? COSMIC_ICON_BASE : DEFAULT_ICON_BASE;
   const iconPrefix = isCosmic ? 'cosmic-' : '';
+  const cls = isCosmic ? ' cosmic-native' : '';
   if (s === 'да' || s === 'yes') {
-    return `<span class="vt-sverka-mark yes" title="Сверено" aria-label="Сверено" style="--sverka-icon:url('${iconBase}${iconPrefix}s_verified.svg')"><i></i></span>`;
+    return `<span class="vt-sverka-mark yes${cls}" title="Сверено" aria-label="Сверено" style="--sverka-icon:url('${iconBase}${iconPrefix}s_verified.svg')"><i></i></span>`;
   }
   if (s === 'нет' || s === 'no') {
-    return `<span class="vt-sverka-mark no" title="Не прошел сверку" aria-label="Не прошел сверку" style="--sverka-icon:url('${iconBase}${iconPrefix}s_not-verified.svg')"><i></i></span>`;
+    return `<span class="vt-sverka-mark no${cls}" title="Не прошел сверку" aria-label="Не прошел сверку" style="--sverka-icon:url('${iconBase}${iconPrefix}s_not-verified.svg')"><i></i></span>`;
   }
-  return `<span class="vt-sverka-mark empty" title="Визит проверяется..." aria-label="Визит проверяется" style="--sverka-icon:url('${iconBase}${iconPrefix}s_check.svg')"><i></i></span>`;
+  return `<span class="vt-sverka-mark empty${cls}" title="Визит проверяется..." aria-label="Визит проверяется" style="--sverka-icon:url('${iconBase}${iconPrefix}s_check.svg')"><i></i></span>`;
 }
 
 function getVizChipTone(label) {

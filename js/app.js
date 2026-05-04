@@ -667,7 +667,8 @@ async function syncFirebaseAuth(accessToken) {
     return result.user;
   } catch(e) {
     console.warn('Firebase Auth/Presence не запущен', e);
-    firebasePresence.error = 'Firebase Auth не подключился';
+    const code = e?.code || e?.message || 'unknown';
+    firebasePresence.error = `Firebase Auth не подключился: ${code}`;
     renderPresenceState();
     return null;
   }

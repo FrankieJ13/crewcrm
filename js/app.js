@@ -362,6 +362,7 @@ let autoRefreshTimer = null;
 let tokenExpiresAt = 0;
 let tokenRequest = null;
 const AUTO_REFRESH_INTERVAL = 60 * 1000; // 1 минута
+const PRESENCE_STALE_MS = 15 * 60 * 1000;
 
 const firebasePresence = {
   app: null,
@@ -459,8 +460,34 @@ function getUserSheetNameByEmail(email) {
 
 function normalizePresenceUser(user) {
   if (!user) return user;
-  const sheetName = getUserSheetNameByEmail(user.email);
-  return sheetName ? { ...user, name: sheetName } : user;
+  const email = normalizeEmail(user.email);
+  const sheetName = getUserSheetNameByEmail(email);
+  const updatedAt = Number(user.updatedAt || 0);
+  const normalized = { ...user, email, updatedAt };
+  normalized.name = sheetName || normalized.name || '';
+  if (sheetName) normalized.personKey = String(sheetName).toLowerCase().trim();
+  else if (email) normalized.personKey = email;
+  else if (normalized.name) normalized.personKey = String(normalized.name).toLowerCase().trim();
+  return normalized;
+}
+
+function isPresenceFresh(user) {
+  const ts = Number(user?.updatedAt || 0);
+  return !!ts && Date.now() - ts <= PRESENCE_STALE_MS;
+}
+
+function dedupePresenceUsers(users) {
+  const byPerson = new Map();
+  users
+    .map(normalizePresenceUser)
+    .filter(u => u && u.status === 'online' && isPresenceFresh(u))
+    .forEach(u => {
+      const key = u.personKey || u.uid || u.email || u.name;
+      const prev = byPerson.get(key);
+      if (!prev || Number(u.updatedAt || 0) > Number(prev.updatedAt || 0)) byPerson.set(key, u);
+    });
+  return [...byPerson.values()]
+    .sort((a, b) => String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'ru'));
 }
 
 function getPresencePageLabel() {
@@ -507,10 +534,13 @@ function initFirebasePresence() {
 }
 
 function renderPresenceState() {
-  const listed = (firebasePresence.onlineUsers || []).map(normalizePresenceUser);
-  const self = normalizePresenceUser(firebasePresence.selfUser);
+  const listed = dedupePresenceUsers(firebasePresence.onlineUsers || []);
+  const selfRaw = firebasePresence.selfUser
+    ? { ...firebasePresence.selfUser, updatedAt: Date.now(), status: 'online' }
+    : null;
+  const self = normalizePresenceUser(selfRaw);
   const hasSelf = self && listed.some(u => u.uid === self.uid);
-  const users = self && !hasSelf ? [self, ...listed] : listed;
+  const users = dedupePresenceUsers(self && !hasSelf ? [self, ...listed] : listed);
   const countEl = document.getElementById('presence-count');
   if (countEl) {
     countEl.textContent = users.length;
@@ -550,9 +580,7 @@ function subscribeFirebaseUsers() {
   p.usersHandler = snap => {
     const raw = snap.val() || {};
     p.error = '';
-    p.onlineUsers = Object.values(raw)
-      .filter(u => u && u.status === 'online')
-      .sort((a, b) => String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'ru'));
+    p.onlineUsers = dedupePresenceUsers(Object.values(raw));
     renderPresenceState();
   };
   p.usersRef.on('value', p.usersHandler, err => {
@@ -566,11 +594,12 @@ function subscribeFirebaseUsers() {
 function updateFirebasePage() {
   const p = firebasePresence;
   const page = getPresencePageLabel();
+  const now = Date.now();
   if (p.selfUser) {
-    p.selfUser = { ...p.selfUser, page };
+    p.selfUser = { ...p.selfUser, page, updatedAt: now, status: 'online' };
   }
   if (p.onlineUsers?.length && p.uid) {
-    p.onlineUsers = p.onlineUsers.map(u => u.uid === p.uid ? { ...u, page } : u);
+    p.onlineUsers = p.onlineUsers.map(u => u.uid === p.uid ? { ...u, page, updatedAt: now, status: 'online' } : u);
   }
   renderPresenceState();
   if (!p.userRef || !window.firebase?.database) return;
@@ -584,7 +613,7 @@ function updateFirebasePage() {
 function refreshFirebaseProfile() {
   const p = firebasePresence;
   if (!p.userRef || !p.uid || !window.firebase?.database) return;
-  const profile = firebaseProfile({ uid: p.uid });
+  const profile = { ...firebaseProfile({ uid: p.uid }), updatedAt: Date.now() };
   if (p.selfUser) {
     p.selfUser = { ...p.selfUser, ...profile, status: 'online' };
   }
@@ -671,7 +700,7 @@ function startFirebasePresence(user) {
 
   const uid = user.uid;
   const profile = firebaseProfile(user);
-  p.selfUser = { ...profile, status: 'online' };
+  p.selfUser = { ...profile, status: 'online', updatedAt: Date.now() };
   p.error = '';
   p.uid = uid;
   p.userRef = p.db.ref(`presence/users/${uid}`);
@@ -711,6 +740,14 @@ function startFirebasePresence(user) {
       p.error = err?.code === 'PERMISSION_DENIED' ? 'Нет доступа к записи online-статуса' : 'Не удалось записать online-статус';
       renderPresenceState();
     });
+    setTimeout(() => {
+      const latest = firebaseProfile(user);
+      p.userRef?.update({
+        ...latest,
+        status: 'online',
+        updatedAt: firebase.database.ServerValue.TIMESTAMP,
+      }).catch(() => {});
+    }, 1000);
     renderPresenceState();
   };
 

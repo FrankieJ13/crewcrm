@@ -519,7 +519,7 @@ function getPresencePageLabel() {
   }
   if (document.getElementById('scr-vizity')?.classList.contains('on')) return `Визиты ${deptLabel(S.vizDept || roleDept)}`;
   if (document.getElementById('scr-instruktsii')?.classList.contains('on')) {
-    const faq = S.faqTab === 'mango' ? 'MANGO' : S.faqTab === 'links' ? 'Ссылки' : 'Инструкции';
+    const faq = S.faqTab === 'mango' ? 'MANGO' : S.faqTab === 'links' ? 'Ссылки' : S.faqTab === 'reglament' ? 'Регламент' : 'Инструкции';
     return `FAQ ${faq}`;
   }
   if (document.getElementById('scr-otchet')?.classList.contains('on')) {
@@ -3164,6 +3164,8 @@ function openScheduleBulkEditor() {
     if (uRole === 'ceo') continue;
     if (schedIndex[name.toLowerCase()]) names.push(name);
   }
+  const longestNameLen = names.reduce((max, name) => Math.max(max, String(name || '').length), 0);
+  const nameColWidth = Math.max(142, Math.min(188, Math.ceil(longestNameLen * 7.2 + 18)));
 
   const dayHeads = Array.from({ length: daysInMonth }, (_, i) => `<div class="sched-bulk-day">${i + 1}</div>`).join('');
   const rows = names.map(name => {
@@ -3191,6 +3193,7 @@ function openScheduleBulkEditor() {
   const overlay = document.createElement('div');
   overlay.id = 'sched-bulk-overlay';
   overlay.className = 'sched-bulk-overlay open';
+  overlay.style.setProperty('--sched-name-col-dynamic', `${nameColWidth}px`);
   overlay.innerHTML = `
     <div class="sched-bulk-modal">
       <div class="sched-bulk-hdr">
@@ -3254,6 +3257,7 @@ function renderInstruktsii() {
   const el  = document.getElementById('c-instruktsii');
   const floatingFaq = document.getElementById('floating-faq-subtabs');
   if (floatingFaq) floatingFaq.style.display = 'none'; // вкладки убраны — управление через Dock
+  if (S.faqTab === 'reglament') { el.innerHTML = renderReglamentTab(); return; }
   if (S.faqTab === 'mango') { el.innerHTML = renderMangoTab(); return; }
   if (S.faqTab === 'links') { el.innerHTML = renderLinksTab(); initLinksTab(); return; }
   const raw = S.data.instruktsii;
@@ -3280,6 +3284,10 @@ function renderInstruktsii() {
   }).filter(Boolean).join('');
   const ndzBody = `<div class="mango-wrap"><table class="ndz-table"><tbody>${ndzHTML}</tbody></table></div>`;
   el.innerHTML = `<div class="sec-title">Инструкции</div><div class="instr-block" id="ib-reglament"><div class="instr-hdr" onclick="toggleInstr('ib-reglament')"><h3>РЕГЛАМЕНТ КОРРЕКТНОГО ЗАКРЫТИЯ CRM ЗАЯВОК (ЛИДОВ)</h3><div class="instr-toggle">+</div></div><div class="instr-body">${reglamentBody}</div></div><div class="instr-block" id="ib-ndz"><div class="instr-hdr" onclick="toggleInstr('ib-ndz')"><h3>АЛГОРИТМ РАБОТЫ С НЕДОЗВОНАМИ</h3><div class="instr-toggle">+</div></div><div class="instr-body" style="padding:12px 14px">${ndzBody}</div></div>`;
+}
+
+function renderReglamentTab() {
+  return `<div class="sec-title">Регламент</div><div class="faq-under-dev">Раздел в разработке...</div>`;
 }
 
 function toggleInstr(id) {

@@ -433,6 +433,8 @@ function escapeHtml(v) {
   }[ch]));
 }
 
+const escapeAttr = escapeHtml;
+
 function normalizeEmail(v) {
   return String(v || '')
     .replace(/\u00a0/g, ' ')
@@ -3996,6 +3998,7 @@ function renderPersonal(matched) {
   const prog     = progNum + '%';
   const prc      = factPct + '%';
   const daily    = planNum ? computeDailyPlan(planNum, factN, progNum, currentSuffix, name) : '—';
+  const visitsModalName = JSON.stringify(nameLow).replace(/"/g, '&quot;');
 
   let kred='—', nal='—', kom='—', kredSub='', nalSub='', komSub='';
   let convVis='—', convKred='—', pctTarget='—';
@@ -4037,6 +4040,7 @@ function renderPersonal(matched) {
     const dSal = calcSalaryDozhimFromVizity(nameLow);
     if (dSal) {
       const incomeDetail = {
+        nameLow,
         oklad: dSal.detail.oklad, baseOklad: dSal.detail.baseOklad,
         workedR: dSal.detail.workedR, totalR: dSal.detail.totalR,
         premium: dSal.detail.premium, kotel: dSal.detail.kotel,
@@ -4068,8 +4072,9 @@ function renderPersonal(matched) {
       inFund:   salObj.detail.inFund,
       fact:     salObj.fact,
       prognoz:  salObj.prognoz,
+      nameLow,
     };
-    incomePanelAttr = 'style="position:relative;text-align:center"';
+    incomePanelAttr = `style="position:relative;text-align:center;cursor:pointer" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(incomeDetail).replace(/'/g,"&#39;")}' data-total=""`;
     incomePanelContent = `
       <div class="zl">Доход за месяц</div>
       <div class="zv">${fmtRub(Math.round(salObj.fact.total))}</div>
@@ -4089,7 +4094,7 @@ function renderPersonal(matched) {
     <div class="kpi-subtitle">Текущий KPI</div>
     <div class="kpi-badges">
       <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">План</div><div class="kb-val">${plan}</div></div>
-      <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Визиты</div><div class="kb-val">${factN}</div></div>
+      <div class="kpi-badge kpi-core-badge kpi-visits-drill" onclick="openVisitsDayModal(${visitsModalName}, ${isDozhim})" title="Диаграмма визитов по дням"><div class="kb-lbl">Визиты</div><div class="kb-val">${factN}</div></div>
       <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Остаток</div><div class="kb-val">${ost}</div></div>
     </div>
     <div class="kpi-badges">
@@ -4449,6 +4454,8 @@ function openDozhimIncomeModal(btn) {
     ${subtotal('Доля котла', Math.round(kotel))}` : '';
 
   const mc = document.getElementById('income-modal-content');
+  const title = document.querySelector('#income-overlay .income-modal-title');
+  if (title) title.textContent = 'Детализация дохода';
   mc.setAttribute('data-modal', 'dozhim');
   mc.innerHTML = `
     <div class="income-sec-title">Оклад</div>
@@ -4527,6 +4534,8 @@ function openIncomeDetail(btn) {
     </div>` : '';
 
   const mc = document.getElementById('income-modal-content');
+  const title = document.querySelector('#income-overlay .income-modal-title');
+  if (title) title.textContent = 'Детализация дохода';
   mc.removeAttribute('data-modal');
   mc.innerHTML = `
     ${koefRow}
@@ -4569,6 +4578,73 @@ function openIncomeDetail(btn) {
       rWarmKom:  parseRate((S.data.stavki||[])[18]?.[1]),
       rZadatok:  parseRate((S.data.stavki||[])[20]?.[1]),
     }, false)}
+  `;
+  document.getElementById('income-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function getVisitsByDay(nameLow, isDozhim) {
+  const suffix = currentSuffix;
+  const mm = parseInt(suffix.slice(0,2)), yy = 2000 + parseInt(suffix.slice(2));
+  const daysInMonth = new Date(yy, mm, 0).getDate();
+  const counts = Array.from({ length: daysInMonth + 1 }, () => 0);
+  const rows = isDozhim ? (S.data.d_vizity || []) : (S.data.vizity || []);
+  const target = String(nameLow || '').toLowerCase().trim();
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row) continue;
+    const mgr = String(row[8] || '').trim().toLowerCase();
+    if (mgr !== target) continue;
+    if (!isSverkaRow(row)) continue;
+    const parts = String(row[0] || '').trim().split('.');
+    const day = parseInt(parts[0]);
+    if (!day || day < 1 || day > daysInMonth) continue;
+    counts[day]++;
+  }
+
+  return counts;
+}
+
+function pluralVisits(n) {
+  const v = Math.abs(Number(n) || 0) % 100;
+  const v1 = v % 10;
+  if (v > 10 && v < 20) return 'визитов';
+  if (v1 > 1 && v1 < 5) return 'визита';
+  if (v1 === 1) return 'визит';
+  return 'визитов';
+}
+
+function openVisitsDayModal(nameLow, isDozhim) {
+  const counts = getVisitsByDay(nameLow, isDozhim);
+  const max = Math.max(1, ...counts);
+  const total = counts.reduce((sum, v) => sum + v, 0);
+  const days = counts.slice(1).map((count, idx) => {
+    const day = idx + 1;
+    const h = Math.max(count ? 18 : 5, Math.round(count / max * 100));
+    const title = `${day}: ${count} ${pluralVisits(count)}`;
+    return `<button class="vis-day-bar${count ? ' has-visits' : ''}" style="--h:${h}%" title="${escapeAttr(title)}" aria-label="${escapeAttr(title)}">
+      <span class="vis-day-bar-fill"></span>
+      <span class="vis-day-tip">${count}</span>
+      <span class="vis-day-num">${day}</span>
+    </button>`;
+  }).join('');
+
+  const modalTitle = document.querySelector('#income-overlay .income-modal-title');
+  const mc = document.getElementById('income-modal-content');
+  if (modalTitle) modalTitle.textContent = 'Диаграмма визитов';
+  mc.removeAttribute('data-modal');
+  mc.innerHTML = `
+    <div class="vis-chart-card">
+      <div class="vis-chart-hdr">
+        <div>
+          <div class="vis-chart-kicker">Визиты по дням</div>
+          <div class="vis-chart-total">${total}</div>
+        </div>
+        <div class="vis-chart-note">наведите на день</div>
+      </div>
+      <div class="vis-chart-bars">${days}</div>
+    </div>
   `;
   document.getElementById('income-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -4704,7 +4780,7 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
   const headerCells = DOW_SHORT.map(d => `<div style="font-size:7px;font-family:'Unbounded',sans-serif;font-weight:800;color:var(--txt3);text-align:center;padding:3px 0">${d}</div>`).join('');
 
   for (let i = 0; i < firstDow; i++) {
-    cells += `<div class="inc-day-cell empty"></div>`;
+    cells += `<div class="inc-day-blank" aria-hidden="true"></div>`;
   }
   for (let d = 1; d <= daysInMonth; d++) {
     const sum = dayMap[d];

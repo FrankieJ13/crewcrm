@@ -124,6 +124,7 @@ const S = {
   faqTab: 'instr',
   ratingDept: null,
   silentRefresh: false,
+  authReady: false,
   sverkaMode: false,
 };
 
@@ -1000,6 +1001,7 @@ function renderUser() {
 }
 
 function onLogin() {
+  S.authReady = false;
   const _bo = document.getElementById('btn-out');
   if (_bo) _bo.style.display = '';
   document.getElementById('main-nav').style.display  = 'none';
@@ -1015,7 +1017,8 @@ function onLogin() {
   if (window._loginLiquidCleanup) window._loginLiquidCleanup();
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab==='otchet'));
   showScr('otchet');
-  loadTab('otchet');
+  const firstScreen = document.getElementById('c-otchet');
+  if (firstScreen) firstScreen.innerHTML = loader();
   loadUsersAndStart();
   // Автообновление каждые 3 минуты — полный сброс кеша
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
@@ -1035,6 +1038,7 @@ function onLogin() {
 
 function onLogout() {
   if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+  S.authReady = false;
   if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
   cleanupTokenRequest();
   markFirebaseOffline(true);
@@ -1501,7 +1505,7 @@ function animateDynamicValues(root = document) {
 }
 
 function scheduleAnimatedValues(root = document) {
-  if (S.silentRefresh) return;
+  if (S.silentRefresh || !S.authReady) return;
   requestAnimationFrame(() => animateDynamicValues(root));
 }
 
@@ -2332,7 +2336,7 @@ function renderOtchet() {
     return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
       <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${getMgrMessengerHtml(name)}</div><button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
       <div class="mop-mini">
-        <div class="mm kpi-visits-drill" onclick="openVisitsDayModal(${JSON.stringify(String(r[0]||'').toLowerCase().trim()).replace(/"/g, '&quot;')}, false)" title="Диаграмма визитов по дням"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
+        <div class="mm kpi-visits-drill" onclick="openVisitsDayModal(${JSON.stringify(String(r[0]||'').toLowerCase().trim()).replace(/"/g, '&quot;')}, false)" title="Хронология визитов по дням"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
         <div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div>
         <div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div>
         <div class="mm"><div class="ml">Дневной</div><div class="mv">${daily}</div></div>
@@ -2434,7 +2438,7 @@ function renderDozhimCards() {
     return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
       <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name.toUpperCase()}</span>${getMgrMessengerHtml(name)}</div><button class="mop-info-btn" onclick="openDozhimModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
       <div class="mop-mini">
-        <div class="mm kpi-visits-drill" onclick="openVisitsDayModal(${JSON.stringify(nl).replace(/"/g, '&quot;')}, true)" title="Диаграмма визитов по дням"><div class="ml">Визиты</div><div class="mv">${allVis}</div></div>
+        <div class="mm kpi-visits-drill" onclick="openVisitsDayModal(${JSON.stringify(nl).replace(/"/g, '&quot;')}, true)" title="Хронология визитов по дням"><div class="ml">Визиты</div><div class="mv">${allVis}</div></div>
         <div class="mm"><div class="ml">План</div><div class="mv">${plan}</div></div>
         <div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div>
         <div class="mm"><div class="ml">Дневной</div><div class="mv">${daily}</div></div>
@@ -2609,6 +2613,19 @@ function renderDohod() {
           ${subtotal('Итого Тёплые лиды', warmSum)}
           ${kotelRow}
           ${noKoefRow}
+          ${buildDayCalendar(nameLow, S.data.vizity||[], {
+            rCrmVis:   parseRate((S.data.stavki||[])[8]?.[1]),
+            rCrmKred:  parseRate((S.data.stavki||[])[9]?.[1]),
+            rCrmNal:   parseRate((S.data.stavki||[])[10]?.[1]),
+            rCrmObmen: parseRate((S.data.stavki||[])[11]?.[1]),
+            rCrmKom:   parseRate((S.data.stavki||[])[12]?.[1]),
+            rWarmVis:  parseRate((S.data.stavki||[])[14]?.[1]),
+            rWarmKred: parseRate((S.data.stavki||[])[15]?.[1]),
+            rWarmNal:  parseRate((S.data.stavki||[])[16]?.[1]),
+            rWarmObmen:parseRate((S.data.stavki||[])[17]?.[1]),
+            rWarmKom:  parseRate((S.data.stavki||[])[18]?.[1]),
+            rZadatok:  parseRate((S.data.stavki||[])[20]?.[1]),
+          }, false)}
         </div>
       </div>`);
   }
@@ -3902,6 +3919,7 @@ function findUserInSheet() {
 
 function showAccessDenied(reason = 'Почта не найдена в USERS') {
   const email = normalizeEmail(S.user?.email) || 'email не получен';
+  S.authReady = false;
   closeAllDockPopups?.();
   closePresenceModal?.();
   if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
@@ -3968,9 +3986,11 @@ async function loadUsersAndStart() {
     if (matched.role === 'ceo') {
       S.reportTab = 'dept';
       S.ratingDept = 'crm';
+      S.authReady = true;
       goTab('otchet');
       dockSetActive('home');
     } else {
+      S.authReady = true;
       goPersonal();
     }
     // Фоновая предзагрузка остальных данных через 8 сек (не перегружаем API при старте)
@@ -4209,7 +4229,7 @@ function renderPersonal(matched) {
     <div class="kpi-subtitle">Текущий KPI</div>
     <div class="kpi-badges">
       <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">План</div><div class="kb-val">${plan}</div></div>
-      <div class="kpi-badge kpi-core-badge kpi-visits-drill" onclick="openVisitsDayModal(${visitsModalName}, ${isDozhim})" title="Диаграмма визитов по дням"><div class="kb-lbl">Визиты</div><div class="kb-val">${factN}</div></div>
+      <div class="kpi-badge kpi-core-badge kpi-visits-drill" onclick="openVisitsDayModal(${visitsModalName}, ${isDozhim})" title="Хронология визитов по дням"><div class="kb-lbl">Визиты</div><div class="kb-val">${factN}</div></div>
       <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Остаток</div><div class="kb-val">${ost}</div></div>
     </div>
     <div class="kpi-badges">
@@ -4753,7 +4773,7 @@ function openVisitsDayModal(nameLow, isDozhim) {
 
   const modalTitle = document.querySelector('#income-overlay .income-modal-title');
   const mc = document.getElementById('income-modal-content');
-  if (modalTitle) modalTitle.textContent = 'Диаграмма визитов';
+  if (modalTitle) modalTitle.textContent = 'Хронология визитов';
   document.getElementById('income-overlay')?.classList.add('visits-mode');
   mc.removeAttribute('data-modal');
   mc.innerHTML = `
@@ -5052,7 +5072,7 @@ function closeSalInfo() {
 
 function closeIncomeDetail(e) {
   if (e && e.target !== document.getElementById('income-overlay')) return;
-  document.getElementById('income-overlay').classList.remove('open');
+  document.getElementById('income-overlay').classList.remove('open', 'visits-mode');
   document.body.style.overflow = '';
 }
 

@@ -2296,6 +2296,7 @@ body.light .income-modal { border-color:rgba(0,0,0,0.2); }
   border-radius: 0 0 var(--r2) var(--r2);
   overflow-y:auto; max-height:86vh;
   position:relative;
+  padding:14px 16px;
   box-shadow:0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
 }
 body.light .income-modal-body { background:rgba(255,255,255,0.6); }
@@ -2531,7 +2532,10 @@ body.cosmic #presence-popover::before {
   #presence-popover::before { right:86px; }
 }
 
-.income-modal-content { padding:14px 16px; }
+.income-modal-content { padding:0; color:var(--acc); }
+.income-modal-content :where(.income-sec-title,.income-badge .ib-lbl,.income-badge .ib-val,.income-subtotal .ist-lbl,.income-subtotal .ist-val,.dz-badge .dzb-lbl,.dz-badge .dzb-count,.dz-badge .dzb-earn,.inc-day-num,.inc-day-sum,.vis-step-header h2,.vis-step-header p,.vis-card-total-value,.vis-card-total span:last-child) {
+  color:var(--acc) !important;
+}
 .income-total-banner {
   text-align:center; padding:12px; margin-bottom:14px;
   border-radius:var(--r); background:var(--acc-bg); border:1px solid var(--acc-bdr);
@@ -2860,10 +2864,10 @@ body.light .dz-badge { background:rgba(0,0,0,0.03); }
 .dz-badge .dzb-lbl  { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px; }
 .dz-badge .dzb-count { font-family:'Unbounded',sans-serif; font-size:14px; font-weight:800; color:var(--txt); margin-bottom:3px; }
 .dz-badge .dzb-earn  { font-size:10px; color:var(--acc); font-weight:600; }
-body.light #income-modal-content[data-modal="dozhim"] .income-subtotal .ist-lbl { color:#fff; }
-body.light #income-modal-content[data-modal="dozhim"] .income-subtotal .ist-val { color:#fff; }
-body.light #income-modal-content[data-modal="dozhim"] .income-sec-title { color:#fff; }
-body.light #income-modal-content[data-modal="dozhim"] .income-sec-title::after { background:rgba(255,255,255,0.3); }
+body.light #income-modal-content[data-modal="dozhim"] .income-subtotal .ist-lbl { color:var(--acc); }
+body.light #income-modal-content[data-modal="dozhim"] .income-subtotal .ist-val { color:var(--acc); }
+body.light #income-modal-content[data-modal="dozhim"] .income-sec-title { color:var(--acc); }
+body.light #income-modal-content[data-modal="dozhim"] .income-sec-title::after { background:var(--acc-bdr); }
 /* ==================== INCOME COLS BADGES ==================== */
 .income-cols { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:8px 0 4px; }
 .income-col {

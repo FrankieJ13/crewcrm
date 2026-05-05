@@ -2845,7 +2845,53 @@ async function putScheduleCell(sheetRow, colIdx, value) {
     const err = await resp.json().catch(() => ({}));
     throw new Error(err.error?.message || 'Ошибка сохранения графика');
   }
+  await formatScheduleCell(sheet, sheetRow, colIdx, value);
   apiCacheInvalidate(SHEETS.grafik);
+}
+
+async function getSpreadsheetSheetId(sheetName) {
+  S._sheetIdCache = S._sheetIdCache || {};
+  if (S._sheetIdCache[sheetName] !== undefined) return S._sheetIdCache[sheetName];
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}?fields=sheets.properties`;
+  const resp = await fetch(url, { headers: await authHeaders() });
+  if (!resp.ok) return null;
+  const data = await resp.json();
+  (data.sheets || []).forEach(s => {
+    S._sheetIdCache[s.properties.title] = s.properties.sheetId;
+  });
+  return S._sheetIdCache[sheetName] ?? null;
+}
+
+async function formatScheduleCell(sheetName, sheetRow, colIdx, value) {
+  const sheetId = await getSpreadsheetSheetId(sheetName);
+  if (sheetId === null) return;
+  const v = normalizeSchedVal(value);
+  const cell = v === 'В'
+    ? { userEnteredFormat: { backgroundColor: { red: 1, green: 0.8, blue: 0.8 } } }
+    : { userEnteredFormat: {} };
+  const resp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`, {
+    method: 'POST',
+    headers: await authHeaders({ 'Content-Type':'application/json' }),
+    body: JSON.stringify({
+      requests: [{
+        repeatCell: {
+          range: {
+            sheetId,
+            startRowIndex: sheetRow - 1,
+            endRowIndex: sheetRow,
+            startColumnIndex: colIdx,
+            endColumnIndex: colIdx + 1,
+          },
+          cell,
+          fields: 'userEnteredFormat.backgroundColor',
+        }
+      }]
+    })
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Ошибка форматирования графика');
+  }
 }
 
 function findSchedDayCol(daysRow, dayNum) {

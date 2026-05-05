@@ -2571,7 +2571,15 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
 .income-subtotal .ist-lbl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.06em; }
 .income-subtotal .ist-val { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:800; color:var(--acc); }
 /* Day breakdown calendar */
-.inc-day-spoiler { margin-top:12px; border-top:1px solid var(--line); }
+.inc-day-panel {
+  margin-top:12px;
+  padding:10px 10px 0;
+  border:1px solid var(--acc-bdr);
+  border-radius:var(--r2);
+  background:var(--bg2);
+  box-shadow:0 12px 28px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.inc-day-spoiler { margin-top:0; border-top:0; }
 .inc-day-spoiler summary {
   display:flex; align-items:center; gap:8px; padding:10px 0;
   cursor:pointer; list-style:none; user-select:none;

@@ -1398,17 +1398,6 @@ function renderTab(tab) {
 function liveTextUpdate(node, nextText) {
   if (node.nodeValue === nextText) return;
   const parent = node.parentElement;
-  if (!S.silentRefresh && parent?.matches?.(ANIMATED_VALUE_SELECTOR)) {
-    const oldMeta = parseAnimatedNumber(node.nodeValue);
-    const nextMeta = parseAnimatedNumber(nextText);
-    if (oldMeta && nextMeta) {
-      node.nodeValue = oldMeta.raw;
-      parent.dataset.countTarget = String(oldMeta.value);
-      parent.dataset.countRaw = oldMeta.raw;
-      springCountValue(parent, nextMeta);
-      return;
-    }
-  }
   node.nodeValue = nextText;
   if (!parent || !S.silentRefresh) return;
   parent.classList.remove('live-value-updated');
@@ -1457,8 +1446,12 @@ function formatAnimatedNumber(value, meta) {
 function springCountValue(el, meta) {
   const prevTarget = Number(el.dataset.countTarget);
   const fromCurrent = parseAnimatedNumber(el.textContent);
-  const start = Number.isFinite(prevTarget) && fromCurrent ? fromCurrent.value : 0;
-  if (Number.isFinite(prevTarget) && Math.abs(prevTarget - meta.value) < 0.0001 && el.dataset.countRaw === meta.raw) return;
+  const preparedStart = el.dataset.countStart;
+  const start = preparedStart != null
+    ? Number(preparedStart)
+    : (Number.isFinite(prevTarget) && fromCurrent ? fromCurrent.value : 0);
+  delete el.dataset.countStart;
+  if (preparedStart == null && Number.isFinite(prevTarget) && Math.abs(prevTarget - meta.value) < 0.0001 && el.dataset.countRaw === meta.raw) return;
 
   el.dataset.countTarget = String(meta.value);
   el.dataset.countRaw = meta.raw;
@@ -1504,9 +1497,29 @@ function animateDynamicValues(root = document) {
   });
 }
 
+function prepareDynamicValues(root = document) {
+  const scope = root instanceof Element || root === document ? root : document;
+  const prepared = [];
+  scope.querySelectorAll(ANIMATED_VALUE_SELECTOR).forEach(el => {
+    if (el.closest('.vt-row-card, .vt-picker-modal')) return;
+    const meta = parseAnimatedNumber(el.textContent);
+    if (!meta) return;
+    el.dataset.countStart = '0';
+    el.textContent = formatAnimatedNumber(0, meta);
+    prepared.push([el, meta]);
+  });
+  return prepared;
+}
+
 function scheduleAnimatedValues(root = document) {
   if (S.silentRefresh || !S.authReady) return;
-  requestAnimationFrame(() => animateDynamicValues(root));
+  const prepared = prepareDynamicValues(root);
+  if (!prepared.length) return;
+  requestAnimationFrame(() => {
+    prepared.forEach(([el, meta]) => {
+      if (el.isConnected) springCountValue(el, meta);
+    });
+  });
 }
 
 function canMorphElement(a, b) {
@@ -4931,13 +4944,15 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
     </div>`;
   }
 
-  return `<details class="inc-day-spoiler">
-    <summary>
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-      Детализация по дням
-    </summary>
-    <div class="inc-day-grid">${headerCells}${cells}</div>
-  </details>`;
+  return `<div class="inc-day-panel">
+    <details class="inc-day-spoiler">
+      <summary>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        Детализация по дням
+      </summary>
+      <div class="inc-day-grid">${headerCells}${cells}</div>
+    </details>
+  </div>`;
 }
 
 function openSalInfo(roleHint) {

@@ -1386,7 +1386,7 @@ function renderTab(tab) {
 function liveTextUpdate(node, nextText) {
   if (node.nodeValue === nextText) return;
   const parent = node.parentElement;
-  if (parent?.matches?.(ANIMATED_VALUE_SELECTOR)) {
+  if (!S.silentRefresh && parent?.matches?.(ANIMATED_VALUE_SELECTOR)) {
     const oldMeta = parseAnimatedNumber(node.nodeValue);
     const nextMeta = parseAnimatedNumber(nextText);
     if (oldMeta && nextMeta) {
@@ -1493,6 +1493,7 @@ function animateDynamicValues(root = document) {
 }
 
 function scheduleAnimatedValues(root = document) {
+  if (S.silentRefresh) return;
   requestAnimationFrame(() => animateDynamicValues(root));
 }
 

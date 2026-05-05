@@ -2804,6 +2804,56 @@ function setDohodTab(tab) {
 // ==================== GRAFIK ====================
 const DOW = ['вс','пн','вт','ср','чт','пт','сб'];
 let _schedWeek = null;
+let _schedEditPopover = null;
+
+function sheetColName(idx) {
+  let n = idx + 1;
+  let s = '';
+  while (n > 0) {
+    const r = (n - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
+
+function normalizeSchedVal(v) {
+  const s = String(v || '').trim().toUpperCase();
+  if (s === 'Р' || s === 'В') return s;
+  if (s === 'ВС') return 'ВС';
+  return '';
+}
+
+function canEditScheduleName(name) {
+  const matched = findUserInSheet();
+  if (!matched) return false;
+  if (matched.role === 'ceo') return true;
+  return String(name || '').trim().toLowerCase() === String(matched.name || '').trim().toLowerCase();
+}
+
+async function putScheduleCell(sheetRow, colIdx, value) {
+  const sheet = SHEETS.grafik;
+  const col = sheetColName(colIdx);
+  const range = `'${sheet}'!${col}${sheetRow}:${col}${sheetRow}`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+  const resp = await fetch(url, {
+    method: 'PUT',
+    headers: await authHeaders({ 'Content-Type':'application/json' }),
+    body: JSON.stringify({ values: [[value]] })
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Ошибка сохранения графика');
+  }
+  apiCacheInvalidate(SHEETS.grafik);
+}
+
+function findSchedDayCol(daysRow, dayNum) {
+  for (let c = 1; c < (daysRow || []).length; c++) {
+    if (parseInt(daysRow[c]) === dayNum) return c;
+  }
+  return -1;
+}
 
 function getWeeksForMonth(year, month) {
   const dim = new Date(year, month + 1, 0).getDate();
@@ -2838,7 +2888,7 @@ function buildSchedIndex(raw) {
     const nums = r.slice(1).filter(c => { const n = parseInt(c); return n >= 1 && n <= 31; }).length;
     if (nums >= 20) { lastDaysRow = r; continue; }
     const name = (r[0]||'').trim();
-    if (name) idx[name.toLowerCase()] = { row: r, daysRow: lastDaysRow };
+    if (name) idx[name.toLowerCase()] = { row: r, daysRow: lastDaysRow, sheetRow: i + 1, name };
   }
   return idx;
 }
@@ -2889,7 +2939,7 @@ function renderGrafik() {
     if (isDaysRow(r)) { lastDaysRow = r; continue; }
     const name = (r[0]||'').trim();
     if (!name) continue;
-    schedIndex[name.toLowerCase()] = { name, row: r, daysRow: lastDaysRow };
+    schedIndex[name.toLowerCase()] = { name, row: r, daysRow: lastDaysRow, sheetRow: i + 1 };
   }
 
   // 2. Собираем CRM и ДОЖИМ из USERS
@@ -2912,13 +2962,10 @@ function renderGrafik() {
     const daysRow = entry ? entry.daysRow : [];
     const cells = weekDays.map(dayNum => {
       if (!entry) return '';
-      let colIdx = -1;
-      for (let c = 1; c < daysRow.length; c++) {
-        if (parseInt(daysRow[c]) === dayNum) { colIdx = c; break; }
-      }
+      const colIdx = findSchedDayCol(daysRow, dayNum);
       return colIdx >= 0 ? (entry.row[colIdx] || '') : '';
     });
-    return { name, cells, found: !!entry };
+    return { name, cells, found: !!entry, entry };
   }
 
   const crmPeople    = crmNames.map(makePerson).filter(p => p.found);
@@ -2942,7 +2989,14 @@ function renderGrafik() {
       const cells = p.cells.map((val, wi) => {
         const v   = val.toLowerCase().trim();
         const cls = v==='р'?'dr':v==='в'?'dv':v==='вс'?'dvs':val?'':'empty';
-        return `<div class="sched-cell ${cls}${isToday(week[wi]?.day)?' today-col':''}">${val||'·'}</div>`;
+        const entry = p.entry;
+        const dayNum = week[wi]?.day || 0;
+        const colIdx = entry ? findSchedDayCol(entry.daysRow, dayNum) : -1;
+        const canEdit = entry && colIdx >= 0 && canEditScheduleName(p.name);
+        const editAttrs = canEdit
+          ? ` role="button" tabindex="0" onclick="openSchedCellEditor(event, ${entry.sheetRow}, ${colIdx}, '${escapeAttr(p.name)}', ${dayNum})" onkeydown="if(event.key==='Enter'||event.key===' '){openSchedCellEditor(event, ${entry.sheetRow}, ${colIdx}, '${escapeAttr(p.name)}', ${dayNum})}"`
+          : '';
+        return `<div class="sched-cell ${cls}${canEdit?' editable':''}${isToday(dayNum)?' today-col':''}" data-sched-cell="${entry ? entry.sheetRow + '-' + colIdx : ''}"${editAttrs}>${val||'·'}</div>`;
       }).join('');
       const sched = getWorkedAndTotalR(p.name.toLowerCase().trim());
       const workedBadge = sched
@@ -2976,7 +3030,7 @@ function renderGrafik() {
     const mName  = new Date(yr, mo-1, 1).toLocaleString('ru',{month:'long'});
     const prevDis = _schedWeek === 0 ? 'disabled' : '';
     const nextDis = _schedWeek === weeks.length-1 ? 'disabled' : '';
-    stickyInner.innerHTML = `<div class="sched-nav"><button class="sched-nav-btn" onclick="schedNav(-1)" ${prevDis} aria-label="Предыдущая неделя"><span class="sched-nav-icon" style="--sched-nav-icon:url('${DEFAULT_ICON_BASE}left.svg')"></span></button><div class="sched-nav-title">${wStart}–${wEnd} ${mName}</div><button class="sched-nav-btn" onclick="schedNav(1)" ${nextDis} aria-label="Следующая неделя"><span class="sched-nav-icon" style="--sched-nav-icon:url('${DEFAULT_ICON_BASE}right.svg')"></span></button></div>${weekHeader}`;
+    stickyInner.innerHTML = `<div class="sched-nav"><button class="sched-nav-btn" onclick="schedNav(-1)" ${prevDis} aria-label="Предыдущая неделя"><span class="sched-nav-icon" style="--sched-nav-icon:url('${DEFAULT_ICON_BASE}left.svg')"></span></button><div class="sched-nav-title">${wStart}–${wEnd} ${mName}</div><button class="sched-edit-btn" onclick="openScheduleBulkEditor()">Редактировать</button><button class="sched-nav-btn" onclick="schedNav(1)" ${nextDis} aria-label="Следующая неделя"><span class="sched-nav-icon" style="--sched-nav-icon:url('${DEFAULT_ICON_BASE}right.svg')"></span></button></div>${weekHeader}`;
     const hdr = document.querySelector('header');
     const nav = document.getElementById('main-nav');
     if (hdr && nav) stickyEl.style.top = (hdr.offsetHeight + nav.offsetHeight) + 'px';
@@ -2986,6 +3040,167 @@ function renderGrafik() {
 function schedNav(dir) {
   _schedWeek = (_schedWeek||0) + dir;
   if (S.data.grafik) renderGrafik();
+}
+
+function closeSchedCellEditor() {
+  if (_schedEditPopover) {
+    _schedEditPopover.remove();
+    _schedEditPopover = null;
+  }
+}
+
+function openSchedCellEditor(e, sheetRow, colIdx, name, dayNum) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (!canEditScheduleName(name)) return;
+  closeSchedCellEditor();
+
+  const target = e.currentTarget;
+  const rect = target.getBoundingClientRect();
+  const pop = document.createElement('div');
+  pop.className = 'sched-edit-pop';
+  pop.innerHTML = `
+    <div class="sched-edit-pop-title">${escapeHtml(name)} · ${dayNum}</div>
+    <div class="sched-edit-pop-actions">
+      <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'Р')">Р</button>
+      <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'В')">В</button>
+    </div>
+    <div class="sched-edit-pop-status" id="sched-pop-status"></div>
+  `;
+  document.body.appendChild(pop);
+  const left = Math.min(window.innerWidth - pop.offsetWidth - 10, Math.max(10, rect.left + rect.width / 2 - pop.offsetWidth / 2));
+  const top = Math.min(window.innerHeight - pop.offsetHeight - 10, rect.bottom + 8);
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+  _schedEditPopover = pop;
+  setTimeout(() => {
+    document.addEventListener('pointerdown', schedEditorOutside, { once:true, capture:true });
+  }, 0);
+}
+
+function schedEditorOutside(e) {
+  if (_schedEditPopover && !_schedEditPopover.contains(e.target)) closeSchedCellEditor();
+}
+
+async function saveSchedCell(sheetRow, colIdx, value) {
+  const status = document.getElementById('sched-pop-status');
+  try {
+    if (status) { status.className = 'sched-edit-pop-status saving'; status.textContent = 'Сохранение...'; }
+    await putScheduleCell(sheetRow, colIdx, value);
+    if (!S.data.grafik[sheetRow - 1]) S.data.grafik[sheetRow - 1] = [];
+    S.data.grafik[sheetRow - 1][colIdx] = value;
+    if (status) { status.className = 'sched-edit-pop-status saved'; status.textContent = 'Сохранено'; }
+    setTimeout(() => { closeSchedCellEditor(); renderGrafik(); }, 350);
+  } catch (err) {
+    if (status) { status.className = 'sched-edit-pop-status err'; status.textContent = 'Ошибка сохранения'; }
+    toast(err.message || 'Ошибка сохранения графика', 'e');
+  }
+}
+
+function openScheduleBulkEditor() {
+  const raw = S.data.grafik || [];
+  const matched = findUserInSheet();
+  if (!matched) return;
+  const role = matched.role || '';
+  const myName = String(matched.name || '').trim().toLowerCase();
+  const mo = parseInt(currentSuffix.slice(0,2));
+  const yr = 2000 + parseInt(currentSuffix.slice(2,4));
+  const daysInMonth = new Date(yr, mo, 0).getDate();
+  const schedIndex = buildSchedIndex(raw);
+
+  const users = S.usersData || [];
+  const names = [];
+  for (let i = 1; i < users.length; i++) {
+    const u = users[i];
+    if (!u || !u[1]) continue;
+    const name = String(u[1]).trim();
+    const uRole = String(u[2] || 'crm').toLowerCase().trim();
+    if (uRole === 'ceo') continue;
+    if (schedIndex[name.toLowerCase()]) names.push(name);
+  }
+
+  const dayHeads = Array.from({ length: daysInMonth }, (_, i) => `<div class="sched-bulk-day">${i + 1}</div>`).join('');
+  const rows = names.map(name => {
+    const entry = schedIndex[name.toLowerCase()];
+    const editable = role === 'ceo' || name.toLowerCase() === myName;
+    const cells = Array.from({ length: daysInMonth }, (_, i) => {
+      const day = i + 1;
+      const colIdx = findSchedDayCol(entry.daysRow, day);
+      const val = colIdx >= 0 ? normalizeSchedVal(entry.row[colIdx]) : '';
+      const disabled = editable && colIdx >= 0 ? '' : 'disabled';
+      return `<select class="sched-bulk-select" data-row="${entry.sheetRow}" data-col="${colIdx}" data-name="${escapeAttr(name)}" ${disabled}>
+        <option value="" ${!val?'selected':''}>·</option>
+        <option value="Р" ${val==='Р'?'selected':''}>Р</option>
+        <option value="В" ${val==='В'?'selected':''}>В</option>
+      </select>`;
+    }).join('');
+    return `<div class="sched-bulk-row${editable?'':' locked'}">
+      <div class="sched-bulk-name">${escapeHtml(name)}</div>
+      <div class="sched-bulk-cells" style="grid-template-columns:repeat(${daysInMonth}, minmax(30px, 1fr))">${cells}</div>
+    </div>`;
+  }).join('');
+
+  const old = document.getElementById('sched-bulk-overlay');
+  if (old) old.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'sched-bulk-overlay';
+  overlay.className = 'sched-bulk-overlay open';
+  overlay.innerHTML = `
+    <div class="sched-bulk-modal">
+      <div class="sched-bulk-hdr">
+        <div>
+          <div class="sched-bulk-title">Редактирование графика</div>
+          <div class="sched-bulk-sub">${getMonthName(currentSuffix)}</div>
+        </div>
+        <button class="sched-bulk-close" onclick="closeScheduleBulkEditor()">×</button>
+      </div>
+      <div class="sched-bulk-body">
+        <div class="sched-bulk-head"><div></div><div class="sched-bulk-days" style="grid-template-columns:repeat(${daysInMonth}, minmax(30px, 1fr))">${dayHeads}</div></div>
+        ${rows}
+      </div>
+      <div class="sched-bulk-footer">
+        <span class="sched-bulk-status" id="sched-bulk-status"></span>
+        <button class="sched-bulk-save" onclick="saveScheduleBulkEditor()">Сохранить</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+}
+
+function closeScheduleBulkEditor() {
+  document.getElementById('sched-bulk-overlay')?.remove();
+  document.body.style.overflow = '';
+}
+
+async function saveScheduleBulkEditor() {
+  const overlay = document.getElementById('sched-bulk-overlay');
+  const status = document.getElementById('sched-bulk-status');
+  if (!overlay) return;
+  const selects = [...overlay.querySelectorAll('.sched-bulk-select:not(:disabled)')];
+  const changes = [];
+  selects.forEach(sel => {
+    const row = Number(sel.dataset.row);
+    const col = Number(sel.dataset.col);
+    if (!row || col < 0) return;
+    const next = normalizeSchedVal(sel.value);
+    const prev = normalizeSchedVal(S.data.grafik?.[row - 1]?.[col]);
+    if (next !== prev) changes.push({ row, col, value: next });
+  });
+  if (!changes.length) { if (status) status.textContent = 'Нет изменений'; return; }
+  try {
+    if (status) { status.className = 'sched-bulk-status saving'; status.textContent = 'Сохранение...'; }
+    await Promise.all(changes.map(ch => putScheduleCell(ch.row, ch.col, ch.value)));
+    changes.forEach(ch => {
+      if (!S.data.grafik[ch.row - 1]) S.data.grafik[ch.row - 1] = [];
+      S.data.grafik[ch.row - 1][ch.col] = ch.value;
+    });
+    if (status) { status.className = 'sched-bulk-status saved'; status.textContent = 'Сохранено'; }
+    setTimeout(() => { closeScheduleBulkEditor(); renderGrafik(); toast('График сохранён', 's'); }, 400);
+  } catch (err) {
+    if (status) { status.className = 'sched-bulk-status err'; status.textContent = 'Ошибка сохранения'; }
+    toast(err.message || 'Ошибка сохранения графика', 'e');
+  }
 }
 
 // ==================== INSTRUKTSII ====================

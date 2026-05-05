@@ -4591,7 +4591,7 @@ function openDozhimIncomeModal(btn) {
   const mc = document.getElementById('income-modal-content');
   document.getElementById('income-overlay')?.classList.remove('visits-mode');
   const title = document.querySelector('#income-overlay .income-modal-title');
-  if (title) title.textContent = 'Детализация дохода';
+  if (title) title.innerHTML = 'Детализация дохода';
   mc.setAttribute('data-modal', 'dozhim');
   mc.innerHTML = `
     <div class="income-sec-title">Оклад</div>
@@ -4673,7 +4673,7 @@ function openIncomeDetail(btn) {
   const mc = document.getElementById('income-modal-content');
   document.getElementById('income-overlay')?.classList.remove('visits-mode');
   const title = document.querySelector('#income-overlay .income-modal-title');
-  if (title) title.textContent = 'Детализация дохода';
+  if (title) title.innerHTML = 'Детализация дохода';
   mc.removeAttribute('data-modal');
   mc.innerHTML = `
     ${koefRow}
@@ -4773,15 +4773,11 @@ function openVisitsDayModal(nameLow, isDozhim) {
 
   const modalTitle = document.querySelector('#income-overlay .income-modal-title');
   const mc = document.getElementById('income-modal-content');
-  if (modalTitle) modalTitle.textContent = 'Хронология визитов';
+  if (modalTitle) modalTitle.innerHTML = `Хронология визитов <span>${escapeHtml(subtitle)}</span>`;
   document.getElementById('income-overlay')?.classList.add('visits-mode');
   mc.removeAttribute('data-modal');
   mc.innerHTML = `
     <div class="vis-step-card" role="figure" aria-label="Визиты за ${escapeAttr(subtitle)}: ${total}">
-      <header class="vis-step-header">
-        <h2>Визиты</h2>
-        <p>${escapeHtml(subtitle)}</p>
-      </header>
       <div class="vis-card-total" aria-live="polite">
         <span class="vis-card-total-value">${total}</span>
         <span>${pluralVisits(total)}</span>

@@ -2311,6 +2311,12 @@ body.light .income-modal-body { background:rgba(255,255,255,0.6); }
   font-family:'Unbounded',sans-serif; font-size:11px; font-weight:800;
   display:flex; align-items:center; gap:8px;
 }
+.income-modal-title span {
+  font-family:'Golos Text',sans-serif;
+  font-size:11px;
+  font-weight:600;
+  color:var(--txt2);
+}
 .income-modal-close {
   width:28px; height:28px; border-radius:50%;
   border:1px solid var(--line2); background:var(--bg3);
@@ -2533,7 +2539,7 @@ body.cosmic #presence-popover::before {
 }
 
 .income-modal-content { padding:0; color:var(--acc); }
-.income-modal-content :where(.income-sec-title,.income-badge .ib-lbl,.income-badge .ib-val,.income-subtotal .ist-lbl,.income-subtotal .ist-val,.dz-badge .dzb-lbl,.dz-badge .dzb-count,.dz-badge .dzb-earn,.inc-day-num,.inc-day-sum,.vis-step-header h2,.vis-step-header p,.vis-card-total-value,.vis-card-total span:last-child) {
+.income-modal-content :where(.income-sec-title,.income-badge .ib-lbl,.income-badge .ib-val,.income-subtotal .ist-lbl,.income-subtotal .ist-val,.dz-badge .dzb-lbl,.dz-badge .dzb-count,.dz-badge .dzb-earn,.inc-day-num,.inc-day-sum,.vis-card-total-value,.vis-card-total span:last-child) {
   color:var(--acc) !important;
 }
 .income-total-banner {
@@ -2614,28 +2620,8 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
   color:var(--txt);
   box-shadow:0 14px 34px rgba(0,0,0,.18);
 }
-.vis-step-header {
-  display:flex;
-  align-items:baseline;
-  justify-content:flex-start;
-  gap:10px;
-  padding:0 4px;
-}
-.vis-step-header h2 {
-  margin:0;
-  font-family:'Unbounded',sans-serif;
-  font-size:13px;
-  font-weight:600;
-  line-height:1.15;
-  color:var(--txt);
-}
-.vis-step-header p {
-  margin:0;
-  font-size:12px;
-  color:var(--txt2);
-}
 .vis-card-total {
-  margin:28px 0 24px;
+  margin:0 0 24px;
   display:flex;
   align-items:baseline;
   gap:8px;

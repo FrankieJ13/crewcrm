@@ -22,6 +22,14 @@ const ASSET_BASE = new URL('./logos/', document.baseURI).href;
 const DEFAULT_ICON_BASE = ASSET_BASE + 'default/';
 const COSMIC_ICON_BASE = ASSET_BASE + 'cosmic/';
 
+function requestPortraitOrientation() {
+  if (!screen.orientation?.lock) return;
+  const isMobile = matchMedia('(max-width: 900px)').matches;
+  if (!isMobile) return;
+  screen.orientation.lock('portrait').catch(() => {});
+}
+window.addEventListener('load', requestPortraitOrientation);
+
 /* ══ MONTH STATE ══ */
 let currentSuffix = (() => {
   const now = new Date();
@@ -2308,7 +2316,7 @@ function renderOtchet() {
     const warmCnvrs = getCnvrsRow(name, 'warm');
     const genCnvrs  = getCnvrsRow(name, 'general');
     const modalData = JSON.stringify({
-      name, v800:r[1], v1200:r[2], rplan, ost, prc, prog, allV, daily, progNum,
+      name, nameLow: String(r[0]||'').toLowerCase().trim(), v800:r[1], v1200:r[2], rplan, ost, prc, prog, allV, daily, progNum,
       kred800:r[8], nal800:r[9], td800:r[10], kom800:r[11],
       kred1200:r[12], nal1200:r[13], td1200:r[14], kom1200:r[15],
       zadatok:r[16], vsalone:r[19], vkso:r[22], vfSSP:r[23], vbanke:r[24], otkaz:r[25],
@@ -2324,7 +2332,7 @@ function renderOtchet() {
     return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
       <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${getMgrMessengerHtml(name)}</div><button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
       <div class="mop-mini">
-        <div class="mm"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
+        <div class="mm kpi-visits-drill" onclick="openVisitsDayModal(${JSON.stringify(String(r[0]||'').toLowerCase().trim()).replace(/"/g, '&quot;')}, false)" title="Диаграмма визитов по дням"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
         <div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div>
         <div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div>
         <div class="mm"><div class="ml">Дневной</div><div class="mv">${daily}</div></div>
@@ -2416,7 +2424,7 @@ function renderDozhimCards() {
     const ost   = Math.max(0, plan - allVis);
     const daily = computeDailyPlan(plan, allVis, progNum, currentSuffix, name);
     const modalData = JSON.stringify({
-      type:'dozhim', name: name.toUpperCase(),
+      type:'dozhim', name: name.toUpperCase(), nameLow: nl,
       v800: s.vis800||0, v1000: s.vis1000||0,
       rplan: plan, ost, prc: factNum+'%', prog: progNum+'%', allV: allVis,
       kred800:s.kred800||0, nal800:s.nal800||0, obmen800:s.obmen800||0, kom800:s.kom800||0,
@@ -2426,7 +2434,7 @@ function renderDozhimCards() {
     return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
       <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name.toUpperCase()}</span>${getMgrMessengerHtml(name)}</div><button class="mop-info-btn" onclick="openDozhimModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
       <div class="mop-mini">
-        <div class="mm"><div class="ml">Визиты</div><div class="mv">${allVis}</div></div>
+        <div class="mm kpi-visits-drill" onclick="openVisitsDayModal(${JSON.stringify(nl).replace(/"/g, '&quot;')}, true)" title="Диаграмма визитов по дням"><div class="ml">Визиты</div><div class="mv">${allVis}</div></div>
         <div class="mm"><div class="ml">План</div><div class="mv">${plan}</div></div>
         <div class="mm"><div class="ml">Остаток</div><div class="mv">${ost}</div></div>
         <div class="mm"><div class="ml">Дневной</div><div class="mv">${daily}</div></div>
@@ -4561,6 +4569,7 @@ function openDozhimIncomeModal(btn) {
     ${subtotal('Доля котла', Math.round(kotel))}` : '';
 
   const mc = document.getElementById('income-modal-content');
+  document.getElementById('income-overlay')?.classList.remove('visits-mode');
   const title = document.querySelector('#income-overlay .income-modal-title');
   if (title) title.textContent = 'Детализация дохода';
   mc.setAttribute('data-modal', 'dozhim');
@@ -4642,6 +4651,7 @@ function openIncomeDetail(btn) {
     </div>` : '';
 
   const mc = document.getElementById('income-modal-content');
+  document.getElementById('income-overlay')?.classList.remove('visits-mode');
   const title = document.querySelector('#income-overlay .income-modal-title');
   if (title) title.textContent = 'Детализация дохода';
   mc.removeAttribute('data-modal');
@@ -4736,6 +4746,7 @@ function openVisitsDayModal(nameLow, isDozhim) {
       <span class="vis-step-track"></span>
       <span class="vis-step-fill"></span>
       <span class="vis-step-tip">${count}</span>
+      <span class="vis-step-day">${day}</span>
     </button>`;
   }).join('');
   const subtitle = getMonthName(currentSuffix);
@@ -4743,22 +4754,13 @@ function openVisitsDayModal(nameLow, isDozhim) {
   const modalTitle = document.querySelector('#income-overlay .income-modal-title');
   const mc = document.getElementById('income-modal-content');
   if (modalTitle) modalTitle.textContent = 'Диаграмма визитов';
+  document.getElementById('income-overlay')?.classList.add('visits-mode');
   mc.removeAttribute('data-modal');
   mc.innerHTML = `
     <div class="vis-step-card" role="figure" aria-label="Визиты за ${escapeAttr(subtitle)}: ${total}">
       <header class="vis-step-header">
-        <div>
-          <h2>Визиты</h2>
-          <p>${escapeHtml(subtitle)}</p>
-        </div>
-        <div class="vis-step-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-          </svg>
-        </div>
+        <h2>Визиты</h2>
+        <p>${escapeHtml(subtitle)}</p>
       </header>
       <div class="vis-card-total" aria-live="polite">
         <span class="vis-card-total-value">${total}</span>

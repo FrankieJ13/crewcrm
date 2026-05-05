@@ -1406,7 +1406,7 @@ function liveTextUpdate(node, nextText) {
 
 const ANIMATED_VALUE_SELECTOR = [
   '.kb-val', '.zv', '.mv', '.dc-val', '.rating-sum-val', '.rating-card-pct',
-  '.rating-card-prog', '.ic-val', '.ib-val', '.ist-val', '.mc-v', '.vis-chart-total'
+  '.rating-card-prog', '.ic-val', '.ib-val', '.ist-val', '.mc-v', '.vis-card-total-value'
 ].join(',');
 
 function parseAnimatedNumber(text) {
@@ -4730,29 +4730,41 @@ function openVisitsDayModal(nameLow, isDozhim) {
   const total = counts.reduce((sum, v) => sum + v, 0);
   const days = counts.slice(1).map((count, idx) => {
     const day = idx + 1;
-    const h = Math.max(count ? 18 : 5, Math.round(count / max * 100));
+    const h = count ? Math.max(7, Math.round(count / max * 100)) : 0;
     const title = `${day}: ${count} ${pluralVisits(count)}`;
-    return `<button class="vis-day-bar${count ? ' has-visits' : ''}" style="--h:${h}%" title="${escapeAttr(title)}" aria-label="${escapeAttr(title)}">
-      <span class="vis-day-bar-fill"></span>
-      <span class="vis-day-tip">${count}</span>
-      <span class="vis-day-num">${day}</span>
+    return `<button class="vis-step-bar${count ? ' has-visits' : ''}" style="--h:${h}%;--i:${idx}" title="${escapeAttr(title)}" aria-label="${escapeAttr(title)}">
+      <span class="vis-step-track"></span>
+      <span class="vis-step-fill"></span>
+      <span class="vis-step-tip">${count}</span>
     </button>`;
   }).join('');
+  const subtitle = getMonthName(currentSuffix);
 
   const modalTitle = document.querySelector('#income-overlay .income-modal-title');
   const mc = document.getElementById('income-modal-content');
   if (modalTitle) modalTitle.textContent = 'Диаграмма визитов';
   mc.removeAttribute('data-modal');
   mc.innerHTML = `
-    <div class="vis-chart-card">
-      <div class="vis-chart-hdr">
+    <div class="vis-step-card" role="figure" aria-label="Визиты за ${escapeAttr(subtitle)}: ${total}">
+      <header class="vis-step-header">
         <div>
-          <div class="vis-chart-kicker">Визиты по дням</div>
-          <div class="vis-chart-total">${total}</div>
+          <h2>Визиты</h2>
+          <p>${escapeHtml(subtitle)}</p>
         </div>
-        <div class="vis-chart-note">наведите на день</div>
+        <div class="vis-step-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </div>
+      </header>
+      <div class="vis-card-total" aria-live="polite">
+        <span class="vis-card-total-value">${total}</span>
+        <span>${pluralVisits(total)}</span>
       </div>
-      <div class="vis-chart-bars">${days}</div>
+      <div class="vis-step-bars" aria-label="Визиты по дням">${days}</div>
     </div>
   `;
   scheduleAnimatedValues(mc);

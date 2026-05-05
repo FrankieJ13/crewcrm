@@ -2571,107 +2571,114 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
   white-space:nowrap;
 }
 
-.vis-chart-card {
-  position:relative;
-  overflow:hidden;
-  border:1px solid var(--acc-bdr);
-  border-radius:16px;
-  padding:14px;
-  background:
-    radial-gradient(circle at 18% 0%, rgba(var(--acc-rgb), .24), transparent 34%),
-    linear-gradient(145deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
-  box-shadow:0 18px 44px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.15);
+.vis-step-card {
+  width:100%;
+  max-width:430px;
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:22px;
+  background:var(--bg2);
+  color:var(--txt);
+  box-shadow:0 14px 34px rgba(0,0,0,.18);
 }
-.vis-chart-card::before {
-  content:'';
-  position:absolute;
-  inset:-45%;
-  background:conic-gradient(from 90deg, transparent 0 28%, rgba(var(--acc-rgb), .28), transparent 54%);
-  animation:vis-card-sweep 8s linear infinite;
-  pointer-events:none;
-}
-.vis-chart-card::after {
-  content:'';
-  position:absolute;
-  inset:1px;
-  border-radius:15px;
-  background:linear-gradient(180deg, rgba(255,255,255,.08), transparent 42%);
-  pointer-events:none;
-}
-.vis-chart-hdr,
-.vis-chart-bars { position:relative; z-index:1; }
-.vis-chart-hdr {
+.vis-step-header {
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
-  gap:12px;
-  margin-bottom:12px;
+  gap:14px;
 }
-.vis-chart-kicker,
-.vis-chart-note {
-  font-size:9px;
+.vis-step-header h2 {
+  margin:0;
+  font-family:'Unbounded',sans-serif;
+  font-size:18px;
   font-weight:800;
-  letter-spacing:.08em;
-  text-transform:uppercase;
+  line-height:1.15;
+  color:var(--txt);
+}
+.vis-step-header p {
+  margin:4px 0 0;
+  font-size:13px;
   color:var(--txt2);
 }
-.vis-chart-total {
-  margin-top:2px;
+.vis-step-icon {
+  width:40px;
+  height:40px;
+  flex:0 0 40px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:var(--bg3);
+  color:var(--acc);
+}
+.vis-step-icon svg {
+  width:21px;
+  height:21px;
+}
+.vis-card-total {
+  margin:28px 0 24px;
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+}
+.vis-card-total-value {
   font-family:'Unbounded',sans-serif;
-  font-size:30px;
+  font-size:46px;
   font-weight:900;
   line-height:1;
-  color:var(--acc);
-  text-shadow:0 10px 24px rgba(var(--acc-rgb), .3);
+  letter-spacing:-.03em;
+  color:var(--txt);
 }
-.vis-chart-bars {
-  height:170px;
-  display:grid;
-  grid-template-columns:repeat(31, minmax(6px, 1fr));
-  align-items:end;
+.vis-card-total span:last-child {
+  font-size:17px;
+  color:var(--txt2);
+}
+.vis-step-bars {
+  margin-top:auto;
+  height:128px;
+  display:flex;
+  align-items:flex-end;
   gap:4px;
 }
-.vis-day-bar {
+.vis-step-bar {
   position:relative;
+  flex:1 1 0;
   height:100%;
   min-width:0;
   border:0;
-  padding:0 0 18px;
-  border-radius:9px;
-  background:rgba(255,255,255,.05);
+  padding:0;
+  border-radius:4px 4px 0 0;
+  background:transparent;
   cursor:default;
 }
-.vis-day-bar-fill {
+.vis-step-track,
+.vis-step-fill {
   position:absolute;
   left:0;
   right:0;
-  bottom:18px;
+  bottom:0;
+  border-radius:4px 4px 0 0;
+}
+.vis-step-track {
+  height:100%;
+  background:color-mix(in srgb, var(--txt) 8%, transparent);
+}
+.vis-step-fill {
   height:var(--h);
-  min-height:5px;
-  border-radius:8px 8px 4px 4px;
-  background:linear-gradient(180deg, rgba(var(--acc-rgb), .9), rgba(var(--acc-rgb), .24));
-  box-shadow:0 0 20px rgba(var(--acc-rgb), .22);
+  background:var(--txt);
   transform-origin:bottom;
-  animation:vis-bar-rise .7s cubic-bezier(.2,.8,.2,1) both;
+  animation:vis-step-fill .72s cubic-bezier(.2,.8,.2,1) both;
+  animation-delay:calc(var(--i) * 30ms);
 }
-.vis-day-bar:not(.has-visits) .vis-day-bar-fill {
-  opacity:.25;
-  box-shadow:none;
-}
-.vis-day-num {
-  position:absolute;
-  left:0;
-  right:0;
-  bottom:3px;
-  font-size:8px;
-  font-weight:800;
-  color:var(--txt3);
-}
-.vis-day-tip {
+.vis-step-bar:not(.has-visits) .vis-step-fill { opacity:0; }
+.vis-step-tip {
   position:absolute;
   left:50%;
-  bottom:calc(var(--h) + 24px);
-  transform:translate(-50%, 8px);
+  bottom:calc(var(--h) + 7px);
+  transform:translate(-50%, 6px);
   min-width:22px;
   padding:3px 5px;
   border-radius:999px;
@@ -2684,7 +2691,7 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
   transition:opacity .16s ease, transform .16s ease;
   z-index:2;
 }
-.vis-day-bar:hover .vis-day-tip {
+.vis-step-bar:hover .vis-step-tip {
   opacity:1;
   transform:translate(-50%, 0);
 }
@@ -2698,10 +2705,7 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
   box-shadow:0 0 0 1px var(--acc-bdr), 0 10px 26px rgba(var(--acc-rgb), .12);
 }
 
-@keyframes vis-card-sweep {
-  to { transform:rotate(360deg); }
-}
-@keyframes vis-bar-rise {
+@keyframes vis-step-fill {
   from { transform:scaleY(.08); opacity:.35; }
   to { transform:scaleY(1); opacity:1; }
 }

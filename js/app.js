@@ -1386,11 +1386,114 @@ function renderTab(tab) {
 function liveTextUpdate(node, nextText) {
   if (node.nodeValue === nextText) return;
   const parent = node.parentElement;
+  if (parent?.matches?.(ANIMATED_VALUE_SELECTOR)) {
+    const oldMeta = parseAnimatedNumber(node.nodeValue);
+    const nextMeta = parseAnimatedNumber(nextText);
+    if (oldMeta && nextMeta) {
+      node.nodeValue = oldMeta.raw;
+      parent.dataset.countTarget = String(oldMeta.value);
+      parent.dataset.countRaw = oldMeta.raw;
+      springCountValue(parent, nextMeta);
+      return;
+    }
+  }
   node.nodeValue = nextText;
   if (!parent || !S.silentRefresh) return;
   parent.classList.remove('live-value-updated');
   void parent.offsetWidth;
   parent.classList.add('live-value-updated');
+}
+
+const ANIMATED_VALUE_SELECTOR = [
+  '.kb-val', '.zv', '.mv', '.dc-val', '.rating-sum-val', '.rating-card-pct',
+  '.rating-card-prog', '.ic-val', '.ib-val', '.ist-val', '.mc-v', '.vis-chart-total'
+].join(',');
+
+function parseAnimatedNumber(text) {
+  const raw = String(text || '').trim();
+  if (!raw || raw === '—' || raw.includes('/')) return null;
+  const matches = raw.match(/-?\d[\d\s]*(?:[.,]\d+)?/g);
+  if (!matches || matches.length !== 1) return null;
+  const token = matches[0];
+  const normalized = token.replace(/\s/g, '').replace(',', '.');
+  const value = Number(normalized);
+  if (!Number.isFinite(value)) return null;
+  const decimals = (token.match(/[.,](\d+)/)?.[1] || '').length;
+  return {
+    raw,
+    token,
+    value,
+    decimals,
+    prefix: raw.slice(0, raw.indexOf(token)),
+    suffix: raw.slice(raw.indexOf(token) + token.length),
+    grouped: /\d\s+\d/.test(token),
+  };
+}
+
+function formatAnimatedNumber(value, meta) {
+  const fixed = Math.max(0, meta.decimals || 0);
+  let out = Number(value).toFixed(fixed);
+  if (meta.grouped) {
+    const [intPart, decPart] = out.split('.');
+    out = Number(intPart).toLocaleString('ru-RU') + (decPart ? ',' + decPart : '');
+  } else if (meta.decimals && meta.token.includes(',')) {
+    out = out.replace('.', ',');
+  }
+  return meta.prefix + out + meta.suffix;
+}
+
+function springCountValue(el, meta) {
+  const prevTarget = Number(el.dataset.countTarget);
+  const fromCurrent = parseAnimatedNumber(el.textContent);
+  const start = Number.isFinite(prevTarget) && fromCurrent ? fromCurrent.value : 0;
+  if (Number.isFinite(prevTarget) && Math.abs(prevTarget - meta.value) < 0.0001 && el.dataset.countRaw === meta.raw) return;
+
+  el.dataset.countTarget = String(meta.value);
+  el.dataset.countRaw = meta.raw;
+  el.classList.add('value-counting');
+
+  let current = start;
+  let velocity = 0;
+  let last = performance.now();
+  let frames = 0;
+  const stiffness = 200;
+  const damping = 50;
+  const mass = 1;
+
+  function tick(now) {
+    const dt = Math.min(0.032, (now - last) / 1000);
+    last = now;
+    frames++;
+    const force = -stiffness * (current - meta.value);
+    const damp = -damping * velocity;
+    const accel = (force + damp) / mass;
+    velocity += accel * dt;
+    current += velocity * dt;
+    const done = frames > 12 && Math.abs(current - meta.value) < 0.01 && Math.abs(velocity) < 0.01;
+    el.textContent = done ? meta.raw : formatAnimatedNumber(current, meta);
+    if (!done) {
+      requestAnimationFrame(tick);
+    } else {
+      el.classList.remove('value-counting');
+    }
+  }
+
+  el.textContent = formatAnimatedNumber(start, meta);
+  requestAnimationFrame(tick);
+}
+
+function animateDynamicValues(root = document) {
+  const scope = root instanceof Element || root === document ? root : document;
+  scope.querySelectorAll(ANIMATED_VALUE_SELECTOR).forEach(el => {
+    if (el.closest('.vt-row-card, .vt-picker-modal')) return;
+    const meta = parseAnimatedNumber(el.textContent);
+    if (!meta) return;
+    springCountValue(el, meta);
+  });
+}
+
+function scheduleAnimatedValues(root = document) {
+  requestAnimationFrame(() => animateDynamicValues(root));
 }
 
 function canMorphElement(a, b) {
@@ -1438,6 +1541,7 @@ function setLiveHTML(el, html) {
   if (!el) return;
   if (!S.silentRefresh || !el.children.length) {
     el.innerHTML = html;
+    scheduleAnimatedValues(el);
     return;
   }
   const tpl = document.createElement('template');
@@ -1446,11 +1550,13 @@ function setLiveHTML(el, html) {
   const nextChildren = [...tpl.content.childNodes];
   if (curChildren.length !== nextChildren.length) {
     el.replaceChildren(...nextChildren.map(ch => ch.cloneNode(true)));
+    scheduleAnimatedValues(el);
     return;
   }
   for (let i = 0; i < nextChildren.length; i++) {
     morphLiveNode(curChildren[i], nextChildren[i]);
   }
+  scheduleAnimatedValues(el);
 }
 
 async function refreshVisibleDataLive() {
@@ -4483,6 +4589,7 @@ function openDozhimIncomeModal(btn) {
     ${subtotal('Фактический доход', Math.round(n(d.fact?.total)))}
     ${buildDayCalendar(d.nameLow||'', S.data.d_vizity||[], DOZHIM_RATES, true)}
   `;
+  scheduleAnimatedValues(mc);
   document.getElementById('income-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -4579,6 +4686,7 @@ function openIncomeDetail(btn) {
       rZadatok:  parseRate((S.data.stavki||[])[20]?.[1]),
     }, false)}
   `;
+  scheduleAnimatedValues(mc);
   document.getElementById('income-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -4646,6 +4754,7 @@ function openVisitsDayModal(nameLow, isDozhim) {
       <div class="vis-chart-bars">${days}</div>
     </div>
   `;
+  scheduleAnimatedValues(mc);
   document.getElementById('income-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }

@@ -2241,6 +2241,7 @@ body.cosmic .sched-nav-icon {
   color:var(--txt2); font-size:18px; cursor:pointer;
 }
 .sched-bulk-body {
+  --sched-name-col: 220px;
   overflow:auto;
   padding:12px;
   scrollbar-width:thick;
@@ -2266,14 +2267,15 @@ body.cosmic .sched-nav-icon {
 .sched-bulk-head,
 .sched-bulk-row {
   display:grid;
-  grid-template-columns:minmax(150px, 220px) minmax(720px, 1fr);
-  gap:8px;
+  grid-template-columns:var(--sched-name-col) minmax(720px, 1fr);
+  gap:0;
   align-items:center;
+  min-width:calc(var(--sched-name-col) + 960px);
 }
 .sched-bulk-head {
   position:sticky;
   top:0;
-  z-index:4;
+  z-index:8;
   padding-bottom:6px;
   background:var(--bg2);
 }
@@ -2293,6 +2295,12 @@ body.cosmic .sched-nav-icon {
   padding:5px 0;
   border-top:1px solid rgba(128,128,128,.12);
 }
+.sched-bulk-row:nth-child(odd) {
+  background:color-mix(in srgb, var(--txt) 4%, transparent);
+}
+.sched-bulk-row:nth-child(even) {
+  background:color-mix(in srgb, var(--bg3) 45%, transparent);
+}
 .sched-bulk-row.locked {
   opacity:.42;
   filter:blur(.7px);
@@ -2306,8 +2314,9 @@ body.cosmic .sched-nav-icon {
   display:flex;
   align-items:center;
   padding:0 10px;
-  background:var(--bg2);
+  background:inherit;
   border-right:1px solid var(--line);
+  box-shadow:10px 0 18px rgba(0,0,0,.16);
   font-family:'Unbounded',sans-serif;
   font-size:10px;
   font-weight:800;
@@ -2319,10 +2328,11 @@ body.cosmic .sched-nav-icon {
 .sched-bulk-head > div:first-child {
   position:sticky;
   left:0;
-  z-index:5;
+  z-index:10;
   align-self:stretch;
   background:var(--bg2);
   border-right:1px solid var(--line);
+  box-shadow:10px 0 18px rgba(0,0,0,.16);
 }
 .sched-bulk-select {
   width:100%;

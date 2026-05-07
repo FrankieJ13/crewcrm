@@ -5394,7 +5394,7 @@ document.getElementById('badge-month').addEventListener('click', showMonthDropdo
 document.getElementById('center-login-btn').addEventListener('click', () => {
   if (isAndroidWebView) {
     // Google блокирует OAuth в Android WebView — открываем в Chrome
-    window.open('https://frankiej13.github.io/crm-crew-dashboard/', '_system');
+    window.open('https://frankiej13.github.io/crewcrm/', '_system');
     return;
   }
   if (!tokenClient) { toast('Загружается…','i'); return; }

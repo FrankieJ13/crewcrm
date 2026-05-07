@@ -1410,6 +1410,14 @@ const ANIMATED_VALUE_SELECTOR = [
   '.rating-card-prog', '.ic-val', '.ib-val', '.ist-val', '.mc-v', '.vis-card-total-value'
 ].join(',');
 
+function isPlanValueElement(el) {
+  const labelSelectors = '.kb-lbl,.ml,.dc-lbl,.mc-l,.rating-sum-lbl';
+  const containers = '.kpi-badge,.mm,.m4,.dept-cell,.modal-cell,.rating-sum-cell';
+  const container = el.closest(containers);
+  const label = container?.querySelector(labelSelectors);
+  return String(label?.textContent || '').trim().toLowerCase() === 'план';
+}
+
 function parseAnimatedNumber(text) {
   const raw = String(text || '').trim();
   if (!raw || raw === '—' || raw.includes('/')) return null;
@@ -1491,6 +1499,7 @@ function animateDynamicValues(root = document) {
   const scope = root instanceof Element || root === document ? root : document;
   scope.querySelectorAll(ANIMATED_VALUE_SELECTOR).forEach(el => {
     if (el.closest('.vt-row-card, .vt-picker-modal')) return;
+    if (isPlanValueElement(el)) return;
     const meta = parseAnimatedNumber(el.textContent);
     if (!meta) return;
     springCountValue(el, meta);
@@ -1502,6 +1511,7 @@ function prepareDynamicValues(root = document) {
   const prepared = [];
   scope.querySelectorAll(ANIMATED_VALUE_SELECTOR).forEach(el => {
     if (el.closest('.vt-row-card, .vt-picker-modal')) return;
+    if (isPlanValueElement(el)) return;
     const meta = parseAnimatedNumber(el.textContent);
     if (!meta) return;
     el.dataset.countStart = '0';

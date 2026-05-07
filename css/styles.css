@@ -2318,7 +2318,7 @@ body.cosmic .sched-nav-icon {
   padding:0 8px;
   background:var(--sched-row-bg);
   border-right:1px solid var(--line);
-  box-shadow:12px 0 20px rgba(0,0,0,.22);
+  box-shadow:-32px 0 0 var(--sched-row-bg), 12px 0 20px rgba(0,0,0,.22);
   font-family:'Unbounded',sans-serif;
   font-size:9px;
   font-weight:800;
@@ -2334,7 +2334,7 @@ body.cosmic .sched-nav-icon {
   align-self:stretch;
   background:var(--bg2);
   border-right:1px solid var(--line);
-  box-shadow:10px 0 18px rgba(0,0,0,.16);
+  box-shadow:-32px 0 0 var(--bg2), 10px 0 18px rgba(0,0,0,.16);
 }
 .sched-bulk-select {
   width:100%;

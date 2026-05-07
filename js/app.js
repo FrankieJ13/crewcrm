@@ -5881,9 +5881,7 @@ function renderRating() {
     const pctStyle = pctTextStyle(m.progNum);
     const barW = maxProg > 0 ? Math.min(Math.round(m.progNum / maxProg * 100), 100) : 0;
     const rankClass = isTop ? `rank-${idx+1}` : '';
-    const petalsHtml = isTop
-      ? `<div class="rating-petals" aria-hidden="true">${Array.from({length:18}, (_, i) => `<span class="rating-petal ${i % 3 === 1 ? 'sakura' : 'metal'}"></span>`).join('')}</div>`
-      : '';
+    const petalsHtml = '';
 
     const nl = m.name.toLowerCase();
     const isMe = nl === myName;
@@ -5932,7 +5930,6 @@ function renderRating() {
 
   // Анимируем бары
   requestAnimationFrame(() => {
-    setupRatingPetals(el);
     el.querySelectorAll('.rating-card-bar-fill').forEach((bar, i) => {
       setTimeout(() => { bar.style.width = bar.dataset.w + '%'; }, i * 80);
     });
@@ -6291,7 +6288,7 @@ function renderVizRow(row, dept, locked, isFirstOfDate) {
   const label = comment || deal;
   const isDeal = ['ПОКУПКА','КОМИССИЯ','ОБМЕН','ВЫКУП','Кредит','Наличные','Комиссия','Обмен'].some(x=>label.includes(x));
   const isSalon = label.includes('В салоне');
-  const chipTone = getVizChipTone(label);
+  const chipTone = getVizChipTone(label, deal);
   const chipClass = `${isDeal ? 'deal' : isSalon ? 'salon' : ''} ${chipTone}`.trim();
   const chip = label
     ? `<span class="vt-status-chip ${chipClass}" title="${label}">${label.slice(0,18)}${label.length>18?'…':''}</span>` : '';
@@ -6333,21 +6330,25 @@ function getVizSverkaMark(value) {
   return `<span class="vt-sverka-mark empty${cls}" title="Визит проверяется..." aria-label="Визит проверяется" style="--sverka-icon:url('${iconBase}${iconPrefix}s_check.svg')"><i></i></span>`;
 }
 
-function getVizChipTone(label) {
+function getVizChipTone(label, dealValue = '') {
   const s = String(label || '').toLowerCase();
+  const deal = String(dealValue || '').toLowerCase().trim();
   if (!s) return '';
   if (s.includes('отказ') || s.includes('фссп')) return 'vt-chip-red';
   if (s.includes('одобрено')) return 'vt-chip-yellow';
   if (s.includes('подает заявку') || s.includes('подаёт заявку') || s.includes('в работе ксо') || s.includes('на рассмотрении банка')) {
     return 'vt-chip-purple';
   }
-  if (
-    s.includes('покупка (кредит)') ||
-    s.includes('покупка (наличные)') ||
-    s.includes('обмен') ||
-    s.includes('выкуп') ||
-    s.includes('комиссия')
-  ) {
+  const greenDeals = new Set([
+    'покупка (кредит)',
+    'покупка (наличные)',
+    'кредит',
+    'наличные',
+    'обмен',
+    'выкуп',
+    'комиссия'
+  ]);
+  if (greenDeals.has(deal)) {
     return 'vt-chip-green';
   }
   return '';

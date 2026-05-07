@@ -3051,7 +3051,9 @@ body.light .kpi-badge { background:rgba(0,0,0,0.03); }
 }
 .value-counting {
   display:inline-block;
-  font-variant-numeric:tabular-nums;
+  font-family:inherit;
+  font-weight:inherit;
+  font-style:inherit;
   will-change:contents;
 }
 .live-value-updated {
@@ -3116,6 +3118,11 @@ body.light #income-modal-content[data-modal="dozhim"] .income-sec-title::after {
 }
 body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.07); }
 .ic-lbl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:5px; line-height:1; }
+body:not(.light):not(.tiffany):not(.neo-light):not(.cosmic) .income-col .ic-lbl,
+body.cinematic .income-col .ic-lbl,
+body.neo-dark .income-col .ic-lbl {
+  color:#fff !important;
+}
 .ic-val { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:800; line-height:1; }
 .ic-koef {
   position:absolute; top:50%; right:-5px;

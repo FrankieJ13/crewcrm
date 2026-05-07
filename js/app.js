@@ -1763,17 +1763,18 @@ function computeDailyPlan(plan, fact, progNum, suffix, name) {
 
 // ==================== RENDER OTCHET ====================
 // ==================== CRM STATS FROM ВИЗИТЫ ====================
-// Фильтр сверки — должен быть ДО buildCrmStats/buildDozhimStats
-function isSverkaRow(row) {
-  if (!S || !S.sverkaMode) return true;
+// Фильтр сверки применяется только там, где он явно нужен: сверка и расчёт дохода.
+function isSverkaRow(row, sverkaOnly = false) {
+  if (!sverkaOnly || !S || !S.sverkaMode) return true;
   const sverka = (row[13]||'').trim().toLowerCase();
   return sverka === 'да' || sverka === 'yes';
 }
 
 // Строит агрегат по каждому менеджеру из листа ВИЗИТЫ
-function buildCrmStats(vizData) {
+function buildCrmStats(vizData, opts = {}) {
   const mgrs = {};
   if (!vizData || vizData.length < 2) return mgrs;
+  const sverkaOnly = !!opts.sverkaOnly;
 
   const BUY_KREDIT  = 'покупка (кредит)';
   const BUY_NAL     = 'покупка (наличные)';
@@ -1791,7 +1792,7 @@ function buildCrmStats(vizData) {
   for (let i = 1; i < vizData.length; i++) {
     const row = vizData[i];
     if (!row || !row[8]) continue;
-    if (!isSverkaRow(row)) continue; // фильтр сверки
+    if (!isSverkaRow(row, sverkaOnly)) continue;
     const mgr  = String(row[8]).trim();
     const mgrL = mgr.toLowerCase();
     if (!mgr) continue;
@@ -1841,9 +1842,10 @@ function buildCrmStats(vizData) {
 // Столбцы (0-based): A=дата, B=ФИО, C=телефон, D=город, E=комментарий,
 //   F=источник, G=категория, H=способ покупки, I=менеджер, J=задаток, K=авто, L=сверка
 // Категории: кат 800, кат 1000
-function buildDozhimStats(dVizData) {
+function buildDozhimStats(dVizData, opts = {}) {
   const mgrs = {};
   if (!dVizData || dVizData.length < 2) return mgrs;
+  const sverkaOnly = !!opts.sverkaOnly;
 
   const BUY_KREDIT = 'покупка (кредит)';
   const BUY_NAL    = 'покупка (наличные)';
@@ -1855,7 +1857,7 @@ function buildDozhimStats(dVizData) {
   for (let i = 1; i < dVizData.length; i++) {
     const row = dVizData[i];
     if (!row || !row[8]) continue;
-    if (!isSverkaRow(row)) continue; // фильтр сверки
+    if (!isSverkaRow(row, sverkaOnly)) continue;
     const mgr  = String(row[8]).trim();
     const mgrL = mgr.toLowerCase();
     if (!mgr) continue;
@@ -1904,7 +1906,7 @@ const DOZHIM_RATES = {
 
 function calcSalaryDozhimFromVizity(nameLow) {
   const dVizData = S.data.d_vizity || [];
-  const allStats = buildDozhimStats(dVizData);
+  const allStats = buildDozhimStats(dVizData, { sverkaOnly: true });
   const mgrStat  = allStats[nameLow];
   if (!mgrStat) return null;
 
@@ -4628,7 +4630,7 @@ function calcSalary(nameLow) {
   const rZadatok     = parseRate(stavki[20]?.[1]);
 
   // Агрегируем данные менеджера из ВИЗИТЫ
-  const allStats = buildCrmStats(vizData);
+  const allStats = buildCrmStats(vizData, { sverkaOnly: true });
   const mgrStat  = allStats[nameLow];
   if (!mgrStat) return null;
 
@@ -5129,7 +5131,7 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
       if (!row) continue;
       const mgr = (row[8]||'').trim().toLowerCase();
       if (mgr !== nameLow) continue;
-      if (!isSverkaRow(row)) continue;
+      if (!isSverkaRow(row, true)) continue;
 
       const dateStr = (row[0]||'').trim();
       const parts = dateStr.split('.');
@@ -5484,8 +5486,11 @@ async function savePlanAndSverka() {
       });
       if (resp.ok) {
         if (S.usersData && S.usersData[1]) S.usersData[1][9] = newMode;
-        apiCacheInvalidate();
-        S.data.vizity=null; S.data.d_vizity=null; S.data.otchet=null; S.data.dohod=null; S.data.d_dohod=null;
+        if (document.getElementById('scr-dohod')?.classList.contains('on')) renderDohod();
+        if (document.getElementById('scr-personal')?.classList.contains('on')) {
+          const matched = findUserInSheet();
+          if (matched) renderPersonal(matched);
+        }
         toast('Режим сверки: ' + (S.sverkaMode ? 'Вкл' : 'Выкл'), 's');
       } else {
         const err = await resp.text();

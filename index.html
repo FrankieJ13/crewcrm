@@ -168,13 +168,13 @@
           <div class="cfg-spoiler-body">
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
               <label style="font-size:12px;color:var(--txt2);flex:1">Состояние</label>
-              <label class="sverka-toggle" id="sverka-toggle-label" title="Режим сверки: считать только сверенные визиты">
+              <label class="sverka-toggle" id="sverka-toggle-label" title="Режим сверки: учитывать только сверенные визиты в расчёте дохода">
                 <input type="checkbox" id="sverka-toggle-cb">
                 <span class="sverka-slider"></span>
               </label>
             </div>
             <p style="font-size:11px;color:var(--txt3);line-height:1.6;margin:0">
-              При активации система учитывает только те визиты, у которых в столбце <b style="color:var(--txt2)">Сверка</b> таблицы проставлено значение <b style="color:var(--txt2)">Да</b>. Все отчёты, KPI, доходы и метрики пересчитываются исключительно по сверенным данным. При отключении — учитываются все визиты без фильтрации.
+              При активации система использует только визиты со значением <b style="color:var(--txt2)">Да</b> в столбце <b style="color:var(--txt2)">Сверка</b> для сверочных расчётов и дохода. Отображаемые факты визитов, продажи, KPI, рейтинг и журнал визитов остаются по всем внесённым данным.
             </p>
           </div>
         </details>

@@ -8,8 +8,10 @@ if ('serviceWorker' in navigator && ['http:', 'https:'].includes(location.protoc
 
 /* ══ CONFIG ══ */
 const CFG = {
-  CLIENT_ID: '364532815329-0j1lkobb1v9vcserj6artf64nd95a0la.apps.googleusercontent.com',
-  SHEET_ID:  '1DeUsHB_O1SbIMR4p5yd64o_R0yllWvtnyNhjxjhipn8',
+  CLIENT_ID:    '364532815329-0j1lkobb1v9vcserj6artf64nd95a0la.apps.googleusercontent.com',
+  SHEET_ID:     '1DeUsHB_O1SbIMR4p5yd64o_R0yllWvtnyNhjxjhipn8',
+  WORKER_URL:   'https://crm-auth.frankiej13.workers.dev',
+  REDIRECT_URI: 'https://frankiej13.github.io/crewcrm/',
   FIREBASE: {
     apiKey: 'AIzaSyAmXoyZdIuxmbWyFHTKfdYRbYLcKxgVbWE',
     authDomain: 'crm-crew.firebaseapp.com',
@@ -826,12 +828,30 @@ async function signInFirebaseAnonymously() {
 function scheduleTokenRefresh(expiresIn) {
   if (refreshTimer) clearTimeout(refreshTimer);
   const delay = Math.max((expiresIn - 300) * 1000, 0);
-  refreshTimer = setTimeout(() => {
-    if (tokenClient && S.token) {
-      tokenClient.requestAccessToken({ prompt: '' });
-    }
+  refreshTimer = setTimeout(async () => {
+    await silentRefreshViaWorker();
     refreshTimer = null;
   }, delay);
+}
+
+async function silentRefreshViaWorker() {
+  const user = S.user || JSON.parse(localStorage.getItem('crm_user') || 'null');
+  if (!user?.sub) return false;
+  try {
+    const r = await fetch(CFG.WORKER_URL + '/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: user.sub }),
+    });
+    const data = await r.json();
+    if (data.error) return false;
+    S.token = data.access_token;
+    tokenExpiresAt = Date.now() + Math.max((data.expires_in || 3600) - 60, 60) * 1000;
+    localStorage.setItem('crm_tok', data.access_token);
+    localStorage.setItem('crm_exp', tokenExpiresAt);
+    scheduleTokenRefresh(data.expires_in);
+    return true;
+  } catch(e) { return false; }
 }
 
 function cleanupTokenRequest() {
@@ -852,7 +872,7 @@ function showLoginScreen() {
   if (window._loginLiquidInit) window._loginLiquidInit();
 }
 
-function requestGoogleToken({ prompt = '', mode = 'ensure', force = false } = {}) {
+function requestGoogleToken({ mode = 'ensure', force = false } = {}) {
   if (!tokenClient) return Promise.reject(new Error('oauth_not_ready'));
   if (force && tokenRequest) cleanupTokenRequest();
   if (tokenRequest) return tokenRequest.promise;
@@ -872,11 +892,11 @@ function requestGoogleToken({ prompt = '', mode = 'ensure', force = false } = {}
       const current = tokenRequest;
       cleanupTokenRequest();
       if (current) current.reject(new Error('oauth_timeout'));
-    }, 15000),
+    }, 30000),
   };
 
   try {
-    tokenClient.requestAccessToken({ prompt });
+    tokenClient.requestCode();
   } catch (err) {
     const current = tokenRequest;
     cleanupTokenRequest();
@@ -895,8 +915,15 @@ async function ensureToken({ interactive = false } = {}) {
     tokenExpiresAt = exp;
     return tok;
   }
+  const refreshed = await silentRefreshViaWorker();
+  if (refreshed) return S.token;
+  if (!interactive) {
+    const err = new Error('token_expired');
+    err.isAuthError = true;
+    throw err;
+  }
   try {
-    const resp = await requestGoogleToken({ prompt: interactive ? 'consent' : '', mode: 'ensure' });
+    const resp = await requestGoogleToken({ mode: 'ensure' });
     return resp.access_token;
   } catch (err) {
     err.isAuthError = true;
@@ -910,9 +937,12 @@ async function authHeaders(extra = {}, opts = {}) {
 }
 
 function initAuth() {
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CFG.CLIENT_ID,
-    scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+  tokenClient = google.accounts.oauth2.initCodeClient({
+    client_id:    CFG.CLIENT_ID,
+    scope:        'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+    ux_mode:      'popup',
+    access_type:  'offline',
+    redirect_uri: CFG.REDIRECT_URI,
     error_callback: (err) => {
       const pending = tokenRequest;
       cleanupTokenRequest();
@@ -926,25 +956,39 @@ function initAuth() {
       const pending = tokenRequest;
       if (resp.error) {
         cleanupTokenRequest();
-        if (window._silentFallback) { clearTimeout(window._silentFallback); window._silentFallback = null; }
         showLoginScreen();
-        toast('Ошибка: '+resp.error, 'e');
+        toast('Ошибка: ' + resp.error, 'e');
         if (pending) pending.reject(new Error(resp.error));
         return;
       }
-      const l = document.getElementById('silent-loader');
-      if (l) l.remove();
-      if (window._silentFallback) { clearTimeout(window._silentFallback); window._silentFallback = null; }
-      S.token = resp.access_token;
-      tokenExpiresAt = Date.now() + Math.max((resp.expires_in || 3600) - 60, 60) * 1000;
-      localStorage.setItem('crm_tok', resp.access_token);
-      localStorage.setItem('crm_exp', tokenExpiresAt);
-      loadUser();
-      syncFirebaseAuth(resp.access_token);
-      onLogin();
-      scheduleTokenRefresh(resp.expires_in);
-      cleanupTokenRequest();
-      if (pending) pending.resolve(resp);
+      try {
+        const r = await fetch(CFG.WORKER_URL + '/exchange', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ code: resp.code, redirect_uri: CFG.REDIRECT_URI }),
+        });
+        const data = await r.json();
+        if (data.error) throw new Error(data.error);
+        const l = document.getElementById('silent-loader');
+        if (l) l.remove();
+        S.token = data.access_token;
+        S.user  = data.user;
+        tokenExpiresAt = Date.now() + Math.max((data.expires_in || 3600) - 60, 60) * 1000;
+        localStorage.setItem('crm_tok',  data.access_token);
+        localStorage.setItem('crm_exp',  tokenExpiresAt);
+        localStorage.setItem('crm_user', JSON.stringify(data.user));
+        syncFirebaseAuth(data.access_token);
+        renderUser();
+        onLogin();
+        scheduleTokenRefresh(data.expires_in);
+        cleanupTokenRequest();
+        if (pending) pending.resolve({ access_token: data.access_token, expires_in: data.expires_in });
+      } catch(e) {
+        cleanupTokenRequest();
+        toast('Ошибка авторизации: ' + e.message, 'e');
+        showLoginScreen();
+        if (pending) pending.reject(e);
+      }
     },
   });
 }
@@ -1104,25 +1148,25 @@ function tryRestore() {
 
 function trySilentRefresh() {
   document.getElementById('scr-login').classList.remove('on');
-  document.getElementById('scr-login').style.display = 'none'; document.body.classList.remove('login-active');
+  document.getElementById('scr-login').style.display = 'none';
+  document.body.classList.remove('login-active');
   const loader = document.createElement('div');
   loader.id = 'silent-loader';
   loader.className = 'loader';
   loader.innerHTML = '<div class="spin"></div><div>Восстановление сессии…</div>';
   document.querySelector('main').prepend(loader);
 
-  tokenClient.requestAccessToken({ prompt: '' });
-
-  const fallback = setTimeout(() => {
+  silentRefreshViaWorker().then(ok => {
     const l = document.getElementById('silent-loader');
     if (l) l.remove();
-    if (!S.token) {
+    if (ok) {
+      if (!S.user) { S.user = JSON.parse(localStorage.getItem('crm_user') || 'null'); if (S.user) renderUser(); }
+      onLogin();
+    } else {
       localStorage.removeItem('crm_user');
       showLoginScreen();
     }
-  }, 8000);
-
-  window._silentFallback = fallback;
+  });
 }
 
 // ==================== API LAYER ====================
@@ -5398,7 +5442,7 @@ document.getElementById('center-login-btn').addEventListener('click', () => {
     return;
   }
   if (!tokenClient) { toast('Загружается…','i'); return; }
-  requestGoogleToken({ prompt:'consent', mode:'login', force:true }).catch(() => {
+  requestGoogleToken({ mode:'login', force:true }).catch(() => {
     toast('Не удалось войти через Google', 'e');
   });
 });

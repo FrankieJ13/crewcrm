@@ -1,0 +1,7 @@
+name = "crm-auth"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "TOKENS"
+id = "a4013dc025bf4357ba603f516d94e4e1"

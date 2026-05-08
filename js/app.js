@@ -373,6 +373,7 @@ let autoRefreshTimer = null;
 let tokenExpiresAt = 0;
 let tokenRequest = null;
 let oauthCodeProcessed = false;
+const IS_WPF = !!window.__IS_WPF__;
 const AUTO_REFRESH_INTERVAL = 60 * 1000; // 1 минута
 const PRESENCE_STALE_MS = 15 * 60 * 1000;
 
@@ -941,7 +942,7 @@ function initAuth() {
   tokenClient = google.accounts.oauth2.initCodeClient({
     client_id:    CFG.CLIENT_ID,
     scope:        'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
-    ux_mode:      'redirect',
+    ux_mode:      IS_WPF ? 'popup' : 'redirect',
     redirect_uri: CFG.REDIRECT_URI,
     error_callback: (err) => {
       const pending = tokenRequest;

@@ -905,9 +905,11 @@ function showLoginScreen() {
 }
 
 function requestGoogleToken({ mode = 'ensure', force = false } = {}) {
-  if (!tokenClient) return Promise.reject(new Error('oauth_not_ready'));
+  if (!isWPF && !tokenClient) return Promise.reject(new Error('oauth_not_ready'));
   if (force && tokenRequest) cleanupTokenRequest();
   if (tokenRequest) return tokenRequest.promise;
+
+  oauthCodeProcessed = false;
 
   let resolveRequest, rejectRequest;
   const promise = new Promise((resolve, reject) => {
@@ -915,6 +917,7 @@ function requestGoogleToken({ mode = 'ensure', force = false } = {}) {
     rejectRequest = reject;
   });
 
+  const timeoutMs = isWPF ? 300000 : 30000;
   tokenRequest = {
     mode,
     promise,
@@ -924,7 +927,7 @@ function requestGoogleToken({ mode = 'ensure', force = false } = {}) {
       const current = tokenRequest;
       cleanupTokenRequest();
       if (current) current.reject(new Error('oauth_timeout'));
-    }, 30000),
+    }, timeoutMs),
   };
 
   try {
@@ -943,6 +946,12 @@ function requestGoogleToken({ mode = 'ensure', force = false } = {}) {
 
   return promise;
 }
+
+window._wpfPopupClosed = function() {
+  const pending = tokenRequest;
+  cleanupTokenRequest();
+  if (pending && !oauthCodeProcessed) pending.reject(new Error('oauth_cancelled'));
+};
 
 async function ensureToken({ interactive = false } = {}) {
   if (S.token && Date.now() < tokenExpiresAt - 60_000) return S.token;

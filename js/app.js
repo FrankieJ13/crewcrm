@@ -968,7 +968,7 @@ function initAuth() {
           body:    JSON.stringify({ code: resp.code, redirect_uri: CFG.REDIRECT_URI }),
         });
         const data = await r.json();
-        if (data.error) throw new Error(data.error + (data.error_description ? ': ' + data.error_description : ''));
+        if (data.error) { console.error('[CRM auth] exchange error:', data); throw new Error(data.error + (data.error_description ? ': ' + data.error_description : '')); }
         const l = document.getElementById('silent-loader');
         if (l) l.remove();
         S.token = data.access_token;

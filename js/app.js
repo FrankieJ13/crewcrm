@@ -1030,6 +1030,42 @@ async function handleOAuthCode(code) {
   await _exchangeCode(code, null);
 }
 
+// Called by WPF via ExecuteScriptAsync — exchange happens in C# HttpClient
+window._wpfExchangeStart = function() {
+  oauthCodeProcessed = true;
+  const main = document.querySelector('main');
+  if (main && !document.getElementById('silent-loader')) {
+    const l = document.createElement('div');
+    l.id = 'silent-loader'; l.className = 'loader';
+    l.innerHTML = '<div class="spin"></div><div>Авторизация…</div>';
+    main.prepend(l);
+  }
+};
+
+window._wpfOAuthResult = function(data) {
+  oauthCodeProcessed = false;
+  cleanupTokenRequest();
+  const l = document.getElementById('silent-loader');
+  if (l) l.remove();
+  if (!data || data.error) {
+    console.error('[CRM auth] WPF exchange error:', data);
+    toast('Ошибка авторизации' + (data?.error ? ': ' + data.error : ''), 'e');
+    showLoginScreen();
+    return;
+  }
+  history.replaceState({}, '', location.pathname);
+  S.token = data.access_token;
+  S.user  = data.user;
+  tokenExpiresAt = Date.now() + Math.max((data.expires_in || 3600) - 60, 60) * 1000;
+  localStorage.setItem('crm_tok',  data.access_token);
+  localStorage.setItem('crm_exp',  tokenExpiresAt);
+  localStorage.setItem('crm_user', JSON.stringify(data.user));
+  syncFirebaseAuth(data.access_token);
+  renderUser();
+  onLogin();
+  scheduleTokenRefresh(data.expires_in);
+};
+
 async function loadUser() {
   try {
     const token = S.token || localStorage.getItem('crm_tok');

@@ -3188,7 +3188,8 @@ function openScheduleBulkEditor() {
       const colIdx = findSchedDayCol(entry.daysRow, day);
       const val = colIdx >= 0 ? normalizeSchedVal(entry.row[colIdx]) : '';
       const disabled = editable && colIdx >= 0 ? '' : 'disabled';
-      return `<select class="sched-bulk-select" data-row="${entry.sheetRow}" data-col="${colIdx}" data-name="${escapeAttr(name)}" ${disabled}>
+      const selStyle = val==='В' ? ' style="background:var(--acc);color:#fff"' : '';
+      return `<select class="sched-bulk-select" data-row="${entry.sheetRow}" data-col="${colIdx}" data-name="${escapeAttr(name)}" ${disabled}${selStyle} onchange="this.style.background=this.value==='В'?'var(--acc)':'';this.style.color=this.value==='В'?'#fff':''">
         <option value="" ${!val?'selected':''}>·</option>
         <option value="Р" ${val==='Р'?'selected':''}>Р</option>
         <option value="В" ${val==='В'?'selected':''}>В</option>
@@ -5067,7 +5068,8 @@ function openVisitsDayModal(nameLow, isDozhim) {
 
   const modalTitle = document.querySelector('#income-overlay .income-modal-title');
   const mc = document.getElementById('income-modal-content');
-  if (modalTitle) modalTitle.innerHTML = `Хронология визитов <span>${escapeHtml(subtitle)}</span>`;
+  const nameDisplay = nameLow ? nameLow.replace(/\b\S/g, c => c.toUpperCase()) : '';
+  if (modalTitle) modalTitle.innerHTML = `Хронология визитов <span>${escapeHtml(subtitle)}</span>${nameDisplay ? `<div class="visits-modal-mgr-name">${escapeHtml(nameDisplay)}</div>` : ''}`;
   document.getElementById('income-overlay')?.classList.add('visits-mode');
   mc.removeAttribute('data-modal');
   mc.innerHTML = `

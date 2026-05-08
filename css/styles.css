@@ -2552,13 +2552,21 @@ body.light .income-modal-body { background:rgba(255,255,255,0.6); }
 }
 .income-modal-title {
   font-family:'Unbounded',sans-serif; font-size:11px; font-weight:800;
-  display:flex; align-items:center; gap:8px;
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
 }
 .income-modal-title span {
   font-family:'Golos Text',sans-serif;
   font-size:11px;
   font-weight:600;
   color:var(--txt2);
+}
+.visits-modal-mgr-name {
+  font-family:'Golos Text',sans-serif;
+  font-size:11px;
+  font-weight:600;
+  color:var(--acc);
+  width:100%;
+  margin-top:2px;
 }
 .income-modal-close {
   width:28px; height:28px; border-radius:50%;

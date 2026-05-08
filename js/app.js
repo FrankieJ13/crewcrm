@@ -873,6 +873,13 @@ function showLoginScreen() {
 }
 
 function requestGoogleToken({ mode = 'ensure', force = false } = {}) {
+  // intercept to log the exact redirect_uri GIS uses
+  const _origOpen = window.open;
+  window.open = function(url, ...args) {
+    try { const u = new URL(url); console.log('[CRM] OAuth redirect_uri:', u.searchParams.get('redirect_uri')); } catch(e) {}
+    window.open = _origOpen;
+    return _origOpen.call(window, url, ...args);
+  };
   if (!tokenClient) return Promise.reject(new Error('oauth_not_ready'));
   if (force && tokenRequest) cleanupTokenRequest();
   if (tokenRequest) return tokenRequest.promise;

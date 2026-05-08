@@ -380,6 +380,13 @@ if (IS_WPF) {
   const _origOpen = window.open.bind(window);
   window.open = function(url, target, features) {
     if (typeof url === 'string' && url.includes('accounts.google.com')) {
+      // GIS popup mode uses an internal redirect_uri — replace it with ours
+      // so Google redirects the popup to frankiej13.github.io which WPF can detect
+      try {
+        const authUrl = new URL(url);
+        authUrl.searchParams.set('redirect_uri', CFG.REDIRECT_URI);
+        url = authUrl.toString();
+      } catch (_) {}
       window.chrome.webview.postMessage('openOAuth:' + url);
       const fake = { closed: false, close() { this.closed = true; }, focus() {} };
       setTimeout(() => { fake.closed = true; }, 10000);

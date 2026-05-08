@@ -940,9 +940,8 @@ function initAuth() {
   tokenClient = google.accounts.oauth2.initCodeClient({
     client_id:    CFG.CLIENT_ID,
     scope:        'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
-    ux_mode:      'popup',
-    access_type:  'offline',
-    redirect_uri: CFG.REDIRECT_URI,
+    ux_mode:     'popup',
+    access_type: 'offline',
     error_callback: (err) => {
       const pending = tokenRequest;
       cleanupTokenRequest();
@@ -965,7 +964,7 @@ function initAuth() {
         const r = await fetch(CFG.WORKER_URL + '/exchange', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ code: resp.code, redirect_uri: CFG.REDIRECT_URI }),
+          body:    JSON.stringify({ code: resp.code }),
         });
         const data = await r.json();
         if (data.error) { console.error('[CRM auth] exchange error:', data); throw new Error(data.error + (data.error_description ? ': ' + data.error_description : '')); }

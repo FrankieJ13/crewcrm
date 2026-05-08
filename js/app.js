@@ -8,10 +8,8 @@ if ('serviceWorker' in navigator && ['http:', 'https:'].includes(location.protoc
 
 /* ══ CONFIG ══ */
 const CFG = {
-  CLIENT_ID:    '364532815329-0j1lkobb1v9vcserj6artf64nd95a0la.apps.googleusercontent.com',
-  SHEET_ID:     '1DeUsHB_O1SbIMR4p5yd64o_R0yllWvtnyNhjxjhipn8',
-  WORKER_URL:   'https://crm-auth.frankiej13.workers.dev',
-  REDIRECT_URI: 'https://frankiej13.github.io/crewcrm/',
+  CLIENT_ID: '364532815329-0j1lkobb1v9vcserj6artf64nd95a0la.apps.googleusercontent.com',
+  SHEET_ID:  '1DeUsHB_O1SbIMR4p5yd64o_R0yllWvtnyNhjxjhipn8',
   FIREBASE: {
     apiKey: 'AIzaSyAmXoyZdIuxmbWyFHTKfdYRbYLcKxgVbWE',
     authDomain: 'crm-crew.firebaseapp.com',
@@ -372,12 +370,6 @@ let refreshTimer = null;
 let autoRefreshTimer = null;
 let tokenExpiresAt = 0;
 let tokenRequest = null;
-let oauthCodeProcessed = false;
-const isIOSPWA = /iphone|ipad|ipod/i.test(navigator.userAgent) && window.navigator.standalone === true;
-const isCapacitorAndroid = !!window.Capacitor?.isNativePlatform?.() && /android/i.test(navigator.userAgent);
-const isWPF = !!window.chrome?.webview;
-const isNativeCodeFlow = isIOSPWA || isCapacitorAndroid || isWPF;
-
 const AUTO_REFRESH_INTERVAL = 60 * 1000; // 1 минута
 const PRESENCE_STALE_MS = 15 * 60 * 1000;
 
@@ -730,7 +722,6 @@ function startFirebasePresence(user) {
   const connectedRef = p.db.ref('.info/connected');
   p.connectedHandler = snap => {
     if (snap.val() !== true) return;
-    if (!profile.name && !profile.email) return;
     const con = p.connectionsRef.push();
     p.connectionRef = con;
     const online = {
@@ -835,55 +826,12 @@ async function signInFirebaseAnonymously() {
 function scheduleTokenRefresh(expiresIn) {
   if (refreshTimer) clearTimeout(refreshTimer);
   const delay = Math.max((expiresIn - 300) * 1000, 0);
-  refreshTimer = setTimeout(async () => {
-    const refreshed = await silentRefreshViaWorker();
-    if (!refreshed && !isNativeCodeFlow) await silentRefreshViaGIS();
+  refreshTimer = setTimeout(() => {
+    if (tokenClient && S.token) {
+      tokenClient.requestAccessToken({ prompt: '' });
+    }
     refreshTimer = null;
   }, delay);
-}
-
-let _silentGISResolve = null;
-
-async function silentRefreshViaGIS() {
-  if (!tokenClient || _silentGISResolve) return false;
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => {
-      _silentGISResolve = null;
-      resolve(false);
-    }, 15000);
-    _silentGISResolve = (success) => {
-      clearTimeout(timer);
-      _silentGISResolve = null;
-      resolve(success);
-    };
-    try {
-      tokenClient.requestAccessToken({ prompt: '' });
-    } catch(e) {
-      clearTimeout(timer);
-      _silentGISResolve = null;
-      resolve(false);
-    }
-  });
-}
-
-async function silentRefreshViaWorker() {
-  const user = S.user || JSON.parse(localStorage.getItem('crm_user') || 'null');
-  if (!user?.sub) return false;
-  try {
-    const r = await fetch(CFG.WORKER_URL + '/refresh', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: user.sub }),
-    });
-    const data = await r.json();
-    if (data.error) return false;
-    S.token = data.access_token;
-    tokenExpiresAt = Date.now() + Math.max((data.expires_in || 3600) - 60, 60) * 1000;
-    localStorage.setItem('crm_tok', data.access_token);
-    localStorage.setItem('crm_exp', tokenExpiresAt);
-    scheduleTokenRefresh(data.expires_in);
-    return true;
-  } catch(e) { return false; }
 }
 
 function cleanupTokenRequest() {
@@ -904,12 +852,10 @@ function showLoginScreen() {
   if (window._loginLiquidInit) window._loginLiquidInit();
 }
 
-function requestGoogleToken({ mode = 'ensure', force = false } = {}) {
-  if (!isWPF && !tokenClient) return Promise.reject(new Error('oauth_not_ready'));
+function requestGoogleToken({ prompt = '', mode = 'ensure', force = false } = {}) {
+  if (!tokenClient) return Promise.reject(new Error('oauth_not_ready'));
   if (force && tokenRequest) cleanupTokenRequest();
   if (tokenRequest) return tokenRequest.promise;
-
-  oauthCodeProcessed = false;
 
   let resolveRequest, rejectRequest;
   const promise = new Promise((resolve, reject) => {
@@ -917,7 +863,6 @@ function requestGoogleToken({ mode = 'ensure', force = false } = {}) {
     rejectRequest = reject;
   });
 
-  const timeoutMs = isWPF ? 300000 : 30000;
   tokenRequest = {
     mode,
     promise,
@@ -927,17 +872,11 @@ function requestGoogleToken({ mode = 'ensure', force = false } = {}) {
       const current = tokenRequest;
       cleanupTokenRequest();
       if (current) current.reject(new Error('oauth_timeout'));
-    }, timeoutMs),
+    }, 15000),
   };
 
   try {
-    if (isWPF) {
-      window.chrome.webview.postMessage('openOAuth:' + buildGoogleAuthUrl());
-    } else if (isNativeCodeFlow) {
-      tokenClient.requestCode();
-    } else {
-      tokenClient.requestAccessToken({ prompt: mode === 'login' ? 'select_account' : '' });
-    }
+    tokenClient.requestAccessToken({ prompt });
   } catch (err) {
     const current = tokenRequest;
     cleanupTokenRequest();
@@ -946,12 +885,6 @@ function requestGoogleToken({ mode = 'ensure', force = false } = {}) {
 
   return promise;
 }
-
-window._wpfPopupClosed = function() {
-  const pending = tokenRequest;
-  cleanupTokenRequest();
-  if (pending && !oauthCodeProcessed) pending.reject(new Error('oauth_cancelled'));
-};
 
 async function ensureToken({ interactive = false } = {}) {
   if (S.token && Date.now() < tokenExpiresAt - 60_000) return S.token;
@@ -962,15 +895,8 @@ async function ensureToken({ interactive = false } = {}) {
     tokenExpiresAt = exp;
     return tok;
   }
-  const refreshed = await silentRefreshViaWorker();
-  if (refreshed) return S.token;
-  if (!interactive) {
-    const err = new Error('token_expired');
-    err.isAuthError = true;
-    throw err;
-  }
   try {
-    const resp = await requestGoogleToken({ mode: 'ensure' });
+    const resp = await requestGoogleToken({ prompt: interactive ? 'consent' : '', mode: 'ensure' });
     return resp.access_token;
   } catch (err) {
     err.isAuthError = true;
@@ -983,162 +909,45 @@ async function authHeaders(extra = {}, opts = {}) {
   return { Authorization: 'Bearer ' + token, ...extra };
 }
 
-function buildGoogleAuthUrl() {
-  const params = new URLSearchParams({
-    client_id:     CFG.CLIENT_ID,
-    redirect_uri:  CFG.REDIRECT_URI,
-    response_type: 'code',
-    scope:         'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
-    access_type:   'offline',
-    prompt:        'select_account',
-  });
-  return 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString();
-}
-
 function initAuth() {
-  if (isNativeCodeFlow) {
-    tokenClient = google.accounts.oauth2.initCodeClient({
-      client_id:    CFG.CLIENT_ID,
-      scope:        'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
-      ux_mode:      'redirect',
-      redirect_uri: CFG.REDIRECT_URI,
-      access_type:  'offline',
-      error_callback: (err) => {
-        const pending = tokenRequest;
-        cleanupTokenRequest();
-        if (pending) pending.reject(new Error(err?.type || 'oauth_error'));
-        if (pending?.mode === 'login') {
-          showLoginScreen();
-          toast('Окно авторизации не завершилось. Попробуйте войти еще раз', 'e');
-        }
-      },
-      callback: async (resp) => {
-        if (oauthCodeProcessed) return;
-        const pending = tokenRequest;
-        if (resp.error) {
-          cleanupTokenRequest();
-          showLoginScreen();
-          toast('Ошибка: ' + resp.error, 'e');
-          if (pending) pending.reject(new Error(resp.error));
-          return;
-        }
-        oauthCodeProcessed = true;
-        await _exchangeCode(resp.code, pending);
-      },
-    });
-  } else {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id:    CFG.CLIENT_ID,
-      scope:        'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
-      error_callback: (err) => {
-        const pending = tokenRequest;
-        cleanupTokenRequest();
-        if (pending) pending.reject(new Error(err?.type || 'oauth_error'));
-        if (pending?.mode === 'login') {
-          showLoginScreen();
-          toast('Окно авторизации не завершилось. Попробуйте войти еще раз', 'e');
-        }
-      },
-      callback: async (resp) => {
-        if (_silentGISResolve) {
-          if (resp.error) { _silentGISResolve(false); return; }
-          S.token = resp.access_token;
-          tokenExpiresAt = Date.now() + Math.max((resp.expires_in || 3600) - 60, 60) * 1000;
-          localStorage.setItem('crm_tok', resp.access_token);
-          localStorage.setItem('crm_exp', tokenExpiresAt);
-          scheduleTokenRefresh(resp.expires_in);
-          _silentGISResolve(true);
-          return;
-        }
-        const pending = tokenRequest;
-        if (resp.error) {
-          cleanupTokenRequest();
-          showLoginScreen();
-          toast('Ошибка: ' + resp.error, 'e');
-          if (pending) pending.reject(new Error(resp.error));
-          return;
-        }
-        S.token = resp.access_token;
-        tokenExpiresAt = Date.now() + Math.max((resp.expires_in || 3600) - 60, 60) * 1000;
-        localStorage.setItem('crm_tok', resp.access_token);
-        localStorage.setItem('crm_exp', tokenExpiresAt);
-        try {
-          const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo',
-            { headers: { Authorization: 'Bearer ' + resp.access_token } });
-          if (r.ok) {
-            S.user = await r.json();
-            localStorage.setItem('crm_user', JSON.stringify(S.user));
-          }
-        } catch(e) {}
-        syncFirebaseAuth(resp.access_token);
-        renderUser();
-        onLogin();
-        cleanupTokenRequest();
-        if (pending) pending.resolve({ access_token: resp.access_token, expires_in: resp.expires_in });
-      },
-    });
-  }
-}
-
-async function _exchangeCode(code, pending, attempt = 1) {
-  const doFetch = () => fetch(CFG.WORKER_URL + '/exchange', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ code, redirect_uri: CFG.REDIRECT_URI }),
-  });
-  try {
-    let r;
-    try {
-      r = await doFetch();
-    } catch (netErr) {
-      if (attempt < 3) {
-        await new Promise(res => setTimeout(res, 1000 * attempt));
-        return _exchangeCode(code, pending, attempt + 1);
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CFG.CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+    error_callback: (err) => {
+      const pending = tokenRequest;
+      cleanupTokenRequest();
+      if (pending) pending.reject(new Error(err?.type || 'oauth_popup_error'));
+      if (pending?.mode === 'login') {
+        showLoginScreen();
+        toast('Окно авторизации не завершилось. Попробуйте войти еще раз', 'e');
       }
-      throw netErr;
-    }
-    const data = await r.json();
-    if (data.error) { console.error('[CRM auth] exchange error:', data); throw new Error(data.error + (data.error_description ? ': ' + data.error_description : '')); }
-    history.replaceState({}, '', location.pathname);
-    const l = document.getElementById('silent-loader');
-    if (l) l.remove();
-    S.token = data.access_token;
-    S.user  = data.user;
-    tokenExpiresAt = Date.now() + Math.max((data.expires_in || 3600) - 60, 60) * 1000;
-    localStorage.setItem('crm_tok',  data.access_token);
-    localStorage.setItem('crm_exp',  tokenExpiresAt);
-    localStorage.setItem('crm_user', JSON.stringify(data.user));
-    syncFirebaseAuth(data.access_token);
-    renderUser();
-    onLogin();
-    scheduleTokenRefresh(data.expires_in);
-    cleanupTokenRequest();
-    if (pending) pending.resolve({ access_token: data.access_token, expires_in: data.expires_in });
-  } catch(e) {
-    console.error('[CRM auth] _exchangeCode error (attempt ' + attempt + '):', e);
-    oauthCodeProcessed = false;
-    cleanupTokenRequest();
-    toast('Ошибка авторизации: ' + e.message, 'e');
-    showLoginScreen();
-    if (pending) pending.reject(e);
-  }
+    },
+    callback: async (resp) => {
+      const pending = tokenRequest;
+      if (resp.error) {
+        cleanupTokenRequest();
+        if (window._silentFallback) { clearTimeout(window._silentFallback); window._silentFallback = null; }
+        showLoginScreen();
+        toast('Ошибка: '+resp.error, 'e');
+        if (pending) pending.reject(new Error(resp.error));
+        return;
+      }
+      const l = document.getElementById('silent-loader');
+      if (l) l.remove();
+      if (window._silentFallback) { clearTimeout(window._silentFallback); window._silentFallback = null; }
+      S.token = resp.access_token;
+      tokenExpiresAt = Date.now() + Math.max((resp.expires_in || 3600) - 60, 60) * 1000;
+      localStorage.setItem('crm_tok', resp.access_token);
+      localStorage.setItem('crm_exp', tokenExpiresAt);
+      loadUser();
+      syncFirebaseAuth(resp.access_token);
+      onLogin();
+      scheduleTokenRefresh(resp.expires_in);
+      cleanupTokenRequest();
+      if (pending) pending.resolve(resp);
+    },
+  });
 }
-
-async function handleOAuthCode(code) {
-  if (oauthCodeProcessed) return;
-  oauthCodeProcessed = true;
-  const pending = tokenRequest;
-  const main = document.querySelector('main');
-  if (main) {
-    const loader = document.createElement('div');
-    loader.id = 'silent-loader';
-    loader.className = 'loader';
-    loader.innerHTML = '<div class="spin"></div><div>Авторизация…</div>';
-    main.prepend(loader);
-  }
-  await _exchangeCode(code, pending);
-}
-
 
 async function loadUser() {
   try {
@@ -1295,25 +1104,25 @@ function tryRestore() {
 
 function trySilentRefresh() {
   document.getElementById('scr-login').classList.remove('on');
-  document.getElementById('scr-login').style.display = 'none';
-  document.body.classList.remove('login-active');
+  document.getElementById('scr-login').style.display = 'none'; document.body.classList.remove('login-active');
   const loader = document.createElement('div');
   loader.id = 'silent-loader';
   loader.className = 'loader';
   loader.innerHTML = '<div class="spin"></div><div>Восстановление сессии…</div>';
   document.querySelector('main').prepend(loader);
 
-  silentRefreshViaWorker().then(ok => {
+  tokenClient.requestAccessToken({ prompt: '' });
+
+  const fallback = setTimeout(() => {
     const l = document.getElementById('silent-loader');
     if (l) l.remove();
-    if (ok) {
-      if (!S.user) { S.user = JSON.parse(localStorage.getItem('crm_user') || 'null'); if (S.user) renderUser(); }
-      onLogin();
-    } else {
+    if (!S.token) {
       localStorage.removeItem('crm_user');
       showLoginScreen();
     }
-  });
+  }, 8000);
+
+  window._silentFallback = fallback;
 }
 
 // ==================== API LAYER ====================
@@ -5589,7 +5398,7 @@ document.getElementById('center-login-btn').addEventListener('click', () => {
     return;
   }
   if (!tokenClient) { toast('Загружается…','i'); return; }
-  requestGoogleToken({ mode:'login', force:true }).catch(() => {
+  requestGoogleToken({ prompt:'consent', mode:'login', force:true }).catch(() => {
     toast('Не удалось войти через Google', 'e');
   });
 });
@@ -5627,13 +5436,6 @@ function init() {
   function waitGoogle() {
     if (typeof google !== 'undefined' && google.accounts) {
       clearTimeout(gsiTimeout);
-      if (isNativeCodeFlow && !isWPF) {
-        const oauthCode = new URLSearchParams(location.search).get('code');
-        if (oauthCode) {
-          handleOAuthCode(oauthCode).finally(() => { if (!tokenClient) initAuth(); });
-          return;
-        }
-      }
       initAuth();
       if (!tryRestore()) {
         document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active'); if(window._loginLiquidInit) window._loginLiquidInit();

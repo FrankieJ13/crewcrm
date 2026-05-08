@@ -13,7 +13,7 @@ export default {
     try {
       // POST /exchange  — code → access_token (refresh_token сохраняем в KV)
       if (url.pathname === '/exchange' && req.method === 'POST') {
-        const { code } = await req.json();
+        const { code, redirect_uri } = await req.json();
 
         const tokenResp = await fetch('https://oauth2.googleapis.com/token', {
           method: 'POST',
@@ -22,6 +22,7 @@ export default {
             code,
             client_id:     env.GOOGLE_CLIENT_ID,
             client_secret: env.GOOGLE_CLIENT_SECRET,
+            redirect_uri,
             grant_type:    'authorization_code',
           }),
         });

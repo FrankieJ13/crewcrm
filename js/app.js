@@ -873,13 +873,6 @@ function showLoginScreen() {
 }
 
 function requestGoogleToken({ mode = 'ensure', force = false } = {}) {
-  // intercept to log the exact redirect_uri GIS uses
-  const _origOpen = window.open;
-  window.open = function(url, ...args) {
-    try { const u = new URL(url); console.log('[CRM] OAuth redirect_uri:', u.searchParams.get('redirect_uri')); } catch(e) {}
-    window.open = _origOpen;
-    return _origOpen.call(window, url, ...args);
-  };
   if (!tokenClient) return Promise.reject(new Error('oauth_not_ready'));
   if (force && tokenRequest) cleanupTokenRequest();
   if (tokenRequest) return tokenRequest.promise;
@@ -947,8 +940,9 @@ function initAuth() {
   tokenClient = google.accounts.oauth2.initCodeClient({
     client_id:    CFG.CLIENT_ID,
     scope:        'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
-    ux_mode:     'popup',
-    access_type: 'offline',
+    ux_mode:      'redirect',
+    access_type:  'offline',
+    redirect_uri: CFG.REDIRECT_URI,
     error_callback: (err) => {
       const pending = tokenRequest;
       cleanupTokenRequest();
@@ -971,7 +965,7 @@ function initAuth() {
         const r = await fetch(CFG.WORKER_URL + '/exchange', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ code: resp.code }),
+          body:    JSON.stringify({ code: resp.code, redirect_uri: CFG.REDIRECT_URI }),
         });
         const data = await r.json();
         if (data.error) { console.error('[CRM auth] exchange error:', data); throw new Error(data.error + (data.error_description ? ': ' + data.error_description : '')); }

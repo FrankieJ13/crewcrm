@@ -374,6 +374,24 @@ let tokenExpiresAt = 0;
 let tokenRequest = null;
 let oauthCodeProcessed = false;
 const IS_WPF = !!window.__IS_WPF__;
+
+if (IS_WPF) {
+  // Intercept window.open so WPF can open its own popup for Google OAuth
+  // instead of relying on GIS's popup→postMessage mechanism (blocked by COOP)
+  const _origOpen = window.open.bind(window);
+  window.open = function(url, target, features) {
+    if (typeof url === 'string' && url.includes('accounts.google.com')) {
+      if (window.chrome?.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ type: 'openOAuth', url }));
+      }
+      const fake = { closed: false, close() { this.closed = true; }, focus() {}, location: { href: url } };
+      setTimeout(() => { fake.closed = true; }, 10000);
+      return fake;
+    }
+    return _origOpen(url, target, features);
+  };
+}
+
 const AUTO_REFRESH_INTERVAL = 60 * 1000; // 1 минута
 const PRESENCE_STALE_MS = 15 * 60 * 1000;
 

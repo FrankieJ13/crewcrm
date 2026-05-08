@@ -968,13 +968,23 @@ function initAuth() {
   });
 }
 
-async function _exchangeCode(code, pending) {
+async function _exchangeCode(code, pending, attempt = 1) {
+  const doFetch = () => fetch(CFG.WORKER_URL + '/exchange', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ code, redirect_uri: CFG.REDIRECT_URI }),
+  });
   try {
-    const r = await fetch(CFG.WORKER_URL + '/exchange', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ code, redirect_uri: CFG.REDIRECT_URI }),
-    });
+    let r;
+    try {
+      r = await doFetch();
+    } catch (netErr) {
+      if (attempt < 3) {
+        await new Promise(res => setTimeout(res, 1000 * attempt));
+        return _exchangeCode(code, pending, attempt + 1);
+      }
+      throw netErr;
+    }
     const data = await r.json();
     if (data.error) { console.error('[CRM auth] exchange error:', data); throw new Error(data.error + (data.error_description ? ': ' + data.error_description : '')); }
     history.replaceState({}, '', location.pathname);
@@ -993,7 +1003,7 @@ async function _exchangeCode(code, pending) {
     cleanupTokenRequest();
     if (pending) pending.resolve({ access_token: data.access_token, expires_in: data.expires_in });
   } catch(e) {
-    console.error('[CRM auth] _exchangeCode error:', e);
+    console.error('[CRM auth] _exchangeCode error (attempt ' + attempt + '):', e);
     cleanupTokenRequest();
     toast('Ошибка авторизации: ' + e.message, 'e');
     showLoginScreen();
@@ -1004,11 +1014,14 @@ async function _exchangeCode(code, pending) {
 async function handleOAuthCode(code) {
   if (oauthCodeProcessed) return;
   oauthCodeProcessed = true;
-  const loader = document.createElement('div');
-  loader.id = 'silent-loader';
-  loader.className = 'loader';
-  loader.innerHTML = '<div class="spin"></div><div>Авторизация…</div>';
-  document.querySelector('main').prepend(loader);
+  const main = document.querySelector('main');
+  if (main) {
+    const loader = document.createElement('div');
+    loader.id = 'silent-loader';
+    loader.className = 'loader';
+    loader.innerHTML = '<div class="spin"></div><div>Авторизация…</div>';
+    main.prepend(loader);
+  }
   await _exchangeCode(code, null);
 }
 
@@ -5499,12 +5512,16 @@ function init() {
   function waitGoogle() {
     if (typeof google !== 'undefined' && google.accounts) {
       clearTimeout(gsiTimeout);
-      initAuth();
       const oauthCode = new URLSearchParams(location.search).get('code');
       if (oauthCode) {
-        handleOAuthCode(oauthCode);
-      } else if (!tryRestore()) {
-        document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active'); if(window._loginLiquidInit) window._loginLiquidInit();
+        // Don't call initAuth() here — GIS would also detect ?code= and interfere.
+        // Exchange the code directly, then init GIS for future re-auth.
+        handleOAuthCode(oauthCode).finally(() => { if (!tokenClient) initAuth(); });
+      } else {
+        initAuth();
+        if (!tryRestore()) {
+          document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active'); if(window._loginLiquidInit) window._loginLiquidInit();
+        }
       }
     } else setTimeout(waitGoogle, 100);
   }

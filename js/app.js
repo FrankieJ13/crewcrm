@@ -373,28 +373,7 @@ let autoRefreshTimer = null;
 let tokenExpiresAt = 0;
 let tokenRequest = null;
 let oauthCodeProcessed = false;
-// Detect WebView2 via the built-in chrome.webview API (more reliable than injected flag)
-const IS_WPF = !!window.chrome?.webview || !!window.__IS_WPF__;
-
-if (IS_WPF) {
-  const _origOpen = window.open.bind(window);
-  window.open = function(url, target, features) {
-    if (typeof url === 'string' && url.includes('accounts.google.com')) {
-      // GIS popup mode uses an internal redirect_uri — replace it with ours
-      // so Google redirects the popup to frankiej13.github.io which WPF can detect
-      try {
-        const authUrl = new URL(url);
-        authUrl.searchParams.set('redirect_uri', CFG.REDIRECT_URI);
-        url = authUrl.toString();
-      } catch (_) {}
-      window.chrome.webview.postMessage('openOAuth:' + url);
-      const fake = { closed: false, close() { this.closed = true; }, focus() {} };
-      setTimeout(() => { fake.closed = true; }, 10000);
-      return fake;
-    }
-    return _origOpen(url, target, features);
-  };
-}
+const isIOSPWA = /iphone|ipad|ipod/i.test(navigator.userAgent) && window.navigator.standalone === true;
 
 const AUTO_REFRESH_INTERVAL = 60 * 1000; // 1 минута
 const PRESENCE_STALE_MS = 15 * 60 * 1000;
@@ -901,8 +880,6 @@ function requestGoogleToken({ mode = 'ensure', force = false } = {}) {
   if (force && tokenRequest) cleanupTokenRequest();
   if (tokenRequest) return tokenRequest.promise;
 
-  oauthCodeProcessed = false; // reset so WPF popup handler works on retry
-
   let resolveRequest, rejectRequest;
   const promise = new Promise((resolve, reject) => {
     resolveRequest = resolve;
@@ -922,7 +899,11 @@ function requestGoogleToken({ mode = 'ensure', force = false } = {}) {
   };
 
   try {
-    tokenClient.requestCode();
+    if (isIOSPWA) {
+      tokenClient.requestCode();
+    } else {
+      tokenClient.requestAccessToken({ prompt: mode === 'login' ? 'select_account' : '' });
+    }
   } catch (err) {
     const current = tokenRequest;
     cleanupTokenRequest();
@@ -963,35 +944,78 @@ async function authHeaders(extra = {}, opts = {}) {
 }
 
 function initAuth() {
-  tokenClient = google.accounts.oauth2.initCodeClient({
-    client_id:    CFG.CLIENT_ID,
-    scope:        'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
-    ux_mode:      IS_WPF ? 'popup' : 'redirect',
-    redirect_uri: CFG.REDIRECT_URI,
-    access_type:  'offline',
-    error_callback: (err) => {
-      const pending = tokenRequest;
-      cleanupTokenRequest();
-      if (pending) pending.reject(new Error(err?.type || 'oauth_popup_error'));
-      if (pending?.mode === 'login') {
-        showLoginScreen();
-        toast('Окно авторизации не завершилось. Попробуйте войти еще раз', 'e');
-      }
-    },
-    callback: async (resp) => {
-      if (oauthCodeProcessed) return; // handled by handleOAuthCode
-      const pending = tokenRequest;
-      if (resp.error) {
+  if (isIOSPWA) {
+    tokenClient = google.accounts.oauth2.initCodeClient({
+      client_id:    CFG.CLIENT_ID,
+      scope:        'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+      ux_mode:      'redirect',
+      redirect_uri: CFG.REDIRECT_URI,
+      access_type:  'offline',
+      error_callback: (err) => {
+        const pending = tokenRequest;
         cleanupTokenRequest();
-        showLoginScreen();
-        toast('Ошибка: ' + resp.error, 'e');
-        if (pending) pending.reject(new Error(resp.error));
-        return;
-      }
-      oauthCodeProcessed = true;
-      await _exchangeCode(resp.code, pending);
-    },
-  });
+        if (pending) pending.reject(new Error(err?.type || 'oauth_error'));
+        if (pending?.mode === 'login') {
+          showLoginScreen();
+          toast('Окно авторизации не завершилось. Попробуйте войти еще раз', 'e');
+        }
+      },
+      callback: async (resp) => {
+        if (oauthCodeProcessed) return;
+        const pending = tokenRequest;
+        if (resp.error) {
+          cleanupTokenRequest();
+          showLoginScreen();
+          toast('Ошибка: ' + resp.error, 'e');
+          if (pending) pending.reject(new Error(resp.error));
+          return;
+        }
+        oauthCodeProcessed = true;
+        await _exchangeCode(resp.code, pending);
+      },
+    });
+  } else {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id:    CFG.CLIENT_ID,
+      scope:        'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+      error_callback: (err) => {
+        const pending = tokenRequest;
+        cleanupTokenRequest();
+        if (pending) pending.reject(new Error(err?.type || 'oauth_error'));
+        if (pending?.mode === 'login') {
+          showLoginScreen();
+          toast('Окно авторизации не завершилось. Попробуйте войти еще раз', 'e');
+        }
+      },
+      callback: async (resp) => {
+        const pending = tokenRequest;
+        if (resp.error) {
+          cleanupTokenRequest();
+          showLoginScreen();
+          toast('Ошибка: ' + resp.error, 'e');
+          if (pending) pending.reject(new Error(resp.error));
+          return;
+        }
+        S.token = resp.access_token;
+        tokenExpiresAt = Date.now() + Math.max((resp.expires_in || 3600) - 60, 60) * 1000;
+        localStorage.setItem('crm_tok', resp.access_token);
+        localStorage.setItem('crm_exp', tokenExpiresAt);
+        try {
+          const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo',
+            { headers: { Authorization: 'Bearer ' + resp.access_token } });
+          if (r.ok) {
+            S.user = await r.json();
+            localStorage.setItem('crm_user', JSON.stringify(S.user));
+          }
+        } catch(e) {}
+        syncFirebaseAuth(resp.access_token);
+        renderUser();
+        onLogin();
+        cleanupTokenRequest();
+        if (pending) pending.resolve({ access_token: resp.access_token, expires_in: resp.expires_in });
+      },
+    });
+  }
 }
 
 async function _exchangeCode(code, pending, attempt = 1) {
@@ -1052,41 +1076,6 @@ async function handleOAuthCode(code) {
   await _exchangeCode(code, null);
 }
 
-// Called by WPF via ExecuteScriptAsync — exchange happens in C# HttpClient
-window._wpfExchangeStart = function() {
-  oauthCodeProcessed = true;
-  const main = document.querySelector('main');
-  if (main && !document.getElementById('silent-loader')) {
-    const l = document.createElement('div');
-    l.id = 'silent-loader'; l.className = 'loader';
-    l.innerHTML = '<div class="spin"></div><div>Авторизация…</div>';
-    main.prepend(l);
-  }
-};
-
-window._wpfOAuthResult = function(data) {
-  oauthCodeProcessed = false;
-  cleanupTokenRequest();
-  const l = document.getElementById('silent-loader');
-  if (l) l.remove();
-  if (!data || data.error) {
-    console.error('[CRM auth] WPF exchange error:', data);
-    toast('Ошибка авторизации' + (data?.error ? ': ' + data.error : ''), 'e');
-    showLoginScreen();
-    return;
-  }
-  history.replaceState({}, '', location.pathname);
-  S.token = data.access_token;
-  S.user  = data.user;
-  tokenExpiresAt = Date.now() + Math.max((data.expires_in || 3600) - 60, 60) * 1000;
-  localStorage.setItem('crm_tok',  data.access_token);
-  localStorage.setItem('crm_exp',  tokenExpiresAt);
-  localStorage.setItem('crm_user', JSON.stringify(data.user));
-  syncFirebaseAuth(data.access_token);
-  renderUser();
-  onLogin();
-  scheduleTokenRefresh(data.expires_in);
-};
 
 async function loadUser() {
   try {
@@ -5575,16 +5564,16 @@ function init() {
   function waitGoogle() {
     if (typeof google !== 'undefined' && google.accounts) {
       clearTimeout(gsiTimeout);
-      const oauthCode = new URLSearchParams(location.search).get('code');
-      if (oauthCode) {
-        // Don't call initAuth() here — GIS would also detect ?code= and interfere.
-        // Exchange the code directly, then init GIS for future re-auth.
-        handleOAuthCode(oauthCode).finally(() => { if (!tokenClient) initAuth(); });
-      } else {
-        initAuth();
-        if (!tryRestore()) {
-          document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active'); if(window._loginLiquidInit) window._loginLiquidInit();
+      if (isIOSPWA) {
+        const oauthCode = new URLSearchParams(location.search).get('code');
+        if (oauthCode) {
+          handleOAuthCode(oauthCode).finally(() => { if (!tokenClient) initAuth(); });
+          return;
         }
+      }
+      initAuth();
+      if (!tryRestore()) {
+        document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active'); if(window._loginLiquidInit) window._loginLiquidInit();
       }
     } else setTimeout(waitGoogle, 100);
   }

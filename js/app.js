@@ -879,6 +879,8 @@ function requestGoogleToken({ mode = 'ensure', force = false } = {}) {
   if (force && tokenRequest) cleanupTokenRequest();
   if (tokenRequest) return tokenRequest.promise;
 
+  oauthCodeProcessed = false; // reset so WPF popup handler works on retry
+
   let resolveRequest, rejectRequest;
   const promise = new Promise((resolve, reject) => {
     resolveRequest = resolve;
@@ -1006,6 +1008,7 @@ async function _exchangeCode(code, pending, attempt = 1) {
     if (pending) pending.resolve({ access_token: data.access_token, expires_in: data.expires_in });
   } catch(e) {
     console.error('[CRM auth] _exchangeCode error (attempt ' + attempt + '):', e);
+    oauthCodeProcessed = false;
     cleanupTokenRequest();
     toast('Ошибка авторизации: ' + e.message, 'e');
     showLoginScreen();

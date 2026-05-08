@@ -374,6 +374,8 @@ let tokenExpiresAt = 0;
 let tokenRequest = null;
 let oauthCodeProcessed = false;
 const isIOSPWA = /iphone|ipad|ipod/i.test(navigator.userAgent) && window.navigator.standalone === true;
+const isCapacitorAndroid = !!window.Capacitor?.isNativePlatform?.() && /android/i.test(navigator.userAgent);
+const isNativeCodeFlow = isIOSPWA || isCapacitorAndroid;
 
 const AUTO_REFRESH_INTERVAL = 60 * 1000; // 1 минута
 const PRESENCE_STALE_MS = 15 * 60 * 1000;
@@ -834,7 +836,7 @@ function scheduleTokenRefresh(expiresIn) {
   const delay = Math.max((expiresIn - 300) * 1000, 0);
   refreshTimer = setTimeout(async () => {
     const refreshed = await silentRefreshViaWorker();
-    if (!refreshed && !isIOSPWA) await silentRefreshViaGIS();
+    if (!refreshed && !isNativeCodeFlow) await silentRefreshViaGIS();
     refreshTimer = null;
   }, delay);
 }
@@ -925,7 +927,7 @@ function requestGoogleToken({ mode = 'ensure', force = false } = {}) {
   };
 
   try {
-    if (isIOSPWA) {
+    if (isNativeCodeFlow) {
       tokenClient.requestCode();
     } else {
       tokenClient.requestAccessToken({ prompt: mode === 'login' ? 'select_account' : '' });
@@ -970,7 +972,7 @@ async function authHeaders(extra = {}, opts = {}) {
 }
 
 function initAuth() {
-  if (isIOSPWA) {
+  if (isNativeCodeFlow) {
     tokenClient = google.accounts.oauth2.initCodeClient({
       client_id:    CFG.CLIENT_ID,
       scope:        'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
@@ -5600,7 +5602,7 @@ function init() {
   function waitGoogle() {
     if (typeof google !== 'undefined' && google.accounts) {
       clearTimeout(gsiTimeout);
-      if (isIOSPWA) {
+      if (isNativeCodeFlow) {
         const oauthCode = new URLSearchParams(location.search).get('code');
         if (oauthCode) {
           handleOAuthCode(oauthCode).finally(() => { if (!tokenClient) initAuth(); });

@@ -944,6 +944,7 @@ function initAuth() {
     scope:        'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
     ux_mode:      IS_WPF ? 'popup' : 'redirect',
     redirect_uri: CFG.REDIRECT_URI,
+    access_type:  'offline',
     error_callback: (err) => {
       const pending = tokenRequest;
       cleanupTokenRequest();

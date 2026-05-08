@@ -373,18 +373,15 @@ let autoRefreshTimer = null;
 let tokenExpiresAt = 0;
 let tokenRequest = null;
 let oauthCodeProcessed = false;
-const IS_WPF = !!window.__IS_WPF__;
+// Detect WebView2 via the built-in chrome.webview API (more reliable than injected flag)
+const IS_WPF = !!window.chrome?.webview || !!window.__IS_WPF__;
 
 if (IS_WPF) {
-  // Intercept window.open so WPF can open its own popup for Google OAuth
-  // instead of relying on GIS's popup→postMessage mechanism (blocked by COOP)
   const _origOpen = window.open.bind(window);
   window.open = function(url, target, features) {
     if (typeof url === 'string' && url.includes('accounts.google.com')) {
-      if (window.chrome?.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ type: 'openOAuth', url }));
-      }
-      const fake = { closed: false, close() { this.closed = true; }, focus() {}, location: { href: url } };
+      window.chrome.webview.postMessage('openOAuth:' + url);
+      const fake = { closed: false, close() { this.closed = true; }, focus() {} };
       setTimeout(() => { fake.closed = true; }, 10000);
       return fake;
     }

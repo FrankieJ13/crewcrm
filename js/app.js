@@ -727,6 +727,7 @@ function startFirebasePresence(user) {
   const connectedRef = p.db.ref('.info/connected');
   p.connectedHandler = snap => {
     if (snap.val() !== true) return;
+    if (!profile.name && !profile.email) return;
     const con = p.connectionsRef.push();
     p.connectionRef = con;
     const online = {

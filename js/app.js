@@ -832,9 +832,34 @@ function scheduleTokenRefresh(expiresIn) {
   if (refreshTimer) clearTimeout(refreshTimer);
   const delay = Math.max((expiresIn - 300) * 1000, 0);
   refreshTimer = setTimeout(async () => {
-    await silentRefreshViaWorker();
+    const refreshed = await silentRefreshViaWorker();
+    if (!refreshed && !isIOSPWA) await silentRefreshViaGIS();
     refreshTimer = null;
   }, delay);
+}
+
+let _silentGISResolve = null;
+
+async function silentRefreshViaGIS() {
+  if (!tokenClient || _silentGISResolve) return false;
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      _silentGISResolve = null;
+      resolve(false);
+    }, 15000);
+    _silentGISResolve = (success) => {
+      clearTimeout(timer);
+      _silentGISResolve = null;
+      resolve(success);
+    };
+    try {
+      tokenClient.requestAccessToken({ prompt: '' });
+    } catch(e) {
+      clearTimeout(timer);
+      _silentGISResolve = null;
+      resolve(false);
+    }
+  });
 }
 
 async function silentRefreshViaWorker() {
@@ -988,6 +1013,16 @@ function initAuth() {
         }
       },
       callback: async (resp) => {
+        if (_silentGISResolve) {
+          if (resp.error) { _silentGISResolve(false); return; }
+          S.token = resp.access_token;
+          tokenExpiresAt = Date.now() + Math.max((resp.expires_in || 3600) - 60, 60) * 1000;
+          localStorage.setItem('crm_tok', resp.access_token);
+          localStorage.setItem('crm_exp', tokenExpiresAt);
+          scheduleTokenRefresh(resp.expires_in);
+          _silentGISResolve(true);
+          return;
+        }
         const pending = tokenRequest;
         if (resp.error) {
           cleanupTokenRequest();

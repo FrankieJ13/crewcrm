@@ -375,7 +375,8 @@ let tokenRequest = null;
 let oauthCodeProcessed = false;
 const isIOSPWA = /iphone|ipad|ipod/i.test(navigator.userAgent) && window.navigator.standalone === true;
 const isCapacitorAndroid = !!window.Capacitor?.isNativePlatform?.() && /android/i.test(navigator.userAgent);
-const isNativeCodeFlow = isIOSPWA || isCapacitorAndroid;
+const isWPF = !!window.chrome?.webview;
+const isNativeCodeFlow = isIOSPWA || isCapacitorAndroid || isWPF;
 
 const AUTO_REFRESH_INTERVAL = 60 * 1000; // 1 минута
 const PRESENCE_STALE_MS = 15 * 60 * 1000;
@@ -927,7 +928,9 @@ function requestGoogleToken({ mode = 'ensure', force = false } = {}) {
   };
 
   try {
-    if (isNativeCodeFlow) {
+    if (isWPF) {
+      window.chrome.webview.postMessage('openOAuth:' + buildGoogleAuthUrl());
+    } else if (isNativeCodeFlow) {
       tokenClient.requestCode();
     } else {
       tokenClient.requestAccessToken({ prompt: mode === 'login' ? 'select_account' : '' });
@@ -969,6 +972,18 @@ async function ensureToken({ interactive = false } = {}) {
 async function authHeaders(extra = {}, opts = {}) {
   const token = await ensureToken(opts);
   return { Authorization: 'Bearer ' + token, ...extra };
+}
+
+function buildGoogleAuthUrl() {
+  const params = new URLSearchParams({
+    client_id:     CFG.CLIENT_ID,
+    redirect_uri:  CFG.REDIRECT_URI,
+    response_type: 'code',
+    scope:         'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+    access_type:   'offline',
+    prompt:        'select_account',
+  });
+  return 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString();
 }
 
 function initAuth() {
@@ -1103,6 +1118,7 @@ async function _exchangeCode(code, pending, attempt = 1) {
 async function handleOAuthCode(code) {
   if (oauthCodeProcessed) return;
   oauthCodeProcessed = true;
+  const pending = tokenRequest;
   const main = document.querySelector('main');
   if (main) {
     const loader = document.createElement('div');
@@ -1111,7 +1127,7 @@ async function handleOAuthCode(code) {
     loader.innerHTML = '<div class="spin"></div><div>Авторизация…</div>';
     main.prepend(loader);
   }
-  await _exchangeCode(code, null);
+  await _exchangeCode(code, pending);
 }
 
 
@@ -5602,7 +5618,7 @@ function init() {
   function waitGoogle() {
     if (typeof google !== 'undefined' && google.accounts) {
       clearTimeout(gsiTimeout);
-      if (isNativeCodeFlow) {
+      if (isNativeCodeFlow && !isWPF) {
         const oauthCode = new URLSearchParams(location.search).get('code');
         if (oauthCode) {
           handleOAuthCode(oauthCode).finally(() => { if (!tokenClient) initAuth(); });

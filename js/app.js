@@ -372,6 +372,7 @@ let refreshTimer = null;
 let autoRefreshTimer = null;
 let tokenExpiresAt = 0;
 let tokenRequest = null;
+let oauthCodeProcessed = false;
 const AUTO_REFRESH_INTERVAL = 60 * 1000; // 1 минута
 const PRESENCE_STALE_MS = 15 * 60 * 1000;
 
@@ -952,6 +953,7 @@ function initAuth() {
       }
     },
     callback: async (resp) => {
+      if (oauthCodeProcessed) return; // handled by handleOAuthCode
       const pending = tokenRequest;
       if (resp.error) {
         cleanupTokenRequest();
@@ -960,36 +962,54 @@ function initAuth() {
         if (pending) pending.reject(new Error(resp.error));
         return;
       }
-      try {
-        const r = await fetch(CFG.WORKER_URL + '/exchange', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ code: resp.code, redirect_uri: CFG.REDIRECT_URI }),
-        });
-        const data = await r.json();
-        if (data.error) { console.error('[CRM auth] exchange error:', data); throw new Error(data.error + (data.error_description ? ': ' + data.error_description : '')); }
-        const l = document.getElementById('silent-loader');
-        if (l) l.remove();
-        S.token = data.access_token;
-        S.user  = data.user;
-        tokenExpiresAt = Date.now() + Math.max((data.expires_in || 3600) - 60, 60) * 1000;
-        localStorage.setItem('crm_tok',  data.access_token);
-        localStorage.setItem('crm_exp',  tokenExpiresAt);
-        localStorage.setItem('crm_user', JSON.stringify(data.user));
-        syncFirebaseAuth(data.access_token);
-        renderUser();
-        onLogin();
-        scheduleTokenRefresh(data.expires_in);
-        cleanupTokenRequest();
-        if (pending) pending.resolve({ access_token: data.access_token, expires_in: data.expires_in });
-      } catch(e) {
-        cleanupTokenRequest();
-        toast('Ошибка авторизации: ' + e.message, 'e');
-        showLoginScreen();
-        if (pending) pending.reject(e);
-      }
+      oauthCodeProcessed = true;
+      await _exchangeCode(resp.code, pending);
     },
   });
+}
+
+async function _exchangeCode(code, pending) {
+  try {
+    const r = await fetch(CFG.WORKER_URL + '/exchange', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ code, redirect_uri: CFG.REDIRECT_URI }),
+    });
+    const data = await r.json();
+    if (data.error) { console.error('[CRM auth] exchange error:', data); throw new Error(data.error + (data.error_description ? ': ' + data.error_description : '')); }
+    history.replaceState({}, '', location.pathname);
+    const l = document.getElementById('silent-loader');
+    if (l) l.remove();
+    S.token = data.access_token;
+    S.user  = data.user;
+    tokenExpiresAt = Date.now() + Math.max((data.expires_in || 3600) - 60, 60) * 1000;
+    localStorage.setItem('crm_tok',  data.access_token);
+    localStorage.setItem('crm_exp',  tokenExpiresAt);
+    localStorage.setItem('crm_user', JSON.stringify(data.user));
+    syncFirebaseAuth(data.access_token);
+    renderUser();
+    onLogin();
+    scheduleTokenRefresh(data.expires_in);
+    cleanupTokenRequest();
+    if (pending) pending.resolve({ access_token: data.access_token, expires_in: data.expires_in });
+  } catch(e) {
+    console.error('[CRM auth] _exchangeCode error:', e);
+    cleanupTokenRequest();
+    toast('Ошибка авторизации: ' + e.message, 'e');
+    showLoginScreen();
+    if (pending) pending.reject(e);
+  }
+}
+
+async function handleOAuthCode(code) {
+  if (oauthCodeProcessed) return;
+  oauthCodeProcessed = true;
+  const loader = document.createElement('div');
+  loader.id = 'silent-loader';
+  loader.className = 'loader';
+  loader.innerHTML = '<div class="spin"></div><div>Авторизация…</div>';
+  document.querySelector('main').prepend(loader);
+  await _exchangeCode(code, null);
 }
 
 async function loadUser() {
@@ -5480,7 +5500,10 @@ function init() {
     if (typeof google !== 'undefined' && google.accounts) {
       clearTimeout(gsiTimeout);
       initAuth();
-      if (!tryRestore()) {
+      const oauthCode = new URLSearchParams(location.search).get('code');
+      if (oauthCode) {
+        handleOAuthCode(oauthCode);
+      } else if (!tryRestore()) {
         document.getElementById('scr-login').classList.add('on'); document.body.classList.add('login-active'); if(window._loginLiquidInit) window._loginLiquidInit();
       }
     } else setTimeout(waitGoogle, 100);

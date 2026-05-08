@@ -28,7 +28,7 @@ export default {
         });
 
         const tokens = await tokenResp.json();
-        if (tokens.error) return Response.json({ error: tokens.error }, { status: 400, headers: CORS });
+        if (tokens.error) return Response.json({ error: tokens.error, error_description: tokens.error_description }, { status: 400, headers: CORS });
 
         const userResp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
           headers: { Authorization: `Bearer ${tokens.access_token}` },

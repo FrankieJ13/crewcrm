@@ -281,7 +281,9 @@ function showScr(id) {
     const el = document.getElementById('scr-'+t);
     if (el) el.classList.remove('on');
   });
-  document.getElementById('scr-'+id)?.classList.add('on');
+  const scrEl = document.getElementById('scr-'+id);
+  scrEl?.classList.add('on');
+  if (scrEl) requestAnimationFrame(() => flushPendingAnimations(scrEl));
   const gs = document.getElementById('grafik-sticky');
   if (gs) gs.style.display = id === 'grafik' ? '' : 'none';
   // Все верхние вкладки убраны
@@ -1506,14 +1508,42 @@ function prepareDynamicValues(root = document) {
   return prepared;
 }
 
+function isAnimationRootVisible(root) {
+  if (!root || root === document || root === document.body) return true;
+  // Модалки/оверлеи — видны если открыты
+  const overlay = root.closest('[id$="-overlay"],[class*="overlay"]');
+  if (overlay) return overlay.classList.contains('open');
+  // Вкладки — видны если их родительский scr имеет класс on
+  const scr = root.closest('[id^="scr-"]');
+  if (scr) return scr.classList.contains('on');
+  return true; // не в специальном контейнере — считаем видимым
+}
+
 function scheduleAnimatedValues(root = document) {
   if (S.silentRefresh || !S.authReady) return;
   const prepared = prepareDynamicValues(root);
   if (!prepared.length) return;
+  if (!isAnimationRootVisible(root instanceof Element ? root : document.body)) {
+    // Экран не виден — сохраняем цель для запуска при показе
+    prepared.forEach(([el, meta]) => {
+      el.dataset.countPending = meta.raw;
+    });
+    return;
+  }
   requestAnimationFrame(() => {
     prepared.forEach(([el, meta]) => {
       if (el.isConnected) springCountValue(el, meta);
     });
+  });
+}
+
+function flushPendingAnimations(scr) {
+  if (!scr) return;
+  scr.querySelectorAll('[data-count-pending]').forEach(el => {
+    const raw = el.dataset.countPending;
+    delete el.dataset.countPending;
+    const meta = parseAnimatedNumber(raw);
+    if (meta && el.isConnected) springCountValue(el, meta);
   });
 }
 
@@ -4899,9 +4929,9 @@ function openDozhimIncomeModal(btn) {
     ${subtotal('Фактический доход', Math.round(n(d.fact?.total)))}
     ${buildDayCalendar(d.nameLow||'', S.data.d_vizity||[], DOZHIM_RATES, true)}
   `;
-  scheduleAnimatedValues(mc);
   document.getElementById('income-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
+  requestAnimationFrame(() => scheduleAnimatedValues(mc));
 }
 
 // ==================== INCOME DETAIL MODAL ====================
@@ -4997,9 +5027,9 @@ function openIncomeDetail(btn) {
       rZadatok:  parseRate((S.data.stavki||[])[20]?.[1]),
     }, false)}
   `;
-  scheduleAnimatedValues(mc);
   document.getElementById('income-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
+  requestAnimationFrame(() => scheduleAnimatedValues(mc));
 }
 
 function getVisitsByDay(nameLow, isDozhim) {

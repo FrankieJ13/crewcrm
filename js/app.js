@@ -5075,8 +5075,11 @@ function openVisitsDayModal(nameLow, isDozhim) {
   mc.innerHTML = `
     <div class="vis-step-card" role="figure" aria-label="Визиты за ${escapeAttr(subtitle)}: ${total}">
       <div class="vis-card-total" aria-live="polite">
-        <span class="vis-card-total-value">${total}</span>
-        <span>${pluralVisits(total)}</span>
+        <div class="vis-card-total-main">
+          <span class="vis-card-total-value">${total}</span>
+          <span class="vis-card-total-label">${pluralVisits(total)}</span>
+        </div>
+        <span class="vis-card-month-badge">${escapeHtml(subtitle)}</span>
       </div>
       <div class="vis-step-bars" aria-label="Визиты по дням">${days}</div>
     </div>

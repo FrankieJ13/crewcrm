@@ -2565,12 +2565,12 @@ body.light .income-modal-body { background:rgba(255,255,255,0.6); }
   color:var(--txt2);
 }
 .visits-modal-mgr-name {
-  font-family:'Golos Text',sans-serif;
-  font-size:11px;
-  font-weight:600;
+  font-family:'Unbounded',sans-serif;
+  font-size:10px;
+  font-weight:700;
   color:var(--acc);
   width:100%;
-  margin-top:2px;
+  margin-top:3px;
 }
 .income-modal-close {
   width:28px; height:28px; border-radius:50%;
@@ -2794,7 +2794,7 @@ body.cosmic #presence-popover::before {
 }
 
 .income-modal-content { padding:0; color:var(--acc); }
-.income-modal-content :where(.income-sec-title,.income-badge .ib-lbl,.income-badge .ib-val,.income-subtotal .ist-lbl,.income-subtotal .ist-val,.dz-badge .dzb-lbl,.dz-badge .dzb-count,.dz-badge .dzb-earn,.inc-day-num,.inc-day-sum,.vis-card-total-value,.vis-card-total span:last-child) {
+.income-modal-content :where(.income-sec-title,.income-badge .ib-lbl,.income-badge .ib-val,.income-subtotal .ist-lbl,.income-subtotal .ist-val,.dz-badge .dzb-lbl,.dz-badge .dzb-count,.dz-badge .dzb-earn,.inc-day-num,.inc-day-sum,.vis-card-total-value,.vis-card-total-label) {
   color:var(--acc) !important;
 }
 .income-total-banner {
@@ -2885,20 +2885,38 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
 .vis-card-total {
   margin:0 0 24px;
   display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.vis-card-total-main {
+  display:flex;
   align-items:baseline;
   gap:8px;
 }
 .vis-card-total-value {
-  font-family:'Unbounded',sans-serif;
-  font-size:46px;
+  font-family:'Unbounded',sans-serif !important;
+  font-size:35px;
   font-weight:900;
   line-height:1;
   letter-spacing:-.03em;
   color:var(--txt);
 }
-.vis-card-total span:last-child {
-  font-size:17px;
+.vis-card-total-label {
+  font-family:'Unbounded',sans-serif;
+  font-size:13px;
+  font-weight:600;
   color:var(--txt2);
+}
+.vis-card-month-badge {
+  font-family:'Unbounded',sans-serif;
+  font-size:9px;
+  font-weight:700;
+  color:var(--txt3);
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  text-align:right;
+  flex-shrink:0;
 }
 .vis-step-bars {
   margin-top:auto;
@@ -2964,8 +2982,9 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
   left:0;
   right:0;
   bottom:0;
+  font-family:'Oswald',sans-serif;
   font-size:8px;
-  font-weight:800;
+  font-weight:700;
   color:var(--txt3);
   text-align:center;
   line-height:14px;

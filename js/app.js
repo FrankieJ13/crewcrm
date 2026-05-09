@@ -1156,29 +1156,35 @@ async function api(sheet, range) {
 async function _apiFetch(sheet, range, key, retryCount = 0) {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/`
             + encodeURIComponent(sheet + '!' + range);
+
+  // Таймаут 12 секунд — fetch не будет висеть бесконечно
+  const ctrl = new AbortController();
+  const tid  = setTimeout(() => ctrl.abort(), 12000);
+
   let r;
   try {
-    r = await fetch(url, { headers: await authHeaders() });
+    r = await fetch(url, { headers: await authHeaders(), signal: ctrl.signal });
   } catch (err) {
-    if (err.isAuthError) {
-      showLoginScreen();
-      throw new Error('auth');
-    }
-    if (retryCount < 2) {
-      const wait = (retryCount + 1) * 3000;
-      if (retryCount === 0) toast('Связь с Google нестабильна — повторяю…', 'i');
+    clearTimeout(tid);
+    if (err.isAuthError) { showLoginScreen(); throw new Error('auth'); }
+    if (retryCount < 3) {
+      // Тихий первый retry; сообщаем только начиная со второй неудачи
+      if (retryCount === 1) toast('Связь с Google нестабильна — повторяю…', 'i');
+      const jitter = Math.round(Math.random() * 800);
+      const wait   = Math.min((retryCount + 1) * 3000 + jitter, 10000);
       await new Promise(res => setTimeout(res, wait));
       return _apiFetch(sheet, range, key, retryCount + 1);
     }
     toast('Не удалось получить данные Google. Проверьте сеть и обновите экран', 'e');
     throw err;
   }
+  clearTimeout(tid);
 
   if (r.status === 429) {
     // Quota exceeded — ждём и повторяем (до 3 раз)
     if (retryCount < 3) {
       const wait = (retryCount + 1) * 8000; // 8s, 16s, 24s
-      if (retryCount === 0) toast('Лимит запросов — повтор через ' + (wait/1000) + 'с…', 'i');
+      if (retryCount === 1) toast('Лимит запросов — повтор через ' + (wait/1000) + 'с…', 'i');
       await new Promise(res => setTimeout(res, wait));
       return _apiFetch(sheet, range, key, retryCount + 1);
     }

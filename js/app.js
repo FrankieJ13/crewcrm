@@ -5058,7 +5058,7 @@ function openVisitsDayModal(nameLow, isDozhim) {
     const h = count ? Math.max(7, Math.round(count / max * 100)) : 0;
     const title = `${day}: ${count} ${pluralVisits(count)}`;
     return `<button class="vis-step-bar${count ? ' has-visits' : ''}" style="--h:${h}%;--i:${idx}" title="${escapeAttr(title)}" aria-label="${escapeAttr(title)}">
-      <span class="vis-step-track"></span>
+      ${count ? '' : '<span class="vis-step-track"></span>'}
       <span class="vis-step-fill"></span>
       <span class="vis-step-tip">${count}</span>
       <span class="vis-step-day">${day}</span>

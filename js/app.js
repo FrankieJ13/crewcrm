@@ -1520,30 +1520,23 @@ function isAnimationRootVisible(root) {
   return true; // не в специальном контейнере — считаем видимым
 }
 
-function scheduleAnimatedValues(root = document) {
+// force=true — первый рендер на пустом контейнере (переход на вкладку),
+// запускает spring даже во время silentRefresh.
+// force=false (default) — тихий рефреш видимого контента, spring не запускается.
+function scheduleAnimatedValues(root = document, force = false) {
   if (!S.authReady) return;
+  // Тихий фоновый рефреш + не первый рендер → morph сам обновит через liveValueTick
+  if (S.silentRefresh && !force) return;
   const prepared = prepareDynamicValues(root);
   if (!prepared.length) return;
   const visible = isAnimationRootVisible(root instanceof Element ? root : document.body);
   if (!visible) {
-    // Экран не виден — сохраняем цель для запуска при показе
+    // Экран не виден — сохраняем цель, запустим при переходе
     prepared.forEach(([el, meta]) => { el.dataset.countPending = meta.raw; });
     return;
   }
-  // Во время тихого фонового обновления (silentRefresh) не перезапускаем
-  // анимацию для уже видимых значений — только для новых (countTarget не задан)
-  if (S.silentRefresh) {
-    const fresh = prepared.filter(([el]) => !el.dataset.countTarget);
-    if (!fresh.length) return;
-    requestAnimationFrame(() => {
-      fresh.forEach(([el, meta]) => { if (el.isConnected) springCountValue(el, meta); });
-    });
-    return;
-  }
   requestAnimationFrame(() => {
-    prepared.forEach(([el, meta]) => {
-      if (el.isConnected) springCountValue(el, meta);
-    });
+    prepared.forEach(([el, meta]) => { if (el.isConnected) springCountValue(el, meta); });
   });
 }
 
@@ -1601,23 +1594,26 @@ function morphLiveNode(cur, next) {
 function setLiveHTML(el, html) {
   if (!el) return;
   if (!S.silentRefresh || !el.children.length) {
+    const firstRender = !el.children.length;
     el.innerHTML = html;
-    scheduleAnimatedValues(el);
+    // force=true только при первом рендере (пустой контейнер → переход на вкладку)
+    scheduleAnimatedValues(el, firstRender);
     return;
   }
+  // Тихий рефреш с существующим контентом → morph, liveValueTick, без spring
   const tpl = document.createElement('template');
   tpl.innerHTML = html.trim();
   const curChildren = [...el.childNodes];
   const nextChildren = [...tpl.content.childNodes];
   if (curChildren.length !== nextChildren.length) {
     el.replaceChildren(...nextChildren.map(ch => ch.cloneNode(true)));
-    scheduleAnimatedValues(el);
+    // структура изменилась, но это silentRefresh — spring не нужен
     return;
   }
   for (let i = 0; i < nextChildren.length; i++) {
     morphLiveNode(curChildren[i], nextChildren[i]);
   }
-  scheduleAnimatedValues(el);
+  // morph обновил текст через liveValueTick — spring не запускаем
 }
 
 async function refreshVisibleDataLive() {

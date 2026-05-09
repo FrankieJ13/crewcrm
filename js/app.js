@@ -1243,45 +1243,30 @@ async function loadTab(tab) {
   };
   if (tab === 'otchet') {
     const el = document.getElementById('c-otchet');
+    const needDvizity = (S.reportTab === 'dept' || S.reportTab === 'dozhim') && !S.data.d_vizity;
+    const needAnything = !S.data.vizity || !S.data.plan || needDvizity || !S.data.cnvrs;
 
-    // Загружаем ВИЗИТЫ и ПЛАН синхронно если не загружены
-    if (!S.data.vizity || !S.data.plan) {
+    if (needAnything) {
       if (el) el.innerHTML = loader();
       try {
-        const [vd, pd] = await Promise.all([
-          S.data.vizity ? Promise.resolve(S.data.vizity) : api(SHEETS.vizity, 'A:N').catch(() => []),
-          S.data.plan   ? Promise.resolve(S.data.plan)   : api(SHEETS.plan,   'A:B'),
+        const [vd, pd, dv, cv] = await Promise.all([
+          S.data.vizity   ? Promise.resolve(S.data.vizity) : api(SHEETS.vizity, 'A:N').catch(() => []),
+          S.data.plan     ? Promise.resolve(S.data.plan)   : api(SHEETS.plan,   'A:B').catch(() => []),
+          needDvizity     ? api(SHEETS.d_vizity, 'A:N').catch(() => []) : Promise.resolve(S.data.d_vizity),
+          S.data.cnvrs    ? Promise.resolve(S.data.cnvrs)  : api(SHEETS.cnvrs,  'A1:N40').catch(() => []),
         ]);
         S.data.vizity = vd || [];
-        S.data.plan   = pd;
+        if (pd?.length) S.data.plan = pd;
+        if (dv !== undefined) S.data.d_vizity = dv || [];
+        if (cv?.length) S.data.cnvrs = cv;
       } catch(e) {
-        if (e.message !== 'auth') {
-          // Если визиты не загружены — пробуем без них
-          if (!S.data.plan) {
-            try { S.data.plan = await api(SHEETS.plan, 'A:B'); }
-            catch(e2) { if (el) el.innerHTML = `<div class="err">Ошибка: ${e2.message}</div>`; return; }
-          }
-          S.data.vizity = S.data.vizity || [];
-        } else return;
+        if (e.message === 'auth') return;
+        if (!S.data.plan) {
+          try { S.data.plan = await api(SHEETS.plan, 'A:B'); }
+          catch(e2) { if (el) el.innerHTML = `<div class="err">Ошибка: ${e2.message}</div>`; return; }
+        }
+        S.data.vizity = S.data.vizity || [];
       }
-    }
-
-    // Д_ВИЗИТЫ — фоновая загрузка для вкладки ДОЖИМ
-    if (S.reportTab === 'dozhim' && !S.data.d_vizity) {
-      Promise.all([
-        api(SHEETS.d_vizity, 'A:N').catch(() => []),
-        S.data.plan ? Promise.resolve(S.data.plan) : api(SHEETS.plan, 'A:B').catch(() => []),
-      ]).then(([dv, pd]) => { S.data.d_vizity = dv; S.data.plan = pd; renderOtchet(); });
-    }
-    if (S.reportTab === 'dept' && !S.data.d_vizity) {
-      Promise.all([
-        api(SHEETS.d_vizity, 'A:N').catch(() => []),
-      ]).then(([dv]) => { S.data.d_vizity = dv; if (S.reportTab === 'dept') renderOtchet(); });
-    }
-    if (!S.data.cnvrs) {
-      api(SHEETS.cnvrs, 'A1:N40')
-        .then(d => { S.data.cnvrs = d; renderOtchet(); })
-        .catch(() => { S.data.cnvrs = []; });
     }
 
     renderOtchet();

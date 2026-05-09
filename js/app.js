@@ -1521,13 +1521,22 @@ function isAnimationRootVisible(root) {
 }
 
 function scheduleAnimatedValues(root = document) {
-  if (S.silentRefresh || !S.authReady) return;
+  if (!S.authReady) return;
   const prepared = prepareDynamicValues(root);
   if (!prepared.length) return;
-  if (!isAnimationRootVisible(root instanceof Element ? root : document.body)) {
+  const visible = isAnimationRootVisible(root instanceof Element ? root : document.body);
+  if (!visible) {
     // Экран не виден — сохраняем цель для запуска при показе
-    prepared.forEach(([el, meta]) => {
-      el.dataset.countPending = meta.raw;
+    prepared.forEach(([el, meta]) => { el.dataset.countPending = meta.raw; });
+    return;
+  }
+  // Во время тихого фонового обновления (silentRefresh) не перезапускаем
+  // анимацию для уже видимых значений — только для новых (countTarget не задан)
+  if (S.silentRefresh) {
+    const fresh = prepared.filter(([el]) => !el.dataset.countTarget);
+    if (!fresh.length) return;
+    requestAnimationFrame(() => {
+      fresh.forEach(([el, meta]) => { if (el.isConnected) springCountValue(el, meta); });
     });
     return;
   }
@@ -4305,7 +4314,7 @@ async function loadUsersAndStart() {
       goPersonal();
     }
     // Фоновая предзагрузка остальных данных через 8 сек (не перегружаем API при старте)
-    setTimeout(() => backgroundPrefetch(matched), 8000);
+    setTimeout(() => backgroundPrefetch(matched), 3000);
   } else {
     showAccessDenied();
     toast('Почта не найдена в USERS', 'e');
@@ -4314,33 +4323,27 @@ async function loadUsersAndStart() {
 
 // Фоновая предзагрузка данных всех вкладок после старта
 async function backgroundPrefetch(matched) {
-  const role = matched?.role || 'crm';
+  const role     = matched?.role || 'crm';
   const isCeo    = role === 'ceo';
   const isDozhim = role === 'dozhim';
 
-  const tasks = [];
-  if (!S.data.vizity)      tasks.push(() => api(SHEETS.vizity,  'A:N').then(d => S.data.vizity  = d).catch(()=>{}));
-  if (!S.data.plan)        tasks.push(() => api(SHEETS.plan,    'A:B').then(d => S.data.plan    = d).catch(()=>{}));
-  if (!S.data.grafik)      tasks.push(() => api(SHEETS.grafik,  'A1:AI25').then(d => S.data.grafik = d).catch(()=>{}));
-  if (!S.data.cnvrs)       tasks.push(() => api(SHEETS.cnvrs,   'A1:N40').then(d => S.data.cnvrs  = d).catch(()=>{}));
-  if (!S.data.stavki)      tasks.push(() => api(SHEETS.stavki,  'A1:B25').then(d => S.data.stavki = d).catch(()=>{}));
+  const fetches = [];
+  if (!S.data.vizity)      fetches.push(api(SHEETS.vizity,      'A:N').then(d => S.data.vizity      = d).catch(()=>{}));
+  if (!S.data.plan)        fetches.push(api(SHEETS.plan,        'A:B').then(d => S.data.plan        = d).catch(()=>{}));
+  if (!S.data.grafik)      fetches.push(api(SHEETS.grafik,      'A1:AI25').then(d => S.data.grafik  = d).catch(()=>{}));
+  if (!S.data.cnvrs)       fetches.push(api(SHEETS.cnvrs,       'A1:N40').then(d => S.data.cnvrs    = d).catch(()=>{}));
+  if (!S.data.stavki)      fetches.push(api(SHEETS.stavki,      'A1:B25').then(d => S.data.stavki   = d).catch(()=>{}));
   if (isCeo || isDozhim) {
-    if (!S.data.d_vizity)  tasks.push(() => api(SHEETS.d_vizity, 'A:N').then(d => S.data.d_vizity = d).catch(()=>{}));
+    if (!S.data.d_vizity)  fetches.push(api(SHEETS.d_vizity,    'A:N').then(d => S.data.d_vizity    = d).catch(()=>{}));
   }
-  if (!S.data.instruktsii) tasks.push(() => api(SHEETS.instruktsii, 'A1:C200').then(d => S.data.instruktsii = d).catch(()=>{}));
+  if (!S.data.instruktsii) fetches.push(api(SHEETS.instruktsii, 'A1:C200').then(d => S.data.instruktsii = d).catch(()=>{}));
 
-  if (!tasks.length) return;
+  if (!fetches.length) return;
 
-  // Тихий режим: не показываем лоадер
   S.silentRefresh = true;
   try {
-    for (const task of tasks) {
-      await task();
-      await new Promise(r => setTimeout(r, 1500));
-    }
-    // Не перерисовываем если открыт журнал визитов (пользователь вводит данные)
+    await Promise.all(fetches);
     if (document.getElementById('scr-vizity')?.classList.contains('on')) return;
-    // Тихо перерисовываем текущий видимый экран
     const activeTab = document.querySelector('.tab.on')?.dataset.tab;
     if (activeTab) renderTab(activeTab);
     const personalOn = document.getElementById('scr-personal')?.classList.contains('on');
@@ -4370,15 +4373,17 @@ async function loadPersonal(matched) {
       if (!S.data.d_vizity) S.data.d_vizity = await api(SHEETS.d_vizity, 'A:N').catch(() => []);
       if (!S.data.plan)     S.data.plan     = await api(SHEETS.plan,   'A:B').catch(() => []);
     } else {
-      if (!S.data.vizity) S.data.vizity = await api(SHEETS.vizity, 'A:N').catch(() => []);
-      if (!S.data.plan)   S.data.plan   = await api(SHEETS.plan,   'A:B').catch(() => []);
-      if (!S.data.stavki) {
-        try { S.data.stavki = await api(SHEETS.stavki, 'A1:B25'); }
-        catch(e) { S.data.stavki = []; }
-      }
-      if (!S.data.cnvrs) S.data.cnvrs = await api(SHEETS.cnvrs, 'A1:N40');
+      const [vd, pd, sd, cv, gr] = await Promise.all([
+        S.data.vizity  ? Promise.resolve(S.data.vizity)  : api(SHEETS.vizity,  'A:N').catch(() => []),
+        S.data.plan    ? Promise.resolve(S.data.plan)    : api(SHEETS.plan,    'A:B').catch(() => []),
+        S.data.stavki  ? Promise.resolve(S.data.stavki)  : api(SHEETS.stavki,  'A1:B25').catch(() => []),
+        S.data.cnvrs   ? Promise.resolve(S.data.cnvrs)   : api(SHEETS.cnvrs,   'A1:N40').catch(() => []),
+        S.data.grafik  ? Promise.resolve(S.data.grafik)  : api(SHEETS.grafik,  'A1:AI25').catch(() => []),
+      ]);
+      S.data.vizity = vd; S.data.plan = pd; S.data.stavki = sd;
+      S.data.cnvrs = cv; S.data.grafik = gr;
     }
-    if (!S.data.grafik) S.data.grafik = await api(SHEETS.grafik, 'A1:AI25');
+    if (!S.data.grafik) S.data.grafik = await api(SHEETS.grafik, 'A1:AI25').catch(() => []);
   } catch(e) {
     if (e.message !== 'auth') el.innerHTML = `<div class="err">Ошибка загрузки данных: ${e.message}</div>`;
     return;

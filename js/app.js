@@ -1394,7 +1394,8 @@ function liveTextUpdate(node, nextText) {
 
 const ANIMATED_VALUE_SELECTOR = [
   '.kb-val', '.zv', '.mv', '.dc-val', '.rating-sum-val', '.rating-card-pct',
-  '.rating-card-prog', '.ic-val', '.ib-val', '.ist-val', '.mc-v', '.vis-card-total-value'
+  '.rating-card-prog', '.ic-val', '.ib-val', '.ist-val', '.mc-v', '.vis-card-total-value',
+  '.speedo-value', '.speedo-conv', '.speedo-visits'
 ].join(',');
 
 function isPlanValueElement(el) {

@@ -4333,9 +4333,7 @@ async function backgroundPrefetch(matched) {
   if (!S.data.grafik)      fetches.push(api(SHEETS.grafik,      'A1:AI25').then(d => S.data.grafik  = d).catch(()=>{}));
   if (!S.data.cnvrs)       fetches.push(api(SHEETS.cnvrs,       'A1:N40').then(d => S.data.cnvrs    = d).catch(()=>{}));
   if (!S.data.stavki)      fetches.push(api(SHEETS.stavki,      'A1:B25').then(d => S.data.stavki   = d).catch(()=>{}));
-  if (isCeo || isDozhim) {
-    if (!S.data.d_vizity)  fetches.push(api(SHEETS.d_vizity,    'A:N').then(d => S.data.d_vizity    = d).catch(()=>{}));
-  }
+  if (!S.data.d_vizity)    fetches.push(api(SHEETS.d_vizity,    'A:N').then(d => S.data.d_vizity    = d).catch(()=>{}));
   if (!S.data.instruktsii) fetches.push(api(SHEETS.instruktsii, 'A1:C200').then(d => S.data.instruktsii = d).catch(()=>{}));
 
   if (!fetches.length) return;
@@ -4370,8 +4368,13 @@ async function loadPersonal(matched) {
   const isDozhim = matched.role === 'dozhim';
   try {
     if (isDozhim) {
-      if (!S.data.d_vizity) S.data.d_vizity = await api(SHEETS.d_vizity, 'A:N').catch(() => []);
-      if (!S.data.plan)     S.data.plan     = await api(SHEETS.plan,   'A:B').catch(() => []);
+      const [dv, pd, gr, sd] = await Promise.all([
+        S.data.d_vizity ? Promise.resolve(S.data.d_vizity) : api(SHEETS.d_vizity, 'A:N').catch(() => []),
+        S.data.plan     ? Promise.resolve(S.data.plan)     : api(SHEETS.plan,     'A:B').catch(() => []),
+        S.data.grafik   ? Promise.resolve(S.data.grafik)   : api(SHEETS.grafik,   'A1:AI25').catch(() => []),
+        S.data.stavki   ? Promise.resolve(S.data.stavki)   : api(SHEETS.stavki,   'A1:B25').catch(() => []),
+      ]);
+      S.data.d_vizity = dv; S.data.plan = pd; S.data.grafik = gr; S.data.stavki = sd;
     } else {
       const [vd, pd, sd, cv, gr] = await Promise.all([
         S.data.vizity  ? Promise.resolve(S.data.vizity)  : api(SHEETS.vizity,  'A:N').catch(() => []),
@@ -4380,10 +4383,8 @@ async function loadPersonal(matched) {
         S.data.cnvrs   ? Promise.resolve(S.data.cnvrs)   : api(SHEETS.cnvrs,   'A1:N40').catch(() => []),
         S.data.grafik  ? Promise.resolve(S.data.grafik)  : api(SHEETS.grafik,  'A1:AI25').catch(() => []),
       ]);
-      S.data.vizity = vd; S.data.plan = pd; S.data.stavki = sd;
-      S.data.cnvrs = cv; S.data.grafik = gr;
+      S.data.vizity = vd; S.data.plan = pd; S.data.stavki = sd; S.data.cnvrs = cv; S.data.grafik = gr;
     }
-    if (!S.data.grafik) S.data.grafik = await api(SHEETS.grafik, 'A1:AI25').catch(() => []);
   } catch(e) {
     if (e.message !== 'auth') el.innerHTML = `<div class="err">Ошибка загрузки данных: ${e.message}</div>`;
     return;

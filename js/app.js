@@ -1387,9 +1387,9 @@ function liveTextUpdate(node, nextText) {
   const parent = node.parentElement;
   node.nodeValue = nextText;
   if (!parent || !S.silentRefresh) return;
-  parent.classList.remove('live-value-updated');
+  parent.classList.remove('num-flip');
   void parent.offsetWidth;
-  parent.classList.add('live-value-updated');
+  parent.classList.add('num-flip');
 }
 
 const ANIMATED_VALUE_SELECTOR = [

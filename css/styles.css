@@ -3083,13 +3083,15 @@ body.light .kpi-badge { background:rgba(0,0,0,0.03); }
   display:inline-block;
   will-change:contents;
 }
-.live-value-updated {
-  animation: liveValueTick .42s cubic-bezier(.2,.8,.2,1);
+.num-flip {
+  animation: numFlip 0.28s cubic-bezier(0.23, 1, 0.32, 1) both;
+  transform-origin: center top;
 }
-@keyframes liveValueTick {
-  0%   { transform: translateY(-3px); filter: brightness(1.25); }
-  55%  { transform: translateY(1px); }
-  100% { transform: translateY(0); filter: brightness(1); }
+@keyframes numFlip {
+  0%   { transform: perspective(360px) rotateX(-90deg); opacity: 0; }
+  60%  { transform: perspective(360px) rotateX(8deg);   opacity: 1; }
+  80%  { transform: perspective(360px) rotateX(-3deg);  opacity: 1; }
+  100% { transform: perspective(360px) rotateX(0deg);   opacity: 1; }
 }
 /* ---- instr-table: alternating rows ---- */
 .instr-table tbody tr:nth-child(odd) td  { background:var(--bg2); }

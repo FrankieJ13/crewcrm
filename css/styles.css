@@ -1365,6 +1365,10 @@ body.hamburger-open #hamburger-wrap {
   line-height:1;
   box-sizing:border-box;
 }
+/* Glass Dark: жёлтый акцент — текст чёрный */
+body:not(.light):not(.tiffany):not(.cinematic):not(.neo-dark):not(.neo-light):not(.cosmic) .presence-count {
+  color:#000;
+}
 #btn-out:hover { border-color:var(--red); color:var(--red) }
 .center-login-btn {
   margin-top: 12px;

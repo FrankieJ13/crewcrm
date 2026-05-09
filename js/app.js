@@ -1385,11 +1385,21 @@ function renderTab(tab) {
 function liveTextUpdate(node, nextText) {
   if (node.nodeValue === nextText) return;
   const parent = node.parentElement;
-  node.nodeValue = nextText;
-  if (!parent || !S.silentRefresh) return;
-  parent.classList.remove('num-flip');
+  if (!parent || !S.silentRefresh) {
+    node.nodeValue = nextText;
+    return;
+  }
+  // Фаза 1: складываем (scaleY → 0)
+  parent.classList.remove('flap-fold', 'flap-unfold');
   void parent.offsetWidth;
-  parent.classList.add('num-flip');
+  parent.classList.add('flap-fold');
+  // Фаза 2: меняем текст и разворачиваем
+  setTimeout(() => {
+    node.nodeValue = nextText;
+    parent.classList.remove('flap-fold');
+    void parent.offsetWidth;
+    parent.classList.add('flap-unfold');
+  }, 110);
 }
 
 const ANIMATED_VALUE_SELECTOR = [

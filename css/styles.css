@@ -2902,9 +2902,6 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
   letter-spacing:-.03em;
   color:var(--txt);
 }
-.vis-card-total-value.value-counting {
-  font-weight:900 !important;
-}
 .vis-card-total-label {
   font-family:'Unbounded',sans-serif;
   font-size:13px;
@@ -3084,9 +3081,6 @@ body.light .kpi-badge { background:rgba(0,0,0,0.03); }
 }
 .value-counting {
   display:inline-block;
-  font-family:inherit;
-  font-weight:inherit;
-  font-style:inherit;
   will-change:contents;
 }
 .live-value-updated {

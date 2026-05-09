@@ -1382,24 +1382,105 @@ function renderTab(tab) {
   else if (tab==='instruktsii') renderInstruktsii();
 }
 
+// Поцифровая анимация: только изменившиеся позиции перелистываются
+const DIGIT_STAGGER  = 200;  // мс между цифрами
+const DIGIT_DURATION = 320;  // мс на одно движение
+
+// Тест в консоли: _testDigitAnim() — прибавляет 1 ко всем видимым числовым значениям
+window._testDigitAnim = function() {
+  S.silentRefresh = true;
+  document.querySelectorAll('.dc-val,.kb-val,.mv,.mc-v,.speedo-value,.speedo-visits').forEach(el => {
+    const t = el.firstChild;
+    if (!t || t.nodeType !== Node.TEXT_NODE) return;
+    const v = t.nodeValue.trim();
+    const n = parseInt(v.replace(/\s/g, ''), 10);
+    if (isNaN(n)) return;
+    const next = String(n + 1).padStart(v.replace(/\s/g,'').length, '0');
+    liveTextUpdate(t, next);
+  });
+  setTimeout(() => { S.silentRefresh = false; }, 500);
+};
+
+function slideDigits(parent, node, oldText, nextText, changedPos) {
+  // Каждый символ — слот с overflow:hidden + старый/новый символ внутри
+  const chars = [...oldText];
+  const slots = chars.map((ch) => {
+    const slot   = document.createElement('span');
+    slot.className = 'digit-slot';
+    // Спейсер (невидимый) держит ширину слота
+    const spacer = document.createElement('span');
+    spacer.className = 'digit-spacer';
+    spacer.textContent = ch;
+    // Текущий символ — виден, будет анимирован
+    const cur = document.createElement('span');
+    cur.className = 'digit-cur';
+    cur.textContent = ch;
+    slot.appendChild(spacer);
+    slot.appendChild(cur);
+    return { slot, spacer, cur };
+  });
+
+  while (parent.firstChild) parent.removeChild(parent.firstChild);
+  slots.forEach(({ slot }) => parent.appendChild(slot));
+
+  const token = {};
+  parent._slideToken = token;
+
+  // Единицы первые (справа налево: rightmost index = единицы)
+  const ordered = [...changedPos].sort((a, b) => b - a);
+  ordered.forEach((pos, j) => {
+    const { slot, spacer, cur } = slots[pos];
+    const newCh = nextText[pos];
+    setTimeout(() => {
+      if (!slot.isConnected) return;
+      spacer.textContent = newCh;                         // обновляем ширину слота
+      cur.style.animation = `digitOut ${DIGIT_DURATION}ms ease-in forwards`;
+      const nxt = document.createElement('span');
+      nxt.className = 'digit-nxt';
+      nxt.textContent = newCh;
+      nxt.style.animation = `digitIn ${DIGIT_DURATION}ms ease-out forwards`;
+      slot.appendChild(nxt);
+    }, j * DIGIT_STAGGER);
+  });
+
+  // После всех анимаций — восстанавливаем текстовый узел
+  const done = (ordered.length - 1) * DIGIT_STAGGER + DIGIT_DURATION + 80;
+  setTimeout(() => {
+    if (!parent.isConnected || parent._slideToken !== token) return;
+    const isOurs = [...parent.childNodes].every(n => n.classList?.contains('digit-slot'));
+    if (isOurs) { node.nodeValue = nextText; parent.replaceChildren(node); }
+    parent._slideToken = null;
+  }, done);
+}
+
 function liveTextUpdate(node, nextText) {
   if (node.nodeValue === nextText) return;
   const parent = node.parentElement;
-  if (!parent || !S.silentRefresh) {
-    node.nodeValue = nextText;
-    return;
+  if (!parent || !S.silentRefresh) { node.nodeValue = nextText; return; }
+
+  const oldText = node.nodeValue;
+  parent._slideToken = null;
+  parent.classList.remove('digit-fold-el', 'digit-unfold-el');
+
+  // Поцифровое скольжение — только когда длина одинакова
+  if (oldText.length === nextText.length) {
+    const changed = [];
+    for (let i = 0; i < oldText.length; i++) {
+      if (oldText[i] !== nextText[i]) changed.push(i);
+    }
+    if (changed.length > 0) { slideDigits(parent, node, oldText, nextText, changed); return; }
   }
-  // Фаза 1: складываем (scaleY → 0)
-  parent.classList.remove('flap-fold', 'flap-unfold');
+
+  // Фолбэк (длина изменилась: "9"→"10", "—"→"7" и т.п.): весь элемент
   void parent.offsetWidth;
-  parent.classList.add('flap-fold');
-  // Фаза 2: меняем текст и разворачиваем
+  parent.classList.add('digit-fold-el');
   setTimeout(() => {
     node.nodeValue = nextText;
-    parent.classList.remove('flap-fold');
+    parent.classList.remove('digit-fold-el');
     void parent.offsetWidth;
-    parent.classList.add('flap-unfold');
-  }, 110);
+    parent.classList.add('digit-unfold-el');
+    parent.addEventListener('animationend', () => parent.classList.remove('digit-unfold-el'), { once: true });
+  }, 300);
 }
 
 const ANIMATED_VALUE_SELECTOR = [
@@ -1593,6 +1674,7 @@ function morphLiveNode(cur, next) {
   const curChildren = [...cur.childNodes];
   const nextChildren = [...next.childNodes];
   if (curChildren.length !== nextChildren.length) {
+    cur._slideToken = null; // отменяем анимацию если структура поменялась
     cur.replaceChildren(...nextChildren.map(ch => ch.cloneNode(true)));
     return;
   }
@@ -2276,8 +2358,16 @@ function renderOtchet() {
     dozhimDeptCard = `
     <div class="sec-title">ОТДЕЛ ДОЖИМ</div>
     <div class="dept-card" style="opacity:0.7;background:rgba(${accR},${accG},${accB},0.08)">
-      <div class="dept-row1" style="grid-template-columns:repeat(3,1fr)"><div class="dept-cell"><div class="dc-lbl">Визиты</div><div class="dc-val">—</div></div><div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">—</div></div><div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val">—</div></div></div>
-      <div class="dept-row2" style="grid-template-columns:repeat(3,1fr)"><div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">—</div></div><div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">—</div></div><div class="dept-cell"><div class="dc-lbl">Комиссия</div><div class="dc-val">—</div></div></div>
+      <div class="dept-row1" style="grid-template-columns:repeat(3,1fr)">
+        <div class="dept-cell hi"><div class="dc-lbl">Визиты</div><div class="dc-val">—</div></div>
+        <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">—</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val">—</div></div>
+      </div>
+      <div class="dept-row2" style="grid-template-columns:repeat(3,1fr)">
+        <div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">—</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">—</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Комиссия</div><div class="dc-val">—</div></div>
+      </div>
     </div>`;
   }
 

@@ -5068,8 +5068,10 @@ function openVisitsDayModal(nameLow, isDozhim) {
 
   const modalTitle = document.querySelector('#income-overlay .income-modal-title');
   const mc = document.getElementById('income-modal-content');
-  const nameDisplay = nameLow ? nameLow.replace(/\b\S/g, c => c.toUpperCase()) : '';
-  if (modalTitle) modalTitle.innerHTML = `Хронология визитов <span>${escapeHtml(subtitle)}</span>${nameDisplay ? `<div class="visits-modal-mgr-name">${escapeHtml(nameDisplay)}</div>` : ''}`;
+  const nameDisplay = nameLow
+    ? nameLow.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+    : '';
+  if (modalTitle) modalTitle.innerHTML = `Хронология визитов${nameDisplay ? `<div class="visits-modal-mgr-name">${escapeHtml(nameDisplay)}</div>` : ''}`;
   document.getElementById('income-overlay')?.classList.add('visits-mode');
   mc.removeAttribute('data-modal');
   mc.innerHTML = `
@@ -5084,9 +5086,9 @@ function openVisitsDayModal(nameLow, isDozhim) {
       <div class="vis-step-bars" aria-label="Визиты по дням">${days}</div>
     </div>
   `;
-  scheduleAnimatedValues(mc);
   document.getElementById('income-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
+  requestAnimationFrame(() => scheduleAnimatedValues(mc));
 }
 
 // ==================== DAY CALENDAR BREAKDOWN ====================

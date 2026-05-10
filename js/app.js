@@ -2984,11 +2984,26 @@ const SCHED_SHEET_BG = {
   'В*': { red: 1,     green: 1,     blue: 0     },
   'Р*': { red: 0.263, green: 0.525, blue: 0.961 },
 };
+// Показываем звёздочки в дропдауне (перед открытием)
+function schedBulkShowStars(sel) {
+  for (const opt of sel.options) {
+    if (opt.value === 'Р*') opt.text = 'Р*';
+    else if (opt.value === 'В*') opt.text = 'В*';
+  }
+}
+// Прячем звёздочки в закрытом select (после выбора / потери фокуса)
+function schedBulkHideStars(sel) {
+  for (const opt of sel.options) {
+    if (opt.value === 'Р*') opt.text = 'Р';
+    else if (opt.value === 'В*') opt.text = 'В';
+  }
+}
 // Обработчик изменения select в bulk-редакторе
 function schedBulkSelectChanged(sel) {
   const v = sel.value;
   sel.style.background = SCHED_CELL_BG[v] || '';
   sel.style.color      = SCHED_CELL_FG[v] || '';
+  schedBulkHideStars(sel);
 }
 
 function canEditScheduleName(name) {
@@ -3413,13 +3428,13 @@ function openScheduleBulkEditor() {
       const selBg = SCHED_CELL_BG[val] || '';
       const selFg = SCHED_CELL_FG[val] || '';
       const selStyle = selBg ? ` style="background:${selBg};color:${selFg}"` : '';
-      return `<select class="sched-bulk-select" data-row="${entry.sheetRow}" data-col="${colIdx}" data-name="${escapeAttr(name)}" ${disabled}${selStyle} onchange="schedBulkSelectChanged(this)">
+      return `<select class="sched-bulk-select" data-row="${entry.sheetRow}" data-col="${colIdx}" data-name="${escapeAttr(name)}" ${disabled}${selStyle} onchange="schedBulkSelectChanged(this)" onmousedown="schedBulkShowStars(this)" onblur="schedBulkHideStars(this)">
         <option value="" ${!val?'selected':''}>·</option>
         <option value="Р"  ${val==='Р' ?'selected':''}>Р</option>
         <option value="Р*" ${val==='Р*'?'selected':''}>Р</option>
         <option value="В"  ${val==='В' ?'selected':''}>В</option>
         <option value="В*" ${val==='В*'?'selected':''}>В</option>
-      </select>`;
+      </select>`; /* звёздочки восстанавливаются через onmousedown перед открытием */
     }).join('');
     return `<div class="sched-bulk-row${editable?'':' locked'}">
       <div class="sched-bulk-name">${escapeHtml(name)}</div>
@@ -3461,6 +3476,8 @@ function openScheduleBulkEditor() {
   `;
   document.body.appendChild(overlay);
   document.body.style.overflow = 'hidden';
+  // Скрываем звёздочки у уже выбранных значений (Р*/В* → показываем Р/В)
+  overlay.querySelectorAll('.sched-bulk-select').forEach(schedBulkHideStars);
 }
 
 function closeScheduleBulkEditor() {

@@ -1036,7 +1036,7 @@ body.tiffany .glass {
   backdrop-filter:blur(18px);
 }
 /* Спидометр */
-body.tiffany .sched-cell.dr      { background:rgba(184,77,107,.15); color:var(--acc); }
+body.tiffany .sched-cell.dr      { background:rgba(168,198,195,.15); color:var(--acc); }
 body.tiffany .sched-cell.dv      { background:rgba(143,192,187,.25); color:#3a6e6a; }
 body.tiffany .sched-cell.dvs     { background:rgba(143,192,187,.12); color:#6a9a96; }
 body.tiffany .sched-cell.dr-star { background:#4386f5; color:#fff; }

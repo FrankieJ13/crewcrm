@@ -7380,24 +7380,25 @@ function toggleHmbTheme(e) {
 
 
 
-// ==================== BACKGROUND ORBS ====================
+// ==================== BACKGROUND CANVAS ====================
 (function() {
   const canvas = document.getElementById('bg-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  let orbs = [];
-  const ORB_COUNT = 20;
+
   function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
   resize();
   window.addEventListener('resize', resize);
+
+  // --- Orb mode (all themes except cosmic) ---
+  const ORB_COUNT = 20;
   class Orb {
     constructor() { this.reset(); }
     reset() {
       this.x = Math.random() * canvas.width;
       this.y = Math.random() * canvas.height;
       this.baseRadius = 60 + Math.random() * 120;
-      this.radius = 0;
-      this.alpha = 0;
+      this.radius = 0; this.alpha = 0;
       this.vx = (Math.random() - 0.5) * 0.5;
       this.vy = (Math.random() - 0.5) * 0.5;
     }
@@ -7405,22 +7406,93 @@ function toggleHmbTheme(e) {
       this.x += this.vx; this.y += this.vy;
       if (this.alpha < 1) this.alpha += 0.01;
       if (this.radius < this.baseRadius) this.radius += this.baseRadius * 0.02;
-      if (this.x < -500 || this.x > canvas.width + 500 || this.y < -500 || this.y > canvas.height + 500) this.reset();
+      if (this.x < -500 || this.x > canvas.width+500 || this.y < -500 || this.y > canvas.height+500) this.reset();
     }
     draw() {
-      const isLight = (document.body.classList.contains('light')||document.body.classList.contains('tiffany'));
-      let color = isLight ? "232, 255, 71" : "50, 0, 85";
-      const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
-      gradient.addColorStop(0, `rgba(${color}, ${0.35 * this.alpha})`);
-      gradient.addColorStop(1, `rgba(${color}, 0)`);
-      ctx.fillStyle = gradient;
-      ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
+      const isLight = document.body.classList.contains('light') || document.body.classList.contains('tiffany');
+      const color = isLight ? '232,255,71' : '50,0,85';
+      const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+      g.addColorStop(0, `rgba(${color},${0.35*this.alpha})`);
+      g.addColorStop(1, `rgba(${color},0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill();
     }
   }
-  for (let i = 0; i < ORB_COUNT; i++) orbs.push(new Orb());
+  const orbs = Array.from({length: ORB_COUNT}, () => new Orb());
+
+  // --- Cosmic mesh-gradient mode ---
+  const BLOBS = [
+    { cx:0.15, cy:0.25, r:0.55, rgb:[6,182,212],  sx:0.18, sy:0.12, px:0.0, py:1.1 },
+    { cx:0.78, cy:0.18, r:0.50, rgb:[8,145,178],  sx:0.14, sy:0.20, px:0.7, py:0.3 },
+    { cx:0.50, cy:0.68, r:0.62, rgb:[22,78,99],   sx:0.22, sy:0.16, px:1.5, py:2.0 },
+    { cx:0.08, cy:0.78, r:0.45, rgb:[249,115,22], sx:0.16, sy:0.24, px:2.3, py:0.8 },
+    { cx:0.88, cy:0.62, r:0.48, rgb:[6,182,212],  sx:0.12, sy:0.18, px:3.1, py:1.7 },
+    { cx:0.42, cy:0.32, r:0.42, rgb:[249,115,22], sx:0.20, sy:0.14, px:0.5, py:2.5 },
+  ];
+  let cosmicT = 0;
+
+  function drawCosmicMesh() {
+    const w = canvas.width, h = canvas.height;
+
+    // Black base
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, w, h);
+
+    // Color blobs — screen blend makes them glow
+    ctx.globalCompositeOperation = 'screen';
+    for (const b of BLOBS) {
+      const x = (b.cx + Math.sin(cosmicT * b.sx + b.px) * 0.20) * w;
+      const y = (b.cy + Math.cos(cosmicT * b.sy + b.py) * 0.18) * h;
+      const r = b.r * Math.max(w, h) * 0.65;
+      const [r_,g_,b_] = b.rgb;
+      const gr = ctx.createRadialGradient(x, y, 0, x, y, r);
+      gr.addColorStop(0,    `rgba(${r_},${g_},${b_},0.88)`);
+      gr.addColorStop(0.45, `rgba(${r_},${g_},${b_},0.28)`);
+      gr.addColorStop(1,    `rgba(${r_},${g_},${b_},0)`);
+      ctx.fillStyle = gr;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+
+    // Wireframe mesh overlay (like the wireframe MeshGradient layer)
+    const cols = 14, rows = 9;
+    const cw = w / cols, ch = h / rows;
+    ctx.strokeStyle = 'rgba(6,182,212,0.07)';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    for (let xi = 0; xi <= cols; xi++) {
+      for (let yi = 0; yi <= rows; yi++) {
+        const nx = xi*cw + Math.sin(cosmicT*0.4 + yi*0.5) * 7;
+        const ny = yi*ch + Math.cos(cosmicT*0.3 + xi*0.5) * 7;
+        if (xi < cols) {
+          ctx.moveTo(nx, ny);
+          ctx.lineTo((xi+1)*cw + Math.sin(cosmicT*0.4 + yi*0.5)*7, ny);
+        }
+        if (yi < rows) {
+          ctx.moveTo(nx, ny);
+          ctx.lineTo(nx, (yi+1)*ch + Math.cos(cosmicT*0.3 + xi*0.5)*7);
+        }
+      }
+    }
+    ctx.stroke();
+
+    // Subtle darkening pass
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
+    ctx.fillRect(0, 0, w, h);
+
+    cosmicT += 0.004;
+  }
+
   function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    orbs.forEach(o => { o.update(); o.draw(); });
+    if (!document.hidden) {
+      if (document.body.classList.contains('cosmic')) {
+        drawCosmicMesh();
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        orbs.forEach(o => { o.update(); o.draw(); });
+      }
+    }
     requestAnimationFrame(animate);
   }
   animate();

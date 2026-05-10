@@ -71,6 +71,7 @@ body.light {
 /* ══ COSMIC THEME ══ */
 /* ══ COSMIC THEME — светлая тема ══ */
 body.cosmic {
+  background: #000 !important;
   --bg:      #f0f0f0;
   --bg2:     #e8e8e8;
   --bg3:     #dcdcdc;

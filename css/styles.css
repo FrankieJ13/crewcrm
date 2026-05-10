@@ -1207,8 +1207,8 @@ body.neo-light .hdr-greeting.aurora,
 body.cosmic .hdr-title-main.aurora,
 body.cosmic .hdr-greeting.aurora {
   background: linear-gradient(
-    90deg, #888888, #add8e6, #ffffff, #888888, #111111,
-           #888888, #add8e6, #ffffff, #888888, #111111
+    90deg, #444444, #add8e6, #888888, #111111,
+           #444444, #add8e6, #888888, #111111
   );
   background-size: 300% auto;
   -webkit-background-clip: text;

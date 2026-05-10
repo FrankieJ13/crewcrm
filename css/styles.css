@@ -2321,6 +2321,7 @@ body.cosmic .sched-nav-icon {
   display:grid;
   grid-template-columns:repeat(31, minmax(30px, 1fr));
   gap:3px;
+  padding:4px 0;
 }
 .sched-bulk-day {
   text-align:center;
@@ -2330,7 +2331,7 @@ body.cosmic .sched-nav-icon {
 }
 .sched-bulk-row {
   --sched-row-bg: var(--bg2);
-  padding:4px 0;
+  padding:0;
   border-top:1px solid var(--line);
   background:var(--sched-row-bg);
 }
@@ -2348,7 +2349,7 @@ body.cosmic .sched-nav-icon {
   align-self:stretch;
   display:flex;
   align-items:center;
-  padding:0 8px;
+  padding:6px 8px;
   background:var(--sched-row-bg);
   border-right:1px solid var(--line);
   box-shadow:-32px 0 0 var(--sched-row-bg), 12px 0 20px rgba(0,0,0,.22);

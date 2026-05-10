@@ -2039,7 +2039,7 @@ body.light .zp-row {
 #scr-grafik .w { padding-top:8px }
 .sched-nav {
   display:flex; align-items:center;
-  padding-top:0; margin-bottom:10px; gap:0;
+  padding-top:0; margin-bottom:5px; gap:0;
   position:relative;
 }
 .sched-nav-title {
@@ -2089,10 +2089,10 @@ body.cosmic .sched-nav-icon {
   display:grid; grid-template-columns:repeat(7,1fr); gap:4px;
 }
 .sched-day-hdr {
-  text-align:left; padding:6px 7px;
+  text-align:left; padding:4px 4px;
   background:var(--bg3); border-radius:8px;
-  min-height:42px;
-  display:flex; align-items:center; justify-content:center; gap:6px;
+  min-height:30px;
+  display:flex; align-items:center; justify-content:center; gap:3px;
 }
 .sd-date {
   min-width:0; flex:1;

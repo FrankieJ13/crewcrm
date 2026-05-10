@@ -3363,10 +3363,15 @@ function openSchedCellEditor(e, sheetRow, colIdx, name, dayNum) {
       <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'В*')" style="background:#ffff00;color:#222" title="Обязательный выходной день">В*</button>
     </div>
     <div class="sched-edit-pop-saving" id="sched-pop-saving" style="display:none">
-      <svg class="sched-save-anim" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="36" height="36">
-        <circle cx="20" cy="20" r="16" fill="none" stroke="currentColor" stroke-width="3" stroke-opacity="0.15"/>
-        <circle cx="20" cy="20" r="16" fill="none" stroke="currentColor" stroke-width="3"
-          stroke-dasharray="60 44" stroke-linecap="round"/>
+      <svg class="sched-save-anim" xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+          <path stroke-dasharray="64" stroke-dashoffset="64" d="M3 12c0-4.97 4.03-9 9-9c4.97 0 9 4.03 9 9c0 4.97-4.03 9-9 9c-4.97 0-9-4.03-9-9Z">
+            <animate fill="freeze" attributeName="stroke-dashoffset" dur="0.6s" values="64;0"/>
+          </path>
+          <path stroke-dasharray="14" stroke-dashoffset="14" d="M8 12l3 3l5-5">
+            <animate fill="freeze" attributeName="stroke-dashoffset" begin="0.6s" dur="0.2s" values="14;0"/>
+          </path>
+        </g>
       </svg>
     </div>
   `;

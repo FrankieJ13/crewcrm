@@ -2244,16 +2244,10 @@ body.cosmic .sched-nav-icon {
   width:36px;
   height:36px;
   color:#555;
-  animation: schedSpinAnim 0.9s linear infinite;
-  transform-origin: center;
   display:block;
 }
 body.dark .sched-save-anim,
 body.cosmic .sched-save-anim { color:#bbb; }
-@keyframes schedSpinAnim {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
 .sched-bulk-overlay {
   position:fixed;
   inset:0;

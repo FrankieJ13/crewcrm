@@ -105,6 +105,8 @@ body.cosmic header {
 }
 body.cosmic .hdr-title-main,
 body.cosmic .hdr-greeting { color: #2a2a2a !important; -webkit-text-fill-color: #2a2a2a !important; }
+body.cosmic .hdr-title-main.aurora,
+body.cosmic .hdr-greeting.aurora { color: transparent !important; -webkit-text-fill-color: transparent !important; }
 
 /* dept-card: серый градиент */
 body.cosmic .dept-card {

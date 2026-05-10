@@ -1692,7 +1692,10 @@ function morphLiveNode(cur, next) {
 function setLiveHTML(el, html) {
   if (!el) return;
   if (!S.silentRefresh || !el.children.length) {
-    const firstRender = !el.children.length;
+    // firstRender = true если контейнер пустой ИЛИ показывал лоадер (Синхронизация…)
+    // В обоих случаях анимация spring должна стартовать с нуля
+    const wasLoader = !!el.querySelector('.loader');
+    const firstRender = !el.children.length || wasLoader;
     el.innerHTML = html;
     // force=true только при первом рендере (пустой контейнер → переход на вкладку)
     scheduleAnimatedValues(el, firstRender);

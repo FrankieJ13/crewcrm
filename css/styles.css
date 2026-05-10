@@ -2038,8 +2038,8 @@ body.light .zp-row {
 #scr-grafik { padding-top:0; padding-left:0; padding-right:0; }
 #scr-grafik .w { padding-top:8px }
 .sched-nav {
-  display:flex; align-items:center; justify-content:space-between;
-  padding-top:0; margin-bottom:10px; gap:12px;
+  display:flex; align-items:center;
+  padding-top:0; margin-bottom:10px; gap:0;
   position:relative;
 }
 .sched-nav-title {
@@ -2056,6 +2056,7 @@ body.light .zp-row {
   display:flex; align-items:center; justify-content:center;
   padding:0;
   transition:opacity .15s, transform .15s;
+  margin-left:auto; margin-right:10px;
 }
 .sched-edit-btn:hover { opacity:.82; transform:scale(1.06); }
 .sched-edit-icon {

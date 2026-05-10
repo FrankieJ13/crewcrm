@@ -3152,7 +3152,7 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
 .kpi-manager-name {
   font-family:'Unbounded',sans-serif;
   font-size:18px; font-weight:800; letter-spacing:.03em;
-  color:var(--txt); margin:14px 0 10px; line-height:1.2;
+  color:var(--txt); margin:4px 0 4px; line-height:1.2;
 }
 .kpi-divider { height:1px; background:var(--line2); margin-bottom:14px; }
 .kpi-bare-text { color: var(--txt2); }

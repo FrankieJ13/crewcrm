@@ -2113,24 +2113,25 @@ body.cosmic .sched-nav-icon {
 }
 .sched-day-hdr.understaffed {
   animation: understaffedBlink 1.4s ease-in-out infinite,
-             understaffedShake 11.2s ease-in-out infinite;
+             understaffedShake 7.2s ease-in-out infinite;
 }
 @keyframes understaffedBlink {
   0%,100% { background: rgba(255,20,20,0.55); }
   50%      { background: rgba(20,80,255,0.55); }
 }
 @keyframes understaffedShake {
-  /* 0–10.7% = 1.2s тряска, остаток = 10s пауза */
+  /* 0–16.7% = 1.2s тряска, остаток = 6s пауза */
   0%         { transform: translateX(0)    rotate(0deg);  }
-  1.2%       { transform: translateX(-4px) rotate(-3deg); }
-  2.4%       { transform: translateX(4px)  rotate(3deg);  }
-  3.6%       { transform: translateX(-4px) rotate(-3deg); }
-  4.8%       { transform: translateX(4px)  rotate(3deg);  }
-  6%         { transform: translateX(-3px) rotate(-2deg); }
-  7.1%       { transform: translateX(3px)  rotate(2deg);  }
-  8.3%       { transform: translateX(-2px) rotate(-1deg); }
-  9.5%       { transform: translateX(2px)  rotate(1deg);  }
-  10.7%,100% { transform: translateX(0)    rotate(0deg);  }
+  1.7%       { transform: translateX(-4px) rotate(-3deg); }
+  3.3%       { transform: translateX(4px)  rotate(3deg);  }
+  5%         { transform: translateX(-4px) rotate(-3deg); }
+  6.7%       { transform: translateX(4px)  rotate(3deg);  }
+  8.3%       { transform: translateX(-3px) rotate(-2deg); }
+  10%        { transform: translateX(3px)  rotate(2deg);  }
+  11.7%      { transform: translateX(-2px) rotate(-1deg); }
+  13.3%      { transform: translateX(2px)  rotate(1deg);  }
+  15%        { transform: translateX(0)    rotate(0deg);  }
+  16.7%,100% { transform: translateX(0)    rotate(0deg);  }
 }
 .sched-day-hdr.today { background:var(--acc-bg); border:1px solid var(--acc-bdr); }
 .sched-day-hdr.today .sd-num { color:var(--acc) }

@@ -2048,29 +2048,20 @@ body.light .zp-row {
 }
 .sched-edit-btn {
   width:34px; height:34px;
-  border:1px solid var(--acc-bdr);
-  background:var(--acc-bg);
-  border-radius:10px;
-  cursor:pointer;
-  flex-shrink:0;
+  background:transparent; border:0;
+  cursor:pointer; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
   padding:0;
-  transition:background .15s, transform .15s;
+  transition:opacity .15s, transform .15s;
 }
-.sched-edit-btn:hover { background:var(--acc); transform:scale(1.06); }
+.sched-edit-btn:hover { opacity:.82; transform:scale(1.06); }
 .sched-edit-icon {
-  width:18px; height:18px; display:block;
+  width:24px; height:24px; display:block;
   background: var(--acc);
   mask: var(--sched-edit-icon) center / contain no-repeat;
   -webkit-mask: var(--sched-edit-icon) center / contain no-repeat;
-  transition:background .15s;
 }
-.sched-edit-btn:hover .sched-edit-icon { background: var(--bg); }
-
-/* Тёмные темы — иконка акцентного цвета (по умолчанию уже var(--acc)) */
-/* Cosmic (светлая) — иконка тёмного цвета */
 body.cosmic .sched-edit-icon { background: #1a1a1a; }
-body.cosmic .sched-edit-btn:hover .sched-edit-icon { background: #fff; }
 .sched-nav-btn {
   width:34px; height:34px; border-radius:0;
   background:transparent; border:0;

@@ -7433,22 +7433,23 @@ function toggleHmbTheme(e) {
           vnoise(p*1.4 + 2.8*q + vec2(1.7,9.2) + t*0.14),
           vnoise(p*1.4 + 2.8*q + vec2(8.3,2.8) + t*0.11)
         );
-        /* ── final noise value ── */
-        float f =vnoise(p*1.8 + 3.2*r + t*0.09);
-        float f2=vnoise(p*2.2 + 2.5*r + vec2(4.1,7.6) + t*0.07);
-        float f3=vnoise(p*1.2 + vec2(2.0*q.y, 2.0*q.x) + t*0.05);
+        /* ── combine noise layers into one 0..1 value ── */
+        float f  = vnoise(p*1.8 + 3.2*r + t*0.09);
+        float f2 = vnoise(p*2.2 + 2.5*r + vec2(4.1,7.6) + t*0.07);
+        float h  = clamp(f*0.6 + f2*0.4, 0.0, 1.0);
 
-        /* ── color palette ── */
+        /* ── sequential palette: black→teal→cyan→orange→black ──
+           Each color zone occupies exactly 1/4 of the 0..1 range,
+           so all colours are guaranteed to appear across the canvas. */
         vec3 black  = vec3(0.000,0.000,0.000);
         vec3 cyan   = vec3(0.024,0.714,0.831); /* #06b6d4 */
-        vec3 dcyan  = vec3(0.031,0.569,0.698); /* #0891b2 */
         vec3 dteal  = vec3(0.086,0.306,0.388); /* #164e63 */
         vec3 orange = vec3(0.976,0.451,0.086); /* #f97316 */
 
-        vec3 col = mix(black, dteal,  smoothstep(0.25,0.65,f));
-        col = mix(col, cyan,   smoothstep(0.40,0.75,f2));
-        col = mix(col, dcyan,  smoothstep(0.55,0.85,f3)*0.7);
-        col = mix(col, orange, smoothstep(0.60,0.90,f*f2)*0.85);
+        float s = h * 4.0;
+        vec3 a = s<1.0 ? black  : (s<2.0 ? dteal  : (s<3.0 ? cyan   : orange));
+        vec3 b = s<1.0 ? dteal  : (s<2.0 ? cyan   : (s<3.0 ? orange : black ));
+        vec3 col = mix(a, b, smoothstep(0.0,1.0,fract(s)));
 
         /* ── subtle wireframe grid ── */
         vec2 grid=fract(uv*vec2(16.0,10.0));

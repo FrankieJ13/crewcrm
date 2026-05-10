@@ -3379,6 +3379,18 @@ function openSchedCellEditor(e, sheetRow, colIdx, name, dayNum) {
         </g>
       </svg>
     </div>
+    <div class="sched-edit-pop-saving" id="sched-pop-error" style="display:none">
+      <svg class="sched-error-anim" xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+          <path stroke-dasharray="64" stroke-dashoffset="64" d="M12 3c4.97 0 9 4.03 9 9c0 4.97-4.03 9-9 9c-4.97 0-9-4.03-9-9c0-4.97 4.03-9 9-9Z">
+            <animate fill="freeze" attributeName="stroke-dashoffset" dur="0.6s" values="64;0"/>
+          </path>
+          <path stroke-dasharray="8" stroke-dashoffset="8" d="M12 12l4 4M12 12l-4-4M12 12l-4 4M12 12l4-4">
+            <animate fill="freeze" attributeName="stroke-dashoffset" begin="0.6s" dur="0.2s" values="8;0"/>
+          </path>
+        </g>
+      </svg>
+    </div>
   `;
   document.body.appendChild(pop);
   const left = Math.min(window.innerWidth - pop.offsetWidth - 10, Math.max(10, rect.left + rect.width / 2 - pop.offsetWidth / 2));
@@ -3396,9 +3408,9 @@ function schedEditorOutside(e) {
 }
 
 async function saveSchedCell(sheetRow, colIdx, value) {
-  // Скрываем кнопки, показываем спиннер
   const actions = document.getElementById('sched-pop-actions');
   const saving  = document.getElementById('sched-pop-saving');
+  const errDiv  = document.getElementById('sched-pop-error');
   if (actions) actions.style.display = 'none';
   if (saving) {
     saving.style.display = 'flex';
@@ -3410,10 +3422,25 @@ async function saveSchedCell(sheetRow, colIdx, value) {
     S.data.grafik[sheetRow - 1][colIdx] = value;
     setTimeout(() => { closeSchedCellEditor(); renderGrafik(); }, 800);
   } catch (err) {
-    // При ошибке — возвращаем кнопки
-    if (saving)  saving.style.display  = 'none';
-    if (actions) actions.style.display = '';
-    toast(err.message || 'Ошибка сохранения графика', 'e');
+    // Прячем спиннер успеха, показываем анимацию ошибки
+    if (saving) saving.style.display = 'none';
+    if (errDiv) {
+      errDiv.style.display = 'flex';
+      errDiv.classList.remove('sched-pop-red');
+      errDiv.querySelectorAll('animate').forEach(a => a.beginElement());
+      // Через 0.8s (конец анимации рисования) — красим в красный
+      setTimeout(() => errDiv.classList.add('sched-pop-red'), 800);
+      // Через 1.4s — возвращаем кнопки и показываем тост
+      setTimeout(() => {
+        errDiv.style.display = 'none';
+        errDiv.classList.remove('sched-pop-red');
+        if (actions) actions.style.display = '';
+        toast(err.message || 'Ошибка сохранения графика', 'e');
+      }, 1400);
+    } else {
+      if (actions) actions.style.display = '';
+      toast(err.message || 'Ошибка сохранения графика', 'e');
+    }
   }
 }
 

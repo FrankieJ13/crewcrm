@@ -3003,16 +3003,18 @@ async function putScheduleCell(sheetRow, colIdx, value) {
   const col = sheetColName(colIdx);
   const range = `'${sheet}'!${col}${sheetRow}:${col}${sheetRow}`;
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+  // В таблицу пишем без звёздочки (Р*/В* → Р/В), цвет форматируем отдельно
+  const sheetValue = normalizeSchedVal(value) || '';
   const resp = await fetch(url, {
     method: 'PUT',
     headers: await authHeaders({ 'Content-Type':'application/json' }),
-    body: JSON.stringify({ values: [[value]] })
+    body: JSON.stringify({ values: [[sheetValue]] })
   });
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
     throw new Error(err.error?.message || 'Ошибка сохранения графика');
   }
-  await formatScheduleCell(sheet, sheetRow, colIdx, value);
+  await formatScheduleCell(sheet, sheetRow, colIdx, value); // value с звёздочкой — для цвета
   apiCacheInvalidate(SHEETS.grafik);
 }
 

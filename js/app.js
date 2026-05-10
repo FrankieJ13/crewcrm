@@ -3408,7 +3408,7 @@ function openScheduleBulkEditor() {
     const cells = Array.from({ length: daysInMonth }, (_, i) => {
       const day = i + 1;
       const colIdx = findSchedDayCol(entry.daysRow, day);
-      const val = colIdx >= 0 ? rawSchedVal(entry.row[colIdx]) : '';
+      const val = colIdx >= 0 ? resolveSchedVal(entry.row[colIdx] || '', entry.sheetRow, colIdx) : '';
       const disabled = editable && colIdx >= 0 ? '' : 'disabled';
       const selBg = SCHED_CELL_BG[val] || '';
       const selFg = SCHED_CELL_FG[val] || '';

@@ -2265,7 +2265,7 @@ body.cosmic .sched-nav-icon {
   font-size:12px;
   font-weight:900;
 }
-.sched-bulk-sub { margin-top:3px; font-size:11px; color:var(--txt2); }
+.sched-bulk-sub { margin-top:3px; font-size:11px; color:var(--txt2); font-family:'Unbounded',sans-serif; font-weight:700; }
 .sched-bulk-close {
   width:30px; height:30px; border-radius:50%;
   border:1px solid var(--line2); background:var(--bg3);
@@ -2274,7 +2274,8 @@ body.cosmic .sched-nav-icon {
 .sched-bulk-body {
   --sched-name-col: var(--sched-name-col-dynamic, clamp(150px, 18vw, 184px));
   overflow:auto;
-  padding:12px;
+  padding:0 0 8px; /* нет горизонтальных отступов — строки заполняют всю ширину */
+  background:var(--bg2);
   scrollbar-width:thick;
   scrollbar-color:var(--acc) var(--bg3);
 }
@@ -2307,7 +2308,7 @@ body.cosmic .sched-nav-icon {
   position:sticky;
   top:0;
   z-index:8;
-  padding-bottom:6px;
+  padding:8px 0 6px;
   background:var(--bg2);
 }
 .sched-bulk-days,
@@ -2324,16 +2325,12 @@ body.cosmic .sched-nav-icon {
 }
 .sched-bulk-row {
   --sched-row-bg: var(--bg2);
-  padding:5px 0;
-  border-top:1px solid rgba(128,128,128,.12);
+  padding:4px 0;
+  border-top:1px solid var(--line);
   background:var(--sched-row-bg);
 }
-.sched-bulk-row:nth-child(odd) {
-  --sched-row-bg: color-mix(in srgb, var(--acc) 12%, var(--bg2));
-}
-.sched-bulk-row:nth-child(even) {
-  --sched-row-bg: color-mix(in srgb, var(--txt) 8%, var(--bg2));
-}
+.sched-bulk-row:nth-child(odd)  { --sched-row-bg: var(--bg3); }
+.sched-bulk-row:nth-child(even) { --sched-row-bg: var(--bg2); }
 .sched-bulk-row.locked {
   opacity:.42;
   filter:blur(.7px);
@@ -2375,7 +2372,12 @@ body.cosmic .sched-nav-icon {
   background:var(--bg3);
   color:var(--txt);
   text-align:center;
+  text-align-last:center;
   font-weight:800;
+  appearance:none;
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  cursor:pointer;
 }
 .sched-bulk-actions {
   display:flex; align-items:center; gap:4px;

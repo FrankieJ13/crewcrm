@@ -2498,6 +2498,40 @@ body.light #author {
   header     { padding:0 12px }
   .scr       { padding:12px; }
   .tab       { padding:10px 14px; font-size:13px; letter-spacing:.02em }
+
+  /* График — адаптация под узкие экраны (≤480px) */
+  .sched-week {
+    gap: 2px;
+  }
+  .sched-day-hdr {
+    padding: 4px 2px;
+    gap: 2px;
+    min-height: 36px;
+  }
+  .sched-day-hdr .sd-num {
+    font-size: 10px;
+  }
+  .sched-day-hdr .sd-dow {
+    font-size: 7px;
+    letter-spacing: 0;
+    margin-top: 1px;
+  }
+  .sd-divider {
+    height: 18px;
+  }
+  .sd-workers {
+    font-size: 9px;
+    min-width: 10px;
+  }
+  .sched-cells {
+    gap: 2px;
+    padding: 5px;
+  }
+  .sched-cell {
+    font-size: 10px;
+    padding: 6px 1px;
+    min-height: 30px;
+  }
 }
 @keyframes firework {
   to { transform: translate(var(--tx), var(--ty)) scale(0.6); opacity: 0; }

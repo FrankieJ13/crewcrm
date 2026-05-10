@@ -3366,10 +3366,7 @@ function openSchedCellEditor(e, sheetRow, colIdx, name, dayNum) {
       <svg class="sched-save-anim" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="36" height="36">
         <circle cx="20" cy="20" r="16" fill="none" stroke="currentColor" stroke-width="3" stroke-opacity="0.15"/>
         <circle cx="20" cy="20" r="16" fill="none" stroke="currentColor" stroke-width="3"
-          stroke-dasharray="60 44" stroke-linecap="round" transform="rotate(-90 20 20)">
-          <animateTransform attributeName="transform" type="rotate"
-            from="-90 20 20" to="270 20 20" dur="0.9s" repeatCount="indefinite"/>
-        </circle>
+          stroke-dasharray="60 44" stroke-linecap="round"/>
       </svg>
     </div>
   `;
@@ -3398,7 +3395,7 @@ async function saveSchedCell(sheetRow, colIdx, value) {
     await putScheduleCell(sheetRow, colIdx, value);
     if (!S.data.grafik[sheetRow - 1]) S.data.grafik[sheetRow - 1] = [];
     S.data.grafik[sheetRow - 1][colIdx] = value;
-    setTimeout(() => { closeSchedCellEditor(); renderGrafik(); }, 300);
+    setTimeout(() => { closeSchedCellEditor(); renderGrafik(); }, 800);
   } catch (err) {
     // При ошибке — возвращаем кнопки
     if (saving)  saving.style.display  = 'none';

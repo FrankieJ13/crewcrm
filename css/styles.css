@@ -2392,13 +2392,11 @@ body.cosmic .sched-nav-icon {
   transition:opacity .15s, transform .15s;
 }
 .sched-bulk-icon-btn:hover { opacity:.75; transform:scale(1.1); }
-.sched-bulk-icon {
-  width:24px; height:24px; display:block;
-  background: var(--acc);
-  mask: var(--sched-bulk-icon) center / contain no-repeat;
-  -webkit-mask: var(--sched-bulk-icon) center / contain no-repeat;
+.sched-bulk-svg {
+  display:block;
+  color: var(--acc);
 }
-body.cosmic .sched-bulk-icon { background: #1a1a1a; }
+body.cosmic .sched-bulk-svg { color: #1a1a1a; }
 .instr-block {
   border:1px solid var(--line); border-radius:var(--r2);
   overflow:hidden; margin-bottom:8px;

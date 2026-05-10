@@ -118,7 +118,7 @@ const S = {
   token:null,
   user:null,
   usersData:null,
-  data:{ otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null },
+  data:{ otchet:null, dohod:null, grafik:null, grafikFmt:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null },
   reportTab: 'dept',
   dohodTab: 'crm',
   faqTab: 'instr',
@@ -1047,7 +1047,7 @@ function onLogout() {
   if (S.token) google.accounts.oauth2.revoke(S.token, ()=>{});
   tokenExpiresAt = 0;
   S.token=null; S.user=null; S.usersData=null;
-  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null };
+  S.data = { otchet:null, dohod:null, grafik:null, grafikFmt:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null };
   ['crm_tok','crm_exp','crm_user'].forEach(k => localStorage.removeItem(k));
   document.getElementById('user-wrap').style.display = 'none';
   const _bo2 = document.getElementById('btn-out');
@@ -1232,7 +1232,7 @@ function setCurrentMonth(newSuffix) {
   currentSuffix = newSuffix;
   updateBadge();
   SHEETS = getSheetNames(currentSuffix);
-  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null };
+  S.data = { otchet:null, dohod:null, grafik:null, grafikFmt:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null };
   apiCacheInvalidate(); // сбрасываем кеш при смене месяца
   _schedWeek = null;
   const activeTab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
@@ -3016,6 +3016,7 @@ async function putScheduleCell(sheetRow, colIdx, value) {
   }
   await formatScheduleCell(sheet, sheetRow, colIdx, value); // value с звёздочкой — для цвета
   apiCacheInvalidate(SHEETS.grafik);
+  S.data.grafikFmt = null; // сбрасываем кеш цветов — перечитаем при следующем рендере
 }
 
 async function getSpreadsheetSheetId(sheetName) {
@@ -3122,10 +3123,61 @@ function parseGroup(rows, daysRow, weekDays) {
   });
 }
 
+// Определяет Р* или В* по цвету фона ячейки из Google Sheets API (float 0-1)
+function colorToSchedVariant(bg) {
+  if (!bg) return null;
+  const r = bg.red || 0, g = bg.green || 0, b = bg.blue || 0;
+  const near = (a, x) => Math.abs(a - x) < 0.06;
+  if (near(r, 0.263) && near(g, 0.525) && near(b, 0.961)) return 'Р*'; // #4386f5
+  if (near(r, 1)     && near(g, 1)     && near(b, 0))     return 'В*'; // #ffff00
+  return null;
+}
+
+// Загружает цвета заливки ячеек листа ГРАФИКИ и кеширует в S.data.grafikFmt
+// grafikFmt — объект вида { rowIndex: { colIndex: 'Р*'|'В*' } }, индексы 0-based
+async function fetchGrafikFmt() {
+  try {
+    const range  = encodeURIComponent(`'${SHEETS.grafik}'!A1:AI25`);
+    const fields = 'sheets.data.rowData.values.userEnteredFormat.backgroundColor';
+    const url    = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}`
+                 + `?ranges=${range}&fields=${fields}&includeGridData=true`;
+    const resp = await fetch(url, { headers: await authHeaders() });
+    if (!resp.ok) { S.data.grafikFmt = {}; return; }
+    const data    = await resp.json();
+    const rowData = data?.sheets?.[0]?.data?.[0]?.rowData || [];
+    const fmt     = {};
+    rowData.forEach((row, ri) => {
+      (row.values || []).forEach((cell, ci) => {
+        const variant = colorToSchedVariant(cell?.userEnteredFormat?.backgroundColor);
+        if (variant) { (fmt[ri] = fmt[ri] || {})[ci] = variant; }
+      });
+    });
+    S.data.grafikFmt = fmt;
+  } catch (e) {
+    S.data.grafikFmt = {};
+  }
+}
+
+// Возвращает значение ячейки с учётом цвета из Sheets (textVal — то, что читаем из массива данных)
+function resolveSchedVal(textVal, sheetRow, colIdx) {
+  const variant = S.data.grafikFmt?.[sheetRow - 1]?.[colIdx];
+  if (!variant) return textVal;
+  const norm = normalizeSchedVal(textVal);
+  if (variant === 'Р*' && norm === 'Р') return 'Р*';
+  if (variant === 'В*' && norm === 'В') return 'В*';
+  return textVal;
+}
+
 function renderGrafik() {
   const el  = document.getElementById('c-grafik');
   const raw = S.data.grafik;
   if (!raw || raw.length < 3) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
+
+  // Загружаем цвета заливки из Sheets, если ещё не загружены; после загрузки перерисуем
+  if (S.data.grafikFmt === null) {
+    S.data.grafikFmt = 'loading'; // sentinel — не запускать повторно
+    fetchGrafikFmt().then(() => { if (document.getElementById('c-grafik')) renderGrafik(); });
+  }
 
   const mo    = parseInt(currentSuffix.slice(0,2));
   const yr    = 2000 + parseInt(currentSuffix.slice(2,4));
@@ -3178,7 +3230,9 @@ function renderGrafik() {
     const cells = weekDays.map(dayNum => {
       if (!entry) return '';
       const colIdx = findSchedDayCol(daysRow, dayNum);
-      return colIdx >= 0 ? (entry.row[colIdx] || '') : '';
+      if (colIdx < 0) return '';
+      const textVal = entry.row[colIdx] || '';
+      return resolveSchedVal(textVal, entry.sheetRow, colIdx);
     });
     return { name, cells, found: !!entry, entry };
   }
@@ -4389,7 +4443,7 @@ function showAccessDenied(reason = 'Почта не найдена в USERS') {
   S.token = null;
   S.user = null;
   S.usersData = null;
-  S.data = { otchet:null, dohod:null, grafik:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null };
+  S.data = { otchet:null, dohod:null, grafik:null, grafikFmt:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null };
   ['crm_tok','crm_exp','crm_user'].forEach(k => localStorage.removeItem(k));
   document.getElementById('main-nav').style.display = 'none';
   document.getElementById('main-dock').style.display = 'none';

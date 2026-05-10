@@ -3356,13 +3356,22 @@ function openSchedCellEditor(e, sheetRow, colIdx, name, dayNum) {
   pop.className = 'sched-edit-pop';
   pop.innerHTML = `
     <div class="sched-edit-pop-title">${escapeHtml(name)} · ${dayNum}</div>
-    <div class="sched-edit-pop-actions">
+    <div class="sched-edit-pop-actions" id="sched-pop-actions">
       <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'Р')" title="Рабочий день">Р</button>
       <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'Р*')" style="background:#4386f5;color:#fff" title="Рабочий день + проверка анкет">Р*</button>
       <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'В')" style="background:#f50e02;color:#fff" title="Выходной день">В</button>
       <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'В*')" style="background:#ffff00;color:#222" title="Обязательный выходной день">В*</button>
     </div>
-    <div class="sched-edit-pop-status" id="sched-pop-status"></div>
+    <div class="sched-edit-pop-saving" id="sched-pop-saving" style="display:none">
+      <svg class="sched-save-anim" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="36" height="36">
+        <circle cx="20" cy="20" r="16" fill="none" stroke="currentColor" stroke-width="3" stroke-opacity="0.15"/>
+        <circle cx="20" cy="20" r="16" fill="none" stroke="currentColor" stroke-width="3"
+          stroke-dasharray="60 44" stroke-linecap="round" transform="rotate(-90 20 20)">
+          <animateTransform attributeName="transform" type="rotate"
+            from="-90 20 20" to="270 20 20" dur="0.9s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+    </div>
   `;
   document.body.appendChild(pop);
   const left = Math.min(window.innerWidth - pop.offsetWidth - 10, Math.max(10, rect.left + rect.width / 2 - pop.offsetWidth / 2));
@@ -3380,16 +3389,20 @@ function schedEditorOutside(e) {
 }
 
 async function saveSchedCell(sheetRow, colIdx, value) {
-  const status = document.getElementById('sched-pop-status');
+  // Скрываем кнопки, показываем спиннер
+  const actions = document.getElementById('sched-pop-actions');
+  const saving  = document.getElementById('sched-pop-saving');
+  if (actions) actions.style.display = 'none';
+  if (saving)  saving.style.display  = 'flex';
   try {
-    if (status) { status.className = 'sched-edit-pop-status saving'; status.textContent = 'Сохранение...'; }
     await putScheduleCell(sheetRow, colIdx, value);
     if (!S.data.grafik[sheetRow - 1]) S.data.grafik[sheetRow - 1] = [];
     S.data.grafik[sheetRow - 1][colIdx] = value;
-    if (status) { status.className = 'sched-edit-pop-status saved'; status.textContent = 'Сохранено'; }
-    setTimeout(() => { closeSchedCellEditor(); renderGrafik(); }, 350);
+    setTimeout(() => { closeSchedCellEditor(); renderGrafik(); }, 300);
   } catch (err) {
-    if (status) { status.className = 'sched-edit-pop-status err'; status.textContent = 'Ошибка сохранения'; }
+    // При ошибке — возвращаем кнопки
+    if (saving)  saving.style.display  = 'none';
+    if (actions) actions.style.display = '';
     toast(err.message || 'Ошибка сохранения графика', 'e');
   }
 }

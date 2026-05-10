@@ -2225,19 +2225,28 @@ body.cosmic .sched-nav-icon {
   cursor:pointer;
 }
 .sched-edit-pop-actions button:hover { background:var(--acc); color:var(--bg); }
-.sched-edit-pop-status,
 .sched-bulk-status {
   min-height:14px;
   margin-top:7px;
   font-size:10px;
   color:var(--txt3);
 }
-.sched-edit-pop-status.saving,
 .sched-bulk-status.saving { color:var(--org); }
-.sched-edit-pop-status.saved,
 .sched-bulk-status.saved { color:var(--grn); }
-.sched-edit-pop-status.err,
 .sched-bulk-status.err { color:var(--red); }
+.sched-edit-pop-saving {
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:6px 0 2px;
+}
+.sched-save-anim {
+  width:36px;
+  height:36px;
+  color:#555;
+}
+body.dark .sched-save-anim,
+body.cosmic .sched-save-anim { color:#bbb; }
 .sched-bulk-overlay {
   position:fixed;
   inset:0;

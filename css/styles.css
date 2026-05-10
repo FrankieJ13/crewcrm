@@ -2035,7 +2035,7 @@ body.light .zp-row {
   margin:0; width:100%; height:100%;
 }
 .medal-btn:hover { transform:scale(1.25); }
-#scr-grafik { padding-top:0 }
+#scr-grafik { padding-top:0; padding-left:0; padding-right:0; }
 #scr-grafik .w { padding-top:8px }
 .sched-nav {
   display:flex; align-items:center; justify-content:space-between;

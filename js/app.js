@@ -7382,21 +7382,131 @@ function toggleHmbTheme(e) {
 
 // ==================== BACKGROUND CANVAS ====================
 (function() {
-  const canvas = document.getElementById('bg-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
+  const canvas2d = document.getElementById('bg-canvas');
+  if (!canvas2d) return;
 
-  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-  resize();
-  window.addEventListener('resize', resize);
+  // ── WebGL canvas for cosmic mesh gradient ──────────────────────────────
+  const glCanvas = document.createElement('canvas');
+  glCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;display:none';
+  document.body.insertBefore(glCanvas, canvas2d);
 
-  // --- Orb mode (all themes except cosmic) ---
+  const gl = glCanvas.getContext('webgl') || glCanvas.getContext('experimental-webgl');
+
+  let glReady = false, uTime, uRes;
+
+  if (gl) {
+    const VS = `
+      attribute vec2 a_pos;
+      void main(){gl_Position=vec4(a_pos,0.0,1.0);}
+    `;
+    // Domain-warped gradient noise — same technique as @paper-design/shaders MeshGradient
+    const FS = `
+      precision highp float;
+      uniform float u_time;
+      uniform vec2  u_res;
+
+      float hash(vec2 p){
+        p=fract(p*vec2(234.34,435.345));
+        p+=dot(p,p+34.23);
+        return fract(p.x*p.y);
+      }
+      float vnoise(vec2 p){
+        vec2 i=floor(p),f=fract(p);
+        f=f*f*(3.0-2.0*f);
+        float a=hash(i),b=hash(i+vec2(1,0)),c=hash(i+vec2(0,1)),d=hash(i+vec2(1,1));
+        return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);
+      }
+
+      void main(){
+        vec2 uv=gl_FragCoord.xy/u_res;
+        float ar=u_res.x/u_res.y;
+        vec2 p=vec2(uv.x*ar, uv.y);
+        float t=u_time*0.13;
+
+        /* ── layer 1: warp UV ── */
+        vec2 q=vec2(
+          vnoise(p*1.6 + vec2(0.0,0.0) + t*0.28),
+          vnoise(p*1.6 + vec2(5.2,1.3) + t*0.22)
+        );
+        /* ── layer 2: warp the warp ── */
+        vec2 r=vec2(
+          vnoise(p*1.4 + 2.8*q + vec2(1.7,9.2) + t*0.14),
+          vnoise(p*1.4 + 2.8*q + vec2(8.3,2.8) + t*0.11)
+        );
+        /* ── final noise value ── */
+        float f =vnoise(p*1.8 + 3.2*r + t*0.09);
+        float f2=vnoise(p*2.2 + 2.5*r + vec2(4.1,7.6) + t*0.07);
+        float f3=vnoise(p*1.2 + vec2(2.0*q.y, 2.0*q.x) + t*0.05);
+
+        /* ── color palette ── */
+        vec3 black  = vec3(0.000,0.000,0.000);
+        vec3 cyan   = vec3(0.024,0.714,0.831); /* #06b6d4 */
+        vec3 dcyan  = vec3(0.031,0.569,0.698); /* #0891b2 */
+        vec3 dteal  = vec3(0.086,0.306,0.388); /* #164e63 */
+        vec3 orange = vec3(0.976,0.451,0.086); /* #f97316 */
+
+        vec3 col = mix(black, dteal,  smoothstep(0.25,0.65,f));
+        col = mix(col, cyan,   smoothstep(0.40,0.75,f2));
+        col = mix(col, dcyan,  smoothstep(0.55,0.85,f3)*0.7);
+        col = mix(col, orange, smoothstep(0.60,0.90,f*f2)*0.85);
+
+        /* ── subtle wireframe grid ── */
+        vec2 grid=fract(uv*vec2(16.0,10.0));
+        float lw=0.018;
+        float lines=smoothstep(lw,0.0,grid.x)+smoothstep(1.0-lw,1.0,grid.x)
+                   +smoothstep(lw,0.0,grid.y)+smoothstep(1.0-lw,1.0,grid.y);
+        col=mix(col,cyan,clamp(lines,0.0,1.0)*0.06);
+
+        /* ── vignette ── */
+        float vig=1.0-dot(uv-0.5,uv-0.5)*1.6;
+        col*=clamp(vig,0.0,1.0);
+
+        gl_FragColor=vec4(col,1.0);
+      }
+    `;
+
+    function mkShader(type, src) {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, src); gl.compileShader(s); return s;
+    }
+    const prog = gl.createProgram();
+    gl.attachShader(prog, mkShader(gl.VERTEX_SHADER, VS));
+    gl.attachShader(prog, mkShader(gl.FRAGMENT_SHADER, FS));
+    gl.linkProgram(prog);
+    if (gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      gl.useProgram(prog);
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+      const aPos = gl.getAttribLocation(prog, 'a_pos');
+      gl.enableVertexAttribArray(aPos);
+      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+      uTime = gl.getUniformLocation(prog, 'u_time');
+      uRes  = gl.getUniformLocation(prog, 'u_res');
+      glReady = true;
+    }
+  }
+
+  function resizeGL() {
+    glCanvas.width  = window.innerWidth;
+    glCanvas.height = window.innerHeight;
+    if (gl) gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+  }
+  resizeGL();
+
+  // ── Canvas 2D for orbs (all non-cosmic themes) ──────────────────────────
+  const ctx = canvas2d.getContext('2d');
+  function resize2d() { canvas2d.width = window.innerWidth; canvas2d.height = window.innerHeight; }
+  resize2d();
+
+  window.addEventListener('resize', () => { resize2d(); resizeGL(); });
+
   const ORB_COUNT = 20;
   class Orb {
     constructor() { this.reset(); }
     reset() {
-      this.x = Math.random() * canvas.width;
-      this.y = Math.random() * canvas.height;
+      this.x = Math.random() * canvas2d.width;
+      this.y = Math.random() * canvas2d.height;
       this.baseRadius = 60 + Math.random() * 120;
       this.radius = 0; this.alpha = 0;
       this.vx = (Math.random() - 0.5) * 0.5;
@@ -7406,7 +7516,7 @@ function toggleHmbTheme(e) {
       this.x += this.vx; this.y += this.vy;
       if (this.alpha < 1) this.alpha += 0.01;
       if (this.radius < this.baseRadius) this.radius += this.baseRadius * 0.02;
-      if (this.x < -500 || this.x > canvas.width+500 || this.y < -500 || this.y > canvas.height+500) this.reset();
+      if (this.x < -500 || this.x > canvas2d.width+500 || this.y < -500 || this.y > canvas2d.height+500) this.reset();
     }
     draw() {
       const isLight = document.body.classList.contains('light') || document.body.classList.contains('tiffany');
@@ -7420,82 +7530,28 @@ function toggleHmbTheme(e) {
   }
   const orbs = Array.from({length: ORB_COUNT}, () => new Orb());
 
-  // --- Cosmic mesh-gradient mode ---
-  const BLOBS = [
-    { cx:0.15, cy:0.25, r:0.55, rgb:[6,182,212],  sx:0.18, sy:0.12, px:0.0, py:1.1 },
-    { cx:0.78, cy:0.18, r:0.50, rgb:[8,145,178],  sx:0.14, sy:0.20, px:0.7, py:0.3 },
-    { cx:0.50, cy:0.68, r:0.62, rgb:[22,78,99],   sx:0.22, sy:0.16, px:1.5, py:2.0 },
-    { cx:0.08, cy:0.78, r:0.45, rgb:[249,115,22], sx:0.16, sy:0.24, px:2.3, py:0.8 },
-    { cx:0.88, cy:0.62, r:0.48, rgb:[6,182,212],  sx:0.12, sy:0.18, px:3.1, py:1.7 },
-    { cx:0.42, cy:0.32, r:0.42, rgb:[249,115,22], sx:0.20, sy:0.14, px:0.5, py:2.5 },
-  ];
-  let cosmicT = 0;
-
-  function drawCosmicMesh() {
-    const w = canvas.width, h = canvas.height;
-
-    // Black base
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, w, h);
-
-    // Color blobs — screen blend makes them glow
-    ctx.globalCompositeOperation = 'screen';
-    for (const b of BLOBS) {
-      const x = (b.cx + Math.sin(cosmicT * b.sx + b.px) * 0.20) * w;
-      const y = (b.cy + Math.cos(cosmicT * b.sy + b.py) * 0.18) * h;
-      const r = b.r * Math.max(w, h) * 0.65;
-      const [r_,g_,b_] = b.rgb;
-      const gr = ctx.createRadialGradient(x, y, 0, x, y, r);
-      gr.addColorStop(0,    `rgba(${r_},${g_},${b_},0.88)`);
-      gr.addColorStop(0.45, `rgba(${r_},${g_},${b_},0.28)`);
-      gr.addColorStop(1,    `rgba(${r_},${g_},${b_},0)`);
-      ctx.fillStyle = gr;
-      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
-    }
-    ctx.globalCompositeOperation = 'source-over';
-
-    // Wireframe mesh overlay (like the wireframe MeshGradient layer)
-    const cols = 14, rows = 9;
-    const cw = w / cols, ch = h / rows;
-    ctx.strokeStyle = 'rgba(6,182,212,0.07)';
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    for (let xi = 0; xi <= cols; xi++) {
-      for (let yi = 0; yi <= rows; yi++) {
-        const nx = xi*cw + Math.sin(cosmicT*0.4 + yi*0.5) * 7;
-        const ny = yi*ch + Math.cos(cosmicT*0.3 + xi*0.5) * 7;
-        if (xi < cols) {
-          ctx.moveTo(nx, ny);
-          ctx.lineTo((xi+1)*cw + Math.sin(cosmicT*0.4 + yi*0.5)*7, ny);
-        }
-        if (yi < rows) {
-          ctx.moveTo(nx, ny);
-          ctx.lineTo(nx, (yi+1)*ch + Math.cos(cosmicT*0.3 + xi*0.5)*7);
-        }
-      }
-    }
-    ctx.stroke();
-
-    // Subtle darkening pass
-    ctx.fillStyle = 'rgba(0,0,0,0.22)';
-    ctx.fillRect(0, 0, w, h);
-
-    cosmicT += 0.004;
-  }
-
-  function animate() {
+  let t0 = null;
+  function animate(ts) {
     if (!document.hidden) {
       if (document.body.classList.contains('cosmic')) {
-        drawCosmicMesh();
+        glCanvas.style.display  = '';
+        canvas2d.style.display  = 'none';
+        if (glReady) {
+          if (t0 === null) t0 = ts;
+          gl.uniform1f(uTime, (ts - t0) * 0.001);
+          gl.uniform2f(uRes,  glCanvas.width, glCanvas.height);
+          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        }
       } else {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        glCanvas.style.display  = 'none';
+        canvas2d.style.display  = '';
+        ctx.clearRect(0, 0, canvas2d.width, canvas2d.height);
         orbs.forEach(o => { o.update(); o.draw(); });
       }
     }
     requestAnimationFrame(animate);
   }
-  animate();
+  requestAnimationFrame(animate);
 })();
 
 // ==================== MATRIX TEXT EFFECT ====================

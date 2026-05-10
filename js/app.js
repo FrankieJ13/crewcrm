@@ -2709,19 +2709,20 @@ function renderDohod() {
     }
     const crmSum  = n(d.detail.crm.vis)+n(d.detail.crm.kred)+n(d.detail.crm.nal)+n(d.detail.crm.obmen)+n(d.detail.crm.kom)+n(d.detail.crm.zadatok);
     const warmSum = n(d.detail.warm.vis)+n(d.detail.warm.kred)+n(d.detail.warm.nal)+n(d.detail.warm.obmen)+n(d.detail.warm.kom);
-    const oklad   = n(d.detail.oklad);
-    const kotel   = n(d.detail.kotel);
-    const premium = n(d.detail.premium);
-    const fundCount = d.detail.fundCount || '—';
-    const factKoef = d.fact.koef;
-    const progKoef = d.prognoz.koef;
-    const okladLbl = d.detail.workedR != null ? `Оклад (${d.detail.workedR}/${d.detail.totalR} дн.)` : 'Оклад';
+    const oklad      = n(d.detail.oklad);
+    const baseOklad  = n(d.detail.baseOklad) || oklad;
+    const kotel      = n(d.detail.kotel);
+    const premium    = n(d.detail.premium);
+    const fundCount  = d.detail.fundCount || '—';
+    const factKoef   = d.fact.koef;
+    const progKoef   = d.prognoz.koef;
+    const okladLbl   = d.detail.workedR != null ? `Оклад (${d.detail.workedR}/${d.detail.totalR} дн.)` : 'Оклад';
     const okladFormula = d.detail.workedR != null
-      ? `(${fmtRub(d.detail.baseOklad)}÷${d.detail.totalR}×${d.detail.workedR}) + (${fmtRub(Math.round(premium))} × ${factKoef.toFixed(1)}) = ${fmtRub(Math.round(d.fact.total))}`
+      ? `(${fmtRub(baseOklad)}÷${d.detail.totalR}×${d.detail.workedR}) + (${fmtRub(Math.round(premium))} × ${factKoef.toFixed(1)}) = ${fmtRub(Math.round(d.fact.total))}`
       : `${fmtRub(oklad)} + (${fmtRub(Math.round(premium))} × ${factKoef.toFixed(1)}) = ${fmtRub(Math.round(d.fact.total))}`;
-    const okladRow = oklad > 0 ? `<div class="income-sec-title">Оклад</div>${subtotal(okladLbl, oklad)}` : '';
-    const kotelRow = (d.detail.inFund && kotel > 0) ? `<div class="income-sec-title">Котёл</div><div style="font-size:10px;color:var(--txt2);margin-bottom:6px">Участников котла: ${fundCount}</div>${subtotal('Доля котла', kotel)}` : '';
-    const noKoefTotal = Math.round(oklad + crmSum + warmSum + kotel);
+    const okladRow   = oklad > 0 ? `<div class="income-sec-title">Оклад</div>${subtotal(okladLbl, oklad)}` : '';
+    const kotelRow   = (d.detail.inFund && kotel > 0) ? `<div class="income-sec-title">Котёл</div><div style="font-size:10px;color:var(--txt2);margin-bottom:6px">Участников котла: ${fundCount}</div>${subtotal('Доля котла', kotel)}` : '';
+    const noKoefTotal = Math.round(baseOklad + crmSum + warmSum + kotel);
     const noKoefRow = `<div class="income-sec-title">Без коэффициентов</div>${subtotal('Оклад 100% + Премия + Котёл', noKoefTotal)}`;
 
     setLiveHTML(el, `
@@ -5205,14 +5206,15 @@ function openIncomeDetail(btn) {
   }
   const crmSum  = n(d.crm.vis)+n(d.crm.kred)+n(d.crm.nal)+n(d.crm.obmen)+n(d.crm.kom)+n(d.crm.zadatok);
   const warmSum = n(d.warm.vis)+n(d.warm.kred)+n(d.warm.nal)+n(d.warm.obmen)+n(d.warm.kom);
-  const oklad   = n(d.oklad);
-  const kotel   = n(d.kotel);
-  const premium = n(d.premium) || (crmSum + warmSum + kotel);
-  const fundCount = d.fundCount || '—';
+  const oklad      = n(d.oklad);
+  const baseOklad  = n(d.baseOklad) || oklad;
+  const kotel      = n(d.kotel);
+  const premium    = n(d.premium) || (crmSum + warmSum + kotel);
+  const fundCount  = d.fundCount || '—';
 
   const okladRow = oklad > 0 ? `<div class="income-sec-title">Оклад</div>${subtotal(d.workedR != null ? `Оклад (${d.workedR}/${d.totalR} дн.)` : 'Оклад', oklad)}` : '';
   const kotelRow = (d.inFund && kotel > 0) ? `<div class="income-sec-title">Котёл</div><div style="font-size:10px;color:var(--txt2);margin-bottom:6px">Участников котла: ${fundCount}</div>${subtotal('Доля котла', kotel)}` : '';
-  const noKoefTotal = Math.round(oklad + crmSum + warmSum + kotel);
+  const noKoefTotal = Math.round(baseOklad + crmSum + warmSum + kotel);
   const noKoefRow = `<div class="income-sec-title">Без коэффициентов</div>${subtotal('Оклад 100% + Премия + Котёл', noKoefTotal)}`;
   const factKoef = d.fact ? d.fact.koef : null;
   const progKoef = d.prognoz ? d.prognoz.koef : null;

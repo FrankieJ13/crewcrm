@@ -3258,8 +3258,15 @@ function renderGrafik() {
       const cells = p.cells.map((val, wi) => {
         const norm = normalizeSchedVal(val);
         const raw  = rawSchedVal(val);
-        const cls  = norm==='Р'?'dr':norm==='В'?'dv':norm==='ВС'?'dvs':val?'':'empty';
-        const extraStyle = schedCellAppStyle(raw);
+        // Р* и В* получают свои классы dr-star/dv-star (без inline-стиля)
+        // чтобы !important правила тем не затирали их цвета
+        let cls, extraStyle;
+        if (raw === 'Р*')      { cls = 'dr-star'; extraStyle = ''; }
+        else if (raw === 'В*') { cls = 'dv-star'; extraStyle = ''; }
+        else {
+          cls = norm==='Р'?'dr':norm==='В'?'dv':norm==='ВС'?'dvs':val?'':'empty';
+          extraStyle = schedCellAppStyle(raw); // для В — inline #f50e02
+        }
         const entry = p.entry;
         const dayNum = week[wi]?.day || 0;
         const colIdx = entry ? findSchedDayCol(entry.daysRow, dayNum) : -1;

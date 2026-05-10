@@ -227,9 +227,11 @@ body.cosmic .income-col .ic-koef {
   box-shadow: 0 2px 8px rgba(0,0,0,.14);
 }
 
-/* График: Р и В — постельные цвета */
-body.cosmic .sched-cell.dr { background: rgba(48,192,90,.18) !important; color: #1a6b35 !important; }
-body.cosmic .sched-cell.dv { background: rgba(255,69,58,.12) !important; color: #8b1a1a !important; }
+/* График: Р и В — постельные цвета; Р* и В* сохраняют фирменные цвета */
+body.cosmic .sched-cell.dr     { background: rgba(48,192,90,.18) !important; color: #1a6b35 !important; }
+body.cosmic .sched-cell.dv     { background: rgba(255,69,58,.12) !important; color: #8b1a1a !important; }
+body.cosmic .sched-cell.dr-star { background: #4386f5 !important; color: #fff !important; }
+body.cosmic .sched-cell.dv-star { background: #ffff00 !important; color: #222 !important; }
 body.cosmic .sched-person-name { color: #000 !important; }
 
 /* mm и income-badge */
@@ -617,9 +619,13 @@ body.neo-light .income-badge {
 body.neo-dark .sched-cell.dr,
 body.neo-dark .sched-cell.dv,
 body.neo-dark .sched-cell.dvs,
+body.neo-dark .sched-cell.dr-star,
+body.neo-dark .sched-cell.dv-star,
 body.neo-light .sched-cell.dr,
 body.neo-light .sched-cell.dv,
-body.neo-light .sched-cell.dvs {
+body.neo-light .sched-cell.dvs,
+body.neo-light .sched-cell.dr-star,
+body.neo-light .sched-cell.dv-star {
   box-shadow: var(--neo-shadow-inset);
   border-radius: var(--r);
 }
@@ -1030,9 +1036,11 @@ body.tiffany .glass {
   backdrop-filter:blur(18px);
 }
 /* Спидометр */
-body.tiffany .sched-cell.dr  { background:rgba(184,77,107,.15); color:var(--acc); }
-body.tiffany .sched-cell.dv  { background:rgba(143,192,187,.25); color:#3a6e6a; }
-body.tiffany .sched-cell.dvs { background:rgba(143,192,187,.12); color:#6a9a96; }
+body.tiffany .sched-cell.dr      { background:rgba(184,77,107,.15); color:var(--acc); }
+body.tiffany .sched-cell.dv      { background:rgba(143,192,187,.25); color:#3a6e6a; }
+body.tiffany .sched-cell.dvs     { background:rgba(143,192,187,.12); color:#6a9a96; }
+body.tiffany .sched-cell.dr-star { background:#4386f5; color:#fff; }
+body.tiffany .sched-cell.dv-star { background:#ffff00; color:#222; }
 /* Коэффициенты */
 body.tiffany .ic-koef        { background:rgba(248,252,251,.92) !important; }
 /* income-col карточки */
@@ -2150,6 +2158,8 @@ body.cosmic .sched-nav-icon {
 .sched-cell.dr  { background:rgba(46,213,115,.12); color:var(--grn) }
 .sched-cell.dv  { background:rgba(255,71,87,.12);  color:var(--red) }
 .sched-cell.dvs { background:rgba(130,130,130,.1); color:var(--txt3) }
+.sched-cell.dr-star { background:#4386f5; color:#fff }
+.sched-cell.dv-star { background:#ffff00; color:#222 }
 .sched-cell.empty { color:var(--txt3); opacity:.4 }
 .sched-cell.today-col { outline:2px solid var(--acc); outline-offset:-2px; border-radius:6px; }
 .sched-edit-pop {

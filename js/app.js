@@ -3395,7 +3395,10 @@ async function saveSchedCell(sheetRow, colIdx, value) {
   const actions = document.getElementById('sched-pop-actions');
   const saving  = document.getElementById('sched-pop-saving');
   if (actions) actions.style.display = 'none';
-  if (saving)  saving.style.display  = 'flex';
+  if (saving) {
+    saving.style.display = 'flex';
+    saving.querySelectorAll('animate').forEach(a => a.beginElement());
+  }
   try {
     await putScheduleCell(sheetRow, colIdx, value);
     if (!S.data.grafik[sheetRow - 1]) S.data.grafik[sheetRow - 1] = [];

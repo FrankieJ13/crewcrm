@@ -2169,6 +2169,13 @@ body.cosmic .sched-nav-icon {
   font-family:'Unbounded',sans-serif;
   min-height:36px; display:flex; align-items:center; justify-content:center;
 }
+.sched-cell.editing {
+  animation: schedCellPulse 1s ease-in-out infinite;
+}
+@keyframes schedCellPulse {
+  0%,100% { transform: scale(1);    opacity: 1;    }
+  50%      { transform: scale(1.08); opacity: 0.75; }
+}
 .sched-cell.editable {
   cursor:pointer;
   border:1px solid var(--acc-bdr);

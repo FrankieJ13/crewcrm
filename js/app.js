@@ -3340,6 +3340,7 @@ function closeSchedCellEditor() {
     _schedEditPopover.remove();
     _schedEditPopover = null;
   }
+  document.querySelectorAll('.sched-cell.editing').forEach(el => el.classList.remove('editing'));
 }
 
 function openSchedCellEditor(e, sheetRow, colIdx, name, dayNum) {
@@ -3349,6 +3350,7 @@ function openSchedCellEditor(e, sheetRow, colIdx, name, dayNum) {
   closeSchedCellEditor();
 
   const target = e.currentTarget;
+  target.classList.add('editing');
   const rect = target.getBoundingClientRect();
   const pop = document.createElement('div');
   pop.className = 'sched-edit-pop';

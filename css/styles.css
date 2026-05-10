@@ -2384,6 +2384,7 @@ body.cosmic .sched-nav-icon {
   text-align:center;
   text-align-last:center;
   font-family:'Unbounded',sans-serif;
+  font-size:14px;
   font-weight:800;
   appearance:none;
   -webkit-appearance:none;

@@ -925,7 +925,9 @@ body.cinematic ::-webkit-scrollbar-thumb { background: #2a2520; }
 body.cinematic ::-webkit-scrollbar-thumb:hover { background: var(--acc); }
 
 /* ══ TIFFANY THEME ══ */
-body.tiffany {  --bg:      #A9C7C3;
+body.tiffany {
+  background: #b5d9d9 !important;
+  --bg:      #A9C7C3;
   --bg2:     #F4EFE7;
   --bg3:     #e5dfd4;
   --line:    #8FB3AE;

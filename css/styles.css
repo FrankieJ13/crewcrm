@@ -1139,7 +1139,7 @@ body:not(.login-active) .page-footer { display: none; }
   padding:0 10px;
   box-sizing:border-box;
 }
-.scr { display:none; padding:0 0 10px 0; animation:up .2s ease }
+.scr { display:none; padding:0 0 10px; animation:up .2s ease }
 .scr.on { display:block }
 @keyframes up { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 header {
@@ -2528,7 +2528,7 @@ body.light #author {
   .sum-grid  { grid-template-columns:1fr 1fr }
   .mop-grid4 { grid-template-columns:repeat(2,1fr) }
   header     { padding:0 12px }
-  .scr       { padding:12px; }
+  .scr       { padding:12px 0; }
   .tab       { padding:10px 14px; font-size:13px; letter-spacing:.02em }
 
   /* График — адаптация под узкие экраны (≤480px) */

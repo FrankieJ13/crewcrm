@@ -2085,7 +2085,7 @@ body.cosmic .sched-nav-icon {
 }
 .sched-day-hdr .sd-num {
   font-family:'Unbounded',sans-serif;
-  font-size:13px; font-weight:800; line-height:1;
+  font-size:11px; font-weight:800; line-height:1;
 }
 .sched-day-hdr .sd-dow {
   font-size:9px; color:var(--txt2);
@@ -2097,7 +2097,7 @@ body.cosmic .sched-nav-icon {
 }
 .sd-workers {
   font-family:'Unbounded',sans-serif;
-  font-size:12px; font-weight:800; color:var(--acc);
+  font-size:10px; font-weight:800; color:var(--acc);
   min-width:16px; text-align:center; line-height:1;
 }
 .sched-day-hdr.understaffed {

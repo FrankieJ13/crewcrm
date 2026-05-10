@@ -2914,7 +2914,8 @@ body.cosmic #presence-popover::before {
   padding:9px 6px; text-align:center; backdrop-filter:blur(4px);
 }
 body.light .income-badge { background:rgba(0,0,0,0.03); }
-.income-badge .ib-lbl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px; }
+.income-badge .ib-lbl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px; }
+.income-badge .ib-cnt { font-size:10px; color:var(--txt2); margin-bottom:2px; }
 .income-badge .ib-val { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:800; color:var(--txt); }
 .income-subtotal {
   background:var(--acc-bg); border:1px solid var(--acc-bdr);

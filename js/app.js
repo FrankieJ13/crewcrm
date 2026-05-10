@@ -3279,10 +3279,10 @@ function openSchedCellEditor(e, sheetRow, colIdx, name, dayNum) {
   pop.innerHTML = `
     <div class="sched-edit-pop-title">${escapeHtml(name)} · ${dayNum}</div>
     <div class="sched-edit-pop-actions">
-      <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'Р')">Р</button>
-      <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'Р*')" style="background:#4386f5;color:#fff">Р*</button>
-      <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'В')" style="background:#f50e02;color:#fff">В</button>
-      <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'В*')" style="background:#ffff00;color:#222">В*</button>
+      <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'Р')" title="Рабочий день">Р</button>
+      <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'Р*')" style="background:#4386f5;color:#fff" title="Рабочий день + проверка анкет">Р*</button>
+      <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'В')" style="background:#f50e02;color:#fff" title="Выходной день">В</button>
+      <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'В*')" style="background:#ffff00;color:#222" title="Обязательный выходной день">В*</button>
     </div>
     <div class="sched-edit-pop-status" id="sched-pop-status"></div>
   `;

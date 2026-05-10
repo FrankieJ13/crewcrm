@@ -2297,13 +2297,17 @@ body.cosmic .sched-nav-icon {
 .sched-bulk-body::-webkit-scrollbar-thumb:hover {
   background:color-mix(in srgb, var(--acc) 78%, #fff);
 }
+.sched-bulk-inner {
+  width:fit-content;
+  min-width:100%;
+}
 .sched-bulk-head,
 .sched-bulk-row {
   display:grid;
-  grid-template-columns:var(--sched-name-col) minmax(760px, 1fr);
+  grid-template-columns:var(--sched-name-col) 1fr;
   gap:0;
   align-items:center;
-  min-width:calc(var(--sched-name-col) + 930px);
+  width:100%;
 }
 .sched-bulk-head {
   position:sticky;

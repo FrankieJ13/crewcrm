@@ -3458,8 +3458,10 @@ function openScheduleBulkEditor() {
         <button class="sched-bulk-close" onclick="closeScheduleBulkEditor()">×</button>
       </div>
       <div class="sched-bulk-body">
-        <div class="sched-bulk-head"><div></div><div class="sched-bulk-days" style="grid-template-columns:repeat(${daysInMonth}, minmax(30px, 1fr))">${dayHeads}</div></div>
-        ${rows}
+        <div class="sched-bulk-inner">
+          <div class="sched-bulk-head"><div></div><div class="sched-bulk-days" style="grid-template-columns:repeat(${daysInMonth}, minmax(30px, 1fr))">${dayHeads}</div></div>
+          ${rows}
+        </div>
       </div>
       <div class="sched-bulk-footer">
         <span class="sched-bulk-status" id="sched-bulk-status"></span>

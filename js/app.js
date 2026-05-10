@@ -1060,7 +1060,7 @@ function onLogout() {
   const hmbAccSep2 = document.getElementById('hmb-sep-account'); if (hmbAccSep2) hmbAccSep2.style.display = 'none';
   const hdrMain2 = document.getElementById('hdr-title');
   const hdrGreeting2 = document.getElementById('hdr-greeting');
-  if (hdrMain2) hdrMain2.classList.remove('aurora');
+  /* hdr-title aurora is always-on — don't remove it on logout */
   if (hdrGreeting2) { hdrGreeting2.style.display = 'none'; hdrGreeting2.classList.remove('aurora'); }
   closeHamburger();
   // Сбрасываем ВСЕ экраны
@@ -4556,10 +4556,8 @@ async function loadUsersAndStart() {
     const parts = matched.name.trim().split(/\s+/);
     const firstName = parts.length >= 2 ? parts[1] : parts[0];
     toast('Приветствую, ' + firstName + '!', 's');
-    // Активируем aurora и показываем приветствие
-    const hdrMain = document.getElementById('hdr-title');
+    // Показываем приветствие (aurora на hdr-title уже постоянная)
     const hdrGreeting = document.getElementById('hdr-greeting');
-    if (hdrMain) hdrMain.classList.add('aurora');
     if (hdrGreeting) {
       hdrGreeting.textContent = 'Привет, ' + firstName + '!';
       hdrGreeting.classList.add('aurora');

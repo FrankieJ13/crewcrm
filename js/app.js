@@ -3006,7 +3006,7 @@ async function formatScheduleCell(sheetName, sheetRow, colIdx, value) {
   if (sheetId === null) return;
   const v = normalizeSchedVal(value);
   const cell = v === 'В'
-    ? { userEnteredFormat: { backgroundColor: { red: 1, green: 0.8, blue: 0.8 } } }
+    ? { userEnteredFormat: { backgroundColor: { red: 0.961, green: 0.055, blue: 0.008 } } }
     : { userEnteredFormat: {} };
   const resp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`, {
     method: 'POST',

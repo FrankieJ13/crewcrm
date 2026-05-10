@@ -1846,8 +1846,7 @@ function getManagerShiftCounts(name, suffix) {
   for (let c = 1; c < daysRow.length; c++) {
     const dayNum = parseInt(daysRow[c]);
     if (!dayNum || dayNum < 1 || dayNum > 31) continue;
-    const val = (mgrRow[c]||'').toLowerCase().trim();
-    if (val === 'р') {
+    if (normalizeSchedVal(mgrRow[c]) === 'Р') {
       total++;
       if (!isCurrent || dayNum > today) remaining++;
     }
@@ -2958,9 +2957,38 @@ function sheetColName(idx) {
 
 function normalizeSchedVal(v) {
   const s = String(v || '').trim().toUpperCase();
-  if (s === 'Р' || s === 'В') return s;
+  if (s === 'Р' || s === 'Р*') return 'Р';
+  if (s === 'В' || s === 'В*') return 'В';
   if (s === 'ВС') return 'ВС';
   return '';
+}
+// Возвращает сырое значение ячейки (Р, Р*, В, В*, ВС, '')
+function rawSchedVal(v) {
+  const s = String(v || '').trim().toUpperCase();
+  if (s === 'Р' || s === 'Р*') return s;
+  if (s === 'В' || s === 'В*') return s;
+  if (s === 'ВС') return 'ВС';
+  return '';
+}
+// Цвет/стиль ячейки в приложении по сырому значению
+const SCHED_CELL_BG = { 'В': '#f50e02', 'В*': '#ffff00', 'Р*': '#4386f5' };
+const SCHED_CELL_FG = { 'В': '#fff',    'В*': '#222',    'Р*': '#fff'    };
+function schedCellAppStyle(rawVal) {
+  const bg = SCHED_CELL_BG[rawVal];
+  if (!bg) return '';
+  return ` style="background:${bg};color:${SCHED_CELL_FG[rawVal]}"`;
+}
+// Цвет фона в Google Sheets по сырому значению
+const SCHED_SHEET_BG = {
+  'В':  { red: 0.961, green: 0.055, blue: 0.008 },
+  'В*': { red: 1,     green: 1,     blue: 0     },
+  'Р*': { red: 0.263, green: 0.525, blue: 0.961 },
+};
+// Обработчик изменения select в bulk-редакторе
+function schedBulkSelectChanged(sel) {
+  const v = sel.value;
+  sel.style.background = SCHED_CELL_BG[v] || '';
+  sel.style.color      = SCHED_CELL_FG[v] || '';
 }
 
 function canEditScheduleName(name) {
@@ -3004,10 +3032,10 @@ async function getSpreadsheetSheetId(sheetName) {
 async function formatScheduleCell(sheetName, sheetRow, colIdx, value) {
   const sheetId = await getSpreadsheetSheetId(sheetName);
   if (sheetId === null) return;
-  const v = normalizeSchedVal(value);
-  const cell = v === 'В'
-    ? { userEnteredFormat: { backgroundColor: { red: 0.961, green: 0.055, blue: 0.008 } } }
-    : { userEnteredFormat: {} };
+  const raw  = rawSchedVal(value);
+  const bg   = SCHED_SHEET_BG[raw];
+  const cell = bg ? { userEnteredFormat: { backgroundColor: bg } }
+                  : { userEnteredFormat: {} };
   const resp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`, {
     method: 'POST',
     headers: await authHeaders({ 'Content-Type':'application/json' }),
@@ -3158,7 +3186,7 @@ function renderGrafik() {
 
   // 4. Шапка с числами рабочих в день
   const workerCounts = weekDays.map((_, wi) =>
-    crmPeople.filter(p => (p.cells[wi]||'').toLowerCase().trim() === 'р').length
+    crmPeople.filter(p => normalizeSchedVal(p.cells[wi]) === 'Р').length
   );
   const hdrs = week.map((d, wi) => {
     const cnt = workerCounts[wi];
@@ -3172,8 +3200,10 @@ function renderGrafik() {
   function buildCards(people) {
     return people.map(p => {
       const cells = p.cells.map((val, wi) => {
-        const v   = val.toLowerCase().trim();
-        const cls = v==='р'?'dr':v==='в'?'dv':v==='вс'?'dvs':val?'':'empty';
+        const norm = normalizeSchedVal(val);
+        const raw  = rawSchedVal(val);
+        const cls  = norm==='Р'?'dr':norm==='В'?'dv':norm==='ВС'?'dvs':val?'':'empty';
+        const extraStyle = schedCellAppStyle(raw);
         const entry = p.entry;
         const dayNum = week[wi]?.day || 0;
         const colIdx = entry ? findSchedDayCol(entry.daysRow, dayNum) : -1;
@@ -3181,7 +3211,7 @@ function renderGrafik() {
         const editAttrs = canEdit
           ? ` role="button" tabindex="0" onclick="openSchedCellEditor(event, ${entry.sheetRow}, ${colIdx}, '${escapeAttr(p.name)}', ${dayNum})" onkeydown="if(event.key==='Enter'||event.key===' '){openSchedCellEditor(event, ${entry.sheetRow}, ${colIdx}, '${escapeAttr(p.name)}', ${dayNum})}"`
           : '';
-        return `<div class="sched-cell ${cls}${canEdit?' editable':''}${isToday(dayNum)?' today-col':''}" data-sched-cell="${entry ? entry.sheetRow + '-' + colIdx : ''}"${editAttrs}>${val||'·'}</div>`;
+        return `<div class="sched-cell ${cls}${canEdit?' editable':''}${isToday(dayNum)?' today-col':''}" data-sched-cell="${entry ? entry.sheetRow + '-' + colIdx : ''}"${editAttrs}${extraStyle}>${norm||'·'}</div>`;
       }).join('');
       const sched = getWorkedAndTotalR(p.name.toLowerCase().trim());
       const workedBadge = sched
@@ -3248,7 +3278,9 @@ function openSchedCellEditor(e, sheetRow, colIdx, name, dayNum) {
     <div class="sched-edit-pop-title">${escapeHtml(name)} · ${dayNum}</div>
     <div class="sched-edit-pop-actions">
       <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'Р')">Р</button>
-      <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'В')">В</button>
+      <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'Р*')" style="background:#4386f5;color:#fff">Р*</button>
+      <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'В')" style="background:#f50e02;color:#fff">В</button>
+      <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'В*')" style="background:#ffff00;color:#222">В*</button>
     </div>
     <div class="sched-edit-pop-status" id="sched-pop-status"></div>
   `;
@@ -3313,13 +3345,17 @@ function openScheduleBulkEditor() {
     const cells = Array.from({ length: daysInMonth }, (_, i) => {
       const day = i + 1;
       const colIdx = findSchedDayCol(entry.daysRow, day);
-      const val = colIdx >= 0 ? normalizeSchedVal(entry.row[colIdx]) : '';
+      const val = colIdx >= 0 ? rawSchedVal(entry.row[colIdx]) : '';
       const disabled = editable && colIdx >= 0 ? '' : 'disabled';
-      const selStyle = val==='В' ? ' style="background:var(--acc);color:#fff"' : '';
-      return `<select class="sched-bulk-select" data-row="${entry.sheetRow}" data-col="${colIdx}" data-name="${escapeAttr(name)}" ${disabled}${selStyle} onchange="this.style.background=this.value==='В'?'var(--acc)':'';this.style.color=this.value==='В'?'#fff':''">
+      const selBg = SCHED_CELL_BG[val] || '';
+      const selFg = SCHED_CELL_FG[val] || '';
+      const selStyle = selBg ? ` style="background:${selBg};color:${selFg}"` : '';
+      return `<select class="sched-bulk-select" data-row="${entry.sheetRow}" data-col="${colIdx}" data-name="${escapeAttr(name)}" ${disabled}${selStyle} onchange="schedBulkSelectChanged(this)">
         <option value="" ${!val?'selected':''}>·</option>
-        <option value="Р" ${val==='Р'?'selected':''}>Р</option>
-        <option value="В" ${val==='В'?'selected':''}>В</option>
+        <option value="Р"  ${val==='Р' ?'selected':''}>Р</option>
+        <option value="Р*" ${val==='Р*'?'selected':''}>Р*</option>
+        <option value="В"  ${val==='В' ?'selected':''}>В</option>
+        <option value="В*" ${val==='В*'?'selected':''}>В*</option>
       </select>`;
     }).join('');
     return `<div class="sched-bulk-row${editable?'':' locked'}">
@@ -3372,8 +3408,8 @@ async function saveScheduleBulkEditor() {
     const row = Number(sel.dataset.row);
     const col = Number(sel.dataset.col);
     if (!row || col < 0) return;
-    const next = normalizeSchedVal(sel.value);
-    const prev = normalizeSchedVal(S.data.grafik?.[row - 1]?.[col]);
+    const next = rawSchedVal(sel.value);
+    const prev = rawSchedVal(S.data.grafik?.[row - 1]?.[col]);
     if (next !== prev) changes.push({ row, col, value: next });
   });
   if (!changes.length) { if (status) status.textContent = 'Нет изменений'; return; }
@@ -4725,7 +4761,7 @@ function getWorkedAndTotalR(nameLow) {
   for (let c = 1; c < daysRow.length; c++) {
     const dayNum = parseInt(daysRow[c]);
     if (!dayNum || dayNum < 1 || dayNum > 31) continue;
-    if ((mgrRow[c]||'').toLowerCase().trim() === 'р') {
+    if (normalizeSchedVal(mgrRow[c]) === 'Р') {
       totalR++;
       if (dayNum <= today) workedR++;
     }

@@ -2112,11 +2112,20 @@ body.cosmic .sched-nav-icon {
   min-width:16px; text-align:center; line-height:1;
 }
 .sched-day-hdr.understaffed {
-  animation: understaffedBlink 1.4s ease-in-out infinite;
+  animation: understaffedBlink 1.4s ease-in-out infinite,
+             understaffedShake 2.6s ease-in-out infinite;
 }
 @keyframes understaffedBlink {
   0%,100% { background: rgba(220,38,38,0.18); }
   50%      { background: rgba(37,99,235,0.18); }
+}
+@keyframes understaffedShake {
+  0%,100%       { transform: translateX(0); }
+  10%           { transform: translateX(-2px); }
+  20%           { transform: translateX(2px); }
+  30%           { transform: translateX(-2px); }
+  40%           { transform: translateX(1px); }
+  50%           { transform: translateX(0); }
 }
 .sched-day-hdr.today { background:var(--acc-bg); border:1px solid var(--acc-bdr); }
 .sched-day-hdr.today .sd-num { color:var(--acc) }

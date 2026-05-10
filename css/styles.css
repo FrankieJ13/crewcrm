@@ -2116,8 +2116,8 @@ body.cosmic .sched-nav-icon {
              understaffedShake 11.2s ease-in-out infinite;
 }
 @keyframes understaffedBlink {
-  0%,100% { background: rgba(220,38,38,0.18); }
-  50%      { background: rgba(37,99,235,0.18); }
+  0%,100% { background: rgba(255,20,20,0.55); }
+  50%      { background: rgba(20,80,255,0.55); }
 }
 @keyframes understaffedShake {
   /* 0–10.7% = 1.2s тряска, остаток = 10s пауза */

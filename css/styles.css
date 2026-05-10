@@ -2162,6 +2162,7 @@ body.cosmic .sched-nav-icon {
 .sched-cell {
   text-align:center; padding:8px 2px;
   border-radius:6px; font-size:12px; font-weight:600;
+  font-family:'Unbounded',sans-serif;
   min-height:36px; display:flex; align-items:center; justify-content:center;
 }
 .sched-cell.editable {

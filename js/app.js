@@ -3448,7 +3448,14 @@ function openScheduleBulkEditor() {
       </div>
       <div class="sched-bulk-footer">
         <span class="sched-bulk-status" id="sched-bulk-status"></span>
-        <button class="sched-bulk-save" onclick="saveScheduleBulkEditor()">Сохранить</button>
+        <div class="sched-bulk-actions">
+          <button class="sched-bulk-icon-btn" onclick="closeScheduleBulkEditor()" title="Выход из редактирования">
+            <span class="sched-bulk-icon" style="--sched-bulk-icon:url('${DEFAULT_ICON_BASE}grafik-cancel.svg')"></span>
+          </button>
+          <button class="sched-bulk-icon-btn" onclick="saveScheduleBulkEditor()" title="Сохранить график">
+            <span class="sched-bulk-icon" style="--sched-bulk-icon:url('${DEFAULT_ICON_BASE}grafik-save.svg')"></span>
+          </button>
+        </div>
       </div>
     </div>
   `;

@@ -2917,6 +2917,7 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
   letter-spacing:.05em; color:var(--txt);
 }
 .inc-day-spoiler summary::-webkit-details-marker { display:none; }
+.inc-day-spoiler summary::marker { display:none; }
 .inc-day-spoiler summary svg { flex-shrink:0; transition:transform .2s; }
 .inc-day-spoiler[open] summary svg { transform:rotate(90deg); }
 .inc-day-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; padding-bottom:12px; }

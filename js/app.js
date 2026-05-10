@@ -3416,9 +3416,9 @@ function openScheduleBulkEditor() {
       return `<select class="sched-bulk-select" data-row="${entry.sheetRow}" data-col="${colIdx}" data-name="${escapeAttr(name)}" ${disabled}${selStyle} onchange="schedBulkSelectChanged(this)">
         <option value="" ${!val?'selected':''}>·</option>
         <option value="Р"  ${val==='Р' ?'selected':''}>Р</option>
-        <option value="Р*" ${val==='Р*'?'selected':''}>Р*</option>
+        <option value="Р*" ${val==='Р*'?'selected':''}>Р</option>
         <option value="В"  ${val==='В' ?'selected':''}>В</option>
-        <option value="В*" ${val==='В*'?'selected':''}>В*</option>
+        <option value="В*" ${val==='В*'?'selected':''}>В</option>
       </select>`;
     }).join('');
     return `<div class="sched-bulk-row${editable?'':' locked'}">

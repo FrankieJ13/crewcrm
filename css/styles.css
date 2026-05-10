@@ -441,7 +441,17 @@ body.cosmic #sal-info-modal .si-close {
   color: #1a1a1a !important;
 }
 body.cosmic .kpi-manager-name {
-  color: #1a1a1a !important;
+  color: #d0d0d0 !important;
+}
+body.cosmic .kpi-divider {
+  background: rgba(255,255,255,0.12) !important;
+}
+body.cosmic .kpi-bare-text {
+  color: #a0a0a0 !important;
+}
+body.cosmic #scr-personal .income-subtotal .ist-lbl,
+body.cosmic #scr-dohod   .income-subtotal .ist-lbl {
+  color: #999 !important;
 }
 body.cosmic .kpi-income-panel {
   background: linear-gradient(45deg, var(--cosmic-soft-a), var(--cosmic-soft-b)) !important;
@@ -3133,6 +3143,7 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
   color:var(--txt); margin:14px 0 10px; line-height:1.2;
 }
 .kpi-divider { height:1px; background:var(--line2); margin-bottom:14px; }
+.kpi-bare-text { color: var(--txt2); }
 .kpi-subtitle {
   font-family:'Unbounded',sans-serif;
   font-size:10px; font-weight:800; letter-spacing:.1em;

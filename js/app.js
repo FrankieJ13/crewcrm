@@ -2724,7 +2724,7 @@ function renderDohod() {
       ? `(${fmtRub(baseOklad)}÷${d.detail.totalR}×${d.detail.workedR}) + (${fmtRub(Math.round(premium))} × ${factKoef.toFixed(1)}) = ${fmtRub(Math.round(d.fact.total))}`
       : `${fmtRub(oklad)} + (${fmtRub(Math.round(premium))} × ${factKoef.toFixed(1)}) = ${fmtRub(Math.round(d.fact.total))}`;
     const okladRow   = oklad > 0 ? `<div class="income-sec-title">Оклад</div>${subtotal(okladLbl, oklad)}` : '';
-    const kotelRow   = (d.detail.inFund && kotel > 0) ? `<div class="income-sec-title">Котёл</div><div style="font-size:10px;color:var(--txt2);margin-bottom:6px">Участников котла: ${fundCount}</div>${subtotal('Доля котла', kotel)}` : '';
+    const kotelRow   = (d.detail.inFund && kotel > 0) ? `<div class="income-sec-title">Котёл</div><div class="kpi-bare-text" style="font-size:10px;margin-bottom:6px">Участников котла: ${fundCount}</div>${subtotal('Доля котла', kotel)}` : '';
     const noKoefTotal = Math.round(baseOklad + crmSum + warmSum + kotel);
     const noKoefRow = `<div class="income-sec-title">Без коэффициентов</div>${subtotal('Оклад 100% + Премия + Котёл', noKoefTotal)}`;
 
@@ -2747,7 +2747,7 @@ function renderDohod() {
         </div>
         <div class="kpi-subtitle" style="margin-top:16px">Детализация</div>
         <div style="padding-bottom:16px">
-          <div style="font-size:10px;color:var(--txt2);margin-bottom:8px;line-height:1.5">
+          <div class="kpi-bare-text" style="font-size:10px;margin-bottom:8px;line-height:1.5">
             Оклад + (Премия × К) = Итог<br>${okladFormula}
           </div>
           ${okladRow}

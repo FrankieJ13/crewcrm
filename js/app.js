@@ -3243,6 +3243,20 @@ function renderGrafik() {
     else crmNames.push(name);
   }
 
+  // Авторизованный пользователь — в начало своего отдела
+  const me = findUserInSheet();
+  const myName = me?.name || '';
+  const myRole = me?.role || '';
+  if (myName) {
+    const moveFirst = arr => {
+      const idx = arr.findIndex(n => n.toLowerCase() === myName.toLowerCase());
+      if (idx > 0) { arr.splice(idx, 1); arr.unshift(myName); }
+    };
+    moveFirst(crmNames);
+    moveFirst(dozhimNames);
+  }
+  const myDeptIsDozhim = myRole === 'dozhim';
+
   // 3. Строим объект person для отображения
   function makePerson(name) {
     const entry = schedIndex[name.toLowerCase()];
@@ -3318,7 +3332,11 @@ function renderGrafik() {
   const g1title = groupTitles[0] || 'CRM';
   const g2title = groupTitles[1] || 'ДОЖИМ';
 
-  setLiveHTML(el, `<div class="sched-group-title" style="margin-top:4px">${g1title}</div>${buildCards(crmPeople)}<div class="sched-group-title">${g2title}</div>${buildCards(dozhimPeople)}`);
+  const firstTitle  = myDeptIsDozhim ? g2title    : g1title;
+  const firstPeople = myDeptIsDozhim ? dozhimPeople : crmPeople;
+  const secTitle    = myDeptIsDozhim ? g1title     : g2title;
+  const secPeople   = myDeptIsDozhim ? crmPeople   : dozhimPeople;
+  setLiveHTML(el, `<div class="sched-group-title" style="margin-top:4px">${firstTitle}</div>${buildCards(firstPeople)}<div class="sched-group-title">${secTitle}</div>${buildCards(secPeople)}`);
 
   const stickyEl    = document.getElementById('grafik-sticky');
   const stickyInner = document.getElementById('grafik-sticky-inner');

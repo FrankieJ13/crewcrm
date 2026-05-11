@@ -49,6 +49,13 @@
           </div>
           <span id="user-name"></span>
         </div>
+        <!-- Кнопка уведомления — только для CEO -->
+        <button class="btn-icon" id="btn-notify" title="Отправить уведомление" aria-label="Отправить уведомление" style="display:none" onclick="openNotifyModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+        </button>
         <div class="presence-wrap" id="presence-wrap">
           <button class="btn-icon presence-btn" id="btn-presence" title="Кто онлайн" aria-label="Кто онлайн">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -647,6 +654,41 @@
     </linearGradient>
   </defs>
 </svg>
+<!-- ══ Модалка CEO: отправить уведомление ══ -->
+<div id="notify-modal-overlay" style="display:none" onclick="if(event.target===this)closeNotifyModal()">
+  <div id="notify-modal">
+    <div class="notify-modal-hdr">
+      <span class="notify-modal-title">Уведомление команде</span>
+      <button class="notify-modal-close" onclick="closeNotifyModal()">×</button>
+    </div>
+    <div class="notify-modal-body">
+      <textarea id="notify-text" class="notify-textarea" placeholder="Введите сообщение для команды…" maxlength="300" rows="4" oninput="_notifyCharUpdate()"></textarea>
+      <div class="notify-modal-footer">
+        <span class="notify-char-count"><span id="notify-char">0</span>/300</span>
+        <button class="notify-send-btn" id="notify-send-btn" onclick="sendPushNotification()">Отправить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Баннер пуш-уведомления для пользователей ══ -->
+<div id="push-banner" style="display:none">
+  <div id="push-banner-card">
+    <div class="push-banner-hdr">
+      <svg class="push-banner-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      </svg>
+      <div class="push-banner-meta">
+        <span class="push-banner-sender" id="push-banner-sender"></span>
+        <span class="push-banner-time" id="push-banner-time"></span>
+      </div>
+      <button class="push-banner-close" onclick="closePushBanner()" aria-label="Закрыть">×</button>
+    </div>
+    <div class="push-banner-text" id="push-banner-text"></div>
+  </div>
+</div>
+
 <script src="./js/app.js"></script>
 </body>
 </html>

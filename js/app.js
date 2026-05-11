@@ -651,6 +651,91 @@ function closePresenceModal() {
   document.getElementById('presence-popover')?.classList.remove('open');
 }
 
+/* ══ CEO PUSH NOTIFICATION ══ */
+function openNotifyModal() {
+  const overlay = document.getElementById('notify-modal-overlay');
+  const ta = document.getElementById('notify-text');
+  if (!overlay) return;
+  ta.value = '';
+  document.getElementById('notify-char').textContent = '0';
+  overlay.style.display = 'flex';
+  setTimeout(() => ta.focus(), 80);
+}
+
+function closeNotifyModal() {
+  const overlay = document.getElementById('notify-modal-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function _notifyCharUpdate() {
+  const ta = document.getElementById('notify-text');
+  const cc = document.getElementById('notify-char');
+  if (ta && cc) cc.textContent = ta.value.length;
+}
+
+async function sendPushNotification() {
+  const ta   = document.getElementById('notify-text');
+  const btn  = document.getElementById('notify-send-btn');
+  const text = (ta?.value || '').trim();
+  if (!text) { ta?.focus(); return; }
+
+  const p = firebasePresence;
+  if (!p.db) { toast('Firebase не подключён', 'e'); return; }
+
+  const me = findUserInSheet();
+  const sentBy = me?.name || S.user?.name || 'CEO';
+
+  btn.disabled = true;
+  btn.textContent = 'Отправка…';
+  try {
+    await p.db.ref('notification').set({
+      text,
+      sentBy,
+      sentAt: firebase.database.ServerValue.TIMESTAMP,
+    });
+    toast('Уведомление отправлено', 's');
+    closeNotifyModal();
+  } catch(e) {
+    toast('Ошибка отправки: ' + (e.message || e), 'e');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Отправить';
+  }
+}
+
+let _notifyListenerStarted = false;
+function startNotificationListener() {
+  if (_notifyListenerStarted) return;
+  const p = firebasePresence;
+  if (!p.db) return;
+  const me = findUserInSheet();
+  if (me?.role === 'ceo') return; // CEO не получает свои же уведомления
+  _notifyListenerStarted = true;
+
+  p.db.ref('notification').on('value', snap => {
+    const data = snap.val();
+    if (!data || !data.sentAt || !data.text) return;
+    const age = Date.now() - data.sentAt;
+    if (age > 600_000) return; // старше 10 минут — игнор
+    showPushBanner(data);
+  }, () => {}); // ошибку доступа тихо игнорируем
+}
+
+function showPushBanner(data) {
+  const banner = document.getElementById('push-banner');
+  if (!banner) return;
+  document.getElementById('push-banner-text').textContent   = data.text || '';
+  document.getElementById('push-banner-sender').textContent = data.sentBy || 'Руководитель';
+  const mins = Math.max(0, Math.round((Date.now() - (data.sentAt || Date.now())) / 60000));
+  document.getElementById('push-banner-time').textContent   = mins < 1 ? 'только что' : `${mins} мин назад`;
+  banner.style.display = 'flex';
+}
+
+function closePushBanner() {
+  const banner = document.getElementById('push-banner');
+  if (banner) banner.style.display = 'none';
+}
+
 function firebaseProfile(user) {
   const profile = S.user || {};
   const email = profile.email || user.email || '';
@@ -4008,6 +4093,9 @@ async function savePlan() {
 function showPlanEditBtnIfCeo(matched) {
   const btn = document.getElementById('btn-plan-edit');
   if (btn) btn.style.display = (matched && matched.role === 'ceo') ? 'flex' : 'none';
+  // Кнопка уведомления — только CEO
+  const notifyBtn = document.getElementById('btn-notify');
+  if (notifyBtn) notifyBtn.style.display = (matched && matched.role === 'ceo') ? 'flex' : 'none';
   const hmb = document.getElementById('hmb-plan-edit');
   const sep = document.getElementById('hmb-sep-plan');
   const isCeo = matched && matched.role === 'ceo';
@@ -4582,6 +4670,7 @@ async function loadUsersAndStart() {
       hdrGreeting.style.display = '';
     }
     showPlanEditBtnIfCeo(matched);
+    startNotificationListener();
     initSverkaToggle();
     // Иконки автора в "О проекте" — показываем после авторизации
     const authorLinks = document.getElementById('about-author-links');

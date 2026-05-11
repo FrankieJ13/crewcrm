@@ -3598,6 +3598,22 @@ body.neo-dark .income-col .ic-lbl {
 .cfg-spoiler-hdr svg { flex-shrink: 0; transition: transform .2s; }
 .cfg-spoiler[open] .cfg-spoiler-hdr svg { transform: rotate(90deg); }
 .cfg-spoiler-body { padding: 0 16px 14px; }
+/* Конфигуратор режимов — вложенные схлопы */
+.cfg-modes-body { padding: 0; }
+.cfg-spoiler-inner { border-top: 1px solid var(--line); }
+.cfg-spoiler-inner:first-child { border-top: none; }
+.cfg-spoiler-inner-hdr {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px 10px 20px; cursor: pointer;
+  font-family: 'Golos Text', sans-serif; font-size: 11px;
+  font-weight: 600; color: var(--txt2);
+  list-style: none; user-select: none;
+  transition: color .15s;
+}
+.cfg-spoiler-inner-hdr:hover { color: var(--txt); }
+.cfg-spoiler-inner-hdr svg { flex-shrink: 0; transition: transform .2s; color: var(--txt3); }
+.cfg-spoiler-inner[open] .cfg-spoiler-inner-hdr svg { transform: rotate(90deg); }
+.cfg-spoiler-inner-body { padding: 0 16px 14px 20px; }
 .cfg-placeholder {
   font-size: 12px; color: var(--txt3); text-align: center;
   padding: 12px 0; font-style: italic;

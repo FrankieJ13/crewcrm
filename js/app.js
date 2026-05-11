@@ -5879,7 +5879,8 @@ else init();
 document.getElementById('dock-block-overlay')?.remove();
 
 // ==================== SVERKA MODE ====================
-S.sverkaMode = localStorage.getItem('crm_sverka') === '1';
+S.sverkaMode    = localStorage.getItem('crm_sverka')    === '1';
+S.vizPasteMode  = localStorage.getItem('crm_viz_paste') === '1';
 
 function getSverkaMode() {
   if (S.usersData) {
@@ -5893,9 +5894,23 @@ function getSverkaMode() {
 }
 
 function initSverkaToggle() {
-  S.sverkaMode = getSverkaMode();
-  const cb = document.getElementById('sverka-toggle-cb');
-  if (cb) cb.checked = S.sverkaMode;
+  S.sverkaMode   = getSverkaMode();
+  S.vizPasteMode = getVizPasteMode();
+  const cb  = document.getElementById('sverka-toggle-cb');
+  const cb2 = document.getElementById('viz-paste-toggle-cb');
+  if (cb)  cb.checked  = S.sverkaMode;
+  if (cb2) cb2.checked = S.vizPasteMode;
+}
+
+function getVizPasteMode() {
+  if (S.usersData) {
+    for (let i = 1; i < S.usersData.length; i++) {
+      const mode = (S.usersData[i][10] || '').trim().toLowerCase(); // колонка K
+      if (mode === 'on')  return true;
+      if (mode === 'off') return false;
+    }
+  }
+  return localStorage.getItem('crm_viz_paste') === '1';
 }
 
 async function savePlanAndSverka() {
@@ -5928,6 +5943,31 @@ async function savePlanAndSverka() {
     } catch(e) {
       console.error('sverka save', e);
       toast('Ошибка сохранения сверки', 'e');
+    }
+  }
+
+  // Режим вставки визитов
+  const cb2 = document.getElementById('viz-paste-toggle-cb');
+  if (cb2) {
+    S.vizPasteMode = cb2.checked;
+    const newMode2 = S.vizPasteMode ? 'On' : 'Off';
+    localStorage.setItem('crm_viz_paste', S.vizPasteMode ? '1' : '0');
+    try {
+      const range2 = encodeURIComponent('USERS!K2:K2');
+      const url2 = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range2}?valueInputOption=USER_ENTERED`;
+      const resp2 = await fetch(url2, {
+        method: 'PUT',
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ values: [[newMode2]] })
+      });
+      if (resp2.ok) {
+        if (S.usersData && S.usersData[1]) S.usersData[1][10] = newMode2;
+        toast('Режим вставки визитов: ' + (S.vizPasteMode ? 'Вкл' : 'Выкл'), 's');
+      } else {
+        toast('Ошибка сохранения режима вставки', 'e');
+      }
+    } catch(e) {
+      toast('Ошибка сохранения режима вставки', 'e');
     }
   }
 

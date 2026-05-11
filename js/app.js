@@ -187,6 +187,7 @@ function syncTheme() {
     'dock-btn-instruktsii': COSMIC_ICON_BASE + 'cosmic_faq.svg',
     'dock-btn-vizity':      COSMIC_ICON_BASE + 'cosmic_vizity.svg',
     'btn-presence':         COSMIC_ICON_BASE + 'cosmic_online.svg',
+    'btn-notify':           COSMIC_ICON_BASE + 'cosmic-send-noti.svg',
     'btn-refresh':          COSMIC_ICON_BASE + 'cosmic_refresh.svg',
     'btn-hamburger':        COSMIC_ICON_BASE + 'cosmic_menu.svg',
     // Гамбургер
@@ -204,6 +205,7 @@ function syncTheme() {
     'dock-btn-instruktsii': DEFAULT_ICON_BASE + 'faq.svg',
     'dock-btn-vizity':      DEFAULT_ICON_BASE + 'vizity.svg',
     'btn-presence':         DEFAULT_ICON_BASE + 'online.svg',
+    'btn-notify':           DEFAULT_ICON_BASE + 'send-noti.svg',
     'btn-refresh':          DEFAULT_ICON_BASE + 'refresh.svg',
     'btn-hamburger':        DEFAULT_ICON_BASE + 'menu.svg',
     'hmb-month-trigger':    DEFAULT_ICON_BASE + 'base.svg',

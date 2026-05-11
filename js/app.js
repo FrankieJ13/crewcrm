@@ -5963,6 +5963,7 @@ async function savePlanAndSverka() {
       if (resp2.ok) {
         if (S.usersData && S.usersData[1]) S.usersData[1][10] = newMode2;
         toast('Режим вставки визитов: ' + (S.vizPasteMode ? 'Вкл' : 'Выкл'), 's');
+        if (document.getElementById('scr-vizity')?.classList.contains('on')) renderVizity();
       } else {
         toast('Ошибка сохранения режима вставки', 'e');
       }
@@ -6717,6 +6718,7 @@ function renderVizity() {
     // Build insert zones + rows
     function makeInsertZone(afterRow, label='') {
       if (locked) return '';
+      if (!S.vizPasteMode) return '';
       return `<div class="vt-insert-zone" onclick="vizManualInsert(${afterRow})" title="Вставить визит${label}"><div class="vt-insert-zone-btn">+</div></div>`;
     }
 

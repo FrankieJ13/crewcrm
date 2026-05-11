@@ -704,6 +704,8 @@ async function sendPushNotification() {
 }
 
 let _notifyListenerStarted = false;
+let _currentNotifySentAt   = 0;
+
 function startNotificationListener() {
   if (_notifyListenerStarted) return;
   const p = firebasePresence;
@@ -717,6 +719,11 @@ function startNotificationListener() {
     if (!data || !data.sentAt || !data.text) return;
     const age = Date.now() - data.sentAt;
     if (age > 600_000) return; // старше 10 минут — игнор
+
+    // Уже видел это уведомление (та же временна́я метка)?
+    const seenAt = parseInt(localStorage.getItem('notify_seen_at') || '0');
+    if (data.sentAt <= seenAt) return;
+
     showPushBanner(data);
   }, () => {}); // ошибку доступа тихо игнорируем
 }
@@ -724,6 +731,7 @@ function startNotificationListener() {
 function showPushBanner(data) {
   const banner = document.getElementById('push-banner');
   if (!banner) return;
+  _currentNotifySentAt = data.sentAt || 0;
   document.getElementById('push-banner-text').textContent   = data.text || '';
   document.getElementById('push-banner-sender').textContent = data.sentBy || 'Руководитель';
   const mins = Math.max(0, Math.round((Date.now() - (data.sentAt || Date.now())) / 60000));
@@ -734,6 +742,11 @@ function showPushBanner(data) {
 function closePushBanner() {
   const banner = document.getElementById('push-banner');
   if (banner) banner.style.display = 'none';
+  // Запоминаем: это уведомление уже показано, не показывать повторно
+  if (_currentNotifySentAt) {
+    localStorage.setItem('notify_seen_at', String(_currentNotifySentAt));
+    _currentNotifySentAt = 0;
+  }
 }
 
 function firebaseProfile(user) {

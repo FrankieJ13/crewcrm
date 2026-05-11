@@ -1293,6 +1293,8 @@ function onLogout() {
   // Сбрасываем визиты
   S.vizRows = []; S.vizDept = null;
   if (window._loginLiquidCleanup) window._loginLiquidCleanup();
+  // Скрываем экран технического обслуживания при выходе
+  hideMaintenancePage();
   // Показываем логин
   const ls = document.getElementById('scr-login');
   ls.style.display=''; ls.classList.add('on');

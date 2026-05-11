@@ -4769,3 +4769,65 @@ body:not(.cosmic) .sched-person-name {
 }
 
 /* ===== END DOCK v2 ===== */
+
+/* ==================== MAINTENANCE OVERLAY ==================== */
+#maintenance-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#maintenance-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+#maintenance-text {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+#maintenance-text span {
+  font-family: 'Unbounded', sans-serif;
+  font-size: clamp(28px, 8vw, 56px);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.15;
+  color: transparent;
+  background: linear-gradient(
+    135deg,
+    rgba(255,255,255,0.95) 0%,
+    rgba(200,180,255,0.90) 30%,
+    rgba(150,120,255,0.85) 60%,
+    rgba(255,255,255,0.90) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 2px 24px rgba(120,80,255,0.55));
+  animation: maint-text-pulse 4s ease-in-out infinite;
+}
+
+#maintenance-text span:nth-child(2) { animation-delay: 0.3s; }
+#maintenance-text span:nth-child(3) { animation-delay: 0.6s; }
+
+@keyframes maint-text-pulse {
+  0%, 100% { opacity: 0.85; transform: translateY(0); }
+  50%       { opacity: 1;    transform: translateY(-3px); }
+}
+/* ===== END MAINTENANCE OVERLAY ===== */

@@ -751,6 +751,128 @@ function closePushBanner() {
   }
 }
 
+// ==================== MAINTENANCE OVERLAY ====================
+let _svcRenderer = null;
+let _svcAnimFrame = null;
+
+function showMaintenancePage() {
+  const overlay = document.getElementById('maintenance-overlay');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+  _initMaintenanceShader();
+}
+
+function hideMaintenancePage() {
+  const overlay = document.getElementById('maintenance-overlay');
+  if (overlay) overlay.style.display = 'none';
+  _destroyMaintenanceShader();
+}
+
+function _destroyMaintenanceShader() {
+  if (_svcAnimFrame) { cancelAnimationFrame(_svcAnimFrame); _svcAnimFrame = null; }
+  if (_svcRenderer) { _svcRenderer.dispose(); _svcRenderer = null; }
+}
+
+function _initMaintenanceShader() {
+  if (typeof THREE === 'undefined') return;
+  const canvas = document.getElementById('maintenance-canvas');
+  if (!canvas) return;
+  _destroyMaintenanceShader();
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+  _svcRenderer = renderer;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  const scene  = new THREE.Scene();
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+  const vertexShader = `
+    void main() {
+      gl_Position = vec4(position, 1.0);
+    }
+  `;
+
+  const fragmentShader = `
+    uniform float uTime;
+    uniform vec2  uResolution;
+
+    vec3 palette(float t) {
+      vec3 a = vec3(0.1, 0.05, 0.2);
+      vec3 b = vec3(0.1, 0.1,  0.3);
+      vec3 c = vec3(0.5, 0.4,  0.7);
+      vec3 d = vec3(0.0, 0.15, 0.4);
+      return a + b * cos(6.28318 * (c * t + d));
+    }
+
+    float hash(vec2 p) {
+      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+    }
+
+    float noise(vec2 p) {
+      vec2 i = floor(p);
+      vec2 f = fract(p);
+      f = f * f * (3.0 - 2.0 * f);
+      return mix(
+        mix(hash(i), hash(i + vec2(1,0)), f.x),
+        mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), f.x),
+        f.y
+      );
+    }
+
+    float fbm(vec2 p) {
+      float v = 0.0, a = 0.5;
+      for(int i = 0; i < 6; i++) {
+        v += a * noise(p);
+        p *= 2.0; a *= 0.5;
+      }
+      return v;
+    }
+
+    void main() {
+      vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / min(uResolution.x, uResolution.y);
+      float t = uTime * 0.18;
+
+      vec2 q = vec2(fbm(uv + t), fbm(uv + vec2(1.7, 9.2)));
+      vec2 r = vec2(fbm(uv + 4.0*q + vec2(1.7+t, 9.2)), fbm(uv + 4.0*q + vec2(8.3, 2.8+t)));
+      float f = fbm(uv + 4.0 * r);
+
+      vec3 col = mix(
+        mix(vec3(0.02, 0.01, 0.05), palette(f + 0.3 * t), clamp(f * 2.0, 0.0, 1.0)),
+        palette(f + 0.5),
+        clamp(length(q) * 1.5, 0.0, 1.0)
+      );
+      col = pow(clamp(col, 0.0, 1.0), vec3(1.0 / 1.8));
+
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `;
+
+  const uniforms = {
+    uTime:       { value: 0.0 },
+    uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+  };
+
+  const geometry = new THREE.PlaneGeometry(2, 2);
+  const material = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms });
+  scene.add(new THREE.Mesh(geometry, material));
+
+  const onResize = () => {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
+  };
+  window.addEventListener('resize', onResize);
+
+  const clock = new THREE.Clock();
+  const animate = () => {
+    if (!_svcRenderer) { window.removeEventListener('resize', onResize); return; }
+    _svcAnimFrame = requestAnimationFrame(animate);
+    uniforms.uTime.value = clock.getElapsedTime();
+    renderer.render(scene, camera);
+  };
+  animate();
+}
+
 function firebaseProfile(user) {
   const profile = S.user || {};
   const email = profile.email || user.email || '';
@@ -4669,7 +4791,7 @@ function showAccessDenied(reason = 'Почта не найдена в USERS') {
 async function loadUsersAndStart() {
   try {
     apiCacheInvalidate('USERS');
-    S.usersData = await api('USERS', 'A1:K500');
+    S.usersData = await api('USERS', 'A1:L500');
   } catch(e) { S.usersData = []; showAccessDenied('Нет доступа к таблице'); return; }
   const matched = findUserInSheet();
   refreshFirebaseProfile();
@@ -4687,6 +4809,10 @@ async function loadUsersAndStart() {
     showPlanEditBtnIfCeo(matched);
     startNotificationListener();
     initSverkaToggle();
+    // Проверяем режим технического обслуживания (не для CEO)
+    if (matched.role !== 'ceo' && S.svcMode) {
+      showMaintenancePage();
+    }
     // Иконки автора в "О проекте" — показываем после авторизации
     const authorLinks = document.getElementById('about-author-links');
     if (authorLinks) {
@@ -5881,6 +6007,7 @@ document.getElementById('dock-block-overlay')?.remove();
 // ==================== SVERKA MODE ====================
 S.sverkaMode    = localStorage.getItem('crm_sverka')    === '1';
 S.vizPasteMode  = localStorage.getItem('crm_viz_paste') === '1';
+S.svcMode       = false;
 
 function getSverkaMode() {
   if (S.usersData) {
@@ -5896,10 +6023,13 @@ function getSverkaMode() {
 function initSverkaToggle() {
   S.sverkaMode   = getSverkaMode();
   S.vizPasteMode = getVizPasteMode();
+  S.svcMode      = getSvcMode();
   const cb  = document.getElementById('sverka-toggle-cb');
   const cb2 = document.getElementById('viz-paste-toggle-cb');
+  const cb3 = document.getElementById('svc-toggle-cb');
   if (cb)  cb.checked  = S.sverkaMode;
   if (cb2) cb2.checked = S.vizPasteMode;
+  if (cb3) cb3.checked = S.svcMode;
 }
 
 function getVizPasteMode() {
@@ -5911,6 +6041,17 @@ function getVizPasteMode() {
     }
   }
   return localStorage.getItem('crm_viz_paste') === '1';
+}
+
+function getSvcMode() {
+  if (S.usersData) {
+    for (let i = 1; i < S.usersData.length; i++) {
+      const mode = (S.usersData[i][11] || '').trim().toLowerCase(); // колонка L
+      if (mode === 'on')  return true;
+      if (mode === 'off') return false;
+    }
+  }
+  return false;
 }
 
 async function savePlanAndSverka() {
@@ -5969,6 +6110,33 @@ async function savePlanAndSverka() {
       }
     } catch(e) {
       toast('Ошибка сохранения режима вставки', 'e');
+    }
+  }
+
+  // Техническое обслуживание
+  const cb3 = document.getElementById('svc-toggle-cb');
+  if (cb3) {
+    const wasOn = S.svcMode;
+    S.svcMode = cb3.checked;
+    const newMode3 = S.svcMode ? 'On' : 'Off';
+    try {
+      const range3 = encodeURIComponent('USERS!L2:L2');
+      const url3 = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range3}?valueInputOption=USER_ENTERED`;
+      const resp3 = await fetch(url3, {
+        method: 'PUT',
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ values: [[newMode3]] })
+      });
+      if (resp3.ok) {
+        if (S.usersData && S.usersData[1]) S.usersData[1][11] = newMode3;
+        toast('Техническое обслуживание: ' + (S.svcMode ? 'Вкл' : 'Выкл'), 's');
+      } else {
+        toast('Ошибка сохранения режима обслуживания', 'e');
+        S.svcMode = wasOn;
+      }
+    } catch(e) {
+      toast('Ошибка сохранения режима обслуживания', 'e');
+      S.svcMode = wasOn;
     }
   }
 

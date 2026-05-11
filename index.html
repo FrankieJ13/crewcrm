@@ -135,7 +135,7 @@
             <div class="hmb-sep" id="hmb-sep-plan" style="display:none"></div>
             <button class="hmb-item" id="hmb-plan-edit" onclick="openPlanEditorWithSverka();closeHamburger()" style="display:none">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-              <span>Конфигурация</span>
+              <span>Настройки</span>
             </button>
             <div class="hmb-sep"></div>
             <button class="hmb-item" id="hmb-about-btn" onclick="openAbout();closeHamburger()">
@@ -157,7 +157,7 @@
   <div id="plan-editor-overlay" style="display:none" onclick="if(event.target===this)closePlanEditorFull()">
     <div id="plan-editor-modal">
       <div class="pe-hdr">
-        <span class="pe-title">Конфигурация</span>
+        <span class="pe-title">Настройки</span>
         <button class="pe-close" onclick="closePlanEditorFull()">×</button>
       </div>
       <div class="pe-body" id="pe-body">
@@ -205,6 +205,26 @@
                 </div>
                 <p style="font-size:11px;color:var(--txt3);line-height:1.6;margin:0">
                   При активации система включает возможность вставки визита между другими визитами через кнопку <b style="color:var(--txt2)">+</b>. Деактивация выключает этот режим и остаётся возможность добавлять новые визиты только через кнопку <b style="color:var(--txt2)">Добавить визит</b>.
+                </p>
+              </div>
+            </details>
+
+            <!-- Вложенный: Техническое обслуживание -->
+            <details class="cfg-spoiler-inner">
+              <summary class="cfg-spoiler-inner-hdr">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                Техническое обслуживание
+              </summary>
+              <div class="cfg-spoiler-inner-body">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+                  <label style="font-size:12px;color:var(--txt2);flex:1">Состояние</label>
+                  <label class="sverka-toggle" id="svc-toggle-label" title="Техническое обслуживание">
+                    <input type="checkbox" id="svc-toggle-cb">
+                    <span class="sverka-slider"></span>
+                  </label>
+                </div>
+                <p style="font-size:11px;color:var(--txt3);line-height:1.6;margin:0">
+                  При активации система отображает экран технического обслуживания для пользователей <b style="color:var(--txt2)">CRM</b> и <b style="color:var(--txt2)">Дожим</b>. Генеральный директор работает в штатном режиме.
                 </p>
               </div>
             </details>
@@ -712,6 +732,16 @@
       <button class="push-banner-close" onclick="closePushBanner()" aria-label="Закрыть">×</button>
     </div>
     <div class="push-banner-text" id="push-banner-text"></div>
+  </div>
+</div>
+
+<!-- MAINTENANCE OVERLAY -->
+<div id="maintenance-overlay" style="display:none">
+  <canvas id="maintenance-canvas"></canvas>
+  <div id="maintenance-text">
+    <span>Ведутся</span>
+    <span>технические</span>
+    <span>работы</span>
   </div>
 </div>
 

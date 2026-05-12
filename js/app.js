@@ -4048,10 +4048,89 @@ function initLinksTab() {
   sel.addEventListener('change', function() { if (this.value) renderCity(this.value); });
 }
 
+const MANGO_WEATHER_COORDS = {
+  "Барнаул":     { lat: 53.3474, lon: 83.7784 },
+  "Кемерово":    { lat: 55.3550, lon: 86.0873 },
+  "Красноярск":  { lat: 56.0184, lon: 92.8672 },
+  "Новокузнецк": { lat: 53.7575, lon: 87.1361 },
+  "Новосибирск": { lat: 55.0084, lon: 82.9357 },
+  "Омск":        { lat: 54.9885, lon: 73.3242 },
+  "Оренбург":    { lat: 51.7682, lon: 55.0970 },
+  "Пермь":       { lat: 58.0105, lon: 56.2502 },
+  "Сургут":      { lat: 61.2540, lon: 73.3962 },
+  "Томск":       { lat: 56.5010, lon: 84.9925 },
+  "Тюмень":      { lat: 57.1530, lon: 65.5343 },
+  "Челябинск":   { lat: 55.1644, lon: 61.4368 }
+};
+
+function _mangoWeatherEmoji(code) {
+  if (code === 0) return '☀️';
+  if ([1,2].includes(code)) return '🌤️';
+  if (code === 3) return '☁️';
+  if ([45,48].includes(code)) return '🌫️';
+  if ([51,53,55,56,57].includes(code)) return '🌦️';
+  if ([61,63,65,66,67,80,81,82].includes(code)) return '🌧️';
+  if ([71,73,75,77,85,86].includes(code)) return '❄️';
+  if ([95,96,99].includes(code)) return '⛈️';
+  return '⛅';
+}
+
+async function loadMangoWeather(city) {
+  const coords = MANGO_WEATHER_COORDS[city];
+  const emojiEl = document.getElementById('mango-weather-emoji');
+  const tempEl  = document.getElementById('mango-weather-temp');
+  if (!emojiEl || !tempEl) return;
+  if (!coords) { emojiEl.textContent = '—'; tempEl.textContent = ''; return; }
+  emojiEl.textContent = '…'; tempEl.textContent = '';
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&current=temperature_2m,weather_code&timezone=auto`;
+    const data = await (await fetch(url)).json();
+    const temp = Math.round(data.current.temperature_2m);
+    const code = data.current.weather_code;
+    emojiEl.textContent = _mangoWeatherEmoji(code);
+    tempEl.textContent  = (temp > 0 ? '+' : '') + temp + '°';
+  } catch(e) {
+    emojiEl.textContent = '⚠️'; tempEl.textContent = '--°';
+  }
+}
+
+function onMangoCityChange(sel) {
+  const city = sel.value;
+  localStorage.setItem('crm_mango_city', city);
+  const nameEl = document.getElementById('mango-city-name');
+  const addrEl = document.getElementById('mango-city-addr');
+  if (nameEl) nameEl.textContent = city;
+  if (addrEl) addrEl.textContent = LINKS_DATA[city]?.addr || '';
+  loadMangoWeather(city);
+}
+
 function renderMangoTab() {
   const mangoData = [['Барнаул','##9912'],['Красноярск','##1118'],['Кемерово','##1478'],['Новокузнецк','##1213'],['Новосибирск','##1516'],['Омск','##108'],['Оренбург','##11444'],['Пермь','##974'],['Сургут','##1811'],['Томск','##1417'],['Тюмень','##1512'],['Челябинск','##1612'],['АСЦ Пермь','239-26-26']];
   const rows = mangoData.map(([c,n]) => '<tr><td>'+c+'</td><td>'+n+'</td></tr>').join('');
+
+  const savedCity = localStorage.getItem('crm_mango_city') || 'Новосибирск';
+  const cityAddr  = LINKS_DATA[savedCity]?.addr || '';
+  const cityOpts  = Object.keys(MANGO_WEATHER_COORDS).map(c =>
+    `<option value="${c}"${c === savedCity ? ' selected' : ''}>${c}</option>`
+  ).join('');
+
+  const cityBlock =
+    '<div class="mango-city-block">' +
+      '<div class="mango-city-row" id="mango-city-row">' +
+        '<div class="mango-city-info">' +
+          '<span class="mango-city-name" id="mango-city-name">' + savedCity + '</span>' +
+          '<span class="mango-city-addr" id="mango-city-addr">' + cityAddr + '</span>' +
+        '</div>' +
+        '<div class="mango-weather-badge" id="mango-weather-badge">' +
+          '<span id="mango-weather-emoji">…</span>' +
+          '<span id="mango-weather-temp"></span>' +
+        '</div>' +
+      '</div>' +
+      '<select class="mango-city-select" onchange="onMangoCityChange(this)">' + cityOpts + '</select>' +
+    '</div>';
+
   const html =
+    cityBlock +
     '<div class="sec-title">Добавочные номера Mango</div>' +
     '<div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th></tr></thead><tbody>'+rows+'</tbody></table></div>' +
     '<div class="sec-title">Определить номер</div>' +
@@ -4067,6 +4146,7 @@ function renderMangoTab() {
     var i = document.getElementById('pl-inp');
     if (b) b.addEventListener('click', phoneLookup);
     if (i) i.addEventListener('keydown', function(e) { if (e.key === 'Enter') phoneLookup(); });
+    loadMangoWeather(savedCity);
   }, 0);
   return html;
 }

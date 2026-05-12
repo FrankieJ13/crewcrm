@@ -1897,81 +1897,6 @@ body.light .mop-modal-body {
   color:var(--acc); text-transform:uppercase;
   margin:10px 0 6px; padding-left:2px;
 }
-/* ---- Mango city+weather block ---- */
-.mango-city-block {
-  margin-bottom: 18px;
-}
-.mango-city-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-bottom: 14px;
-  border-bottom: 1.5px solid var(--line);
-  margin-bottom: 10px;
-}
-.mango-city-info {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  min-width: 0;
-  flex: 1;
-}
-.mango-city-name {
-  font-family: 'Unbounded', sans-serif;
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--txt);
-  white-space: nowrap;
-}
-.mango-city-addr {
-  font-family: 'Golos Text', sans-serif;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--txt3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.mango-weather-badge {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 12px;
-  border-radius: 12px;
-  background: var(--bg3);
-  border: 1px solid var(--line);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.mango-weather-badge span:first-child {
-  font-size: 18px;
-  line-height: 1;
-}
-.mango-weather-badge span:last-child {
-  font-family: 'Unbounded', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--txt);
-}
-.mango-city-select {
-  width: 100%;
-  padding: 8px 12px;
-  background: var(--bg3);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  color: var(--txt2);
-  font-family: 'Golos Text', sans-serif;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  outline: none;
-  -webkit-appearance: none;
-  appearance: none;
-}
-.mango-city-select:focus { border-color: var(--acc); }
-/* ---- end Mango city block ---- */
-
 .mango-wrap {
   border:1px solid var(--line); border-radius:var(--r2);
   overflow:hidden;
@@ -3566,16 +3491,31 @@ body.neo-dark .income-col .ic-lbl {
 }
 .links-city-select:focus { outline: none; border-color: var(--acc); }
 .links-city-header {
-  display: flex; align-items: baseline; gap: 10px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
   padding-bottom: 10px; margin-bottom: 14px;
   border-bottom: 1px solid var(--line);
 }
+.links-city-info {
+  display: flex; align-items: baseline; gap: 10px; min-width: 0; flex: 1;
+}
 .links-city-name {
   font-family: 'Unbounded', sans-serif; font-size: 13px;
-  font-weight: 600; color: var(--txt);
+  font-weight: 600; color: var(--txt); white-space: nowrap;
 }
 .links-city-addr {
   font-size: 12px; color: var(--txt3); letter-spacing: .02em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.links-weather-badge {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 11px; border-radius: 10px;
+  background: var(--bg3); border: 1px solid var(--line);
+  white-space: nowrap; flex-shrink: 0;
+}
+.links-weather-badge span:first-child { font-size: 16px; line-height: 1; }
+.links-weather-badge span:last-child {
+  font-family: 'Unbounded', sans-serif; font-size: 12px;
+  font-weight: 700; color: var(--txt);
 }
 .links-btns-grid {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;

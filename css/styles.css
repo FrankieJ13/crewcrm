@@ -1141,6 +1141,10 @@ body.login-active #scr-login {
   z-index: 100;
 }
 /* Авторство на экране логина — снизу */
+/* Для неавторизованного пользователя */
+body.login-active #btn-presence { display: none !important; }
+body.login-active .logo { pointer-events: none; cursor: default; }
+
 body.login-active .page-footer {
   position: fixed;
   bottom: env(safe-area-inset-bottom, 8px);

@@ -6642,7 +6642,7 @@ function renderRating() {
     return `
       <div class="rating-card ${rankClass}">
         ${petalsHtml}
-        <div class="rating-card-strip" style="background:${stripColor}"></div>
+        <div class="rating-card-strip" style="background:linear-gradient(to right,${stripColor},transparent)"></div>
         <div class="rating-card-top">
           <div class="rating-rank-num" style="background:${rankNumBg};color:${rankNumColor};font-size:${isTop?'16px':'10px'}">${isTop ? medalBtn(idx) : idx+1}</div>
           <div class="rating-card-name">

@@ -4036,7 +4036,9 @@ body.tiffany .rating-dept-btn.on {
 }
 /* Rank accent strip */
 .rating-card-strip {
-  position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  position: absolute; left: 0; top: 0; bottom: 0; width: 50%;
+  z-index: 0; pointer-events: none;
+  border-radius: inherit;
 }
 /* Top row: rank + name + pct */
 .rating-card-top {

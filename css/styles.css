@@ -5179,7 +5179,8 @@ body.fluent .income-col {
 }
 body.fluent .income-col,
 body.fluent .income-col .ic-lbl,
-body.fluent .income-col .ic-val { color: #111111 !important; }
+/* No !important — позволяет pctClr() красить .ic-val по % выполнения */
+body.fluent .income-col .ic-val { color: #111111; }
 body.fluent .income-col .ic-koef {
   background: rgba(255,255,255,.85) !important;
   border-color: rgba(0,0,0,.18);
@@ -5232,8 +5233,9 @@ body.fluent .zp-n { color: #111111 !important; }
 body.fluent .sec-title,
 body.fluent .kpi-subtitle,
 body.fluent .income-sec-title { color: #0078d4 !important; }
-body.fluent .dept-card .dc-lbl,
-body.fluent .dept-card .dc-val { color: #2a2a2a !important; }
+body.fluent .dept-card .dc-lbl { color: #2a2a2a !important; }
+/* No !important on dc-val — позволяет pctClr() красить прогноз по % выполнения */
+body.fluent .dept-card .dc-val { color: #2a2a2a; }
 
 /* ── Modals ── */
 body.fluent .mop-overlay {
@@ -5423,8 +5425,9 @@ body.fluent .ist-lbl,
 body.fluent .si-key,
 body.fluent .zl,
 body.fluent .ic-lbl { color: #5a5a5a !important; }
+/* No !important — позволяет pctClr() красить .mv/.mc-v в модалках по % */
 body.fluent .mv,
-body.fluent .mc-v,
+body.fluent .mc-v { color: #111111; }
 body.fluent .ib-val,
 body.fluent .ist-val,
 body.fluent .si-val,

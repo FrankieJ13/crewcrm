@@ -4298,6 +4298,9 @@ function showPlanEditBtnIfCeo(matched) {
   const isCeo = matched && matched.role === 'ceo';
   if (hmb) hmb.style.display = isCeo ? '' : 'none';
   if (sep) sep.style.display = isCeo ? '' : 'none';
+  // Кнопка экспорта отчёта — только CEO
+  const hmbExp = document.getElementById('hmb-export');
+  if (hmbExp) hmbExp.style.display = isCeo ? '' : 'none';
   // Итоги — скрыт у CEO (у CEO нет смысла, он и так видит всё на Главной)
   const itogiBtn = document.getElementById('dock-kpi-itogi');
   if (itogiBtn) itogiBtn.style.display = isCeo ? 'none' : '';
@@ -7968,3 +7971,620 @@ function toggleHmbTheme(e) {
     setInterval(startMatrixAnimation, 10000);
     window.addEventListener("load", startMatrixAnimation);
 })();
+
+/* ════════════════════════════════════════════════════════════════════
+ * EXPORT REPORT (CEO) — Excel/xlsx export of monthly CRM stats
+ * Все функции и переменные имеют префикс exp_ для изоляции.
+ * Не модифицирует существующие S.data.* — фетчит данные отдельно.
+ * ═══════════════════════════════════════════════════════════════════ */
+
+const EXP_EXCELJS_URL = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+let _expLibLoading = null;
+
+function exp_loadExcelJS() {
+  if (window.ExcelJS) return Promise.resolve();
+  if (_expLibLoading) return _expLibLoading;
+  _expLibLoading = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = EXP_EXCELJS_URL;
+    s.onload  = () => resolve();
+    s.onerror = () => { _expLibLoading = null; reject(new Error('Не удалось загрузить ExcelJS')); };
+    document.head.appendChild(s);
+  });
+  return _expLibLoading;
+}
+
+function exp_openModal() {
+  const ov = document.getElementById('export-modal-overlay');
+  const sel = document.getElementById('exp-month-sel');
+  if (!ov || !sel) return;
+  // Заполняем список месяцев (6 последних)
+  sel.innerHTML = '';
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
+    const yy = d.getFullYear().toString().slice(-2);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const suffix = mm + yy;
+    const opt = document.createElement('option');
+    opt.value = suffix;
+    opt.textContent = getMonthName(suffix);
+    if (suffix === currentSuffix) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  const status = document.getElementById('exp-status');
+  if (status) { status.textContent = ''; status.className = 'export-status'; }
+  const btn = document.getElementById('exp-go-btn');
+  if (btn) btn.disabled = false;
+  ov.style.display = 'flex';
+}
+
+function exp_closeModal() {
+  const ov = document.getElementById('export-modal-overlay');
+  if (ov) ov.style.display = 'none';
+}
+
+function exp_setStatus(text, kind) {
+  const el = document.getElementById('exp-status');
+  if (!el) return;
+  el.textContent = text || '';
+  el.className = 'export-status' + (kind ? ' ' + kind : '');
+}
+
+// Парс DD.MM.YYYY → {y,m,d} или null
+function exp_parseDate(s) {
+  if (!s) return null;
+  const m = String(s).match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  if (!m) return null;
+  return { y: +m[3], m: +m[2], d: +m[1] };
+}
+
+// Возвращает Map(nameLow → plan number) из массива plan-листа
+function exp_getPlanMap(planData) {
+  const map = {};
+  if (!planData || planData.length < 2) return map;
+  for (let i = 1; i < planData.length; i++) {
+    const row = planData[i];
+    if (!row || !row[0]) continue;
+    const name = String(row[0]).trim().toLowerCase();
+    const plan = parseFloat(String(row[1]||'0').replace(/[^\d.]/g,'')) || 0;
+    if (name) map[name] = plan;
+  }
+  return map;
+}
+
+// Список CRM-менеджеров (имя в исходном регистре) из USERS — без CEO, без dozhim
+function exp_getCrmManagers() {
+  const out = [];
+  const users = S.usersData || [];
+  for (let i = 1; i < users.length; i++) {
+    const u = users[i];
+    if (!u || !u[1]) continue;
+    const role = String(u[2]||'crm').toLowerCase().trim();
+    if (role === 'crm') out.push(String(u[1]).trim());
+  }
+  return out;
+}
+
+// Базовая ячейка статистики
+function exp_emptyMgr(name) {
+  return {
+    name,
+    visTotal: 0, visCrm: 0, visTl: 0,
+    kredit: 0, nal: 0, obmen: 0, vykup: 0, kom: 0,
+    otkaz: 0, fssp: 0, odobNeKupil: 0,
+  };
+}
+
+const EXP_STATUS = {
+  KREDIT: 'покупка (кредит)',
+  NAL:    'покупка (наличные)',
+  OBMEN:  'обмен',
+  VYKUP:  'выкуп',
+  KOM:    'комиссия',
+  OTKAZ:  'отказ',
+  FSSP:   'фссп не подаем',
+  ODOB:   'одобрено банком, но не купил',
+};
+const EXP_CAT_CRM = 'кат 800';
+const EXP_CAT_TL  = 'кат 1200';
+
+// Применяет инкременты статуса к объекту stat
+function exp_applyRow(stat, cat, st) {
+  if (cat === EXP_CAT_CRM) stat.visCrm++;
+  if (cat === EXP_CAT_TL)  stat.visTl++;
+  stat.visTotal++;
+  if (st === EXP_STATUS.KREDIT) stat.kredit++;
+  else if (st === EXP_STATUS.NAL)   stat.nal++;
+  else if (st === EXP_STATUS.OBMEN) stat.obmen++;
+  else if (st === EXP_STATUS.VYKUP) stat.vykup++;
+  else if (st === EXP_STATUS.KOM)   stat.kom++;
+  else if (st === EXP_STATUS.OTKAZ) stat.otkaz++;
+  else if (st === EXP_STATUS.FSSP)  stat.fssp++;
+  else if (st === EXP_STATUS.ODOB)  stat.odobNeKupil++;
+}
+
+// Главная: возвращает { managers: [...], total: {...}, byCity: {...}, daily: [{day,count}] }
+function exp_aggregate(vizData, crmNamesList) {
+  const allowed = new Set(crmNamesList.map(n => n.toLowerCase()));
+  const managers = {};
+  const byCity   = {}; // city → { _total: stat, mgrs: { nameLow: stat } }
+  const daily    = {}; // day(int) → count
+  for (const n of crmNamesList) managers[n.toLowerCase()] = exp_emptyMgr(n);
+
+  if (!vizData || vizData.length < 2) {
+    return {
+      managers: Object.values(managers),
+      total: exp_emptyMgr('ИТОГО'),
+      byCity, daily
+    };
+  }
+
+  for (let i = 1; i < vizData.length; i++) {
+    const row = vizData[i];
+    if (!row || !row[8]) continue;
+    const mgr  = String(row[8]).trim();
+    const mgrL = mgr.toLowerCase();
+    if (!allowed.has(mgrL)) continue; // только CRM-менеджеры из USERS
+    const cat  = String(row[6]||'').trim().toLowerCase();
+    const st   = String(row[4]||'').trim().toLowerCase();
+    const city = String(row[3]||'').trim() || '—';
+
+    exp_applyRow(managers[mgrL], cat, st);
+
+    if (!byCity[city]) byCity[city] = { _total: exp_emptyMgr('Город: ' + city), mgrs: {} };
+    if (!byCity[city].mgrs[mgrL]) byCity[city].mgrs[mgrL] = exp_emptyMgr(mgr);
+    exp_applyRow(byCity[city].mgrs[mgrL], cat, st);
+    exp_applyRow(byCity[city]._total, cat, st);
+
+    const d = exp_parseDate(row[0]);
+    if (d) daily[d.d] = (daily[d.d] || 0) + 1;
+  }
+
+  // ИТОГО
+  const total = exp_emptyMgr('ИТОГО');
+  Object.values(managers).forEach(m => {
+    total.visTotal    += m.visTotal;
+    total.visCrm      += m.visCrm;
+    total.visTl       += m.visTl;
+    total.kredit      += m.kredit;
+    total.nal         += m.nal;
+    total.obmen       += m.obmen;
+    total.vykup       += m.vykup;
+    total.kom         += m.kom;
+    total.otkaz       += m.otkaz;
+    total.fssp        += m.fssp;
+    total.odobNeKupil += m.odobNeKupil;
+  });
+
+  // daily в массив 1..31
+  const dailyArr = [];
+  for (let d = 1; d <= 31; d++) dailyArr.push({ day: d, count: daily[d] || 0 });
+
+  // managers в массив, сортируем по убыванию визитов
+  const mgrsArr = Object.values(managers).sort((a,b) => b.visTotal - a.visTotal);
+
+  return { managers: mgrsArr, total, byCity, daily: dailyArr };
+}
+
+// Рисуем chart: столбики по 31 дню → возвращает base64 PNG
+function exp_drawTimelineChart(dailyArr, monthLabel) {
+  const W = 980, H = 360;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // Фон
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  // Заголовок
+  ctx.fillStyle = '#222';
+  ctx.font = 'bold 18px Arial, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Хронология визитов — ' + monthLabel, 24, 30);
+
+  // Область графика
+  const padL = 50, padR = 24, padT = 60, padB = 50;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+  const maxVal = Math.max(1, ...dailyArr.map(d => d.count));
+  const niceMax = Math.ceil(maxVal / 5) * 5 || 5;
+
+  // Сетка и Y-оси
+  ctx.strokeStyle = '#e8e8e8';
+  ctx.fillStyle   = '#888';
+  ctx.font = '11px Arial, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const y = padT + plotH - (plotH * i / 5);
+    const v = Math.round(niceMax * i / 5);
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    ctx.fillText(String(v), padL - 6, y + 4);
+  }
+
+  // Bars
+  const barGap = 4;
+  const barW = (plotW - barGap * (dailyArr.length - 1)) / dailyArr.length;
+  dailyArr.forEach((d, i) => {
+    const h = plotH * (d.count / niceMax);
+    const x = padL + i * (barW + barGap);
+    const y = padT + plotH - h;
+    const grad = ctx.createLinearGradient(0, y, 0, y + h);
+    grad.addColorStop(0, '#5e8def');
+    grad.addColorStop(1, '#3a6bd6');
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, y, barW, h);
+    // X-метка (день)
+    ctx.fillStyle = '#666';
+    ctx.font = '10px Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(String(d.day), x + barW/2, H - padB + 14);
+    // Значение над столбиком, если > 0
+    if (d.count > 0) {
+      ctx.fillStyle = '#333';
+      ctx.font = 'bold 10px Arial, sans-serif';
+      ctx.fillText(String(d.count), x + barW/2, y - 4);
+    }
+  });
+
+  // Подпись оси X
+  ctx.fillStyle = '#888';
+  ctx.font = '11px Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('День месяца', W / 2, H - 8);
+
+  return canvas.toDataURL('image/png');
+}
+
+// Хелперы стиля для ExcelJS
+function exp_styleHeader(cell) {
+  cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+  cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3A6BD6' } };
+  cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+  cell.border = {
+    top:    { style: 'thin', color: { argb: 'FFCCCCCC' } },
+    left:   { style: 'thin', color: { argb: 'FFCCCCCC' } },
+    bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+    right:  { style: 'thin', color: { argb: 'FFCCCCCC' } },
+  };
+}
+function exp_styleData(cell, opts) {
+  cell.font = { size: 10 };
+  cell.alignment = { vertical: 'middle', horizontal: (opts && opts.left) ? 'left' : 'center' };
+  cell.border = {
+    top:    { style: 'hair', color: { argb: 'FFDDDDDD' } },
+    left:   { style: 'hair', color: { argb: 'FFDDDDDD' } },
+    bottom: { style: 'hair', color: { argb: 'FFDDDDDD' } },
+    right:  { style: 'hair', color: { argb: 'FFDDDDDD' } },
+  };
+  if (opts && opts.bg) {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: opts.bg } };
+  }
+}
+function exp_styleTotal(cell) {
+  cell.font = { bold: true, size: 10, color: { argb: 'FF222222' } };
+  cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFE9A8' } };
+  cell.alignment = { vertical: 'middle', horizontal: 'center' };
+  cell.border = {
+    top:    { style: 'thin', color: { argb: 'FF999999' } },
+    left:   { style: 'thin', color: { argb: 'FFDDDDDD' } },
+    bottom: { style: 'thin', color: { argb: 'FF999999' } },
+    right:  { style: 'thin', color: { argb: 'FFDDDDDD' } },
+  };
+}
+
+function exp_pct(num, den) {
+  if (!den) return 0;
+  return num / den;
+}
+
+// Главная: формирует workbook
+async function exp_buildWorkbook(opts) {
+  const { suffix, monthLabel, agg, plans, sections } = opts;
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'CRM Crew Dashboard';
+  wb.created = new Date();
+
+  /* === ЛИСТ 1: СВОДНАЯ === */
+  const ws = wb.addWorksheet('Сводный отчёт', {
+    views: [{ state: 'frozen', ySplit: 4 }],
+    pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true }
+  });
+
+  // Заголовок
+  ws.mergeCells('A1:R1');
+  const titleCell = ws.getCell('A1');
+  titleCell.value = 'ИТОГОВЫЙ ОТЧЁТ ЗА ' + monthLabel.toUpperCase();
+  titleCell.font = { bold: true, size: 16, color: { argb: 'FF1A1A1A' } };
+  titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+  ws.getRow(1).height = 28;
+  ws.getRow(2).height = 6;
+
+  // Определяем колонки в зависимости от sections
+  const cols = [{ key: 'name', label: 'Менеджер', width: 28, left: true }];
+  if (sections.summary) {
+    cols.push({ key: 'visTotal', label: 'Всего\nвизитов', width: 11 });
+    cols.push({ key: 'visCrm',   label: 'CRM\n(кат 800)', width: 11 });
+    cols.push({ key: 'visTl',    label: 'ТЛ\n(кат 1200)', width: 11 });
+    cols.push({ key: 'plan',     label: 'План',           width: 9 });
+    cols.push({ key: 'pctFact',  label: '% факта',        width: 10, pct: true });
+  }
+  if (sections.sales) {
+    cols.push({ key: 'kredit', label: 'Кредит',   width: 9 });
+    cols.push({ key: 'nal',    label: 'Наличные', width: 10 });
+    cols.push({ key: 'obmen',  label: 'Обмен',    width: 9 });
+    cols.push({ key: 'vykup',  label: 'Выкуп',    width: 9 });
+    cols.push({ key: 'kom',    label: 'Комиссия', width: 10 });
+  }
+  if (sections.refus) {
+    cols.push({ key: 'otkaz',       label: 'Отказ',          width: 9 });
+    cols.push({ key: 'fssp',        label: 'ФССП\nне подаём',width: 11 });
+    cols.push({ key: 'odobNeKupil', label: 'Одобрено,\nно не купил', width: 13 });
+  }
+  if (sections.pct) {
+    cols.push({ key: 'pOtkaz',  label: '% отказ',  width: 10, pct: true });
+    cols.push({ key: 'pFssp',   label: '% ФССП',   width: 10, pct: true });
+    cols.push({ key: 'pKredit', label: '% кредит', width: 10, pct: true });
+  }
+
+  // Section header row (3)
+  ws.mergeCells(3, 1, 3, cols.length);
+  const secCell = ws.getCell(3, 1);
+  secCell.value = 'СВОДНАЯ ПО МЕНЕДЖЕРАМ';
+  secCell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+  secCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1A1A' } };
+  secCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+  ws.getRow(3).height = 22;
+
+  // Header row (4)
+  cols.forEach((c, i) => {
+    const cell = ws.getCell(4, i + 1);
+    cell.value = c.label;
+    exp_styleHeader(cell);
+    ws.getColumn(i + 1).width = c.width;
+  });
+  ws.getRow(4).height = 36;
+
+  // Data rows
+  const allRows = agg.managers.slice();
+  let r = 5;
+  for (const m of allRows) {
+    const planVal = plans[m.name.toLowerCase()] || 0;
+    const pctFact = exp_pct(m.visTotal, planVal);
+    const pOtkaz  = exp_pct(m.otkaz, m.visTotal);
+    const pFssp   = exp_pct(m.fssp,  m.visTotal);
+    const pKredit = exp_pct(m.kredit, m.visTotal);
+    cols.forEach((c, i) => {
+      const cell = ws.getCell(r, i + 1);
+      let v;
+      if      (c.key === 'plan')    v = planVal || '';
+      else if (c.key === 'pctFact') v = planVal ? pctFact : '';
+      else if (c.key === 'pOtkaz')  v = pOtkaz;
+      else if (c.key === 'pFssp')   v = pFssp;
+      else if (c.key === 'pKredit') v = pKredit;
+      else                          v = m[c.key];
+      cell.value = (typeof v === 'number' && v === 0 && c.key !== 'pOtkaz' && c.key !== 'pFssp' && c.key !== 'pKredit' && c.key !== 'pctFact') ? 0 : v;
+      exp_styleData(cell, { left: c.left, bg: (r % 2 === 1) ? 'FFF7F9FC' : 'FFFFFFFF' });
+      if (c.pct) cell.numFmt = '0.0%';
+    });
+    r++;
+  }
+
+  // Итого
+  {
+    const t = agg.total;
+    const planSum = Object.values(plans).reduce((s, v) => s + (v||0), 0);
+    cols.forEach((c, i) => {
+      const cell = ws.getCell(r, i + 1);
+      let v = '';
+      if      (c.key === 'name')    v = 'ИТОГО';
+      else if (c.key === 'plan')    v = planSum || '';
+      else if (c.key === 'pctFact') v = planSum ? exp_pct(t.visTotal, planSum) : '';
+      else if (c.key === 'pOtkaz')  v = exp_pct(t.otkaz,  t.visTotal);
+      else if (c.key === 'pFssp')   v = exp_pct(t.fssp,   t.visTotal);
+      else if (c.key === 'pKredit') v = exp_pct(t.kredit, t.visTotal);
+      else                          v = t[c.key];
+      cell.value = v;
+      exp_styleTotal(cell);
+      if (c.pct) cell.numFmt = '0.0%';
+    });
+    r++;
+  }
+
+  /* === ЛИСТ 2: ПО ГОРОДАМ === */
+  if (sections.city) {
+    const wsC = wb.addWorksheet('По городам', {
+      views: [{ state: 'frozen', ySplit: 3 }],
+      pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true }
+    });
+    const cityCols = [
+      { label: 'Город',     w: 18 },
+      { label: 'Менеджер',  w: 26 },
+      { label: 'Визиты',    w: 10 },
+      { label: 'Кредит',    w: 9 },
+      { label: 'Наличные',  w: 10 },
+      { label: 'Обмен',     w: 9 },
+      { label: 'Выкуп',     w: 9 },
+      { label: 'Комиссия',  w: 10 },
+      { label: 'Отказ',     w: 9 },
+      { label: 'ФССП',      w: 9 },
+      { label: 'Одобр./не куп.', w: 14 },
+    ];
+    wsC.mergeCells(1, 1, 1, cityCols.length);
+    const t = wsC.getCell(1, 1);
+    t.value = 'РАЗБИВКА ПО ГОРОДАМ — ' + monthLabel.toUpperCase();
+    t.font = { bold: true, size: 14 };
+    t.alignment = { vertical: 'middle', horizontal: 'center' };
+    wsC.getRow(1).height = 26;
+    wsC.getRow(2).height = 6;
+
+    cityCols.forEach((c, i) => {
+      const cell = wsC.getCell(3, i + 1);
+      cell.value = c.label;
+      exp_styleHeader(cell);
+      wsC.getColumn(i + 1).width = c.w;
+    });
+    wsC.getRow(3).height = 28;
+
+    let cr = 4;
+    const cityNames = Object.keys(agg.byCity).sort((a, b) => a.localeCompare(b, 'ru'));
+    for (const cityName of cityNames) {
+      const cityBlock = agg.byCity[cityName];
+      const mgrsLow = Object.keys(cityBlock.mgrs).sort((a,b) =>
+        cityBlock.mgrs[b].visTotal - cityBlock.mgrs[a].visTotal
+      );
+      for (const mLow of mgrsLow) {
+        const m = cityBlock.mgrs[mLow];
+        const row = [cityName, m.name, m.visTotal, m.kredit, m.nal, m.obmen, m.vykup, m.kom, m.otkaz, m.fssp, m.odobNeKupil];
+        row.forEach((v, i) => {
+          const cell = wsC.getCell(cr, i + 1);
+          cell.value = v;
+          exp_styleData(cell, { left: i < 2, bg: (cr % 2 === 0) ? 'FFF7F9FC' : 'FFFFFFFF' });
+        });
+        cr++;
+      }
+      // Итого по городу
+      const ct = cityBlock._total;
+      const totalRow = [cityName, 'ИТОГО по городу', ct.visTotal, ct.kredit, ct.nal, ct.obmen, ct.vykup, ct.kom, ct.otkaz, ct.fssp, ct.odobNeKupil];
+      totalRow.forEach((v, i) => {
+        const cell = wsC.getCell(cr, i + 1);
+        cell.value = v;
+        exp_styleTotal(cell);
+      });
+      cr++;
+    }
+    // Общий итог
+    {
+      const t2 = agg.total;
+      const totalRow = ['ВСЕ ГОРОДА', 'ОБЩИЙ ИТОГ', t2.visTotal, t2.kredit, t2.nal, t2.obmen, t2.vykup, t2.kom, t2.otkaz, t2.fssp, t2.odobNeKupil];
+      totalRow.forEach((v, i) => {
+        const cell = wsC.getCell(cr, i + 1);
+        cell.value = v;
+        cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1A1A' } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      });
+    }
+  }
+
+  /* === ЛИСТ 3: ХРОНОЛОГИЯ === */
+  if (sections.timeline) {
+    const wsT = wb.addWorksheet('Хронология', {
+      pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true }
+    });
+    wsT.mergeCells('A1:F1');
+    const t = wsT.getCell('A1');
+    t.value = 'ХРОНОЛОГИЯ ВИЗИТОВ — ' + monthLabel.toUpperCase();
+    t.font = { bold: true, size: 14 };
+    t.alignment = { vertical: 'middle', horizontal: 'center' };
+    wsT.getRow(1).height = 26;
+
+    // PNG-чарт
+    const pngDataUrl = exp_drawTimelineChart(agg.daily, monthLabel);
+    const pngB64 = pngDataUrl.replace(/^data:image\/png;base64,/, '');
+    const imageId = wb.addImage({ base64: pngB64, extension: 'png' });
+    // Якорь: с A3 до G22 (≈ 20 строк)
+    wsT.addImage(imageId, { tl: { col: 0, row: 2 }, ext: { width: 980, height: 360 } });
+
+    // Таблица день/число — ниже чарта
+    const tableStart = 24;
+    wsT.getCell(tableStart, 1).value = 'День';
+    wsT.getCell(tableStart, 2).value = 'Визитов';
+    exp_styleHeader(wsT.getCell(tableStart, 1));
+    exp_styleHeader(wsT.getCell(tableStart, 2));
+    wsT.getColumn(1).width = 8;
+    wsT.getColumn(2).width = 12;
+    let totalCount = 0;
+    agg.daily.forEach((d, i) => {
+      const cell1 = wsT.getCell(tableStart + 1 + i, 1);
+      const cell2 = wsT.getCell(tableStart + 1 + i, 2);
+      cell1.value = d.day;
+      cell2.value = d.count;
+      exp_styleData(cell1, { bg: (i % 2 === 0) ? 'FFF7F9FC' : 'FFFFFFFF' });
+      exp_styleData(cell2, { bg: (i % 2 === 0) ? 'FFF7F9FC' : 'FFFFFFFF' });
+      totalCount += d.count;
+    });
+    const totalRowIdx = tableStart + 1 + agg.daily.length;
+    wsT.getCell(totalRowIdx, 1).value = 'Итого';
+    wsT.getCell(totalRowIdx, 2).value = totalCount;
+    exp_styleTotal(wsT.getCell(totalRowIdx, 1));
+    exp_styleTotal(wsT.getCell(totalRowIdx, 2));
+  }
+
+  return wb;
+}
+
+async function exp_run() {
+  const btn = document.getElementById('exp-go-btn');
+  const sel = document.getElementById('exp-month-sel');
+  if (!btn || !sel) return;
+  btn.disabled = true;
+  try {
+    const suffix = sel.value;
+    if (!suffix) throw new Error('Не выбран месяц');
+    const monthLabel = getMonthName(suffix);
+
+    const sections = {
+      summary:  document.getElementById('exp-s-summary').checked,
+      sales:    document.getElementById('exp-s-sales').checked,
+      refus:    document.getElementById('exp-s-refus').checked,
+      pct:      document.getElementById('exp-s-pct').checked,
+      city:     document.getElementById('exp-s-city').checked,
+      timeline: document.getElementById('exp-s-timeline').checked,
+    };
+    if (!Object.values(sections).some(Boolean)) {
+      exp_setStatus('Выберите хотя бы один раздел', 'err');
+      btn.disabled = false;
+      return;
+    }
+
+    exp_setStatus('Загружаем библиотеку…');
+    await exp_loadExcelJS();
+
+    exp_setStatus('Получаем данные за ' + monthLabel + '…');
+    const vizName  = 'ВИЗИТЫ' + suffix;
+    const planName = 'ПЛАН'   + suffix;
+    let vizData, planData;
+    try {
+      [vizData, planData] = await Promise.all([
+        api(vizName,  'A:N'),
+        api(planName, 'A:B').catch(() => []),
+      ]);
+    } catch (e) {
+      exp_setStatus('Нет данных за выбранный месяц', 'err');
+      btn.disabled = false;
+      return;
+    }
+
+    exp_setStatus('Считаем статистику…');
+    const crmMgrs = exp_getCrmManagers();
+    const agg     = exp_aggregate(vizData, crmMgrs);
+    const plans   = exp_getPlanMap(planData);
+
+    exp_setStatus('Формируем файл…');
+    const wb = await exp_buildWorkbook({ suffix, monthLabel, agg, plans, sections });
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = 'Итоговый отчёт — ' + monthLabel + '.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+    exp_setStatus('✓ Готово', 'ok');
+    toast('Отчёт сформирован', 's');
+    setTimeout(() => exp_closeModal(), 800);
+  } catch (e) {
+    console.error('export error', e);
+    exp_setStatus('Ошибка: ' + (e.message || 'не удалось сформировать'), 'err');
+    toast('Ошибка экспорта', 'e');
+  } finally {
+    btn.disabled = false;
+  }
+}
+/* ════════════════════ END EXPORT REPORT ════════════════════ */

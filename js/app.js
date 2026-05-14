@@ -8103,19 +8103,24 @@ function exp_applyRow(stat, cat, st) {
   else if (st === EXP_STATUS.ODOB)  stat.odobNeKupil++;
 }
 
-// Главная: возвращает { managers: [...], total: {...}, byCity: {...}, daily: [{day,count}] }
+// Главная: возвращает { managers, total, byCity, daily, dailyByMgr }
+// dailyByMgr: Map(nameLow → Array<31>) — визиты по дням для каждого менеджера
 function exp_aggregate(vizData, crmNamesList) {
   const allowed = new Set(crmNamesList.map(n => n.toLowerCase()));
   const managers = {};
   const byCity   = {}; // city → { _total: stat, mgrs: { nameLow: stat } }
   const daily    = {}; // day(int) → count
-  for (const n of crmNamesList) managers[n.toLowerCase()] = exp_emptyMgr(n);
+  const dailyByMgr = {}; // nameLow → { day(int) → count }
+  for (const n of crmNamesList) {
+    managers[n.toLowerCase()] = exp_emptyMgr(n);
+    dailyByMgr[n.toLowerCase()] = {};
+  }
 
   if (!vizData || vizData.length < 2) {
     return {
       managers: Object.values(managers),
       total: exp_emptyMgr('ИТОГО'),
-      byCity, daily
+      byCity, daily, dailyByMgr
     };
   }
 
@@ -8137,7 +8142,10 @@ function exp_aggregate(vizData, crmNamesList) {
     exp_applyRow(byCity[city]._total, cat, st);
 
     const d = exp_parseDate(row[0]);
-    if (d) daily[d.d] = (daily[d.d] || 0) + 1;
+    if (d) {
+      daily[d.d] = (daily[d.d] || 0) + 1;
+      dailyByMgr[mgrL][d.d] = (dailyByMgr[mgrL][d.d] || 0) + 1;
+    }
   }
 
   // ИТОГО
@@ -8163,7 +8171,16 @@ function exp_aggregate(vizData, crmNamesList) {
   // managers в массив, сортируем по убыванию визитов
   const mgrsArr = Object.values(managers).sort((a,b) => b.visTotal - a.visTotal);
 
-  return { managers: mgrsArr, total, byCity, daily: dailyArr };
+  // dailyByMgr → объект { nameLow: { name, perDay: Array<31> } }
+  const dailyByMgrArr = {};
+  for (const m of mgrsArr) {
+    const nl = m.name.toLowerCase();
+    const arr = [];
+    for (let d = 1; d <= 31; d++) arr.push(dailyByMgr[nl][d] || 0);
+    dailyByMgrArr[nl] = { name: m.name, perDay: arr, total: m.visTotal };
+  }
+
+  return { managers: mgrsArr, total, byCity, daily: dailyArr, dailyByMgr: dailyByMgrArr };
 }
 
 // Рисуем chart: столбики по 31 дню → возвращает base64 PNG
@@ -8233,6 +8250,132 @@ function exp_drawTimelineChart(dailyArr, monthLabel) {
   ctx.font = '11px Arial, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText('День месяца', W / 2, H - 8);
+
+  return canvas.toDataURL('image/png');
+}
+
+// Палитра цветов для линий менеджеров на мульти-чарте
+const EXP_PALETTE = [
+  '#3a6bd6', '#e74c3c', '#27ae60', '#f39c12', '#9b59b6',
+  '#16a085', '#e84393', '#2c3e50', '#d35400', '#1abc9c',
+  '#c0392b', '#7f8c8d', '#2980b9', '#8e44ad', '#f1c40f',
+  '#34495e', '#00b894', '#fd79a8', '#6c5ce7', '#e17055',
+];
+
+// Мульти-линейный чарт: каждый менеджер = своя цветная линия
+function exp_drawTimelineByMgrChart(dailyByMgrObj, monthLabel) {
+  const mgrs = Object.values(dailyByMgrObj).filter(m => m.total > 0);
+  if (mgrs.length === 0) return null;
+
+  // Адаптируем высоту под количество менеджеров (легенда)
+  const legendCols = 3;
+  const legendRows = Math.ceil(mgrs.length / legendCols);
+  const legendH = legendRows * 20 + 10;
+
+  const W = 980, H = 420 + legendH;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  // Заголовок
+  ctx.fillStyle = '#222';
+  ctx.font = 'bold 18px Arial, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Хронология визитов по менеджерам — ' + monthLabel, 24, 30);
+
+  // Plot area
+  const padL = 50, padR = 24, padT = 60, padB = 50 + legendH;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  // Макс по любому менеджеру в любой день
+  let maxVal = 1;
+  mgrs.forEach(m => m.perDay.forEach(v => { if (v > maxVal) maxVal = v; }));
+  const niceMax = Math.ceil(maxVal / 5) * 5 || 5;
+
+  // Сетка и Y-метки
+  ctx.strokeStyle = '#e8e8e8';
+  ctx.fillStyle   = '#888';
+  ctx.font = '11px Arial, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const y = padT + plotH - (plotH * i / 5);
+    const v = Math.round(niceMax * i / 5);
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    ctx.fillText(String(v), padL - 6, y + 4);
+  }
+
+  // X-разметка (дни 1..31)
+  const stepX = plotW / 30;
+  ctx.fillStyle = '#666';
+  ctx.font = '10px Arial, sans-serif';
+  ctx.textAlign = 'center';
+  for (let d = 1; d <= 31; d++) {
+    const x = padL + (d - 1) * stepX;
+    if (d === 1 || d % 5 === 0 || d === 31) {
+      ctx.fillText(String(d), x, padT + plotH + 14);
+    }
+  }
+
+  // Линии менеджеров
+  mgrs.forEach((m, idx) => {
+    const color = EXP_PALETTE[idx % EXP_PALETTE.length];
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.8;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    let started = false;
+    m.perDay.forEach((v, di) => {
+      const x = padL + di * stepX;
+      const y = padT + plotH - (plotH * v / niceMax);
+      if (!started) { ctx.moveTo(x, y); started = true; }
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    // Точки
+    m.perDay.forEach((v, di) => {
+      if (v === 0) return;
+      const x = padL + di * stepX;
+      const y = padT + plotH - (plotH * v / niceMax);
+      ctx.beginPath();
+      ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  });
+
+  // Подпись оси X
+  ctx.fillStyle = '#888';
+  ctx.font = '11px Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('День месяца', padL + plotW / 2, padT + plotH + 32);
+
+  // Легенда
+  const legendStartY = H - legendH + 4;
+  const legendColW = (W - 40) / legendCols;
+  mgrs.forEach((m, idx) => {
+    const color = EXP_PALETTE[idx % EXP_PALETTE.length];
+    const col = idx % legendCols;
+    const row = Math.floor(idx / legendCols);
+    const lx = 24 + col * legendColW;
+    const ly = legendStartY + row * 20;
+    ctx.fillStyle = color;
+    ctx.fillRect(lx, ly + 4, 12, 4);
+    ctx.fillStyle = '#333';
+    ctx.font = '11px Arial, sans-serif';
+    ctx.textAlign = 'left';
+    const label = m.name + ' (' + m.total + ')';
+    const maxTxtW = legendColW - 20;
+    let txt = label;
+    if (ctx.measureText(txt).width > maxTxtW) {
+      while (ctx.measureText(txt + '…').width > maxTxtW && txt.length > 4) txt = txt.slice(0, -1);
+      txt += '…';
+    }
+    ctx.fillText(txt, lx + 18, ly + 12);
+  });
 
   return canvas.toDataURL('image/png');
 }
@@ -8480,36 +8623,101 @@ async function exp_buildWorkbook(opts) {
     t.alignment = { vertical: 'middle', horizontal: 'center' };
     wsT.getRow(1).height = 26;
 
-    // PNG-чарт
+    // === Чарт 1: общая хронология по отделу ===
     const pngDataUrl = exp_drawTimelineChart(agg.daily, monthLabel);
     const pngB64 = pngDataUrl.replace(/^data:image\/png;base64,/, '');
     const imageId = wb.addImage({ base64: pngB64, extension: 'png' });
-    // Якорь: с A3 до G22 (≈ 20 строк)
     wsT.addImage(imageId, { tl: { col: 0, row: 2 }, ext: { width: 980, height: 360 } });
 
-    // Таблица день/число — ниже чарта
-    const tableStart = 24;
+    // === Чарт 2: по менеджерам (мульти-линии) ===
+    const mgrChartUrl = exp_drawTimelineByMgrChart(agg.dailyByMgr, monthLabel);
+    let nextAnchorRow = 24;
+    if (mgrChartUrl) {
+      const mgrChartH = 420 + Math.ceil(
+        Object.values(agg.dailyByMgr).filter(m => m.total > 0).length / 3
+      ) * 20 + 10;
+      const mgrPngB64 = mgrChartUrl.replace(/^data:image\/png;base64,/, '');
+      const mgrImgId = wb.addImage({ base64: mgrPngB64, extension: 'png' });
+      wsT.addImage(mgrImgId, { tl: { col: 0, row: 23 }, ext: { width: 980, height: mgrChartH } });
+      // Каждая строка в Excel ≈ 20px, оценим высоту в строках
+      nextAnchorRow = 24 + Math.ceil(mgrChartH / 20) + 2;
+    }
+
+    // === Таблица: день × менеджер (широкая) ===
+    const mgrsWithData = Object.values(agg.dailyByMgr).filter(m => m.total > 0);
+    const hasMgrTable = mgrsWithData.length > 0;
+
+    const tableStart = nextAnchorRow;
+    // Заголовок: День | Менеджер1 | Менеджер2 | ... | ИТОГО
     wsT.getCell(tableStart, 1).value = 'День';
-    wsT.getCell(tableStart, 2).value = 'Визитов';
     exp_styleHeader(wsT.getCell(tableStart, 1));
-    exp_styleHeader(wsT.getCell(tableStart, 2));
     wsT.getColumn(1).width = 8;
-    wsT.getColumn(2).width = 12;
-    let totalCount = 0;
-    agg.daily.forEach((d, i) => {
-      const cell1 = wsT.getCell(tableStart + 1 + i, 1);
-      const cell2 = wsT.getCell(tableStart + 1 + i, 2);
-      cell1.value = d.day;
-      cell2.value = d.count;
-      exp_styleData(cell1, { bg: (i % 2 === 0) ? 'FFF7F9FC' : 'FFFFFFFF' });
-      exp_styleData(cell2, { bg: (i % 2 === 0) ? 'FFF7F9FC' : 'FFFFFFFF' });
-      totalCount += d.count;
+
+    if (hasMgrTable) {
+      mgrsWithData.forEach((m, idx) => {
+        const col = 2 + idx;
+        const cell = wsT.getCell(tableStart, col);
+        cell.value = m.name;
+        exp_styleHeader(cell);
+        wsT.getColumn(col).width = Math.max(11, Math.min(22, m.name.length + 2));
+      });
+      const totalCol = 2 + mgrsWithData.length;
+      wsT.getCell(tableStart, totalCol).value = 'Отдел';
+      exp_styleHeader(wsT.getCell(tableStart, totalCol));
+      wsT.getColumn(totalCol).width = 10;
+    } else {
+      wsT.getCell(tableStart, 2).value = 'Визитов';
+      exp_styleHeader(wsT.getCell(tableStart, 2));
+      wsT.getColumn(2).width = 12;
+    }
+    wsT.getRow(tableStart).height = 32;
+
+    // Тело таблицы
+    agg.daily.forEach((d, di) => {
+      const rowIdx = tableStart + 1 + di;
+      const bg = (di % 2 === 0) ? 'FFF7F9FC' : 'FFFFFFFF';
+      const dayCell = wsT.getCell(rowIdx, 1);
+      dayCell.value = d.day;
+      exp_styleData(dayCell, { bg });
+
+      if (hasMgrTable) {
+        mgrsWithData.forEach((m, mi) => {
+          const cell = wsT.getCell(rowIdx, 2 + mi);
+          const v = m.perDay[di] || 0;
+          cell.value = v;
+          exp_styleData(cell, { bg });
+          if (v === 0) cell.font = { size: 10, color: { argb: 'FFCCCCCC' } };
+        });
+        const totCell = wsT.getCell(rowIdx, 2 + mgrsWithData.length);
+        totCell.value = d.count;
+        exp_styleData(totCell, { bg });
+        totCell.font = { size: 10, bold: true };
+      } else {
+        const cell = wsT.getCell(rowIdx, 2);
+        cell.value = d.count;
+        exp_styleData(cell, { bg });
+      }
     });
+
+    // ИТОГО внизу
+    let totalCount = 0;
+    agg.daily.forEach(d => totalCount += d.count);
     const totalRowIdx = tableStart + 1 + agg.daily.length;
     wsT.getCell(totalRowIdx, 1).value = 'Итого';
-    wsT.getCell(totalRowIdx, 2).value = totalCount;
     exp_styleTotal(wsT.getCell(totalRowIdx, 1));
-    exp_styleTotal(wsT.getCell(totalRowIdx, 2));
+    if (hasMgrTable) {
+      mgrsWithData.forEach((m, mi) => {
+        const cell = wsT.getCell(totalRowIdx, 2 + mi);
+        cell.value = m.total;
+        exp_styleTotal(cell);
+      });
+      const totCell = wsT.getCell(totalRowIdx, 2 + mgrsWithData.length);
+      totCell.value = totalCount;
+      exp_styleTotal(totCell);
+    } else {
+      wsT.getCell(totalRowIdx, 2).value = totalCount;
+      exp_styleTotal(wsT.getCell(totalRowIdx, 2));
+    }
   }
 
   return wb;

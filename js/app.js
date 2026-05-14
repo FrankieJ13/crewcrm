@@ -9003,13 +9003,15 @@ function exp_pdfBuildTimelineSection(agg, monthLabel) {
 
 function exp_runPdf({ suffix, monthLabel, agg, plans, sections }) {
   const css = `
-    @page { size: A4 landscape; margin: 10mm; }
+    /* margin:0 у @page — у браузера нет места под автоматический URL/заголовок */
+    @page { size: A4 landscape; margin: 0; }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
       color: #1a1a1a;
       font-size: 10pt;
+      padding: 10mm 10mm 10mm 10mm;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
@@ -9031,6 +9033,10 @@ function exp_runPdf({ suffix, monthLabel, agg, plans, sections }) {
     }
     table.rpt-table.small { font-size: 8pt; }
     table.rpt-table.narrow { width: 40%; margin-left: auto; margin-right: auto; }
+    /* Повторяем шапку на каждой странице, если таблица растянулась */
+    table.rpt-table thead { display: table-header-group; }
+    table.rpt-table tfoot { display: table-footer-group; }
+    table.rpt-table tbody tr { page-break-inside: avoid; }
     table.rpt-table thead th {
       background: #3a6bd6; color: #fff; font-weight: 700;
       padding: 2mm 2mm; text-align: center; border: 1px solid #ccc;
@@ -9057,7 +9063,11 @@ function exp_runPdf({ suffix, monthLabel, agg, plans, sections }) {
     .chart-wrap img { max-width: 100%; height: auto; }
     .page-break { page-break-after: always; }
     .empty { color: #999; font-style: italic; text-align: center; margin: 4mm 0; }
-    .footer { margin-top: 6mm; text-align: center; color: #999; font-size: 8pt; }
+    .footer {
+      margin-top: 6mm; text-align: center;
+      color: #555; font-size: 9pt; font-weight: 600;
+      font-style: italic;
+    }
   `;
 
   // Сборка тела
@@ -9085,7 +9095,7 @@ function exp_runPdf({ suffix, monthLabel, agg, plans, sections }) {
     body += exp_pdfBuildTimelineSection(agg, monthLabel);
   }
 
-  body += '<div class="footer">CRM Crew Dashboard · ' + new Date().getFullYear() + '</div>';
+  body += '<div class="footer">Отчёт подготовил Бочаров Ю.С.</div>';
 
   const fullHtml =
     '<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8">' +

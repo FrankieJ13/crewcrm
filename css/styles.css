@@ -5006,3 +5006,437 @@ body:not(.cosmic) .sched-person-name {
 .export-status.ok  { color: var(--grn); }
 .export-status.err { color: var(--red); }
 /* ===== END EXPORT MODAL ===== */
+
+/* ══════════════════════════════════════════════
+   FLUENT THEME
+   Gray-toned, Fluent/Windows design language
+   ══════════════════════════════════════════════ */
+body.fluent {
+  background: #f5f5f5 !important;
+  --bg:      #f5f5f5;
+  --bg2:     #ebebeb;
+  --bg3:     #e0e0e0;
+  --line:    #c8c8c8;
+  --line2:   #b0b0b0;
+  --txt:     #111111;
+  --txt2:    #3c3c3c;
+  --txt3:    #787878;
+  --acc:     #0078d4;
+  --acc-rgb: 0,120,212;
+  --acc-bg:  rgba(0,120,212,.10);
+  --acc-bdr: rgba(0,120,212,.38);
+  --red:     #c42b1c;
+  --grn:     #107c10;
+  --blu:     #0078d4;
+  --org:     #ca5010;
+  --r:       8px;
+  --r2:      12px;
+  --m4-bg:   #b0b0b0;
+}
+
+body.fluent canvas#bg-canvas { opacity: 0.04; }
+body.fluent .glass {
+  background: rgba(245,245,245,0.08) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* ── Header ── */
+body.fluent header {
+  background: #3c3c3c !important;
+  border-bottom: 1px solid #2a2a2a !important;
+  box-shadow: 0 1px 6px rgba(0,0,0,.28);
+  color: #f5f5f5;
+}
+body.fluent .hdr-title-main,
+body.fluent .hdr-greeting { color: #f5f5f5 !important; -webkit-text-fill-color: #f5f5f5 !important; }
+
+/* Aurora title override — flat white, no animated gradient */
+body.fluent .hdr-title-main.aurora,
+body.fluent .hdr-greeting.aurora {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: #f5f5f5 !important;
+  color: #f5f5f5 !important;
+  animation: none !important;
+}
+
+/* Header buttons (btn-icon in dark header) */
+body.fluent .btn-icon {
+  background: rgba(255,255,255,.10) !important;
+  border-color: rgba(255,255,255,.14) !important;
+  color: #f0f0f0 !important;
+}
+body.fluent .btn-icon:hover {
+  background: rgba(255,255,255,.18) !important;
+}
+
+/* ── Dock ── */
+body.fluent .dock-container {
+  background: #2a2a2a !important;
+  border: 1px solid #1a1a1a !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,.32);
+}
+body.fluent .dock-btn { color: #b8b8b8 !important; }
+body.fluent .dock-btn.dock-active {
+  background: rgba(0,120,212,.18) !important;
+  border: 1px solid rgba(0,120,212,.42) !important;
+  border-radius: 12px;
+  color: #0078d4 !important;
+}
+body.fluent .dock-btn.dock-active svg { color: #0078d4 !important; }
+body.fluent #main-dock .app-icon {
+  width: 28px;
+  height: 28px;
+}
+
+/* Dock popup */
+body.fluent .dock-popup {
+  background: #363636 !important;
+  border: 1px solid #1e1e1e !important;
+}
+body.fluent .dock-popup-btn {
+  color: #eeeeee !important;
+}
+body.fluent .dock-popup-btn:hover {
+  background: rgba(255,255,255,.10) !important;
+  color: #ffffff !important;
+}
+
+/* ── Hamburger ── */
+body.fluent .hamburger-dropdown {
+  background: #404040 !important;
+  border: 1px solid #2a2a2a !important;
+}
+body.fluent #hamburger-backdrop {
+  background: rgba(10,10,10,.6);
+}
+body.fluent .hmb-item { color: #eeeeee !important; }
+body.fluent .hmb-item:hover { background: rgba(255,255,255,.08) !important; }
+body.fluent .hmb-item.hmb-danger { color: #ff8c8c !important; }
+
+/* ── dept-card / dept-cell ── */
+body.fluent .dept-card {
+  background: linear-gradient(135deg, #ececec, #e0e0e0) !important;
+  border: 1px solid #c0c0c0 !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,.10);
+}
+body.fluent .dept-cell {
+  background: linear-gradient(135deg, #e4e4e4, #d4d4d4) !important;
+  border: 1px solid #b4b4b4 !important;
+  border-radius: var(--r);
+  color: #111111 !important;
+}
+body.fluent .dc-lbl { color: #545454 !important; }
+body.fluent .dc-val { color: #111111 !important; }
+
+/* ── mop / zp-row / rating-card ── */
+body.fluent .mop,
+body.fluent .zp-row,
+body.fluent .rating-card,
+body.fluent .vt-row-card {
+  background: linear-gradient(135deg, #ededed, #e2e2e2) !important;
+  border: 1px solid #c8c8c8 !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,.08);
+}
+
+/* ── rank-badge ── */
+body.fluent .rank-badge {
+  background: linear-gradient(135deg, #e4e4e4, #d0d0d0) !important;
+  border: 1px solid #a0a0a0 !important;
+  color: #1a1a1a !important;
+}
+
+/* ── rating-card-stat ── */
+body.fluent .rating-card-stats { background: transparent !important; border: 0; }
+body.fluent .rating-card-stat {
+  background: linear-gradient(135deg, #e8e8e8, #d8d8d8) !important;
+  border: 1px solid #afafaf !important;
+  color: #111111 !important;
+}
+body.fluent .rating-card-stat span,
+body.fluent .rating-card-stat b { color: #111111 !important; }
+
+/* ── income-col ── */
+body.fluent .income-cols {
+  background: transparent !important;
+  border: 1px solid #c0c0c0 !important;
+  border-radius: var(--r);
+  padding: 8px;
+}
+body.fluent .income-col {
+  background: rgba(255,255,255,.5) !important;
+  border: 1px solid #c0c0c0 !important;
+  box-shadow: none !important;
+}
+body.fluent .income-col,
+body.fluent .income-col .ic-lbl,
+body.fluent .income-col .ic-val { color: #111111 !important; }
+body.fluent .income-col .ic-koef {
+  background: rgba(255,255,255,.85) !important;
+  border-color: rgba(0,0,0,.18);
+  color: #111111 !important;
+}
+
+/* ── Schedule ── */
+body.fluent .sched-edit-icon { background: #3c3c3c !important; }
+body.fluent .sched-nav-icon  { background: #3c3c3c !important; }
+body.fluent .sched-person-name { color: #111111 !important; }
+body.fluent .sched-cell.dr  { background: rgba(16,124,16,.15) !important; color: #0a5a0a !important; }
+body.fluent .sched-cell.dv  { background: rgba(209,52,56,.12) !important; color: #7a1a1a !important; }
+body.fluent .sched-bulk-svg { color: #3c3c3c; }
+
+/* GrafikSave / GrafikExit — hide inline SVG, show Fluent icon via ::before */
+body.fluent .sched-bulk-icon-btn .sched-bulk-svg { display: none !important; }
+body.fluent .sched-bulk-icon-btn[title*="Выход"]::before {
+  content: ''; display: block; width: 22px; height: 22px;
+  background: url('./logos/Fluent/FluentColor-GrafikExit.svg') center/contain no-repeat;
+}
+body.fluent .sched-bulk-icon-btn[title*="Сохранить"]::before {
+  content: ''; display: block; width: 22px; height: 22px;
+  background: url('./logos/Fluent/FluentColor-GrafikSave.svg') center/contain no-repeat;
+}
+
+/* ── mm / income-badge ── */
+body.fluent .mm,
+body.fluent .income-badge {
+  border: 1px solid #b8b8b8 !important;
+  background: #e8e8e8 !important;
+}
+
+/* ── Text colors ── */
+body.fluent .mop-name,
+body.fluent .rating-card-name-text,
+body.fluent .zp-n { color: #111111 !important; }
+body.fluent .sec-title,
+body.fluent .kpi-subtitle,
+body.fluent .income-sec-title { color: #0078d4 !important; }
+body.fluent .dept-card .dc-lbl,
+body.fluent .dept-card .dc-val { color: #2a2a2a !important; }
+
+/* ── Modals ── */
+body.fluent .mop-overlay {
+  background: rgba(40,40,40,.45) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+body.fluent .mop-modal,
+body.fluent .income-modal,
+body.fluent #sal-info-modal,
+body.fluent #plan-editor-modal,
+body.fluent #about-modal,
+body.fluent .vt-picker-modal {
+  background: linear-gradient(135deg, rgba(248,248,248,.97), rgba(234,234,234,.95)) !important;
+  border: 1px solid #c0c0c0 !important;
+  box-shadow: 0 20px 50px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.7) !important;
+  color: #111111 !important;
+}
+body.fluent .mop-modal-hdr,
+body.fluent .income-modal-hdr,
+body.fluent #sal-info-modal .si-hdr {
+  background: linear-gradient(135deg, #efefef, #e0e0e0) !important;
+  border-bottom: 1px solid #bebebe !important;
+  color: #111111 !important;
+}
+body.fluent .mop-modal-body,
+body.fluent .income-modal-body,
+body.fluent #sal-info-modal .si-body {
+  background: rgba(245,245,245,.8) !important;
+  color: #111111 !important;
+}
+body.fluent .modal-cell,
+body.fluent .m4,
+body.fluent .income-subtotal,
+body.fluent .si-formula {
+  background: linear-gradient(135deg, #ececec, #e0e0e0) !important;
+  border: 1px solid #c0c0c0 !important;
+  color: #111111 !important;
+}
+body.fluent .mop-modal-close,
+body.fluent .income-modal-close,
+body.fluent #sal-info-modal .si-close {
+  font-size: 0 !important;
+  background-image: url('./logos/Fluent/FluentColor-Close.svg') !important;
+  background-size: 16px !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+/* Info buttons */
+body.fluent .mop-info-btn,
+body.fluent .kpi-subtitle-info,
+body.fluent .income-modal-info-btn {
+  font-size: 0 !important;
+  background-color: transparent !important;
+  border: none !important;
+  background-image: url('./logos/Fluent/FluentColor-Inform.svg') !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  width: 20px !important;
+  height: 20px !important;
+  padding: 0 !important;
+}
+
+/* ── KPI / income panels ── */
+body.fluent .kpi-income-panel {
+  background: linear-gradient(135deg, #ececec, #e2e2e2) !important;
+  border: 1px solid #c0c0c0 !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,.10) !important;
+  color: #111111 !important;
+}
+body.fluent .zp-banner {
+  background: linear-gradient(135deg, #ececec, #e2e2e2) !important;
+  border: 1px solid #c0c0c0 !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,.10) !important;
+  color: #111111 !important;
+}
+body.fluent .kpi-income-panel .zl,
+body.fluent .zp-banner .zl,
+body.fluent .kpi-badge .kb-lbl,
+body.fluent .kpi-badge .kb-sub { color: #3c3c3c !important; }
+body.fluent .kpi-income-panel .zv,
+body.fluent .zp-banner .zv { color: #0078d4 !important; }
+body.fluent .kpi-badge {
+  background: linear-gradient(135deg, #ececec, #e0e0e0) !important;
+  border: 1px solid #c0c0c0 !important;
+  color: #111111 !important;
+  box-shadow: none !important;
+}
+body.fluent .kpi-badge.kpi-core-badge {
+  background: linear-gradient(135deg, #ececec, #e0e0e0) !important;
+  border: 1px solid #c0c0c0 !important;
+}
+body.fluent .kpi-badge .kb-val { color: #111111 !important; }
+body.fluent .kpi-divider,
+body.fluent .kpi-subtitle::after { background: #c8c8c8 !important; }
+body.fluent .kpi-subtitle-info {
+  background: rgba(0,0,0,.05) !important;
+  border-color: #bebebe !important;
+  color: #111111 !important;
+}
+body.fluent .kpi-manager-name { color: #5a5a5a !important; }
+body.fluent .kpi-bare-text { color: #787878 !important; }
+body.fluent #scr-personal .income-subtotal .ist-lbl,
+body.fluent #scr-dohod   .income-subtotal .ist-lbl { color: #787878 !important; }
+
+/* ── Visits (vt-*) ── */
+body.fluent .vt-toolbar,
+body.fluent .vt-dept-badge,
+body.fluent .vt-lock-badge,
+body.fluent .vt-week-sum,
+body.fluent .vt-week-sum-line1,
+body.fluent .vt-week-sum-line2,
+body.fluent .vt-week-sum-line2 b,
+body.fluent .vt-week-stats,
+body.fluent .vt-row-date,
+body.fluent .vt-row-name,
+body.fluent .vt-row-sub,
+body.fluent .vt-status-chip,
+body.fluent .vt-field-lbl,
+body.fluent .vt-field input,
+body.fluent .vt-field textarea,
+body.fluent .vt-field select,
+body.fluent .vt-status-trigger,
+body.fluent .vt-status-trigger span,
+body.fluent .vt-save-status,
+body.fluent .vt-picker-search,
+body.fluent .vt-picker-item,
+body.fluent .vt-picker-cancel { color: #111111 !important; }
+body.fluent .vt-field input,
+body.fluent .vt-field textarea,
+body.fluent .vt-field select,
+body.fluent .vt-status-trigger,
+body.fluent .vt-picker-search {
+  background: #f0f0f0 !important;
+  border-color: #c0c0c0 !important;
+}
+body.fluent .vt-status-chip.vt-chip-green {
+  background: #dff6dd !important; border-color: #92c353 !important; color: #1a4a1a !important;
+}
+body.fluent .vt-status-chip.vt-chip-red {
+  background: #fde7e9 !important; border-color: #d69ca5 !important; color: #7a1a1a !important;
+}
+body.fluent .vt-status-chip.vt-chip-yellow {
+  background: #fff4ce !important; border-color: #d6a419 !important; color: #5a3a00 !important;
+}
+body.fluent .vt-status-chip.vt-chip-purple {
+  background: #ede8f8 !important; border-color: #9b84c4 !important; color: #3a1a7a !important;
+}
+body.fluent .vt-week-sum { color: #0078d4 !important; }
+body.fluent .vt-save-status.saved { color: #107c10 !important; }
+
+/* General text in colored elements */
+body.fluent .rating-card,
+body.fluent .rating-summary,
+body.fluent .rating-sum-cell,
+body.fluent .zp-row,
+body.fluent .mop,
+body.fluent .mm,
+body.fluent .m4,
+body.fluent .modal-cell,
+body.fluent .income-badge,
+body.fluent .income-subtotal,
+body.fluent .si-row,
+body.fluent .si-formula,
+body.fluent .dz-badge { color: #111111 !important; }
+body.fluent .rating-sum-lbl,
+body.fluent .ml,
+body.fluent .mc-l,
+body.fluent .ib-lbl,
+body.fluent .ist-lbl,
+body.fluent .si-key,
+body.fluent .zl,
+body.fluent .ic-lbl { color: #5a5a5a !important; }
+body.fluent .mv,
+body.fluent .mc-v,
+body.fluent .ib-val,
+body.fluent .ist-val,
+body.fluent .si-val,
+body.fluent .zv,
+body.fluent .rating-sum-val { color: #111111 !important; }
+
+/* ── Toast ── */
+body.fluent #toast {
+  background: rgba(40,40,40,.92) !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
+  color: #f0f0f0 !important;
+}
+body.fluent #toast.s,
+body.fluent #toast.i,
+body.fluent #toast.e {
+  background: rgba(40,40,40,.92) !important;
+  color: #f0f0f0 !important;
+}
+
+/* ── Login gate ── */
+body.fluent .gate-icon {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* ── Presence popover ── */
+body.fluent #presence-popover {
+  background: #f0f0f0 !important;
+  border: 1px solid #c0c0c0 !important;
+}
+body.fluent .presence-hdr { background: #e0e0e0 !important; border-bottom: 1px solid #c0c0c0 !important; }
+body.fluent .presence-title,
+body.fluent .presence-total,
+body.fluent .presence-name { color: #111111 !important; }
+body.fluent .presence-page,
+body.fluent .presence-empty { color: #5a5a5a !important; }
+body.fluent .presence-row { border-bottom: 1px solid #d0d0d0 !important; }
+body.fluent .presence-close { background: rgba(0,0,0,.08) !important; border-color: #b8b8b8 !important; color: #111 !important; }
+
+@media(max-width:420px) {
+  body.fluent #main-dock .app-icon {
+    width: 25px;
+    height: 25px;
+  }
+}
+/* ══ END FLUENT THEME ══ */

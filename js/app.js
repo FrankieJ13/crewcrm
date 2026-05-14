@@ -21,6 +21,7 @@ const CFG = {
 const ASSET_BASE = new URL('./logos/', document.baseURI).href;
 const DEFAULT_ICON_BASE = ASSET_BASE + 'default/';
 const COSMIC_ICON_BASE = ASSET_BASE + 'cosmic/';
+const FLUENT_ICON_BASE = ASSET_BASE + 'Fluent/';
 
 function requestPortraitOrientation() {
   if (!screen.orientation?.lock) return;
@@ -129,16 +130,17 @@ const S = {
 };
 
 /* ══ THEME ══ */
-const THEMES = ['dark', 'light', 'tiffany', 'cinematic', 'neo-dark', 'neo-light', 'cosmic'];
+const THEMES = ['dark', 'light', 'tiffany', 'cinematic', 'neo-dark', 'neo-light', 'cosmic', 'fluent'];
 
 function applyTheme(theme) {
-  document.body.classList.remove('light', 'tiffany', 'cinematic', 'neo-dark', 'neo-light', 'cosmic');
+  document.body.classList.remove('light', 'tiffany', 'cinematic', 'neo-dark', 'neo-light', 'cosmic', 'fluent');
   if (theme === 'light')      document.body.classList.add('light');
   if (theme === 'tiffany')    document.body.classList.add('tiffany');
   if (theme === 'cinematic')  document.body.classList.add('cinematic');
   if (theme === 'neo-dark')   document.body.classList.add('neo-dark');
   if (theme === 'neo-light')  document.body.classList.add('neo-light');
   if (theme === 'cosmic')     document.body.classList.add('cosmic');
+  if (theme === 'fluent')     document.body.classList.add('fluent');
   localStorage.setItem('crm_theme', theme);
   // Обновляем активный пункт в дропдауне
   THEMES.forEach(t => {
@@ -170,8 +172,9 @@ function toggleThemeDropdown(e) {
 
 function syncTheme() {
   const b = document.body.classList;
-  const isLight = b.contains('light') || b.contains('tiffany') || b.contains('neo-light');
+  const isLight = b.contains('light') || b.contains('tiffany') || b.contains('neo-light') || b.contains('fluent');
   const isCosmic = b.contains('cosmic');
+  const isFluent = b.contains('fluent');
   const logoD = document.getElementById('logo-dark');
   const logoL = document.getElementById('logo-light');
   if (logoD) logoD.style.display = isLight ? 'none' : '';
@@ -236,23 +239,47 @@ function syncTheme() {
     el.querySelectorAll('svg').forEach(s => s.style.display = 'none');
   }
 
+  const FLUENT_ICONS = {
+    'dock-btn-home':        FLUENT_ICON_BASE + 'FluentColor-Home.svg',
+    'dock-btn-kpi':         FLUENT_ICON_BASE + 'FluentColor-KPI.svg',
+    'dock-btn-rating':      FLUENT_ICON_BASE + 'FluentColor-Rang.svg',
+    'dock-btn-dohod':       FLUENT_ICON_BASE + 'FluentColor-Cash.svg',
+    'dock-btn-grafik':      FLUENT_ICON_BASE + 'FluentColor-Grafik.svg',
+    'dock-btn-instruktsii': FLUENT_ICON_BASE + 'FluentColor-FAQ.svg',
+    'dock-btn-vizity':      FLUENT_ICON_BASE + 'FluentColor-Vizity.svg',
+    'btn-presence':         FLUENT_ICON_BASE + 'FluentColor-Online.svg',
+    'btn-notify':           FLUENT_ICON_BASE + 'FluentColor-Alert.svg',
+    'btn-refresh':          FLUENT_ICON_BASE + 'FluentColor-Refresh.svg',
+    'btn-hamburger':        FLUENT_ICON_BASE + 'FluentColor-Menu.svg',
+    'hmb-month-trigger':    FLUENT_ICON_BASE + 'FluentColor-Archive.svg',
+    'hmb-plan-edit':        FLUENT_ICON_BASE + 'FluentColor-Settings.svg',
+    'hmb-logout':           FLUENT_ICON_BASE + 'FluentColor-Exit.svg',
+    'hmb-about-btn':        FLUENT_ICON_BASE + 'FluentColor-About.svg',
+  };
+
   if (isCosmic) {
     Object.entries(COSMIC_ICONS).forEach(([id, src]) => setAppIcon(document.getElementById(id), src, 'cosmic'));
     if (themeTrigger) setAppIcon(themeTrigger, COSMIC_ICON_BASE + 'cosmic_themes.svg', 'cosmic');
     // Аккаунт
     const acc = document.getElementById('hmb-account-btn');
     if (acc) { const img = acc.querySelector('img:not(.app-icon)'); if(img) img.style.opacity='.7'; }
+  } else if (isFluent) {
+    Object.entries(FLUENT_ICONS).forEach(([id, src]) => setAppIcon(document.getElementById(id), src, 'fluent'));
+    if (themeTrigger) setAppIcon(themeTrigger, FLUENT_ICON_BASE + 'FluentColor-Themes.svg', 'fluent');
   } else {
     Object.entries(DEFAULT_ICONS).forEach(([id, src]) => setAppIcon(document.getElementById(id), src, 'default'));
     if (themeTrigger) setAppIcon(themeTrigger, DEFAULT_ICON_BASE + 'theme.svg', 'default');
   }
 
-  // Cosmic: замок на авторизации
+  // Lock icon on auth screen
   const lockDefault = document.getElementById('gate-lock-default');
   const lockCosmic  = document.getElementById('gate-lock-cosmic');
+  const lockFluent  = document.getElementById('gate-lock-fluent');
   if (lockCosmic) lockCosmic.onerror = null;
-  if (lockDefault) lockDefault.style.display = isCosmic ? 'none' : '';
+  if (lockFluent) lockFluent.onerror = null;
+  if (lockDefault) lockDefault.style.display = (isCosmic || isFluent) ? 'none' : '';
   if (lockCosmic)  lockCosmic.style.display  = isCosmic ? '' : 'none';
+  if (lockFluent)  lockFluent.style.display  = isFluent ? '' : 'none';
 
   THEMES.forEach(t => {
     const btn = document.getElementById('htd-' + t);
@@ -3570,7 +3597,12 @@ function renderGrafik() {
     const mName  = new Date(yr, mo-1, 1).toLocaleString('ru',{month:'long'});
     const prevDis = _schedWeek === 0 ? 'disabled' : '';
     const nextDis = _schedWeek === weeks.length-1 ? 'disabled' : '';
-    stickyInner.innerHTML = `<div class="sched-nav"><button class="sched-nav-btn" onclick="schedNav(-1)" ${prevDis} aria-label="Предыдущая неделя"><span class="sched-nav-icon" style="--sched-nav-icon:url('${DEFAULT_ICON_BASE}left.svg')"></span></button><div class="sched-nav-title">${wStart}–${wEnd} ${mName}</div><button class="sched-edit-btn" onclick="openScheduleBulkEditor()" aria-label="Редактировать график"><span class="sched-edit-icon" style="--sched-edit-icon:url('${DEFAULT_ICON_BASE}edit.svg')"></span></button><button class="sched-nav-btn" onclick="schedNav(1)" ${nextDis} aria-label="Следующая неделя"><span class="sched-nav-icon" style="--sched-nav-icon:url('${DEFAULT_ICON_BASE}right.svg')"></span></button></div>${weekHeader}`;
+    const schedIconBase = document.body.classList.contains('cosmic') ? COSMIC_ICON_BASE :
+                          document.body.classList.contains('fluent') ? FLUENT_ICON_BASE : DEFAULT_ICON_BASE;
+    const leftIco  = document.body.classList.contains('fluent') ? 'FluentColor-Left.svg'       : 'left.svg';
+    const rightIco = document.body.classList.contains('fluent') ? 'FluentColor-Right.svg'      : 'right.svg';
+    const editIco  = document.body.classList.contains('fluent') ? 'FluentColor-GrafikEdit.svg' : 'edit.svg';
+    stickyInner.innerHTML = `<div class="sched-nav"><button class="sched-nav-btn" onclick="schedNav(-1)" ${prevDis} aria-label="Предыдущая неделя"><span class="sched-nav-icon" style="--sched-nav-icon:url('${schedIconBase}${leftIco}')"></span></button><div class="sched-nav-title">${wStart}–${wEnd} ${mName}</div><button class="sched-edit-btn" onclick="openScheduleBulkEditor()" aria-label="Редактировать график"><span class="sched-edit-icon" style="--sched-edit-icon:url('${schedIconBase}${editIco}')"></span></button><button class="sched-nav-btn" onclick="schedNav(1)" ${nextDis} aria-label="Следующая неделя"><span class="sched-nav-icon" style="--sched-nav-icon:url('${schedIconBase}${rightIco}')"></span></button></div>${weekHeader}`;
     const hdr = document.querySelector('header');
     const nav = document.getElementById('main-nav');
     if (hdr && nav) stickyEl.style.top = (hdr.offsetHeight + nav.offsetHeight) + 'px';
@@ -7034,6 +7066,16 @@ function renderVizRow(row, dept, locked, isFirstOfDate) {
 function getVizSverkaMark(value) {
   const s = String(value || '').trim().toLowerCase();
   const isCosmic = document.body.classList.contains('cosmic');
+  const isFluent = document.body.classList.contains('fluent');
+  if (isFluent) {
+    if (s === 'да' || s === 'yes') {
+      return `<span class="vt-sverka-mark yes" title="Сверено" aria-label="Сверено" style="--sverka-icon:url('${FLUENT_ICON_BASE}FluentColor-Check.svg')"><i></i></span>`;
+    }
+    if (s === 'нет' || s === 'no') {
+      return `<span class="vt-sverka-mark no" title="Не прошел сверку" aria-label="Не прошел сверку" style="--sverka-icon:url('${FLUENT_ICON_BASE}FluentColor-Fail.svg')"><i></i></span>`;
+    }
+    return `<span class="vt-sverka-mark empty" title="Визит проверяется..." aria-label="Визит проверяется" style="--sverka-icon:url('${FLUENT_ICON_BASE}FluentColor-Revise.svg')"><i></i></span>`;
+  }
   const iconBase = isCosmic ? COSMIC_ICON_BASE : DEFAULT_ICON_BASE;
   const iconPrefix = isCosmic ? 'cosmic-' : '';
   const cls = isCosmic ? ' cosmic-native' : '';

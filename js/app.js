@@ -8775,10 +8775,10 @@ async function exp_run() {
     const plans   = exp_getPlanMap(planData);
 
     if (fmt === 'pdf') {
-      exp_setStatus('Открываем окно печати…');
+      exp_setStatus('Открываем окно отчёта…');
       exp_runPdf({ suffix, monthLabel, agg, plans, sections });
-      exp_setStatus('✓ Откройте диалог «Сохранить как PDF»', 'ok');
-      toast('Откройте печать → PDF', 's');
+      exp_setStatus('✓ Готово — нажмите «Печать / PDF» в окне', 'ok');
+      toast('Отчёт открыт в новом окне', 's');
       setTimeout(() => exp_closeModal(), 1200);
       return;
     }
@@ -9068,10 +9068,58 @@ function exp_runPdf({ suffix, monthLabel, agg, plans, sections }) {
       color: #555; font-size: 9pt; font-weight: 600;
       font-style: italic;
     }
+
+    /* ===== Верхняя панель (только на экране, скрыта при печати) ===== */
+    .rpt-toolbar {
+      position: sticky; top: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 10px 14px;
+      background: #1a1a1a; color: #fff;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+      margin: -10mm -10mm 6mm -10mm;
+      z-index: 999;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+    .rpt-toolbar-title {
+      font-size: 12pt; font-weight: 700; letter-spacing: 0.02em;
+    }
+    .rpt-toolbar-actions { display: flex; gap: 8px; }
+    .rpt-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: 8px;
+      font-family: inherit; font-size: 11pt; font-weight: 600;
+      cursor: pointer; border: none; outline: none;
+      transition: background 0.15s, color 0.15s;
+    }
+    .rpt-btn-back {
+      background: rgba(255,255,255,0.12); color: #fff;
+    }
+    .rpt-btn-back:hover { background: rgba(255,255,255,0.22); }
+    .rpt-btn-print {
+      background: #3a6bd6; color: #fff;
+    }
+    .rpt-btn-print:hover { background: #4d7be0; }
+    @media print {
+      .rpt-toolbar { display: none !important; }
+      body { padding-top: 10mm !important; }
+    }
   `;
 
   // Сборка тела
   let body = '';
+  // Верхняя панель — только на экране, в PDF не попадёт
+  body +=
+    '<div class="rpt-toolbar">' +
+      '<button class="rpt-btn rpt-btn-back" onclick="window.close()" title="Вернуться в приложение">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>' +
+        '<span>Закрыть</span>' +
+      '</button>' +
+      '<div class="rpt-toolbar-title">Итоговый отчёт — ' + exp_escHtml(monthLabel) + '</div>' +
+      '<button class="rpt-btn rpt-btn-print" onclick="window.print()" title="Печать / Сохранить как PDF">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>' +
+        '<span>Печать / PDF</span>' +
+      '</button>' +
+    '</div>';
   body += '<h1 class="rpt-title">ИТОГОВЫЙ ОТЧЁТ ЗА ' + exp_escHtml(monthLabel.toUpperCase()) + '</h1>';
   body += '<div class="rpt-meta">Отдел CRM · Сформировано ' +
           new Date().toLocaleString('ru', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) +
@@ -9112,15 +9160,8 @@ function exp_runPdf({ suffix, monthLabel, agg, plans, sections }) {
   win.document.write(fullHtml);
   win.document.close();
   win.document.title = 'Итоговый отчёт — ' + monthLabel;
-
-  // Печать после загрузки картинок (canvas-PNG embedded — обычно мгновенно, но даём кадр)
-  const triggerPrint = () => {
-    try { win.focus(); win.print(); } catch(e) { /* noop */ }
-  };
-  if (win.document.readyState === 'complete') {
-    setTimeout(triggerPrint, 300);
-  } else {
-    win.addEventListener('load', () => setTimeout(triggerPrint, 200));
-  }
+  // Не вызываем print() автоматически — у пользователя есть кнопки
+  // «Закрыть» и «Печать / PDF» в верхней панели окна.
+  try { win.focus(); } catch(e) { /* noop */ }
 }
 /* ════════════════════ END EXPORT REPORT ════════════════════ */

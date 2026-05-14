@@ -5440,16 +5440,20 @@ body.fluent .mc-l,
 body.fluent .ib-lbl,
 body.fluent .ist-lbl,
 body.fluent .si-key,
-body.fluent .zl,
-body.fluent .ic-lbl { color: #5a5a5a !important; }
+body.fluent .zl { color: #5a5a5a !important; }
+/* ic-lbl (ФАКТ / ПРОГНОЗ) — тёмно-серый (перебивает body:not(.light)...{color:#fff}) */
+body.fluent .income-col .ic-lbl { color: #1a1a1a !important; }
+/* ic-val — тёмно-серый по умолчанию; pctClr() может перекрасить через inline */
+body.fluent .income-col .ic-val { color: #1a1a1a; }
 /* No !important — позволяет pctClr() красить .mv/.mc-v в модалках по % */
 body.fluent .mv,
 body.fluent .mc-v { color: #111111; }
 body.fluent .ib-val,
 body.fluent .ist-val,
 body.fluent .si-val,
-body.fluent .zv,
-body.fluent .rating-sum-val { color: #111111 !important; }
+body.fluent .zv { color: #111111 !important; }
+/* No !important — позволяет pctClr() красить прогноз в рейтинге */
+body.fluent .rating-sum-val { color: #111111; }
 
 /* ── Toast ── */
 body.fluent #toast {

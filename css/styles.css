@@ -5237,6 +5237,24 @@ body.fluent .dept-card .dc-lbl { color: #2a2a2a !important; }
 /* No !important on dc-val — позволяет pctClr() красить прогноз по % выполнения */
 body.fluent .dept-card .dc-val { color: #2a2a2a; }
 
+/* ── Income overlay — зажата между хедером (52px) и доком (~80px) ── */
+body.fluent .income-overlay {
+  top: 52px !important;
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+  left: 0 !important; right: 0 !important;
+  padding: 10px 14px !important;
+  align-items: flex-start !important;
+}
+body.fluent .income-modal {
+  max-height: 100% !important;
+  height: 100% !important;
+  margin: 0 auto !important;
+}
+body.fluent .income-modal-body {
+  max-height: none !important;
+  flex: 1 1 0 !important;
+}
+
 /* ── Modals ── */
 body.fluent .mop-overlay {
   background: rgba(40,40,40,.45) !important;
@@ -5447,11 +5465,33 @@ body.fluent #toast.e {
   color: #f0f0f0 !important;
 }
 
+/* ── Notify modal close — round shape with SVG icon ── */
+body.fluent .notify-modal-close {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: url('../logos/Fluent/FluentColor-Close.svg') center/16px no-repeat !important;
+  font-size: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  flex-shrink: 0 !important;
+}
+
 /* ── Accent-filled buttons → dock dark color ── */
 body.fluent .center-login-btn,
 body.fluent .vt-save-btn,
 body.fluent .pe-save-btn,
 body.fluent .pe-apply-btn,
+body.fluent .pe-save,
+body.fluent .notify-send-btn,
+body.fluent .export-go-btn,
+body.fluent .pl-btn,
+body.fluent .vt-add-btn,
+body.fluent .vt-undo-btn,
 body.fluent button[style*="background:var(--acc)"],
 body.fluent button[style*="background: var(--acc)"],
 body.fluent .btn-acc {

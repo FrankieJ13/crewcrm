@@ -5242,8 +5242,12 @@ body.fluent .dept-card .dc-val { color: #2a2a2a; }
 /* ── Income overlay — покрывает весь экран включая dok;
    padding отодвигает карточку от хедера и дока ── */
 body.fluent .income-overlay {
-  padding-top: calc(52px + 10px) !important;
+  padding-top: calc(52px + 8px) !important;
   padding-bottom: calc(80px + env(safe-area-inset-bottom, 8px)) !important;
+  align-items: flex-start !important;
+}
+body.fluent .income-modal {
+  max-height: 100% !important;
 }
 
 /* ── Modals ── */

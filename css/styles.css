@@ -5180,22 +5180,28 @@ body.fluent .income-col .ic-koef {
 }
 
 /* ── Schedule ── */
-body.fluent .sched-edit-icon { background: #3c3c3c !important; }
-body.fluent .sched-nav-icon  { background: #3c3c3c !important; }
+/* Fluent: показываем цветные SVG как есть — отключаем mask, используем background-image */
+body.fluent .sched-edit-icon {
+  background: var(--sched-edit-icon) center/contain no-repeat !important;
+  mask: none !important; -webkit-mask: none !important;
+}
+body.fluent .sched-nav-icon {
+  background: var(--sched-nav-icon) center/contain no-repeat !important;
+  mask: none !important; -webkit-mask: none !important;
+}
 body.fluent .sched-person-name { color: #111111 !important; }
 body.fluent .sched-cell.dr  { background: rgba(16,124,16,.15) !important; color: #0a5a0a !important; }
 body.fluent .sched-cell.dv  { background: rgba(209,52,56,.12) !important; color: #7a1a1a !important; }
-body.fluent .sched-bulk-svg { color: #3c3c3c; }
 
 /* GrafikSave / GrafikExit — hide inline SVG, show Fluent icon via ::before */
 body.fluent .sched-bulk-icon-btn .sched-bulk-svg { display: none !important; }
 body.fluent .sched-bulk-icon-btn[title*="Выход"]::before {
   content: ''; display: block; width: 22px; height: 22px;
-  background: url('./logos/Fluent/FluentColor-GrafikExit.svg') center/contain no-repeat;
+  background: url('../logos/Fluent/FluentColor-GrafikExit.svg') center/contain no-repeat;
 }
 body.fluent .sched-bulk-icon-btn[title*="Сохранить"]::before {
   content: ''; display: block; width: 22px; height: 22px;
-  background: url('./logos/Fluent/FluentColor-GrafikSave.svg') center/contain no-repeat;
+  background: url('../logos/Fluent/FluentColor-GrafikSave.svg') center/contain no-repeat;
 }
 
 /* ── mm / income-badge ── */
@@ -5257,12 +5263,9 @@ body.fluent .mop-modal-close,
 body.fluent .income-modal-close,
 body.fluent #sal-info-modal .si-close {
   font-size: 0 !important;
-  background-image: url('./logos/Fluent/FluentColor-Close.svg') !important;
-  background-size: 16px !important;
-  background-repeat: no-repeat !important;
-  background-position: center !important;
-  background-color: transparent !important;
+  background: url('../logos/Fluent/FluentColor-Close.svg') center/16px no-repeat !important;
   border: none !important;
+  box-shadow: none !important;
 }
 
 /* Info buttons */
@@ -5270,12 +5273,9 @@ body.fluent .mop-info-btn,
 body.fluent .kpi-subtitle-info,
 body.fluent .income-modal-info-btn {
   font-size: 0 !important;
-  background-color: transparent !important;
   border: none !important;
-  background-image: url('./logos/Fluent/FluentColor-Inform.svg') !important;
-  background-size: contain !important;
-  background-repeat: no-repeat !important;
-  background-position: center !important;
+  box-shadow: none !important;
+  background: url('../logos/Fluent/FluentColor-Inform.svg') center/contain no-repeat !important;
   width: 20px !important;
   height: 20px !important;
   padding: 0 !important;
@@ -5313,11 +5313,7 @@ body.fluent .kpi-badge.kpi-core-badge {
 body.fluent .kpi-badge .kb-val { color: #111111 !important; }
 body.fluent .kpi-divider,
 body.fluent .kpi-subtitle::after { background: #c8c8c8 !important; }
-body.fluent .kpi-subtitle-info {
-  background: rgba(0,0,0,.05) !important;
-  border-color: #bebebe !important;
-  color: #111111 !important;
-}
+/* kpi-subtitle-info uses the Inform icon above — no background override here */
 body.fluent .kpi-manager-name { color: #5a5a5a !important; }
 body.fluent .kpi-bare-text { color: #787878 !important; }
 body.fluent #scr-personal .income-subtotal .ist-lbl,

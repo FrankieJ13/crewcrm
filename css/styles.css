@@ -5239,22 +5239,11 @@ body.fluent .dept-card .dc-lbl { color: #2a2a2a !important; }
 /* No !important on dc-val — позволяет pctClr() красить прогноз по % выполнения */
 body.fluent .dept-card .dc-val { color: #2a2a2a; }
 
-/* ── Income overlay — зажата между хедером (52px) и доком (~80px) ── */
+/* ── Income overlay — покрывает весь экран включая dok;
+   padding отодвигает карточку от хедера и дока ── */
 body.fluent .income-overlay {
-  top: 52px !important;
-  bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
-  left: 0 !important; right: 0 !important;
-  padding: 10px 14px !important;
-  align-items: flex-start !important;
-}
-body.fluent .income-modal {
-  max-height: 100% !important;
-  height: 100% !important;
-  margin: 0 auto !important;
-}
-body.fluent .income-modal-body {
-  max-height: none !important;
-  flex: 1 1 0 !important;
+  padding-top: calc(52px + 10px) !important;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 8px)) !important;
 }
 
 /* ── Modals ── */

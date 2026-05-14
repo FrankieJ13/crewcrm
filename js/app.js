@@ -7685,12 +7685,7 @@ function toggleHmbTheme(e) {
     }
 
     function getColors() {
-      const isFluent = document.body.classList.contains('fluent');
       const lm = isLightTheme();
-      if (isFluent) {
-        // Fluent: cool gray-blue palette — Windows Fluent accent #0078d4
-        return {c1:[0.0,0.47,0.83],c2:[0.85,0.88,0.92],navy:[0.94,0.95,0.97],bg:0xf0f2f5};
-      }
       return lm
         ? {c1:[1.0,0.5,0.35],c2:[0.9,0.95,1.0],navy:[0.95,0.97,1.0],bg:0xf5f7ff}
         : {c1:[0.945,0.353,0.133],c2:[0.039,0.055,0.153],navy:[0.039,0.055,0.153],bg:0x0a0e27};

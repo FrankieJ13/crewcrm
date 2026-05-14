@@ -8732,6 +8732,8 @@ async function exp_run() {
     const suffix = sel.value;
     if (!suffix) throw new Error('Не выбран месяц');
     const monthLabel = getMonthName(suffix);
+    const fmtRadio = document.querySelector('input[name="exp-fmt"]:checked');
+    const fmt = fmtRadio ? fmtRadio.value : 'xlsx';
 
     const sections = {
       summary:  document.getElementById('exp-s-summary').checked,
@@ -8747,8 +8749,10 @@ async function exp_run() {
       return;
     }
 
-    exp_setStatus('Загружаем библиотеку…');
-    await exp_loadExcelJS();
+    if (fmt === 'xlsx') {
+      exp_setStatus('Загружаем библиотеку…');
+      await exp_loadExcelJS();
+    }
 
     exp_setStatus('Получаем данные за ' + monthLabel + '…');
     const vizName  = 'ВИЗИТЫ' + suffix;
@@ -8769,6 +8773,15 @@ async function exp_run() {
     const crmMgrs = exp_getCrmManagers();
     const agg     = exp_aggregate(vizData, crmMgrs);
     const plans   = exp_getPlanMap(planData);
+
+    if (fmt === 'pdf') {
+      exp_setStatus('Открываем окно печати…');
+      exp_runPdf({ suffix, monthLabel, agg, plans, sections });
+      exp_setStatus('✓ Откройте диалог «Сохранить как PDF»', 'ok');
+      toast('Откройте печать → PDF', 's');
+      setTimeout(() => exp_closeModal(), 1200);
+      return;
+    }
 
     exp_setStatus('Формируем файл…');
     const wb = await exp_buildWorkbook({ suffix, monthLabel, agg, plans, sections });
@@ -8793,6 +8806,311 @@ async function exp_run() {
     toast('Ошибка экспорта', 'e');
   } finally {
     btn.disabled = false;
+  }
+}
+
+// ==================== PDF EXPORT ====================
+function exp_escHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function exp_pctStr(num, den, digits) {
+  if (!den) return '—';
+  const v = (num / den) * 100;
+  return v.toFixed(digits == null ? 1 : digits) + '%';
+}
+
+function exp_pdfBuildSummaryTable(agg, plans, sections) {
+  const cols = [{ key: 'name', label: 'Менеджер', cls: 'left' }];
+  if (sections.summary) {
+    cols.push({ key: 'visTotal', label: 'Всего' });
+    cols.push({ key: 'visCrm',   label: 'CRM' });
+    cols.push({ key: 'visTl',    label: 'ТЛ' });
+    cols.push({ key: 'plan',     label: 'План' });
+    cols.push({ key: 'pctFact',  label: '% факта' });
+  }
+  if (sections.sales) {
+    cols.push({ key: 'kredit', label: 'Кредит' });
+    cols.push({ key: 'nal',    label: 'Нал.' });
+    cols.push({ key: 'obmen',  label: 'Обмен' });
+    cols.push({ key: 'vykup',  label: 'Выкуп' });
+    cols.push({ key: 'kom',    label: 'Комис.' });
+  }
+  if (sections.refus) {
+    cols.push({ key: 'otkaz',       label: 'Отказ' });
+    cols.push({ key: 'fssp',        label: 'ФССП' });
+    cols.push({ key: 'odobNeKupil', label: 'Одоб. н/к' });
+  }
+  if (sections.pct) {
+    cols.push({ key: 'pOtkaz',  label: '% отказ' });
+    cols.push({ key: 'pFssp',   label: '% ФССП' });
+    cols.push({ key: 'pKredit', label: '% кредит' });
+  }
+
+  const mkRow = (m, isTotal) => {
+    const planVal = isTotal
+      ? Object.values(plans).reduce((s,v) => s + (v||0), 0)
+      : (plans[m.name.toLowerCase()] || 0);
+    const tds = cols.map(c => {
+      let v;
+      if      (c.key === 'name')    v = m.name;
+      else if (c.key === 'plan')    v = planVal || '—';
+      else if (c.key === 'pctFact') v = planVal ? exp_pctStr(m.visTotal, planVal) : '—';
+      else if (c.key === 'pOtkaz')  v = exp_pctStr(m.otkaz,  m.visTotal);
+      else if (c.key === 'pFssp')   v = exp_pctStr(m.fssp,   m.visTotal);
+      else if (c.key === 'pKredit') v = exp_pctStr(m.kredit, m.visTotal);
+      else                          v = m[c.key];
+      const cls = (c.cls || '') + (isTotal ? ' total' : '');
+      return '<td class="' + cls + '">' + exp_escHtml(v) + '</td>';
+    }).join('');
+    return '<tr' + (isTotal ? ' class="tr-total"' : '') + '>' + tds + '</tr>';
+  };
+
+  const thead = '<thead><tr>' + cols.map(c => '<th>' + exp_escHtml(c.label) + '</th>').join('') + '</tr></thead>';
+  const tbody = '<tbody>' +
+    agg.managers.map(m => mkRow(m, false)).join('') +
+    mkRow(agg.total, true) +
+    '</tbody>';
+
+  return '<table class="rpt-table">' + thead + tbody + '</table>';
+}
+
+function exp_pdfBuildCitySection(agg) {
+  const cityNames = Object.keys(agg.byCity).sort((a,b) => a.localeCompare(b, 'ru'));
+  if (cityNames.length === 0) return '<p class="empty">Нет данных по городам.</p>';
+
+  const headers = ['Город','Менеджер','Визиты','Кредит','Нал.','Обмен','Выкуп','Комис.','Отказ','ФССП','Одоб. н/к'];
+  let rows = '';
+  for (const cityName of cityNames) {
+    const block = agg.byCity[cityName];
+    const mgrsLow = Object.keys(block.mgrs).sort((a,b) =>
+      block.mgrs[b].visTotal - block.mgrs[a].visTotal
+    );
+    mgrsLow.forEach(mLow => {
+      const m = block.mgrs[mLow];
+      rows += '<tr>' +
+        '<td class="left">' + exp_escHtml(cityName) + '</td>' +
+        '<td class="left">' + exp_escHtml(m.name) + '</td>' +
+        '<td>' + m.visTotal + '</td>' +
+        '<td>' + m.kredit + '</td>' +
+        '<td>' + m.nal + '</td>' +
+        '<td>' + m.obmen + '</td>' +
+        '<td>' + m.vykup + '</td>' +
+        '<td>' + m.kom + '</td>' +
+        '<td>' + m.otkaz + '</td>' +
+        '<td>' + m.fssp + '</td>' +
+        '<td>' + m.odobNeKupil + '</td>' +
+        '</tr>';
+    });
+    const ct = block._total;
+    rows += '<tr class="tr-subtotal">' +
+      '<td class="left">' + exp_escHtml(cityName) + '</td>' +
+      '<td class="left"><i>Итого по городу</i></td>' +
+      '<td>' + ct.visTotal + '</td>' +
+      '<td>' + ct.kredit + '</td>' +
+      '<td>' + ct.nal + '</td>' +
+      '<td>' + ct.obmen + '</td>' +
+      '<td>' + ct.vykup + '</td>' +
+      '<td>' + ct.kom + '</td>' +
+      '<td>' + ct.otkaz + '</td>' +
+      '<td>' + ct.fssp + '</td>' +
+      '<td>' + ct.odobNeKupil + '</td>' +
+      '</tr>';
+  }
+  // Общий итог
+  const t = agg.total;
+  rows += '<tr class="tr-total">' +
+    '<td class="left">ВСЕ ГОРОДА</td>' +
+    '<td class="left">ОБЩИЙ ИТОГ</td>' +
+    '<td>' + t.visTotal + '</td>' +
+    '<td>' + t.kredit + '</td>' +
+    '<td>' + t.nal + '</td>' +
+    '<td>' + t.obmen + '</td>' +
+    '<td>' + t.vykup + '</td>' +
+    '<td>' + t.kom + '</td>' +
+    '<td>' + t.otkaz + '</td>' +
+    '<td>' + t.fssp + '</td>' +
+    '<td>' + t.odobNeKupil + '</td>' +
+    '</tr>';
+
+  return '<table class="rpt-table">' +
+    '<thead><tr>' + headers.map(h => '<th>' + exp_escHtml(h) + '</th>').join('') + '</tr></thead>' +
+    '<tbody>' + rows + '</tbody>' +
+    '</table>';
+}
+
+function exp_pdfBuildTimelineSection(agg, monthLabel) {
+  const deptPng  = exp_drawTimelineChart(agg.daily, monthLabel);
+  const mgrPng   = exp_drawTimelineByMgrChart(agg.dailyByMgr, monthLabel);
+  const mgrsWithData = Object.values(agg.dailyByMgr).filter(m => m.total > 0);
+
+  let html = '<div class="chart-wrap"><img src="' + deptPng + '" alt="Хронология по отделу"/></div>';
+  if (mgrPng) {
+    html += '<div class="page-break"></div>';
+    html += '<h2 class="rpt-sec">Хронология по менеджерам</h2>';
+    html += '<div class="chart-wrap"><img src="' + mgrPng + '" alt="Хронология по менеджерам"/></div>';
+  }
+
+  // Таблица день × менеджер
+  if (mgrsWithData.length > 0) {
+    html += '<div class="page-break"></div>';
+    html += '<h2 class="rpt-sec">Таблица: день × менеджер</h2>';
+    const headerCells =
+      '<th>День</th>' +
+      mgrsWithData.map(m => '<th>' + exp_escHtml(m.name) + '</th>').join('') +
+      '<th>Отдел</th>';
+    let bodyRows = '';
+    agg.daily.forEach((d, di) => {
+      bodyRows += '<tr>' +
+        '<td>' + d.day + '</td>' +
+        mgrsWithData.map(m => {
+          const v = m.perDay[di] || 0;
+          return '<td' + (v === 0 ? ' class="dim"' : '') + '>' + v + '</td>';
+        }).join('') +
+        '<td class="bold">' + d.count + '</td>' +
+        '</tr>';
+    });
+    let totalCount = 0;
+    agg.daily.forEach(d => totalCount += d.count);
+    bodyRows += '<tr class="tr-total">' +
+      '<td>Итого</td>' +
+      mgrsWithData.map(m => '<td>' + m.total + '</td>').join('') +
+      '<td>' + totalCount + '</td>' +
+      '</tr>';
+    html += '<table class="rpt-table small">' +
+      '<thead><tr>' + headerCells + '</tr></thead>' +
+      '<tbody>' + bodyRows + '</tbody>' +
+      '</table>';
+  } else {
+    // Если по менеджерам пусто — обычная таблица по отделу
+    html += '<h2 class="rpt-sec">Визиты по дням</h2>';
+    let bodyRows = '';
+    let totalCount = 0;
+    agg.daily.forEach(d => {
+      bodyRows += '<tr><td>' + d.day + '</td><td>' + d.count + '</td></tr>';
+      totalCount += d.count;
+    });
+    bodyRows += '<tr class="tr-total"><td>Итого</td><td>' + totalCount + '</td></tr>';
+    html += '<table class="rpt-table small narrow">' +
+      '<thead><tr><th>День</th><th>Визитов</th></tr></thead>' +
+      '<tbody>' + bodyRows + '</tbody>' +
+      '</table>';
+  }
+  return html;
+}
+
+function exp_runPdf({ suffix, monthLabel, agg, plans, sections }) {
+  const css = `
+    @page { size: A4 landscape; margin: 10mm; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      color: #1a1a1a;
+      font-size: 10pt;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    h1.rpt-title {
+      font-size: 18pt; font-weight: 800; margin: 0 0 4mm 0;
+      letter-spacing: 0.02em; text-align: center;
+      border-bottom: 2px solid #1a1a1a; padding-bottom: 3mm;
+    }
+    h2.rpt-sec {
+      font-size: 12pt; font-weight: 700; margin: 4mm 0 2mm 0;
+      background: #1a1a1a; color: #fff; padding: 2mm 3mm; border-radius: 1mm;
+    }
+    .rpt-meta {
+      font-size: 9pt; color: #666; text-align: center; margin-bottom: 4mm;
+    }
+    table.rpt-table {
+      width: 100%; border-collapse: collapse; margin-bottom: 4mm;
+      font-size: 9pt;
+    }
+    table.rpt-table.small { font-size: 8pt; }
+    table.rpt-table.narrow { width: 40%; margin-left: auto; margin-right: auto; }
+    table.rpt-table thead th {
+      background: #3a6bd6; color: #fff; font-weight: 700;
+      padding: 2mm 2mm; text-align: center; border: 1px solid #ccc;
+      font-size: 8.5pt;
+    }
+    table.rpt-table tbody td {
+      padding: 1.5mm 2mm; border: 1px solid #e0e0e0; text-align: center;
+      vertical-align: middle;
+    }
+    table.rpt-table tbody td.left { text-align: left; }
+    table.rpt-table tbody td.dim  { color: #c8c8c8; }
+    table.rpt-table tbody td.bold { font-weight: 700; }
+    table.rpt-table tbody tr:nth-child(even) td { background: #f7f9fc; }
+    table.rpt-table tbody tr.tr-subtotal td {
+      background: #fff4d6; font-weight: 600;
+    }
+    table.rpt-table tbody tr.tr-total td {
+      background: #ffe9a8; font-weight: 800; border-top: 2px solid #999;
+    }
+    .chart-wrap {
+      width: 100%; text-align: center; margin: 3mm 0;
+      page-break-inside: avoid;
+    }
+    .chart-wrap img { max-width: 100%; height: auto; }
+    .page-break { page-break-after: always; }
+    .empty { color: #999; font-style: italic; text-align: center; margin: 4mm 0; }
+    .footer { margin-top: 6mm; text-align: center; color: #999; font-size: 8pt; }
+  `;
+
+  // Сборка тела
+  let body = '';
+  body += '<h1 class="rpt-title">ИТОГОВЫЙ ОТЧЁТ ЗА ' + exp_escHtml(monthLabel.toUpperCase()) + '</h1>';
+  body += '<div class="rpt-meta">Отдел CRM · Сформировано ' +
+          new Date().toLocaleString('ru', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) +
+          '</div>';
+
+  const hasSummaryCols = sections.summary || sections.sales || sections.refus || sections.pct;
+  if (hasSummaryCols) {
+    body += '<h2 class="rpt-sec">Сводная по менеджерам</h2>';
+    body += exp_pdfBuildSummaryTable(agg, plans, sections);
+  }
+
+  if (sections.city) {
+    body += '<div class="page-break"></div>';
+    body += '<h2 class="rpt-sec">Разбивка по городам</h2>';
+    body += exp_pdfBuildCitySection(agg);
+  }
+
+  if (sections.timeline) {
+    body += '<div class="page-break"></div>';
+    body += '<h2 class="rpt-sec">Хронология визитов — отдел</h2>';
+    body += exp_pdfBuildTimelineSection(agg, monthLabel);
+  }
+
+  body += '<div class="footer">CRM Crew Dashboard · ' + new Date().getFullYear() + '</div>';
+
+  const fullHtml =
+    '<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8">' +
+    '<title>Итоговый отчёт — ' + exp_escHtml(monthLabel) + '</title>' +
+    '<style>' + css + '</style></head>' +
+    '<body>' + body + '</body></html>';
+
+  // Открываем в новом окне и запускаем печать
+  const win = window.open('', '_blank', 'width=1100,height=800');
+  if (!win) {
+    throw new Error('Браузер заблокировал всплывающее окно. Разрешите popup для этого сайта.');
+  }
+  win.document.open();
+  win.document.write(fullHtml);
+  win.document.close();
+  win.document.title = 'Итоговый отчёт — ' + monthLabel;
+
+  // Печать после загрузки картинок (canvas-PNG embedded — обычно мгновенно, но даём кадр)
+  const triggerPrint = () => {
+    try { win.focus(); win.print(); } catch(e) { /* noop */ }
+  };
+  if (win.document.readyState === 'complete') {
+    setTimeout(triggerPrint, 300);
+  } else {
+    win.addEventListener('load', () => setTimeout(triggerPrint, 200));
   }
 }
 /* ════════════════════ END EXPORT REPORT ════════════════════ */

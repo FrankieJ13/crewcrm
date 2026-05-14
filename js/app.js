@@ -6535,7 +6535,7 @@ function renderRating() {
       </div>
       <div class="rating-sum-cell rating-sum-visits">
         <div class="rating-sum-lbl">Визиты</div>
-        <div class="rating-sum-val accent" style="color:${pctClr(avgProg)}">${totalVis || '—'}</div>
+        <div class="rating-sum-val accent">${totalVis || '—'}</div>
       </div>
       <div class="rating-sum-cell">
         <div class="rating-sum-lbl">Прогноз</div>

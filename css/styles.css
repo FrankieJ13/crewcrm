@@ -5441,10 +5441,12 @@ body.fluent .ib-lbl,
 body.fluent .ist-lbl,
 body.fluent .si-key,
 body.fluent .zl { color: #5a5a5a !important; }
-/* ic-lbl (ФАКТ / ПРОГНОЗ) — тёмно-серый (перебивает body:not(.light)...{color:#fff}) */
-body.fluent .income-col .ic-lbl { color: #1a1a1a !important; }
+/* ic-lbl (ФАКТ / ПРОГНОЗ) — тёмно-серый.
+   Используем #income-overlay (ID даёт специфичность 1-*-*) чтобы
+   перебить body:not(.light):not(...)...ic-lbl {color:#fff !important} */
+body.fluent #income-overlay .ic-lbl { color: #1a1a1a !important; }
 /* ic-val — тёмно-серый по умолчанию; pctClr() может перекрасить через inline */
-body.fluent .income-col .ic-val { color: #1a1a1a; }
+body.fluent #income-overlay .ic-val { color: #1a1a1a; }
 /* No !important — позволяет pctClr() красить .mv/.mc-v в модалках по % */
 body.fluent .mv,
 body.fluent .mc-v { color: #111111; }

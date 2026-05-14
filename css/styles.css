@@ -2288,34 +2288,40 @@ body.cosmic .sched-save-anim { color:#bbb; }
 body.dark .sched-error-anim,
 body.cosmic .sched-error-anim { color:#bbb; }
 .sched-bulk-overlay {
-  position:fixed; inset:0; z-index:10001;
-  display:none; align-items:center; justify-content:center;
+  position:fixed;
+  inset:0;
+  z-index:10001;
+  display:none;
+  align-items:center;
+  justify-content:center;
   padding:14px;
-  background:rgba(0,0,0,.75);
-  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  background:rgba(0,0,0,.72);
+  backdrop-filter:blur(8px);
 }
-.sched-bulk-overlay.open { display:flex; animation:mFade .2s ease; }
+.sched-bulk-overlay.open { display:flex; }
 .sched-bulk-modal {
-  width:min(1120px, 96vw); max-height:88vh;
-  display:flex; flex-direction:column; overflow:hidden;
-  border:1px solid rgba(255,255,255,0.2);
+  width:min(1120px, 96vw);
+  max-height:88vh;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  border:1px solid var(--line);
   border-radius:var(--r2);
-  background: transparent;
-  animation:mUp .22s ease; position:relative;
+  background:var(--bg2);
+  color:var(--txt);
+  box-shadow:0 24px 70px rgba(0,0,0,.45);
 }
-body.light .sched-bulk-modal,
-body.tiffany .sched-bulk-modal,
-body.neo-light .sched-bulk-modal { border-color:rgba(0,0,0,0.18); }
 .sched-bulk-hdr,
 .sched-bulk-footer {
-  display:flex; align-items:center; justify-content:space-between;
-  gap:12px; padding:12px 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px 14px;
   border-bottom:1px solid var(--line);
   background:var(--bg2);
-  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
 }
-.sched-bulk-footer { border-top:1px solid var(--line); border-bottom:0; border-radius:0 0 var(--r2) var(--r2); }
-.sched-bulk-hdr { border-radius:var(--r2) var(--r2) 0 0; }
+.sched-bulk-footer { border-top:1px solid var(--line); border-bottom:0; }
 .sched-bulk-title {
   font-family:'Unbounded',sans-serif;
   font-size:12px;
@@ -2329,19 +2335,12 @@ body.neo-light .sched-bulk-modal { border-color:rgba(0,0,0,0.18); }
 }
 .sched-bulk-body {
   --sched-name-col: var(--sched-name-col-dynamic, clamp(150px, 18vw, 184px));
-  overflow:auto; flex:1;
-  padding:0 0 8px;
-  background:rgba(18,18,18,0.55);
-  backdrop-filter:blur(25px) saturate(180%);
-  -webkit-backdrop-filter:blur(25px) saturate(180%);
-  position:relative;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.25);
+  overflow:auto;
+  padding:0 0 8px; /* нет горизонтальных отступов — строки заполняют всю ширину */
+  background:var(--bg2);
   scrollbar-width:thick;
   scrollbar-color:var(--acc) var(--bg3);
 }
-body.light .sched-bulk-body,
-body.tiffany .sched-bulk-body,
-body.neo-light .sched-bulk-body { background:rgba(255,255,255,0.55); }
 .sched-bulk-body::-webkit-scrollbar {
   width:16px;
   height:18px;
@@ -2732,28 +2731,19 @@ body.light .income-modal-body { background:rgba(255,255,255,0.6); }
 /* Salary info overlay */
 #sal-info-overlay {
   display:none; position:fixed; inset:0; z-index:10001;
-  background:rgba(0,0,0,.75);
-  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
-  align-items:center; justify-content:center;
-  padding:16px;
+  background:rgba(0,0,0,.6); align-items:center; justify-content:center;
 }
-#sal-info-overlay.open { display:flex; animation:mFade .2s ease; }
+#sal-info-overlay.open { display:flex; }
 #sal-info-modal {
-  background: transparent;
-  border:1px solid rgba(255,255,255,0.2);
+  background:var(--bg2); border:1px solid var(--line2);
   border-radius:var(--r2); width:min(420px,94vw);
   max-height:82vh; display:flex; flex-direction:column;
-  overflow:hidden; animation:mUp .22s ease; position:relative;
+  overflow:hidden;
 }
-body.light #sal-info-modal,
-body.tiffany #sal-info-modal,
-body.neo-light #sal-info-modal { border-color:rgba(0,0,0,0.18); }
 #sal-info-modal .si-hdr {
   display:flex; align-items:center; justify-content:space-between;
   padding:12px 16px; border-bottom:1px solid var(--line);
-  background:var(--bg2); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-  position:sticky; top:0; z-index:2;
-  border-radius:var(--r2) var(--r2) 0 0;
+  background:var(--bg2); position:sticky; top:0;
 }
 #sal-info-modal .si-title {
   font-family:'Unbounded',sans-serif; font-size:10px; font-weight:800; color:var(--txt);
@@ -2768,27 +2758,7 @@ body.neo-light #sal-info-modal { border-color:rgba(0,0,0,0.18); }
 #sal-info-modal .si-body {
   overflow-y:auto; padding:14px 16px; font-size:12px;
   color:var(--txt2); line-height:1.65;
-  background:rgba(18,18,18,0.55);
-  backdrop-filter:blur(25px) saturate(180%);
-  -webkit-backdrop-filter:blur(25px) saturate(180%);
-  border-radius:0 0 var(--r2) var(--r2);
-  position:relative;
-  box-shadow:0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
 }
-#sal-info-modal .si-body::before {
-  content:''; position:absolute; inset:0; border-radius:inherit;
-  background:linear-gradient(120deg,rgba(255,255,255,.35) 0%,rgba(255,255,255,.15) 30%,rgba(255,255,255,.05) 60%,transparent 100%);
-  pointer-events:none;
-}
-#sal-info-modal .si-body::after {
-  content:''; position:absolute; inset:0; border-radius:inherit;
-  background:radial-gradient(circle at 20% 10%,rgba(255,255,255,.25),transparent 40%),
-             radial-gradient(circle at 80% 90%,rgba(255,255,255,.15),transparent 50%);
-  pointer-events:none; opacity:.6;
-}
-body.light #sal-info-modal .si-body,
-body.tiffany #sal-info-modal .si-body,
-body.neo-light #sal-info-modal .si-body { background:rgba(255,255,255,0.55); }
 #sal-info-modal .si-sec {
   font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
   color:var(--acc); margin:14px 0 6px; padding-bottom:4px;
@@ -2964,23 +2934,21 @@ body.cosmic #presence-popover::before {
 /* ══ CEO NOTIFY MODAL ══ */
 #notify-modal-overlay {
   position: fixed; inset: 0; z-index: 1800;
-  background: rgba(0,0,0,0.75);
-  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex; align-items: center; justify-content: center;
   padding: 20px;
 }
 #notify-modal {
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: var(--r2);
+  background: var(--bg2);
+  border: 1px solid var(--line2);
+  border-radius: 18px;
   width: 100%; max-width: 360px;
-  overflow: hidden; position: relative;
-  display: flex; flex-direction: column;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  overflow: hidden;
   animation: notifyModalIn .2s cubic-bezier(.34,1.56,.64,1);
 }
-body.light #notify-modal,
-body.tiffany #notify-modal,
-body.neo-light #notify-modal { border-color: rgba(0,0,0,0.18); }
 @keyframes notifyModalIn {
   from { opacity:0; transform:scale(.92) translateY(12px); }
   to   { opacity:1; transform:scale(1)  translateY(0);     }
@@ -2989,9 +2957,6 @@ body.neo-light #notify-modal { border-color: rgba(0,0,0,0.18); }
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px 16px 12px;
   border-bottom: 1px solid var(--line);
-  background: var(--bg2);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-  border-radius: var(--r2) var(--r2) 0 0;
 }
 .notify-modal-title {
   font-family: 'Unbounded', sans-serif;
@@ -2999,36 +2964,13 @@ body.neo-light #notify-modal { border-color: rgba(0,0,0,0.18); }
   color: var(--txt);
 }
 .notify-modal-close {
-  width: 28px; height: 28px; border-radius: 50%;
-  border: 1px solid var(--line2); background: var(--bg3);
-  color: var(--txt2); font-size: 18px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all .15s; flex-shrink: 0; line-height: 1;
+  background: none; border: none; cursor: pointer;
+  font-size: 20px; color: var(--txt3); line-height: 1;
+  padding: 2px 6px; border-radius: 6px;
+  transition: color .15s, background .15s;
 }
-.notify-modal-close:hover { border-color: var(--red); color: var(--red); }
-.notify-modal-body {
-  padding: 14px 16px 16px;
-  background: rgba(18,18,18,0.55);
-  backdrop-filter: blur(25px) saturate(180%);
-  -webkit-backdrop-filter: blur(25px) saturate(180%);
-  border-radius: 0 0 var(--r2) var(--r2);
-  position: relative;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
-}
-.notify-modal-body::before {
-  content:''; position:absolute; inset:0; border-radius:inherit;
-  background:linear-gradient(120deg,rgba(255,255,255,.35) 0%,rgba(255,255,255,.15) 30%,rgba(255,255,255,.05) 60%,transparent 100%);
-  pointer-events:none;
-}
-.notify-modal-body::after {
-  content:''; position:absolute; inset:0; border-radius:inherit;
-  background:radial-gradient(circle at 20% 10%,rgba(255,255,255,.25),transparent 40%),
-             radial-gradient(circle at 80% 90%,rgba(255,255,255,.15),transparent 50%);
-  pointer-events:none; opacity:.6;
-}
-body.light .notify-modal-body,
-body.tiffany .notify-modal-body,
-body.neo-light .notify-modal-body { background: rgba(255,255,255,0.55); }
+.notify-modal-close:hover { color: var(--txt); background: var(--line); }
+.notify-modal-body { padding: 14px 16px 16px; }
 .notify-textarea {
   width: 100%; box-sizing: border-box;
   background: var(--bg3); border: 1px solid var(--line2);
@@ -3700,29 +3642,19 @@ body.neo-dark .income-col .ic-lbl {
 }
 #plan-editor-overlay {
   display:none; position:fixed; inset:0; z-index:9999;
-  background:rgba(0,0,0,.75);
-  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
-  align-items:center; justify-content:center;
+  background:rgba(0,0,0,.6); align-items:center; justify-content:center;
   padding:16px;
 }
-#plan-editor-overlay.open { display:flex; animation:mFade .2s ease; }
+#plan-editor-overlay.open { display:flex; }
 #plan-editor-modal {
-  background: transparent;
-  border:1px solid rgba(255,255,255,0.2);
+  background:var(--bg2); border:1px solid var(--line2);
   border-radius:var(--r2); width:min(420px,94vw);
-  max-height:85vh; display:flex; flex-direction:column;
-  overflow:hidden; animation:mUp .22s ease; position:relative;
+  max-height:85vh; display:flex; flex-direction:column; overflow:hidden;
 }
-body.light #plan-editor-modal,
-body.tiffany #plan-editor-modal,
-body.neo-light #plan-editor-modal { border-color:rgba(0,0,0,0.18); }
 .pe-hdr {
   display:flex; align-items:center; justify-content:space-between;
   padding:13px 16px; border-bottom:1px solid var(--line);
-  background:var(--bg2);
-  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-  position:sticky; top:0; z-index:2;
-  border-radius:var(--r2) var(--r2) 0 0;
+  background:var(--bg2); position:sticky; top:0;
 }
 .pe-title { font-family:'Unbounded',sans-serif; font-size:10px; font-weight:800; color:var(--txt); }
 .pe-close {
@@ -3732,28 +3664,7 @@ body.neo-light #plan-editor-modal { border-color:rgba(0,0,0,0.18); }
   display:flex; align-items:center; justify-content:center;
 }
 .pe-close:hover { border-color:var(--red); color:var(--red); }
-.pe-body {
-  overflow-y:auto; padding:12px 16px; flex:1;
-  background:rgba(18,18,18,0.55);
-  backdrop-filter:blur(25px) saturate(180%);
-  -webkit-backdrop-filter:blur(25px) saturate(180%);
-  position:relative;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.25);
-}
-.pe-body::before {
-  content:''; position:absolute; inset:0; border-radius:inherit;
-  background:linear-gradient(120deg,rgba(255,255,255,.35) 0%,rgba(255,255,255,.15) 30%,rgba(255,255,255,.05) 60%,transparent 100%);
-  pointer-events:none;
-}
-.pe-body::after {
-  content:''; position:absolute; inset:0; border-radius:inherit;
-  background:radial-gradient(circle at 20% 10%,rgba(255,255,255,.25),transparent 40%),
-             radial-gradient(circle at 80% 90%,rgba(255,255,255,.15),transparent 50%);
-  pointer-events:none; opacity:.6;
-}
-body.light .pe-body,
-body.tiffany .pe-body,
-body.neo-light .pe-body { background:rgba(255,255,255,0.55); }
+.pe-body { overflow-y:auto; padding:12px 16px; }
 .pe-spoiler { border:1px solid var(--line); border-radius:var(--r); overflow:hidden; margin-bottom:4px; }
 .pe-spoiler summary {
   list-style:none; padding:10px 14px;
@@ -3782,10 +3693,7 @@ body.neo-light .pe-body { background:rgba(255,255,255,0.55); }
 .pe-input:focus { border-color:var(--acc); }
 .pe-footer {
   padding:12px 16px; border-top:1px solid var(--line);
-  display:flex; gap:8px;
-  background:var(--bg2);
-  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-  border-radius:0 0 var(--r2) var(--r2);
+  display:flex; gap:8px; background:var(--bg2);
 }
 .pe-save {
   flex:1; background:var(--acc); color:#000;
@@ -4477,31 +4385,22 @@ body.neo-light .vt-row-card:nth-child(even) {
 }
 /* Status picker overlay */
 .vt-picker-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,.75);
-  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-  z-index: 600;
+  position: fixed; inset: 0; background: rgba(0,0,0,.6);
+  backdrop-filter: blur(4px); z-index: 600;
   display: none; align-items: flex-end; justify-content: center;
   padding: 0 0 calc(88px + env(safe-area-inset-bottom, 0px)) 0;
 }
 .vt-picker-overlay.open { display: flex; animation: mFade .15s ease; }
 .vt-picker-modal {
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.2);
+  background: var(--bg2); border: 1px solid var(--line2);
   border-radius: var(--r2) var(--r2) 0 0;
   width: 100%; max-width: 520px; max-height: 70vh;
   display: flex; flex-direction: column;
-  animation: mUp .18s ease; overflow: hidden; position: relative;
+  animation: mUp .18s ease;
 }
-body.light .vt-picker-modal,
-body.tiffany .vt-picker-modal,
-body.neo-light .vt-picker-modal { border-color: rgba(0,0,0,0.18); }
 .vt-picker-hdr {
   padding: 12px 16px; border-bottom: 1px solid var(--line);
   display: flex; align-items: center; gap: 8px;
-  background: var(--bg2);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-  border-radius: var(--r2) var(--r2) 0 0;
 }
 .vt-picker-search {
   flex: 1; background: var(--bg3); border: 1px solid var(--line2);
@@ -4515,17 +4414,7 @@ body.neo-light .vt-picker-modal { border-color: rgba(0,0,0,0.18); }
   cursor: pointer; padding: 4px 8px; border-radius: var(--r);
 }
 .vt-picker-cancel:hover { color: var(--acc); }
-.vt-picker-list {
-  overflow-y: auto; flex: 1;
-  background: rgba(18,18,18,0.55);
-  backdrop-filter: blur(25px) saturate(180%);
-  -webkit-backdrop-filter: blur(25px) saturate(180%);
-  position: relative;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
-}
-body.light .vt-picker-list,
-body.tiffany .vt-picker-list,
-body.neo-light .vt-picker-list { background: rgba(255,255,255,0.55); }
+.vt-picker-list { overflow-y: auto; flex: 1; }
 .vt-picker-item {
   padding: 12px 16px; border-bottom: 1px solid var(--line);
   cursor: pointer; font-size: 13px; color: var(--txt);
@@ -4985,31 +4874,24 @@ body:not(.cosmic) .sched-person-name {
 /* ==================== EXPORT MODAL ==================== */
 #export-modal-overlay {
   position: fixed; inset: 0; z-index: 99998;
-  background: rgba(0,0,0,0.75);
+  background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   display: none; align-items: center; justify-content: center;
   padding: 16px;
 }
-#export-modal-overlay.open { display: flex; animation: mFade .2s ease; }
 #export-modal {
   width: 100%; max-width: 480px; max-height: 90vh;
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: var(--r2);
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
   display: flex; flex-direction: column;
-  overflow: hidden; animation: mUp .22s ease; position: relative;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.45);
 }
-body.light #export-modal,
-body.tiffany #export-modal,
-body.neo-light #export-modal { border-color: rgba(0,0,0,0.18); }
 .export-modal-hdr {
   display: flex; align-items: center; justify-content: space-between;
   padding: 16px 18px;
   border-bottom: 1px solid var(--line);
-  background: var(--bg2);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-  border-radius: var(--r2) var(--r2) 0 0;
-  position: sticky; top: 0; z-index: 2;
 }
 .export-modal-title {
   font-family: 'Unbounded', sans-serif;
@@ -5017,39 +4899,18 @@ body.neo-light #export-modal { border-color: rgba(0,0,0,0.18); }
   color: var(--txt); text-transform: uppercase;
 }
 .export-modal-close {
-  width: 28px; height: 28px; border-radius: 50%;
-  border: 1px solid var(--line2); background: var(--bg3);
-  color: var(--txt2); font-size: 18px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all .15s; flex-shrink: 0; line-height: 1;
+  background: none; border: none;
+  font-size: 24px; font-weight: 300; color: var(--txt3);
+  cursor: pointer; padding: 0 4px; line-height: 1;
+  transition: color 0.15s;
 }
-.export-modal-close:hover { border-color: var(--red); color: var(--red); }
+.export-modal-close:hover { color: var(--txt); }
 
 .export-modal-body {
   padding: 16px 18px 18px;
   overflow-y: auto;
   display: flex; flex-direction: column; gap: 14px;
-  background: rgba(18,18,18,0.55);
-  backdrop-filter: blur(25px) saturate(180%);
-  -webkit-backdrop-filter: blur(25px) saturate(180%);
-  border-radius: 0 0 var(--r2) var(--r2);
-  position: relative;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
 }
-.export-modal-body::before {
-  content:''; position:absolute; inset:0; border-radius:inherit;
-  background:linear-gradient(120deg,rgba(255,255,255,.35) 0%,rgba(255,255,255,.15) 30%,rgba(255,255,255,.05) 60%,transparent 100%);
-  pointer-events:none;
-}
-.export-modal-body::after {
-  content:''; position:absolute; inset:0; border-radius:inherit;
-  background:radial-gradient(circle at 20% 10%,rgba(255,255,255,.25),transparent 40%),
-             radial-gradient(circle at 80% 90%,rgba(255,255,255,.15),transparent 50%);
-  pointer-events:none; opacity:.6;
-}
-body.light .export-modal-body,
-body.tiffany .export-modal-body,
-body.neo-light .export-modal-body { background: rgba(255,255,255,0.55); }
 .export-row {
   display: flex; flex-direction: column; gap: 6px;
 }
@@ -5394,76 +5255,36 @@ body.fluent .income-modal-body {
   flex: 1 1 0 !important;
 }
 
-/* ── Modals overlays ── */
-body.fluent .mop-overlay,
-body.fluent .income-overlay:not([style*="top"]),
-body.fluent #sal-info-overlay,
-body.fluent #notify-modal-overlay,
-body.fluent #plan-editor-overlay,
-body.fluent #export-modal-overlay,
-body.fluent .sched-bulk-overlay,
-body.fluent .vt-picker-overlay {
-  background: rgba(30,30,30,.55) !important;
-  backdrop-filter: blur(10px) !important;
-  -webkit-backdrop-filter: blur(10px) !important;
+/* ── Modals ── */
+body.fluent .mop-overlay {
+  background: rgba(40,40,40,.45) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
-
-/* Modal containers — transparent + Fluent border */
 body.fluent .mop-modal,
 body.fluent .income-modal,
 body.fluent #sal-info-modal,
-body.fluent #notify-modal,
 body.fluent #plan-editor-modal,
-body.fluent #export-modal,
-body.fluent .sched-bulk-modal,
 body.fluent #about-modal,
 body.fluent .vt-picker-modal {
-  background: transparent !important;
-  border: 1px solid rgba(0,0,0,0.18) !important;
-  box-shadow: 0 20px 50px rgba(0,0,0,.20) !important;
+  background: linear-gradient(135deg, rgba(248,248,248,.97), rgba(234,234,234,.95)) !important;
+  border: 1px solid #c0c0c0 !important;
+  box-shadow: 0 20px 50px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.7) !important;
+  color: #111111 !important;
 }
-
-/* Modal headers — light Fluent bg */
 body.fluent .mop-modal-hdr,
 body.fluent .income-modal-hdr,
-body.fluent #sal-info-modal .si-hdr,
-body.fluent .notify-modal-hdr,
-body.fluent .pe-hdr,
-body.fluent .export-modal-hdr,
-body.fluent .sched-bulk-hdr,
-body.fluent .sched-bulk-footer,
-body.fluent .pe-footer,
-body.fluent .vt-picker-hdr {
-  background: linear-gradient(135deg, #f0f0f0, #e4e4e4) !important;
-  border-bottom-color: #c0c0c0 !important;
-  border-top-color: #c0c0c0 !important;
+body.fluent #sal-info-modal .si-hdr {
+  background: linear-gradient(135deg, #efefef, #e0e0e0) !important;
+  border-bottom: 1px solid #bebebe !important;
   color: #111111 !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
 }
-
-/* Modal bodies — light Fluent glass */
 body.fluent .mop-modal-body,
 body.fluent .income-modal-body,
-body.fluent #sal-info-modal .si-body,
-body.fluent .notify-modal-body,
-body.fluent .pe-body,
-body.fluent .export-modal-body,
-body.fluent .sched-bulk-body,
-body.fluent .vt-picker-list {
-  background: rgba(245,245,245,.88) !important;
-  backdrop-filter: blur(20px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+body.fluent #sal-info-modal .si-body {
+  background: rgba(245,245,245,.8) !important;
   color: #111111 !important;
 }
-/* Suppress shimmer pseudo-elements in Fluent (not needed on light bg) */
-body.fluent .mop-modal-body::before, body.fluent .mop-modal-body::after,
-body.fluent .income-modal-body::before, body.fluent .income-modal-body::after,
-body.fluent #sal-info-modal .si-body::before, body.fluent #sal-info-modal .si-body::after,
-body.fluent .notify-modal-body::before, body.fluent .notify-modal-body::after,
-body.fluent .pe-body::before, body.fluent .pe-body::after,
-body.fluent .export-modal-body::before, body.fluent .export-modal-body::after,
-body.fluent .sched-bulk-body::before, body.fluent .sched-bulk-body::after { display: none !important; }
 body.fluent .modal-cell,
 body.fluent .m4,
 body.fluent .income-subtotal,

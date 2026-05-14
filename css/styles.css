@@ -1116,10 +1116,17 @@ html:has(body.login-active) {
 }
 body.login-active main { overflow: hidden; }
 /* Хедер — всегда fixed (и при логине и после) */
+/* Находится ВНЕ #app → z-index сравнивается в корневом stacking context */
 header {
   position: fixed !important;
   top: 0; left: 0; right: 0;
-  z-index: 200;
+  z-index: 9999;
+  /* iOS PWA: форсируем собственный GPU-слой — исправляет перекрытие при скролле */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 /* Компенсируем фиксированный хедер */
 main { padding-top: 52px; }
@@ -1313,7 +1320,7 @@ body.cosmic .hdr-greeting.aurora {
 /* Hamburger backdrop blur */
 #hamburger-backdrop {
   display: none;
-  position: fixed; inset: 0; z-index: 260;
+  position: fixed; inset: 0; z-index: 9800;
   backdrop-filter: blur(5px) saturate(120%);
   -webkit-backdrop-filter: blur(5px) saturate(120%);
   background: rgba(0,0,0,.18);
@@ -1325,10 +1332,10 @@ body.cosmic .hdr-greeting.aurora {
   opacity: 1;
 }
 body.hamburger-open header {
-  z-index: 330 !important;
+  z-index: 9999 !important;
 }
 body.hamburger-open #hamburger-wrap {
-  z-index: 340;
+  z-index: 10000;
 }
 /* hide old standalone buttons still referenced by JS */
 #btn-out, #btn-plan-edit { display: none !important; }
@@ -4546,18 +4553,6 @@ main { padding-bottom: 88px; }
   justify-content: center;
   padding: 0 12px calc(16px + env(safe-area-inset-bottom, 8px)) 12px;
   pointer-events: none;
-}
-/* Хедер — всегда закреплён, не уезжает при скролле */
-header {
-  position: fixed !important;
-  top: 0; left: 0; right: 0;
-  z-index: 200;
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-  will-change: transform;
-  /* Предотвращаем исчезновение при скролле на iOS */
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
 }
 .dock-container {
   pointer-events: all;

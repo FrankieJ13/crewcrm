@@ -28,19 +28,18 @@
 </div>
 <canvas id="bg-canvas"></canvas>
 <div class="glass"></div>
-<div id="app">
 <div id="hamburger-backdrop" onclick="closeHamburger()"></div>
-  <header>
-    <div class="hdr-inner">
-      <div class="hdr-left">
-        <div class="logo" onclick="goHome()">
-          <img id="logo-img" src="./logos/01.png" class="logo-img" alt="logo"/>
-          <div class="hdr-title-wrap">
-            <span id="hdr-title" class="hdr-title-main aurora">ДАШБОРД</span>
-            <span id="hdr-greeting" class="hdr-greeting" style="display:none"></span>
-          </div>
+<header>
+  <div class="hdr-inner">
+    <div class="hdr-left">
+      <div class="logo" onclick="goHome()">
+        <img id="logo-img" src="./logos/01.png" class="logo-img" alt="logo"/>
+        <div class="hdr-title-wrap">
+          <span id="hdr-title" class="hdr-title-main aurora">ДАШБОРД</span>
+          <span id="hdr-greeting" class="hdr-greeting" style="display:none"></span>
         </div>
       </div>
+    </div>
       <div class="hdr-right">
         <div id="user-wrap" style="display:none">
           <img id="user-avatar" src="" alt=""/>
@@ -156,7 +155,7 @@
       </div>
     </div>
   </header>
-
+<div id="app">
   <!-- PLAN EDITOR OVERLAY -->
   <div id="plan-editor-overlay" style="display:none" onclick="if(event.target===this)closePlanEditorFull()">
     <div id="plan-editor-modal">

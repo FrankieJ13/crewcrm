@@ -2731,7 +2731,8 @@ body.light .income-modal-body { background:rgba(255,255,255,0.6); }
 /* Salary info overlay */
 #sal-info-overlay {
   display:none; position:fixed; inset:0; z-index:10001;
-  background:rgba(0,0,0,.6); align-items:center; justify-content:center;
+  background:rgba(0,0,0,.6); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  align-items:center; justify-content:center;
 }
 #sal-info-overlay.open { display:flex; }
 #sal-info-modal {
@@ -3642,7 +3643,8 @@ body.neo-dark .income-col .ic-lbl {
 }
 #plan-editor-overlay {
   display:none; position:fixed; inset:0; z-index:9999;
-  background:rgba(0,0,0,.6); align-items:center; justify-content:center;
+  background:rgba(0,0,0,.6); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  align-items:center; justify-content:center;
   padding:16px;
 }
 #plan-editor-overlay.open { display:flex; }

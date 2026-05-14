@@ -9011,7 +9011,7 @@ function exp_runPdf({ suffix, monthLabel, agg, plans, sections }) {
       font-family: 'Helvetica Neue', Arial, sans-serif;
       color: #1a1a1a;
       font-size: 10pt;
-      padding: 10mm 10mm 10mm 10mm;
+      padding: 10mm 10mm 14mm 10mm;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
@@ -9063,11 +9063,41 @@ function exp_runPdf({ suffix, monthLabel, agg, plans, sections }) {
     .chart-wrap img { max-width: 100%; height: auto; }
     .page-break { page-break-after: always; }
     .empty { color: #999; font-style: italic; text-align: center; margin: 4mm 0; }
-    .footer {
-      margin-top: 6mm; text-align: center;
-      color: #555; font-size: 9pt; font-weight: 600;
-      font-style: italic;
+    /* Старый end-of-doc футер больше не используем (см. .print-footer) */
+    .footer { display: none; }
+
+    /* Фиксированный футер на каждой печатной странице — слева внизу */
+    .print-footer {
+      display: none;
     }
+    @media print {
+      .print-footer {
+        display: block;
+        position: fixed;
+        bottom: 4mm;
+        left: 10mm;
+        right: 10mm;
+        color: #555;
+        font-size: 9pt;
+        font-style: italic;
+        font-weight: 600;
+        text-align: left;
+      }
+    }
+
+    /* Подсказка для пользователя — только на экране */
+    .rpt-hint {
+      background: #fff8d6;
+      border: 1px solid #f0d572;
+      color: #7a5500;
+      padding: 8px 14px;
+      font-size: 11pt;
+      border-radius: 6px;
+      margin: 0 0 6mm 0;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .rpt-hint b { color: #4a3300; font-weight: 700; }
+    @media print { .rpt-hint { display: none !important; } }
 
     /* ===== Верхняя панель (только на экране, скрыта при печати) ===== */
     .rpt-toolbar {
@@ -9120,6 +9150,12 @@ function exp_runPdf({ suffix, monthLabel, agg, plans, sections }) {
         '<span>Печать / PDF</span>' +
       '</button>' +
     '</div>';
+  // Подсказка по настройке диалога печати (только на экране)
+  body +=
+    '<div class="rpt-hint">' +
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+      '<span>В диалоге печати: <b>«Дополнительные настройки» → «Поля» → «Без полей»</b> и снимите галку <b>«Колонтитулы»</b> — тогда URL/дата/номера страниц не попадут в PDF.</span>' +
+    '</div>';
   body += '<h1 class="rpt-title">ИТОГОВЫЙ ОТЧЁТ ЗА ' + exp_escHtml(monthLabel.toUpperCase()) + '</h1>';
   body += '<div class="rpt-meta">Отдел CRM · Сформировано ' +
           new Date().toLocaleString('ru', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) +
@@ -9143,7 +9179,8 @@ function exp_runPdf({ suffix, monthLabel, agg, plans, sections }) {
     body += exp_pdfBuildTimelineSection(agg, monthLabel);
   }
 
-  body += '<div class="footer">Отчёт подготовил Бочаров Ю.С.</div>';
+  // Фиксированный футер — печатается на КАЖДОЙ странице (CSS position:fixed @media print)
+  body += '<div class="print-footer">Отчёт подготовил Бочаров Ю.С.</div>';
 
   const fullHtml =
     '<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8">' +

@@ -5064,12 +5064,12 @@ body.fluent .hdr-greeting.aurora {
 
 /* Header buttons (btn-icon in dark header) */
 body.fluent .btn-icon {
-  background: rgba(255,255,255,.10) !important;
-  border-color: rgba(255,255,255,.14) !important;
+  background: rgba(255,255,255,.22) !important;
+  border-color: rgba(255,255,255,.20) !important;
   color: #f0f0f0 !important;
 }
 body.fluent .btn-icon:hover {
-  background: rgba(255,255,255,.18) !important;
+  background: rgba(255,255,255,.32) !important;
 }
 
 /* ── Dock ── */
@@ -5080,12 +5080,12 @@ body.fluent .dock-container {
 }
 body.fluent .dock-btn { color: #b8b8b8 !important; }
 body.fluent .dock-btn.dock-active {
-  background: rgba(0,120,212,.18) !important;
-  border: 1px solid rgba(0,120,212,.42) !important;
+  background: rgba(255,255,255,.16) !important;
+  border: 1px solid rgba(255,255,255,.28) !important;
   border-radius: 12px;
-  color: #0078d4 !important;
+  color: #f0f0f0 !important;
 }
-body.fluent .dock-btn.dock-active svg { color: #0078d4 !important; }
+body.fluent .dock-btn.dock-active svg { color: #f0f0f0 !important; }
 body.fluent #main-dock .app-icon {
   width: 28px;
   height: 28px;
@@ -5115,6 +5115,11 @@ body.fluent #hamburger-backdrop {
 body.fluent .hmb-item { color: #eeeeee !important; }
 body.fluent .hmb-item:hover { background: rgba(255,255,255,.08) !important; }
 body.fluent .hmb-item.hmb-danger { color: #ff8c8c !important; }
+/* Sub-items inside light accordion panels (month/theme) — text must be dark */
+body.fluent .hmb-theme-sub .hmb-item,
+body.fluent #hmb-month-sub .hmb-item { color: #111111 !important; }
+body.fluent .hmb-theme-sub .hmb-item:hover,
+body.fluent #hmb-month-sub .hmb-item:hover { background: rgba(0,0,0,.07) !important; }
 
 /* ── dept-card / dept-cell ── */
 body.fluent .dept-card {
@@ -5129,7 +5134,8 @@ body.fluent .dept-cell {
   color: #111111 !important;
 }
 body.fluent .dc-lbl { color: #545454 !important; }
-body.fluent .dc-val { color: #111111 !important; }
+/* No !important — allows pctClr() inline style to set plan-progress color */
+body.fluent .dc-val { color: #111111; }
 
 /* ── mop / zp-row / rating-card ── */
 body.fluent .mop,
@@ -5166,7 +5172,8 @@ body.fluent .income-cols {
   padding: 8px;
 }
 body.fluent .income-col {
-  background: rgba(255,255,255,.5) !important;
+  /* No !important on background — allows pctToneStyle() inline to apply plan-progress tint */
+  background: rgba(255,255,255,.5);
   border: 1px solid #c0c0c0 !important;
   box-shadow: none !important;
 }
@@ -5190,6 +5197,13 @@ body.fluent .sched-nav-icon {
   mask: none !important; -webkit-mask: none !important;
 }
 body.fluent .sched-person-name { color: #111111 !important; }
+/* Today column header — dark bg, white text */
+body.fluent .sched-day-hdr.today {
+  background: #3c3c3c !important;
+  color: #ffffff !important;
+}
+body.fluent .sched-day-hdr.today .sched-day-num,
+body.fluent .sched-day-hdr.today .sched-day-name { color: #ffffff !important; }
 body.fluent .sched-cell.dr  { background: rgba(16,124,16,.15) !important; color: #0a5a0a !important; }
 body.fluent .sched-cell.dv  { background: rgba(209,52,56,.12) !important; color: #7a1a1a !important; }
 
@@ -5259,13 +5273,21 @@ body.fluent .si-formula {
   border: 1px solid #c0c0c0 !important;
   color: #111111 !important;
 }
+/* All close buttons → Fluent Close icon */
 body.fluent .mop-modal-close,
 body.fluent .income-modal-close,
-body.fluent #sal-info-modal .si-close {
+body.fluent #sal-info-modal .si-close,
+body.fluent .pe-close,
+body.fluent .sched-bulk-close,
+body.fluent .notify-modal-close,
+body.fluent .export-modal-close,
+body.fluent .vt-picker-cancel-x,
+body.fluent .modal-close-btn {
   font-size: 0 !important;
   background: url('../logos/Fluent/FluentColor-Close.svg') center/16px no-repeat !important;
   border: none !important;
   box-shadow: none !important;
+  color: transparent !important;
 }
 
 /* Info buttons */
@@ -5364,6 +5386,20 @@ body.fluent .vt-status-chip.vt-chip-purple {
 }
 body.fluent .vt-week-sum { color: #0078d4 !important; }
 body.fluent .vt-save-status.saved { color: #107c10 !important; }
+/* Sverka mark icons — show native SVG colors, no mask tinting */
+body.fluent .vt-sverka-mark {
+  background: transparent !important;
+  border: none !important;
+}
+body.fluent .vt-sverka-mark i {
+  mask: none !important;
+  -webkit-mask: none !important;
+  background-image: var(--sverka-icon) !important;
+  background-size: contain !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-color: transparent !important;
+}
 
 /* General text in colored elements */
 body.fluent .rating-card,
@@ -5408,6 +5444,19 @@ body.fluent #toast.e {
   color: #f0f0f0 !important;
 }
 
+/* ── Accent-filled buttons → dock dark color ── */
+body.fluent .center-login-btn,
+body.fluent .vt-save-btn,
+body.fluent .pe-save-btn,
+body.fluent .pe-apply-btn,
+body.fluent button[style*="background:var(--acc)"],
+body.fluent button[style*="background: var(--acc)"],
+body.fluent .btn-acc {
+  background: #2a2a2a !important;
+  color: #ffffff !important;
+  border-color: #1a1a1a !important;
+}
+
 /* ── Login gate ── */
 body.fluent .gate-icon {
   background: transparent !important;
@@ -5428,6 +5477,12 @@ body.fluent .presence-page,
 body.fluent .presence-empty { color: #5a5a5a !important; }
 body.fluent .presence-row { border-bottom: 1px solid #d0d0d0 !important; }
 body.fluent .presence-close { background: rgba(0,0,0,.08) !important; border-color: #b8b8b8 !important; color: #111 !important; }
+/* Online counter badge — white fill, black border and text */
+body.fluent .presence-count {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 1.5px solid #111111 !important;
+}
 
 @media(max-width:420px) {
   body.fluent #main-dock .app-icon {

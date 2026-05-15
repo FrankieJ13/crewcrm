@@ -1835,17 +1835,30 @@ body.fluent .mop-city-count { background:rgba(0,0,0,0.05); }
   background:rgba(255,255,255,0.05); border-radius:8px;
   padding:8px 6px; text-align:center;
 }
-/* В САЛОНЕ — будильник: моргание фоном + тряска по таймеру */
+/* В САЛОНЕ — будильник: моргание фоном + тряска по таймеру.
+   Фон через ::before чтобы тема (Fluent с !important) не перебивала анимацию. */
 .modal-cell.salon-alarm {
-  animation: salonAlarmBlink 1.4s ease-in-out infinite,
-             salonAlarmShake 7.2s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+  background: transparent !important;
+  border: 0 !important;
+  animation: salonAlarmShake 7.2s ease-in-out infinite;
   transform-origin: center;
 }
-.modal-cell.salon-alarm .mc-v { color:#fff !important; font-weight:800; }
-.modal-cell.salon-alarm .mc-l { color:#fff !important; }
+.modal-cell.salon-alarm::before {
+  content:''; position:absolute; inset:0; border-radius:inherit;
+  animation: salonAlarmBlink 1.4s ease-in-out infinite;
+  z-index: 0;
+}
+.modal-cell.salon-alarm .mc-l,
+.modal-cell.salon-alarm .mc-v {
+  position: relative; z-index: 1;
+  color:#fff !important;
+}
+.modal-cell.salon-alarm .mc-v { font-weight:800; }
 @keyframes salonAlarmBlink {
-  0%,100% { background: rgba(255,20,20,0.55); }
-  50%     { background: rgba(20,80,255,0.55); }
+  0%,100% { background: rgba(255,20,20,0.65); }
+  50%     { background: rgba(20,80,255,0.65); }
 }
 @keyframes salonAlarmShake {
   0%         { transform: translateX(0)    rotate(0deg);  }

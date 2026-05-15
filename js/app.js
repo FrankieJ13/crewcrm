@@ -4024,6 +4024,7 @@ function openMopModal(dataStr) {
     ['Обмен',         tObmen],
     ['Выкуп',         tVykup],
     ['Комиссия',      tKom],
+    ['Задаток',       d.zadatok],
     ['Отказ',         d.otkaz],
     ['ФССП',          d.vfSSP],
     ['Одоб. н/к', d.odobNeKupil || 0],

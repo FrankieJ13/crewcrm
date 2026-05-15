@@ -2151,6 +2151,7 @@ function buildCrmStats(vizData, opts = {}) {
   const BUY_KREDIT  = 'покупка (кредит)';
   const BUY_NAL     = 'покупка (наличные)';
   const BUY_OBMEN   = 'обмен';
+  const BUY_VYKUP   = 'выкуп';
   const BUY_KOM     = 'комиссия';
   const ST_SALON    = 'в салоне';
   const ST_KSO1     = 'в работе ксо';
@@ -2158,8 +2159,17 @@ function buildCrmStats(vizData, opts = {}) {
   const ST_KSO3     = 'подает заявку';
   const ST_FSSП     = 'фссп не подаем';
   const ST_OTKAZ    = 'отказ';
+  const ST_ODOB_NK  = 'одобрено банком, но не купил';
   const CAT800      = 'кат 800';
   const CAT1200     = 'кат 1200';
+
+  function emptyCity(city) {
+    return {
+      city,
+      vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0,
+      otkaz:0, fssp:0, odobNeKupil:0,
+    };
+  }
 
   for (let i = 1; i < vizData.length; i++) {
     const row = vizData[i];
@@ -2173,15 +2183,17 @@ function buildCrmStats(vizData, opts = {}) {
       mgrs[mgrL] = {
         name: mgr,
         vis800:0, vis1200:0,
-        kred800:0, nal800:0, obmen800:0, kom800:0,
-        kred1200:0, nal1200:0, obmen1200:0, kom1200:0,
+        kred800:0, nal800:0, obmen800:0, vykup800:0, kom800:0,
+        kred1200:0, nal1200:0, obmen1200:0, vykup1200:0, kom1200:0,
         zadatok:0,
-        vsalone:0, vkso:0, vfssп:0, vbanke:0, otkaz:0,
+        vsalone:0, vkso:0, vfssп:0, vbanke:0, otkaz:0, odobNeKupil:0,
+        byCity: {},
       };
     }
     const m   = mgrs[mgrL];
     const cat = String(row[6]||'').trim().toLowerCase();  // col G = категория
     const st  = String(row[4]||'').trim().toLowerCase();  // col E = способ/статус
+    const city = String(row[3]||'').trim() || '—';        // col D = город
     const zadSum = parseFloat(String(row[9]||'0').replace(/[^\d.]/g,'')) || 0; // col J
 
     if (cat === CAT800)  m.vis800++;
@@ -2191,12 +2203,14 @@ function buildCrmStats(vizData, opts = {}) {
       if (st === BUY_KREDIT) m.kred800++;
       if (st === BUY_NAL)    m.nal800++;
       if (st === BUY_OBMEN)  m.obmen800++;
+      if (st === BUY_VYKUP)  m.vykup800++;
       if (st === BUY_KOM)    m.kom800++;
     }
     if (cat === CAT1200) {
       if (st === BUY_KREDIT) m.kred1200++;
       if (st === BUY_NAL)    m.nal1200++;
       if (st === BUY_OBMEN)  m.obmen1200++;
+      if (st === BUY_VYKUP)  m.vykup1200++;
       if (st === BUY_KOM)    m.kom1200++;
     }
     if (zadSum > 1000) m.zadatok++;
@@ -2205,6 +2219,22 @@ function buildCrmStats(vizData, opts = {}) {
     if (st === ST_KSO1 || st === ST_KSO2 || st === ST_KSO3) m.vkso++;
     if (st === ST_FSSП)   m.vfssп++;
     if (st === ST_OTKAZ)  m.otkaz++;
+    if (st === ST_ODOB_NK) m.odobNeKupil++;
+
+    // По городам (только кат 800 + 1200 — все визиты этого менеджера)
+    if (cat === CAT800 || cat === CAT1200) {
+      if (!m.byCity[city]) m.byCity[city] = emptyCity(city);
+      const c = m.byCity[city];
+      c.vis++;
+      if (st === BUY_KREDIT) c.kred++;
+      else if (st === BUY_NAL)    c.nal++;
+      else if (st === BUY_OBMEN)  c.obmen++;
+      else if (st === BUY_VYKUP)  c.vykup++;
+      else if (st === BUY_KOM)    c.kom++;
+      else if (st === ST_OTKAZ)   c.otkaz++;
+      else if (st === ST_FSSП)    c.fssp++;
+      else if (st === ST_ODOB_NK) c.odobNeKupil++;
+    }
   }
   return mgrs;
 }
@@ -2435,11 +2465,15 @@ function renderOtchet() {
     row[14] = s.obmen1200|| 0;
     row[15] = s.kom1200  || 0;
     row[16] = s.zadatok  || 0;
+    row[17] = s.vykup800 || 0;
+    row[18] = s.vykup1200|| 0;
     row[19] = s.vsalone  || 0;
     row[22] = s.vkso     || 0;
     row[23] = s.vfssп    || 0;
     row[24] = s.vbanke   || 0;
     row[25] = s.otkaz    || 0;
+    row[26] = s.odobNeKupil || 0;
+    row[27] = s.byCity   || {};
     return row;
   }
 
@@ -2728,7 +2762,9 @@ function renderOtchet() {
       name, nameLow: String(r[0]||'').toLowerCase().trim(), v800:r[1], v1200:r[2], rplan, ost, prc, prog, allV, daily, progNum,
       kred800:r[8], nal800:r[9], td800:r[10], kom800:r[11],
       kred1200:r[12], nal1200:r[13], td1200:r[14], kom1200:r[15],
-      zadatok:r[16], vsalone:r[19], vkso:r[22], vfSSP:r[23], vbanke:r[24], otkaz:r[25],
+      zadatok:r[16], vykup800:r[17]||0, vykup1200:r[18]||0,
+      vsalone:r[19], vkso:r[22], vfSSP:r[23], vbanke:r[24], otkaz:r[25],
+      odobNeKupil:r[26]||0, byCity:r[27]||{},
       crmConVis:crmCnvrs[6]||'—', crmConKred:crmCnvrs[7]||'—',
       crmDolya:crmCnvrs[8]||'—', crmKoef:crmCnvrs[12]||'—',
       warmConVis:warmCnvrs[6]||'—', warmConKred:warmCnvrs[7]||'—',
@@ -3886,7 +3922,7 @@ function toggleInstr(id) {
 function toggleSub(id) {
   const sub = document.getElementById(id);
   sub.classList.toggle('open');
-  const btn = sub.querySelector('.instr-sub-toggle');
+  const btn = sub.querySelector('.instr-sub-toggle, .mop-sub-toggle');
   if (btn) btn.textContent = sub.classList.contains('open') ? '−' : '+';
 }
 
@@ -3927,8 +3963,118 @@ function openMopModal(dataStr) {
   const factPct = d.rplan && num(d.rplan) > 0
     ? Math.min(Math.round(num(d.allV) / num(d.rplan) * 100), 100)
     : parseFloat(String(d.prc||'0').replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
+  const factPctRaw = parseFloat(String(d.prc||'0').replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
+
+  // Суммарные значения для "Общий результат"
+  const tKred  = (num(d.kred800)  || 0) + (num(d.kred1200)  || 0);
+  const tNal   = (num(d.nal800)   || 0) + (num(d.nal1200)   || 0);
+  const tObmen = (num(d.td800)    || 0) + (num(d.td1200)    || 0);
+  const tVykup = (num(d.vykup800) || 0) + (num(d.vykup1200) || 0);
+  const tKom   = (num(d.kom800)   || 0) + (num(d.kom1200)   || 0);
+  const vsaloneN = num(d.vsalone) || 0;
+  const salStyle = vsaloneN > 0 ? 'color:#ff4757' : '';
+
+  // Бейджи "Общий результат" — основные показатели
+  const genBadges = [
+    ['План',          d.rplan],
+    ['Дневной',       d.daily || '—'],
+    ['Визиты',        d.allV],
+    ['Остаток',       d.ost],
+    ['Прогноз',       d.prog,    `color:${pctClr(progPct)}`],
+    ['Прогноз',       progVis,   `color:${pctClr(progPct)}`],
+    ['Факт',          d.prc,     `color:${pctClr(factPctRaw)}`],
+    ['Кредит',        tKred],
+    ['Наличные',      tNal],
+    ['Обмен',         tObmen],
+    ['Выкуп',         tVykup],
+    ['Комиссия',      tKom],
+    ['Отказ',         d.otkaz],
+    ['ФССП',          d.vfSSP],
+    ['Одобрено но не купил', d.odobNeKupil || 0],
+    ['В салоне',      vsaloneN,  salStyle],
+    ['В КСО',         d.vkso],
+  ];
+  const genHtml = genBadges.map(([l,v,st]) =>
+    `<div class="modal-cell"><div class="mc-l">${l}</div><div class="mc-v" style="${st||''}">${v}</div></div>`
+  ).join('');
+
+  // Конверсии (общий)
+  const convHtml = `
+    <div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.genConVis}</div></div>
+    <div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.genConKred}</div></div>
+    <div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.genDolya}</div></div>
+    <div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.genKoef}</div></div>`;
+
+  // CRM (кат 800)
+  const crmHtml = `
+    <div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div>
+    <div class="modal-cell"><div class="mc-l">Кредит</div><div class="mc-v">${d.kred800}</div></div>
+    <div class="modal-cell"><div class="mc-l">Наличные</div><div class="mc-v">${d.nal800}</div></div>
+    <div class="modal-cell"><div class="mc-l">Обмен</div><div class="mc-v">${d.td800}</div></div>
+    <div class="modal-cell"><div class="mc-l">Выкуп</div><div class="mc-v">${d.vykup800||0}</div></div>
+    <div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div>
+    <div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div>
+    <div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.crmConVis}</div></div>
+    <div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.crmConKred}</div></div>
+    <div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.crmDolya}</div></div>
+    <div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.crmKoef}</div></div>`;
+
+  // ТЁПЛЫЕ ЛИДЫ (кат 1200)
+  const warmHtml = `
+    <div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1200}</div></div>
+    <div class="modal-cell"><div class="mc-l">Кредит</div><div class="mc-v">${d.kred1200}</div></div>
+    <div class="modal-cell"><div class="mc-l">Наличные</div><div class="mc-v">${d.nal1200}</div></div>
+    <div class="modal-cell"><div class="mc-l">Обмен</div><div class="mc-v">${d.td1200}</div></div>
+    <div class="modal-cell"><div class="mc-l">Выкуп</div><div class="mc-v">${d.vykup1200||0}</div></div>
+    <div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1200}</div></div>
+    <div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.warmConVis}</div></div>
+    <div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.warmConKred}</div></div>
+    <div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.warmDolya}</div></div>
+    <div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.warmKoef}</div></div>`;
+
+  // Города (сортируем по визитам убыв.)
+  const cities = Object.values(d.byCity || {}).sort((a,b) => (b.vis||0) - (a.vis||0));
+  const citiesHtml = cities.length ? cities.map(c => {
+    const cellH = (lbl, val, st) =>
+      `<div class="modal-cell"><div class="mc-l">${lbl}</div><div class="mc-v" style="${st||''}">${val||0}</div></div>`;
+    return `<div class="mop-city">
+      <div class="mop-city-name">${(c.city||'—').toUpperCase()}</div>
+      <div class="modal-grid">
+        ${cellH('Визиты', c.vis)}
+        ${cellH('Кредит', c.kred)}
+        ${cellH('Наличные', c.nal)}
+        ${cellH('Обмен', c.obmen)}
+        ${cellH('Выкуп', c.vykup)}
+        ${cellH('Комиссия', c.kom)}
+        ${cellH('Отказ', c.otkaz)}
+        ${cellH('ФССП', c.fssp)}
+        ${cellH('Одобрено но не купил', c.odobNeKupil)}
+      </div>
+    </div>`;
+  }).join('') : '<div class="mop-city-empty">Нет данных по городам</div>';
+
   document.getElementById('mop-modal-title').innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>`;
-  document.getElementById('mop-modal-body').innerHTML = `<div class="mop-grid4" style="grid-template-columns:repeat(3,1fr)"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Дневной</div><div class="mv">${d.daily||'—'}</div></div><div class="m4"><div class="ml">Прогноз, шт</div><div class="mv" style="color:${pctClr(progPct)}">${progVis}</div></div><div class="m4"><div class="ml">Прогноз, %</div><div class="mv" style="color:${pctClr(progPct)}">${d.prog}</div></div></div><div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${factPct}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div><div class="modal-sec"><div class="modal-sec-title">CRM</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td800}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.crmConVis}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.crmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.crmDolya}</div></div><div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.crmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТЁПЛЫЕ ЛИДЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1200}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1200}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1200}</div></div><div class="modal-cell"><div class="mc-l">Trade-in</div><div class="mc-v">${d.td1200}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1200}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.warmConVis}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.warmConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.warmDolya}</div></div><div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.warmKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ОБЩИЙ РЕЗУЛЬТАТ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.genConVis}</div></div><div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.genConKred}</div></div><div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.genDolya}</div></div><div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.genKoef}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">ТРЕБУЮТ АКТУАЛИЗАЦИИ / ОТКАЗЫ</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">В салоне</div><div class="mc-v">${d.vsalone}</div></div><div class="modal-cell"><div class="mc-l">В КСО</div><div class="mc-v">${d.vkso}</div></div><div class="modal-cell"><div class="mc-l">В банке</div><div class="mc-v">${d.vbanke}</div></div><div class="modal-cell"><div class="mc-l">ФССП</div><div class="mc-v">${d.vfSSP}</div></div><div class="modal-cell"><div class="mc-l">Отказ</div><div class="mc-v">${d.otkaz}</div></div></div></div>`;
+  document.getElementById('mop-modal-body').innerHTML = `
+    <div class="mop-modal-subtitle">ДЕТАЛЬНЫЙ KPI</div>
+    <div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${factPct}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div>
+    <div class="modal-sec">
+      <div class="modal-sec-title">ОБЩИЙ РЕЗУЛЬТАТ</div>
+      <div class="modal-grid">${genHtml}</div>
+      <div class="modal-subhead">КОНВЕРСИИ</div>
+      <div class="modal-grid">${convHtml}</div>
+    </div>
+    <div class="mop-sub" id="mop-sub-crm">
+      <div class="mop-sub-hdr" onclick="toggleSub('mop-sub-crm')"><span>CRM</span><div class="mop-sub-toggle">+</div></div>
+      <div class="mop-sub-body"><div class="modal-grid">${crmHtml}</div></div>
+    </div>
+    <div class="mop-sub" id="mop-sub-warm">
+      <div class="mop-sub-hdr" onclick="toggleSub('mop-sub-warm')"><span>ТЁПЛЫЕ ЛИДЫ</span><div class="mop-sub-toggle">+</div></div>
+      <div class="mop-sub-body"><div class="modal-grid">${warmHtml}</div></div>
+    </div>
+    <div class="mop-sub" id="mop-sub-cities">
+      <div class="mop-sub-hdr" onclick="toggleSub('mop-sub-cities')"><span>ДЕТАЛИЗАЦИЯ ПО ГОРОДАМ</span><div class="mop-sub-toggle">+</div></div>
+      <div class="mop-sub-body">${citiesHtml}</div>
+    </div>`;
   document.getElementById('mop-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }

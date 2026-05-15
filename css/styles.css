@@ -1770,7 +1770,64 @@ body.light .mm { background:rgba(0,0,0,0.03); }
 .modal-sec-title::after { content:''; flex:1; height:1px; background:var(--line2) }
 .modal-grid {
   display:grid; gap:6px;
-  grid-template-columns:repeat(auto-fill, minmax(72px, 1fr));
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+}
+@media (min-width:560px) {
+  .modal-grid { grid-template-columns:repeat(5, minmax(0, 1fr)); }
+}
+/* Подзаголовок модалки (после ФИО) */
+.mop-modal-subtitle {
+  font-family:'Unbounded',sans-serif;
+  font-size:11px; font-weight:600; letter-spacing:.08em;
+  color:var(--txt2); text-transform:uppercase;
+  margin:0 0 10px; opacity:.85;
+}
+/* Подзаголовок внутри секции (например "Конверсии") */
+.modal-subhead {
+  font-family:'Unbounded',sans-serif;
+  font-size:10px; font-weight:600; letter-spacing:.08em;
+  color:var(--txt2); text-transform:uppercase;
+  margin:10px 0 6px; opacity:.75;
+}
+/* Схлопы внутри модалки KPI */
+.mop-sub {
+  margin-top:10px; border:1px solid var(--line); border-radius:10px;
+  background:rgba(255,255,255,0.03); overflow:hidden;
+}
+body.light .mop-sub,
+body.fluent .mop-sub { background:rgba(0,0,0,0.02); }
+.mop-sub-hdr {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 12px; cursor:pointer; user-select:none; gap:8px;
+  transition:background .15s;
+}
+.mop-sub-hdr:hover { background:rgba(255,255,255,0.04); }
+body.light .mop-sub-hdr:hover,
+body.fluent .mop-sub-hdr:hover { background:rgba(0,0,0,0.04); }
+.mop-sub-hdr span {
+  font-family:'Unbounded',sans-serif;
+  font-weight:600; font-size:11px; letter-spacing:.06em;
+  color:var(--acc); text-transform:uppercase; flex:1;
+}
+.mop-sub-toggle {
+  width:22px; height:22px; border-radius:50%;
+  background:var(--bg3); border:1px solid var(--line2);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--txt2); font-size:13px; flex-shrink:0; transition:all .2s;
+}
+.mop-sub.open .mop-sub-toggle { color:var(--acc); border-color:var(--acc); }
+.mop-sub-body { display:none; padding:0 10px 10px; }
+.mop-sub.open .mop-sub-body { display:block; }
+/* Город внутри схлопа Детализация по городам */
+.mop-city { margin-top:8px; }
+.mop-city:first-child { margin-top:0; }
+.mop-city-name {
+  font-family:'Unbounded',sans-serif;
+  font-size:11px; font-weight:700; letter-spacing:.04em;
+  color:var(--txt); margin-bottom:6px; padding-left:2px;
+}
+.mop-city-empty {
+  text-align:center; padding:14px; color:var(--txt2); font-size:12px;
 }
 .modal-cell {
   background:rgba(255,255,255,0.05); border-radius:8px;
@@ -5303,7 +5360,9 @@ body.fluent #sal-info-modal .si-body {
 body.fluent .modal-cell,
 body.fluent .m4,
 body.fluent .income-subtotal,
-body.fluent .si-formula {
+body.fluent .si-formula,
+body.fluent .dz-badge,
+body.fluent .income-badge {
   background: linear-gradient(135deg, #ececec, #e0e0e0) !important;
   border: 1px solid #c0c0c0 !important;
   color: #111111 !important;

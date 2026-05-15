@@ -5299,19 +5299,19 @@ function renderPersonal(matched) {
   let zadatok='—', vsaloneN=0;
 
   if (isDozhim) {
-    kred    = num(mgrRow[8])  + num(mgrRow[12]);
+    kred    = (num(mgrRow[8])  + num(mgrRow[12]))                           || '—';
     // Наличные = наличные + обмен (обе категории)
-    nal     = num(mgrRow[9])  + num(mgrRow[10]) + num(mgrRow[13]);
-    kom     = num(mgrRow[11]) + num(mgrRow[14]);
-    zadatok = num(mgrRow[15]);
+    nal     = (num(mgrRow[9])  + num(mgrRow[10]) + num(mgrRow[13]))         || '—';
+    kom     = (num(mgrRow[11]) + num(mgrRow[14]))                           || '—';
+    zadatok = num(mgrRow[15]) || '—';
   } else {
-    kred = num(mgrRow[8]) + num(mgrRow[12]);
+    kred = (num(mgrRow[8]) + num(mgrRow[12])) || '—';
     kredSub = `${mgrRow[8]||'0'} / ${mgrRow[12]||'0'}`;
-    nal  = num(mgrRow[9]) + num(mgrRow[13]);
+    nal  = (num(mgrRow[9]) + num(mgrRow[13])) || '—';
     nalSub = `${mgrRow[9]||'0'} / ${mgrRow[13]||'0'}`;
-    kom  = num(mgrRow[11]) + num(mgrRow[15]);
+    kom  = (num(mgrRow[11]) + num(mgrRow[15])) || '—';
     komSub = `${mgrRow[11]||'0'} / ${mgrRow[15]||'0'}`;
-    zadatok = num(mgrRow[16]);
+    zadatok = num(mgrRow[16]) || '—';
     vsaloneN  = num(mgrRow[19]) || 0;
     const genRow = getCnvrsRowGlobal(name, 'general');
     convVis   = genRow[6]||'—';

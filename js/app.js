@@ -5299,12 +5299,11 @@ function renderPersonal(matched) {
   let zadatok='—', vsaloneN=0;
 
   if (isDozhim) {
-    kred = (num(mgrRow[8]) + num(mgrRow[12])) || '—';
-    kredSub = `${mgrRow[8]||'0'} / ${mgrRow[12]||'0'}`;
-    nal  = (num(mgrRow[9]) + num(mgrRow[13])) || '—';
-    nalSub = `${mgrRow[9]||'0'} / ${mgrRow[13]||'0'}`;
-    kom  = (num(mgrRow[11]) + num(mgrRow[14])) || '—';
-    komSub = `${mgrRow[11]||'0'} / ${mgrRow[14]||'0'}`;
+    kred    = (num(mgrRow[8])  + num(mgrRow[12])) || '—';
+    // Наличные = наличные + обмен (обе категории)
+    nal     = (num(mgrRow[9])  + num(mgrRow[10]) + num(mgrRow[13])) || '—';
+    kom     = (num(mgrRow[11]) + num(mgrRow[14])) || '—';
+    zadatok = mgrRow[15]||0;
   } else {
     kred = (num(mgrRow[8]) + num(mgrRow[12])) || '—';
     kredSub = `${mgrRow[8]||'0'} / ${mgrRow[12]||'0'}`;
@@ -5421,10 +5420,10 @@ function renderPersonal(matched) {
     </div>` : ''}
     <div class="kpi-badge-sep"></div>
     <div class="kpi-badges">
-      <div class="kpi-badge"><div class="kb-lbl">${isDozhim ? 'Кредит' : 'КД CRM/ТЛ'}</div><div class="kb-val">${kred}</div><div class="kb-sub">${kredSub}</div></div>
-      <div class="kpi-badge"><div class="kb-lbl">${isDozhim ? 'Наличные' : 'НАЛ CRM/ТЛ'}</div><div class="kb-val">${nal}</div><div class="kb-sub">${nalSub}</div></div>
-      <div class="kpi-badge"><div class="kb-lbl">${isDozhim ? 'Комиссия' : 'КОМ CRM/ТЛ'}</div><div class="kb-val">${kom}</div><div class="kb-sub">${komSub}</div></div>
-      ${!isDozhim ? `<div class="kpi-badge"><div class="kb-lbl">Задаток</div><div class="kb-val">${zadatok}</div></div>` : ''}
+      <div class="kpi-badge"><div class="kb-lbl">${isDozhim ? 'Кредит' : 'КД CRM/ТЛ'}</div><div class="kb-val">${kred}</div>${!isDozhim ? `<div class="kb-sub">${kredSub}</div>` : ''}</div>
+      <div class="kpi-badge"><div class="kb-lbl">${isDozhim ? 'Наличные' : 'НАЛ CRM/ТЛ'}</div><div class="kb-val">${nal}</div>${!isDozhim ? `<div class="kb-sub">${nalSub}</div>` : ''}</div>
+      <div class="kpi-badge"><div class="kb-lbl">${isDozhim ? 'Комиссия' : 'КОМ CRM/ТЛ'}</div><div class="kb-val">${kom}</div>${!isDozhim ? `<div class="kb-sub">${komSub}</div>` : ''}</div>
+      <div class="kpi-badge"><div class="kb-lbl">Задаток</div><div class="kb-val">${zadatok}</div></div>
     </div>
     ${convRow}
   `);

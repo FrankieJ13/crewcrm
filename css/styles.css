@@ -1740,7 +1740,6 @@ body.light .mop {
 .mm {
   background:rgba(255,255,255,0.05); border-radius:8px;
   padding:8px; text-align:center;
-  backdrop-filter:blur(4px);
 }
 body.light .mm { background:rgba(0,0,0,0.03); }
 .mm .ml { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px }
@@ -1835,7 +1834,6 @@ body.fluent .mop-city-count { background:rgba(0,0,0,0.05); }
 .modal-cell {
   background:rgba(255,255,255,0.05); border-radius:8px;
   padding:8px 6px; text-align:center;
-  backdrop-filter:blur(4px);
 }
 body.light .modal-cell { background:rgba(0,0,0,0.03); }
 .modal-cell .mc-l {
@@ -2005,7 +2003,6 @@ body.light .mop-modal-body {
 .dept-cell {
   background:rgba(255,255,255,0.05); border-radius:8px;
   padding:10px 12px; text-align:center;
-  backdrop-filter:blur(4px);
 }
 body.light .dept-cell { background:rgba(0,0,0,0.02); }
 .dept-cell .dc-lbl {
@@ -2089,7 +2086,6 @@ body.light .inner-base-path { stroke:rgba(0,0,0,0.08); }
   background:rgba(255,255,255,0.05); border-radius:8px;
   padding:7px 11px; min-width:75px;
   display:flex; flex-direction:column; gap:2px;
-  backdrop-filter:blur(4px);
 }
 .ti .tl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em }
 .ti .tv { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:700 }
@@ -3157,7 +3153,7 @@ body.cosmic #presence-popover::before {
 .income-badges { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:6px; }
 .income-badge {
   background:rgba(255,255,255,0.05); border-radius:8px;
-  padding:9px 6px; text-align:center; backdrop-filter:blur(4px);
+  padding:9px 6px; text-align:center;
 }
 body.light .income-badge { background:rgba(0,0,0,0.03); }
 .income-badge .ib-lbl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px; }
@@ -3417,7 +3413,7 @@ body.light .zp-banner {
 .kpi-badge {
   background:rgba(255,255,255,0.05); border-radius:10px;
   padding:10px 8px; text-align:center;
-  backdrop-filter:blur(4px); border:1px solid var(--line);
+ border:1px solid var(--line);
 }
 body.light .kpi-badge { background:rgba(0,0,0,0.03); }
 .kpi-badge .kb-lbl {
@@ -3510,7 +3506,7 @@ body.light .ndz-table tr.ndz-highlight td { background:rgba(217,53,53,.06); }
 .dz-badges { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:6px; }
 .dz-badge {
   background:rgba(255,255,255,0.05); border-radius:8px;
-  padding:9px 6px; text-align:center; backdrop-filter:blur(4px);
+  padding:9px 6px; text-align:center;
 }
 body.light .dz-badge { background:rgba(0,0,0,0.03); }
 .dz-badge .dzb-lbl  { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px; }
@@ -3526,7 +3522,6 @@ body.light #income-modal-content[data-modal="dozhim"] .income-sec-title::after {
   position:relative;
   background:rgba(255,255,255,0.06); border-radius:10px;
   padding:10px 26px 9px 10px; text-align:center;
-  backdrop-filter:blur(4px);
   border:1px solid rgba(255,255,255,0.08);
 }
 body.light .income-col { background:rgba(0,0,0,0.04); border-color:rgba(0,0,0,0.07); }

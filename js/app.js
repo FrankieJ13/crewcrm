@@ -3956,7 +3956,7 @@ function toggleCitiesAll() {
         ${cell('Комиссия', c.kom)}
         ${cell('Отказ', c.otkaz)}
         ${cell('ФССП', c.fssp)}
-        ${cell('Одобрено но не купил', c.odobNeKupil)}
+        ${cell('Одоб. н/к', c.odobNeKupil)}
       </div>
     </div>`).join('');
   body.dataset.loaded = '1';
@@ -4026,7 +4026,7 @@ function openMopModal(dataStr) {
     ['Комиссия',      tKom],
     ['Отказ',         d.otkaz],
     ['ФССП',          d.vfSSP],
-    ['Одобрено но не купил', d.odobNeKupil || 0],
+    ['Одоб. н/к', d.odobNeKupil || 0],
     ['В салоне',      vsaloneN,  salStyle],
     ['В КСО',         d.vkso],
   ];

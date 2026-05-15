@@ -6,6 +6,17 @@ if ('serviceWorker' in navigator && ['http:', 'https:'].includes(location.protoc
   });
 }
 
+// Переносим оверлеи из #app в <body>, иначе #app (z:10) кэпит их z-index
+// в корневом stacking context — они проигрывают mop-overlay (sibling #app в body).
+document.addEventListener('DOMContentLoaded', () => {
+  ['plan-editor-overlay', 'about-overlay'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.parentElement && el.parentElement.id !== 'document-body-root') {
+      document.body.appendChild(el);
+    }
+  });
+});
+
 /* ══ CONFIG ══ */
 const CFG = {
   CLIENT_ID: '364532815329-0j1lkobb1v9vcserj6artf64nd95a0la.apps.googleusercontent.com',

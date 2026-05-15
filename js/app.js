@@ -5352,21 +5352,21 @@ function renderPersonal(matched) {
     <div class="kpi-subtitle">Текущий KPI</div>
     <div class="kpi-badges">
       <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">План</div><div class="kb-val">${plan}</div></div>
+      <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Дневной</div><div class="kb-val">${daily}</div></div>
       <div class="kpi-badge kpi-core-badge kpi-visits-drill" onclick="openVisitsDayModal(${visitsModalName}, ${isDozhim})" title="Хронология визитов по дням"><div class="kb-lbl">Визиты</div><div class="kb-val">${factN}</div></div>
       <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Остаток</div><div class="kb-val">${ost}</div></div>
-      ${!isDozhim ? `<div class="kpi-badge${salAlarm ? ' kpi-badge-salon-alarm' : ''}"><div class="kb-lbl">В салоне</div><div class="kb-val">${vsaloneN}</div></div>` : ''}
     </div>
     <div class="kpi-badges">
-      <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Дневной</div><div class="kb-val">${daily}</div></div>
       <div class="kpi-badge"><div class="kb-lbl">Прогноз %</div><div class="kb-val" style="color:${pctClr(progNum)}">${prog}</div></div>
       ${!isDozhim ? `<div class="kpi-badge"><div class="kb-lbl">Прогноз шт</div><div class="kb-val" style="color:${pctClr(progNum)}">${progVisN}</div></div>` : ''}
       <div class="kpi-badge"><div class="kb-lbl">Факт %</div><div class="kb-val" style="color:${pctClr(progNum)}">${prc}</div></div>
+      ${!isDozhim ? `<div class="kpi-badge${salAlarm ? ' kpi-badge-salon-alarm' : ''}"><div class="kb-lbl">В салоне</div><div class="kb-val">${vsaloneN}</div></div>` : ''}
     </div>
     <div class="kpi-badge-sep"></div>
     <div class="kpi-badges">
-      <div class="kpi-badge"><div class="kb-lbl">Кредиты CRM/ТЛ</div><div class="kb-val">${kred}</div><div class="kb-sub">${kredSub}</div></div>
-      <div class="kpi-badge"><div class="kb-lbl">Наличка CRM/ТЛ</div><div class="kb-val">${nal}</div><div class="kb-sub">${nalSub}</div></div>
-      <div class="kpi-badge"><div class="kb-lbl">Комиссия CRM/ТЛ</div><div class="kb-val">${kom}</div><div class="kb-sub">${komSub}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl">КД CRM</div><div class="kb-val">${kred}</div><div class="kb-sub">${kredSub}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl">НАЛ</div><div class="kb-val">${nal}</div><div class="kb-sub">${nalSub}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl">КОМ</div><div class="kb-val">${kom}</div><div class="kb-sub">${komSub}</div></div>
       ${!isDozhim ? `<div class="kpi-badge"><div class="kb-lbl">Задаток</div><div class="kb-val">${zadatok}</div></div>` : ''}
     </div>
     ${convRow}

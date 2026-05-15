@@ -1835,6 +1835,30 @@ body.fluent .mop-city-count { background:rgba(0,0,0,0.05); }
   background:rgba(255,255,255,0.05); border-radius:8px;
   padding:8px 6px; text-align:center;
 }
+/* В САЛОНЕ — будильник: моргание фоном + тряска по таймеру */
+.modal-cell.salon-alarm {
+  animation: salonAlarmBlink 1.4s ease-in-out infinite,
+             salonAlarmShake 7.2s ease-in-out infinite;
+  transform-origin: center;
+}
+.modal-cell.salon-alarm .mc-v { color:#fff !important; font-weight:800; }
+.modal-cell.salon-alarm .mc-l { color:#fff !important; }
+@keyframes salonAlarmBlink {
+  0%,100% { background: rgba(255,20,20,0.55); }
+  50%     { background: rgba(20,80,255,0.55); }
+}
+@keyframes salonAlarmShake {
+  0%         { transform: translateX(0)    rotate(0deg);  }
+  1.7%       { transform: translateX(-3px) rotate(-2deg); }
+  3.3%       { transform: translateX(3px)  rotate(2deg);  }
+  5%         { transform: translateX(-3px) rotate(-2deg); }
+  6.7%       { transform: translateX(3px)  rotate(2deg);  }
+  8.3%       { transform: translateX(-2px) rotate(-1deg); }
+  10%        { transform: translateX(2px)  rotate(1deg);  }
+  11.7%      { transform: translateX(-1px) rotate(-1deg); }
+  13.3%      { transform: translateX(1px)  rotate(1deg);  }
+  15%,100%   { transform: translateX(0)    rotate(0deg);  }
+}
 body.light .modal-cell { background:rgba(0,0,0,0.03); }
 .modal-cell .mc-l {
   font-size:9px; color:var(--txt2);
@@ -5288,6 +5312,9 @@ body.fluent .sched-day-hdr.today {
   background: #3c3c3c !important;
   color: #ffffff !important;
 }
+body.fluent .sched-day-hdr.today .sd-num,
+body.fluent .sched-day-hdr.today .sd-dow,
+body.fluent .sched-day-hdr.today .sd-workers,
 body.fluent .sched-day-hdr.today .sched-day-num,
 body.fluent .sched-day-hdr.today .sched-day-name { color: #ffffff !important; }
 body.fluent .sched-cell.dr  { background: rgba(16,124,16,.15) !important; color: #0a5a0a !important; }

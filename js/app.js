@@ -4008,7 +4008,7 @@ function openMopModal(dataStr) {
   const tVykup = (num(d.vykup800) || 0) + (num(d.vykup1200) || 0);
   const tKom   = (num(d.kom800)   || 0) + (num(d.kom1200)   || 0);
   const vsaloneN = num(d.vsalone) || 0;
-  const salStyle = vsaloneN > 0 ? 'color:#ff4757' : '';
+  const salAlarm = vsaloneN > 0;
 
   // Бейджи "Общий результат" — основные показатели
   const genBadges = [
@@ -4027,11 +4027,11 @@ function openMopModal(dataStr) {
     ['Отказ',         d.otkaz],
     ['ФССП',          d.vfSSP],
     ['Одоб. н/к', d.odobNeKupil || 0],
-    ['В салоне',      vsaloneN,  salStyle],
+    ['В салоне',      vsaloneN,  '', salAlarm ? 'salon-alarm' : ''],
     ['В КСО',         d.vkso],
   ];
-  const genHtml = genBadges.map(([l,v,st]) =>
-    `<div class="modal-cell"><div class="mc-l">${l}</div><div class="mc-v" style="${st||''}">${v}</div></div>`
+  const genHtml = genBadges.map(([l,v,st,cls]) =>
+    `<div class="modal-cell ${cls||''}"><div class="mc-l">${l}</div><div class="mc-v" style="${st||''}">${v}</div></div>`
   ).join('');
 
   // Конверсии (общий)

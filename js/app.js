@@ -2664,19 +2664,25 @@ function renderOtchet() {
     let dSalesProgNum = 0;
     let dSalesProg = '—';
     if (dp && dSalesPl > 0) { dSalesProgNum = Math.round(dSalesFact / (dSalesPl / dim * dp) * 100); dSalesProg = dSalesProgNum + '%'; }
-    // Всегда показываем split-формат: «визиты | продажи»
-    const dPlanLbl = `<span class="dc-sn">${dPlan||'—'}</span> <span class="dc-pipe">|</span> <span class="dc-sn">${dSalesPl||'—'}</span>`;
-    const dFactLbl = `<span class="dc-sn">${dAllVis||'—'}</span> <span class="dc-pipe">|</span> <span class="dc-sn">${dSalesFact||'—'}</span>`;
-    const fmtPct = (val, clr) => `<span class="dc-sn" style="color:${clr}">${String(val).replace('%','')}<span style="font-size:9px;font-weight:400">%</span></span>`;
-    const dProgLbl = `${fmtPct(dProg, pctClr(dProgNum))} <span class="dc-pipe">|</span> ${fmtPct(dSalesProg, pctClr(dSalesProgNum))}`;
+    const dOst = Math.max(0, dPlan - dAllVis);
     dozhimDeptCard = `
     <div class="sec-title">ОТДЕЛ ДОЖИМ</div>
     <div class="dept-card" style="background:rgba(${accR},${accG},${accB},0.08)">
-      <div class="dept-row1" style="grid-template-columns:repeat(3,1fr)">
-        <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val dc-split">${dPlanLbl}</div></div>
-        <div class="dept-cell hi"><div class="dc-lbl">Факт</div><div class="dc-val dc-split">${dFactLbl}</div></div>
-        <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val dc-split">${dProgLbl}</div></div>
+      <div class="dept-sec-lbl">Визиты</div>
+      <div class="dept-row1">
+        <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">${dPlan||'—'}</div></div>
+        <div class="dept-cell hi"><div class="dc-lbl">Визиты</div><div class="dc-val">${dAllVis||'—'}</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Остаток</div><div class="dc-val">${dOst||'—'}</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val" style="color:${pctClr(dProgNum)}">${dProg}</div></div>
       </div>
+      <div class="dept-sec-lbl">Продажи</div>
+      <div class="dept-row1">
+        <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">${dSalesPl||'—'}</div></div>
+        <div class="dept-cell hi"><div class="dc-lbl">Продажи</div><div class="dc-val">${dSalesFact||'—'}</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Остаток</div><div class="dc-val">${Math.max(0,dSalesPl-dSalesFact)||'—'}</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val" style="color:${pctClr(dSalesProgNum)}">${dSalesProg}</div></div>
+      </div>
+      <div style="height:1px;background:var(--line2);margin:8px 0"></div>
       <div class="dept-row2" style="grid-template-columns:repeat(3,1fr)">
         <div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">${dKred||'—'}</div></div>
         <div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">${dNal||'—'}</div></div>
@@ -2687,11 +2693,21 @@ function renderOtchet() {
     dozhimDeptCard = `
     <div class="sec-title">ОТДЕЛ ДОЖИМ</div>
     <div class="dept-card" style="opacity:0.7;background:rgba(${accR},${accG},${accB},0.08)">
-      <div class="dept-row1" style="grid-template-columns:repeat(3,1fr)">
+      <div class="dept-sec-lbl">Визиты</div>
+      <div class="dept-row1">
         <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">—</div></div>
-        <div class="dept-cell hi"><div class="dc-lbl">Факт</div><div class="dc-val">—</div></div>
+        <div class="dept-cell hi"><div class="dc-lbl">Визиты</div><div class="dc-val">—</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Остаток</div><div class="dc-val">—</div></div>
         <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val">—</div></div>
       </div>
+      <div class="dept-sec-lbl">Продажи</div>
+      <div class="dept-row1">
+        <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">—</div></div>
+        <div class="dept-cell hi"><div class="dc-lbl">Продажи</div><div class="dc-val">—</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Остаток</div><div class="dc-val">—</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val">—</div></div>
+      </div>
+      <div style="height:1px;background:var(--line2);margin:8px 0"></div>
       <div class="dept-row2" style="grid-template-columns:repeat(3,1fr)">
         <div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">—</div></div>
         <div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">—</div></div>

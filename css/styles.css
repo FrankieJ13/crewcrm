@@ -5185,8 +5185,8 @@ body.fluent .dock-container {
 }
 body.fluent .dock-btn { color: #b8b8b8 !important; }
 body.fluent .dock-btn.dock-active {
-  background: rgba(255,255,255,.28) !important;
-  border: 1px solid rgba(255,255,255,.42) !important;
+  background: rgba(255,255,255,.18) !important;
+  border: 1px solid rgba(255,255,255,.30) !important;
   border-radius: 12px;
   color: #ffffff !important;
 }

@@ -2061,7 +2061,7 @@ body.light .mop-modal-body {
 }
 .dept-cell {
   background:rgba(255,255,255,0.05); border-radius:8px;
-  padding:10px 12px; text-align:center;
+  padding:10px 8px; text-align:center;
 }
 body.light .dept-cell { background:rgba(0,0,0,0.02); }
 .dept-cell .dc-lbl {

@@ -2075,7 +2075,7 @@ body.light .dept-cell { background:rgba(0,0,0,0.02); }
 }
 .dept-cell.hi .dc-val { color:var(--txt); }
 /* Двойное значение визиты | продажи в ОТДЕЛ ДОЖИМ */
-.dc-split { font-size:15px; letter-spacing:-.01em; }
+.dc-split { font-size:14px; letter-spacing:-.01em; }
 .dc-pipe { opacity:.35; margin:0 3px; font-weight:400; }
 .speedo-grid {
   display:grid; grid-template-columns:repeat(3, 1fr);

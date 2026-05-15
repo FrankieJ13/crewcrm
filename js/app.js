@@ -2667,7 +2667,8 @@ function renderOtchet() {
     // Всегда показываем split-формат: «визиты | продажи»
     const dPlanLbl = `${dPlan||'—'} <span class="dc-pipe">|</span> ${dSalesPl||'—'}`;
     const dFactLbl = `${dAllVis||'—'} <span class="dc-pipe">|</span> ${dSalesFact||'—'}`;
-    const dProgLbl = `<span style="color:${pctClr(dProgNum)}">${dProg}</span> <span class="dc-pipe">|</span> <span style="color:${pctClr(dSalesProgNum)}">${dSalesProg}</span>`;
+    const fmtPct = (val, clr) => `<span style="color:${clr}">${String(val).replace('%','')}<span style="font-size:10px;font-weight:400">%</span></span>`;
+    const dProgLbl = `${fmtPct(dProg, pctClr(dProgNum))} <span class="dc-pipe">|</span> ${fmtPct(dSalesProg, pctClr(dSalesProgNum))}`;
     dozhimDeptCard = `
     <div class="sec-title">ОТДЕЛ ДОЖИМ</div>
     <div class="dept-card" style="background:rgba(${accR},${accG},${accB},0.08)">

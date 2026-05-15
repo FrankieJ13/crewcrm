@@ -353,11 +353,11 @@ function pctClr(p) {
 }
 function pctGrad(p) {
   const n = (typeof p === 'number') ? p : (parseFloat(String(p||0).replace(/[^\d.,-]/g,'').replace(',','.')) || 0);
-  if (n >= 120) return 'linear-gradient(45deg,#eadcff,#59d879)';
-  if (n >= 110) return 'linear-gradient(45deg,#ffe0ee,#59d879)';
-  if (n >= 100) return 'linear-gradient(45deg,#d9f8de,#59d879)';
-  if (n >= 90) return 'linear-gradient(45deg,#fff3b8,#ffd84d)';
-  return 'linear-gradient(45deg,#ffd6d9,#ff6b75)';
+  if (n >= 120) return 'linear-gradient(45deg,#b06aff,#59d879)'; // purple → green
+  if (n >= 110) return 'linear-gradient(45deg,#ff5faa,#59d879)'; // hot-pink → green
+  if (n >= 100) return 'linear-gradient(45deg,#34e06a,#059652)'; // light-green → deep-green
+  if (n >= 90)  return 'linear-gradient(45deg,#ffd84d,#f59e0b)'; // gold → amber
+  return 'linear-gradient(45deg,#ff6b75,#c0392b)';               // red → dark-red
 }
 function pctTextStyle(p) {
   return `background:${pctGrad(p)};-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent`;

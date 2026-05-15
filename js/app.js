@@ -5233,6 +5233,7 @@ function renderPersonal(matched) {
     synRow[12]= s.kred1200||0; synRow[13]= s.nal1200||0;
     synRow[14]= s.obmen1200||0; synRow[15]= s.kom1200||0;
     synRow[16]= s.zadatok||0;
+    synRow[19]= s.vsalone||0;
     mgrRow = synRow;
     salObj = calcSalary(nameLow);
   }
@@ -5251,7 +5252,8 @@ function renderPersonal(matched) {
   const visitsModalName = JSON.stringify(nameLow).replace(/"/g, '&quot;');
 
   let kred='—', nal='—', kom='—', kredSub='', nalSub='', komSub='';
-  let convVis='—', convKred='—', pctTarget='—';
+  let convVis='—', convKred='—', pctTarget='—', koeff='—';
+  let zadatok='—', vsaloneN=0;
 
   if (isDozhim) {
     kred = (num(mgrRow[8]) + num(mgrRow[12])) || '—';
@@ -5267,20 +5269,26 @@ function renderPersonal(matched) {
     nalSub = `${mgrRow[9]||'0'} / ${mgrRow[13]||'0'}`;
     kom  = (num(mgrRow[11]) + num(mgrRow[15])) || '—';
     komSub = `${mgrRow[11]||'0'} / ${mgrRow[15]||'0'}`;
+    zadatok = mgrRow[16]||0;
+    vsaloneN  = num(mgrRow[19]) || 0;
     const genRow = getCnvrsRowGlobal(name, 'general');
     convVis   = genRow[6]||'—';
     convKred  = genRow[7]||'—';
     pctTarget = genRow[8]||'—';
+    koeff     = genRow[12]||'—';
   }
 
+  const progVisN = (!isDozhim && planNum && progNum) ? Math.round(planNum * progNum / 100) : '—';
+  const salAlarm = vsaloneN > 0;
   const isLight = (document.body.classList.contains('light')||document.body.classList.contains('tiffany'));
   const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
   const convRow = !isDozhim ? `
     <div class="kpi-badge-sep"></div>
     <div class="kpi-badges">
       <div class="kpi-badge"><div class="kb-lbl"><b><i>К</i></b> визиты</div><div class="kb-val">${convVis}</div></div>
-      <div class="kpi-badge"><div class="kb-lbl"><b><i>К</i></b> кредиты</div><div class="kb-val">${convKred}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl"><b><i>К</i></b> кредит</div><div class="kb-val">${convKred}</div></div>
       <div class="kpi-badge"><div class="kb-lbl">% целевых</div><div class="kb-val">${pctTarget}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl">Коэфф</div><div class="kb-val">${koeff}</div></div>
     </div>` : '';
 
   let incomePanelContent = '';
@@ -5346,17 +5354,20 @@ function renderPersonal(matched) {
       <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">План</div><div class="kb-val">${plan}</div></div>
       <div class="kpi-badge kpi-core-badge kpi-visits-drill" onclick="openVisitsDayModal(${visitsModalName}, ${isDozhim})" title="Хронология визитов по дням"><div class="kb-lbl">Визиты</div><div class="kb-val">${factN}</div></div>
       <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Остаток</div><div class="kb-val">${ost}</div></div>
+      ${!isDozhim ? `<div class="kpi-badge${salAlarm ? ' kpi-badge-salon-alarm' : ''}"><div class="kb-lbl">В салоне</div><div class="kb-val">${vsaloneN}</div></div>` : ''}
     </div>
     <div class="kpi-badges">
       <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Дневной</div><div class="kb-val">${daily}</div></div>
-      <div class="kpi-badge"><div class="kb-lbl">Прогноз</div><div class="kb-val" style="color:${pctClr(progNum)}">${prog}</div></div>
-      <div class="kpi-badge"><div class="kb-lbl">%</div><div class="kb-val" style="color:${pctClr(progNum)}">${prc}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl">Прогноз %</div><div class="kb-val" style="color:${pctClr(progNum)}">${prog}</div></div>
+      ${!isDozhim ? `<div class="kpi-badge"><div class="kb-lbl">Прогноз шт</div><div class="kb-val" style="color:${pctClr(progNum)}">${progVisN}</div></div>` : ''}
+      <div class="kpi-badge"><div class="kb-lbl">Факт %</div><div class="kb-val" style="color:${pctClr(progNum)}">${prc}</div></div>
     </div>
     <div class="kpi-badge-sep"></div>
     <div class="kpi-badges">
       <div class="kpi-badge"><div class="kb-lbl">Кредиты CRM/ТЛ</div><div class="kb-val">${kred}</div><div class="kb-sub">${kredSub}</div></div>
       <div class="kpi-badge"><div class="kb-lbl">Наличка CRM/ТЛ</div><div class="kb-val">${nal}</div><div class="kb-sub">${nalSub}</div></div>
       <div class="kpi-badge"><div class="kb-lbl">Комиссия CRM/ТЛ</div><div class="kb-val">${kom}</div><div class="kb-sub">${komSub}</div></div>
+      ${!isDozhim ? `<div class="kpi-badge"><div class="kb-lbl">Задаток</div><div class="kb-val">${zadatok}</div></div>` : ''}
     </div>
     ${convRow}
   `);

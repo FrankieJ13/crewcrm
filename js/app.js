@@ -1521,7 +1521,7 @@ async function loadTab(tab) {
       try {
         const [vd, pd, dv, cv] = await Promise.all([
           S.data.vizity   ? Promise.resolve(S.data.vizity) : api(SHEETS.vizity, 'A:N').catch(() => []),
-          S.data.plan     ? Promise.resolve(S.data.plan)   : api(SHEETS.plan,   'A:B').catch(() => []),
+          S.data.plan     ? Promise.resolve(S.data.plan)   : api(SHEETS.plan,   'A:D').catch(() => []),
           needDvizity     ? api(SHEETS.d_vizity, 'A:N').catch(() => []) : Promise.resolve(S.data.d_vizity),
           S.data.cnvrs    ? Promise.resolve(S.data.cnvrs)  : api(SHEETS.cnvrs,  'A1:N40').catch(() => []),
         ]);
@@ -1557,7 +1557,7 @@ async function loadTab(tab) {
         try {
           const [vd, pd] = await Promise.all([
             S.data.vizity ? Promise.resolve(S.data.vizity) : api(SHEETS.vizity, 'A:N'),
-            S.data.plan   ? Promise.resolve(S.data.plan)   : api(SHEETS.plan,   'A:B'),
+            S.data.plan   ? Promise.resolve(S.data.plan)   : api(SHEETS.plan,   'A:D'),
           ]);
           S.data.vizity = vd; S.data.plan = pd;
         } catch(e) {
@@ -1584,7 +1584,7 @@ async function loadTab(tab) {
         if (el) el.innerHTML = loader();
         await Promise.all([
           S.data.d_vizity ? Promise.resolve() : api(SHEETS.d_vizity, 'A:N').then(d => S.data.d_vizity = d).catch(() => S.data.d_vizity = []),
-          S.data.plan     ? Promise.resolve() : api(SHEETS.plan,     'A:B').then(d => S.data.plan     = d).catch(() => S.data.plan     = []),
+          S.data.plan     ? Promise.resolve() : api(SHEETS.plan,     'A:D').then(d => S.data.plan     = d).catch(() => S.data.plan     = []),
           S.data.grafik   ? Promise.resolve() : api(SHEETS.grafik,   'A1:AI25').then(d => S.data.grafik = d).catch(() => S.data.grafik = []),
         ]);
       }
@@ -3260,7 +3260,7 @@ function setDohodTab(tab) {
     el.innerHTML = loader();
     Promise.all([
       S.data.d_vizity ? Promise.resolve(S.data.d_vizity) : api(SHEETS.d_vizity, 'A:N').catch(() => []),
-      S.data.plan     ? Promise.resolve(S.data.plan)     : api(SHEETS.plan,     'A:B').catch(() => []),
+      S.data.plan     ? Promise.resolve(S.data.plan)     : api(SHEETS.plan,     'A:D').catch(() => []),
       S.data.grafik   ? Promise.resolve(S.data.grafik)   : api(SHEETS.grafik,   'A1:AI25').catch(() => []),
     ]).then(([dvizity, plan, grafik]) => {
       S.data.d_vizity = dvizity;
@@ -5166,7 +5166,7 @@ async function backgroundPrefetch(matched) {
 
   const fetches = [];
   if (!S.data.vizity)      fetches.push(api(SHEETS.vizity,      'A:N').then(d => S.data.vizity      = d).catch(()=>{}));
-  if (!S.data.plan)        fetches.push(api(SHEETS.plan,        'A:B').then(d => S.data.plan        = d).catch(()=>{}));
+  if (!S.data.plan)        fetches.push(api(SHEETS.plan,        'A:D').then(d => S.data.plan        = d).catch(()=>{}));
   if (!S.data.grafik)      fetches.push(api(SHEETS.grafik,      'A1:AI25').then(d => S.data.grafik  = d).catch(()=>{}));
   if (!S.data.cnvrs)       fetches.push(api(SHEETS.cnvrs,       'A1:N40').then(d => S.data.cnvrs    = d).catch(()=>{}));
   if (!S.data.stavki)      fetches.push(api(SHEETS.stavki,      'A1:B25').then(d => S.data.stavki   = d).catch(()=>{}));
@@ -5207,7 +5207,7 @@ async function loadPersonal(matched) {
     if (isDozhim) {
       const [dv, pd, gr, sd] = await Promise.all([
         S.data.d_vizity ? Promise.resolve(S.data.d_vizity) : api(SHEETS.d_vizity, 'A:N').catch(() => []),
-        S.data.plan     ? Promise.resolve(S.data.plan)     : api(SHEETS.plan,     'A:B').catch(() => []),
+        S.data.plan     ? Promise.resolve(S.data.plan)     : api(SHEETS.plan,     'A:D').catch(() => []),
         S.data.grafik   ? Promise.resolve(S.data.grafik)   : api(SHEETS.grafik,   'A1:AI25').catch(() => []),
         S.data.stavki   ? Promise.resolve(S.data.stavki)   : api(SHEETS.stavki,   'A1:B25').catch(() => []),
       ]);
@@ -5215,7 +5215,7 @@ async function loadPersonal(matched) {
     } else {
       const [vd, pd, sd, cv, gr] = await Promise.all([
         S.data.vizity  ? Promise.resolve(S.data.vizity)  : api(SHEETS.vizity,  'A:N').catch(() => []),
-        S.data.plan    ? Promise.resolve(S.data.plan)    : api(SHEETS.plan,    'A:B').catch(() => []),
+        S.data.plan    ? Promise.resolve(S.data.plan)    : api(SHEETS.plan,    'A:D').catch(() => []),
         S.data.stavki  ? Promise.resolve(S.data.stavki)  : api(SHEETS.stavki,  'A1:B25').catch(() => []),
         S.data.cnvrs   ? Promise.resolve(S.data.cnvrs)   : api(SHEETS.cnvrs,   'A1:N40').catch(() => []),
         S.data.grafik  ? Promise.resolve(S.data.grafik)  : api(SHEETS.grafik,  'A1:AI25').catch(() => []),
@@ -6666,7 +6666,7 @@ async function loadRating() {
     try {
       const [vd, pd, sd] = await Promise.all([
         S.data.vizity  ? Promise.resolve(S.data.vizity)  : api(SHEETS.vizity,  'A:N'),
-        S.data.plan    ? Promise.resolve(S.data.plan)    : api(SHEETS.plan,    'A:B'),
+        S.data.plan    ? Promise.resolve(S.data.plan)    : api(SHEETS.plan,    'A:D'),
         S.data.stavki  ? Promise.resolve(S.data.stavki)  : api(SHEETS.stavki,  'A1:B25').catch(()=>[]),
       ]);
       S.data.vizity = vd; S.data.plan = pd; S.data.stavki = sd;

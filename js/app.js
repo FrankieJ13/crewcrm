@@ -2637,8 +2637,9 @@ function renderOtchet() {
   let dozhimDeptCard = '';
   const dVizData = S.data.d_vizity;
   if (dVizData && dVizData.length > 1) {
-    const dStats = buildDozhimStats(dVizData);
-    const dPlanM = getPlanMap(S.data.plan || []);
+    const dStats   = buildDozhimStats(dVizData);
+    const dPlanM   = getPlanMap(S.data.plan || []);
+    const dSalesM2 = getDSalesPlanMap(S.data.plan || []);
     // Берём имена дожим-менеджеров: из USERS с role=dozhim + из листа ПЛАН
     const dNames = (S.data.plan||[]).slice(1)
       .filter(r => r && r[0])
@@ -2650,20 +2651,31 @@ function renderOtchet() {
       });
     // Если dNames пустой — берём всех у кого есть визиты в d_vizity
     const dNamesEff = dNames.length > 0 ? dNames : Object.keys(dStats).map(nl => dStats[nl].name);
-    const dAllVis = dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.vis800||0)+(st.vis1000||0);},0);
-    const dPlan   = dNamesEff.reduce((s,n)=>{const v=dPlanM[n.toLowerCase()]||0; return s+v;},0);
-    const dKred   = dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.kred800||0)+(st.kred1000||0);},0);
-    const dNal    = dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.nal800||0)+(st.nal1000||0);},0);
-    const dKom    = dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.kom800||0)+(st.kom1000||0);},0);
+    const dAllVis   = dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.vis800||0)+(st.vis1000||0);},0);
+    const dPlan     = dNamesEff.reduce((s,n)=>{const v=dPlanM[n.toLowerCase()]||0; return s+v;},0);
+    const dSalesPl  = dNamesEff.reduce((s,n)=>{const v=dSalesM2[n.toLowerCase()]||0; return s+v;},0);
+    const dSalesFact= dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.kred800||0)+(st.nal800||0)+(st.obmen800||0)+(st.kred1000||0)+(st.nal1000||0);},0);
+    const dKred     = dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.kred800||0)+(st.kred1000||0);},0);
+    const dNal      = dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.nal800||0)+(st.nal1000||0);},0);
+    const dKom      = dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.kom800||0)+(st.kom1000||0);},0);
+    let dProgNum = 0;
     let dProg = '—';
-    if (dp && dPlan > 0) dProg = Math.round(dAllVis / (dPlan / dim * dp) * 100) + '%';
+    if (dp && dPlan > 0) { dProgNum = Math.round(dAllVis / (dPlan / dim * dp) * 100); dProg = dProgNum + '%'; }
+    let dSalesProgNum = 0;
+    let dSalesProg = '—';
+    if (dp && dSalesPl > 0) { dSalesProgNum = Math.round(dSalesFact / (dSalesPl / dim * dp) * 100); dSalesProg = dSalesProgNum + '%'; }
+    const dPlanLbl   = dSalesPl  ? `${dPlan||'—'} <span class="dc-pipe">|</span> ${dSalesPl}`  : (dPlan||'—');
+    const dFactLbl   = dSalesPl  ? `${dAllVis||'—'} <span class="dc-pipe">|</span> ${dSalesFact}` : (dAllVis||'—');
+    const dProgLbl   = dSalesPl
+      ? `<span style="color:${pctClr(dProgNum)}">${dProg}</span> <span class="dc-pipe">|</span> <span style="color:${pctClr(dSalesProgNum)}">${dSalesProg}</span>`
+      : `<span style="color:${pctClr(dProgNum)}">${dProg}</span>`;
     dozhimDeptCard = `
     <div class="sec-title">ОТДЕЛ ДОЖИМ</div>
     <div class="dept-card" style="background:rgba(${accR},${accG},${accB},0.08)">
       <div class="dept-row1" style="grid-template-columns:repeat(3,1fr)">
-        <div class="dept-cell hi"><div class="dc-lbl">Визиты</div><div class="dc-val">${dAllVis||'—'}</div></div>
-        <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">${dPlan||'—'}</div></div>
-        <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val" style="color:${pctClr(parseInt(dProg))}">${dProg}</div></div>
+        <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val dc-split">${dPlanLbl}</div></div>
+        <div class="dept-cell hi"><div class="dc-lbl">Факт</div><div class="dc-val dc-split">${dFactLbl}</div></div>
+        <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val dc-split">${dProgLbl}</div></div>
       </div>
       <div class="dept-row2" style="grid-template-columns:repeat(3,1fr)">
         <div class="dept-cell"><div class="dc-lbl">Кредит</div><div class="dc-val">${dKred||'—'}</div></div>
@@ -2676,8 +2688,8 @@ function renderOtchet() {
     <div class="sec-title">ОТДЕЛ ДОЖИМ</div>
     <div class="dept-card" style="opacity:0.7;background:rgba(${accR},${accG},${accB},0.08)">
       <div class="dept-row1" style="grid-template-columns:repeat(3,1fr)">
-        <div class="dept-cell hi"><div class="dc-lbl">Визиты</div><div class="dc-val">—</div></div>
         <div class="dept-cell"><div class="dc-lbl">План</div><div class="dc-val">—</div></div>
+        <div class="dept-cell hi"><div class="dc-lbl">Факт</div><div class="dc-val">—</div></div>
         <div class="dept-cell"><div class="dc-lbl">Прогноз</div><div class="dc-val">—</div></div>
       </div>
       <div class="dept-row2" style="grid-template-columns:repeat(3,1fr)">
@@ -5401,12 +5413,12 @@ function renderPersonal(matched) {
       <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Остаток</div><div class="kb-val">${salesOst}</div></div>
       <div class="kpi-badge"><div class="kb-lbl">Прогноз</div><div class="kb-val" style="color:${pctClr(salesProgNum)}">${salesProgStr}</div></div>
     </div>` : ''}
-    <div class="kpi-badges">
+    ${!isDozhim ? `<div class="kpi-badges">
       <div class="kpi-badge"><div class="kb-lbl">Прогноз %</div><div class="kb-val" style="color:${pctClr(progNum)}">${prog}</div></div>
       <div class="kpi-badge"><div class="kb-lbl">Прогноз шт</div><div class="kb-val" style="color:${pctClr(progNum)}">${progVisN}</div></div>
       <div class="kpi-badge"><div class="kb-lbl">Факт %</div><div class="kb-val" style="color:${pctClr(factPct)}">${prc}</div></div>
-      ${!isDozhim ? `<div class="kpi-badge${salAlarm ? ' kpi-badge-salon-alarm' : ''}"><div class="kb-lbl">В салоне</div><div class="kb-val">${vsaloneN}</div></div>` : ''}
-    </div>
+      <div class="kpi-badge${salAlarm ? ' kpi-badge-salon-alarm' : ''}"><div class="kb-lbl">В салоне</div><div class="kb-val">${vsaloneN}</div></div>
+    </div>` : ''}
     <div class="kpi-badge-sep"></div>
     <div class="kpi-badges">
       <div class="kpi-badge"><div class="kb-lbl">${isDozhim ? 'Кредит' : 'КД CRM/ТЛ'}</div><div class="kb-val">${kred}</div><div class="kb-sub">${kredSub}</div></div>

@@ -1752,7 +1752,7 @@ function liveTextUpdate(node, nextText) {
 }
 
 const ANIMATED_VALUE_SELECTOR = [
-  '.kb-val', '.zv', '.mv', '.dc-val', '.rating-sum-val', '.rating-card-pct',
+  '.kb-val', '.zv', '.mv', '.dc-val', '.dc-sn', '.rating-sum-val', '.rating-card-pct',
   '.rating-card-prog', '.ic-val', '.ib-val', '.ist-val', '.mc-v', '.vis-card-total-value',
   '.speedo-value', '.speedo-conv', '.speedo-visits'
 ].join(',');
@@ -2665,9 +2665,9 @@ function renderOtchet() {
     let dSalesProg = '—';
     if (dp && dSalesPl > 0) { dSalesProgNum = Math.round(dSalesFact / (dSalesPl / dim * dp) * 100); dSalesProg = dSalesProgNum + '%'; }
     // Всегда показываем split-формат: «визиты | продажи»
-    const dPlanLbl = `${dPlan||'—'} <span class="dc-pipe">|</span> ${dSalesPl||'—'}`;
-    const dFactLbl = `${dAllVis||'—'} <span class="dc-pipe">|</span> ${dSalesFact||'—'}`;
-    const fmtPct = (val, clr) => `<span style="color:${clr}">${String(val).replace('%','')}<span style="font-size:9px;font-weight:400">%</span></span>`;
+    const dPlanLbl = `<span class="dc-sn">${dPlan||'—'}</span> <span class="dc-pipe">|</span> <span class="dc-sn">${dSalesPl||'—'}</span>`;
+    const dFactLbl = `<span class="dc-sn">${dAllVis||'—'}</span> <span class="dc-pipe">|</span> <span class="dc-sn">${dSalesFact||'—'}</span>`;
+    const fmtPct = (val, clr) => `<span class="dc-sn" style="color:${clr}">${String(val).replace('%','')}<span style="font-size:9px;font-weight:400">%</span></span>`;
     const dProgLbl = `${fmtPct(dProg, pctClr(dProgNum))} <span class="dc-pipe">|</span> ${fmtPct(dSalesProg, pctClr(dSalesProgNum))}`;
     dozhimDeptCard = `
     <div class="sec-title">ОТДЕЛ ДОЖИМ</div>

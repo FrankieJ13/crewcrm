@@ -3736,10 +3736,10 @@ body.neo-dark .income-col .ic-lbl {
   padding: 12px 0; font-style: italic;
 }
 #plan-editor-overlay {
-  display:none; position:fixed; inset:0; z-index:9999;
+  display:none; position:fixed; inset:0; z-index:11000;
   background:rgba(0,0,0,.6); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
   align-items:center; justify-content:center;
-  padding:16px;
+  padding:calc(52px + 12px) 16px calc(88px + env(safe-area-inset-bottom,0px) + 16px);
 }
 #plan-editor-overlay.open { display:flex; }
 #plan-editor-modal {

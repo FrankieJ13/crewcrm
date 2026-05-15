@@ -486,8 +486,9 @@ body.cosmic .kpi-badge.kpi-core-badge {
   background: linear-gradient(45deg, var(--cosmic-soft-a), var(--cosmic-soft-b)) !important;
   border: 1px solid #8f8f8f !important;
 }
+/* No !important — позволяет pctClr() красить .kb-val по % выполнения */
 body.cosmic .kpi-badge .kb-val {
-  color: #1a1a1a !important;
+  color: #1a1a1a;
 }
 body.cosmic .kpi-divider,
 body.cosmic .kpi-subtitle::after {
@@ -5492,7 +5493,8 @@ body.fluent .kpi-badge.kpi-core-badge {
   background: linear-gradient(135deg, #ececec, #e0e0e0) !important;
   border: 1px solid #c0c0c0 !important;
 }
-body.fluent .kpi-badge .kb-val { color: #111111 !important; }
+/* No !important — позволяет pctClr() красить .kb-val по % выполнения */
+body.fluent .kpi-badge .kb-val { color: #111111; }
 body.fluent .kpi-divider,
 body.fluent .kpi-subtitle::after { background: #c8c8c8 !important; }
 /* kpi-subtitle-info uses the Inform icon above — no background override here */

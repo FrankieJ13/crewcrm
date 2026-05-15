@@ -3445,6 +3445,10 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
   margin-left:2px;
 }
 .kpi-subtitle-info:hover { border-color:var(--acc); color:var(--acc) }
+.kpi-income-info-btn {
+  position:absolute; top:10px; right:10px;
+  margin-left:0;
+}
 .kpi-income-panel {
   border-radius:var(--r2); padding:16px; text-align:center;
   margin-bottom:14px;

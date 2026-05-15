@@ -5394,9 +5394,10 @@ function renderPersonal(matched) {
   setLiveHTML(el, `
     <div class="kpi-manager-name">${name.toUpperCase()}</div>
     <div class="kpi-divider"></div>
-    <div class="kpi-subtitle">Доход за месяц<button class="kpi-subtitle-info" onclick="openSalInfo()">i</button></div>
+    <div class="kpi-subtitle">Доход за месяц</div>
     <div class="kpi-income-panel" ${incomePanelAttr}>
       ${incomePanelContent}
+      <button class="kpi-subtitle-info kpi-income-info-btn" onclick="event.stopPropagation();openSalInfo()">!</button>
     </div>
     <div class="kpi-divider"></div>
     <div class="kpi-subtitle">Текущий KPI</div>

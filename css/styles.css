@@ -5138,12 +5138,12 @@ body.fluent .hdr-greeting.aurora {
 
 /* Header buttons (btn-icon in dark header) */
 body.fluent .btn-icon {
-  background: rgba(255,255,255,.22) !important;
-  border-color: rgba(255,255,255,.20) !important;
-  color: #f0f0f0 !important;
+  background: rgba(255,255,255,.34) !important;
+  border-color: rgba(255,255,255,.30) !important;
+  color: #ffffff !important;
 }
 body.fluent .btn-icon:hover {
-  background: rgba(255,255,255,.32) !important;
+  background: rgba(255,255,255,.46) !important;
 }
 
 /* ── Dock ── */
@@ -5154,10 +5154,10 @@ body.fluent .dock-container {
 }
 body.fluent .dock-btn { color: #b8b8b8 !important; }
 body.fluent .dock-btn.dock-active {
-  background: rgba(255,255,255,.16) !important;
-  border: 1px solid rgba(255,255,255,.28) !important;
+  background: rgba(255,255,255,.28) !important;
+  border: 1px solid rgba(255,255,255,.42) !important;
   border-radius: 12px;
-  color: #f0f0f0 !important;
+  color: #ffffff !important;
 }
 body.fluent .dock-btn.dock-active svg { color: #f0f0f0 !important; }
 body.fluent #main-dock .app-icon {

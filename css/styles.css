@@ -2070,7 +2070,7 @@ body.light .dept-cell { background:rgba(0,0,0,0.02); }
 }
 .dept-cell .dc-val {
   font-family:'Unbounded',sans-serif;
-  font-size:14px; font-weight:800; letter-spacing:-.02em;
+  font-size:12px; font-weight:800; letter-spacing:-.02em;
   color:var(--txt);
 }
 .dept-cell.hi .dc-val { color:var(--txt); }

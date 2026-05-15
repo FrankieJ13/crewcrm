@@ -1782,13 +1782,6 @@ body.light .mm { background:rgba(0,0,0,0.03); }
   color:var(--txt2); text-transform:uppercase;
   margin:0 0 10px; opacity:.85;
 }
-/* Подзаголовок внутри секции (например "Конверсии") */
-.modal-subhead {
-  font-family:'Unbounded',sans-serif;
-  font-size:10px; font-weight:600; letter-spacing:.08em;
-  color:var(--txt2); text-transform:uppercase;
-  margin:10px 0 6px; opacity:.75;
-}
 /* Схлопы внутри модалки KPI */
 .mop-sub {
   margin-top:10px; border:1px solid var(--line); border-radius:10px;
@@ -1818,14 +1811,23 @@ body.fluent .mop-sub-hdr:hover { background:rgba(0,0,0,0.04); }
 .mop-sub.open .mop-sub-toggle { color:var(--acc); border-color:var(--acc); }
 .mop-sub-body { display:none; padding:0 10px 10px; }
 .mop-sub.open .mop-sub-body { display:block; }
-/* Город внутри схлопа Детализация по городам */
-.mop-city { margin-top:8px; }
-.mop-city:first-child { margin-top:0; }
-.mop-city-name {
+/* Город — отдельный схлоп внутри Детализация по городам */
+.mop-sub-city { margin-top:6px; border-radius:8px; }
+.mop-sub-city .mop-sub-hdr { padding:8px 10px; }
+.mop-sub-city .mop-sub-hdr span:first-of-type {
   font-family:'Unbounded',sans-serif;
-  font-size:11px; font-weight:700; letter-spacing:.04em;
-  color:var(--txt); margin-bottom:6px; padding-left:2px;
+  font-weight:600; font-size:10px; letter-spacing:.04em;
+  color:var(--txt); text-transform:uppercase; flex:1;
 }
+.mop-city-count {
+  font-family:'Unbounded',sans-serif;
+  font-size:10px; font-weight:700; color:var(--acc);
+  background:rgba(255,255,255,0.05);
+  border-radius:6px; padding:2px 8px;
+  margin-right:6px;
+}
+body.light .mop-city-count,
+body.fluent .mop-city-count { background:rgba(0,0,0,0.05); }
 .mop-city-empty {
   text-align:center; padding:14px; color:var(--txt2); font-size:12px;
 }

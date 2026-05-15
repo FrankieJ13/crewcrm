@@ -3926,6 +3926,34 @@ function toggleSub(id) {
   if (btn) btn.textContent = sub.classList.contains('open') ? '−' : '+';
 }
 
+// Ленивая подгрузка содержимого города в модалке KPI
+function toggleMopCity(idx) {
+  const sub = document.getElementById('mop-city-' + idx);
+  if (!sub) return;
+  sub.classList.toggle('open');
+  const btn = sub.querySelector('.mop-sub-toggle');
+  if (btn) btn.textContent = sub.classList.contains('open') ? '−' : '+';
+  if (!sub.classList.contains('open')) return;
+  const body = sub.querySelector('.mop-sub-body');
+  if (!body || body.dataset.loaded === '1') return;
+  const c = (window._mopCitiesCache || [])[idx];
+  if (!c) return;
+  const cell = (lbl, val) =>
+    `<div class="modal-cell"><div class="mc-l">${lbl}</div><div class="mc-v">${val||0}</div></div>`;
+  body.innerHTML = `<div class="modal-grid">
+    ${cell('Визиты', c.vis)}
+    ${cell('Кредит', c.kred)}
+    ${cell('Наличные', c.nal)}
+    ${cell('Обмен', c.obmen)}
+    ${cell('Выкуп', c.vykup)}
+    ${cell('Комиссия', c.kom)}
+    ${cell('Отказ', c.otkaz)}
+    ${cell('ФССП', c.fssp)}
+    ${cell('Одобрено но не купил', c.odobNeKupil)}
+  </div>`;
+  body.dataset.loaded = '1';
+}
+
 function burstConfetti(el, idx) {
   const isGold = (idx === 0), isSilver = (idx === 1);
   const rect = el.getBoundingClientRect();
@@ -4032,24 +4060,18 @@ function openMopModal(dataStr) {
     <div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.warmDolya}</div></div>
     <div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.warmKoef}</div></div>`;
 
-  // Города (сортируем по визитам убыв.)
+  // Города — каждый под отдельным схлопом, с ленивой подгрузкой на раскрытие
   const cities = Object.values(d.byCity || {}).sort((a,b) => (b.vis||0) - (a.vis||0));
-  const citiesHtml = cities.length ? cities.map(c => {
-    const cellH = (lbl, val, st) =>
-      `<div class="modal-cell"><div class="mc-l">${lbl}</div><div class="mc-v" style="${st||''}">${val||0}</div></div>`;
-    return `<div class="mop-city">
-      <div class="mop-city-name">${(c.city||'—').toUpperCase()}</div>
-      <div class="modal-grid">
-        ${cellH('Визиты', c.vis)}
-        ${cellH('Кредит', c.kred)}
-        ${cellH('Наличные', c.nal)}
-        ${cellH('Обмен', c.obmen)}
-        ${cellH('Выкуп', c.vykup)}
-        ${cellH('Комиссия', c.kom)}
-        ${cellH('Отказ', c.otkaz)}
-        ${cellH('ФССП', c.fssp)}
-        ${cellH('Одобрено но не купил', c.odobNeKupil)}
+  window._mopCitiesCache = cities; // стэш для toggleMopCity
+  const citiesHtml = cities.length ? cities.map((c, i) => {
+    const visCount = c.vis || 0;
+    return `<div class="mop-sub mop-sub-city" id="mop-city-${i}">
+      <div class="mop-sub-hdr" onclick="toggleMopCity(${i})">
+        <span>${(c.city||'—').toUpperCase()}</span>
+        <span class="mop-city-count">${visCount}</span>
+        <div class="mop-sub-toggle">+</div>
       </div>
+      <div class="mop-sub-body" data-loaded="0"></div>
     </div>`;
   }).join('') : '<div class="mop-city-empty">Нет данных по городам</div>';
 
@@ -4060,7 +4082,7 @@ function openMopModal(dataStr) {
     <div class="modal-sec">
       <div class="modal-sec-title">ОБЩИЙ РЕЗУЛЬТАТ</div>
       <div class="modal-grid">${genHtml}</div>
-      <div class="modal-subhead">КОНВЕРСИИ</div>
+      <div class="modal-sec-title" style="margin-top:14px">КОНВЕРСИИ</div>
       <div class="modal-grid">${convHtml}</div>
     </div>
     <div class="mop-sub" id="mop-sub-crm">

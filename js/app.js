@@ -5364,9 +5364,9 @@ function renderPersonal(matched) {
     </div>
     <div class="kpi-badge-sep"></div>
     <div class="kpi-badges">
-      <div class="kpi-badge"><div class="kb-lbl">КД CRM</div><div class="kb-val">${kred}</div><div class="kb-sub">${kredSub}</div></div>
-      <div class="kpi-badge"><div class="kb-lbl">НАЛ</div><div class="kb-val">${nal}</div><div class="kb-sub">${nalSub}</div></div>
-      <div class="kpi-badge"><div class="kb-lbl">КОМ</div><div class="kb-val">${kom}</div><div class="kb-sub">${komSub}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl">КД CRM/ТЛ</div><div class="kb-val">${kred}</div><div class="kb-sub">${kredSub}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl">НАЛ CRM/ТЛ</div><div class="kb-val">${nal}</div><div class="kb-sub">${nalSub}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl">КОМ CRM/ТЛ</div><div class="kb-val">${kom}</div><div class="kb-sub">${komSub}</div></div>
       ${!isDozhim ? `<div class="kpi-badge"><div class="kb-lbl">Задаток</div><div class="kb-val">${zadatok}</div></div>` : ''}
     </div>
     ${convRow}

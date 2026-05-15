@@ -2664,11 +2664,10 @@ function renderOtchet() {
     let dSalesProgNum = 0;
     let dSalesProg = '—';
     if (dp && dSalesPl > 0) { dSalesProgNum = Math.round(dSalesFact / (dSalesPl / dim * dp) * 100); dSalesProg = dSalesProgNum + '%'; }
-    const dPlanLbl   = dSalesPl  ? `${dPlan||'—'} <span class="dc-pipe">|</span> ${dSalesPl}`  : (dPlan||'—');
-    const dFactLbl   = dSalesPl  ? `${dAllVis||'—'} <span class="dc-pipe">|</span> ${dSalesFact}` : (dAllVis||'—');
-    const dProgLbl   = dSalesPl
-      ? `<span style="color:${pctClr(dProgNum)}">${dProg}</span> <span class="dc-pipe">|</span> <span style="color:${pctClr(dSalesProgNum)}">${dSalesProg}</span>`
-      : `<span style="color:${pctClr(dProgNum)}">${dProg}</span>`;
+    // Всегда показываем split-формат: «визиты | продажи»
+    const dPlanLbl = `${dPlan||'—'} <span class="dc-pipe">|</span> ${dSalesPl||'—'}`;
+    const dFactLbl = `${dAllVis||'—'} <span class="dc-pipe">|</span> ${dSalesFact||'—'}`;
+    const dProgLbl = `<span style="color:${pctClr(dProgNum)}">${dProg}</span> <span class="dc-pipe">|</span> <span style="color:${pctClr(dSalesProgNum)}">${dSalesProg}</span>`;
     dozhimDeptCard = `
     <div class="sec-title">ОТДЕЛ ДОЖИМ</div>
     <div class="dept-card" style="background:rgba(${accR},${accG},${accB},0.08)">

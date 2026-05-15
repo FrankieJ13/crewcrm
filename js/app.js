@@ -3937,14 +3937,10 @@ function toggleSub(id) {
   if (btn) btn.textContent = sub.classList.contains('open') ? '−' : '+';
 }
 
-// Ленивый рендер всех городов внутри схлопа Детализация по городам
+// Ленивый рендер всех городов при раскрытии схлопа Детализация по городам
 function toggleCitiesAll() {
   const sub = document.getElementById('mop-sub-cities');
   if (!sub) return;
-  sub.classList.toggle('open');
-  const btn = sub.querySelector('.mop-sub-toggle');
-  if (btn) btn.textContent = sub.classList.contains('open') ? '−' : '+';
-  if (!sub.classList.contains('open')) return;
   const body = sub.querySelector('.mop-sub-body');
   if (!body || body.dataset.loaded === '1') return;
   const cities = window._mopCitiesCache || [];
@@ -4094,18 +4090,27 @@ function openMopModal(dataStr) {
       <div class="modal-sec-title" style="margin-top:14px">КОНВЕРСИИ</div>
       <div class="modal-grid">${convHtml}</div>
     </div>
-    <div class="mop-sub" id="mop-sub-crm">
-      <div class="mop-sub-hdr" onclick="toggleSub('mop-sub-crm')"><span>CRM</span><div class="mop-sub-toggle">+</div></div>
+    <details class="mop-sub" id="mop-sub-crm">
+      <summary class="mop-sub-hdr">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        <span>CRM</span>
+      </summary>
       <div class="mop-sub-body"><div class="modal-grid">${crmHtml}</div></div>
-    </div>
-    <div class="mop-sub" id="mop-sub-warm">
-      <div class="mop-sub-hdr" onclick="toggleSub('mop-sub-warm')"><span>ТЁПЛЫЕ ЛИДЫ</span><div class="mop-sub-toggle">+</div></div>
+    </details>
+    <details class="mop-sub" id="mop-sub-warm">
+      <summary class="mop-sub-hdr">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        <span>ТЁПЛЫЕ ЛИДЫ</span>
+      </summary>
       <div class="mop-sub-body"><div class="modal-grid">${warmHtml}</div></div>
-    </div>
-    <div class="mop-sub" id="mop-sub-cities">
-      <div class="mop-sub-hdr" onclick="toggleCitiesAll()"><span>ДЕТАЛИЗАЦИЯ ПО ГОРОДАМ</span><div class="mop-sub-toggle">+</div></div>
+    </details>
+    <details class="mop-sub" id="mop-sub-cities" ontoggle="if(this.open)toggleCitiesAll()">
+      <summary class="mop-sub-hdr">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        <span>ДЕТАЛИЗАЦИЯ ПО ГОРОДАМ</span>
+      </summary>
       <div class="mop-sub-body" data-loaded="0"></div>
-    </div>`;
+    </details>`;
   document.getElementById('mop-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }

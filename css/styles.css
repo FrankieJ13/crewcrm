@@ -1781,7 +1781,7 @@ body.light .mm { background:rgba(0,0,0,0.03); }
   color:var(--txt2); text-transform:uppercase;
   margin:0 0 10px; opacity:.85;
 }
-/* Схлопы внутри модалки KPI */
+/* Схлопы внутри модалки KPI (на основе <details>) */
 .mop-sub {
   margin-top:10px; border:1px solid var(--line); border-radius:10px;
   background:rgba(255,255,255,0.03); overflow:hidden;
@@ -1789,27 +1789,26 @@ body.light .mm { background:rgba(0,0,0,0.03); }
 body.light .mop-sub,
 body.fluent .mop-sub { background:rgba(0,0,0,0.02); }
 .mop-sub-hdr {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:10px 12px; cursor:pointer; user-select:none; gap:8px;
-  transition:background .15s;
+  display:flex; align-items:center; gap:8px;
+  padding:10px 12px; cursor:pointer; user-select:none;
+  list-style:none; transition:background .15s;
 }
+.mop-sub-hdr::-webkit-details-marker { display:none; }
+.mop-sub-hdr::marker { display:none; }
 .mop-sub-hdr:hover { background:rgba(255,255,255,0.04); }
 body.light .mop-sub-hdr:hover,
 body.fluent .mop-sub-hdr:hover { background:rgba(0,0,0,0.04); }
+.mop-sub-hdr svg {
+  flex-shrink:0; color:var(--acc);
+  transition:transform .2s ease;
+}
+.mop-sub[open] .mop-sub-hdr svg { transform:rotate(90deg); }
 .mop-sub-hdr span {
   font-family:'Unbounded',sans-serif;
   font-weight:600; font-size:11px; letter-spacing:.06em;
   color:var(--acc); text-transform:uppercase; flex:1;
 }
-.mop-sub-toggle {
-  width:22px; height:22px; border-radius:50%;
-  background:var(--bg3); border:1px solid var(--line2);
-  display:flex; align-items:center; justify-content:center;
-  color:var(--txt2); font-size:13px; flex-shrink:0; transition:all .2s;
-}
-.mop-sub.open .mop-sub-toggle { color:var(--acc); border-color:var(--acc); }
-.mop-sub-body { display:none; padding:0 10px 10px; }
-.mop-sub.open .mop-sub-body { display:block; }
+.mop-sub-body { padding:0 10px 10px; }
 /* Город внутри схлопа Детализация по городам */
 .mop-city { margin-top:12px; }
 .mop-city:first-child { margin-top:0; }

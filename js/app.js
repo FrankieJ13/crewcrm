@@ -1532,7 +1532,7 @@ async function loadTab(tab) {
       } catch(e) {
         if (e.message === 'auth') return;
         if (!S.data.plan) {
-          try { S.data.plan = await api(SHEETS.plan, 'A:B'); }
+          try { S.data.plan = await api(SHEETS.plan, 'A:D'); }
           catch(e2) { if (el) el.innerHTML = `<div class="err">Ошибка: ${e2.message}</div>`; return; }
         }
         S.data.vizity = S.data.vizity || [];
@@ -1995,14 +1995,14 @@ async function refreshVisibleDataLive() {
       if (role === 'dozhim') {
         const [dv, pd, gr] = await Promise.all([
           api(SHEETS.d_vizity, 'A:N').catch(() => []),
-          api(SHEETS.plan, 'A:B').catch(() => []),
+          api(SHEETS.plan, 'A:D').catch(() => []),
           api(SHEETS.grafik, 'A1:AI25').catch(() => []),
         ]);
         S.data.d_vizity = dv; S.data.plan = pd; S.data.grafik = gr;
       } else {
         const [vd, pd, st, cn, gr] = await Promise.all([
           api(SHEETS.vizity, 'A:N').catch(() => []),
-          api(SHEETS.plan, 'A:B').catch(() => []),
+          api(SHEETS.plan, 'A:D').catch(() => []),
           api(SHEETS.stavki, 'A1:B25').catch(() => []),
           api(SHEETS.cnvrs, 'A1:N40').catch(() => []),
           api(SHEETS.grafik, 'A1:AI25').catch(() => []),
@@ -2016,7 +2016,7 @@ async function refreshVisibleDataLive() {
     if (activeTab === 'otchet') {
       const tasks = [
         api(SHEETS.vizity, 'A:N').catch(() => []),
-        api(SHEETS.plan, 'A:B').catch(() => []),
+        api(SHEETS.plan, 'A:D').catch(() => []),
         api(SHEETS.cnvrs, 'A1:N40').catch(() => []),
       ];
       if (S.reportTab === 'dozhim' || S.reportTab === 'dept') tasks.push(api(SHEETS.d_vizity, 'A:N').catch(() => []));
@@ -2030,14 +2030,14 @@ async function refreshVisibleDataLive() {
       if (isDozhim) {
         const [dv, pd, gr] = await Promise.all([
           api(SHEETS.d_vizity, 'A:N').catch(() => []),
-          api(SHEETS.plan, 'A:B').catch(() => []),
+          api(SHEETS.plan, 'A:D').catch(() => []),
           api(SHEETS.grafik, 'A1:AI25').catch(() => []),
         ]);
         S.data.d_vizity = dv; S.data.plan = pd; S.data.grafik = gr;
       } else {
         const [vd, pd, st, gr] = await Promise.all([
           api(SHEETS.vizity, 'A:N').catch(() => []),
-          api(SHEETS.plan, 'A:B').catch(() => []),
+          api(SHEETS.plan, 'A:D').catch(() => []),
           api(SHEETS.stavki, 'A1:B25').catch(() => []),
           api(SHEETS.grafik, 'A1:AI25').catch(() => []),
         ]);
@@ -2047,7 +2047,7 @@ async function refreshVisibleDataLive() {
     } else if (activeTab === 'rating') {
       const isDozhimRating = S.ratingDept === 'dozhim';
       const [pd, vd, st] = await Promise.all([
-        api(SHEETS.plan, 'A:B').catch(() => []),
+        api(SHEETS.plan, 'A:D').catch(() => []),
         api(isDozhimRating ? SHEETS.d_vizity : SHEETS.vizity, 'A:N').catch(() => []),
         isDozhimRating ? api(SHEETS.d_stavki, 'A1:B25').catch(() => []) : Promise.resolve(S.data.stavki || []),
       ]);
@@ -2384,6 +2384,19 @@ function getPlanMap(planData) {
     if (!row || !row[0]) continue;
     const name = String(row[0]).trim().toLowerCase();
     const plan = parseFloat(String(row[1]||'0').replace(/[^\d.]/g,'')) || 0;
+    if (name) map[name] = plan;
+  }
+  return map;
+}
+// Читает колонку D (индекс 3) — план продажи для дожима
+function getDSalesPlanMap(planData) {
+  const map = {};
+  if (!planData) return map;
+  for (let i = 1; i < planData.length; i++) {
+    const row = planData[i];
+    if (!row || !row[0]) continue;
+    const name = String(row[0]).trim().toLowerCase();
+    const plan = parseFloat(String(row[3]||'0').replace(/[^\d.]/g,'')) || 0;
     if (name) map[name] = plan;
   }
   return map;
@@ -2853,9 +2866,10 @@ function renderOtchet() {
 
 function renderDozhimCards() {
   if (!S.data.d_vizity || !S.data.plan) return '<div class="empty">Загрузка данных дожима…</div>';
-  const planData = S.data.plan || [];
-  const planM    = getPlanMap(planData);
-  const dStats   = buildDozhimStats(S.data.d_vizity);
+  const planData  = S.data.plan || [];
+  const planM     = getPlanMap(planData);
+  const dSalesM   = getDSalesPlanMap(planData);
+  const dStats    = buildDozhimStats(S.data.d_vizity);
 
   // Менеджеры дожима из ПЛАН с role=dozhim
   const dozhimNames = planData.slice(1)
@@ -2876,15 +2890,20 @@ function renderDozhimCards() {
   const total = withProg.length;
 
   const cards = withProg.map(({ name, nl, s, allVis, plan, progNum, factNum }, idx) => {
-    const rs    = rankStyles(idx, total);
-    const ost   = Math.max(0, plan - allVis);
-    const daily = computeDailyPlan(plan, allVis, progNum, currentSuffix, name);
+    const rs      = rankStyles(idx, total);
+    const ost     = Math.max(0, plan - allVis);
+    const daily   = computeDailyPlan(plan, allVis, progNum, currentSuffix, name);
+    const sPlan   = dSalesM[nl] || 0;
+    const sFact   = (s.kred800||0)+(s.nal800||0)+(s.obmen800||0)+(s.kred1000||0)+(s.nal1000||0);
+    const sOst    = Math.max(0, sPlan - sFact);
+    const sProg   = sPlan ? computeProgPct(sFact, sPlan, currentSuffix) : 0;
     const modalData = JSON.stringify({
       type:'dozhim', name: name.toUpperCase(), nameLow: nl,
       v800: s.vis800||0, v1000: s.vis1000||0,
       rplan: plan, ost, prc: factNum+'%', prog: progNum+'%', allV: allVis,
       kred800:s.kred800||0, nal800:s.nal800||0, obmen800:s.obmen800||0, kom800:s.kom800||0,
       kred1000:s.kred1000||0, nal1000:s.nal1000||0, kom1000:s.kom1000||0, zadatok:s.zadatok||0,
+      sPlan, sFact, sOst, sProg,
       rs, idx: idx+1,
     }).replace(/'/g,"&#39;");
     return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
@@ -2907,7 +2926,8 @@ function openDozhimModal(dataStr) {
   const p = num(d.prc);
   const rs = d.rs;
   document.getElementById('mop-modal-title').innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>`;
-  document.getElementById('mop-modal-body').innerHTML = `<div class="mop-grid4"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div></div><div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div><div class="modal-sec"><div class="modal-sec-title">КАТ 800</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Обмен</div><div class="mc-v">${d.obmen800||0}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">КАТ 1000</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1000}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1000}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1000}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1000}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div></div></div>`;
+  const sp = d.sProg || 0;
+  document.getElementById('mop-modal-body').innerHTML = `<div class="mop-grid4"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div></div>${d.sPlan ? `<div class="mop-grid4" style="margin-top:6px"><div class="m4"><div class="ml">Продажи</div><div class="mv" style="color:${pctClr(sp)}">${d.sFact}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.sPlan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.sOst}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(sp)}">${sp}%</div></div></div>` : ''}<div class="prog-row"><span class="prog-l">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${rs.color}"></div></div><span class="prog-r" style="color:${rs.color}">100%</span></div><div class="modal-sec"><div class="modal-sec-title">КАТ 800</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Обмен</div><div class="mc-v">${d.obmen800||0}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">КАТ 1000</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1000}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1000}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1000}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1000}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div></div></div>`;
   document.getElementById('mop-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -2920,7 +2940,7 @@ function setReportTab(tab) {
     el.innerHTML = loader();
     Promise.all([
       api(SHEETS.d_vizity, 'A:N').catch(() => []),
-      S.data.plan ? Promise.resolve(S.data.plan) : api(SHEETS.plan, 'A:B').catch(() => []),
+      S.data.plan ? Promise.resolve(S.data.plan) : api(SHEETS.plan, 'A:D').catch(() => []),
     ]).then(([dv, pd]) => {
       S.data.d_vizity = dv;
       S.data.plan     = pd;
@@ -4416,29 +4436,31 @@ function openPlanEditor() {
   planNames.forEach((row, i) => {
     const name = String(row[0]).trim();
     const role = getRoleByName(name.toLowerCase().trim());
-    const item = { name, plan: String(row[1]||'0'), idx: i+1 };
+    const item = { name, plan: String(row[1]||'0'), salesPlan: String(row[3]||'0'), idx: i+1 };
     if (role === 'dozhim') groups.dozhim.push(item);
     else if (role === 'crm' || role === '') groups.crm.push(item);
     else groups.other.push(item);
   });
 
-  function makeRows(items) {
+  function makeRows(items, isDozhim) {
     return items.map(it => `<div class="pe-row">
       <span class="pe-name">${it.name}</span>
       <input class="pe-input" type="number" min="0" step="1"
-             data-name="${it.name}" data-idx="${it.idx}" value="${it.plan}"/>
+             data-name="${it.name}" data-idx="${it.idx}" value="${it.plan}" title="Визиты"/>
+      ${isDozhim ? `<input class="pe-input pe-input-d" type="number" min="0" step="1"
+             data-name="${it.name}" data-idx="${it.idx}" value="${it.salesPlan}" title="Продажи" placeholder="Прод."/>` : ''}
     </div>`).join('');
   }
 
   let html = '';
   if (groups.crm.length) {
-    html += `<details class="pe-spoiler"><summary>CRM (${groups.crm.length} чел.)</summary><div class="pe-spoiler-body">${makeRows(groups.crm)}</div></details>`;
+    html += `<details class="pe-spoiler"><summary>CRM (${groups.crm.length} чел.)</summary><div class="pe-spoiler-body">${makeRows(groups.crm, false)}</div></details>`;
   }
   if (groups.dozhim.length) {
-    html += `<details class="pe-spoiler"><summary>ДОЖИМ (${groups.dozhim.length} чел.)</summary><div class="pe-spoiler-body">${makeRows(groups.dozhim)}</div></details>`;
+    html += `<details class="pe-spoiler"><summary>ДОЖИМ (${groups.dozhim.length} чел.) <small style="opacity:.6;font-size:10px">Визиты / Продажи</small></summary><div class="pe-spoiler-body">${makeRows(groups.dozhim, true)}</div></details>`;
   }
   if (groups.other.length) {
-    html += `<details class="pe-spoiler"><summary>Прочие (${groups.other.length} чел.)</summary><div class="pe-spoiler-body">${makeRows(groups.other)}</div></details>`;
+    html += `<details class="pe-spoiler"><summary>Прочие (${groups.other.length} чел.)</summary><div class="pe-spoiler-body">${makeRows(groups.other, false)}</div></details>`;
   }
   body.innerHTML = html || '<div class="empty">Нет данных</div>';
   if (status) status.textContent = '';
@@ -4456,21 +4478,27 @@ function closePlanEditor() {
 async function savePlan() {
   const btn = document.getElementById('pe-save-btn');
   const status = document.getElementById('pe-status');
-  const inputs = document.querySelectorAll('.pe-input');
-  if (!inputs.length) return;
+  const bInputs = document.querySelectorAll('.pe-input:not(.pe-input-d)');
+  if (!bInputs.length) return;
 
   btn.disabled = true;
   if (status) status.textContent = 'Сохраняем…';
 
-  // Формируем массив строк для записи в Google Sheets
-  const values = [['Менеджер', 'План']]; // заголовок
-  inputs.forEach(inp => {
-    values.push([inp.dataset.name, parseInt(inp.value) || 0]);
+  // Строим map имя → план продажи из .pe-input-d
+  const dMap = {};
+  document.querySelectorAll('.pe-input-d').forEach(inp => {
+    dMap[inp.dataset.name] = parseInt(inp.value) || 0;
+  });
+
+  // Формируем массив строк для записи в Google Sheets (A:D)
+  const values = [['Менеджер', 'План', '', 'План продажи']]; // заголовок
+  bInputs.forEach(inp => {
+    values.push([inp.dataset.name, parseInt(inp.value) || 0, '', dMap[inp.dataset.name] || 0]);
   });
 
   try {
     const sheetName = SHEETS.plan;
-    const range = `'${sheetName}'!A1:B${values.length}`;
+    const range = `'${sheetName}'!A1:D${values.length}`;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
 
     const resp = await fetch(url, {
@@ -5200,11 +5228,14 @@ function renderPersonal(matched) {
   let mgrRow = null;
   let salObj = null;
 
+  let dSalesPlanNum = 0;
   if (isDozhim) {
     const dStats = buildDozhimStats(S.data.d_vizity || []);
     const planM  = getPlanMap(S.data.plan || []);
+    const dSalesM = getDSalesPlanMap(S.data.plan || []);
     const s      = dStats[nameLow] || {};
     const planVal = planM[nameLow] || 0;
+    dSalesPlanNum = dSalesM[nameLow] || 0;
     const allVis  = (s.vis800||0) + (s.vis1000||0);
     const synRow  = new Array(20).fill('');
     synRow[0] = name;
@@ -5277,6 +5308,14 @@ function renderPersonal(matched) {
     pctTarget = genRow[8]||'—';
     koeff     = genRow[12]||'—';
   }
+
+  // Продажи (для дожима): кред + нал + обмен обеих категорий
+  const salesFactN = isDozhim
+    ? (num(mgrRow[8]) + num(mgrRow[9]) + num(mgrRow[10]) + num(mgrRow[12]) + num(mgrRow[13]))
+    : 0;
+  const salesOst   = isDozhim ? Math.max(0, dSalesPlanNum - salesFactN) : 0;
+  const salesProgNum = (isDozhim && dSalesPlanNum) ? computeProgPct(salesFactN, dSalesPlanNum, currentSuffix) : 0;
+  const salesProgStr = isDozhim ? (salesProgNum + '%') : '—';
 
   const progVisN = (planNum && progNum) ? Math.round(planNum * progNum / 100) : '—';
   const salAlarm = vsaloneN > 0;
@@ -5351,11 +5390,17 @@ function renderPersonal(matched) {
     <div class="kpi-divider"></div>
     <div class="kpi-subtitle">Текущий KPI</div>
     <div class="kpi-badges">
+      <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Визиты</div><div class="kb-val">${factN}</div></div>
       <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">План</div><div class="kb-val">${plan}</div></div>
-      <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Дневной</div><div class="kb-val">${daily}</div></div>
-      <div class="kpi-badge kpi-core-badge kpi-visits-drill" onclick="openVisitsDayModal(${visitsModalName}, ${isDozhim})" title="Хронология визитов по дням"><div class="kb-lbl">Визиты</div><div class="kb-val">${factN}</div></div>
       <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Остаток</div><div class="kb-val">${ost}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl">Прогноз</div><div class="kb-val" style="color:${pctClr(progNum)}">${prog}</div></div>
     </div>
+    ${isDozhim ? `<div class="kpi-badges">
+      <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Продажи</div><div class="kb-val" style="color:${pctClr(salesProgNum)}">${salesFactN}</div></div>
+      <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">План</div><div class="kb-val">${dSalesPlanNum||'—'}</div></div>
+      <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Остаток</div><div class="kb-val">${salesOst}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl">Прогноз</div><div class="kb-val" style="color:${pctClr(salesProgNum)}">${salesProgStr}</div></div>
+    </div>` : ''}
     <div class="kpi-badges">
       <div class="kpi-badge"><div class="kb-lbl">Прогноз %</div><div class="kb-val" style="color:${pctClr(progNum)}">${prog}</div></div>
       <div class="kpi-badge"><div class="kb-lbl">Прогноз шт</div><div class="kb-val" style="color:${pctClr(progNum)}">${progVisN}</div></div>
@@ -6429,18 +6474,20 @@ async function savePlanAndSverka() {
   }
 
   // Сохраняем планы только если есть поля (спойлер открыт)
-  const inputs = document.querySelectorAll('.pe-input');
-  if (inputs.length > 0) {
+  const bInputs2 = document.querySelectorAll('.pe-input:not(.pe-input-d)');
+  if (bInputs2.length > 0) {
     // Запускаем savePlan но перехватываем его закрытие
     const btn = document.getElementById('pe-save-btn');
     const status = document.getElementById('pe-status');
-    const values = [['Менеджер', 'План']];
-    inputs.forEach(inp => values.push([inp.dataset.name, parseInt(inp.value) || 0]));
+    const dMap2 = {};
+    document.querySelectorAll('.pe-input-d').forEach(inp => { dMap2[inp.dataset.name] = parseInt(inp.value) || 0; });
+    const values = [['Менеджер', 'План', '', 'План продажи']];
+    bInputs2.forEach(inp => values.push([inp.dataset.name, parseInt(inp.value) || 0, '', dMap2[inp.dataset.name] || 0]));
     if (btn) btn.disabled = true;
     if (status) status.textContent = 'Сохраняем…';
     try {
       const sheetName = SHEETS.plan;
-      const range = `'${sheetName}'!A1:B${values.length}`;
+      const range = `'${sheetName}'!A1:D${values.length}`;
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
       const resp = await fetch(url, {
         method: 'PUT',

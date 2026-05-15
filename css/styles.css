@@ -3821,6 +3821,9 @@ body.neo-dark .income-col .ic-lbl {
   transition:border-color .15s;
 }
 .pe-input:focus { border-color:var(--acc); }
+/* Второй инпут для дожима — план продажи (колонка D) */
+.pe-input-d { width:70px; opacity:.8; }
+.pe-input-d:focus { opacity:1; border-color:var(--acc); }
 .pe-footer {
   padding:12px 16px; border-top:1px solid var(--line);
   display:flex; gap:8px; background:var(--bg2);

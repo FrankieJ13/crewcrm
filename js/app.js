@@ -5359,7 +5359,7 @@ function renderPersonal(matched) {
     <div class="kpi-badges">
       <div class="kpi-badge"><div class="kb-lbl">Прогноз %</div><div class="kb-val" style="color:${pctClr(progNum)}">${prog}</div></div>
       ${!isDozhim ? `<div class="kpi-badge"><div class="kb-lbl">Прогноз шт</div><div class="kb-val" style="color:${pctClr(progNum)}">${progVisN}</div></div>` : ''}
-      <div class="kpi-badge"><div class="kb-lbl">Факт %</div><div class="kb-val" style="color:${pctClr(progNum)}">${prc}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl">Факт %</div><div class="kb-val" style="color:${pctClr(factPct)}">${prc}</div></div>
       ${!isDozhim ? `<div class="kpi-badge${salAlarm ? ' kpi-badge-salon-alarm' : ''}"><div class="kb-lbl">В салоне</div><div class="kb-val">${vsaloneN}</div></div>` : ''}
     </div>
     <div class="kpi-badge-sep"></div>

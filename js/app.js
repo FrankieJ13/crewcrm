@@ -3926,9 +3926,9 @@ function toggleSub(id) {
   if (btn) btn.textContent = sub.classList.contains('open') ? '−' : '+';
 }
 
-// Ленивая подгрузка содержимого города в модалке KPI
-function toggleMopCity(idx) {
-  const sub = document.getElementById('mop-city-' + idx);
+// Ленивый рендер всех городов внутри схлопа Детализация по городам
+function toggleCitiesAll() {
+  const sub = document.getElementById('mop-sub-cities');
   if (!sub) return;
   sub.classList.toggle('open');
   const btn = sub.querySelector('.mop-sub-toggle');
@@ -3936,21 +3936,29 @@ function toggleMopCity(idx) {
   if (!sub.classList.contains('open')) return;
   const body = sub.querySelector('.mop-sub-body');
   if (!body || body.dataset.loaded === '1') return;
-  const c = (window._mopCitiesCache || [])[idx];
-  if (!c) return;
+  const cities = window._mopCitiesCache || [];
+  if (!cities.length) {
+    body.innerHTML = '<div class="mop-city-empty">Нет данных по городам</div>';
+    body.dataset.loaded = '1';
+    return;
+  }
   const cell = (lbl, val) =>
     `<div class="modal-cell"><div class="mc-l">${lbl}</div><div class="mc-v">${val||0}</div></div>`;
-  body.innerHTML = `<div class="modal-grid">
-    ${cell('Визиты', c.vis)}
-    ${cell('Кредит', c.kred)}
-    ${cell('Наличные', c.nal)}
-    ${cell('Обмен', c.obmen)}
-    ${cell('Выкуп', c.vykup)}
-    ${cell('Комиссия', c.kom)}
-    ${cell('Отказ', c.otkaz)}
-    ${cell('ФССП', c.fssp)}
-    ${cell('Одобрено но не купил', c.odobNeKupil)}
-  </div>`;
+  body.innerHTML = cities.map(c => `
+    <div class="mop-city">
+      <div class="mop-city-name">${(c.city||'—').toUpperCase()} <span class="mop-city-count">${c.vis||0}</span></div>
+      <div class="modal-grid">
+        ${cell('Визиты', c.vis)}
+        ${cell('Кредит', c.kred)}
+        ${cell('Наличные', c.nal)}
+        ${cell('Обмен', c.obmen)}
+        ${cell('Выкуп', c.vykup)}
+        ${cell('Комиссия', c.kom)}
+        ${cell('Отказ', c.otkaz)}
+        ${cell('ФССП', c.fssp)}
+        ${cell('Одобрено но не купил', c.odobNeKupil)}
+      </div>
+    </div>`).join('');
   body.dataset.loaded = '1';
 }
 
@@ -4060,20 +4068,9 @@ function openMopModal(dataStr) {
     <div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.warmDolya}</div></div>
     <div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.warmKoef}</div></div>`;
 
-  // Города — каждый под отдельным схлопом, с ленивой подгрузкой на раскрытие
+  // Города — стэшим в кэш, рендер откладываем до раскрытия внешнего схлопа
   const cities = Object.values(d.byCity || {}).sort((a,b) => (b.vis||0) - (a.vis||0));
-  window._mopCitiesCache = cities; // стэш для toggleMopCity
-  const citiesHtml = cities.length ? cities.map((c, i) => {
-    const visCount = c.vis || 0;
-    return `<div class="mop-sub mop-sub-city" id="mop-city-${i}">
-      <div class="mop-sub-hdr" onclick="toggleMopCity(${i})">
-        <span>${(c.city||'—').toUpperCase()}</span>
-        <span class="mop-city-count">${visCount}</span>
-        <div class="mop-sub-toggle">+</div>
-      </div>
-      <div class="mop-sub-body" data-loaded="0"></div>
-    </div>`;
-  }).join('') : '<div class="mop-city-empty">Нет данных по городам</div>';
+  window._mopCitiesCache = cities;
 
   document.getElementById('mop-modal-title').innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>`;
   document.getElementById('mop-modal-body').innerHTML = `
@@ -4094,8 +4091,8 @@ function openMopModal(dataStr) {
       <div class="mop-sub-body"><div class="modal-grid">${warmHtml}</div></div>
     </div>
     <div class="mop-sub" id="mop-sub-cities">
-      <div class="mop-sub-hdr" onclick="toggleSub('mop-sub-cities')"><span>ДЕТАЛИЗАЦИЯ ПО ГОРОДАМ</span><div class="mop-sub-toggle">+</div></div>
-      <div class="mop-sub-body">${citiesHtml}</div>
+      <div class="mop-sub-hdr" onclick="toggleCitiesAll()"><span>ДЕТАЛИЗАЦИЯ ПО ГОРОДАМ</span><div class="mop-sub-toggle">+</div></div>
+      <div class="mop-sub-body" data-loaded="0"></div>
     </div>`;
   document.getElementById('mop-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';

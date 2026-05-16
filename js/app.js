@@ -5470,10 +5470,10 @@ function renderPersonal(matched) {
         <button class="mop-info-btn" onclick="${personalModalOpen}">!</button>
       </div>
       <div class="kpi-badges">
-        <div class="kpi-badge kpi-core-badge kpi-visits-drill" onclick="openVisitsDayModal(${visitsModalName},${isDozhim})" style="cursor:pointer" title="Хронология визитов"><div class="kb-lbl">Визиты</div><div class="kb-val">${factN}</div></div>
         <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">План</div><div class="kb-val">${plan}</div></div>
+        <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Дневной</div><div class="kb-val">${daily}</div></div>
+        <div class="kpi-badge kpi-core-badge kpi-visits-drill" onclick="openVisitsDayModal(${visitsModalName},${isDozhim})" style="cursor:pointer" title="Хронология визитов"><div class="kb-lbl">Визиты</div><div class="kb-val">${factN}</div></div>
         <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Остаток</div><div class="kb-val">${ost}</div></div>
-        <div class="kpi-badge"><div class="kb-lbl">Прогноз</div><div class="kb-val" style="color:${pctClr(progNum)}">${prog}</div></div>
       </div>
       ${isDozhim ? `<div class="kpi-badges">
         <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Продажи</div><div class="kb-val" style="color:${pctClr(salesProgNum)}">${salesFactN}</div></div>

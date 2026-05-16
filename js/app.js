@@ -2408,6 +2408,35 @@ function maxIconSvg(size) {
   return `<svg width="${size}" height="${size}" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg"><circle class="max-circle" cx="500" cy="500" r="500"/><path fill="#fff" fill-rule="evenodd" d="${path}" clip-rule="evenodd"/></svg>`;
 }
 
+// Аватар: ID берётся из USER столбец G (row[6]), эмоция — от прогноза выполнения плана
+function getMgrCrmId(name) {
+  if (!S.usersData || !name) return null;
+  const nl = String(name).toLowerCase().trim();
+  for (let i = 1; i < S.usersData.length; i++) {
+    const row = S.usersData[i];
+    if ((row[1]||'').toLowerCase().trim() === nl) {
+      const id = String(row[6]||'').trim();
+      return id || null;
+    }
+  }
+  return null;
+}
+function getMgrAvatarEmotion(progNum) {
+  const n = (typeof progNum === 'number') ? progNum : (parseFloat(String(progNum||0).replace(/[^\d.,-]/g,'').replace(',','.')) || 0);
+  if (n < 80)  return 'anger';
+  if (n < 90)  return 'sadness';
+  if (n < 100) return 'surprise';
+  if (n < 110) return 'joy';
+  if (n < 120) return 'laughter';
+  return 'like';
+}
+function getMgrAvatarHtml(name, progNum, size = 64) {
+  const id = getMgrCrmId(name);
+  if (!id) return '';
+  const emo = getMgrAvatarEmotion(progNum);
+  return `<img class="kpi-avatar" src="logos/avatar/${id}-${emo}.png" alt="" style="width:${size}px;height:${size}px" onerror="this.style.display='none'">`;
+}
+
 function getMgrMessengerHtml(name) {
   if (!S.usersData || !name) return '';
   const nl = name.toLowerCase().trim();
@@ -5460,6 +5489,7 @@ function renderPersonal(matched) {
     <div class="kpi-subtitle">Доход за месяц</div>
     <div class="kpi-income-panel" ${incomePanelAttr}>
       ${incomePanelContent}
+      ${getMgrAvatarHtml(name, progNum)}
       <button class="kpi-subtitle-info kpi-income-info-btn" onclick="event.stopPropagation();openSalInfo()">!</button>
     </div>
     <div class="kpi-divider"></div>

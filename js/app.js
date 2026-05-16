@@ -6795,12 +6795,15 @@ function renderRating() {
     return `<span style="filter:blur(4px);user-select:none;-webkit-user-select:none;pointer-events:none;letter-spacing:1px;color:var(--txt3)">${s} ₽</span>`;
   }
 
-  // Toggle для CEO
+  // Toggle для CEO — единый тумблер
+  const nextDept = dept === 'crm' ? 'dozhim' : 'crm';
   const deptToggle = isCeo ? `
-    <div class="rating-dept-toggle">
-      <button class="rating-dept-btn ${dept==='crm'?'on':''}" onclick="switchRatingDept('crm')">CRM</button>
-      <button class="rating-dept-btn ${dept==='dozhim'?'on':''}" onclick="switchRatingDept('dozhim')">ДОЖИМ</button>
-    </div>` : `<div style="font-family:'Unbounded',sans-serif;font-size:9px;font-weight:800;letter-spacing:.1em;color:var(--txt3)">${dept === 'dozhim' ? 'ДОЖИМ' : 'CRM'}</div>`;
+    <button class="rating-toggle-pill" onclick="switchRatingDept('${nextDept}')">
+      ${dept === 'crm'
+        ? `CRM <span class="rating-toggle-arrow right"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`
+        : `<span class="rating-toggle-arrow left"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11 7H3M6.5 3.5L3 7l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span> ДОЖИМ`
+      }
+    </button>` : `<div style="font-family:'Unbounded',sans-serif;font-size:9px;font-weight:800;letter-spacing:.1em;color:var(--txt3)">${dept === 'dozhim' ? 'ДОЖИМ' : 'CRM'}</div>`;
 
   const summaryHTML = `
     <div class="rating-summary">
@@ -6946,8 +6949,7 @@ function renderRating() {
       <div class="sec-title" style="margin:0">РЕЙТИНГ</div>
       ${deptToggle}
     </div>
-    ${summaryHTML}
-    <div class="rating-chart">${cardsHTML || '<div class="empty">Нет данных</div>'}</div>
+    <div class="rating-slide-wrap"><div class="rating-slide-inner" id="rating-slide-inner">${summaryHTML}<div class="rating-chart">${cardsHTML || '<div class="empty">Нет данных</div>'}</div></div></div>
   `);
 
   // Анимируем бары
@@ -6966,15 +6968,48 @@ function renderRating() {
 }
 
 function switchRatingDept(dept) {
-  S.ratingDept = dept;
-  updateFirebasePage();
-  if (dept === 'dozhim' && !S.data.d_vizity) {
-    const el = document.getElementById('c-rating');
-    if (el) el.innerHTML = loader();
-    api(SHEETS.d_vizity, 'A:N').then(d => { S.data.d_vizity = d; renderRating(); }).catch(() => { S.data.d_vizity = []; renderRating(); });
-    return;
+  // direction: crm→dozhim = slide left, dozhim→crm = slide right
+  const prevDept = S.ratingDept;
+  const slideOutClass = (prevDept === 'crm') ? 'slide-out-left' : 'slide-out-right';
+  const slideInClass  = (prevDept === 'crm') ? 'slide-in-left'  : 'slide-in-right';
+
+  const inner = document.getElementById('rating-slide-inner');
+  if (inner) {
+    inner.classList.add(slideOutClass);
+    setTimeout(() => {
+      S.ratingDept = dept;
+      updateFirebasePage();
+      if (dept === 'dozhim' && !S.data.d_vizity) {
+        const el = document.getElementById('c-rating');
+        if (el) el.innerHTML = loader();
+        api(SHEETS.d_vizity, 'A:N').then(d => { S.data.d_vizity = d; renderRating(); _finishRatingSlide(slideInClass); }).catch(() => { S.data.d_vizity = []; renderRating(); _finishRatingSlide(slideInClass); });
+        return;
+      }
+      renderRating();
+      _finishRatingSlide(slideInClass);
+    }, 220);
+  } else {
+    S.ratingDept = dept;
+    updateFirebasePage();
+    if (dept === 'dozhim' && !S.data.d_vizity) {
+      const el = document.getElementById('c-rating');
+      if (el) el.innerHTML = loader();
+      api(SHEETS.d_vizity, 'A:N').then(d => { S.data.d_vizity = d; renderRating(); }).catch(() => { S.data.d_vizity = []; renderRating(); });
+      return;
+    }
+    renderRating();
   }
-  renderRating();
+}
+
+function _finishRatingSlide(slideInClass) {
+  requestAnimationFrame(() => {
+    const inner = document.getElementById('rating-slide-inner');
+    if (!inner) return;
+    inner.classList.add(slideInClass);
+    requestAnimationFrame(() => {
+      inner.classList.remove(slideInClass);
+    });
+  });
 }
 
 // ==================== FAQ DOCK ====================

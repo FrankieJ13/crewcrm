@@ -4077,29 +4077,47 @@ body.neo-dark .income-col .ic-lbl {
 
 /* ===== RATING SCREEN ===== */
 .rating-header {
-  padding: 16px 0 10px;
+  padding: 7px 0;
   display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 20;
+  background: var(--bg); backdrop-filter: blur(8px);
 }
-.rating-dept-toggle {
-  display: flex; gap: 6px;
-}
-.rating-dept-btn {
+/* Тумблер CRM ↔ ДОЖИМ */
+.rating-toggle-pill {
   font-family: 'Unbounded', sans-serif;
-  font-size: 9px; font-weight: 800; letter-spacing: .06em;
-  padding: 5px 12px; border-radius: 20px;
-  border: 1px solid var(--line2);
-  background: var(--bg3); color: var(--txt3);
-  cursor: pointer; transition: all .15s;
+  font-size: 10px; font-weight: 800; letter-spacing: .06em;
+  padding: 6px 14px; border-radius: 20px;
+  border: 2px solid var(--txt);
+  background: transparent; color: var(--txt);
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  transition: border-color .2s, color .2s;
+  white-space: nowrap;
 }
-.rating-dept-btn.on {
-  background: var(--acc-bg); border-color: var(--acc); color: var(--acc);
+.rating-toggle-pill:active { opacity: .7; }
+/* Стрелка в тумблере */
+.rating-toggle-arrow {
+  display: inline-flex; align-items: center;
+  animation: ratingArrowPulse 1s ease-in-out infinite;
 }
-body.light .rating-dept-btn.on {
-  background: rgba(81,55,221,0.12); border-color: #5137dd; color: #5137dd;
+.rating-toggle-arrow.left  { animation-name: ratingArrowPulseLeft; }
+.rating-toggle-arrow.right { animation-name: ratingArrowPulseRight; }
+@keyframes ratingArrowPulseRight {
+  0%,100% { transform: translateX(0);    opacity: 1; }
+  50%      { transform: translateX(4px);  opacity: .5; }
 }
-body.tiffany .rating-dept-btn.on {
-  background: rgba(143,179,174,0.25); border-color: #5CACBD; color: #5CACBD;
+@keyframes ratingArrowPulseLeft {
+  0%,100% { transform: translateX(0);    opacity: 1; }
+  50%      { transform: translateX(-4px); opacity: .5; }
 }
+/* Слайд-переход при смене отдела */
+.rating-slide-wrap { overflow: hidden; }
+.rating-slide-inner {
+  transition: transform .32s cubic-bezier(.4,0,.2,1), opacity .32s;
+}
+.rating-slide-inner.slide-out-left  { transform: translateX(-60px); opacity: 0; }
+.rating-slide-inner.slide-out-right { transform: translateX(60px);  opacity: 0; }
+.rating-slide-inner.slide-in-left   { transform: translateX(60px);  opacity: 0; }
+.rating-slide-inner.slide-in-right  { transform: translateX(-60px); opacity: 0; }
 .rating-summary {
   display: grid; grid-template-columns: repeat(3,1fr); gap: 8px;
   margin-bottom: 16px;

@@ -2164,7 +2164,7 @@ body.light .inner-base-path { stroke:rgba(0,0,0,0.08); }
 .ti .tl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.04em }
 .ti .tv { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:700 }
 .zp-banner {
-  border-radius:var(--r2); padding:18px;
+  border-radius:var(--r2); padding:10px;
   text-align:center; margin-top:8px; margin-bottom:16px;
   backdrop-filter:blur(8px);
   background: var(--acc-bg) !important;

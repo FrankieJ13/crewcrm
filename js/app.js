@@ -351,6 +351,15 @@ function pctClr(p) {
   if (n >= 90) return 'var(--org)';
   return 'var(--red)';
 }
+// rgba(r,g,b,0) версия pctClr — для корректного CSS-градиента без интерполяции через чёрный
+function pctClrFade(p) {
+  const n = (typeof p === 'number') ? p : (parseFloat(String(p||0).replace(/[^\d.,-]/g,'').replace(',','.')) || 0);
+  if (n >= 120) return 'rgba(127,90,240,0)';
+  if (n >= 110) return 'rgba(255,122,182,0)';
+  if (n >= 100) return 'rgba(46,213,115,0)';
+  if (n >= 90)  return 'rgba(255,165,2,0)';
+  return 'rgba(255,71,87,0)';
+}
 function pctGrad(p) {
   const n = (typeof p === 'number') ? p : (parseFloat(String(p||0).replace(/[^\d.,-]/g,'').replace(',','.')) || 0);
   if (n >= 120) return 'linear-gradient(45deg,#b06aff,#59d879)'; // purple → green
@@ -2834,7 +2843,7 @@ function renderOtchet() {
     }).replace(/'/g,"&#39;");
 
     return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
-      <div class="mop-strip" style="width:${Math.min(progNum,100)}%;background:${pctClr(progNum)}"></div>
+      <div class="mop-strip" style="width:${Math.min(progNum,100)}%;background:linear-gradient(to right,${pctClr(progNum)} 40%,${pctClrFade(progNum)})"></div>
       <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${getMgrMessengerHtml(name)}</div><button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
       <div class="mop-mini">
         <div class="mm kpi-visits-drill" onclick="openVisitsDayModal(${JSON.stringify(String(r[0]||'').toLowerCase().trim()).replace(/"/g, '&quot;')}, false)" title="Хронология визитов по дням"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
@@ -2853,7 +2862,7 @@ function renderOtchet() {
     const prog = p + '%';
     const fact  = allV;
     const daily = computeDailyPlan(plan, fact, p, currentSuffix, name);
-    return `<div class="mop" style="opacity:.65"><div class="mop-strip" style="width:${Math.min(p,100)}%;background:var(--txt3)"></div><div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:rgba(128,128,128,.15);color:var(--txt3)">—</span><span class="mop-name">${name}</span></div></div>
+    return `<div class="mop" style="opacity:.65"><div class="mop-strip" style="width:${Math.min(p,100)}%;background:linear-gradient(to right,var(--txt3) 40%,transparent)"></div><div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:rgba(128,128,128,.15);color:var(--txt3)">—</span><span class="mop-name">${name}</span></div></div>
       <div class="mop-mini">
         <div class="mm"><div class="ml">Визиты</div><div class="mv">${r[7]||'0'}</div></div>
         <div class="mm"><div class="ml">План</div><div class="mv">${r[3]||'0'}</div></div>
@@ -2942,7 +2951,7 @@ function renderDozhimCards() {
       rs, idx: idx+1,
     }).replace(/'/g,"&#39;");
     return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
-      <div class="mop-strip" style="width:${Math.min(progNum,100)}%;background:${pctClr(progNum)}"></div>
+      <div class="mop-strip" style="width:${Math.min(progNum,100)}%;background:linear-gradient(to right,${pctClr(progNum)} 40%,${pctClrFade(progNum)})"></div>
       <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name.toUpperCase()}</span>${getMgrMessengerHtml(name)}</div><button class="mop-info-btn" onclick="openDozhimModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
       <div class="mop-mini">
         <div class="mm kpi-visits-drill" onclick="openVisitsDayModal(${JSON.stringify(nl).replace(/"/g, '&quot;')}, true)" title="Хронология визитов по дням"><div class="ml">Визиты</div><div class="mv">${allVis}</div></div>
@@ -6921,7 +6930,7 @@ function renderRating() {
     return `
       <div class="rating-card ${rankClass}">
         ${petalsHtml}
-        ${stripColor ? `<div class="rating-card-strip" style="background:${stripColor}"></div>` : ''}
+        ${stripColor ? `<div class="rating-card-strip" style="background:linear-gradient(to right,${stripColor} 40%,${stripEnd})"></div>` : ''}
         <div class="rating-card-top">
           <div class="rating-rank-num" style="background:${rankNumBg};color:${rankNumColor};font-size:${isTop?'16px':'10px'}">${isTop ? medalBtn(idx) : idx+1}</div>
           <div class="rating-card-name">

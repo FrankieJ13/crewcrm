@@ -1704,10 +1704,8 @@ body.light .zp-row {
   position: absolute; left: 0; top: 0; bottom: 0;
   z-index: 0; pointer-events: none;
   border-radius: inherit;
-  opacity: 0.3;
+  opacity: 0.35;
   transition: width .7s ease;
-  -webkit-mask-image: linear-gradient(to right, black 40%, transparent 100%);
-  mask-image: linear-gradient(to right, black 40%, transparent 100%);
 }
 .mop-head, .mop-mini { position: relative; z-index: 1; }
 body.light .mop {
@@ -4195,8 +4193,6 @@ body.neo-dark .income-col .ic-lbl {
   position: absolute; left: 0; top: 0; bottom: 0; width: 50%;
   z-index: 0; pointer-events: none;
   border-radius: inherit;
-  -webkit-mask-image: linear-gradient(to right, black 40%, transparent 100%);
-  mask-image: linear-gradient(to right, black 40%, transparent 100%);
 }
 /* Top row: rank + name + pct */
 .rating-card-top {

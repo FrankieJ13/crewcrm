@@ -4072,7 +4072,8 @@ body.neo-dark .income-col .ic-lbl {
 
 /* ===== RATING SCREEN ===== */
 .rating-header {
-  padding: 7px 0;
+  padding: 7px 10px;
+  margin: 0 -10px;
   display: flex; align-items: center; justify-content: space-between;
   position: sticky; top: 0; z-index: 20;
   background: var(--bg); backdrop-filter: blur(8px);

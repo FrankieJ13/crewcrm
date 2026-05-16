@@ -2834,7 +2834,7 @@ function renderOtchet() {
     }).replace(/'/g,"&#39;");
 
     return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
-      <div class="mop-strip" style="width:${Math.min(progNum,100)}%;background:linear-gradient(to right,${pctClr(progNum)} 40%,transparent)"></div>
+      <div class="mop-strip" style="width:${Math.min(progNum,100)}%;background:${pctClr(progNum)}"></div>
       <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${getMgrMessengerHtml(name)}</div><button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
       <div class="mop-mini">
         <div class="mm kpi-visits-drill" onclick="openVisitsDayModal(${JSON.stringify(String(r[0]||'').toLowerCase().trim()).replace(/"/g, '&quot;')}, false)" title="Хронология визитов по дням"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
@@ -2853,7 +2853,7 @@ function renderOtchet() {
     const prog = p + '%';
     const fact  = allV;
     const daily = computeDailyPlan(plan, fact, p, currentSuffix, name);
-    return `<div class="mop" style="opacity:.65"><div class="mop-strip" style="width:${Math.min(p,100)}%;background:linear-gradient(to right,var(--txt3) 40%,transparent)"></div><div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:rgba(128,128,128,.15);color:var(--txt3)">—</span><span class="mop-name">${name}</span></div></div>
+    return `<div class="mop" style="opacity:.65"><div class="mop-strip" style="width:${Math.min(p,100)}%;background:var(--txt3)"></div><div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:rgba(128,128,128,.15);color:var(--txt3)">—</span><span class="mop-name">${name}</span></div></div>
       <div class="mop-mini">
         <div class="mm"><div class="ml">Визиты</div><div class="mv">${r[7]||'0'}</div></div>
         <div class="mm"><div class="ml">План</div><div class="mv">${r[3]||'0'}</div></div>
@@ -2942,7 +2942,7 @@ function renderDozhimCards() {
       rs, idx: idx+1,
     }).replace(/'/g,"&#39;");
     return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
-      <div class="mop-strip" style="width:${Math.min(progNum,100)}%;background:linear-gradient(to right,${pctClr(progNum)} 40%,transparent)"></div>
+      <div class="mop-strip" style="width:${Math.min(progNum,100)}%;background:${pctClr(progNum)}"></div>
       <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name.toUpperCase()}</span>${getMgrMessengerHtml(name)}</div><button class="mop-info-btn" onclick="openDozhimModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
       <div class="mop-mini">
         <div class="mm kpi-visits-drill" onclick="openVisitsDayModal(${JSON.stringify(nl).replace(/"/g, '&quot;')}, true)" title="Хронология визитов по дням"><div class="ml">Визиты</div><div class="mv">${allVis}</div></div>
@@ -6839,9 +6839,9 @@ function renderRating() {
     return html ? `<span style="display:inline-flex;align-items:center;gap:3px;margin-left:5px">${html}</span>` : '';
   }
   const rankColors = [
-    { strip:'#FFD700', bg:'rgba(255,215,0,0.12)', num:'rgba(255,215,0,0.2)', numTxt:'#FFD700' },
-    { strip:'#C0C0C0', bg:'rgba(192,192,192,0.08)', num:'rgba(192,192,192,0.15)', numTxt:'#C0C0C0' },
-    { strip:'#cd7f32', bg:'rgba(205,127,50,0.08)', num:'rgba(205,127,50,0.15)', numTxt:'#cd7f32' },
+    { strip:'#FFD700', stripEnd:'rgba(255,215,0,0)', bg:'rgba(255,215,0,0.12)', num:'rgba(255,215,0,0.2)', numTxt:'#FFD700' },
+    { strip:'#C0C0C0', stripEnd:'rgba(192,192,192,0)', bg:'rgba(192,192,192,0.08)', num:'rgba(192,192,192,0.15)', numTxt:'#C0C0C0' },
+    { strip:'#cd7f32', stripEnd:'rgba(205,127,50,0)',  bg:'rgba(205,127,50,0.08)', num:'rgba(205,127,50,0.15)', numTxt:'#cd7f32' },
   ];
 
   const rand = (a, b) => Math.round(a + Math.random() * (b - a));
@@ -6899,7 +6899,8 @@ function renderRating() {
   const cardsHTML = managers.map((m, idx) => {
     const isTop = idx < 3;
     const rc = isTop ? rankColors[idx] : null;
-    const stripColor = rc ? rc.strip : 'transparent';
+    const stripColor = rc ? rc.strip : null;
+    const stripEnd   = rc ? rc.stripEnd : null;
     const rankNumBg = isTop ? '#fff' : 'var(--bg3)';
     const rankNumColor = rc ? rc.numTxt : 'var(--txt3)';
     const pctColor = pctClr(m.progNum);
@@ -6920,7 +6921,7 @@ function renderRating() {
     return `
       <div class="rating-card ${rankClass}">
         ${petalsHtml}
-        <div class="rating-card-strip" style="background:linear-gradient(to right,${stripColor},transparent)"></div>
+        ${stripColor ? `<div class="rating-card-strip" style="background:linear-gradient(to right,${stripColor} 40%,${stripEnd})"></div>` : ''}
         <div class="rating-card-top">
           <div class="rating-rank-num" style="background:${rankNumBg};color:${rankNumColor};font-size:${isTop?'16px':'10px'}">${isTop ? medalBtn(idx) : idx+1}</div>
           <div class="rating-card-name">

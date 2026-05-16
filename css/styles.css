@@ -1706,6 +1706,8 @@ body.light .zp-row {
   border-radius: inherit;
   opacity: 0.3;
   transition: width .7s ease;
+  -webkit-mask-image: linear-gradient(to right, black 40%, transparent);
+  mask-image: linear-gradient(to right, black 40%, transparent);
 }
 .mop-head, .mop-mini { position: relative; z-index: 1; }
 body.light .mop {

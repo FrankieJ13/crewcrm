@@ -141,7 +141,7 @@ const S = {
 };
 
 /* ══ THEME ══ */
-const THEMES = ['dark', 'light', 'tiffany', 'cinematic', 'neo-dark', 'neo-light', 'cosmic', 'fluent'];
+const THEMES = ['fluent', 'dark', 'light', 'tiffany', 'cinematic', 'neo-dark', 'neo-light', 'cosmic'];
 
 function applyTheme(theme) {
   document.body.classList.remove('light', 'tiffany', 'cinematic', 'neo-dark', 'neo-light', 'cosmic', 'fluent');
@@ -305,7 +305,7 @@ function syncTheme() {
 
 // Инициализация при загрузке
 (function() {
-  const saved = localStorage.getItem('crm_theme') || 'dark';
+  const saved = localStorage.getItem('crm_theme') || 'fluent';
   applyTheme(saved);
 })();
 

@@ -5490,7 +5490,6 @@ function renderPersonal(matched) {
     <div class="kpi-income-panel" ${incomePanelAttr}>
       ${incomePanelContent}
       ${getMgrAvatarHtml(name, progNum)}
-      <button class="kpi-subtitle-info kpi-income-info-btn" onclick="event.stopPropagation();openSalInfo()">!</button>
     </div>
     <div class="kpi-divider"></div>
     <div class="kpi-subtitle">Текущий KPI</div>

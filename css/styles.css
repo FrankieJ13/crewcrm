@@ -2035,6 +2035,22 @@ body.light .mop-modal-body {
   color:var(--acc); text-transform:uppercase;
   margin:10px 0 6px; padding-left:2px;
 }
+/* Схлоп «Конверсии / Доли» в карточке ОТДЕЛ CRM */
+.dept-cnvrs-spoiler { border:none; margin-top:8px; }
+.dept-cnvrs-spoiler summary { list-style:none; }
+.dept-cnvrs-spoiler summary::-webkit-details-marker { display:none; }
+.dept-cnvrs-summary {
+  display:flex; align-items:center; gap:6px; cursor:pointer;
+  font-family:'Unbounded',sans-serif; font-size:8px; font-weight:800;
+  letter-spacing:.08em; color:var(--acc); text-transform:uppercase;
+  padding:4px 2px; user-select:none;
+}
+.dept-cnvrs-summary svg {
+  flex-shrink:0; color:var(--acc);
+  transition:transform .2s ease;
+}
+.dept-cnvrs-spoiler[open] .dept-cnvrs-summary svg { transform:rotate(90deg); }
+.dept-cnvrs-body { padding-top:4px; }
 .mango-wrap {
   border:1px solid var(--line); border-radius:var(--r2);
   overflow:hidden;

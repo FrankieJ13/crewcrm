@@ -2613,25 +2613,32 @@ function renderOtchet() {
       <div class="dept-cell"><div class="dc-lbl">Наличка</div><div class="dc-val">${deptNal||'—'}</div></div>
       <div class="dept-cell"><div class="dc-lbl">Комиссия</div><div class="dc-val">${deptKom||'—'}</div></div>
     </div>
-    <div class="dept-sec-lbl">Конверсии / Доли</div>
-    <div class="dept-sec-lbl" style="font-size:7px;color:var(--txt2);margin:4px 0 6px"><b><i>К</i></b> общая</div>
-    <div class="dept-row3">
-      <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> визиты</div><div class="dc-val">${cnvrsTotGen[6]||'—'}</div></div>
-      <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> кредиты</div><div class="dc-val">${cnvrsTotGen[7]||'—'}</div></div>
-      <div class="dept-cell"><div class="dc-lbl">% нецелевых</div><div class="dc-val">${cnvrsTotGen[9]||'—'}</div></div>
-    </div>
-    <div class="dept-sec-lbl" style="font-size:7px;color:var(--txt2);margin:10px 0 6px"><b><i>К</i></b> CRM</div>
-    <div class="dept-row3">
-      <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> визиты</div><div class="dc-val">${cnvrsTotCrm[6]||'—'}</div></div>
-      <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> кредиты</div><div class="dc-val">${cnvrsTotCrm[7]||'—'}</div></div>
-      <div class="dept-cell"><div class="dc-lbl">% нецелевых</div><div class="dc-val">${cnvrsTotCrm[9]||'—'}</div></div>
-    </div>
-    <div class="dept-sec-lbl" style="font-size:7px;color:var(--txt2);margin:10px 0 6px"><b><i>К</i></b> тёплые лиды</div>
-    <div class="dept-row3">
-      <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> визиты</div><div class="dc-val">${cnvrsTotWarm[6]||'—'}</div></div>
-      <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> кредиты</div><div class="dc-val">${cnvrsTotWarm[7]||'—'}</div></div>
-      <div class="dept-cell"><div class="dc-lbl">% нецелевых</div><div class="dc-val">${cnvrsTotWarm[9]||'—'}</div></div>
-    </div>
+    <details class="dept-cnvrs-spoiler">
+      <summary class="dept-cnvrs-summary">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Конверсии / Доли</span>
+      </summary>
+      <div class="dept-cnvrs-body">
+        <div class="dept-sec-lbl" style="font-size:7px;color:var(--txt2);margin:4px 0 6px"><b><i>К</i></b> общая</div>
+        <div class="dept-row3">
+          <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> визиты</div><div class="dc-val">${cnvrsTotGen[6]||'—'}</div></div>
+          <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> кредиты</div><div class="dc-val">${cnvrsTotGen[7]||'—'}</div></div>
+          <div class="dept-cell"><div class="dc-lbl">% нецелевых</div><div class="dc-val">${cnvrsTotGen[9]||'—'}</div></div>
+        </div>
+        <div class="dept-sec-lbl" style="font-size:7px;color:var(--txt2);margin:10px 0 6px"><b><i>К</i></b> CRM</div>
+        <div class="dept-row3">
+          <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> визиты</div><div class="dc-val">${cnvrsTotCrm[6]||'—'}</div></div>
+          <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> кредиты</div><div class="dc-val">${cnvrsTotCrm[7]||'—'}</div></div>
+          <div class="dept-cell"><div class="dc-lbl">% нецелевых</div><div class="dc-val">${cnvrsTotCrm[9]||'—'}</div></div>
+        </div>
+        <div class="dept-sec-lbl" style="font-size:7px;color:var(--txt2);margin:10px 0 6px"><b><i>К</i></b> тёплые лиды</div>
+        <div class="dept-row3">
+          <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> визиты</div><div class="dc-val">${cnvrsTotWarm[6]||'—'}</div></div>
+          <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> кредиты</div><div class="dc-val">${cnvrsTotWarm[7]||'—'}</div></div>
+          <div class="dept-cell"><div class="dc-lbl">% нецелевых</div><div class="dc-val">${cnvrsTotWarm[9]||'—'}</div></div>
+        </div>
+      </div>
+    </details>
   </div>`;
 
   let dozhimDeptCard = '';

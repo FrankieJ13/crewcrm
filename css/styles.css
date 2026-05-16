@@ -3466,8 +3466,8 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
   position: absolute;
   right: 0;
   bottom: 0;
-  width: 80px;
-  height: 80px;
+  width: 90px;
+  height: 90px;
   object-fit: contain;
   object-position: bottom right;
   pointer-events: none;

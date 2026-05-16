@@ -4195,6 +4195,9 @@ body.neo-dark .income-col .ic-lbl {
   position: absolute; left: 0; top: 0; bottom: 0; width: 50%;
   z-index: 0; pointer-events: none;
   border-radius: inherit;
+  opacity: 0.35;
+  -webkit-mask-image: linear-gradient(to right, black 40%, transparent);
+  mask-image: linear-gradient(to right, black 40%, transparent);
 }
 /* Top row: rank + name + pct */
 .rating-card-top {

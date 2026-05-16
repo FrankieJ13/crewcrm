@@ -141,7 +141,7 @@ const S = {
 };
 
 /* ══ THEME ══ */
-const THEMES = ['fluent', 'dark', 'light', 'tiffany', 'cinematic', 'neo-dark', 'neo-light', 'cosmic'];
+const THEMES = ['fluent', 'cosmic', 'dark', 'light', 'tiffany', 'cinematic', 'neo-dark', 'neo-light'];
 
 function applyTheme(theme) {
   document.body.classList.remove('light', 'tiffany', 'cinematic', 'neo-dark', 'neo-light', 'cosmic', 'fluent');

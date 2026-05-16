@@ -3487,6 +3487,14 @@ body.light .zp-banner {
   font-family:'Unbounded',sans-serif;
   font-size:28px; font-weight:900; color:var(--acc); letter-spacing:-.02em;
 }
+.kpi-stats-panel {
+  position: relative;
+  border-radius: var(--r2); padding: 10px 10px 4px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--line);
+  margin-bottom: 8px;
+}
+body.light .kpi-stats-panel { background: rgba(0,0,0,0.03); }
 .kpi-badge-sep { height:1px; background:var(--line2); margin:10px 0; }
 .kpi-badges { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:8px; }
 .kpi-badge {

@@ -5355,6 +5355,46 @@ function renderPersonal(matched) {
   const salAlarm = vsaloneN > 0;
   const isLight = (document.body.classList.contains('light')||document.body.classList.contains('tiffany'));
   const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
+
+  // Modal data для кнопки ! (открыть mop/dozhim модалку)
+  const crmCnvrsR  = !isDozhim ? getCnvrsRowGlobal(name, 'crm')     : [];
+  const warmCnvrsR = !isDozhim ? getCnvrsRowGlobal(name, 'warm')    : [];
+  const genCnvrsR  = !isDozhim ? getCnvrsRowGlobal(name, 'general') : [];
+  const rsP = rankStyles(0, 10);
+  const _pmd = isDozhim
+    ? JSON.stringify({
+        type:'dozhim', name: name.toUpperCase(), nameLow,
+        v800: mgrRow[1], v1000: mgrRow[2],
+        rplan: mgrRow[3]||'0', ost: mgrRow[4]||'0',
+        prc, prog, allV: factN,
+        kred800: mgrRow[8], nal800: mgrRow[9], obmen800: mgrRow[10], kom800: mgrRow[11],
+        kred1000: mgrRow[12], nal1000: mgrRow[13], kom1000: mgrRow[14], zadatok: mgrRow[15],
+        sPlan: dSalesPlanNum, sFact: salesFactN, sOst: salesOst, sProg: salesProgNum,
+        rs: rsP, idx: 1,
+      })
+    : JSON.stringify({
+        name: name.toUpperCase(), nameLow,
+        v800: mgrRow[1], v1200: mgrRow[2],
+        rplan: mgrRow[3]||'0', ost: mgrRow[4]||'0',
+        prc, prog, allV: factN, daily, progNum,
+        kred800: mgrRow[8], nal800: mgrRow[9], td800: mgrRow[10], kom800: mgrRow[11],
+        kred1200: mgrRow[12], nal1200: mgrRow[13], td1200: mgrRow[14], kom1200: mgrRow[15],
+        zadatok: mgrRow[16], vykup800: mgrRow[17]||0, vykup1200: mgrRow[18]||0,
+        vsalone: mgrRow[19], vkso: mgrRow[22]||0, vfSSP: mgrRow[23]||0, vbanke: mgrRow[24]||0, otkaz: mgrRow[25]||0,
+        odobNeKupil: mgrRow[26]||0, byCity: mgrRow[27]||{},
+        crmConVis: crmCnvrsR[6]||'—', crmConKred: crmCnvrsR[7]||'—',
+        crmDolya: crmCnvrsR[8]||'—', crmKoef: crmCnvrsR[12]||'—',
+        warmConVis: warmCnvrsR[6]||'—', warmConKred: warmCnvrsR[7]||'—',
+        warmDolya: warmCnvrsR[8]||'—', warmKoef: warmCnvrsR[12]||'—',
+        genConVis: genCnvrsR[6]||'—', genConKred: genCnvrsR[7]||'—',
+        genDolya: genCnvrsR[8]||'—', genKoef: genCnvrsR[12]||'—',
+        rs: rsP, idx: 1,
+      });
+  const _pmdQ = _pmd.replace(/'/g,"&#39;").replace(/"/g,"&quot;");
+  const personalModalOpen = isDozhim
+    ? `openDozhimModal('${_pmdQ}')`
+    : `openMopModal('${_pmdQ}')`;
+
   const convRow = !isDozhim ? `
     <div class="kpi-badge-sep"></div>
     <div class="kpi-badges">
@@ -5424,32 +5464,35 @@ function renderPersonal(matched) {
     </div>
     <div class="kpi-divider"></div>
     <div class="kpi-subtitle">Текущий KPI</div>
-    <div class="kpi-badges">
-      <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Визиты</div><div class="kb-val">${factN}</div></div>
-      <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">План</div><div class="kb-val">${plan}</div></div>
-      <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Остаток</div><div class="kb-val">${ost}</div></div>
-      <div class="kpi-badge"><div class="kb-lbl">Прогноз</div><div class="kb-val" style="color:${pctClr(progNum)}">${prog}</div></div>
+    <div class="kpi-stats-panel">
+      <button class="mop-info-btn" style="position:absolute;top:8px;right:8px" onclick="${personalModalOpen}">!</button>
+      <div class="kpi-badges">
+        <div class="kpi-badge kpi-core-badge kpi-visits-drill" onclick="openVisitsDayModal(${visitsModalName},${isDozhim})" style="cursor:pointer" title="Хронология визитов"><div class="kb-lbl">Визиты</div><div class="kb-val">${factN}</div></div>
+        <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">План</div><div class="kb-val">${plan}</div></div>
+        <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Остаток</div><div class="kb-val">${ost}</div></div>
+        <div class="kpi-badge"><div class="kb-lbl">Прогноз</div><div class="kb-val" style="color:${pctClr(progNum)}">${prog}</div></div>
+      </div>
+      ${isDozhim ? `<div class="kpi-badges">
+        <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Продажи</div><div class="kb-val" style="color:${pctClr(salesProgNum)}">${salesFactN}</div></div>
+        <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">План</div><div class="kb-val">${dSalesPlanNum||'—'}</div></div>
+        <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Остаток</div><div class="kb-val">${salesOst}</div></div>
+        <div class="kpi-badge"><div class="kb-lbl">Прогноз</div><div class="kb-val" style="color:${pctClr(salesProgNum)}">${salesProgStr}</div></div>
+      </div>` : ''}
+      ${!isDozhim ? `<div class="kpi-badges">
+        <div class="kpi-badge"><div class="kb-lbl">Прогноз %</div><div class="kb-val" style="color:${pctClr(progNum)}">${prog}</div></div>
+        <div class="kpi-badge"><div class="kb-lbl">Прогноз шт</div><div class="kb-val" style="color:${pctClr(progNum)}">${progVisN}</div></div>
+        <div class="kpi-badge"><div class="kb-lbl">Факт %</div><div class="kb-val" style="color:${pctClr(factPct)}">${prc}</div></div>
+        <div class="kpi-badge${salAlarm ? ' kpi-badge-salon-alarm' : ''}"><div class="kb-lbl">В салоне</div><div class="kb-val">${vsaloneN}</div></div>
+      </div>` : ''}
+      <div class="kpi-badge-sep"></div>
+      <div class="kpi-badges">
+        <div class="kpi-badge"><div class="kb-lbl">${isDozhim ? 'Кредит' : 'КД CRM/ТЛ'}</div><div class="kb-val">${kred}</div>${!isDozhim ? `<div class="kb-sub">${kredSub}</div>` : ''}</div>
+        <div class="kpi-badge"><div class="kb-lbl">${isDozhim ? 'Наличные' : 'НАЛ CRM/ТЛ'}</div><div class="kb-val">${nal}</div>${!isDozhim ? `<div class="kb-sub">${nalSub}</div>` : ''}</div>
+        <div class="kpi-badge"><div class="kb-lbl">${isDozhim ? 'Комиссия' : 'КОМ CRM/ТЛ'}</div><div class="kb-val">${kom}</div>${!isDozhim ? `<div class="kb-sub">${komSub}</div>` : ''}</div>
+        <div class="kpi-badge"><div class="kb-lbl">Задаток</div><div class="kb-val">${zadatok}</div></div>
+      </div>
+      ${convRow}
     </div>
-    ${isDozhim ? `<div class="kpi-badges">
-      <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Продажи</div><div class="kb-val" style="color:${pctClr(salesProgNum)}">${salesFactN}</div></div>
-      <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">План</div><div class="kb-val">${dSalesPlanNum||'—'}</div></div>
-      <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Остаток</div><div class="kb-val">${salesOst}</div></div>
-      <div class="kpi-badge"><div class="kb-lbl">Прогноз</div><div class="kb-val" style="color:${pctClr(salesProgNum)}">${salesProgStr}</div></div>
-    </div>` : ''}
-    ${!isDozhim ? `<div class="kpi-badges">
-      <div class="kpi-badge"><div class="kb-lbl">Прогноз %</div><div class="kb-val" style="color:${pctClr(progNum)}">${prog}</div></div>
-      <div class="kpi-badge"><div class="kb-lbl">Прогноз шт</div><div class="kb-val" style="color:${pctClr(progNum)}">${progVisN}</div></div>
-      <div class="kpi-badge"><div class="kb-lbl">Факт %</div><div class="kb-val" style="color:${pctClr(factPct)}">${prc}</div></div>
-      <div class="kpi-badge${salAlarm ? ' kpi-badge-salon-alarm' : ''}"><div class="kb-lbl">В салоне</div><div class="kb-val">${vsaloneN}</div></div>
-    </div>` : ''}
-    <div class="kpi-badge-sep"></div>
-    <div class="kpi-badges">
-      <div class="kpi-badge"><div class="kb-lbl">${isDozhim ? 'Кредит' : 'КД CRM/ТЛ'}</div><div class="kb-val">${kred}</div>${!isDozhim ? `<div class="kb-sub">${kredSub}</div>` : ''}</div>
-      <div class="kpi-badge"><div class="kb-lbl">${isDozhim ? 'Наличные' : 'НАЛ CRM/ТЛ'}</div><div class="kb-val">${nal}</div>${!isDozhim ? `<div class="kb-sub">${nalSub}</div>` : ''}</div>
-      <div class="kpi-badge"><div class="kb-lbl">${isDozhim ? 'Комиссия' : 'КОМ CRM/ТЛ'}</div><div class="kb-val">${kom}</div>${!isDozhim ? `<div class="kb-sub">${komSub}</div>` : ''}</div>
-      <div class="kpi-badge"><div class="kb-lbl">Задаток</div><div class="kb-val">${zadatok}</div></div>
-    </div>
-    ${convRow}
   `);
 }
 

@@ -3466,6 +3466,10 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
   position: absolute;
   right: 0;
   bottom: 0;
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  object-position: bottom right;
   pointer-events: none;
   z-index: 1;
 }
@@ -3478,6 +3482,7 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
   border:1px solid var(--acc-bdr) !important;
   box-shadow:0 15px 35px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
   position:relative;
+  overflow:hidden;
 }
 body.light .kpi-income-panel {
   border-color:rgba(0,0,0,0.1);

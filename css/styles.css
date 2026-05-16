@@ -2740,6 +2740,7 @@ body.light #author {
   header     { padding:0 12px }
   .scr       { padding:12px 0; }
   .tab       { padding:10px 14px; font-size:13px; letter-spacing:.02em }
+  .rating-slide-wrap { margin-top: 12px; }
 
   /* График — адаптация под узкие экраны (≤480px) */
   .sched-week {

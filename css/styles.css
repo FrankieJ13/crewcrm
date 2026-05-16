@@ -1738,7 +1738,7 @@ body.light .mop {
 }
 .mop-info-btn:hover { border-color:var(--acc); color:var(--acc) }
 /* Базово: 2 колонки (смартфон < 400px) */
-.mop-mini { display:grid; grid-template-columns:repeat(2,1fr); gap:6px; margin-bottom:12px; }
+.mop-mini { display:grid; grid-template-columns:repeat(2,1fr); gap:6px; margin-bottom:0; }
 /* ≥ 400px — 4 в ряд */
 @media(min-width:400px) {
   .mop-mini { grid-template-columns:repeat(4,1fr); }

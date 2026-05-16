@@ -2430,11 +2430,11 @@ function getMgrAvatarEmotion(progNum) {
   if (n < 120) return 'laughter';
   return 'like';
 }
-function getMgrAvatarHtml(name, progNum, size = 64) {
+function getMgrAvatarHtml(name, progNum) {
   const id = getMgrCrmId(name);
   if (!id) return '';
   const emo = getMgrAvatarEmotion(progNum);
-  return `<img class="kpi-avatar" src="logos/avatar/${id}-${emo}.png" alt="" style="width:${size}px;height:${size}px" onerror="this.style.display='none'">`;
+  return `<img class="kpi-avatar" src="logos/avatar/${id}-${emo}.png" alt="" onerror="this.style.display='none'">`;
 }
 
 function getMgrMessengerHtml(name) {

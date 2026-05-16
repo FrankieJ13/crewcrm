@@ -2187,7 +2187,7 @@ body.light .inner-base-path { stroke:rgba(0,0,0,0.08); }
 }
 .zp-row {
   display:flex; flex-direction:column;
-  border-radius:var(--r2); padding:13px 16px;
+  border-radius:var(--r2); padding:6px 10px;
   background: rgba(var(--rank-r), var(--rank-g), var(--rank-b), 0.15);
   position:relative;
 }
@@ -5364,10 +5364,10 @@ body.fluent .income-col {
   border: 1px solid #c0c0c0 !important;
   box-shadow: none !important;
 }
-body.fluent .income-col,
-body.fluent .income-col .ic-lbl,
+body.fluent .income-col { color: #555555; }
+body.fluent .income-col .ic-lbl { color: #555555; }
 /* No !important — позволяет pctClr() красить .ic-val по % выполнения */
-body.fluent .income-col .ic-val { color: #111111; }
+body.fluent .income-col .ic-val { color: #555555; }
 body.fluent .income-col .ic-koef {
   background: rgba(255,255,255,.85) !important;
   border-color: rgba(0,0,0,.18);

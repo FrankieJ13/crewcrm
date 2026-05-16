@@ -6897,7 +6897,7 @@ function renderRating() {
   }
 
   const cardsHTML = managers.map((m, idx) => {
-    const isTop = idx < 3;
+    const isTop = idx < 3 && m.progNum >= 100;
     const rc = isTop ? rankColors[idx] : null;
     const stripColor = rc ? rc.strip : null;
     const stripEnd   = rc ? rc.stripEnd : null;

@@ -5465,7 +5465,10 @@ function renderPersonal(matched) {
     <div class="kpi-divider"></div>
     <div class="kpi-subtitle">Текущий KPI</div>
     <div class="kpi-stats-panel">
-      <button class="mop-info-btn" style="position:absolute;top:8px;right:8px" onclick="${personalModalOpen}">!</button>
+      <div class="kpi-stats-panel-hdr">
+        <div class="dept-sec-lbl" style="margin:0">Ключевые показатели</div>
+        <button class="mop-info-btn" onclick="${personalModalOpen}">!</button>
+      </div>
       <div class="kpi-badges">
         <div class="kpi-badge kpi-core-badge kpi-visits-drill" onclick="openVisitsDayModal(${visitsModalName},${isDozhim})" style="cursor:pointer" title="Хронология визитов"><div class="kb-lbl">Визиты</div><div class="kb-val">${factN}</div></div>
         <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">План</div><div class="kb-val">${plan}</div></div>
@@ -5484,14 +5487,14 @@ function renderPersonal(matched) {
         <div class="kpi-badge"><div class="kb-lbl">Факт %</div><div class="kb-val" style="color:${pctClr(factPct)}">${prc}</div></div>
         <div class="kpi-badge${salAlarm ? ' kpi-badge-salon-alarm' : ''}"><div class="kb-lbl">В салоне</div><div class="kb-val">${vsaloneN}</div></div>
       </div>` : ''}
-      <div class="kpi-badge-sep"></div>
+      <div class="dept-sec-lbl">Сделки</div>
       <div class="kpi-badges">
         <div class="kpi-badge"><div class="kb-lbl">${isDozhim ? 'Кредит' : 'КД CRM/ТЛ'}</div><div class="kb-val">${kred}</div>${!isDozhim ? `<div class="kb-sub">${kredSub}</div>` : ''}</div>
         <div class="kpi-badge"><div class="kb-lbl">${isDozhim ? 'Наличные' : 'НАЛ CRM/ТЛ'}</div><div class="kb-val">${nal}</div>${!isDozhim ? `<div class="kb-sub">${nalSub}</div>` : ''}</div>
         <div class="kpi-badge"><div class="kb-lbl">${isDozhim ? 'Комиссия' : 'КОМ CRM/ТЛ'}</div><div class="kb-val">${kom}</div>${!isDozhim ? `<div class="kb-sub">${komSub}</div>` : ''}</div>
         <div class="kpi-badge"><div class="kb-lbl">Задаток</div><div class="kb-val">${zadatok}</div></div>
       </div>
-      ${convRow}
+      ${convRow ? `<div class="dept-sec-lbl">Конверсии</div>${convRow.replace('<div class="kpi-badge-sep"></div>','')}` : ''}
     </div>
   `);
 }

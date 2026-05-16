@@ -3464,12 +3464,9 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
 }
 .kpi-avatar {
   position: absolute;
-  right: 14px;
+  right: 0;
   bottom: 0;
-  border-radius: 50%;
-  object-fit: cover;
   pointer-events: none;
-  box-shadow: 0 4px 12px rgba(0,0,0,.25);
   z-index: 1;
 }
 .kpi-income-panel {

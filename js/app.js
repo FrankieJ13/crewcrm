@@ -6702,7 +6702,7 @@ function dockNav(id) {
 
   if (id === 'rating') {
     dockSetActive('rating');
-    ['otchet','dohod','grafik','instruktsii','personal','rating','vizity'].forEach(t => {
+    ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo'].forEach(t => {
       const s = document.getElementById('scr-'+t);
       if (s) s.classList.remove('on');
     });

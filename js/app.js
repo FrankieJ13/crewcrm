@@ -6793,14 +6793,59 @@ function switchCeoLeaders(dept) {
   inner.classList.add(slideOutClass);
   setTimeout(() => {
     S.ceoLeadersDept = dept;
-    renderCeoDashboard();
-    requestAnimationFrame(() => {
-      const inn2 = document.getElementById('ceo-leaders-slide');
-      if (!inn2) return;
+    // Точечный апдейт — только блок лидеров и тумблер
+    const data = _ceoComputeLeaders();
+    const inn2 = document.getElementById('ceo-leaders-slide');
+    const btn  = document.getElementById('ceo-leaders-toggle');
+    if (inn2) {
+      inn2.classList.remove(slideOutClass);
+      inn2.innerHTML = `<div class="ceo-leaders-row">${data.html}</div>`;
+      scheduleAnimatedValues(inn2, true);
       inn2.classList.add(slideInClass);
       requestAnimationFrame(() => inn2.classList.remove(slideInClass));
-    });
+    }
+    if (btn) btn.outerHTML = data.btnHtml;
   }, 220);
+}
+
+function _ceoComputeLeaders() {
+  const vizData = S.data.vizity || [];
+  const dvData  = S.data.d_vizity || [];
+  const planData = S.data.plan || [];
+  const planMap = getPlanMap(planData);
+  const crmStats = buildCrmStats(vizData);
+  const dozhimStats = (typeof buildDozhimStats === 'function') ? buildDozhimStats(dvData) : {};
+  const allPlanNames = (planData || []).slice(1).filter(r => r && r[0]).map(r => String(r[0]).trim());
+  const today = new Date();
+  const sfx = String(today.getMonth()+1).padStart(2,'0') + String(today.getFullYear()).slice(-2);
+  function buildMgr(name, stats) {
+    const nl = name.toLowerCase();
+    const s = stats[nl] || {};
+    const plan = planMap[nl] || 0;
+    const vis = (s.vis800 || 0) + (s.vis1200 || 0) + (s.vis1000 || 0);
+    return { firstName: name.split(' ').slice(-1)[0] || name, progPct: computeProgPct(vis, plan, sfx) };
+  }
+  const crmNames = allPlanNames.filter(n => { const r = getRoleByName(n.toLowerCase().trim()); return r === 'crm' || r === ''; });
+  const dozhimNames = allPlanNames.filter(n => getRoleByName(n.toLowerCase().trim()) === 'dozhim');
+  const crmMgrs = crmNames.map(n => buildMgr(n, crmStats));
+  const dozhimMgrs = dozhimNames.map(n => buildMgr(n, dozhimStats));
+  const dept = S.ceoLeadersDept || 'crm';
+  const leaders = (dept === 'crm' ? crmMgrs : dozhimMgrs)
+    .filter(m => m.progPct >= 100).sort((a,b) => b.progPct - a.progPct).slice(0,3);
+  const medals = ['🥇','🥈','🥉'];
+  const html = leaders.length
+    ? leaders.map((m,i) => {
+        const c = pctClr(m.progPct);
+        return `<div class="ceo-leader-badge"><span class="ceo-medal">${medals[i]}</span><div class="ceo-leader-name">${m.firstName}</div><div class="ceo-leader-prog"><span class="mv" style="color:${c}">${m.progPct}</span><span style="color:${c}">%</span></div></div>`;
+      }).join('')
+    : `<div class="ceo-no-leaders">Нет менеджеров с прогнозом ≥ 100%</div>`;
+  const nextDept = dept === 'crm' ? 'dozhim' : 'crm';
+  const btnHtml = `<button id="ceo-leaders-toggle" class="rating-toggle-pill" onclick="switchCeoLeaders('${nextDept}')">${
+    dept === 'crm'
+      ? `CRM <span class="rating-toggle-arrow right"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`
+      : `<span class="rating-toggle-arrow left"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11 7H3M6.5 3.5L3 7l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span> ДОЖИМ`
+  }</button>`;
+  return { html, btnHtml };
 }
 
 function renderCeoDashboard() {
@@ -6904,12 +6949,15 @@ function renderCeoDashboard() {
 
   function leaderBadge(leaders) {
     if (!leaders.length) return `<div class="ceo-no-leaders">Нет менеджеров с прогнозом ≥ 100%</div>`;
-    return leaders.map((m, i) => `
+    return leaders.map((m, i) => {
+      const c = pctClr(m.progPct);
+      return `
       <div class="ceo-leader-badge">
         <span class="ceo-medal">${medals[i]}</span>
         <div class="ceo-leader-name">${m.firstName}</div>
-        <div class="ceo-leader-prog" style="color:${pctClr(m.progPct)}"><span class="mv">${m.progPct}</span>%</div>
-      </div>`).join('');
+        <div class="ceo-leader-prog"><span class="mv" style="color:${c}">${m.progPct}</span><span style="color:${c}">%</span></div>
+      </div>`;
+    }).join('');
   }
 
   // Алерты
@@ -6976,7 +7024,7 @@ function renderCeoDashboard() {
       <!-- ЛИДЕРЫ -->
       <div class="ceo-leaders-hdr">
         <div class="sec-title" style="margin:0">Лидеры</div>
-        <button class="rating-toggle-pill" onclick="switchCeoLeaders('${nextLeadersDept}')">
+        <button id="ceo-leaders-toggle" class="rating-toggle-pill" onclick="switchCeoLeaders('${nextLeadersDept}')">
           ${activeLeadersDept === 'crm'
             ? `CRM <span class="rating-toggle-arrow right"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`
             : `<span class="rating-toggle-arrow left"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11 7H3M6.5 3.5L3 7l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span> ДОЖИМ`}

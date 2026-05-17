@@ -6866,7 +6866,8 @@ function renderCeoDashboard() {
     const nl = name.toLowerCase();
     const s = stats[nl] || {};
     const plan = planMap[nl] || 0;
-    const vis = (s.vis800 || 0) + (s.vis1200 || 0);
+    // CRM использует vis1200, Дожим — vis1000
+    const vis = (s.vis800 || 0) + (s.vis1200 || 0) + (s.vis1000 || 0);
     const factPct = computeFactPct(vis, plan);
     const progPct = computeProgPct(vis, plan, suffix);
     return { name, firstName: name.split(' ').slice(-1)[0] || name, vis, plan, factPct, progPct };

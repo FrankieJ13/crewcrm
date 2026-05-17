@@ -1611,6 +1611,13 @@ async function loadTab(tab) {
 }
 
 function reloadCurrent() {
+  if (document.getElementById('scr-ceo')?.classList.contains('on')) {
+    apiCacheInvalidate();
+    S.data.vizity = null; S.data.d_vizity = null;
+    S.data.plan = null; S.data.cnvrs = null; S.data.stavki = null;
+    loadCeoDashboard().then(() => toast('Обновлено','s'));
+    return;
+  }
   // На странице Отчёта — перезагружаем только журнал визитов
   if (document.getElementById('scr-rating')?.classList.contains('on')) {
     apiCacheInvalidate();
@@ -6988,8 +6995,10 @@ function renderCeoDashboard() {
         </div>
       </div>
 
-      <!-- ПРОГНОЗ КОМПАНИИ — главная панель -->
+      <!-- ТЕКУЩИЙ KPI -->
+      <div class="sec-title">Текущий KPI</div>
       <div class="kpi-income-panel ceo-forecast-panel" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
+        ${getMgrAvatarHtml ? getMgrAvatarHtml(matched?.name || '', companyProg) : ''}
         <div class="ceo-forecast-num mv" style="color:${progColor}">${companyProg}%</div>
         <div class="ceo-forecast-sub"><span class="mv">${totalFact}</span> из ${totalPlan||'—'} визитов</div>
       </div>

@@ -6085,16 +6085,24 @@ function getVisitsByDayAll(isDozhim) {
   const mm = parseInt(suffix.slice(0,2)), yy = 2000 + parseInt(suffix.slice(2));
   const daysInMonth = new Date(yy, mm, 0).getDate();
   const counts = Array.from({ length: daysInMonth + 1 }, () => 0);
-  const rows = isDozhim ? (S.data.d_vizity || []) : (S.data.vizity || []);
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
-    if (!row) continue;
-    if (!isSverkaRow(row)) continue;
-    const parts = String(row[0] || '').trim().split('.');
-    const day = parseInt(parts[0]);
-    if (!day || day < 1 || day > daysInMonth) continue;
-    counts[day]++;
+  const sources = [];
+  if (isDozhim === null || isDozhim === undefined) {
+    sources.push(S.data.vizity || []);
+    sources.push(S.data.d_vizity || []);
+  } else {
+    sources.push(isDozhim ? (S.data.d_vizity || []) : (S.data.vizity || []));
   }
+  sources.forEach(rows => {
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row) continue;
+      if (!isSverkaRow(row)) continue;
+      const parts = String(row[0] || '').trim().split('.');
+      const day = parseInt(parts[0]);
+      if (!day || day < 1 || day > daysInMonth) continue;
+      counts[day]++;
+    }
+  });
   return counts;
 }
 
@@ -6114,11 +6122,11 @@ function openVisitsDayModalAll(isDozhim) {
     </button>`;
   }).join('');
   const subtitle = getMonthName(currentSuffix);
-  const deptLabel = isDozhim ? 'Дожим' : 'CRM';
+  const deptLabel = (isDozhim === null || isDozhim === undefined) ? 'Все визиты' : (isDozhim ? 'Дожим' : 'CRM');
 
   const modalTitle = document.querySelector('#income-overlay .income-modal-title');
   const mc = document.getElementById('income-modal-content');
-  if (modalTitle) modalTitle.innerHTML = `Хронология визитов<div class="visits-modal-mgr-name">Отдел ${deptLabel}</div>`;
+  if (modalTitle) modalTitle.innerHTML = `Хронология визитов<div class="visits-modal-mgr-name">${deptLabel === 'Все визиты' ? deptLabel : 'Отдел ' + deptLabel}</div>`;
   document.getElementById('income-overlay')?.classList.add('visits-mode');
   mc.removeAttribute('data-modal');
   mc.innerHTML = `
@@ -6136,6 +6144,71 @@ function openVisitsDayModalAll(isDozhim) {
   document.getElementById('income-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
   requestAnimationFrame(() => scheduleAnimatedValues(mc));
+}
+
+function openCeoDealsModal(kind) {
+  const KINDS = {
+    kredit:  { title: 'Кредиты',     match: s => s === 'покупка (кредит)' },
+    nalobm:  { title: 'Нал+Обмен',   match: s => s === 'покупка (наличные)' || s === 'обмен' },
+    komis:   { title: 'Комиссия',    match: s => s === 'комиссия' },
+  };
+  const cfg = KINDS[kind];
+  if (!cfg) return;
+  const collected = [];
+  const sources = [S.data.vizity || [], S.data.d_vizity || []];
+  sources.forEach(rows => {
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || !row[8]) continue;
+      if (!isSverkaRow(row)) continue;
+      const status = String(row[4] || '').trim().toLowerCase();
+      if (!cfg.match(status)) continue;
+      collected.push({
+        date: String(row[0] || '').trim(),
+        manager: String(row[8] || '').trim(),
+        city: String(row[3] || '').trim() || '—',
+        source: String(row[5] || '').trim() || '—',
+      });
+    }
+  });
+  // Сортировка: начало месяца сверху
+  collected.sort((a, b) => {
+    const [da, ma] = a.date.split('.').map(n => parseInt(n) || 0);
+    const [db, mb] = b.date.split('.').map(n => parseInt(n) || 0);
+    if (ma !== mb) return ma - mb;
+    return da - db;
+  });
+
+  function shortName(full) {
+    const parts = full.trim().split(/\s+/);
+    if (parts.length >= 2) return parts[0] + ' ' + parts[1][0].toUpperCase() + '.';
+    return parts[0] || '—';
+  }
+
+  const rows = collected.length
+    ? collected.map(d => `
+      <tr>
+        <td class="ceo-deals-date">${d.date}</td>
+        <td class="ceo-deals-mgr">${shortName(d.manager)}</td>
+        <td class="ceo-deals-city">${d.city}</td>
+        <td class="ceo-deals-src">${d.source}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="4" class="ceo-deals-empty">Нет данных</td></tr>`;
+
+  const modalTitle = document.querySelector('#income-overlay .income-modal-title');
+  const mc = document.getElementById('income-modal-content');
+  if (modalTitle) modalTitle.innerHTML = `${cfg.title}<div class="visits-modal-mgr-name">${collected.length} · ${getMonthName(currentSuffix)}</div>`;
+  document.getElementById('income-overlay')?.classList.remove('visits-mode');
+  mc.removeAttribute('data-modal');
+  mc.innerHTML = `
+    <table class="ceo-deals-table">
+      <thead>
+        <tr><th>Дата</th><th>Менеджер</th><th>Город</th><th>Источник</th></tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  document.getElementById('income-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
 
 function pluralVisits(n) {
@@ -7204,49 +7277,57 @@ function renderCeoDashboard() {
       <!-- МЕТРИКИ -->
       <div class="sec-title">Ключевые показатели</div>
       <div class="ceo-metrics-grid">
-        <!-- Row 1: всего визитов, CRM, Дожим -->
+        <!-- Row 1: Всего визитов, CRM, Дожим -->
         <div class="ceo-metric-card">
+          <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openVisitsDayModalAll(null)" title="Хронология всех визитов">!</button>
           <div class="ceo-metric-lbl">Всего визитов</div>
-          <div class="ceo-metric-val mv" style="color:var(--txt)">${totalFact}</div>
-          <div class="ceo-metric-sub">из ${totalPlan||'—'} плановых</div>
+          <div class="ceo-metric-val"><span class="mv">${totalFact}</span> <span class="ceo-metric-plan">/ ${totalPlan||'—'}</span></div>
+          <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, totalPlan ? Math.round(totalFact/totalPlan*100) : 0)}%;background:${pctClr(companyProg)}"></div></div>
+          <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${pctClr(companyProg)} !important">${companyProg}</span><span style="color:${pctClr(companyProg)}">%</span></div>
         </div>
-        <div class="ceo-metric-card" style="cursor:pointer" onclick="openVisitsDayModalAll(false)" title="Хронология визитов CRM">
+        <div class="ceo-metric-card">
+          <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openVisitsDayModalAll(false)" title="Хронология визитов CRM">!</button>
           <div class="ceo-metric-lbl">CRM</div>
           <div class="ceo-metric-val"><span class="mv">${crmFact}</span> <span class="ceo-metric-plan">/ ${crmPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, crmPlanSum ? Math.round(crmFact/crmPlanSum*100) : 0)}%;background:${pctClr(crmProg)}"></div></div>
           <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${pctClr(crmProg)} !important">${crmProg}</span><span style="color:${pctClr(crmProg)}">%</span></div>
         </div>
-        <div class="ceo-metric-card" style="cursor:pointer" onclick="openVisitsDayModalAll(true)" title="Хронология визитов Дожим">
+        <div class="ceo-metric-card">
+          <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openVisitsDayModalAll(true)" title="Хронология визитов Дожим">!</button>
           <div class="ceo-metric-lbl">Дожим</div>
           <div class="ceo-metric-val"><span class="mv">${dozhimFact}</span> <span class="ceo-metric-plan">/ ${dozhimPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, dozhimPlanSum ? Math.round(dozhimFact/dozhimPlanSum*100) : 0)}%;background:${pctClr(dozhimProg)}"></div></div>
           <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${pctClr(dozhimProg)} !important">${dozhimProg}</span><span style="color:${pctClr(dozhimProg)}">%</span></div>
         </div>
 
-        <!-- Row 2: кредиты, наличные (+обмен), комиссия -->
+        <!-- Row 2: Кредиты, Нал+Обмен, Комиссия -->
         <div class="ceo-metric-card">
+          <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openCeoDealsModal('kredit')" title="Список визитов">!</button>
           <div class="ceo-metric-lbl">Кредиты</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalKredit}</div>
           <div class="ceo-metric-sub">CRM + Дожим</div>
         </div>
         <div class="ceo-metric-card">
-          <div class="ceo-metric-lbl">Наличные</div>
+          <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openCeoDealsModal('nalobm')" title="Список визитов">!</button>
+          <div class="ceo-metric-lbl">Нал+Обмен</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalNalObm}</div>
-          <div class="ceo-metric-sub">с обменами</div>
+          <div class="ceo-metric-sub">CRM + Дожим</div>
         </div>
         <div class="ceo-metric-card">
+          <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openCeoDealsModal('komis')" title="Список визитов">!</button>
           <div class="ceo-metric-lbl">Комиссия</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalKomis}</div>
           <div class="ceo-metric-sub">CRM + Дожим</div>
         </div>
       </div>
 
-      <!-- Row 3: к цели, в салоне -->
+      <!-- Row 3: К цели, В салоне -->
       <div class="ceo-metrics-grid ceo-metrics-grid-2" style="margin-top:8px">
-        <div class="ceo-metric-card" style="cursor:pointer" onclick="openCeoMgrsInPlanModal()">
+        <div class="ceo-metric-card">
+          <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openCeoMgrsInPlanModal()" title="Список менеджеров">!</button>
           <div class="ceo-metric-lbl">К цели</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${mgrsInPlan.length}</div>
-          <div class="ceo-metric-sub">из ${allMgrs.length} · открыть</div>
+          <div class="ceo-metric-sub">из ${allMgrs.length}</div>
         </div>
         <div class="ceo-metric-card${totalVsalone > 0 ? ' ceo-salon-alarm' : ''}">
           <div class="ceo-metric-lbl">В салоне</div>

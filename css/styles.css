@@ -5777,7 +5777,7 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
 }
 .ceo-alert-name {
   display: inline-block;
-  background: rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.55);
   color: #1c1c1e;
   border-radius: 6px;
   padding: 2px 8px;
@@ -5787,8 +5787,42 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
   cursor: pointer;
   transition: background .15s;
 }
-.ceo-alert-name:active { opacity: .65; background: rgba(255,255,255,0.35); }
+.ceo-alert-name:active { opacity: .8; background: rgba(255,255,255,0.85); }
 .ceo-metrics-grid-2 { grid-template-columns: 1fr 1fr !important; }
+
+.ceo-metric-card { position: relative; }
+.ceo-metric-info-btn {
+  position: absolute; top: 6px; right: 6px;
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 1px solid var(--line2); background: var(--bg3);
+  color: var(--txt2); font-size: 10px; font-weight: 700;
+  font-style: italic; font-family: Georgia, serif;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all .15s; padding: 0; line-height: 1;
+}
+.ceo-metric-info-btn:hover { border-color: var(--acc); color: var(--acc); }
+.ceo-salon-alarm .ceo-metric-info-btn {
+  background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.4); color: #fff;
+}
+
+/* Сделки CEO — таблица */
+.ceo-deals-table {
+  width: 100%; border-collapse: collapse; font-size: 12px;
+}
+.ceo-deals-table thead th {
+  text-align: left; font-weight: 700; font-size: 10px;
+  text-transform: uppercase; letter-spacing: .05em;
+  color: var(--txt3); padding: 4px 6px;
+  border-bottom: 1px solid var(--line);
+}
+.ceo-deals-table tbody tr { border-bottom: 1px solid var(--line); }
+.ceo-deals-table tbody tr:last-child { border-bottom: none; }
+.ceo-deals-table td { padding: 5px 6px; color: var(--txt); }
+.ceo-deals-date { white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
+.ceo-deals-mgr  { white-space: nowrap; font-weight: 600; }
+.ceo-deals-city { color: var(--txt2); }
+.ceo-deals-src  { color: var(--txt2); font-size: 11px; }
+.ceo-deals-empty { text-align: center; color: var(--txt3); padding: 20px; }
 .ceo-mgrs-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .ceo-mgrs-list-item {
   display: flex; justify-content: space-between; align-items: center;

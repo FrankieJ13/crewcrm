@@ -5771,6 +5771,10 @@ body.cosmic .ceo-date,
 body.cosmic .ceo-weather,
 body.cosmic .ceo-days-left { color: #f5f5f5 !important; }
 body.cosmic .ceo-days-left strong { color: #fff !important; }
+body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
+  border-color: var(--line) !important;
+  color: var(--line) !important;
+}
 .ceo-alert-name {
   text-decoration: underline; cursor: pointer; font-weight: 700;
 }

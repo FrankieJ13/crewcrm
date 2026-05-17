@@ -2463,7 +2463,7 @@ function getMgrAvatarHtml(name, progNum) {
   const id = getMgrCrmId(name);
   if (!id) return '';
   const emo = getMgrAvatarEmotion(progNum);
-  return `<img class="kpi-avatar" src="logos/avatar/${id}-${emo}.png" alt="" onerror="this.style.display='none'">`;
+  return `<img class="kpi-avatar" src="logos/avatar/${id}-${emo}.png" alt="" style="visibility:hidden" onload="this.style.visibility='visible'" onerror="this.remove()">`;
 }
 
 function getMgrMessengerHtml(name) {
@@ -6815,6 +6815,99 @@ function switchCeoLeaders(dept) {
   }, 220);
 }
 
+function openCeoMgrModalByName(nameLow) {
+  const idx = window._ceoMgrIndex || {};
+  const info = idx[nameLow];
+  if (!info) return;
+  if (info.isDozhim) {
+    _openCeoDozhimModal(info.name);
+  } else {
+    _openCeoCrmModal(info.name);
+  }
+}
+
+function _openCeoCrmModal(name) {
+  const planData = S.data.plan || [];
+  const planM = getPlanMap(planData);
+  const stats = buildCrmStats(S.data.vizity || []);
+  const nl = name.toLowerCase();
+  const s = stats[nl] || {};
+  const plan = planM[nl] || 0;
+  const v800 = s.vis800 || 0, v1200 = s.vis1200 || 0;
+  const allV = v800 + v1200;
+  const ost = Math.max(0, plan - allV);
+  const sfx = String(new Date().getMonth()+1).padStart(2,'0') + String(new Date().getFullYear()).slice(-2);
+  const progNum = computeProgPct(allV, plan, sfx);
+  const factNum = computeFactPct(allV, plan);
+  const daily = computeDailyPlan(plan, allV, progNum, sfx, name);
+  const crmCnvrs = (typeof getCnvrsRow === 'function') ? getCnvrsRow(name.toUpperCase(), 'crm') : [];
+  const warmCnvrs = (typeof getCnvrsRow === 'function') ? getCnvrsRow(name.toUpperCase(), 'warm') : [];
+  const genCnvrs = (typeof getCnvrsRow === 'function') ? getCnvrsRow(name.toUpperCase(), 'general') : [];
+  const rs = rankStyles(0, 1);
+  const data = {
+    name: name.toUpperCase(), nameLow: nl,
+    v800, v1200, rplan: plan, ost, prc: factNum+'%', prog: progNum+'%', allV, daily, progNum,
+    kred800: s.kred800||0, nal800: s.nal800||0, td800: s.obmen800||0, kom800: s.kom800||0,
+    kred1200: s.kred1200||0, nal1200: s.nal1200||0, td1200: s.obmen1200||0, kom1200: s.kom1200||0,
+    zadatok: s.zadatok||0, vykup800: s.vykup800||0, vykup1200: s.vykup1200||0,
+    vsalone: s.vsalone||0, vkso: s.vkso||0, vfSSP: s.vfssп||0, vbanke: s.vbanke||0, otkaz: s.otkaz||0,
+    odobNeKupil: s.odobNeKupil||0, byCity: s.byCity||{},
+    crmConVis: crmCnvrs[6]||'—', crmConKred: crmCnvrs[7]||'—', crmDolya: crmCnvrs[8]||'—', crmKoef: crmCnvrs[12]||'—',
+    warmConVis: warmCnvrs[6]||'—', warmConKred: warmCnvrs[7]||'—', warmDolya: warmCnvrs[8]||'—', warmKoef: warmCnvrs[12]||'—',
+    genConVis: genCnvrs[6]||'—', genConKred: genCnvrs[7]||'—', genDolya: genCnvrs[8]||'—', genKoef: genCnvrs[12]||'—',
+    rs, idx: 1
+  };
+  openMopModal(JSON.stringify(data).replace(/'/g,"&#39;"));
+}
+
+function _openCeoDozhimModal(name) {
+  const planData = S.data.plan || [];
+  const planM = getPlanMap(planData);
+  const dSalesM = (typeof getDSalesPlanMap === 'function') ? getDSalesPlanMap(planData) : {};
+  const dStats = buildDozhimStats(S.data.d_vizity || []);
+  const nl = name.toLowerCase();
+  const s = dStats[nl] || {};
+  const allVis = (s.vis800||0) + (s.vis1000||0);
+  const plan = planM[nl] || 1;
+  const ost = Math.max(0, plan - allVis);
+  const sfx = String(new Date().getMonth()+1).padStart(2,'0') + String(new Date().getFullYear()).slice(-2);
+  const progNum = computeProgPct(allVis, plan, sfx);
+  const factNum = computeFactPct(allVis, plan);
+  const daily = computeDailyPlan(plan, allVis, progNum, sfx, name);
+  const sPlan = dSalesM[nl] || 0;
+  const sFact = (s.kred800||0)+(s.nal800||0)+(s.obmen800||0)+(s.kred1000||0)+(s.nal1000||0);
+  const sOst = Math.max(0, sPlan - sFact);
+  const sProg = sPlan ? computeProgPct(sFact, sPlan, sfx) : 0;
+  const rs = rankStyles(0, 1);
+  const data = {
+    type: 'dozhim', name: name.toUpperCase(), nameLow: nl,
+    v800: s.vis800||0, v1000: s.vis1000||0,
+    rplan: plan, ost, prc: factNum+'%', prog: progNum+'%', allV: allVis,
+    kred800: s.kred800||0, nal800: s.nal800||0, obmen800: s.obmen800||0, kom800: s.kom800||0,
+    kred1000: s.kred1000||0, nal1000: s.nal1000||0, kom1000: s.kom1000||0, zadatok: s.zadatok||0,
+    sPlan, sFact, sOst, sProg,
+    rs, idx: 1
+  };
+  openDozhimModal(JSON.stringify(data).replace(/'/g,"&#39;"));
+}
+
+function openCeoMgrsInPlanModal() {
+  const idx = window._ceoMgrIndex || {};
+  const inPlan = window._ceoMgrsInPlan || [];
+  if (!inPlan.length) return;
+  const items = inPlan.map(m => `
+    <li class="ceo-mgrs-list-item" onclick="closeMopModal();openCeoMgrModalByName('${m.name.toLowerCase().replace(/'/g,"&#39;")}')">
+      <span class="ceo-mgrs-list-name">${m.name}</span>
+      <span class="ceo-mgrs-list-prog" style="color:${pctClr(m.progPct)}">${m.progPct}%</span>
+    </li>`).join('');
+  const body = document.getElementById('mop-modal-body');
+  const title = document.getElementById('mop-modal-title');
+  if (title) title.textContent = 'Менеджеры в плане';
+  if (body) body.innerHTML = `<ul class="ceo-mgrs-list">${items}</ul>`;
+  const overlay = document.getElementById('mop-modal-overlay');
+  if (overlay) overlay.classList.add('open');
+}
+
 function _ceoComputeLeaders() {
   const vizData = S.data.vizity || [];
   const dvData  = S.data.d_vizity || [];
@@ -6914,22 +7007,28 @@ function renderCeoDashboard() {
     return role === 'dozhim';
   });
 
-  function buildMgr(name, stats, suffix) {
+  function buildMgr(name, stats, suffix, isDozhim) {
     const nl = name.toLowerCase();
     const s = stats[nl] || {};
     const plan = planMap[nl] || 0;
-    // CRM использует vis1200, Дожим — vis1000
     const vis = (s.vis800 || 0) + (s.vis1200 || 0) + (s.vis1000 || 0);
     const factPct = computeFactPct(vis, plan);
     const progPct = computeProgPct(vis, plan, suffix);
-    return { name, firstName: name.split(' ').slice(-1)[0] || name, vis, plan, factPct, progPct };
+    const vsalone = s.vsalone || 0;
+    return { name, firstName: name.split(' ').slice(-1)[0] || name, vis, plan, factPct, progPct, vsalone, isDozhim, _stats: s };
   }
 
   // Текущий месяц для suffix (MMYY)
   const sfx = String(today.getMonth()+1).padStart(2,'0') + String(today.getFullYear()).slice(-2);
 
-  const crmMgrs = crmNames.map(n => buildMgr(n, crmStats, sfx));
-  const dozhimMgrs = dozhimNames.map(n => buildMgr(n, dozhimStats, sfx));
+  const crmMgrs = crmNames.map(n => buildMgr(n, crmStats, sfx, false));
+  const dozhimMgrs = dozhimNames.map(n => buildMgr(n, dozhimStats, sfx, true));
+
+  // Карта данных по менеджерам для модалок (по nameLow)
+  window._ceoMgrIndex = {};
+  [...crmMgrs, ...dozhimMgrs].forEach(m => {
+    window._ceoMgrIndex[m.name.toLowerCase()] = { name: m.name, isDozhim: m.isDozhim };
+  });
 
   // ---- Агрегаты ----
   const crmFact = crmMgrs.reduce((s,m) => s + m.vis, 0);
@@ -6939,6 +7038,14 @@ function renderCeoDashboard() {
   const dozhimFact = dozhimMgrs.reduce((s,m) => s + m.vis, 0);
   const dozhimPlanSum = dozhimMgrs.reduce((s,m) => s + m.plan, 0);
   const dozhimProg = computeProgPct(dozhimFact, dozhimPlanSum, sfx);
+
+  // Всего в салоне (CRM + Дожим)
+  const totalVsalone = [...crmMgrs, ...dozhimMgrs].reduce((s,m) => s + m.vsalone, 0);
+
+  // Менеджеры в плане
+  const allMgrs = [...crmMgrs, ...dozhimMgrs];
+  const mgrsInPlan = allMgrs.filter(m => m.progPct >= 100).sort((a,b) => b.progPct - a.progPct);
+  window._ceoMgrsInPlan = mgrsInPlan;
 
   const totalFact = crmFact + dozhimFact;
   const totalPlan = crmPlanSum + dozhimPlanSum;
@@ -6967,9 +7074,12 @@ function renderCeoDashboard() {
     }).join('');
   }
 
-  // Алерты
-  const noVisitsToday = crmMgrs.filter(m => m.vis === 0).map(m => m.firstName);
-  const onEdge = [...crmMgrs, ...dozhimMgrs].filter(m => m.progPct >= 85 && m.progPct < 100).map(m => m.firstName);
+  // Алерты — с кликабельными именами
+  const noVisitsTodayList = crmMgrs.filter(m => m.vis === 0);
+  const onEdgeList = [...crmMgrs, ...dozhimMgrs].filter(m => m.progPct >= 85 && m.progPct < 100);
+  const _clickMgr = m => `<span class="ceo-alert-name" onclick="openCeoMgrModalByName('${m.name.toLowerCase().replace(/'/g,"&#39;")}')">${m.firstName}</span>`;
+  const noVisitsToday = noVisitsTodayList.map(_clickMgr);
+  const onEdge = onEdgeList.map(_clickMgr);
 
   // accent rgb
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--acc').trim() || '#5137dd';
@@ -6984,7 +7094,7 @@ function renderCeoDashboard() {
       <!-- HEADER -->
       <div class="ceo-header">
         <div class="ceo-greeting">
-          <span style="color:var(--acc)">${ceoFirstName}</span>, ${greeting}
+          ${ceoFirstName}, ${greeting}
         </div>
         <div class="ceo-header-right">
           <div class="ceo-date-weather">
@@ -7008,25 +7118,30 @@ function renderCeoDashboard() {
       <div class="ceo-metrics-grid">
         <div class="ceo-metric-card">
           <div class="ceo-metric-lbl">CRM</div>
-          <div class="ceo-metric-val"><span class="mv" style="color:var(--acc)">${crmFact}</span> <span class="ceo-metric-plan">/ ${crmPlanSum||'—'}</span></div>
-          <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, crmPlanSum ? Math.round(crmFact/crmPlanSum*100) : 0)}%;background:var(--acc)"></div></div>
+          <div class="ceo-metric-val"><span class="mv" style="color:var(--txt)">${crmFact}</span> <span class="ceo-metric-plan">/ ${crmPlanSum||'—'}</span></div>
+          <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, crmPlanSum ? Math.round(crmFact/crmPlanSum*100) : 0)}%;background:${pctClr(crmProg)}"></div></div>
           <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${pctClr(crmProg)}">${crmProg}</span><span style="color:${pctClr(crmProg)}">%</span></div>
         </div>
         <div class="ceo-metric-card">
           <div class="ceo-metric-lbl">Дожим</div>
-          <div class="ceo-metric-val"><span class="mv" style="color:#bf5af2">${dozhimFact}</span> <span class="ceo-metric-plan">/ ${dozhimPlanSum||'—'}</span></div>
-          <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, dozhimPlanSum ? Math.round(dozhimFact/dozhimPlanSum*100) : 0)}%;background:#bf5af2"></div></div>
+          <div class="ceo-metric-val"><span class="mv" style="color:var(--txt)">${dozhimFact}</span> <span class="ceo-metric-plan">/ ${dozhimPlanSum||'—'}</span></div>
+          <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, dozhimPlanSum ? Math.round(dozhimFact/dozhimPlanSum*100) : 0)}%;background:${pctClr(dozhimProg)}"></div></div>
           <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${pctClr(dozhimProg)}">${dozhimProg}</span><span style="color:${pctClr(dozhimProg)}">%</span></div>
+        </div>
+        <div class="ceo-metric-card${totalVsalone > 0 ? ' ceo-salon-alarm' : ''}">
+          <div class="ceo-metric-lbl">В салоне</div>
+          <div class="ceo-metric-val mv" style="color:var(--txt)">${totalVsalone}</div>
+          <div class="ceo-metric-sub">${totalVsalone > 0 ? 'клиентов сейчас' : 'никого нет'}</div>
         </div>
         <div class="ceo-metric-card">
           <div class="ceo-metric-lbl">Всего визитов</div>
-          <div class="ceo-metric-val mv" style="color:var(--grn)">${totalFact}</div>
+          <div class="ceo-metric-val mv" style="color:var(--txt)">${totalFact}</div>
           <div class="ceo-metric-sub">из ${totalPlan||'—'} плановых</div>
         </div>
-        <div class="ceo-metric-card">
+        <div class="ceo-metric-card" style="cursor:pointer" onclick="openCeoMgrsInPlanModal()">
           <div class="ceo-metric-lbl">Менеджеров в плане</div>
-          <div class="ceo-metric-val mv" style="color:#ff9f0a">${[...crmMgrs, ...dozhimMgrs].filter(m => m.progPct >= 100).length}</div>
-          <div class="ceo-metric-sub">из ${crmMgrs.length + dozhimMgrs.length}</div>
+          <div class="ceo-metric-val mv" style="color:var(--txt)">${mgrsInPlan.length}</div>
+          <div class="ceo-metric-sub">из ${allMgrs.length} · открыть</div>
         </div>
       </div>
 
@@ -7050,7 +7165,7 @@ function renderCeoDashboard() {
       <div class="ceo-alerts">
         ${noVisitsToday.length ? `<div class="ceo-alert ceo-alert-red"><span class="ceo-alert-icon">🔴</span><div><div class="ceo-alert-title">Без визитов сегодня</div><div class="ceo-alert-sub">${noVisitsToday.join(', ')}</div></div></div>` : ''}
         ${onEdge.length ? `<div class="ceo-alert ceo-alert-yellow"><span class="ceo-alert-icon">📊</span><div><div class="ceo-alert-title">На грани плана (85–99%)</div><div class="ceo-alert-sub">${onEdge.join(', ')}</div></div></div>` : ''}
-        ${!noVisitsToday.length && !onEdge.length ? `<div class="ceo-alert-ok">✅ Всё в порядке</div>` : ''}
+        ${!noVisitsToday.length && !onEdgeList.length ? `<div class="ceo-alert-ok">✅ Всё в порядке</div>` : ''}
       </div>
 
     </div>`);

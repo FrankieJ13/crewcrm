@@ -3488,8 +3488,9 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
 }
 .kpi-avatar-default { opacity: 1; }
 .kpi-avatar-final { opacity: 0; }
-/* В CEO дашборде аватар кликабельный */
-#c-ceo .kpi-avatar-wrap { pointer-events: auto; cursor: pointer; }
+/* CEO + персональная страница — аватар кликабельный */
+#c-ceo .kpi-avatar-wrap,
+#c-personal .kpi-avatar-wrap { pointer-events: auto; cursor: pointer; }
 .kpi-income-panel {
   border-radius:var(--r2); padding:16px; text-align:center;
   margin-bottom:14px;

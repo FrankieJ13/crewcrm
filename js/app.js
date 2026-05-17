@@ -5617,6 +5617,13 @@ function renderPersonal(matched) {
       ${convRow ? `<div class="dept-sec-lbl">Конверсии</div>${convRow.replace('<div class="kpi-badge-sep"></div>','')}` : ''}
     </div>
   `);
+  // Запуск анимации аватара (только не во время silent refresh)
+  if (!S.silentRefresh) {
+    requestAnimationFrame(() => {
+      const wrap = document.querySelector('#c-personal .kpi-avatar-wrap');
+      if (wrap) ceoAvatarPlay(wrap);
+    });
+  }
 }
 
 // ==================== SALARY CALC ====================

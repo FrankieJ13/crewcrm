@@ -6762,17 +6762,24 @@ async function loadCeoDashboard() {
     return;
   }
   renderCeoDashboard();
-  // Погода
+  loadCeoWeather();
+}
+
+function loadCeoWeather() {
   const lat = 56.8389, lon = 60.6057;
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`;
   fetch(url).then(r => r.json()).then(data => {
     const temp = Math.round(data.current.temperature_2m);
     const code = data.current.weather_code;
+    const txt = _cityWeatherEmoji(code) + ' ' + (temp > 0 ? '+' : '') + temp + '°';
+    S._ceoWeatherCache = txt;
     const el2 = document.getElementById('ceo-weather');
-    if (el2) el2.textContent = _cityWeatherEmoji(code) + ' ' + (temp > 0 ? '+' : '') + temp + '°';
+    if (el2) el2.textContent = txt;
   }).catch(() => {
-    const el2 = document.getElementById('ceo-weather');
-    if (el2) el2.textContent = '';
+    if (!S._ceoWeatherCache) {
+      const el2 = document.getElementById('ceo-weather');
+      if (el2) el2.textContent = '';
+    }
   });
 }
 
@@ -6900,7 +6907,7 @@ function renderCeoDashboard() {
       <div class="ceo-leader-badge">
         <span class="ceo-medal">${medals[i]}</span>
         <div class="ceo-leader-name">${m.firstName}</div>
-        <div class="ceo-leader-prog" style="color:${pctClr(m.progPct)}">${m.progPct}%</div>
+        <div class="ceo-leader-prog" style="color:${pctClr(m.progPct)}"><span class="mv">${m.progPct}</span>%</div>
       </div>`).join('');
   }
 
@@ -6914,7 +6921,8 @@ function renderCeoDashboard() {
   const accG = parseInt(accent.slice(3,5),16) || 55;
   const accB = parseInt(accent.slice(5,7),16) || 221;
 
-  el.innerHTML = `
+  const cachedWeather = S._ceoWeatherCache || '';
+  setLiveHTML(el, `
     <div class="ceo-dash">
 
       <!-- HEADER -->
@@ -6925,7 +6933,7 @@ function renderCeoDashboard() {
         <div class="ceo-header-right">
           <div class="ceo-date-weather">
             <span class="ceo-date">${dateShort}</span>
-            <span id="ceo-weather" class="ceo-weather">…</span>
+            <span id="ceo-weather" class="ceo-weather">${cachedWeather || '…'}</span>
           </div>
           <div class="ceo-days-left">остаток <strong>${daysLeft}</strong> д.</div>
         </div>
@@ -6933,9 +6941,8 @@ function renderCeoDashboard() {
 
       <!-- ПРОГНОЗ КОМПАНИИ — главная панель -->
       <div class="kpi-income-panel ceo-forecast-panel" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
-        <div class="kpi-subtitle">Прогноз компании</div>
-        <div class="ceo-forecast-num" style="color:${progColor}">${companyProg}%</div>
-        <div class="ceo-forecast-sub">${totalFact} из ${totalPlan||'—'} визитов</div>
+        <div class="ceo-forecast-num mv" style="color:${progColor}">${companyProg}%</div>
+        <div class="ceo-forecast-sub"><span class="mv">${totalFact}</span> из ${totalPlan||'—'} визитов</div>
       </div>
 
       <!-- МЕТРИКИ -->
@@ -6943,24 +6950,24 @@ function renderCeoDashboard() {
       <div class="ceo-metrics-grid">
         <div class="ceo-metric-card">
           <div class="ceo-metric-lbl">CRM</div>
-          <div class="ceo-metric-val" style="color:var(--acc)">${crmFact} <span class="ceo-metric-plan">/ ${crmPlanSum||'—'}</span></div>
+          <div class="ceo-metric-val" style="color:var(--acc)"><span class="mv">${crmFact}</span> <span class="ceo-metric-plan">/ ${crmPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, crmPlanSum ? Math.round(crmFact/crmPlanSum*100) : 0)}%;background:var(--acc)"></div></div>
-          <div class="ceo-metric-pct" style="color:${pctClr(crmProg)}">прогноз ${crmProg}%</div>
+          <div class="ceo-metric-pct" style="color:${pctClr(crmProg)}">прогноз <span class="mv">${crmProg}</span>%</div>
         </div>
         <div class="ceo-metric-card">
           <div class="ceo-metric-lbl">Дожим</div>
-          <div class="ceo-metric-val" style="color:#bf5af2">${dozhimFact} <span class="ceo-metric-plan">/ ${dozhimPlanSum||'—'}</span></div>
+          <div class="ceo-metric-val" style="color:#bf5af2"><span class="mv">${dozhimFact}</span> <span class="ceo-metric-plan">/ ${dozhimPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, dozhimPlanSum ? Math.round(dozhimFact/dozhimPlanSum*100) : 0)}%;background:#bf5af2"></div></div>
-          <div class="ceo-metric-pct" style="color:${pctClr(dozhimProg)}">прогноз ${dozhimProg}%</div>
+          <div class="ceo-metric-pct" style="color:${pctClr(dozhimProg)}">прогноз <span class="mv">${dozhimProg}</span>%</div>
         </div>
         <div class="ceo-metric-card">
           <div class="ceo-metric-lbl">Всего визитов</div>
-          <div class="ceo-metric-val" style="color:var(--grn)">${totalFact}</div>
+          <div class="ceo-metric-val mv" style="color:var(--grn)">${totalFact}</div>
           <div class="ceo-metric-sub">из ${totalPlan||'—'} плановых</div>
         </div>
         <div class="ceo-metric-card">
           <div class="ceo-metric-lbl">Менеджеров в плане</div>
-          <div class="ceo-metric-val" style="color:#ff9f0a">${[...crmMgrs, ...dozhimMgrs].filter(m => m.progPct >= 100).length}</div>
+          <div class="ceo-metric-val mv" style="color:#ff9f0a">${[...crmMgrs, ...dozhimMgrs].filter(m => m.progPct >= 100).length}</div>
           <div class="ceo-metric-sub">из ${crmMgrs.length + dozhimMgrs.length}</div>
         </div>
       </div>
@@ -6988,7 +6995,7 @@ function renderCeoDashboard() {
         ${!noVisitsToday.length && !onEdge.length ? `<div class="ceo-alert-ok">✅ Всё в порядке</div>` : ''}
       </div>
 
-    </div>`;
+    </div>`);
 
   } catch(e) {
     console.error('CEO dashboard render error:', e);

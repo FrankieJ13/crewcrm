@@ -5868,7 +5868,7 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
 .ceo-days-left strong { color: var(--txt2); font-weight: 600; }
 
 .ceo-forecast-panel {
-  text-align: center; padding: 14px 16px 14px;
+  text-align: center; padding: 9px 16px 9px;
   margin-bottom: 14px;
 }
 .ceo-forecast-panel .kpi-subtitle {

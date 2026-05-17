@@ -2477,7 +2477,22 @@ function getMgrAvatarHtml(name, progNum) {
   const finalEmo = getMgrAvatarEmotion(progNum);
   const finalSrc   = `logos/avatar/${id}-${finalEmo}.png`;
   const defaultSrc = `logos/avatar/${id}-default.png`;
-  // Два IMG поверх друг друга: верхний = default, нижний = final. Плавный crossfade.
+  // Прогружаем кэш в фоне
+  _avatarPreload(finalSrc);
+  _avatarPreload(defaultSrc);
+  const finalOk   = window._avatarCache[finalSrc] === 'ok';
+  const finalFail = window._avatarCache[finalSrc] === 'fail';
+  const defOk     = window._avatarCache[defaultSrc] === 'ok';
+  const defFail   = window._avatarCache[defaultSrc] === 'fail';
+  // Если финальный точно недоступен — не рендерим аватар вообще
+  if (finalFail) return '';
+  // Если default точно недоступен — рендерим только финальный (без анимации)
+  if (defFail) {
+    return `<div class="kpi-avatar-wrap" data-final-src="${finalSrc}" data-default-src="${defaultSrc}" data-no-default="1">
+      <img class="kpi-avatar kpi-avatar-final" src="${finalSrc}" alt="" style="opacity:1" onerror="this.parentElement.remove()">
+    </div>`;
+  }
+  // Обычный случай — два img для crossfade
   return `<div class="kpi-avatar-wrap" onclick="ceoAvatarReplay(this)" data-final-src="${finalSrc}" data-default-src="${defaultSrc}">
     <img class="kpi-avatar kpi-avatar-final" src="${finalSrc}" alt="" onerror="this.style.display='none'">
     <img class="kpi-avatar kpi-avatar-default" src="${defaultSrc}" alt="" onerror="this.style.display='none';this.parentElement.dataset.noDefault='1'">

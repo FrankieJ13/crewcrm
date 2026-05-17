@@ -135,6 +135,7 @@ const S = {
   dohodTab: 'crm',
   faqTab: 'instr',
   ratingDept: null,
+  ceoLeadersDept: 'crm',
   silentRefresh: false,
   authReady: false,
   sverkaMode: false,
@@ -6775,6 +6776,26 @@ async function loadCeoDashboard() {
   });
 }
 
+function switchCeoLeaders(dept) {
+  const prev = S.ceoLeadersDept;
+  if (prev === dept) return;
+  const slideOutClass = (prev === 'crm') ? 'slide-out-left' : 'slide-out-right';
+  const slideInClass  = (prev === 'crm') ? 'slide-in-left'  : 'slide-in-right';
+  const inner = document.getElementById('ceo-leaders-slide');
+  if (!inner) { S.ceoLeadersDept = dept; renderCeoDashboard(); return; }
+  inner.classList.add(slideOutClass);
+  setTimeout(() => {
+    S.ceoLeadersDept = dept;
+    renderCeoDashboard();
+    requestAnimationFrame(() => {
+      const inn2 = document.getElementById('ceo-leaders-slide');
+      if (!inn2) return;
+      inn2.classList.add(slideInClass);
+      requestAnimationFrame(() => inn2.classList.remove(slideInClass));
+    });
+  }, 220);
+}
+
 function renderCeoDashboard() {
   const el = document.getElementById('c-ceo');
   if (!el) return;
@@ -6809,9 +6830,10 @@ function renderCeoDashboard() {
   };
   const greeting = GREETINGS[dayNum] || 'отличного дня!';
 
-  // Имя CEO из профиля
+  // Имя CEO из профиля — формат "Фамилия Имя Отчество"
   const matched = findUserInSheet();
-  const ceoFirstName = (matched?.name || '').trim().split(' ')[0] || 'Руководитель';
+  const _parts = (matched?.name || '').trim().split(/\s+/);
+  const ceoFirstName = _parts.length >= 2 ? _parts[1] : (_parts[0] || 'Руководитель');
 
   // ---- Данные ----
   const vizData = S.data.vizity || [];
@@ -6868,13 +6890,17 @@ function renderCeoDashboard() {
   const dozhimLeaders = [...dozhimMgrs].filter(m => m.progPct >= 100).sort((a,b) => b.progPct - a.progPct).slice(0,3);
   const medals = ['🥇','🥈','🥉'];
 
+  const activeLeadersDept = S.ceoLeadersDept || 'crm';
+  const activeLeaders = activeLeadersDept === 'crm' ? crmLeaders : dozhimLeaders;
+  const nextLeadersDept = activeLeadersDept === 'crm' ? 'dozhim' : 'crm';
+
   function leaderBadge(leaders) {
     if (!leaders.length) return `<div class="ceo-no-leaders">Нет менеджеров с прогнозом ≥ 100%</div>`;
     return leaders.map((m, i) => `
       <div class="ceo-leader-badge">
         <span class="ceo-medal">${medals[i]}</span>
         <div class="ceo-leader-name">${m.firstName}</div>
-        <div class="ceo-leader-prog" style="color:var(--grn)">${m.progPct}%</div>
+        <div class="ceo-leader-prog" style="color:${pctClr(m.progPct)}">${m.progPct}%</div>
       </div>`).join('');
   }
 
@@ -6882,12 +6908,18 @@ function renderCeoDashboard() {
   const noVisitsToday = crmMgrs.filter(m => m.vis === 0).map(m => m.firstName);
   const onEdge = [...crmMgrs, ...dozhimMgrs].filter(m => m.progPct >= 85 && m.progPct < 100).map(m => m.firstName);
 
+  // accent rgb
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--acc').trim() || '#5137dd';
+  const accR = parseInt(accent.slice(1,3),16) || 81;
+  const accG = parseInt(accent.slice(3,5),16) || 55;
+  const accB = parseInt(accent.slice(5,7),16) || 221;
+
   el.innerHTML = `
     <div class="ceo-dash">
 
       <!-- HEADER -->
       <div class="ceo-header">
-        <div class="ceo-greeting" style="font-family:'Unbounded',sans-serif">
+        <div class="ceo-greeting">
           <span style="color:var(--acc)">${ceoFirstName}</span>, ${greeting}
         </div>
         <div class="ceo-header-right">
@@ -6899,54 +6931,60 @@ function renderCeoDashboard() {
         </div>
       </div>
 
-      <!-- ПРОГНОЗ -->
-      <div class="ceo-forecast-row">
-        <div>
-          <div class="ceo-section-lbl">ПРОГНОЗ</div>
-          <div class="ceo-forecast-num" style="color:${progColor}">${companyProg}%</div>
-        </div>
+      <!-- ПРОГНОЗ КОМПАНИИ — главная панель -->
+      <div class="kpi-income-panel ceo-forecast-panel" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
+        <div class="kpi-subtitle">Прогноз компании</div>
+        <div class="ceo-forecast-num" style="color:${progColor}">${companyProg}%</div>
+        <div class="ceo-forecast-sub">${totalFact} из ${totalPlan||'—'} визитов</div>
       </div>
 
       <!-- МЕТРИКИ -->
-      <div class="ceo-section-lbl" style="padding:14px 0 8px">Ключевые показатели</div>
+      <div class="sec-title">Ключевые показатели</div>
       <div class="ceo-metrics-grid">
         <div class="ceo-metric-card">
           <div class="ceo-metric-lbl">CRM</div>
           <div class="ceo-metric-val" style="color:var(--acc)">${crmFact} <span class="ceo-metric-plan">/ ${crmPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, crmPlanSum ? Math.round(crmFact/crmPlanSum*100) : 0)}%;background:var(--acc)"></div></div>
-          <div class="ceo-metric-pct" style="color:var(--acc)">прогноз ${crmProg}%</div>
+          <div class="ceo-metric-pct" style="color:${pctClr(crmProg)}">прогноз ${crmProg}%</div>
         </div>
         <div class="ceo-metric-card">
           <div class="ceo-metric-lbl">Дожим</div>
           <div class="ceo-metric-val" style="color:#bf5af2">${dozhimFact} <span class="ceo-metric-plan">/ ${dozhimPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, dozhimPlanSum ? Math.round(dozhimFact/dozhimPlanSum*100) : 0)}%;background:#bf5af2"></div></div>
-          <div class="ceo-metric-pct" style="color:#bf5af2">прогноз ${dozhimProg}%</div>
+          <div class="ceo-metric-pct" style="color:${pctClr(dozhimProg)}">прогноз ${dozhimProg}%</div>
         </div>
         <div class="ceo-metric-card">
           <div class="ceo-metric-lbl">Всего визитов</div>
           <div class="ceo-metric-val" style="color:var(--grn)">${totalFact}</div>
-          <div class="ceo-metric-sub">из ${totalPlan} плановых</div>
+          <div class="ceo-metric-sub">из ${totalPlan||'—'} плановых</div>
         </div>
         <div class="ceo-metric-card">
-          <div class="ceo-metric-lbl">Остаток дней</div>
-          <div class="ceo-metric-val" style="color:#ff9f0a">${daysLeft}</div>
-          <div class="ceo-metric-sub">до конца месяца</div>
+          <div class="ceo-metric-lbl">Менеджеров в плане</div>
+          <div class="ceo-metric-val" style="color:#ff9f0a">${[...crmMgrs, ...dozhimMgrs].filter(m => m.progPct >= 100).length}</div>
+          <div class="ceo-metric-sub">из ${crmMgrs.length + dozhimMgrs.length}</div>
         </div>
       </div>
 
-      <!-- ЛИДЕРЫ CRM -->
-      <div class="ceo-section-lbl" style="padding:14px 0 8px">Лидеры CRM</div>
-      <div class="ceo-leaders-row">${leaderBadge(crmLeaders)}</div>
-
-      <!-- ЛИДЕРЫ ДОЖИМ -->
-      <div class="ceo-section-lbl" style="padding:14px 0 8px">Лидеры Дожим</div>
-      <div class="ceo-leaders-row">${leaderBadge(dozhimLeaders)}</div>
+      <!-- ЛИДЕРЫ -->
+      <div class="ceo-leaders-hdr">
+        <div class="sec-title" style="margin:0">Лидеры</div>
+        <button class="rating-toggle-pill" onclick="switchCeoLeaders('${nextLeadersDept}')">
+          ${activeLeadersDept === 'crm'
+            ? `CRM <span class="rating-toggle-arrow right"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`
+            : `<span class="rating-toggle-arrow left"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11 7H3M6.5 3.5L3 7l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span> ДОЖИМ`}
+        </button>
+      </div>
+      <div class="rating-slide-wrap">
+        <div class="rating-slide-inner" id="ceo-leaders-slide">
+          <div class="ceo-leaders-row">${leaderBadge(activeLeaders)}</div>
+        </div>
+      </div>
 
       <!-- АЛЕРТЫ -->
-      <div class="ceo-section-lbl" style="padding:14px 0 8px">Внимание</div>
+      <div class="sec-title" style="margin-top:18px">Внимание</div>
       <div class="ceo-alerts">
-        ${noVisitsToday.length ? `<div class="ceo-alert ceo-alert-red">🔴 <div><div class="ceo-alert-title">Без визитов сегодня</div><div class="ceo-alert-sub">${noVisitsToday.join(', ')}</div></div></div>` : ''}
-        ${onEdge.length ? `<div class="ceo-alert ceo-alert-yellow">📊 <div><div class="ceo-alert-title">На грани плана (85–99%)</div><div class="ceo-alert-sub">${onEdge.join(', ')}</div></div></div>` : ''}
+        ${noVisitsToday.length ? `<div class="ceo-alert ceo-alert-red"><span class="ceo-alert-icon">🔴</span><div><div class="ceo-alert-title">Без визитов сегодня</div><div class="ceo-alert-sub">${noVisitsToday.join(', ')}</div></div></div>` : ''}
+        ${onEdge.length ? `<div class="ceo-alert ceo-alert-yellow"><span class="ceo-alert-icon">📊</span><div><div class="ceo-alert-title">На грани плана (85–99%)</div><div class="ceo-alert-sub">${onEdge.join(', ')}</div></div></div>` : ''}
         ${!noVisitsToday.length && !onEdge.length ? `<div class="ceo-alert-ok">✅ Всё в порядке</div>` : ''}
       </div>
 

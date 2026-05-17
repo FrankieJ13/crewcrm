@@ -2459,11 +2459,23 @@ function getMgrAvatarEmotion(progNum) {
   if (n < 120) return 'laughter';
   return 'like';
 }
+window._avatarCache = window._avatarCache || {}; // url -> 'ok' | 'fail' | undefined
 function getMgrAvatarHtml(name, progNum) {
   const id = getMgrCrmId(name);
   if (!id) return '';
   const emo = getMgrAvatarEmotion(progNum);
-  return `<img class="kpi-avatar" src="logos/avatar/${id}-${emo}.png" alt="" style="visibility:hidden" onload="this.style.visibility='visible'" onerror="this.remove()">`;
+  const src = `logos/avatar/${id}-${emo}.png`;
+  const status = window._avatarCache[src];
+  if (status === 'fail') return '';
+  if (status === 'ok') {
+    return `<img class="kpi-avatar" src="${src}" alt="">`;
+  }
+  // Первая загрузка — превентивная проверка
+  const img = new Image();
+  img.onload  = () => { window._avatarCache[src] = 'ok'; };
+  img.onerror = () => { window._avatarCache[src] = 'fail'; document.querySelectorAll(`img.kpi-avatar[src="${src}"]`).forEach(el => el.remove()); };
+  img.src = src;
+  return `<img class="kpi-avatar" src="${src}" alt="" style="visibility:hidden" onload="this.style.visibility='visible'">`;
 }
 
 function getMgrMessengerHtml(name) {

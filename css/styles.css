@@ -5846,12 +5846,10 @@ body.fluent .presence-count {
   font-size: 12px; border: 1px solid;
 }
 .ceo-alert-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
-.ceo-alert-red { background: rgba(255,69,58,0.08); border-color: rgba(255,69,58,0.25); }
-.ceo-alert-yellow { background: rgba(255,214,10,0.07); border-color: rgba(255,214,10,0.22); }
-.ceo-alert-title { font-weight: 700; color: var(--txt); margin-bottom: 2px; font-size: 12px; }
-.ceo-alert-red .ceo-alert-title { color: #ff453a; }
-.ceo-alert-yellow .ceo-alert-title { color: #ffd60a; }
-.ceo-alert-sub { color: var(--txt2); font-size: 11px; line-height: 1.4; }
+.ceo-alert-red { background: #ff453a; border-color: #ff453a; }
+.ceo-alert-yellow { background: #ffd60a; border-color: #ffd60a; }
+.ceo-alert-title { font-weight: 800; color: #1c1c1e; margin-bottom: 2px; font-size: 12px; }
+.ceo-alert-sub { color: rgba(28,28,30,0.75); font-size: 11px; line-height: 1.4; }
 .ceo-alert-ok {
   background: var(--bg2); border-radius: var(--r2); padding: 14px;
   font-size: 12px; color: var(--txt2); border: 1px solid var(--line); text-align: center;

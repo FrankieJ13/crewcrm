@@ -2500,33 +2500,38 @@ function getMgrAvatarHtml(name, progNum) {
 }
 
 // Проигрывание плавной смены: default (видимая) → fade-out → final (видимая под ней)
-function ceoAvatarPlay(wrap) {
+function ceoAvatarPlay(wrap, force) {
   if (!wrap || !wrap.isConnected) return;
+  // Если уже доиграло до final и не форсируем (клик) — не перезапускаем
+  if (!force && wrap.dataset.played === '1') return;
   const defImg   = wrap.querySelector('.kpi-avatar-default');
   const finalImg = wrap.querySelector('.kpi-avatar-final');
-  if (!defImg || !finalImg) return;
+  if (!finalImg) return;
   clearTimeout(wrap._t);
 
-  // Если default не загрузился — сразу финальная
-  if (wrap.dataset.noDefault === '1') {
-    defImg.style.opacity = '0';
+  // Если default не загрузился или отсутствует — сразу финальная
+  if (!defImg || wrap.dataset.noDefault === '1') {
+    if (defImg) defImg.style.opacity = '0';
     finalImg.style.opacity = '1';
+    wrap.dataset.played = '1';
     return;
   }
   // Старт: default видна, final скрыта
   defImg.style.opacity = '1';
   finalImg.style.opacity = '0';
+  wrap.dataset.played = '0';
 
   // Через 1.4с плавный crossfade
   wrap._t = setTimeout(() => {
     if (!wrap.isConnected) return;
     defImg.style.opacity = '0';
     finalImg.style.opacity = '1';
+    wrap.dataset.played = '1';
   }, 1400);
 }
 
 function ceoAvatarReplay(wrap) {
-  ceoAvatarPlay(wrap);
+  ceoAvatarPlay(wrap, true);
 }
 
 function ceoAvatarInitOnRender() {

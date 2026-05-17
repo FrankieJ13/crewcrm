@@ -6951,15 +6951,15 @@ function renderCeoDashboard() {
       <div class="ceo-metrics-grid">
         <div class="ceo-metric-card">
           <div class="ceo-metric-lbl">CRM</div>
-          <div class="ceo-metric-val" style="color:var(--acc)"><span class="mv">${crmFact}</span> <span class="ceo-metric-plan">/ ${crmPlanSum||'—'}</span></div>
+          <div class="ceo-metric-val"><span class="mv" style="color:var(--acc)">${crmFact}</span> <span class="ceo-metric-plan">/ ${crmPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, crmPlanSum ? Math.round(crmFact/crmPlanSum*100) : 0)}%;background:var(--acc)"></div></div>
-          <div class="ceo-metric-pct" style="color:${pctClr(crmProg)}">прогноз <span class="mv">${crmProg}</span>%</div>
+          <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${pctClr(crmProg)}">${crmProg}</span><span style="color:${pctClr(crmProg)}">%</span></div>
         </div>
         <div class="ceo-metric-card">
           <div class="ceo-metric-lbl">Дожим</div>
-          <div class="ceo-metric-val" style="color:#bf5af2"><span class="mv">${dozhimFact}</span> <span class="ceo-metric-plan">/ ${dozhimPlanSum||'—'}</span></div>
+          <div class="ceo-metric-val"><span class="mv" style="color:#bf5af2">${dozhimFact}</span> <span class="ceo-metric-plan">/ ${dozhimPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, dozhimPlanSum ? Math.round(dozhimFact/dozhimPlanSum*100) : 0)}%;background:#bf5af2"></div></div>
-          <div class="ceo-metric-pct" style="color:${pctClr(dozhimProg)}">прогноз <span class="mv">${dozhimProg}</span>%</div>
+          <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${pctClr(dozhimProg)}">${dozhimProg}</span><span style="color:${pctClr(dozhimProg)}">%</span></div>
         </div>
         <div class="ceo-metric-card">
           <div class="ceo-metric-lbl">Всего визитов</div>

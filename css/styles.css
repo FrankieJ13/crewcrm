@@ -5810,13 +5810,18 @@ body.fluent .presence-count {
 .ceo-progress-fill { height: 100%; border-radius: 4px; transition: width .7s ease; }
 
 .ceo-leaders-hdr {
-  display: flex; justify-content: space-between; align-items: center;
-  margin: 18px 0 10px;
+  display: flex; align-items: center; gap: 8px;
+  margin: 8px 0 10px;
 }
+.ceo-leaders-hdr .sec-title { flex: 1; margin: 0; }
 .ceo-leaders-hdr .rating-toggle-pill {
   font-size: 7.5px; padding: 4.5px 10.5px; border-width: 1.5px;
 }
 .ceo-leaders-hdr .rating-toggle-arrow svg { width: 10px; height: 10px; }
+.ceo-metric-pct {
+  font-size: 11px; font-weight: 700; margin-top: 5px;
+  color: var(--txt3);
+}
 .ceo-leaders-row { display: flex; gap: 8px; }
 .ceo-leader-badge {
   flex: 1; position: relative;

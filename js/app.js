@@ -2460,22 +2460,55 @@ function getMgrAvatarEmotion(progNum) {
   return 'like';
 }
 window._avatarCache = window._avatarCache || {}; // url -> 'ok' | 'fail' | undefined
+function _avatarPreload(src) {
+  if (window._avatarCache[src] !== undefined) return;
+  const img = new Image();
+  img.onload  = () => { window._avatarCache[src] = 'ok'; };
+  img.onerror = () => { window._avatarCache[src] = 'fail'; };
+  img.src = src;
+}
 function getMgrAvatarHtml(name, progNum) {
   const id = getMgrCrmId(name);
   if (!id) return '';
-  const emo = getMgrAvatarEmotion(progNum);
-  const src = `logos/avatar/${id}-${emo}.png`;
-  const status = window._avatarCache[src];
-  if (status === 'fail') return '';
-  if (status === 'ok') {
-    return `<img class="kpi-avatar" src="${src}" alt="">`;
-  }
-  // Первая загрузка — превентивная проверка
-  const img = new Image();
-  img.onload  = () => { window._avatarCache[src] = 'ok'; };
-  img.onerror = () => { window._avatarCache[src] = 'fail'; document.querySelectorAll(`img.kpi-avatar[src="${src}"]`).forEach(el => el.remove()); };
-  img.src = src;
-  return `<img class="kpi-avatar" src="${src}" alt="" style="visibility:hidden" onload="this.style.visibility='visible'">`;
+  const finalEmo = getMgrAvatarEmotion(progNum);
+  const finalSrc = `logos/avatar/${id}-${finalEmo}.png`;
+  const defaultSrc = `logos/avatar/${id}-default.png`;
+  // Превентивные загрузки обоих
+  _avatarPreload(defaultSrc);
+  _avatarPreload(finalSrc);
+  // Начинаем с default; через setTimeout меняем на finalEmo (с предварительной "waiting"-эмоцией)
+  const startSrc = defaultSrc;
+  return `<img class="kpi-avatar" src="${startSrc}" alt="" data-final-src="${finalSrc}" data-default-src="${defaultSrc}" onclick="ceoAvatarReplay(this)" onerror="if(this.dataset.errored){this.remove();return;}this.dataset.errored='1';this.src=this.dataset.finalSrc||''" style="cursor:pointer">`;
+}
+
+function ceoAvatarPlay(img) {
+  if (!img || !img.isConnected) return;
+  const finalSrc = img.dataset.finalSrc;
+  const defaultSrc = img.dataset.defaultSrc;
+  if (!finalSrc || !defaultSrc) return;
+  // Default → через ~1.2с → final
+  img.src = defaultSrc;
+  clearTimeout(img._switchTimer);
+  img._switchTimer = setTimeout(() => {
+    if (!img.isConnected) return;
+    img.style.transition = 'opacity .25s';
+    img.style.opacity = '0';
+    setTimeout(() => {
+      if (!img.isConnected) return;
+      img.src = finalSrc;
+      img.style.opacity = '1';
+    }, 250);
+  }, 1200);
+}
+
+function ceoAvatarReplay(img) {
+  ceoAvatarPlay(img);
+}
+
+function ceoAvatarInitOnRender() {
+  // После рендера CEO-дашборда запускаем анимацию аватара
+  const img = document.querySelector('#c-ceo .kpi-avatar');
+  if (img) ceoAvatarPlay(img);
 }
 
 function getMgrMessengerHtml(name) {
@@ -7422,6 +7455,11 @@ function renderCeoDashboard() {
       </div>
 
     </div>`);
+
+  // Запуск анимации аватара только при первом рендере (не silent refresh)
+  if (!S.silentRefresh) {
+    requestAnimationFrame(() => ceoAvatarInitOnRender());
+  }
 
   } catch(e) {
     console.error('CEO dashboard render error:', e);

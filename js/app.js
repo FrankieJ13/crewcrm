@@ -6141,7 +6141,7 @@ function openVisitsDayModalAll(isDozhim) {
       <div class="vis-step-bars" aria-label="Визиты по дням">${days}</div>
     </div>
   `;
-  document.getElementById('income-overlay').classList.add('open');
+  document.getElementById('income-overlay').classList.add('open', 'ceo-mode');
   document.body.style.overflow = 'hidden';
   requestAnimationFrame(() => scheduleAnimatedValues(mc));
 }
@@ -6201,7 +6201,7 @@ function openCeoSalonModal() {
       </thead>
       <tbody>${rows}</tbody>
     </table>`;
-  document.getElementById('income-overlay').classList.add('open');
+  document.getElementById('income-overlay').classList.add('open', 'ceo-mode');
   document.body.style.overflow = 'hidden';
 }
 
@@ -6266,7 +6266,7 @@ function openCeoDealsModal(kind) {
       </thead>
       <tbody>${rows}</tbody>
     </table>`;
-  document.getElementById('income-overlay').classList.add('open');
+  document.getElementById('income-overlay').classList.add('open', 'ceo-mode');
   document.body.style.overflow = 'hidden';
 }
 
@@ -6601,7 +6601,7 @@ function closeSalInfo() {
 
 function closeIncomeDetail(e) {
   if (e && e.target !== document.getElementById('income-overlay')) return;
-  document.getElementById('income-overlay').classList.remove('open', 'visits-mode');
+  document.getElementById('income-overlay').classList.remove('open', 'visits-mode', 'ceo-mode');
   document.body.style.overflow = '';
 }
 
@@ -7131,7 +7131,7 @@ function _ceoComputeLeaders() {
     const s = stats[nl] || {};
     const plan = planMap[nl] || 0;
     const vis = (s.vis800 || 0) + (s.vis1200 || 0) + (s.vis1000 || 0);
-    return { firstName: name.split(' ').slice(-1)[0] || name, progPct: computeProgPct(vis, plan, sfx) };
+    return { name, firstName: name.split(' ').slice(-1)[0] || name, progPct: computeProgPct(vis, plan, sfx) };
   }
   const crmNames = allPlanNames.filter(n => { const r = getRoleByName(n.toLowerCase().trim()); return r === 'crm' || r === ''; });
   const dozhimNames = allPlanNames.filter(n => getRoleByName(n.toLowerCase().trim()) === 'dozhim');
@@ -7144,7 +7144,8 @@ function _ceoComputeLeaders() {
   const html = leaders.length
     ? leaders.map((m,i) => {
         const c = pctClr(m.progPct);
-        return `<div class="ceo-leader-badge"><span class="ceo-medal">${medals[i]}</span><div class="ceo-leader-name">${m.firstName}</div><div class="ceo-leader-prog"><span class="mv" style="color:${c} !important">${m.progPct}</span><span style="color:${c}">%</span></div></div>`;
+        const nl = m.name.toLowerCase().replace(/'/g, "&#39;");
+        return `<div class="ceo-leader-badge" style="cursor:pointer" onclick="openCeoMgrModalByName('${nl}')"><span class="ceo-medal">${medals[i]}</span><div class="ceo-leader-name">${m.firstName}</div><div class="ceo-leader-prog"><span class="mv" style="color:${c} !important">${m.progPct}</span><span style="color:${c}">%</span></div></div>`;
       }).join('')
     : `<div class="ceo-no-leaders">Нет менеджеров с прогнозом ≥ 100%</div>`;
   const nextDept = dept === 'crm' ? 'dozhim' : 'crm';
@@ -7285,8 +7286,9 @@ function renderCeoDashboard() {
     if (!leaders.length) return `<div class="ceo-no-leaders">Нет менеджеров с прогнозом ≥ 100%</div>`;
     return leaders.map((m, i) => {
       const c = pctClr(m.progPct);
+      const nl = m.name.toLowerCase().replace(/'/g, "&#39;");
       return `
-      <div class="ceo-leader-badge">
+      <div class="ceo-leader-badge" style="cursor:pointer" onclick="openCeoMgrModalByName('${nl}')">
         <span class="ceo-medal">${medals[i]}</span>
         <div class="ceo-leader-name">${m.firstName}</div>
         <div class="ceo-leader-prog"><span class="mv" style="color:${c} !important">${m.progPct}</span><span style="color:${c}">%</span></div>

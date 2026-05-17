@@ -2807,6 +2807,12 @@ body.light .glass {
   padding:16px;
 }
 .income-overlay.open { display:flex; animation:mFade .2s ease }
+/* CEO режим: модалка между хедером и доком, без i кнопки */
+.income-overlay.ceo-mode {
+  padding-top: 68px;
+  padding-bottom: 80px;
+}
+.income-overlay.ceo-mode .income-modal-info-btn { display: none; }
 .income-modal {
   background:transparent;
   border:1px solid rgba(255,255,255,0.2);

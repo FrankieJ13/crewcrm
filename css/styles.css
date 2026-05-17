@@ -5776,9 +5776,19 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
   color: var(--line) !important;
 }
 .ceo-alert-name {
-  text-decoration: underline; cursor: pointer; font-weight: 700;
+  display: inline-block;
+  background: rgba(255,255,255,0.18);
+  color: #1c1c1e;
+  border-radius: 6px;
+  padding: 2px 8px;
+  margin: 2px 4px 2px 0;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s;
 }
-.ceo-alert-name:active { opacity: .65; }
+.ceo-alert-name:active { opacity: .65; background: rgba(255,255,255,0.35); }
+.ceo-metrics-grid-2 { grid-template-columns: 1fr 1fr !important; }
 .ceo-mgrs-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .ceo-mgrs-list-item {
   display: flex; justify-content: space-between; align-items: center;

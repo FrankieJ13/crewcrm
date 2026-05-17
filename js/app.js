@@ -7118,6 +7118,18 @@ function renderCeoDashboard() {
   // Всего в салоне (CRM + Дожим)
   const totalVsalone = [...crmMgrs, ...dozhimMgrs].reduce((s,m) => s + m.vsalone, 0);
 
+  // Суммарно сделки (CRM + Дожим)
+  function sumStat(field) {
+    let n = 0;
+    Object.values(crmStats).forEach(s => { n += (s[field] || 0); });
+    Object.values(dozhimStats).forEach(s => { n += (s[field] || 0); });
+    return n;
+  }
+  const totalKredit  = sumStat('kred800') + sumStat('kred1200') + sumStat('kred1000');
+  const totalNalObm  = sumStat('nal800') + sumStat('nal1200') + sumStat('nal1000')
+                     + sumStat('obmen800') + sumStat('obmen1200');
+  const totalKomis   = sumStat('kom800') + sumStat('kom1200') + sumStat('kom1000');
+
   // Менеджеры в плане
   const allMgrs = [...crmMgrs, ...dozhimMgrs];
   const mgrsInPlan = allMgrs.filter(m => m.progPct >= 100).sort((a,b) => b.progPct - a.progPct);
@@ -7192,6 +7204,12 @@ function renderCeoDashboard() {
       <!-- МЕТРИКИ -->
       <div class="sec-title">Ключевые показатели</div>
       <div class="ceo-metrics-grid">
+        <!-- Row 1: всего визитов, CRM, Дожим -->
+        <div class="ceo-metric-card">
+          <div class="ceo-metric-lbl">Всего визитов</div>
+          <div class="ceo-metric-val mv" style="color:var(--txt)">${totalFact}</div>
+          <div class="ceo-metric-sub">из ${totalPlan||'—'} плановых</div>
+        </div>
         <div class="ceo-metric-card" style="cursor:pointer" onclick="openVisitsDayModalAll(false)" title="Хронология визитов CRM">
           <div class="ceo-metric-lbl">CRM</div>
           <div class="ceo-metric-val"><span class="mv">${crmFact}</span> <span class="ceo-metric-plan">/ ${crmPlanSum||'—'}</span></div>
@@ -7204,20 +7222,36 @@ function renderCeoDashboard() {
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, dozhimPlanSum ? Math.round(dozhimFact/dozhimPlanSum*100) : 0)}%;background:${pctClr(dozhimProg)}"></div></div>
           <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${pctClr(dozhimProg)} !important">${dozhimProg}</span><span style="color:${pctClr(dozhimProg)}">%</span></div>
         </div>
-        <div class="ceo-metric-card${totalVsalone > 0 ? ' ceo-salon-alarm' : ''}">
-          <div class="ceo-metric-lbl">В салоне</div>
-          <div class="ceo-metric-val mv" style="color:var(--txt)">${totalVsalone}</div>
-          <div class="ceo-metric-sub">${totalVsalone > 0 ? 'клиентов сейчас' : 'никого нет'}</div>
+
+        <!-- Row 2: кредиты, наличные (+обмен), комиссия -->
+        <div class="ceo-metric-card">
+          <div class="ceo-metric-lbl">Кредиты</div>
+          <div class="ceo-metric-val mv" style="color:var(--txt)">${totalKredit}</div>
+          <div class="ceo-metric-sub">CRM + Дожим</div>
         </div>
         <div class="ceo-metric-card">
-          <div class="ceo-metric-lbl">Всего визитов</div>
-          <div class="ceo-metric-val mv" style="color:var(--txt)">${totalFact}</div>
-          <div class="ceo-metric-sub">из ${totalPlan||'—'} плановых</div>
+          <div class="ceo-metric-lbl">Наличные</div>
+          <div class="ceo-metric-val mv" style="color:var(--txt)">${totalNalObm}</div>
+          <div class="ceo-metric-sub">с обменами</div>
         </div>
+        <div class="ceo-metric-card">
+          <div class="ceo-metric-lbl">Комиссия</div>
+          <div class="ceo-metric-val mv" style="color:var(--txt)">${totalKomis}</div>
+          <div class="ceo-metric-sub">CRM + Дожим</div>
+        </div>
+      </div>
+
+      <!-- Row 3: к цели, в салоне -->
+      <div class="ceo-metrics-grid ceo-metrics-grid-2" style="margin-top:8px">
         <div class="ceo-metric-card" style="cursor:pointer" onclick="openCeoMgrsInPlanModal()">
           <div class="ceo-metric-lbl">К цели</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${mgrsInPlan.length}</div>
           <div class="ceo-metric-sub">из ${allMgrs.length} · открыть</div>
+        </div>
+        <div class="ceo-metric-card${totalVsalone > 0 ? ' ceo-salon-alarm' : ''}">
+          <div class="ceo-metric-lbl">В салоне</div>
+          <div class="ceo-metric-val mv" style="color:var(--txt)">${totalVsalone}</div>
+          <div class="ceo-metric-sub">${totalVsalone > 0 ? 'клиентов сейчас' : 'никого нет'}</div>
         </div>
       </div>
 

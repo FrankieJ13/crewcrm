@@ -5810,7 +5810,7 @@ body.fluent .presence-count {
 }
 
 .ceo-metrics-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
   margin-bottom: 6px;
 }
 .ceo-metric-card {

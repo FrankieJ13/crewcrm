@@ -6904,7 +6904,7 @@ function openCeoMgrsInPlanModal() {
   const title = document.getElementById('mop-modal-title');
   if (title) title.textContent = 'Менеджеры в плане';
   if (body) body.innerHTML = `<ul class="ceo-mgrs-list">${items}</ul>`;
-  const overlay = document.getElementById('mop-modal-overlay');
+  const overlay = document.getElementById('mop-overlay');
   if (overlay) overlay.classList.add('open');
 }
 

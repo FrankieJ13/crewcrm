@@ -332,7 +332,7 @@ function showScr(id) {
   });
   // Dock active
   if (typeof dockSetActive === 'function') {
-    const dockId = id === 'personal' ? 'home' : id === 'otchet' ? 'home' : id;
+    const dockId = id === 'personal' ? 'home' : id === 'otchet' ? 'home' : id === 'ceo' ? 'home' : id;
     dockSetActive(dockId);
   }
   updateFirebasePage();
@@ -1278,6 +1278,10 @@ function onLogin() {
   const ls = document.getElementById('scr-login');
   ls.classList.remove('on'); ls.style.display = 'none'; document.body.classList.remove('login-active');
   if (window._loginLiquidCleanup) window._loginLiquidCleanup();
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab==='otchet'));
+  showScr('otchet');
+  const firstScreen = document.getElementById('c-otchet');
+  if (firstScreen) firstScreen.innerHTML = loader();
   loadUsersAndStart();
   // Автообновление каждые 3 минуты — полный сброс кеша
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
@@ -5214,7 +5218,6 @@ async function loadUsersAndStart() {
       S.ratingDept = 'crm';
       S.authReady = true;
       showScr('ceo');
-      dockSetActive('home');
       loadCeoDashboard();
     } else {
       S.authReady = true;
@@ -5263,7 +5266,6 @@ function goPersonal() {
   if (!matched || !matched.name) { showAccessDenied(); return; }
   if (matched.role === 'ceo') {
     showScr('ceo');
-    dockSetActive('home');
     loadCeoDashboard();
     return;
   }
@@ -6683,7 +6685,6 @@ function dockNav(id) {
       goPersonal();
     } else if (matched && matched.role === 'ceo') {
       showScr('ceo');
-      dockSetActive('home');
       loadCeoDashboard();
     } else {
       showAccessDenied();
@@ -6725,7 +6726,6 @@ function dockKpiItogi() {
   const matched = findUserInSheet();
   if (matched?.role === 'ceo') {
     showScr('ceo');
-    dockSetActive('kpi');
     loadCeoDashboard();
     return;
   }

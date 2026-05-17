@@ -2499,15 +2499,15 @@ function getMgrAvatarHtml(name, progNum) {
   </div>`;
 }
 
-// Проигрывание плавной смены: default (видимая) → fade-out → final (видимая под ней)
+// Проигрывание плавной смены: default → final (привязка к анимации .avatar-trigger)
 function ceoAvatarPlay(wrap, force) {
   if (!wrap || !wrap.isConnected) return;
-  // Если уже доиграло до final и не форсируем (клик) — не перезапускаем
   if (!force && wrap.dataset.played === '1') return;
   const defImg   = wrap.querySelector('.kpi-avatar-default');
   const finalImg = wrap.querySelector('.kpi-avatar-final');
   if (!finalImg) return;
   clearTimeout(wrap._t);
+  clearInterval(wrap._watch);
 
   // Если default не загрузился или отсутствует — сразу финальная
   if (!defImg || wrap.dataset.noDefault === '1') {
@@ -2516,18 +2516,43 @@ function ceoAvatarPlay(wrap, force) {
     wrap.dataset.played = '1';
     return;
   }
-  // Старт: default видна, final скрыта
+
+  // Старт
   defImg.style.opacity = '1';
   finalImg.style.opacity = '0';
   wrap.dataset.played = '0';
 
-  // Через 1.4с плавный crossfade
-  wrap._t = setTimeout(() => {
+  // Ищем элемент-триггер (значение прогноза с анимацией)
+  const scr = wrap.closest('.scr') || document;
+  const trigger = scr.querySelector('.avatar-trigger');
+  const swap = () => {
     if (!wrap.isConnected) return;
     defImg.style.opacity = '0';
     finalImg.style.opacity = '1';
     wrap.dataset.played = '1';
-  }, 1400);
+  };
+
+  if (!trigger) {
+    // Фолбэк — таймер
+    wrap._t = setTimeout(swap, 1400);
+    return;
+  }
+
+  // Ждём окончания spring: класс value-counting должен исчезнуть
+  let elapsed = 0;
+  const minWait = 600; // минимально показать default
+  const maxWait = 4000;
+  wrap._watch = setInterval(() => {
+    elapsed += 80;
+    const counting = trigger.classList.contains('value-counting');
+    if (elapsed >= maxWait) {
+      clearInterval(wrap._watch);
+      swap();
+    } else if (!counting && elapsed >= minWait) {
+      clearInterval(wrap._watch);
+      swap();
+    }
+  }, 80);
 }
 
 function ceoAvatarReplay(wrap) {
@@ -5619,10 +5644,10 @@ function renderPersonal(matched) {
         <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Продажи</div><div class="kb-val" style="color:${pctClr(salesProgNum)}">${salesFactN}</div></div>
         <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">План</div><div class="kb-val">${dSalesPlanNum||'—'}</div></div>
         <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Остаток</div><div class="kb-val">${salesOst}</div></div>
-        <div class="kpi-badge"><div class="kb-lbl">Прогноз</div><div class="kb-val" style="color:${pctClr(salesProgNum)}">${salesProgStr}</div></div>
+        <div class="kpi-badge"><div class="kb-lbl">Прогноз</div><div class="kb-val avatar-trigger" style="color:${pctClr(salesProgNum)}">${salesProgStr}</div></div>
       </div>` : ''}
       ${!isDozhim ? `<div class="kpi-badges">
-        <div class="kpi-badge"><div class="kb-lbl">Прогноз %</div><div class="kb-val" style="color:${pctClr(progNum)}">${prog}</div></div>
+        <div class="kpi-badge"><div class="kb-lbl">Прогноз %</div><div class="kb-val avatar-trigger" style="color:${pctClr(progNum)}">${prog}</div></div>
         <div class="kpi-badge"><div class="kb-lbl">Прогноз шт</div><div class="kb-val" style="color:${pctClr(progNum)}">${progVisN}</div></div>
         <div class="kpi-badge"><div class="kb-lbl">Факт %</div><div class="kb-val" style="color:${pctClr(factPct)}">${prc}</div></div>
         <div class="kpi-badge${salAlarm ? ' kpi-badge-salon-alarm' : ''}"><div class="kb-lbl">В салоне</div><div class="kb-val">${vsaloneN}</div></div>
@@ -7399,7 +7424,7 @@ function renderCeoDashboard() {
       <div class="sec-title">Текущий KPI</div>
       <div class="kpi-income-panel ceo-forecast-panel" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
         ${getMgrAvatarHtml ? getMgrAvatarHtml(matched?.name || '', companyProg) : ''}
-        <div class="ceo-forecast-num mv" style="color:${progColor} !important">${companyProg}%</div>
+        <div class="ceo-forecast-num mv avatar-trigger" style="color:${progColor} !important">${companyProg}%</div>
         <div class="ceo-forecast-sub"><span class="mv">${totalFact}</span> из ${totalPlan||'—'} визитов</div>
       </div>
 

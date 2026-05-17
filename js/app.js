@@ -1278,10 +1278,6 @@ function onLogin() {
   const ls = document.getElementById('scr-login');
   ls.classList.remove('on'); ls.style.display = 'none'; document.body.classList.remove('login-active');
   if (window._loginLiquidCleanup) window._loginLiquidCleanup();
-  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab==='otchet'));
-  showScr('otchet');
-  const firstScreen = document.getElementById('c-otchet');
-  if (firstScreen) firstScreen.innerHTML = loader();
   loadUsersAndStart();
   // Автообновление каждые 3 минуты — полный сброс кеша
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
@@ -1982,6 +1978,26 @@ function setLiveHTML(el, html) {
 
 async function refreshVisibleDataLive() {
   if (document.getElementById('scr-vizity')?.classList.contains('on')) return;
+  if (document.getElementById('scr-ceo')?.classList.contains('on')) {
+    apiCacheInvalidate();
+    S.silentRefresh = true;
+    try {
+      const [vd, dv, pd, cv, sd] = await Promise.all([
+        api(SHEETS.vizity,   'A:N').catch(() => []),
+        api(SHEETS.d_vizity, 'A:N').catch(() => []),
+        api(SHEETS.plan,     'A:D').catch(() => []),
+        api(SHEETS.cnvrs,    'A1:N40').catch(() => []),
+        api(SHEETS.stavki,   'A1:B25').catch(() => []),
+      ]);
+      if (vd?.length)  S.data.vizity   = vd;
+      if (dv?.length)  S.data.d_vizity = dv;
+      if (pd?.length)  S.data.plan     = pd;
+      if (cv?.length)  S.data.cnvrs    = cv;
+      if (sd?.length)  S.data.stavki   = sd;
+      renderCeoDashboard();
+    } finally { S.silentRefresh = false; }
+    return;
+  }
   const personalOn = document.getElementById('scr-personal')?.classList.contains('on');
   const ratingOn = document.getElementById('scr-rating')?.classList.contains('on');
   const activeTab = ratingOn ? 'rating' : (document.querySelector('.tab.on')?.dataset.tab || (personalOn ? null : 'otchet'));
@@ -6746,6 +6762,7 @@ async function loadCeoDashboard() {
       if (sd?.length)  S.data.stavki   = sd;
     }
   } catch(e) {
+    if (e.message === 'auth') return;
     if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
     return;
   }

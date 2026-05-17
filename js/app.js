@@ -2459,46 +2459,104 @@ function getMgrAvatarEmotion(progNum) {
   if (n < 120) return 'laughter';
   return 'like';
 }
-window._avatarCache = window._avatarCache || {}; // url -> 'ok' | 'fail' | undefined
+window._avatarCache = window._avatarCache || {}; // url -> 'ok' | 'fail'
 function _avatarPreload(src) {
-  if (window._avatarCache[src] !== undefined) return;
-  const img = new Image();
-  img.onload  = () => { window._avatarCache[src] = 'ok'; };
-  img.onerror = () => { window._avatarCache[src] = 'fail'; };
-  img.src = src;
+  return new Promise(resolve => {
+    if (window._avatarCache[src] === 'ok') return resolve(true);
+    if (window._avatarCache[src] === 'fail') return resolve(false);
+    const img = new Image();
+    img.onload  = () => { window._avatarCache[src] = 'ok'; resolve(true); };
+    img.onerror = () => { window._avatarCache[src] = 'fail'; resolve(false); };
+    img.src = src;
+  });
 }
+
 function getMgrAvatarHtml(name, progNum) {
   const id = getMgrCrmId(name);
   if (!id) return '';
   const finalEmo = getMgrAvatarEmotion(progNum);
-  const finalSrc = `logos/avatar/${id}-${finalEmo}.png`;
+  const finalSrc   = `logos/avatar/${id}-${finalEmo}.png`;
   const defaultSrc = `logos/avatar/${id}-default.png`;
-  // Превентивные загрузки обоих
-  _avatarPreload(defaultSrc);
-  _avatarPreload(finalSrc);
-  // Начинаем с default; через setTimeout меняем на finalEmo (с предварительной "waiting"-эмоцией)
-  const startSrc = defaultSrc;
-  return `<img class="kpi-avatar" src="${startSrc}" alt="" data-final-src="${finalSrc}" data-default-src="${defaultSrc}" onclick="ceoAvatarReplay(this)" onerror="if(this.dataset.errored){this.remove();return;}this.dataset.errored='1';this.src=this.dataset.finalSrc||''" style="cursor:pointer">`;
+  const waitSrc    = `logos/avatar/${id}-surprise.png`;
+  // Старт с default; в onerror каскад: default → surprise → final → remove
+  return `<img class="kpi-avatar" src="${defaultSrc}" alt=""
+    data-final-src="${finalSrc}"
+    data-default-src="${defaultSrc}"
+    data-wait-src="${waitSrc}"
+    data-stage="default"
+    onclick="ceoAvatarReplay(this)"
+    onerror="ceoAvatarOnError(this)">`;
 }
 
-function ceoAvatarPlay(img) {
+// Каскад fallback при ошибке загрузки кадра
+function ceoAvatarOnError(img) {
+  const cur = img.getAttribute('src') || '';
+  const finalSrc = img.dataset.finalSrc || '';
+  const waitSrc  = img.dataset.waitSrc  || '';
+  if (cur === img.dataset.defaultSrc && waitSrc && cur !== waitSrc) {
+    img.src = waitSrc; return;
+  }
+  if (cur === waitSrc && finalSrc && cur !== finalSrc) {
+    img.src = finalSrc; return;
+  }
+  // Уже на финальном — удаляем
+  img.remove();
+}
+
+// Проигрывание полной последовательности: default → wait → final
+async function ceoAvatarPlay(img) {
   if (!img || !img.isConnected) return;
-  const finalSrc = img.dataset.finalSrc;
+  const finalSrc   = img.dataset.finalSrc;
   const defaultSrc = img.dataset.defaultSrc;
-  if (!finalSrc || !defaultSrc) return;
-  // Default → через ~1.2с → final
-  img.src = defaultSrc;
-  clearTimeout(img._switchTimer);
-  img._switchTimer = setTimeout(() => {
-    if (!img.isConnected) return;
-    img.style.transition = 'opacity .25s';
-    img.style.opacity = '0';
-    setTimeout(() => {
+  const waitSrc    = img.dataset.waitSrc;
+  clearTimeout(img._t1);
+  clearTimeout(img._t2);
+
+  // Проверяем что доступно
+  const [okDef, okWait, okFin] = await Promise.all([
+    _avatarPreload(defaultSrc),
+    _avatarPreload(waitSrc),
+    _avatarPreload(finalSrc),
+  ]);
+
+  if (!img.isConnected) return;
+
+  // Если ничего не доступно — удалить
+  if (!okDef && !okWait && !okFin) { img.remove(); return; }
+
+  // Шаг 0: показать default (или wait/final если default нет)
+  const step0 = okDef ? defaultSrc : (okWait ? waitSrc : finalSrc);
+  img.src = step0;
+  img.style.opacity = '1';
+  img.dataset.stage = 'default';
+
+  // Шаг 1: через ~1с → wait
+  if (okWait && step0 !== waitSrc) {
+    img._t1 = setTimeout(() => {
       if (!img.isConnected) return;
-      img.src = finalSrc;
-      img.style.opacity = '1';
-    }, 250);
-  }, 1200);
+      img.style.opacity = '0';
+      setTimeout(() => {
+        if (!img.isConnected) return;
+        img.src = waitSrc;
+        img.style.opacity = '1';
+        img.dataset.stage = 'wait';
+      }, 350);
+    }, 1000);
+  }
+
+  // Шаг 2: через ~2с → final
+  if (okFin) {
+    img._t2 = setTimeout(() => {
+      if (!img.isConnected) return;
+      img.style.opacity = '0';
+      setTimeout(() => {
+        if (!img.isConnected) return;
+        img.src = finalSrc;
+        img.style.opacity = '1';
+        img.dataset.stage = 'final';
+      }, 350);
+    }, 2100);
+  }
 }
 
 function ceoAvatarReplay(img) {
@@ -2506,7 +2564,6 @@ function ceoAvatarReplay(img) {
 }
 
 function ceoAvatarInitOnRender() {
-  // После рендера CEO-дашборда запускаем анимацию аватара
   const img = document.querySelector('#c-ceo .kpi-avatar');
   if (img) ceoAvatarPlay(img);
 }

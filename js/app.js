@@ -6942,7 +6942,7 @@ function _ceoComputeLeaders() {
   const html = leaders.length
     ? leaders.map((m,i) => {
         const c = pctClr(m.progPct);
-        return `<div class="ceo-leader-badge"><span class="ceo-medal">${medals[i]}</span><div class="ceo-leader-name">${m.firstName}</div><div class="ceo-leader-prog"><span class="mv" style="color:${c}">${m.progPct}</span><span style="color:${c}">%</span></div></div>`;
+        return `<div class="ceo-leader-badge"><span class="ceo-medal">${medals[i]}</span><div class="ceo-leader-name">${m.firstName}</div><div class="ceo-leader-prog"><span class="mv" style="color:${c} !important">${m.progPct}</span><span style="color:${c}">%</span></div></div>`;
       }).join('')
     : `<div class="ceo-no-leaders">Нет менеджеров с прогнозом ≥ 100%</div>`;
   const nextDept = dept === 'crm' ? 'dozhim' : 'crm';
@@ -7075,7 +7075,7 @@ function renderCeoDashboard() {
       <div class="ceo-leader-badge">
         <span class="ceo-medal">${medals[i]}</span>
         <div class="ceo-leader-name">${m.firstName}</div>
-        <div class="ceo-leader-prog"><span class="mv" style="color:${c}">${m.progPct}</span><span style="color:${c}">%</span></div>
+        <div class="ceo-leader-prog"><span class="mv" style="color:${c} !important">${m.progPct}</span><span style="color:${c}">%</span></div>
       </div>`;
     }).join('');
   }
@@ -7115,7 +7115,7 @@ function renderCeoDashboard() {
       <div class="sec-title">Текущий KPI</div>
       <div class="kpi-income-panel ceo-forecast-panel" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
         ${getMgrAvatarHtml ? getMgrAvatarHtml(matched?.name || '', companyProg) : ''}
-        <div class="ceo-forecast-num mv" style="color:${progColor}">${companyProg}%</div>
+        <div class="ceo-forecast-num mv" style="color:${progColor} !important">${companyProg}%</div>
         <div class="ceo-forecast-sub"><span class="mv">${totalFact}</span> из ${totalPlan||'—'} визитов</div>
       </div>
 
@@ -7124,15 +7124,15 @@ function renderCeoDashboard() {
       <div class="ceo-metrics-grid">
         <div class="ceo-metric-card">
           <div class="ceo-metric-lbl">CRM</div>
-          <div class="ceo-metric-val"><span class="mv" style="color:var(--txt)">${crmFact}</span> <span class="ceo-metric-plan">/ ${crmPlanSum||'—'}</span></div>
+          <div class="ceo-metric-val"><span class="mv">${crmFact}</span> <span class="ceo-metric-plan">/ ${crmPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, crmPlanSum ? Math.round(crmFact/crmPlanSum*100) : 0)}%;background:${pctClr(crmProg)}"></div></div>
-          <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${pctClr(crmProg)}">${crmProg}</span><span style="color:${pctClr(crmProg)}">%</span></div>
+          <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${pctClr(crmProg)} !important">${crmProg}</span><span style="color:${pctClr(crmProg)}">%</span></div>
         </div>
         <div class="ceo-metric-card">
           <div class="ceo-metric-lbl">Дожим</div>
-          <div class="ceo-metric-val"><span class="mv" style="color:var(--txt)">${dozhimFact}</span> <span class="ceo-metric-plan">/ ${dozhimPlanSum||'—'}</span></div>
+          <div class="ceo-metric-val"><span class="mv">${dozhimFact}</span> <span class="ceo-metric-plan">/ ${dozhimPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, dozhimPlanSum ? Math.round(dozhimFact/dozhimPlanSum*100) : 0)}%;background:${pctClr(dozhimProg)}"></div></div>
-          <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${pctClr(dozhimProg)}">${dozhimProg}</span><span style="color:${pctClr(dozhimProg)}">%</span></div>
+          <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${pctClr(dozhimProg)} !important">${dozhimProg}</span><span style="color:${pctClr(dozhimProg)}">%</span></div>
         </div>
         <div class="ceo-metric-card${totalVsalone > 0 ? ' ceo-salon-alarm' : ''}">
           <div class="ceo-metric-lbl">В салоне</div>

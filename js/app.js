@@ -5050,6 +5050,12 @@ function startBirthdayCelebration() {
 
 function closeMopModal(e) {
   if (e && e.target !== document.getElementById('mop-overlay')) return;
+  // Возврат на список "Менеджеры в плане", если открывали оттуда
+  if (window._ceoMopReturnToList) {
+    window._ceoMopReturnToList = false;
+    openCeoMgrsInPlanModal();
+    return;
+  }
   document.getElementById('mop-overlay').classList.remove('open');
   document.body.style.overflow = '';
 }
@@ -6896,7 +6902,7 @@ function openCeoMgrsInPlanModal() {
   const inPlan = window._ceoMgrsInPlan || [];
   if (!inPlan.length) return;
   const items = inPlan.map(m => `
-    <li class="ceo-mgrs-list-item" onclick="closeMopModal();openCeoMgrModalByName('${m.name.toLowerCase().replace(/'/g,"&#39;")}')">
+    <li class="ceo-mgrs-list-item" onclick="window._ceoMopReturnToList=true;openCeoMgrModalByName('${m.name.toLowerCase().replace(/'/g,"&#39;")}')">
       <span class="ceo-mgrs-list-name">${m.name}</span>
       <span class="ceo-mgrs-list-prog" style="color:${pctClr(m.progPct)}">${m.progPct}%</span>
     </li>`).join('');

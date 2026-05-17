@@ -6080,6 +6080,64 @@ function getVisitsByDay(nameLow, isDozhim) {
   return counts;
 }
 
+function getVisitsByDayAll(isDozhim) {
+  const suffix = currentSuffix;
+  const mm = parseInt(suffix.slice(0,2)), yy = 2000 + parseInt(suffix.slice(2));
+  const daysInMonth = new Date(yy, mm, 0).getDate();
+  const counts = Array.from({ length: daysInMonth + 1 }, () => 0);
+  const rows = isDozhim ? (S.data.d_vizity || []) : (S.data.vizity || []);
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row) continue;
+    if (!isSverkaRow(row)) continue;
+    const parts = String(row[0] || '').trim().split('.');
+    const day = parseInt(parts[0]);
+    if (!day || day < 1 || day > daysInMonth) continue;
+    counts[day]++;
+  }
+  return counts;
+}
+
+function openVisitsDayModalAll(isDozhim) {
+  const counts = getVisitsByDayAll(isDozhim);
+  const max = Math.max(1, ...counts);
+  const total = counts.reduce((sum, v) => sum + v, 0);
+  const days = counts.slice(1).map((count, idx) => {
+    const day = idx + 1;
+    const h = count ? Math.max(7, Math.round(count / max * 100)) : 0;
+    const title = `${day}: ${count} ${pluralVisits(count)}`;
+    return `<button class="vis-step-bar${count ? ' has-visits' : ''}" style="--h:${h}%;--i:${idx}" title="${escapeAttr(title)}" aria-label="${escapeAttr(title)}">
+      ${count ? '' : '<span class="vis-step-track"></span>'}
+      <span class="vis-step-fill"></span>
+      <span class="vis-step-tip">${count}</span>
+      <span class="vis-step-day">${day}</span>
+    </button>`;
+  }).join('');
+  const subtitle = getMonthName(currentSuffix);
+  const deptLabel = isDozhim ? 'Дожим' : 'CRM';
+
+  const modalTitle = document.querySelector('#income-overlay .income-modal-title');
+  const mc = document.getElementById('income-modal-content');
+  if (modalTitle) modalTitle.innerHTML = `Хронология визитов<div class="visits-modal-mgr-name">Отдел ${deptLabel}</div>`;
+  document.getElementById('income-overlay')?.classList.add('visits-mode');
+  mc.removeAttribute('data-modal');
+  mc.innerHTML = `
+    <div class="vis-step-card" role="figure" aria-label="Визиты за ${escapeAttr(subtitle)}: ${total}">
+      <div class="vis-card-total" aria-live="polite">
+        <div class="vis-card-total-main">
+          <span class="vis-card-total-value">${total}</span>
+          <span class="vis-card-total-label">${pluralVisits(total)}</span>
+        </div>
+        <span class="vis-card-month-badge">${escapeHtml(subtitle)}</span>
+      </div>
+      <div class="vis-step-bars" aria-label="Визиты по дням">${days}</div>
+    </div>
+  `;
+  document.getElementById('income-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  requestAnimationFrame(() => scheduleAnimatedValues(mc));
+}
+
 function pluralVisits(n) {
   const v = Math.abs(Number(n) || 0) % 100;
   const v1 = v % 10;
@@ -7134,13 +7192,13 @@ function renderCeoDashboard() {
       <!-- МЕТРИКИ -->
       <div class="sec-title">Ключевые показатели</div>
       <div class="ceo-metrics-grid">
-        <div class="ceo-metric-card">
+        <div class="ceo-metric-card" style="cursor:pointer" onclick="openVisitsDayModalAll(false)" title="Хронология визитов CRM">
           <div class="ceo-metric-lbl">CRM</div>
           <div class="ceo-metric-val"><span class="mv">${crmFact}</span> <span class="ceo-metric-plan">/ ${crmPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, crmPlanSum ? Math.round(crmFact/crmPlanSum*100) : 0)}%;background:${pctClr(crmProg)}"></div></div>
           <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${pctClr(crmProg)} !important">${crmProg}</span><span style="color:${pctClr(crmProg)}">%</span></div>
         </div>
-        <div class="ceo-metric-card">
+        <div class="ceo-metric-card" style="cursor:pointer" onclick="openVisitsDayModalAll(true)" title="Хронология визитов Дожим">
           <div class="ceo-metric-lbl">Дожим</div>
           <div class="ceo-metric-val"><span class="mv">${dozhimFact}</span> <span class="ceo-metric-plan">/ ${dozhimPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, dozhimPlanSum ? Math.round(dozhimFact/dozhimPlanSum*100) : 0)}%;background:${pctClr(dozhimProg)}"></div></div>

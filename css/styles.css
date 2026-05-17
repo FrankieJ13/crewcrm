@@ -5760,9 +5760,17 @@ body.fluent .presence-count {
 }
 .ceo-header-right { padding-top: 2px; }
 .ceo-salon-alarm {
-  border-color: rgba(255,69,58,0.45) !important;
-  background: rgba(255,69,58,0.08) !important;
+  border-color: #ff453a !important;
+  background: #ff453a !important;
 }
+.ceo-salon-alarm .ceo-metric-lbl,
+.ceo-salon-alarm .ceo-metric-val,
+.ceo-salon-alarm .ceo-metric-sub { color: #fff !important; }
+body.cosmic .ceo-greeting,
+body.cosmic .ceo-date,
+body.cosmic .ceo-weather,
+body.cosmic .ceo-days-left { color: #f5f5f5 !important; }
+body.cosmic .ceo-days-left strong { color: #fff !important; }
 .ceo-alert-name {
   text-decoration: underline; cursor: pointer; font-weight: 700;
 }

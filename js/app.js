@@ -5195,11 +5195,11 @@ async function loadUsersAndStart() {
     checkBirthdayNotifications();
     checkSelfBirthday();
     if (matched.role === 'ceo') {
-      S.reportTab = 'dept';
       S.ratingDept = 'crm';
       S.authReady = true;
-      goTab('otchet');
+      showScr('ceo');
       dockSetActive('home');
+      loadCeoDashboard();
     } else {
       S.authReady = true;
       goPersonal();
@@ -5245,7 +5245,12 @@ async function backgroundPrefetch(matched) {
 function goPersonal() {
   const matched = findUserInSheet();
   if (!matched || !matched.name) { showAccessDenied(); return; }
-  if (matched.role === 'ceo') { goTab('otchet'); return; }
+  if (matched.role === 'ceo') {
+    showScr('ceo');
+    dockSetActive('home');
+    loadCeoDashboard();
+    return;
+  }
   document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
   if (typeof dockSetActive === 'function') dockSetActive('home');
   showScr('personal');
@@ -6661,11 +6666,9 @@ function dockNav(id) {
     if (matched && matched.role !== 'ceo') {
       goPersonal();
     } else if (matched && matched.role === 'ceo') {
-      // CEO → Отдел (dept overview)
-      S.reportTab = 'dept';
-      updateFirebasePage();
-      goTab('otchet');
+      showScr('ceo');
       dockSetActive('home');
+      loadCeoDashboard();
     } else {
       showAccessDenied();
     }

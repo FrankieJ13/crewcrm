@@ -6723,12 +6723,6 @@ function dockKpiToggle(e) {
 
 function dockKpiItogi() {
   closeAllDockPopups();
-  const matched = findUserInSheet();
-  if (matched?.role === 'ceo') {
-    showScr('ceo');
-    loadCeoDashboard();
-    return;
-  }
   S.reportTab = 'dept';
   updateFirebasePage();
   goTab('otchet');

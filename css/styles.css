@@ -1246,9 +1246,8 @@ body.cosmic .hdr-greeting.aurora {
   cursor:pointer;
 }
 .logo-img {
-  width:40px; height:40px; border-radius:5px;
+  height:34px; width:auto;
   object-fit:contain; flex-shrink:0;
-  margin-left:-4px;
   transition: opacity 0.4s ease;
 }
 .badge-month {

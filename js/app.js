@@ -6908,7 +6908,7 @@ function openCeoMgrsInPlanModal() {
     </li>`).join('');
   const body = document.getElementById('mop-modal-body');
   const title = document.getElementById('mop-modal-title');
-  if (title) title.textContent = 'Менеджеры в плане';
+  if (title) title.textContent = 'К цели';
   if (body) body.innerHTML = `<ul class="ceo-mgrs-list">${items}</ul>`;
   const overlay = document.getElementById('mop-overlay');
   if (overlay) overlay.classList.add('open');
@@ -7145,7 +7145,7 @@ function renderCeoDashboard() {
           <div class="ceo-metric-sub">из ${totalPlan||'—'} плановых</div>
         </div>
         <div class="ceo-metric-card" style="cursor:pointer" onclick="openCeoMgrsInPlanModal()">
-          <div class="ceo-metric-lbl">Менеджеров в плане</div>
+          <div class="ceo-metric-lbl">К цели</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${mgrsInPlan.length}</div>
           <div class="ceo-metric-sub">из ${allMgrs.length} · открыть</div>
         </div>

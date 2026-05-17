@@ -6244,7 +6244,7 @@ function openCeoSalonModal() {
   const rows = collected.length
     ? collected.map(d => `
       <tr>
-        <td class="ceo-deals-date">${d.date}</td>
+        <td class="ceo-deals-date">${d.date.split('.').slice(0,2).join('.')}</td>
         <td class="ceo-deals-mgr">${shortName(d.manager)}</td>
         <td class="ceo-deals-city">${d.city}</td>
         <td class="ceo-deals-src">${d.phone}</td>
@@ -6310,7 +6310,7 @@ function openCeoDealsModal(kind) {
   const rows = collected.length
     ? collected.map(d => `
       <tr>
-        <td class="ceo-deals-date">${d.date}</td>
+        <td class="ceo-deals-date">${d.date.split('.').slice(0,2).join('.')}</td>
         <td class="ceo-deals-mgr">${shortName(d.manager)}</td>
         <td class="ceo-deals-city">${d.city}</td>
         <td class="ceo-deals-src">${d.source}</td>

@@ -2477,95 +2477,46 @@ function getMgrAvatarHtml(name, progNum) {
   const finalEmo = getMgrAvatarEmotion(progNum);
   const finalSrc   = `logos/avatar/${id}-${finalEmo}.png`;
   const defaultSrc = `logos/avatar/${id}-default.png`;
-  const waitSrc    = `logos/avatar/${id}-surprise.png`;
-  // Старт с default; в onerror каскад: default → surprise → final → remove
-  return `<img class="kpi-avatar" src="${defaultSrc}" alt=""
-    data-final-src="${finalSrc}"
-    data-default-src="${defaultSrc}"
-    data-wait-src="${waitSrc}"
-    data-stage="default"
-    onclick="ceoAvatarReplay(this)"
-    onerror="ceoAvatarOnError(this)">`;
+  // Два IMG поверх друг друга: верхний = default, нижний = final. Плавный crossfade.
+  return `<div class="kpi-avatar-wrap" onclick="ceoAvatarReplay(this)" data-final-src="${finalSrc}" data-default-src="${defaultSrc}">
+    <img class="kpi-avatar kpi-avatar-final" src="${finalSrc}" alt="" onerror="this.style.display='none'">
+    <img class="kpi-avatar kpi-avatar-default" src="${defaultSrc}" alt="" onerror="this.style.display='none';this.parentElement.dataset.noDefault='1'">
+  </div>`;
 }
 
-// Каскад fallback при ошибке загрузки кадра
-function ceoAvatarOnError(img) {
-  const cur = img.getAttribute('src') || '';
-  const finalSrc = img.dataset.finalSrc || '';
-  const waitSrc  = img.dataset.waitSrc  || '';
-  if (cur === img.dataset.defaultSrc && waitSrc && cur !== waitSrc) {
-    img.src = waitSrc; return;
+// Проигрывание плавной смены: default (видимая) → fade-out → final (видимая под ней)
+function ceoAvatarPlay(wrap) {
+  if (!wrap || !wrap.isConnected) return;
+  const defImg   = wrap.querySelector('.kpi-avatar-default');
+  const finalImg = wrap.querySelector('.kpi-avatar-final');
+  if (!defImg || !finalImg) return;
+  clearTimeout(wrap._t);
+
+  // Если default не загрузился — сразу финальная
+  if (wrap.dataset.noDefault === '1') {
+    defImg.style.opacity = '0';
+    finalImg.style.opacity = '1';
+    return;
   }
-  if (cur === waitSrc && finalSrc && cur !== finalSrc) {
-    img.src = finalSrc; return;
-  }
-  // Уже на финальном — удаляем
-  img.remove();
+  // Старт: default видна, final скрыта
+  defImg.style.opacity = '1';
+  finalImg.style.opacity = '0';
+
+  // Через 1.4с плавный crossfade
+  wrap._t = setTimeout(() => {
+    if (!wrap.isConnected) return;
+    defImg.style.opacity = '0';
+    finalImg.style.opacity = '1';
+  }, 1400);
 }
 
-// Проигрывание полной последовательности: default → wait → final
-async function ceoAvatarPlay(img) {
-  if (!img || !img.isConnected) return;
-  const finalSrc   = img.dataset.finalSrc;
-  const defaultSrc = img.dataset.defaultSrc;
-  const waitSrc    = img.dataset.waitSrc;
-  clearTimeout(img._t1);
-  clearTimeout(img._t2);
-
-  // Проверяем что доступно
-  const [okDef, okWait, okFin] = await Promise.all([
-    _avatarPreload(defaultSrc),
-    _avatarPreload(waitSrc),
-    _avatarPreload(finalSrc),
-  ]);
-
-  if (!img.isConnected) return;
-
-  // Если ничего не доступно — удалить
-  if (!okDef && !okWait && !okFin) { img.remove(); return; }
-
-  // Шаг 0: показать default (или wait/final если default нет)
-  const step0 = okDef ? defaultSrc : (okWait ? waitSrc : finalSrc);
-  img.src = step0;
-  img.style.opacity = '1';
-  img.dataset.stage = 'default';
-
-  // Шаг 1: через ~1с → wait
-  if (okWait && step0 !== waitSrc) {
-    img._t1 = setTimeout(() => {
-      if (!img.isConnected) return;
-      img.style.opacity = '0';
-      setTimeout(() => {
-        if (!img.isConnected) return;
-        img.src = waitSrc;
-        img.style.opacity = '1';
-        img.dataset.stage = 'wait';
-      }, 350);
-    }, 1000);
-  }
-
-  // Шаг 2: через ~2с → final
-  if (okFin) {
-    img._t2 = setTimeout(() => {
-      if (!img.isConnected) return;
-      img.style.opacity = '0';
-      setTimeout(() => {
-        if (!img.isConnected) return;
-        img.src = finalSrc;
-        img.style.opacity = '1';
-        img.dataset.stage = 'final';
-      }, 350);
-    }, 2100);
-  }
-}
-
-function ceoAvatarReplay(img) {
-  ceoAvatarPlay(img);
+function ceoAvatarReplay(wrap) {
+  ceoAvatarPlay(wrap);
 }
 
 function ceoAvatarInitOnRender() {
-  const img = document.querySelector('#c-ceo .kpi-avatar');
-  if (img) ceoAvatarPlay(img);
+  const wrap = document.querySelector('#c-ceo .kpi-avatar-wrap');
+  if (wrap) ceoAvatarPlay(wrap);
 }
 
 function getMgrMessengerHtml(name) {

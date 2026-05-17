@@ -3467,20 +3467,29 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
   position:absolute; top:10px; right:10px;
   margin-left:0;
 }
-.kpi-avatar {
+.kpi-avatar-wrap {
   position: absolute;
   right: 0;
   bottom: 0;
   width: 80px;
   height: 80px;
-  object-fit: contain;
-  object-position: bottom right;
   pointer-events: none;
   z-index: 1;
-  transition: opacity .35s ease;
 }
+.kpi-avatar {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom right;
+  transition: opacity .9s cubic-bezier(.4,0,.2,1);
+  will-change: opacity;
+}
+.kpi-avatar-default { opacity: 1; }
+.kpi-avatar-final { opacity: 0; }
 /* В CEO дашборде аватар кликабельный */
-#c-ceo .kpi-avatar { pointer-events: auto; cursor: pointer; }
+#c-ceo .kpi-avatar-wrap { pointer-events: auto; cursor: pointer; }
 .kpi-income-panel {
   border-radius:var(--r2); padding:16px; text-align:center;
   margin-bottom:14px;

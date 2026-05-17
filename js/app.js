@@ -317,7 +317,7 @@ function toast(msg, type='i') {
 }
 
 function showScr(id) {
-  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo'].forEach(t => {
     const el = document.getElementById('scr-'+t);
     if (el) el.classList.remove('on');
   });
@@ -551,6 +551,7 @@ function getPresencePageLabel() {
   const roleDept = role === 'dozhim' ? 'dozhim' : 'crm';
   const effectiveRatingDept = isCeo ? S.ratingDept : roleDept;
   const effectiveDohodDept = isCeo ? S.dohodTab : roleDept;
+  if (document.getElementById('scr-ceo')?.classList.contains('on')) return 'Итоги';
   if (document.getElementById('scr-personal')?.classList.contains('on')) return 'Мой KPI';
   if (document.getElementById('scr-rating')?.classList.contains('on')) {
     return isCeo ? `Рейтинг ${deptLabel(effectiveRatingDept)}` : 'Рейтинг';
@@ -4607,9 +4608,9 @@ function showPlanEditBtnIfCeo(matched) {
   // Кнопка экспорта отчёта — только CEO
   const hmbExp = document.getElementById('hmb-export');
   if (hmbExp) hmbExp.style.display = isCeo ? '' : 'none';
-  // Итоги — скрыт у CEO (у CEO нет смысла, он и так видит всё на Главной)
+  // Итоги — видны всем
   const itogiBtn = document.getElementById('dock-kpi-itogi');
-  if (itogiBtn) itogiBtn.style.display = isCeo ? 'none' : '';
+  if (itogiBtn) itogiBtn.style.display = '';
   // Визиты и Доход popup — только CEO
   ['dock-vizity-popup','dock-dohod-popup'].forEach(pid => {
     const p = document.getElementById(pid);
@@ -6702,11 +6703,246 @@ function dockKpiToggle(e) {
 
 function dockKpiItogi() {
   closeAllDockPopups();
+  const matched = findUserInSheet();
+  if (matched?.role === 'ceo') {
+    showScr('ceo');
+    dockSetActive('kpi');
+    loadCeoDashboard();
+    return;
+  }
   S.reportTab = 'dept';
   updateFirebasePage();
   goTab('otchet');
   dockSetActive('kpi');
 }
+
+// ==================== CEO DASHBOARD ====================
+
+async function loadCeoDashboard() {
+  const el = document.getElementById('c-ceo');
+  if (!el) return;
+  el.innerHTML = loader();
+  try {
+    const needVizity  = !S.data.vizity;
+    const needDVizity = !S.data.d_vizity;
+    const needPlan    = !S.data.plan;
+    const needCnvrs   = !S.data.cnvrs;
+    const needStavki  = !S.data.stavki;
+    if (needVizity || needDVizity || needPlan || needCnvrs || needStavki) {
+      const [vd, dv, pd, cv, sd] = await Promise.all([
+        needVizity  ? api(SHEETS.vizity,   'A:N').catch(() => [])      : Promise.resolve(S.data.vizity),
+        needDVizity ? api(SHEETS.d_vizity, 'A:N').catch(() => [])      : Promise.resolve(S.data.d_vizity),
+        needPlan    ? api(SHEETS.plan,     'A:D').catch(() => [])      : Promise.resolve(S.data.plan),
+        needCnvrs   ? api(SHEETS.cnvrs,    'A1:N40').catch(() => [])   : Promise.resolve(S.data.cnvrs),
+        needStavki  ? api(SHEETS.stavki,   'A1:B25').catch(() => [])   : Promise.resolve(S.data.stavki),
+      ]);
+      if (vd?.length)  S.data.vizity   = vd;
+      if (dv?.length)  S.data.d_vizity = dv;
+      if (pd?.length)  S.data.plan     = pd;
+      if (cv?.length)  S.data.cnvrs    = cv;
+      if (sd?.length)  S.data.stavki   = sd;
+    }
+  } catch(e) {
+    if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
+    return;
+  }
+  renderCeoDashboard();
+  // Погода
+  const lat = 56.8389, lon = 60.6057;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`;
+  fetch(url).then(r => r.json()).then(data => {
+    const temp = Math.round(data.current.temperature_2m);
+    const code = data.current.weather_code;
+    const el2 = document.getElementById('ceo-weather');
+    if (el2) el2.textContent = _cityWeatherEmoji(code) + ' ' + (temp > 0 ? '+' : '') + temp + '°';
+  }).catch(() => {
+    const el2 = document.getElementById('ceo-weather');
+    if (el2) el2.textContent = '';
+  });
+}
+
+function renderCeoDashboard() {
+  const el = document.getElementById('c-ceo');
+  if (!el) return;
+
+  const today = new Date();
+  const dayNum = today.getDate();
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const daysLeft = daysInMonth - dayNum;
+  const dd = String(dayNum).padStart(2, '0');
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dateShort = `${dd}.${mm}`;
+
+  const GREETINGS = {
+    1:'сегодня будет хороший день!', 2:'ты уже отлично справляешься!',
+    3:'вперёд к маленьким победам!', 4:'всё получится, шаг за шагом!',
+    5:'рад видеть тебя снова!', 6:'время сделать что-то классное!',
+    7:'ты ближе к цели!', 8:'новый день — новые возможности!',
+    9:'спокойно, у тебя всё под контролем!', 10:'сегодня можно чуть лучше!',
+    11:'хороший момент начать!', 12:'мир ждёт твоих идей!',
+    13:'пусть день будет лёгким!', 14:'ты умеешь удивлять!',
+    15:'ещё один шаг вперёд!', 16:'настройся на хороший ритм!',
+    17:'маленький прогресс тоже прогресс!', 18:'сильное начало дня!',
+    19:'сделаем этот день приятным!', 20:'отличный день для роста!',
+    21:'всё важное получится!', 22:'ты сегодня в ударе!',
+    23:'время сиять понемногу!', 24:'пусть всё складывается удачно!',
+    25:'хорошие вещи уже рядом!', 26:'ты двигаешься в верном направлении!',
+    27:'день начинается отлично!', 28:'улыбнись, ты молодец!',
+    29:'сегодня точно что-то получится!', 30:'главное — не останавливаться!',
+    31:'добро пожаловать в продуктивность!'
+  };
+  const greeting = GREETINGS[dayNum] || 'отличного дня!';
+
+  // Имя CEO из профиля
+  const matched = findUserInSheet();
+  const ceoFirstName = (matched?.name || '').trim().split(' ')[0] || 'Руководитель';
+
+  // ---- CRM метрики ----
+  const vizData = S.data.vizity || [];
+  const planData = S.data.plan   || [];
+
+  // Все менеджеры CRM
+  const crmRows = vizData.filter(r => r[0] && r[0] !== 'Имя' && !String(r[0]).toLowerCase().includes('итог'));
+  const crmPlan = (() => {
+    const p = planData.find(r => String(r[1]||'').toLowerCase() === 'crm');
+    return p ? num(p[2]) : 0;
+  })();
+  let crmFact = 0, crmProgNum = 0;
+  const crmMgrs = crmRows.map(r => {
+    const name = String(r[0]||'').trim();
+    const f = computeFactPct ? computeFactPct(r) : num(r[1]);
+    const p = computeProgPct ? computeProgPct(r, planData) : 0;
+    crmFact += num(r[1]);
+    return { name: name.split(' ')[0], fact: num(r[1]), prog: p };
+  });
+  const crmPlanMgr = crmPlan;
+  crmProgNum = crmPlanMgr > 0 ? Math.round((crmFact / crmPlanMgr) / ((dayNum / daysInMonth)) ) : 0;
+
+  // ---- Дожим метрики ----
+  const dvData = S.data.d_vizity || [];
+  const dozhimRows = dvData.filter(r => r[0] && r[0] !== 'Имя' && !String(r[0]).toLowerCase().includes('итог'));
+  const dozhimPlan = (() => {
+    const p = planData.find(r => String(r[1]||'').toLowerCase() === 'dozhim' || String(r[1]||'').toLowerCase() === 'дожим');
+    return p ? num(p[2]) : 0;
+  })();
+  let dozhimFact = 0;
+  const dozhimMgrs = dozhimRows.map(r => {
+    const name = String(r[0]||'').trim();
+    const p = computeProgPct ? computeProgPct(r, planData, true) : 0;
+    dozhimFact += num(r[1]);
+    return { name: name.split(' ')[0], fact: num(r[1]), prog: p };
+  });
+
+  // Общий прогноз компании
+  const totalFact = crmFact + dozhimFact;
+  const totalPlan = (crmPlanMgr||0) + (dozhimPlan||0);
+  const dayFrac = dayNum / daysInMonth;
+  const companyProg = (totalPlan > 0 && dayFrac > 0) ? Math.round((totalFact / totalPlan) / dayFrac * 100) : 0;
+  const progColor = companyProg >= 100 ? 'var(--grn)' : companyProg >= 85 ? '#ffd60a' : 'var(--red)';
+
+  // Лидеры CRM (прогноз >= 100)
+  const crmLeaders = crmMgrs.filter(m => m.prog >= 100).sort((a,b) => b.prog - a.prog).slice(0,3);
+  const dozhimLeaders = dozhimMgrs.filter(m => m.prog >= 100).sort((a,b) => b.prog - a.prog).slice(0,3);
+  const medals = ['🥇','🥈','🥉'];
+
+  function leaderBadge(leaders) {
+    if (!leaders.length) return `<div class="ceo-no-leaders">Нет менеджеров с прогнозом ≥ 100%</div>`;
+    return leaders.map((m, i) => `
+      <div class="ceo-leader-badge">
+        <span class="ceo-medal">${medals[i]}</span>
+        <div class="ceo-leader-name">${m.name}</div>
+        <div class="ceo-leader-prog" style="color:var(--grn)">${m.prog}%</div>
+      </div>`).join('');
+  }
+
+  // Конверсия общая
+  const cnvrs = S.data.cnvrs || [];
+  const cnvrsRow = cnvrs.find(r => String(r[0]||'').toLowerCase().includes('конверсия') || String(r[0]||'').toLowerCase().includes('итог'));
+  const cnvPct = cnvrsRow ? Math.round(num(cnvrsRow[1])*100) : 0;
+
+  // Алерты
+  const todayCol = dayNum; // упрощённо — колонка = день
+  const noVisitsToday = crmMgrs.filter(m => m.fact === 0).map(m => m.name);
+  const behindDaily = crmMgrs.filter(m => {
+    const dailyPlan = crmPlanMgr / crmMgrs.length / daysInMonth;
+    const shouldBe = dailyPlan * dayNum;
+    return m.fact < shouldBe * 0.8;
+  }).map(m => m.name);
+  const onEdge = [...crmMgrs, ...dozhimMgrs].filter(m => m.prog >= 85 && m.prog < 100).map(m => m.name);
+
+  el.innerHTML = `
+    <div class="ceo-dash">
+
+      <!-- HEADER -->
+      <div class="ceo-header">
+        <div class="ceo-greeting" style="font-family:'Unbounded',sans-serif">
+          <span style="color:var(--acc)">${ceoFirstName}</span>, ${greeting}
+        </div>
+        <div class="ceo-header-right">
+          <div class="ceo-date-weather">
+            <span class="ceo-date">${dateShort}</span>
+            <span id="ceo-weather" class="ceo-weather">…</span>
+          </div>
+          <div class="ceo-days-left">остаток <strong>${daysLeft}</strong> д.</div>
+        </div>
+      </div>
+
+      <!-- ПРОГНОЗ -->
+      <div class="ceo-forecast-row">
+        <div>
+          <div class="ceo-section-lbl">ПРОГНОЗ</div>
+          <div class="ceo-forecast-num" style="color:${progColor}">${companyProg}%</div>
+        </div>
+      </div>
+
+      <!-- МЕТРИКИ -->
+      <div class="ceo-section-lbl" style="padding:14px 0 8px">Ключевые показатели</div>
+      <div class="ceo-metrics-grid">
+        <div class="ceo-metric-card">
+          <div class="ceo-metric-lbl">CRM</div>
+          <div class="ceo-metric-val" style="color:var(--acc)">${crmFact} <span class="ceo-metric-plan">/ ${crmPlanMgr||'—'}</span></div>
+          <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, crmPlanMgr ? Math.round(crmFact/crmPlanMgr*100) : 0)}%;background:var(--acc)"></div></div>
+          <div class="ceo-metric-pct" style="color:var(--acc)">${crmPlanMgr ? Math.round(crmFact/crmPlanMgr*100) : 0}%</div>
+        </div>
+        <div class="ceo-metric-card">
+          <div class="ceo-metric-lbl">Дожим</div>
+          <div class="ceo-metric-val" style="color:#bf5af2">${dozhimFact} <span class="ceo-metric-plan">/ ${dozhimPlan||'—'}</span></div>
+          <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, dozhimPlan ? Math.round(dozhimFact/dozhimPlan*100) : 0)}%;background:#bf5af2"></div></div>
+          <div class="ceo-metric-pct" style="color:#bf5af2">${dozhimPlan ? Math.round(dozhimFact/dozhimPlan*100) : 0}%</div>
+        </div>
+        <div class="ceo-metric-card">
+          <div class="ceo-metric-lbl">Доход команды</div>
+          <div class="ceo-metric-val" style="color:var(--grn)">${fmtRub ? fmtRub(0) : '—'}</div>
+          <div class="ceo-metric-sub">за текущий месяц</div>
+        </div>
+        <div class="ceo-metric-card">
+          <div class="ceo-metric-lbl">Конверсия</div>
+          <div class="ceo-metric-val" style="color:#ff9f0a">${cnvPct || '—'}${cnvPct ? '%' : ''}</div>
+          <div class="ceo-metric-sub">визиты → сделки</div>
+        </div>
+      </div>
+
+      <!-- ЛИДЕРЫ CRM -->
+      <div class="ceo-section-lbl" style="padding:14px 0 8px">Лидеры CRM</div>
+      <div class="ceo-leaders-row">${leaderBadge(crmLeaders)}</div>
+
+      <!-- ЛИДЕРЫ ДОЖИМ -->
+      <div class="ceo-section-lbl" style="padding:14px 0 8px">Лидеры Дожим</div>
+      <div class="ceo-leaders-row">${leaderBadge(dozhimLeaders)}</div>
+
+      <!-- АЛЕРТЫ -->
+      <div class="ceo-section-lbl" style="padding:14px 0 8px">Внимание</div>
+      <div class="ceo-alerts">
+        ${noVisitsToday.length ? `<div class="ceo-alert ceo-alert-red">🔴 <div><div class="ceo-alert-title">Без визитов сегодня</div><div class="ceo-alert-sub">${noVisitsToday.join(', ')}</div></div></div>` : ''}
+        ${behindDaily.length ? `<div class="ceo-alert ceo-alert-yellow">⚠️ <div><div class="ceo-alert-title">Отстают от дневного плана</div><div class="ceo-alert-sub">${behindDaily.join(', ')}</div></div></div>` : ''}
+        ${onEdge.length ? `<div class="ceo-alert ceo-alert-yellow">📊 <div><div class="ceo-alert-title">На грани плана (85–99%)</div><div class="ceo-alert-sub">${onEdge.join(', ')}</div></div></div>` : ''}
+        ${!noVisitsToday.length && !behindDaily.length && !onEdge.length ? `<div class="ceo-alert-ok">✅ Всё в порядке</div>` : ''}
+      </div>
+
+    </div>`;
+}
+
+// ==================== END CEO DASHBOARD ====================
 
 function dockKpi(dept) {
   closeAllDockPopups();

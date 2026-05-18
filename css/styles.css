@@ -5884,6 +5884,24 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
 .ceo-forecast-sub {
   font-size: 11px; color: var(--txt2); margin-top: 6px;
 }
+/* Спидометр прогноза в Текущий KPI */
+.ceo-speedo {
+  position: relative;
+  width: 100%; max-width: 160px;
+  margin: 0 auto;
+}
+.ceo-speedo svg {
+  width: 100%; height: auto; display: block;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+}
+.ceo-speedo-value {
+  position: absolute; top: 56%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Unbounded', sans-serif;
+  font-size: 26px; font-weight: 900;
+  color: #1c1c1e !important;
+  line-height: 1;
+}
 
 .ceo-metrics-grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;

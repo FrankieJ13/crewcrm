@@ -7594,7 +7594,14 @@ function renderCeoDashboard() {
       <div class="sec-title">Текущий KPI</div>
       <div class="kpi-income-panel ceo-forecast-panel" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
         ${getMgrAvatarHtml ? getMgrAvatarHtml(matched?.name || '', companyProg) : ''}
-        <div class="ceo-forecast-num mv avatar-trigger" style="color:${progColor} !important">${companyProg}%</div>
+        <div class="ceo-speedo">
+          <svg viewBox="0 0 200 200">
+            <defs><linearGradient id="ceoSpeedGradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#eb4d4b"/><stop offset="50%" stop-color="#fbad33"/><stop offset="100%" stop-color="#27ae60"/></linearGradient></defs>
+            <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/>
+            <path id="ceo-speed-progress" class="progress-path" stroke="url(#ceoSpeedGradient)" d="M 40 160 A 85 85 0 1 1 160 160"/>
+          </svg>
+          <div class="ceo-speedo-value mv avatar-trigger">${companyProg}%</div>
+        </div>
         <div class="ceo-forecast-sub"><span class="mv">${totalFact}</span> из ${totalPlan||'—'} визитов</div>
       </div>
 
@@ -7604,7 +7611,7 @@ function renderCeoDashboard() {
         <!-- Row 1: Всего визитов, CRM, Дожим -->
         <div class="ceo-metric-card">
           <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openVisitsDayModalAll(null)" title="Хронология всех визитов">!</button>
-          <div class="ceo-metric-lbl">Всего визитов</div>
+          <div class="ceo-metric-lbl">Итого</div>
           <div class="ceo-metric-val"><span class="mv">${totalFact}</span> <span class="ceo-metric-plan">/ ${totalPlan||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, totalPlan ? Math.round(totalFact/totalPlan*100) : 0)}%;background:${pctClr(companyProg)}"></div></div>
           <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${pctClr(companyProg)} !important">${companyProg}</span><span style="color:${pctClr(companyProg)}">%</span></div>
@@ -7696,6 +7703,27 @@ function renderCeoDashboard() {
   if (!S.silentRefresh) {
     requestAnimationFrame(() => ceoAvatarInitOnRender());
   }
+
+  // Анимация спидометра прогноза
+  requestAnimationFrame(() => {
+    const path = document.getElementById('ceo-speed-progress');
+    if (!path) return;
+    const length = path.getTotalLength();
+    const target = Math.max(0, Math.min(companyProg / 100, 1));
+    path.style.strokeDasharray = `0,${length}`;
+    let start = null;
+    function animate(ts) {
+      if (!start) start = ts;
+      const ease = 1 - Math.pow(1 - Math.min((ts - start) / 1500, 1), 4);
+      path.style.strokeDasharray = `${ease * length * target},${length}`;
+      if (ease < 1) requestAnimationFrame(animate);
+    }
+    if (S.silentRefresh) {
+      path.style.strokeDasharray = `${length * target},${length}`;
+    } else {
+      requestAnimationFrame(animate);
+    }
+  });
 
   } catch(e) {
     console.error('CEO dashboard render error:', e);

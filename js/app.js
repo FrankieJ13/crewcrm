@@ -498,8 +498,9 @@ function initLogoRotation() {
       if (on === filterOn) return;
       filterOn = on;
       const sh = getComputedStyle(parent).getPropertyValue('--logo-shadow').trim() || '0 2px 3px rgba(0,0,0,0.35)';
+      // CSS-only goo: blur + contrast — работает в iOS PWA, в отличие от SVG url(#id)
       parent.style.filter = on
-        ? `url(#gooey-threshold) drop-shadow(${sh})`
+        ? `blur(5px) contrast(20) drop-shadow(${sh})`
         : `drop-shadow(${sh})`;
     }
     function setMorph(fraction) {

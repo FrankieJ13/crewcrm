@@ -6338,6 +6338,66 @@ function openVisitsDayModalAll(isDozhim) {
   requestAnimationFrame(() => scheduleAnimatedValues(mc));
 }
 
+function openCeoKsoModal() {
+  const ksoStatuses = ['подает заявку', 'в работе ксо', 'на рассмотрении банка'];
+  const collected = [];
+  const sources = [S.data.vizity || [], S.data.d_vizity || []];
+  sources.forEach(rows => {
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || !row[8]) continue;
+      if (!isSverkaRow(row)) continue;
+      const status = String(row[4] || '').trim().toLowerCase();
+      if (!ksoStatuses.includes(status)) continue;
+      collected.push({
+        date: String(row[0] || '').trim(),
+        manager: String(row[8] || '').trim(),
+        city: String(row[3] || '').trim() || '—',
+        phone: String(row[2] || '').trim() || '—',
+        comment: String(row[4] || '').trim() || '—',
+      });
+    }
+  });
+  collected.sort((a, b) => {
+    const [da, ma] = a.date.split('.').map(n => parseInt(n) || 0);
+    const [db, mb] = b.date.split('.').map(n => parseInt(n) || 0);
+    if (ma !== mb) return ma - mb;
+    return da - db;
+  });
+
+  function shortName(full) {
+    const parts = full.trim().split(/\s+/);
+    if (parts.length >= 2) return parts[0] + ' ' + parts[1][0].toUpperCase() + '.';
+    return parts[0] || '—';
+  }
+
+  const rows = collected.length
+    ? collected.map(d => `
+      <tr>
+        <td class="ceo-deals-date">${d.date.split('.').slice(0,2).join('.')}</td>
+        <td class="ceo-deals-mgr">${shortName(d.manager)}</td>
+        <td class="ceo-deals-city">${d.city}</td>
+        <td class="ceo-deals-src">${d.phone}</td>
+        <td class="ceo-deals-src">${d.comment}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="5" class="ceo-deals-empty">Нет заявок в банках</td></tr>`;
+
+  const modalTitle = document.querySelector('#income-overlay .income-modal-title');
+  const mc = document.getElementById('income-modal-content');
+  if (modalTitle) modalTitle.innerHTML = `В КСО<div class="visits-modal-mgr-name">${collected.length} · ${getMonthName(currentSuffix)}</div>`;
+  document.getElementById('income-overlay')?.classList.remove('visits-mode');
+  mc.removeAttribute('data-modal');
+  mc.innerHTML = `
+    <table class="ceo-deals-table">
+      <thead>
+        <tr><th>Дата</th><th>Менеджер</th><th>Город</th><th>Телефон</th><th>Статус</th></tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  document.getElementById('income-overlay').classList.add('open', 'ceo-mode');
+  document.body.style.overflow = 'hidden';
+}
+
 function openCeoSalonModal() {
   const collected = [];
   const sources = [S.data.vizity || [], S.data.d_vizity || []];
@@ -7592,6 +7652,7 @@ function renderCeoDashboard() {
           <div class="ceo-metric-sub">${totalVsalone > 0 ? 'клиентов сейчас' : 'никого нет'}</div>
         </div>
         <div class="ceo-metric-card">
+          <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openCeoKsoModal()" title="Список заявок в банках">!</button>
           <div class="ceo-metric-lbl">В КСО</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalVkso}</div>
           <div class="ceo-metric-sub">заявок в банках</div>

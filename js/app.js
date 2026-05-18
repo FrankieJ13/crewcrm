@@ -5242,13 +5242,13 @@ function getRangByName(nameLow) {
 
 // Возвращает role менеджера ('crm' | 'dozhim' | 'ceo') по имени из USERS
 function getRoleByName(nameLow) {
-  if (!S.usersData) return 'crm';
+  if (!S.usersData) return null;
   for (let i = 1; i < S.usersData.length; i++) {
     const row = S.usersData[i];
     const name = (row[1]||'').toLowerCase().trim();
     if (name === nameLow) return (row[2]||'crm').toLowerCase().trim();
   }
-  return 'crm';
+  return null; // имени нет в USERS — не управленческая роль
 }
 
 function findUserInSheet() {

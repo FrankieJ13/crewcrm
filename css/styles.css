@@ -5910,14 +5910,14 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
 /* Спидометр прогноза в Текущий KPI */
 .ceo-speedo {
   position: relative;
-  width: 68px;
+  width: 75px;
   flex-shrink: 0;
   overflow: visible;
   display: flex; align-items: center; justify-content: center;
   margin-left: -6px;
 }
 .ceo-speedo svg {
-  width: 68px; height: 68px; display: block;
+  width: 75px; height: 75px; display: block;
   overflow: visible;
   filter: drop-shadow(0 3px 3px rgba(0,0,0,0.3));
 }

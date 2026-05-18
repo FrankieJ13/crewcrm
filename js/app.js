@@ -5467,7 +5467,7 @@ function getMgrGreeting(fullName) {
   }
 
   const fn = firstName ? firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase() : '';
-  const html = `<span style="color:var(--acc)">${fn}</span>, ${phrase}`;
+  const html = `${fn}, ${phrase}`;
   return { firstName: fn, phrase, html };
 }
 

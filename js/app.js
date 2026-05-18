@@ -499,7 +499,7 @@ function initLogoRotation() {
       filterOn = on;
       const sh = getComputedStyle(parent).getPropertyValue('--logo-shadow').trim() || '0 2px 3px rgba(0,0,0,0.35)';
       parent.style.filter = on
-        ? `url(#gooey-threshold) drop-shadow(${sh})`
+        ? `url(#gooey-threshold-local) drop-shadow(${sh})`
         : `drop-shadow(${sh})`;
     }
     function setMorph(fraction) {

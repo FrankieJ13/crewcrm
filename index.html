@@ -33,7 +33,14 @@
   <div class="hdr-inner">
     <div class="hdr-left">
       <div class="logo" onclick="goHome()">
-        <div class="gooey-logo" style="filter:url(#gooey-threshold)">
+        <div class="gooey-logo">
+          <svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden;pointer-events:none">
+            <defs>
+              <filter id="gooey-threshold-local">
+                <feColorMatrix in="SourceGraphic" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 255 -140"/>
+              </filter>
+            </defs>
+          </svg>
           <span id="gooey-t1" class="gooey-text"></span>
           <span id="gooey-t2" class="gooey-text"></span>
         </div>

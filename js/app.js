@@ -630,7 +630,7 @@ function getPresencePageLabel() {
   const roleDept = role === 'dozhim' ? 'dozhim' : 'crm';
   const effectiveRatingDept = isCeo ? S.ratingDept : roleDept;
   const effectiveDohodDept = isCeo ? S.dohodTab : roleDept;
-  if (document.getElementById('scr-ceo')?.classList.contains('on')) return 'Итоги';
+  if (document.getElementById('scr-ceo')?.classList.contains('on')) return 'Главная';
   if (document.getElementById('scr-personal')?.classList.contains('on')) return 'Мой KPI';
   if (document.getElementById('scr-rating')?.classList.contains('on')) {
     return isCeo ? `Рейтинг ${deptLabel(effectiveRatingDept)}` : 'Рейтинг';
@@ -648,7 +648,7 @@ function getPresencePageLabel() {
     if (!isCeo) return 'Главная';
     if (S.reportTab === 'mgr') return 'KPI CRM';
     if (S.reportTab === 'dozhim') return 'KPI Дожим';
-    return 'Главная';
+    return 'Итоги';
   }
   return 'Главная';
 }

@@ -5850,6 +5850,16 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
 .ceo-deals-city { color: var(--txt2); }
 .ceo-deals-src  { color: var(--txt2); font-size: 11px; }
 .ceo-deals-empty { text-align: center; color: var(--txt3); padding: 20px; }
+.ceo-deals-daytotal td {
+  background: var(--bg3);
+  color: var(--txt2);
+  font-size: 11px;
+  text-align: right;
+  padding: 5px 8px;
+  letter-spacing: 0.02em;
+  border-bottom: 1px solid var(--line);
+}
+.ceo-deals-daytotal b { color: var(--txt); font-weight: 800; }
 .ceo-mgrs-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .ceo-mgrs-list-item {
   display: flex; justify-content: space-between; align-items: center;

@@ -6573,15 +6573,36 @@ function openCeoDealsModal(kind) {
     return parts[0] || '—';
   }
 
-  const rows = collected.length
-    ? collected.map(d => `
-      <tr>
-        <td class="ceo-deals-date">${d.date.split('.').slice(0,2).join('.')}</td>
+  // Сборка строк с итогом по дню после каждой группы
+  let rows = '';
+  if (!collected.length) {
+    rows = `<tr><td colspan="4" class="ceo-deals-empty">Нет данных</td></tr>`;
+  } else {
+    let curDay = null;
+    let dayCount = 0;
+    let buffer = '';
+    function flushDay() {
+      if (curDay !== null) {
+        rows += buffer;
+        rows += `<tr class="ceo-deals-daytotal"><td colspan="4">Итого за ${curDay}: <b>${dayCount}</b> шт.</td></tr>`;
+      }
+      buffer = '';
+      dayCount = 0;
+    }
+    collected.forEach(d => {
+      const dd = d.date.split('.').slice(0,2).join('.');
+      if (curDay !== null && dd !== curDay) flushDay();
+      curDay = dd;
+      dayCount++;
+      buffer += `<tr>
+        <td class="ceo-deals-date">${dd}</td>
         <td class="ceo-deals-mgr">${shortName(d.manager)}</td>
         <td class="ceo-deals-city">${d.city}</td>
         <td class="ceo-deals-src">${d.source}</td>
-      </tr>`).join('')
-    : `<tr><td colspan="4" class="ceo-deals-empty">Нет данных</td></tr>`;
+      </tr>`;
+    });
+    flushDay();
+  }
 
   const modalTitle = document.querySelector('#income-overlay .income-modal-title');
   const mc = document.getElementById('income-modal-content');

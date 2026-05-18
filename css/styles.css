@@ -1251,6 +1251,57 @@ body.cosmic .hdr-greeting.aurora {
   object-fit:contain; flex-shrink:0;
   transition: opacity 0.4s ease;
 }
+
+/* Gooey morph logo */
+.gooey-logo {
+  position: relative;
+  width: 170px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  --logo-shadow: 0 2px 3px rgba(0,0,0,0.35);
+}
+body.tiffany .gooey-logo { --logo-shadow: 0 1px 6px rgba(255,255,255,0.8); }
+.gooey-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 900;
+  font-size: 22px;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  will-change: filter, opacity;
+}
+/* Светлые/нейтральные радужные темы */
+body.fluent .gooey-text,
+body.cosmic .gooey-text,
+body.tiffany .gooey-text {
+  background-image: linear-gradient(-30deg,
+    #c5673d 0%, #ff9d09 8%, #fcaf15 16%, #deb80f 25%, #b4c61a 33%,
+    #69c651 42%, #3bcaa5 50%, #0491c8 58%, #4ea1d5 66%, #7584cd 75%,
+    #9661c0 83%, #cb55bf 92%, #b54aa8 100%);
+}
+/* Тёмные темы — светлая металлическая заливка */
+body:not(.light):not(.neo-light):not(.fluent):not(.cosmic):not(.tiffany) .gooey-text,
+body.neo-dark .gooey-text,
+body.cinematic .gooey-text {
+  background-image: linear-gradient(-30deg, #999 0%, #fafafa 50%, #999 100%);
+}
+/* Светлые тёмно-серые темы */
+body.light .gooey-text,
+body.neo-light .gooey-text {
+  background-image: linear-gradient(-30deg, #111 0%, #444 50%, #000 100%);
+}
 .badge-month {
   width: 30px; height: 30px; border-radius: 50%;
   background: var(--bg3); border: 1px solid var(--line2);

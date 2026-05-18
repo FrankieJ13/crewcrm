@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Gooey Logo Test — все темы</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800;900&display=swap" rel="stylesheet">
+<style>
+  html, body {
+    margin: 0; padding: 0;
+    background: #0d0d0d; color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+    padding: 24px;
+  }
+  .swatch {
+    border-radius: 12px;
+    padding: 18px 14px;
+    border: 1px solid rgba(255,255,255,0.08);
+    display: flex; flex-direction: column; gap: 12px;
+    align-items: center;
+  }
+  .swatch.dark    { background: #161616; }
+  .swatch.light   { background: #f3f3ee; color: #1a1a1a; }
+  .swatch.tiffany { background: #cfe5e2; color: #1a1a1a; }
+  .swatch.fluent  { background: linear-gradient(135deg, #2b2b2b, #404040); }
+  .swatch.cosmic  { background: linear-gradient(135deg, #1c1c1e, #aeaeb2); color:#1a1a1a; }
+  .swatch.neo-dark   { background: linear-gradient(135deg, #1e2028, #2b2d39); }
+  .swatch.neo-light  { background: linear-gradient(135deg, #e8ecf1, #c8d0dc); color:#1a1a1a; }
+  .swatch.cinematic  { background: linear-gradient(135deg, #080808, #1a1410); }
+
+  .swatch-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; opacity: 0.6;
+  }
+
+  .gooey-logo {
+    position: relative;
+    width: 240px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    --logo-shadow: 0 2px 3px rgba(0,0,0,0.35);
+  }
+  .theme-tiffany.gooey-logo { --logo-shadow: 0 1px 6px rgba(255,255,255,0.8); }
+  .gooey-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Unbounded', sans-serif;
+    font-weight: 900;
+    font-size: 26px;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    white-space: nowrap;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    -webkit-background-clip: text;
+    will-change: filter, opacity;
+  }
+  /* Радужные темы */
+  .theme-fluent  .gooey-text,
+  .theme-cosmic  .gooey-text,
+  .theme-tiffany .gooey-text {
+    background-image: linear-gradient(-30deg,
+      #c5673d 0%, #ff9d09 8%, #fcaf15 16%, #deb80f 25%, #b4c61a 33%,
+      #69c651 42%, #3bcaa5 50%, #0491c8 58%, #4ea1d5 66%, #7584cd 75%,
+      #9661c0 83%, #cb55bf 92%, #b54aa8 100%);
+  }
+  /* Тёмные металлические */
+  .theme-dark      .gooey-text,
+  .theme-neo-dark  .gooey-text,
+  .theme-cinematic .gooey-text {
+    background-image: linear-gradient(-30deg, #999 0%, #fafafa 50%, #999 100%);
+  }
+  /* Светлые тёмно-серые */
+  .theme-light     .gooey-text,
+  .theme-neo-light .gooey-text {
+    background-image: linear-gradient(-30deg, #111 0%, #444 50%, #000 100%);
+  }
+</style>
+</head>
+<body>
+
+<!-- Persistent SVG filter -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="gooey-threshold">
+      <feColorMatrix in="SourceGraphic" type="matrix"
+        values="1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                0 0 0 255 -140"/>
+    </filter>
+  </defs>
+</svg>
+
+<div class="grid">
+  <div class="swatch dark">
+    <div class="swatch-label">Glass Dark</div>
+    <div class="gooey-logo theme-dark" style="filter:url(#gooey-threshold)">
+      <span class="gooey-text gt1"></span><span class="gooey-text gt2"></span>
+    </div>
+  </div>
+  <div class="swatch light">
+    <div class="swatch-label">Glass Light</div>
+    <div class="gooey-logo theme-light" style="filter:url(#gooey-threshold)">
+      <span class="gooey-text gt1"></span><span class="gooey-text gt2"></span>
+    </div>
+  </div>
+  <div class="swatch tiffany">
+    <div class="swatch-label">Tiffany</div>
+    <div class="gooey-logo theme-tiffany" style="filter:url(#gooey-threshold)">
+      <span class="gooey-text gt1"></span><span class="gooey-text gt2"></span>
+    </div>
+  </div>
+  <div class="swatch fluent">
+    <div class="swatch-label">Fluent</div>
+    <div class="gooey-logo theme-fluent" style="filter:url(#gooey-threshold)">
+      <span class="gooey-text gt1"></span><span class="gooey-text gt2"></span>
+    </div>
+  </div>
+  <div class="swatch cosmic">
+    <div class="swatch-label">Cosmic</div>
+    <div class="gooey-logo theme-cosmic" style="filter:url(#gooey-threshold)">
+      <span class="gooey-text gt1"></span><span class="gooey-text gt2"></span>
+    </div>
+  </div>
+  <div class="swatch neo-dark">
+    <div class="swatch-label">Neo Dark</div>
+    <div class="gooey-logo theme-neo-dark" style="filter:url(#gooey-threshold)">
+      <span class="gooey-text gt1"></span><span class="gooey-text gt2"></span>
+    </div>
+  </div>
+  <div class="swatch neo-light">
+    <div class="swatch-label">Neo Light</div>
+    <div class="gooey-logo theme-neo-light" style="filter:url(#gooey-threshold)">
+      <span class="gooey-text gt1"></span><span class="gooey-text gt2"></span>
+    </div>
+  </div>
+  <div class="swatch cinematic">
+    <div class="swatch-label">Cinematic</div>
+    <div class="gooey-logo theme-cinematic" style="filter:url(#gooey-threshold)">
+      <span class="gooey-text gt1"></span><span class="gooey-text gt2"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const TEXTS = ['CRM Crew', 'Dashboard'];
+  const MORPH_TIME = 1.4;
+  const COOLDOWN_TIME = 2.8;
+
+  function runGooey(t1, t2) {
+    const parent = t1.parentElement;
+    let textIndex = TEXTS.length - 1;
+    let prevTime = performance.now();
+    let morph = 0;
+    let cooldown = COOLDOWN_TIME;
+    let filterOn = false;
+    t1.textContent = TEXTS[textIndex % TEXTS.length];
+    t2.textContent = TEXTS[(textIndex + 1) % TEXTS.length];
+
+    function setParentFilter(on) {
+      if (on === filterOn) return;
+      filterOn = on;
+      const sh = getComputedStyle(parent).getPropertyValue('--logo-shadow').trim() || '0 2px 3px rgba(0,0,0,0.35)';
+      parent.style.filter = on
+        ? `url(#gooey-threshold) drop-shadow(${sh})`
+        : `drop-shadow(${sh})`;
+    }
+    function setMorph(fraction) {
+      setParentFilter(true);
+      t2.style.filter = `blur(${Math.min(8 / fraction - 8, 100)}px)`;
+      t2.style.opacity = `${Math.pow(fraction, 0.4) * 100}%`;
+      const inv = 1 - fraction;
+      t1.style.filter = `blur(${Math.min(8 / inv - 8, 100)}px)`;
+      t1.style.opacity = `${Math.pow(inv, 0.4) * 100}%`;
+    }
+    function doCooldown() {
+      morph = 0;
+      setParentFilter(false);
+      t2.style.filter = ''; t2.style.opacity = '100%';
+      t1.style.filter = ''; t1.style.opacity = '0%';
+    }
+    function doMorph() {
+      morph -= cooldown;
+      cooldown = 0;
+      let fraction = morph / MORPH_TIME;
+      if (fraction > 1) { cooldown = COOLDOWN_TIME; fraction = 1; }
+      setMorph(fraction);
+    }
+    function animate() {
+      requestAnimationFrame(animate);
+      const now = performance.now();
+      const dt = (now - prevTime) / 1000;
+      prevTime = now;
+      const shouldIncrement = cooldown > 0;
+      cooldown -= dt;
+      if (cooldown <= 0) {
+        if (shouldIncrement) {
+          textIndex = (textIndex + 1) % TEXTS.length;
+          t1.textContent = TEXTS[textIndex % TEXTS.length];
+          t2.textContent = TEXTS[(textIndex + 1) % TEXTS.length];
+        }
+        doMorph();
+      } else {
+        doCooldown();
+      }
+    }
+    animate();
+  }
+
+  document.querySelectorAll('.gooey-logo').forEach(logo => {
+    const t1 = logo.querySelector('.gt1');
+    const t2 = logo.querySelector('.gt2');
+    if (t1 && t2) runGooey(t1, t2);
+  });
+</script>
+
+</body>
+</html>

@@ -474,6 +474,83 @@ function initLogoRotation() {
   _logoTimer = setInterval(rotateLogo, 5 * 60 * 1000);
 }
 
+// ==================== GOOEY LOGO ANIMATION ====================
+(function initGooeyLogo() {
+  const TEXTS = ['CRM Crew', 'Dashboard'];
+  const MORPH_TIME = 1.4;     // длительность морфа (сек)
+  const COOLDOWN_TIME = 2.8;  // как долго стоит без морфа (сек)
+
+  function start() {
+    const t1 = document.getElementById('gooey-t1');
+    const t2 = document.getElementById('gooey-t2');
+    if (!t1 || !t2) { setTimeout(start, 200); return; }
+    const parent = t1.parentElement;
+
+    let textIndex = TEXTS.length - 1;
+    let prevTime = performance.now();
+    let morph = 0;
+    let cooldown = COOLDOWN_TIME;
+    let filterOn = false;
+    t1.textContent = TEXTS[textIndex % TEXTS.length];
+    t2.textContent = TEXTS[(textIndex + 1) % TEXTS.length];
+
+    function setParentFilter(on) {
+      if (on === filterOn) return;
+      filterOn = on;
+      const sh = getComputedStyle(parent).getPropertyValue('--logo-shadow').trim() || '0 2px 3px rgba(0,0,0,0.35)';
+      parent.style.filter = on
+        ? `url(#gooey-threshold) drop-shadow(${sh})`
+        : `drop-shadow(${sh})`;
+    }
+    function setMorph(fraction) {
+      setParentFilter(true);
+      t2.style.filter = `blur(${Math.min(8 / fraction - 8, 100)}px)`;
+      t2.style.opacity = `${Math.pow(fraction, 0.4) * 100}%`;
+      const inv = 1 - fraction;
+      t1.style.filter = `blur(${Math.min(8 / inv - 8, 100)}px)`;
+      t1.style.opacity = `${Math.pow(inv, 0.4) * 100}%`;
+    }
+    function doCooldown() {
+      morph = 0;
+      setParentFilter(false);
+      t2.style.filter = '';  t2.style.opacity = '100%';
+      t1.style.filter = '';  t1.style.opacity = '0%';
+    }
+    function doMorph() {
+      morph -= cooldown;
+      cooldown = 0;
+      let fraction = morph / MORPH_TIME;
+      if (fraction > 1) { cooldown = COOLDOWN_TIME; fraction = 1; }
+      setMorph(fraction);
+    }
+    function animate() {
+      requestAnimationFrame(animate);
+      const now = performance.now();
+      const dt = (now - prevTime) / 1000;
+      prevTime = now;
+      const shouldIncrement = cooldown > 0;
+      cooldown -= dt;
+      if (cooldown <= 0) {
+        if (shouldIncrement) {
+          textIndex = (textIndex + 1) % TEXTS.length;
+          t1.textContent = TEXTS[textIndex % TEXTS.length];
+          t2.textContent = TEXTS[(textIndex + 1) % TEXTS.length];
+        }
+        doMorph();
+      } else {
+        doCooldown();
+      }
+    }
+    animate();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
+})();
+
 function firebaseConfigured() {
   const cfg = CFG.FIREBASE || {};
   return !!(cfg.apiKey && cfg.authDomain && cfg.databaseURL && cfg.projectId && cfg.appId);

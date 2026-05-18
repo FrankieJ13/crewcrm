@@ -7718,24 +7718,21 @@ function renderCeoDashboard() {
       <div class="sec-title">Ключевые показатели</div>
       <div class="ceo-metrics-grid">
         <!-- Row 1: Итого, CRM, Дожим -->
-        <div class="ceo-metric-card">
-          <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openVisitsDayModalAll(null)" title="Хронология всех визитов">!</button>
+        <div class="ceo-metric-card ceo-clickable" onclick="openVisitsDayModalAll(null)">
           <div class="ceo-metric-lbl">Итого</div>
           <div class="ceo-metric-val"><span class="mv">${totalFact}</span> <span class="ceo-metric-plan">/ ${totalPlan||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, totalPlan ? Math.round(totalFact/totalPlan*100) : 0)}%;background:${pctClr(companyProg)}"></div></div>
           <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${pctClr(companyProg)} !important">${companyProg}</span><span style="color:${pctClr(companyProg)}">%</span></div>
           ${sparkline(trendAll, pctClr(companyProg), 'all')}
         </div>
-        <div class="ceo-metric-card">
-          <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openVisitsDayModalAll(false)" title="Хронология визитов CRM">!</button>
+        <div class="ceo-metric-card ceo-clickable" onclick="openVisitsDayModalAll(false)">
           <div class="ceo-metric-lbl">CRM</div>
           <div class="ceo-metric-val"><span class="mv">${crmFact}</span> <span class="ceo-metric-plan">/ ${crmPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, crmPlanSum ? Math.round(crmFact/crmPlanSum*100) : 0)}%;background:${pctClr(crmProg)}"></div></div>
           <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${pctClr(crmProg)} !important">${crmProg}</span><span style="color:${pctClr(crmProg)}">%</span></div>
           ${sparkline(trendCrm, pctClr(crmProg), 'crm')}
         </div>
-        <div class="ceo-metric-card">
-          <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openVisitsDayModalAll(true)" title="Хронология визитов Дожим">!</button>
+        <div class="ceo-metric-card ceo-clickable" onclick="openVisitsDayModalAll(true)">
           <div class="ceo-metric-lbl">Дожим</div>
           <div class="ceo-metric-val"><span class="mv">${dozhimFact}</span> <span class="ceo-metric-plan">/ ${dozhimPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, dozhimPlanSum ? Math.round(dozhimFact/dozhimPlanSum*100) : 0)}%;background:${pctClr(dozhimProg)}"></div></div>
@@ -7744,20 +7741,17 @@ function renderCeoDashboard() {
         </div>
 
         <!-- Row 2: Кредиты, Нал+Обмен, Комиссия -->
-        <div class="ceo-metric-card">
-          <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openCeoDealsModal('kredit')" title="Список визитов">!</button>
+        <div class="ceo-metric-card ceo-clickable" onclick="openCeoDealsModal('kredit')">
           <div class="ceo-metric-lbl">Кредиты</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalKredit}</div>
           <div class="ceo-metric-sub">CRM + Дожим</div>
         </div>
-        <div class="ceo-metric-card">
-          <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openCeoDealsModal('nalobm')" title="Список визитов">!</button>
+        <div class="ceo-metric-card ceo-clickable" onclick="openCeoDealsModal('nalobm')">
           <div class="ceo-metric-lbl">Нал+Обмен</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalNalObm}</div>
           <div class="ceo-metric-sub">CRM + Дожим</div>
         </div>
-        <div class="ceo-metric-card">
-          <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openCeoDealsModal('komis')" title="Список визитов">!</button>
+        <div class="ceo-metric-card ceo-clickable" onclick="openCeoDealsModal('komis')">
           <div class="ceo-metric-lbl">Комиссия</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalKomis}</div>
           <div class="ceo-metric-sub">CRM + Дожим</div>
@@ -7766,20 +7760,17 @@ function renderCeoDashboard() {
 
       <!-- Row 3: К цели, В салоне, В КСО -->
       <div class="ceo-metrics-grid" style="margin-top:8px">
-        <div class="ceo-metric-card">
-          <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openCeoMgrsInPlanModal()" title="Список менеджеров">!</button>
+        <div class="ceo-metric-card ceo-clickable" onclick="openCeoMgrsInPlanModal()">
           <div class="ceo-metric-lbl">К цели</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${mgrsInPlan.length}</div>
           <div class="ceo-metric-sub">из ${allMgrs.length}</div>
         </div>
-        <div class="ceo-metric-card${totalVsalone > 0 ? ' ceo-salon-alarm' : ''}">
-          <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openCeoSalonModal()" title="Список визитов в салоне">!</button>
+        <div class="ceo-metric-card ceo-clickable${totalVsalone > 0 ? ' ceo-salon-alarm' : ''}" onclick="openCeoSalonModal()">
           <div class="ceo-metric-lbl">В салоне</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalVsalone}</div>
           <div class="ceo-metric-sub">${totalVsalone > 0 ? 'клиентов сейчас' : 'никого нет'}</div>
         </div>
-        <div class="ceo-metric-card ceo-kso-fill">
-          <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openCeoKsoModal()" title="Список заявок в банках">!</button>
+        <div class="ceo-metric-card ceo-clickable ceo-kso-fill" onclick="openCeoKsoModal()">
           <div class="ceo-metric-lbl">В КСО</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalVkso}</div>
           <div class="ceo-metric-sub">заявок в банках</div>

@@ -5941,6 +5941,9 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
   color: #1c1c1e !important;
   line-height: 1;
 }
+body.dark .ceo-speedo-value,
+body.neo-dark .ceo-speedo-value,
+body.cinematic .ceo-speedo-value { color: var(--txt) !important; }
 
 .ceo-metrics-grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;

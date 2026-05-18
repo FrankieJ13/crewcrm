@@ -796,5 +796,15 @@
 </div>
 
 <script src="./js/app.js"></script>
+<!-- Persistent gradient defs for CEO speedo (macOS Chromium fix) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="ceoSpeedGradientGlobal" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#eb4d4b"/>
+      <stop offset="50%" stop-color="#fbad33"/>
+      <stop offset="100%" stop-color="#27ae60"/>
+    </linearGradient>
+  </defs>
+</svg>
 </body>
 </html>

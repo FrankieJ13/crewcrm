@@ -7632,9 +7632,8 @@ function renderCeoDashboard() {
         <div class="ceo-forecast-body">
           <div class="ceo-speedo">
             <svg viewBox="-10 -10 220 220">
-              <defs><linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#eb4d4b"/><stop offset="50%" stop-color="#fbad33"/><stop offset="100%" stop-color="#27ae60"/></linearGradient></defs>
               <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/>
-              <path id="ceo-speed-progress" class="progress-path" pathLength="1" stroke-dasharray="1" stroke-dashoffset="${Math.max(0, 1 - Math.min(companyProg/100, 1))}" style="stroke:url(#speedGradient);transition:stroke-dashoffset 1.5s cubic-bezier(.2,0,.2,1)" d="M 40 160 A 85 85 0 1 1 160 160"/>
+              <path id="ceo-speed-progress" class="ceo-speed-progress" stroke="url(#ceoSpeedGradientGlobal)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="${Math.max(0, 1 - Math.min(companyProg/100, 1))}" d="M 40 160 A 85 85 0 1 1 160 160"/>
             </svg>
             <div class="ceo-speedo-value mv avatar-trigger">${companyProg}%</div>
           </div>

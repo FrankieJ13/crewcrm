@@ -5781,11 +5781,18 @@ body.fluent .presence-count {
 .ceo-header-right { padding-top: 2px; }
 .ceo-salon-alarm {
   border-color: var(--line) !important;
-  background: #bf5af2 !important;
+  background: #7ad17a !important;
 }
 .ceo-salon-alarm .ceo-metric-lbl,
 .ceo-salon-alarm .ceo-metric-val,
-.ceo-salon-alarm .ceo-metric-sub { color: #fff !important; }
+.ceo-salon-alarm .ceo-metric-sub { color: #1c1c1e !important; }
+.ceo-kso-fill {
+  border-color: var(--line) !important;
+  background: #bf5af2 !important;
+}
+.ceo-kso-fill .ceo-metric-lbl,
+.ceo-kso-fill .ceo-metric-val,
+.ceo-kso-fill .ceo-metric-sub { color: #fff !important; }
 body.cosmic .ceo-greeting,
 body.cosmic .ceo-date,
 body.cosmic .ceo-weather,
@@ -5941,7 +5948,7 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
 }
 .ceo-metric-card {
   background: var(--bg2); border-radius: var(--r2);
-  padding: 12px 14px; border: 1px solid var(--line);
+  padding: 10px 10px; border: 1px solid var(--line);
 }
 .ceo-metric-lbl { font-size: 10px; color: var(--txt3); margin-bottom: 6px; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 600; }
 .ceo-metric-val { font-family: 'Unbounded', sans-serif; font-size: 22px; font-weight: 800; line-height: 1.1; margin-bottom: 6px; font-variant-numeric: tabular-nums; min-height: 24px; }

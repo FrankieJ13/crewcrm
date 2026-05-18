@@ -7778,7 +7778,7 @@ function renderCeoDashboard() {
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalVsalone}</div>
           <div class="ceo-metric-sub">${totalVsalone > 0 ? 'клиентов сейчас' : 'никого нет'}</div>
         </div>
-        <div class="ceo-metric-card">
+        <div class="ceo-metric-card ceo-kso-fill">
           <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openCeoKsoModal()" title="Список заявок в банках">!</button>
           <div class="ceo-metric-lbl">В КСО</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalVkso}</div>

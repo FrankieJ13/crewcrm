@@ -7517,6 +7517,39 @@ function renderCeoDashboard() {
   const totalVkso = Object.values(crmStats).reduce((s,x) => s + (x.vkso||0), 0)
                   + Object.values(dozhimStats).reduce((s,x) => s + (x.vkso||0), 0);
 
+  // Динамика за сегодня (сегодня vs вчера по визитам, по обоим листам)
+  const ddTodayStr = String(today.getDate()).padStart(2,'0');
+  const ydayDate = new Date(today.getTime() - 24*60*60*1000);
+  const ddYdayStr = String(ydayDate.getDate()).padStart(2,'0');
+  function countVisitsOnDay(dayStr) {
+    let n = 0;
+    [vizData, dvData].forEach(rows => {
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || !r[0]) continue;
+        if (!isSverkaRow(r)) continue;
+        const d = String(r[0]).trim().split('.')[0].padStart(2,'0');
+        if (d === dayStr) n++;
+      }
+    });
+    return n;
+  }
+  const visitsToday = countVisitsOnDay(ddTodayStr);
+  const visitsYday  = countVisitsOnDay(ddYdayStr);
+  const dynamicsPct = visitsYday > 0 ? Math.round((visitsToday - visitsYday) / visitsYday * 100) : (visitsToday > 0 ? 100 : 0);
+  const dynamicsArrow = visitsToday > visitsYday ? '↑' : (visitsToday < visitsYday ? '↓' : '→');
+  const dynamicsColor = visitsToday > visitsYday ? 'var(--grn)' : (visitsToday < visitsYday ? 'var(--red)' : 'var(--txt2)');
+
+  // Прогноз выполнения к концу дня:
+  // факт + (визиты сегодня * (1 - доля прошедшего рабочего дня)) → проекция к 18:00
+  const hourNow = today.getHours() + today.getMinutes()/60;
+  const workStart = 9, workEnd = 18;
+  const dayFraction = Math.max(0.01, Math.min(1, (hourNow - workStart) / (workEnd - workStart)));
+  const visitsEod = dayFraction > 0 ? Math.round(visitsToday / dayFraction) : visitsToday;
+  const factEod = totalFact - visitsToday + visitsEod;
+  const eodProg = totalPlan > 0 ? Math.round((factEod / totalPlan) * (daysInMonth / dayNum) * 100) : 0;
+  const eodColor = eodProg >= 100 ? 'var(--grn)' : eodProg >= 85 ? '#ffd60a' : 'var(--red)';
+
   // Суммарно сделки (CRM + Дожим)
   function sumStat(field) {
     let n = 0;
@@ -7597,15 +7630,35 @@ function renderCeoDashboard() {
       <div class="sec-title">Текущий KPI</div>
       <div class="kpi-income-panel ceo-forecast-panel" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
         ${getMgrAvatarHtml ? getMgrAvatarHtml(matched?.name || '', companyProg) : ''}
-        <div class="ceo-speedo">
-          <svg viewBox="0 0 200 200">
-            <defs><linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#eb4d4b"/><stop offset="50%" stop-color="#fbad33"/><stop offset="100%" stop-color="#27ae60"/></linearGradient></defs>
-            <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/>
-            <path id="ceo-speed-progress" class="progress-path" style="stroke:url(#speedGradient)" d="M 40 160 A 85 85 0 1 1 160 160"/>
-          </svg>
-          <div class="ceo-speedo-value mv avatar-trigger">${companyProg}%</div>
+        <div class="ceo-forecast-body">
+          <div class="ceo-speedo">
+            <svg viewBox="-10 -10 220 220">
+              <defs><linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#eb4d4b"/><stop offset="50%" stop-color="#fbad33"/><stop offset="100%" stop-color="#27ae60"/></linearGradient></defs>
+              <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/>
+              <path id="ceo-speed-progress" class="progress-path" style="stroke:url(#speedGradient)" d="M 40 160 A 85 85 0 1 1 160 160"/>
+            </svg>
+            <div class="ceo-speedo-value mv avatar-trigger">${companyProg}%</div>
+          </div>
+          <div class="ceo-forecast-info">
+            <div class="ceo-forecast-sub"><span class="mv">${totalFact}</span> из <span>${totalPlan||'—'}</span> визитов</div>
+            <div class="ceo-mini-badges">
+              <div class="ceo-mini-badge">
+                <div class="ceo-mini-lbl">Динамика за сегодня</div>
+                <div class="ceo-mini-val">
+                  <span style="color:${dynamicsColor}">${dynamicsArrow} <span class="mv">${Math.abs(dynamicsPct)}</span>%</span>
+                  <span class="ceo-mini-sub">к вчера</span>
+                </div>
+              </div>
+              <div class="ceo-mini-badge">
+                <div class="ceo-mini-lbl">Прогноз выполнения</div>
+                <div class="ceo-mini-val">
+                  <span style="color:${eodColor}"><span class="mv">${eodProg}</span>%</span>
+                  <span class="ceo-mini-sub">к концу дня</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="ceo-forecast-sub"><span class="mv">${totalFact}</span> из ${totalPlan||'—'} визитов</div>
       </div>
 
       <!-- МЕТРИКИ -->

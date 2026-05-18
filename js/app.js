@@ -2493,7 +2493,7 @@ function getMgrAvatarHtml(name, progNum) {
     </div>`;
   }
   // Обычный случай — два img для crossfade
-  return `<div class="kpi-avatar-wrap" onclick="ceoAvatarReplay(this)" data-final-src="${finalSrc}" data-default-src="${defaultSrc}">
+  return `<div class="kpi-avatar-wrap" onclick="event.stopPropagation();ceoAvatarReplay(this)" data-final-src="${finalSrc}" data-default-src="${defaultSrc}">
     <img class="kpi-avatar kpi-avatar-final" src="${finalSrc}" alt="" onerror="this.style.display='none'">
     <img class="kpi-avatar kpi-avatar-default" src="${defaultSrc}" alt="" onerror="this.style.display='none';this.parentElement.dataset.noDefault='1'">
   </div>`;
@@ -2522,9 +2522,6 @@ function ceoAvatarPlay(wrap, force) {
   finalImg.style.opacity = '0';
   wrap.dataset.played = '0';
 
-  // Ищем элемент-триггер (значение прогноза с анимацией)
-  const scr = wrap.closest('.scr') || document;
-  const trigger = scr.querySelector('.avatar-trigger');
   const swap = () => {
     if (!wrap.isConnected) return;
     defImg.style.opacity = '0';
@@ -2532,27 +2529,38 @@ function ceoAvatarPlay(wrap, force) {
     wrap.dataset.played = '1';
   };
 
-  if (!trigger) {
-    // Фолбэк — таймер
-    wrap._t = setTimeout(swap, 1400);
-    return;
-  }
+  // Ищем элемент-триггер. Опрос в 2 фазы: дождаться появления .value-counting, затем его исчезновения.
+  const findTrigger = () => {
+    const scr = wrap.closest('.scr') || document;
+    return scr.querySelector('.avatar-trigger');
+  };
 
-  // Ждём окончания spring: класс value-counting должен исчезнуть
   let elapsed = 0;
-  const minWait = 600; // минимально показать default
-  const maxWait = 4000;
+  let phase = 'waitStart';
+  const tick = 50;
+  const minDefault = 700;  // минимально показать default
+  const startTimeout = 500; // если spring не стартовал — переходим к waitEnd
+  const maxWait = 4500;
+
   wrap._watch = setInterval(() => {
-    elapsed += 80;
-    const counting = trigger.classList.contains('value-counting');
-    if (elapsed >= maxWait) {
+    elapsed += tick;
+    if (elapsed >= maxWait || !wrap.isConnected) {
       clearInterval(wrap._watch);
       swap();
-    } else if (!counting && elapsed >= minWait) {
-      clearInterval(wrap._watch);
-      swap();
+      return;
     }
-  }, 80);
+    const trigger = findTrigger();
+    const counting = trigger && trigger.isConnected && trigger.classList.contains('value-counting');
+    if (phase === 'waitStart') {
+      if (counting) phase = 'waitEnd';
+      else if (elapsed >= startTimeout) phase = 'waitEnd';
+    } else if (phase === 'waitEnd') {
+      if (!counting && elapsed >= minDefault) {
+        clearInterval(wrap._watch);
+        swap();
+      }
+    }
+  }, tick);
 }
 
 function ceoAvatarReplay(wrap) {

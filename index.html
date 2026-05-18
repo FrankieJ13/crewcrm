@@ -321,15 +321,16 @@
             <div style="font-family:'Unbounded',sans-serif;font-size:10px;font-weight:800;color:var(--txt);letter-spacing:.05em;margin-bottom:6px">Стек</div>
             <p style="font-size:12px;color:var(--txt2);margin:0">Single-file HTML · Google Sheets API v4 · Google OAuth2 · Three.js · WebGL GLSL</p>
           </div>
-          <div style="background:var(--bg3);border-radius:var(--r);padding:10px 12px;border:1px solid var(--line)">
+          <div style="background:var(--bg3);border-radius:var(--r);padding:10px 12px;border:1px solid var(--line);position:relative;overflow:hidden">
             <div style="font-size:10px;color:var(--txt3)">Автор</div>
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px">
-              <div>
+            <div style="margin-top:2px;padding-right:70px">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                 <div style="font-family:'Unbounded',sans-serif;font-size:12px;font-weight:800;color:var(--acc)">Бочаров Ю.С.</div>
-                <div style="font-size:11px;color:var(--txt2);margin-top:2px">frankiej13 · Crystal Motors · 2026</div>
+                <div id="about-author-links" style="display:none;gap:6px;align-items:center"></div>
               </div>
-              <div id="about-author-links" style="display:none;gap:6px;align-items:center;flex-shrink:0;margin-left:10px"></div>
+              <div style="font-size:11px;color:var(--txt2);margin-top:2px">frankiej13 · Crystal Motors · 2026</div>
             </div>
+            <img id="about-author-avatar" src="" alt="" style="display:none;position:absolute;right:0;bottom:0;height:70px;width:auto;pointer-events:none">
           </div>
           <!-- Чейнджлист -->
           <details class="cfg-spoiler" style="margin:0">

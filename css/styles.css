@@ -1287,9 +1287,9 @@ body.fluent .gooey-text,
 body.cosmic .gooey-text,
 body.tiffany .gooey-text {
   background-image: linear-gradient(-30deg,
-    #ff5e3a 0%, #ff9500 8%, #ffc400 16%, #ffe000 25%, #b8e93c 33%,
-    #2fd06a 42%, #00d4b4 50%, #00b8e6 58%, #1e90ff 66%, #6b73ff 75%,
-    #a64bff 83%, #ee3eff 92%, #ff2d92 100%);
+    #ff1f3d 0%, #ff7a00 8%, #ffc400 16%, #fff200 25%, #b6ff1a 33%,
+    #00ff66 42%, #00ffd5 50%, #00c8ff 58%, #0a78ff 66%, #5a4bff 75%,
+    #b026ff 83%, #ff00ff 92%, #ff1493 100%);
 }
 /* Тёмные темы — светлая металлическая заливка */
 body:not(.light):not(.neo-light):not(.fluent):not(.cosmic):not(.tiffany) .gooey-text,

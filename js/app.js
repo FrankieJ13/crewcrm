@@ -478,7 +478,7 @@ function initLogoRotation() {
 (function initGooeyLogo() {
   const TEXTS = ['CRM Crew', 'Dashboard'];
   const MORPH_TIME = 1.4;     // длительность морфа (сек)
-  const COOLDOWN_TIME = 2.8;  // как долго стоит без морфа (сек)
+  const COOLDOWN_TIME = 13.6; // ~15 сек между сменами (cooldown + morph)
 
   function start() {
     const t1 = document.getElementById('gooey-t1');
@@ -5412,6 +5412,24 @@ async function loadUsersAndStart() {
       if (authorHtml) {
         authorLinks.innerHTML = authorHtml;
         authorLinks.style.display = 'flex';
+      }
+    }
+    // Аватар автора
+    const authorAvatar = document.getElementById('about-author-avatar');
+    if (authorAvatar) {
+      const id = getMgrCrmId('Бочаров Юлиан') || getMgrCrmId('Юлиан Бочаров');
+      if (id) {
+        const src = `logos/avatar/${id}-laughter.png`;
+        const probe = new Image();
+        probe.onload  = () => { authorAvatar.src = src; authorAvatar.style.display = ''; };
+        probe.onerror = () => {
+          const fallback = `logos/avatar/${id}-default.png`;
+          const probe2 = new Image();
+          probe2.onload  = () => { authorAvatar.src = fallback; authorAvatar.style.display = ''; };
+          probe2.onerror = () => {};
+          probe2.src = fallback;
+        };
+        probe.src = src;
       }
     }
     checkBirthdayNotifications();

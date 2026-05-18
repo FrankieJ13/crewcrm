@@ -5387,6 +5387,54 @@ async function backgroundPrefetch(matched) {
 }
 
 // ==================== ИНКОГНИТО (доход) + ВСТРЯСКА ====================
+let _shakeAttached = false;
+let _shakeLastX = null, _shakeLastY = null, _shakeLastZ = null;
+let _shakeLastAt = 0;
+const SHAKE_THRESHOLD = 14;
+const SHAKE_COOLDOWN  = 1200;
+
+function _shakeHandle(ev) {
+  const a = ev.accelerationIncludingGravity || ev.acceleration;
+  if (!a) return;
+  if (_shakeLastX !== null) {
+    const dx = Math.abs(a.x - _shakeLastX);
+    const dy = Math.abs(a.y - _shakeLastY);
+    const dz = Math.abs(a.z - _shakeLastZ);
+    const force = dx + dy + dz;
+    const now = Date.now();
+    if (force > SHAKE_THRESHOLD && now - _shakeLastAt > SHAKE_COOLDOWN) {
+      if (document.getElementById('scr-personal')?.classList.contains('on')) {
+        _shakeLastAt = now;
+        toggleIncognito();
+      }
+    }
+  }
+  _shakeLastX = a.x; _shakeLastY = a.y; _shakeLastZ = a.z;
+}
+
+function attachShakeListener() {
+  if (_shakeAttached) return;
+  _shakeAttached = true;
+  window.addEventListener('devicemotion', _shakeHandle, { passive: true });
+}
+
+async function requestShakePermission() {
+  // Если уже подключено — ничего не делаем
+  if (_shakeAttached) return true;
+  if (typeof DeviceMotionEvent === 'undefined') return false;
+  // iOS 13+
+  if (typeof DeviceMotionEvent.requestPermission === 'function') {
+    try {
+      const state = await DeviceMotionEvent.requestPermission();
+      if (state === 'granted') { attachShakeListener(); return true; }
+      return false;
+    } catch(e) { return false; }
+  }
+  // Android / другие
+  attachShakeListener();
+  return true;
+}
+
 function toggleIncognito() {
   const cur = localStorage.getItem('crm_incognito') === '1';
   localStorage.setItem('crm_incognito', cur ? '0' : '1');
@@ -5395,54 +5443,14 @@ function toggleIncognito() {
   if (panel) panel.classList.toggle('kpi-incognito', !cur);
   if (btn) btn.textContent = !cur ? '👁' : '🙈';
   if (typeof toast === 'function') toast(!cur ? 'Инкогнито: ON' : 'Инкогнито: OFF', 's');
+  // Параллельно запрашиваем разрешение (если ещё не дано) — будет работать со следующего тика
+  requestShakePermission();
 }
 
-(function setupShakeDetection() {
-  let lastX = null, lastY = null, lastZ = null;
-  let lastShakeAt = 0;
-  const THRESHOLD = 18; // делта суммы по осям
-  const COOLDOWN = 1500;
-
-  function handle(ev) {
-    const a = ev.accelerationIncludingGravity || ev.acceleration;
-    if (!a) return;
-    if (lastX !== null) {
-      const dx = Math.abs(a.x - lastX);
-      const dy = Math.abs(a.y - lastY);
-      const dz = Math.abs(a.z - lastZ);
-      const force = dx + dy + dz;
-      const now = Date.now();
-      if (force > THRESHOLD && now - lastShakeAt > COOLDOWN) {
-        // Только на персональной странице
-        if (document.getElementById('scr-personal')?.classList.contains('on')) {
-          lastShakeAt = now;
-          toggleIncognito();
-        }
-      }
-    }
-    lastX = a.x; lastY = a.y; lastZ = a.z;
-  }
-
-  function attach() {
-    window.addEventListener('devicemotion', handle, { passive: true });
-  }
-
-  // iOS 13+ требует разрешение
-  if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-    // Ждём первый user gesture, потом запрашиваем
-    const askOnce = () => {
-      document.removeEventListener('click', askOnce);
-      document.removeEventListener('touchstart', askOnce);
-      DeviceMotionEvent.requestPermission().then(state => {
-        if (state === 'granted') attach();
-      }).catch(() => {});
-    };
-    document.addEventListener('click', askOnce, { once: true });
-    document.addEventListener('touchstart', askOnce, { once: true });
-  } else if (typeof DeviceMotionEvent !== 'undefined') {
-    attach();
-  }
-})();
+// На Android можно сразу прицепиться
+if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission !== 'function') {
+  attachShakeListener();
+}
 
 // ==================== ПРИВЕТСТВИЯ МЕНЕДЖЕРА ====================
 const MGR_GREETINGS = [

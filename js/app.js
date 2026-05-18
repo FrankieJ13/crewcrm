@@ -7631,7 +7631,7 @@ function renderCeoDashboard() {
         ${getMgrAvatarHtml ? getMgrAvatarHtml(matched?.name || '', companyProg) : ''}
         <div class="ceo-forecast-body">
           <div class="ceo-speedo">
-            <svg viewBox="-10 -10 220 220">
+            <svg viewBox="5 65 190 105">
               <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/>
               <path id="ceo-speed-progress" class="ceo-speed-progress" stroke="url(#ceoSpeedGradientGlobal)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="${Math.max(0, 1 - Math.min(companyProg/100, 1))}" d="M 40 160 A 85 85 0 1 1 160 160"/>
             </svg>
@@ -7644,15 +7644,15 @@ function renderCeoDashboard() {
                 <div class="ceo-mini-lbl">Динамика за сегодня</div>
                 <div class="ceo-mini-val">
                   <span style="color:${dynamicsColor}">${dynamicsArrow}</span> <span class="mv">${Math.abs(dynamicsPct)}</span>%
-                  <span class="ceo-mini-sub">к вчера</span>
                 </div>
+                <div class="ceo-mini-sub">к вчера</div>
               </div>
               <div class="ceo-mini-badge">
                 <div class="ceo-mini-lbl">Прогноз выполнения</div>
                 <div class="ceo-mini-val">
                   <span class="mv" style="color:${eodColor} !important">${eodProg}</span><span style="color:${eodColor}">%</span>
-                  <span class="ceo-mini-sub">к концу дня</span>
                 </div>
+                <div class="ceo-mini-sub">к концу дня</div>
               </div>
             </div>
           </div>

@@ -5960,6 +5960,16 @@ body.cinematic .ceo-speedo-value { color: var(--txt) !important; }
 .ceo-metric-plan { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 12px; color: var(--txt3); font-weight: 500; font-variant-numeric: tabular-nums; }
 .ceo-metric-pct { font-size: 11px; font-weight: 700; margin-top: 5px; min-height: 14px; font-variant-numeric: tabular-nums; }
 .ceo-spark { display: block; margin-top: 4px; width: 100%; height: 28px; }
+
+/* Инкогнито режим (доход скрыт) */
+.kpi-income-panel.kpi-incognito > *:not(.kpi-avatar-wrap) { filter: blur(10px); transition: filter .3s; }
+.kpi-income-panel:not(.kpi-incognito) > *:not(.kpi-avatar-wrap) { transition: filter .3s; }
+.kpi-incognito-btn {
+  background: none; border: none; cursor: pointer;
+  margin-left: 8px; font-size: 14px; padding: 0 2px;
+  vertical-align: middle; line-height: 1;
+}
+.kpi-incognito-btn:active { opacity: .6; }
 .ceo-card-delta {
   position: absolute;
   top: 6px; right: 7px;

@@ -5872,7 +5872,7 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
   margin-bottom: 12px;
 }
 .ceo-forecast-body {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: stretch; gap: 10px;
 }
 .ceo-forecast-info { flex: 1; min-width: 0; padding-right: 76px; }
 .ceo-mini-badges {
@@ -5910,14 +5910,13 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
 /* Спидометр прогноза в Текущий KPI */
 .ceo-speedo {
   position: relative;
-  width: 80px;
-  height: 40px;
+  width: 90px;
   flex-shrink: 0;
   overflow: visible;
+  display: flex; align-items: center; justify-content: center;
 }
 .ceo-speedo svg {
-  width: 80px; height: 80px; display: block;
-  margin-top: -22px;
+  width: 100%; height: auto; display: block;
   overflow: visible;
   filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
 }

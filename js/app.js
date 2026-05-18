@@ -7596,6 +7596,23 @@ function renderCeoDashboard() {
   const trendCrm = dailyVisits('crm');
   const trendDoz = dailyVisits('dozhim');
 
+  // Дельта сегодня vs вчера для каждого scope
+  function deltaForScope(scope) {
+    const arr = dailyVisits(scope);
+    const today = arr[arr.length - 1] || 0;
+    const yday  = arr[arr.length - 2] || 0;
+    return today - yday;
+  }
+  const deltaAll = deltaForScope('all');
+  const deltaCrm = deltaForScope('crm');
+  const deltaDoz = deltaForScope('dozhim');
+
+  function deltaBadge(delta) {
+    if (delta > 0) return `<span class="ceo-card-delta up">↑+${delta}</span>`;
+    if (delta < 0) return `<span class="ceo-card-delta down">↓${delta}</span>`;
+    return `<span class="ceo-card-delta zero">→ 0</span>`;
+  }
+
   function sparkline(values, color, idSuffix) {
     if (!values.length) return '';
     const w = 100, h = 28;
@@ -7736,6 +7753,7 @@ function renderCeoDashboard() {
       <div class="ceo-metrics-grid">
         <!-- Row 1: Итого, CRM, Дожим -->
         <div class="ceo-metric-card ceo-clickable" onclick="openVisitsDayModalAll(null)">
+          ${deltaBadge(deltaAll)}
           <div class="ceo-metric-lbl">Итого</div>
           <div class="ceo-metric-val"><span class="mv">${totalFact}</span> <span class="ceo-metric-plan">/ ${totalPlan||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, totalPlan ? Math.round(totalFact/totalPlan*100) : 0)}%;background:${pctClr(companyProg)}"></div></div>
@@ -7743,6 +7761,7 @@ function renderCeoDashboard() {
           ${sparkline(trendAll, pctClr(companyProg), 'all')}
         </div>
         <div class="ceo-metric-card ceo-clickable" onclick="openVisitsDayModalAll(false)">
+          ${deltaBadge(deltaCrm)}
           <div class="ceo-metric-lbl">CRM</div>
           <div class="ceo-metric-val"><span class="mv">${crmFact}</span> <span class="ceo-metric-plan">/ ${crmPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, crmPlanSum ? Math.round(crmFact/crmPlanSum*100) : 0)}%;background:${pctClr(crmProg)}"></div></div>
@@ -7750,6 +7769,7 @@ function renderCeoDashboard() {
           ${sparkline(trendCrm, pctClr(crmProg), 'crm')}
         </div>
         <div class="ceo-metric-card ceo-clickable" onclick="openVisitsDayModalAll(true)">
+          ${deltaBadge(deltaDoz)}
           <div class="ceo-metric-lbl">Дожим</div>
           <div class="ceo-metric-val"><span class="mv">${dozhimFact}</span> <span class="ceo-metric-plan">/ ${dozhimPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, dozhimPlanSum ? Math.round(dozhimFact/dozhimPlanSum*100) : 0)}%;background:${pctClr(dozhimProg)}"></div></div>

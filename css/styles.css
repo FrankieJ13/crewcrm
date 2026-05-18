@@ -1167,6 +1167,7 @@ body:not(.login-active) .page-footer { display: none; }
 }
 .scr { display:none; padding:0 0 10px; animation:up .2s ease }
 .scr.on { display:block }
+#scr-personal { padding: 0; }
 @keyframes up { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 header {
   background:var(--bg); border-bottom:1px solid var(--line);

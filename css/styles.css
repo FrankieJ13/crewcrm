@@ -5992,6 +5992,15 @@ body.cinematic .ceo-speedo-value { color: var(--txt) !important; }
 }
 .ceo-leader-name { font-size: 11px; font-weight: 700; color: var(--txt); line-height: 1.3; padding-right: 18px; }
 .ceo-leader-prog { font-family: 'Unbounded', sans-serif; font-size: 14px; font-weight: 800; margin-top: 6px; }
+.ceo-leader-avatar {
+  position: absolute;
+  right: 10px;
+  bottom: 0;
+  width: 50px; height: 50px;
+  object-fit: contain;
+  object-position: bottom right;
+  pointer-events: none;
+}
 .ceo-no-leaders {
   flex: 1; background: var(--bg2); border-radius: var(--r2);
   padding: 14px; border: 1px solid var(--line);

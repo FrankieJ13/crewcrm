@@ -7408,7 +7408,13 @@ function _ceoComputeLeaders() {
     ? leaders.map((m,i) => {
         const c = pctClr(m.progPct);
         const nl = m.name.toLowerCase().replace(/'/g, "&#39;");
-        return `<div class="ceo-leader-badge" style="cursor:pointer" onclick="openCeoMgrModalByName('${nl}')"><span class="ceo-medal">${medals[i]}</span><div class="ceo-leader-name">${m.firstName}</div><div class="ceo-leader-prog"><span class="mv" style="color:${c} !important">${m.progPct}</span><span style="color:${c}">%</span></div></div>`;
+        const id = getMgrCrmId(m.name);
+        const emo = getMgrAvatarEmotion(m.progPct);
+        const aSrc = id ? `logos/avatar/${id}-${emo}.png` : '';
+        const showAv = aSrc && (window._avatarCache?.[aSrc] !== 'fail');
+        if (aSrc) _avatarPreload(aSrc);
+        const avHtml = showAv ? `<img class="ceo-leader-avatar" src="${aSrc}" alt="" onerror="this.remove()">` : '';
+        return `<div class="ceo-leader-badge" style="cursor:pointer" onclick="openCeoMgrModalByName('${nl}')"><span class="ceo-medal">${medals[i]}</span><div class="ceo-leader-name">${m.firstName}</div><div class="ceo-leader-prog"><span class="mv" style="color:${c} !important">${m.progPct}</span><span style="color:${c}">%</span></div>${avHtml}</div>`;
       }).join('')
     : `<div class="ceo-no-leaders">Нет менеджеров с прогнозом ≥ 100%</div>`;
   const nextDept = dept === 'crm' ? 'dozhim' : 'crm';
@@ -7635,6 +7641,16 @@ function renderCeoDashboard() {
   const activeLeaders = activeLeadersDept === 'crm' ? crmLeaders : dozhimLeaders;
   const nextLeadersDept = activeLeadersDept === 'crm' ? 'dozhim' : 'crm';
 
+  function leaderAvatarImg(name, progNum) {
+    const id = getMgrCrmId(name);
+    if (!id) return '';
+    const emo = getMgrAvatarEmotion(progNum);
+    const src = `logos/avatar/${id}-${emo}.png`;
+    if (window._avatarCache && window._avatarCache[src] === 'fail') return '';
+    _avatarPreload(src);
+    return `<img class="ceo-leader-avatar" src="${src}" alt="" onerror="this.remove()">`;
+  }
+
   function leaderBadge(leaders) {
     if (!leaders.length) return `<div class="ceo-no-leaders">Нет менеджеров с прогнозом ≥ 100%</div>`;
     return leaders.map((m, i) => {
@@ -7645,6 +7661,7 @@ function renderCeoDashboard() {
         <span class="ceo-medal">${medals[i]}</span>
         <div class="ceo-leader-name">${m.firstName}</div>
         <div class="ceo-leader-prog"><span class="mv" style="color:${c} !important">${m.progPct}</span><span style="color:${c}">%</span></div>
+        ${leaderAvatarImg(m.name, m.progPct)}
       </div>`;
     }).join('');
   }

@@ -5911,11 +5911,13 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
 .ceo-speedo {
   position: relative;
   width: 80px;
+  height: 56px;
   flex-shrink: 0;
   overflow: visible;
 }
 .ceo-speedo svg {
-  width: 100%; height: auto; display: block;
+  width: 80px; height: 80px; display: block;
+  margin-top: -12px;
   overflow: visible;
   filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
 }
@@ -5924,8 +5926,8 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
   transition: stroke-dashoffset 1.5s cubic-bezier(.2,0,.2,1);
 }
 .ceo-speedo-value {
-  position: absolute; top: 70%; left: 50%;
-  transform: translate(-50%, -65%);
+  position: absolute; top: 75%; left: 50%;
+  transform: translate(-50%, -50%);
   font-family: 'Unbounded', sans-serif;
   font-size: 14px; font-weight: 900;
   color: #1c1c1e !important;

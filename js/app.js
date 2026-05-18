@@ -7607,10 +7607,17 @@ function renderCeoDashboard() {
   const deltaCrm = deltaForScope('crm');
   const deltaDoz = deltaForScope('dozhim');
 
-  function deltaBadge(delta) {
-    if (delta > 0) return `<span class="ceo-card-delta up">↑+${delta}</span>`;
-    if (delta < 0) return `<span class="ceo-card-delta down">↓${delta}</span>`;
-    return `<span class="ceo-card-delta zero">→ 0</span>`;
+  function deltaBadge(delta, label = '') {
+    const lbl = label ? `${label}: ` : '';
+    const tip = delta === 0
+      ? `${lbl}столько же, как вчера`
+      : delta > 0
+        ? `${lbl}на ${delta} больше, чем вчера`
+        : `${lbl}на ${Math.abs(delta)} меньше, чем вчера`;
+    const safe = tip.replace(/"/g, '&quot;');
+    if (delta > 0) return `<span class="ceo-card-delta up" title="${safe}">↑+${delta}</span>`;
+    if (delta < 0) return `<span class="ceo-card-delta down" title="${safe}">↓${delta}</span>`;
+    return `<span class="ceo-card-delta zero" title="${safe}">→ 0</span>`;
   }
 
   // Дельта сделок по типу за сегодня vs вчера
@@ -7774,7 +7781,7 @@ function renderCeoDashboard() {
       <div class="ceo-metrics-grid">
         <!-- Row 1: Итого, CRM, Дожим -->
         <div class="ceo-metric-card ceo-clickable" onclick="openVisitsDayModalAll(null)">
-          ${deltaBadge(deltaAll)}
+          ${deltaBadge(deltaAll, 'Визиты')}
           <div class="ceo-metric-lbl">Итого</div>
           <div class="ceo-metric-val"><span class="mv">${totalFact}</span> <span class="ceo-metric-plan">/ ${totalPlan||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, totalPlan ? Math.round(totalFact/totalPlan*100) : 0)}%;background:${pctClr(companyProg)}"></div></div>
@@ -7782,7 +7789,7 @@ function renderCeoDashboard() {
           ${sparkline(trendAll, pctClr(companyProg), 'all')}
         </div>
         <div class="ceo-metric-card ceo-clickable" onclick="openVisitsDayModalAll(false)">
-          ${deltaBadge(deltaCrm)}
+          ${deltaBadge(deltaCrm, 'Визиты CRM')}
           <div class="ceo-metric-lbl">CRM</div>
           <div class="ceo-metric-val"><span class="mv">${crmFact}</span> <span class="ceo-metric-plan">/ ${crmPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, crmPlanSum ? Math.round(crmFact/crmPlanSum*100) : 0)}%;background:${pctClr(crmProg)}"></div></div>
@@ -7790,7 +7797,7 @@ function renderCeoDashboard() {
           ${sparkline(trendCrm, pctClr(crmProg), 'crm')}
         </div>
         <div class="ceo-metric-card ceo-clickable" onclick="openVisitsDayModalAll(true)">
-          ${deltaBadge(deltaDoz)}
+          ${deltaBadge(deltaDoz, 'Визиты Дожим')}
           <div class="ceo-metric-lbl">Дожим</div>
           <div class="ceo-metric-val"><span class="mv">${dozhimFact}</span> <span class="ceo-metric-plan">/ ${dozhimPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, dozhimPlanSum ? Math.round(dozhimFact/dozhimPlanSum*100) : 0)}%;background:${pctClr(dozhimProg)}"></div></div>
@@ -7800,19 +7807,19 @@ function renderCeoDashboard() {
 
         <!-- Row 2: Кредиты, Нал+Обмен, Комиссия -->
         <div class="ceo-metric-card ceo-clickable" onclick="openCeoDealsModal('kredit')">
-          ${deltaBadge(deltaKredit)}
+          ${deltaBadge(deltaKredit, 'Кредиты')}
           <div class="ceo-metric-lbl">Кредиты</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalKredit}</div>
           <div class="ceo-metric-sub">CRM + Дожим</div>
         </div>
         <div class="ceo-metric-card ceo-clickable" onclick="openCeoDealsModal('nalobm')">
-          ${deltaBadge(deltaNalObm)}
+          ${deltaBadge(deltaNalObm, 'Нал+Обмен')}
           <div class="ceo-metric-lbl">Нал+Обмен</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalNalObm}</div>
           <div class="ceo-metric-sub">CRM + Дожим</div>
         </div>
         <div class="ceo-metric-card ceo-clickable" onclick="openCeoDealsModal('komis')">
-          ${deltaBadge(deltaKomis)}
+          ${deltaBadge(deltaKomis, 'Комиссия')}
           <div class="ceo-metric-lbl">Комиссия</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalKomis}</div>
           <div class="ceo-metric-sub">CRM + Дожим</div>

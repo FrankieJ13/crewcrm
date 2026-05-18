@@ -7517,6 +7517,28 @@ function renderCeoDashboard() {
   const totalVkso = Object.values(crmStats).reduce((s,x) => s + (x.vkso||0), 0)
                   + Object.values(dozhimStats).reduce((s,x) => s + (x.vkso||0), 0);
 
+  // Суммарно сделки (CRM + Дожим)
+  function sumStat(field) {
+    let n = 0;
+    Object.values(crmStats).forEach(s => { n += (s[field] || 0); });
+    Object.values(dozhimStats).forEach(s => { n += (s[field] || 0); });
+    return n;
+  }
+  const totalKredit  = sumStat('kred800') + sumStat('kred1200') + sumStat('kred1000');
+  const totalNalObm  = sumStat('nal800') + sumStat('nal1200') + sumStat('nal1000')
+                     + sumStat('obmen800') + sumStat('obmen1200');
+  const totalKomis   = sumStat('kom800') + sumStat('kom1200') + sumStat('kom1000');
+
+  // Менеджеры в плане
+  const allMgrs = [...crmMgrs, ...dozhimMgrs];
+  const mgrsInPlan = allMgrs.filter(m => m.progPct >= 100).sort((a,b) => b.progPct - a.progPct);
+  window._ceoMgrsInPlan = mgrsInPlan;
+
+  const totalFact = crmFact + dozhimFact;
+  const totalPlan = crmPlanSum + dozhimPlanSum;
+  const companyProg = computeProgPct(totalFact, totalPlan, sfx);
+  const progColor = companyProg >= 100 ? 'var(--grn)' : companyProg >= 85 ? '#ffd60a' : 'var(--red)';
+
   // Динамика за сегодня (сегодня vs вчера по визитам, по обоим листам)
   const ddTodayStr = String(today.getDate()).padStart(2,'0');
   const ydayDate = new Date(today.getTime() - 24*60*60*1000);
@@ -7540,8 +7562,7 @@ function renderCeoDashboard() {
   const dynamicsArrow = visitsToday > visitsYday ? '↑' : (visitsToday < visitsYday ? '↓' : '→');
   const dynamicsColor = visitsToday > visitsYday ? 'var(--grn)' : (visitsToday < visitsYday ? 'var(--red)' : 'var(--txt2)');
 
-  // Прогноз выполнения к концу дня:
-  // факт + (визиты сегодня * (1 - доля прошедшего рабочего дня)) → проекция к 18:00
+  // Прогноз выполнения к концу дня
   const hourNow = today.getHours() + today.getMinutes()/60;
   const workStart = 9, workEnd = 18;
   const dayFraction = Math.max(0.01, Math.min(1, (hourNow - workStart) / (workEnd - workStart)));
@@ -7549,28 +7570,6 @@ function renderCeoDashboard() {
   const factEod = totalFact - visitsToday + visitsEod;
   const eodProg = totalPlan > 0 ? Math.round((factEod / totalPlan) * (daysInMonth / dayNum) * 100) : 0;
   const eodColor = eodProg >= 100 ? 'var(--grn)' : eodProg >= 85 ? '#ffd60a' : 'var(--red)';
-
-  // Суммарно сделки (CRM + Дожим)
-  function sumStat(field) {
-    let n = 0;
-    Object.values(crmStats).forEach(s => { n += (s[field] || 0); });
-    Object.values(dozhimStats).forEach(s => { n += (s[field] || 0); });
-    return n;
-  }
-  const totalKredit  = sumStat('kred800') + sumStat('kred1200') + sumStat('kred1000');
-  const totalNalObm  = sumStat('nal800') + sumStat('nal1200') + sumStat('nal1000')
-                     + sumStat('obmen800') + sumStat('obmen1200');
-  const totalKomis   = sumStat('kom800') + sumStat('kom1200') + sumStat('kom1000');
-
-  // Менеджеры в плане
-  const allMgrs = [...crmMgrs, ...dozhimMgrs];
-  const mgrsInPlan = allMgrs.filter(m => m.progPct >= 100).sort((a,b) => b.progPct - a.progPct);
-  window._ceoMgrsInPlan = mgrsInPlan;
-
-  const totalFact = crmFact + dozhimFact;
-  const totalPlan = crmPlanSum + dozhimPlanSum;
-  const companyProg = computeProgPct(totalFact, totalPlan, sfx);
-  const progColor = companyProg >= 100 ? 'var(--grn)' : companyProg >= 85 ? '#ffd60a' : 'var(--red)';
 
   // Лидеры (прогноз >= 100)
   const crmLeaders = [...crmMgrs].filter(m => m.progPct >= 100).sort((a,b) => b.progPct - a.progPct).slice(0,3);

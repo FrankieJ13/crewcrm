@@ -7631,7 +7631,7 @@ function renderCeoDashboard() {
         ${getMgrAvatarHtml ? getMgrAvatarHtml(matched?.name || '', companyProg) : ''}
         <div class="ceo-forecast-body">
           <div class="ceo-speedo">
-            <svg viewBox="5 65 190 105">
+            <svg viewBox="-10 -10 220 220">
               <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/>
               <path id="ceo-speed-progress" class="ceo-speed-progress" stroke="url(#ceoSpeedGradientGlobal)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="${Math.max(0, 1 - Math.min(companyProg/100, 1))}" d="M 40 160 A 85 85 0 1 1 160 160"/>
             </svg>

@@ -7613,6 +7613,27 @@ function renderCeoDashboard() {
     return `<span class="ceo-card-delta zero">→ 0</span>`;
   }
 
+  // Дельта сделок по типу за сегодня vs вчера
+  function dealDeltaByDay(matcher) {
+    let today = 0, yday = 0;
+    [vizData, dvData].forEach(rows => {
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || !r[0]) continue;
+        if (!isSverkaRow(r)) continue;
+        const status = String(r[4]||'').trim().toLowerCase();
+        if (!matcher(status)) continue;
+        const d = String(r[0]).trim().split('.')[0].padStart(2,'0');
+        if (d === ddTodayStr) today++;
+        else if (d === ddYdayStr) yday++;
+      }
+    });
+    return today - yday;
+  }
+  const deltaKredit = dealDeltaByDay(s => s === 'покупка (кредит)');
+  const deltaNalObm = dealDeltaByDay(s => s === 'покупка (наличные)' || s === 'обмен');
+  const deltaKomis  = dealDeltaByDay(s => s === 'комиссия');
+
   function sparkline(values, color, idSuffix) {
     if (!values.length) return '';
     const w = 100, h = 28;
@@ -7779,16 +7800,19 @@ function renderCeoDashboard() {
 
         <!-- Row 2: Кредиты, Нал+Обмен, Комиссия -->
         <div class="ceo-metric-card ceo-clickable" onclick="openCeoDealsModal('kredit')">
+          ${deltaBadge(deltaKredit)}
           <div class="ceo-metric-lbl">Кредиты</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalKredit}</div>
           <div class="ceo-metric-sub">CRM + Дожим</div>
         </div>
         <div class="ceo-metric-card ceo-clickable" onclick="openCeoDealsModal('nalobm')">
+          ${deltaBadge(deltaNalObm)}
           <div class="ceo-metric-lbl">Нал+Обмен</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalNalObm}</div>
           <div class="ceo-metric-sub">CRM + Дожим</div>
         </div>
         <div class="ceo-metric-card ceo-clickable" onclick="openCeoDealsModal('komis')">
+          ${deltaBadge(deltaKomis)}
           <div class="ceo-metric-lbl">Комиссия</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalKomis}</div>
           <div class="ceo-metric-sub">CRM + Дожим</div>

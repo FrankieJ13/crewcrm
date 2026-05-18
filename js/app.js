@@ -7571,6 +7571,41 @@ function renderCeoDashboard() {
   const eodProg = totalPlan > 0 ? Math.round((factEod / totalPlan) * (daysInMonth / dayNum) * 100) : 0;
   const eodColor = eodProg >= 100 ? 'var(--grn)' : eodProg >= 85 ? '#ffd60a' : 'var(--red)';
 
+  // Тренд по дням до текущего: визиты за каждый день месяца
+  function dailyVisits(scope) {
+    const arr = new Array(dayNum).fill(0);
+    const lists = scope === 'crm' ? [vizData] : scope === 'dozhim' ? [dvData] : [vizData, dvData];
+    lists.forEach(rows => {
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || !r[0]) continue;
+        if (!isSverkaRow(r)) continue;
+        const d = parseInt(String(r[0]).trim().split('.')[0]);
+        if (d >= 1 && d <= dayNum) arr[d-1]++;
+      }
+    });
+    return arr;
+  }
+  const trendAll = dailyVisits('all');
+  const trendCrm = dailyVisits('crm');
+  const trendDoz = dailyVisits('dozhim');
+
+  function sparkline(values, color, idSuffix) {
+    if (!values.length) return '';
+    const w = 100, h = 28;
+    const max = Math.max(1, ...values);
+    const stepX = values.length > 1 ? w / (values.length - 1) : w;
+    const pts = values.map((v, i) => [i * stepX, h - 2 - (v / max) * (h - 4)]);
+    const linePath = pts.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    const areaPath = linePath + ` L ${w} ${h} L 0 ${h} Z`;
+    const gid = `spark-grad-${idSuffix}`;
+    return `<svg class="ceo-spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" width="100%" height="${h}">
+      <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.35"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+      <path d="${areaPath}" fill="url(#${gid})"/>
+      <path d="${linePath}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+  }
+
   // Лидеры (прогноз >= 100)
   const crmLeaders = [...crmMgrs].filter(m => m.progPct >= 100).sort((a,b) => b.progPct - a.progPct).slice(0,3);
   const dozhimLeaders = [...dozhimMgrs].filter(m => m.progPct >= 100).sort((a,b) => b.progPct - a.progPct).slice(0,3);
@@ -7662,13 +7697,14 @@ function renderCeoDashboard() {
       <!-- МЕТРИКИ -->
       <div class="sec-title">Ключевые показатели</div>
       <div class="ceo-metrics-grid">
-        <!-- Row 1: Всего визитов, CRM, Дожим -->
+        <!-- Row 1: Итого, CRM, Дожим -->
         <div class="ceo-metric-card">
           <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openVisitsDayModalAll(null)" title="Хронология всех визитов">!</button>
           <div class="ceo-metric-lbl">Итого</div>
           <div class="ceo-metric-val"><span class="mv">${totalFact}</span> <span class="ceo-metric-plan">/ ${totalPlan||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, totalPlan ? Math.round(totalFact/totalPlan*100) : 0)}%;background:${pctClr(companyProg)}"></div></div>
           <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${pctClr(companyProg)} !important">${companyProg}</span><span style="color:${pctClr(companyProg)}">%</span></div>
+          ${sparkline(trendAll, pctClr(companyProg), 'all')}
         </div>
         <div class="ceo-metric-card">
           <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openVisitsDayModalAll(false)" title="Хронология визитов CRM">!</button>
@@ -7676,6 +7712,7 @@ function renderCeoDashboard() {
           <div class="ceo-metric-val"><span class="mv">${crmFact}</span> <span class="ceo-metric-plan">/ ${crmPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, crmPlanSum ? Math.round(crmFact/crmPlanSum*100) : 0)}%;background:${pctClr(crmProg)}"></div></div>
           <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${pctClr(crmProg)} !important">${crmProg}</span><span style="color:${pctClr(crmProg)}">%</span></div>
+          ${sparkline(trendCrm, pctClr(crmProg), 'crm')}
         </div>
         <div class="ceo-metric-card">
           <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openVisitsDayModalAll(true)" title="Хронология визитов Дожим">!</button>
@@ -7683,6 +7720,7 @@ function renderCeoDashboard() {
           <div class="ceo-metric-val"><span class="mv">${dozhimFact}</span> <span class="ceo-metric-plan">/ ${dozhimPlanSum||'—'}</span></div>
           <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, dozhimPlanSum ? Math.round(dozhimFact/dozhimPlanSum*100) : 0)}%;background:${pctClr(dozhimProg)}"></div></div>
           <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${pctClr(dozhimProg)} !important">${dozhimProg}</span><span style="color:${pctClr(dozhimProg)}">%</span></div>
+          ${sparkline(trendDoz, pctClr(dozhimProg), 'doz')}
         </div>
 
         <!-- Row 2: Кредиты, Нал+Обмен, Комиссия -->

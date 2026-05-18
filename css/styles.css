@@ -5947,6 +5947,7 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
 .ceo-metric-val { font-family: 'Unbounded', sans-serif; font-size: 22px; font-weight: 800; line-height: 1.1; margin-bottom: 6px; font-variant-numeric: tabular-nums; min-height: 24px; }
 .ceo-metric-plan { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 12px; color: var(--txt3); font-weight: 500; font-variant-numeric: tabular-nums; }
 .ceo-metric-pct { font-size: 11px; font-weight: 700; margin-top: 5px; min-height: 14px; font-variant-numeric: tabular-nums; }
+.ceo-spark { display: block; margin-top: 4px; width: 100%; height: 28px; }
 .ceo-metric-sub { font-size: 10px; color: var(--txt3); margin-top: 5px; min-height: 13px; }
 .ceo-forecast-num { font-variant-numeric: tabular-nums; }
 .ceo-leader-prog { font-variant-numeric: tabular-nums; }

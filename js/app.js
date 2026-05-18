@@ -7596,7 +7596,27 @@ function renderCeoDashboard() {
     const max = Math.max(1, ...values);
     const stepX = values.length > 1 ? w / (values.length - 1) : w;
     const pts = values.map((v, i) => [i * stepX, h - 2 - (v / max) * (h - 4)]);
-    const linePath = pts.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+
+    // Сглаживание Catmull-Rom → bezier cubics
+    function smoothPath(pts) {
+      if (pts.length < 2) return '';
+      if (pts.length === 2) return `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)} L${pts[1][0].toFixed(1)},${pts[1][1].toFixed(1)}`;
+      const tension = 0.35;
+      let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[i - 1] || pts[i];
+        const p1 = pts[i];
+        const p2 = pts[i + 1];
+        const p3 = pts[i + 2] || p2;
+        const cp1x = p1[0] + (p2[0] - p0[0]) * tension * 0.5;
+        const cp1y = p1[1] + (p2[1] - p0[1]) * tension * 0.5;
+        const cp2x = p2[0] - (p3[0] - p1[0]) * tension * 0.5;
+        const cp2y = p2[1] - (p3[1] - p1[1]) * tension * 0.5;
+        d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+      }
+      return d;
+    }
+    const linePath = smoothPath(pts);
     const areaPath = linePath + ` L ${w} ${h} L 0 ${h} Z`;
     const gid = `spark-grad-${idSuffix}`;
     return `<svg class="ceo-spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" width="100%" height="${h}">

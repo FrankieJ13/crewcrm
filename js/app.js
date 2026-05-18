@@ -5373,6 +5373,104 @@ async function backgroundPrefetch(matched) {
   }
 }
 
+// ==================== ПРИВЕТСТВИЯ МЕНЕДЖЕРА ====================
+const MGR_GREETINGS = [
+  'сегодня закроешь лучший контракт','ты умеешь убеждать клиентов','вперед к новым сделкам',
+  'твой результат вдохновляет команду','продажи любят твою энергию','клиенты доверяют твоему слову',
+  'время покорять новые вершины','твоя уверенность приносит успех','отличный день для продаж',
+  'твой настрой решает всё','будь лидером этого дня','каждая встреча ведет к успеху',
+  'сегодня твой звездный час','клиенты ждут твоих предложений','продажи начинаются с улыбки',
+  'ты создаешь сильные результаты','действуй смело и уверенно','твои сделки впечатляют всех',
+  'энергия успеха уже рядом','вперед за новыми победами','ты магнит для клиентов',
+  'сегодня отличный день побеждать','твои переговоры приносят результат','держи темп и драйв',
+  'твой профессионализм вызывает уважение','сегодня всё получится идеально','успех любит твою настойчивость',
+  'твоя энергия заряжает команду','клиенты ценят твою экспертизу','каждый звонок приближает победу',
+  'продажи — твоя сильная сторона','сегодня время больших результатов','ты умеешь находить возможности',
+  'вперед к рекордным показателям','твоя уверенность вдохновляет клиентов','новые сделки уже близко',
+  'твоя харизма помогает продавать','каждый клиент — новая возможность','твой успех неизбежен сегодня',
+  'действуй быстро и уверенно','ты способен на большее','твой день начинается с побед',
+  'продажи идут в твои руки','ты умеешь закрывать сделки','сегодня клиенты скажут «да»',
+  'твоя настойчивость приносит результаты','ты создаешь доверие с первого слова','вперед за высоким чеком',
+  'твоя энергия ведет к успеху','клиенты чувствуют твою уверенность','сегодня время новых достижений',
+  'ты умеешь вдохновлять покупателей','твои продажи растут ежедневно','ты работаешь на максимум',
+  'сегодня всё складывается удачно','ты легко находишь общий язык','твой подход приносит прибыль',
+  'продажи любят активных людей','твоя работа дает сильный результат','сегодня будет много успешных звонков',
+  'твоя уверенность покоряет клиентов','каждый контакт ведет к продаже','вперед к новым рекордам',
+  'ты умеешь продавать красиво','сегодня твой день успеха','твой опыт помогает побеждать',
+  'ты сильный переговорщик','продажи растут благодаря тебе','сегодня будет продуктивный день',
+  'твоя настойчивость впечатляет клиентов','ты создаешь возможности ежедневно','время брать новые высоты',
+  'твои сделки двигают компанию вперед','ты умеешь слышать клиента','сегодня удача на твоей стороне',
+  'ты работаешь как настоящий лидер','твоя энергия приносит результат','клиенты любят твой подход',
+  'сегодня всё получится отлично','ты умеешь достигать целей','продажи — твоя территория успеха',
+  'твой настрой ведет к победе','сегодня будут сильные результаты','ты вдохновляешь своей работой',
+  'твои идеи помогают продавать','вперед к большим достижениям','ты умеешь работать эффективно',
+  'сегодня будет много побед','твой успех заметен всем','ты умеешь вести за собой',
+  'продажи идут благодаря твоим усилиям','твой голос внушает доверие','сегодня отличный шанс вырасти',
+  'ты умеешь делать результат','твоя работа приносит прибыль','сегодня всё будет в плюс',
+  'ты настоящий мастер продаж','вперед к лучшим показателям','твоя уверенность открывает двери',
+  'ты создаешь успех каждый день'
+];
+
+function _getYekaterinburgDate() {
+  // UTC+5 без учета DST
+  const now = new Date();
+  return new Date(now.getTime() + (5 * 60 + now.getTimezoneOffset()) * 60 * 1000);
+}
+
+function _getMgrSchedToday(nameLow) {
+  // Возвращает { today: 'Р'|'В'|null, tomorrow: 'Р'|'В'|null }
+  const raw = S.data.grafik;
+  if (!raw || raw.length < 3) return { today: null, tomorrow: null };
+  const ekt = _getYekaterinburgDate();
+  const todayDay = ekt.getDate();
+  const tomorrow = new Date(ekt.getTime() + 24 * 60 * 60 * 1000);
+  const tomorrowDay = tomorrow.getDate();
+  const idx = buildSchedIndex(raw);
+  const entry = idx[nameLow];
+  if (!entry) return { today: null, tomorrow: null };
+  const { row: mgrRow, daysRow } = entry;
+  let today = null, tom = null;
+  for (let c = 1; c < daysRow.length; c++) {
+    const d = parseInt(daysRow[c]);
+    if (d === todayDay) today = normalizeSchedVal(mgrRow[c]) || null;
+    if (d === tomorrowDay) tom = normalizeSchedVal(mgrRow[c]) || null;
+  }
+  return { today, tomorrow: tom };
+}
+
+function getMgrGreeting(fullName) {
+  const parts = (fullName || '').trim().split(/\s+/);
+  const firstName = parts.length >= 2 ? parts[1] : (parts[0] || '');
+  const nameLow = (fullName || '').toLowerCase().trim();
+  const ekt = _getYekaterinburgDate();
+  const hour = ekt.getHours();
+  const sched = _getMgrSchedToday(nameLow);
+  const todayR = sched.today === 'Р';
+  const tomR   = sched.tomorrow === 'Р';
+
+  let phrase = '';
+
+  if (sched.today === 'В') {
+    phrase = 'отдыхай и набирайся сил!';
+  } else if (todayR && hour >= 9 && hour < 18) {
+    // Рабочее время → ротация каждые 2 часа
+    const dayOfYear = Math.floor((ekt - new Date(ekt.getFullYear(), 0, 0)) / 86400000);
+    const bucket = Math.floor(hour / 2);
+    const idx = (dayOfYear * 12 + bucket) % MGR_GREETINGS.length;
+    phrase = MGR_GREETINGS[idx] + '!';
+  } else if ((hour >= 18 || hour < 4) && (todayR && tomR)) {
+    phrase = 'солнце уже село!';
+  } else if (hour >= 4 && hour < 9 && (todayR && tomR)) {
+    phrase = 'рабочий день скоро начнется!';
+  } else {
+    phrase = 'хорошего дня!';
+  }
+
+  const fn = firstName ? firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase() : '';
+  const html = `<span style="color:var(--acc)">${fn}</span>, ${phrase}`;
+  return { firstName: fn, phrase, html };
+}
+
 function goPersonal() {
   const matched = findUserInSheet();
   if (!matched || !matched.name) { showAccessDenied(); return; }
@@ -5619,8 +5717,9 @@ function renderPersonal(matched) {
     incomePanelContent = `<div class="zl">Доход за месяц</div><div class="zv">—</div>`;
   }
 
+  const _greet = getMgrGreeting(name);
   setLiveHTML(el, `
-    <div class="kpi-manager-name">${name.toUpperCase()}</div>
+    <div class="kpi-manager-name">${_greet.html}</div>
     <div class="kpi-divider"></div>
     <div class="kpi-subtitle">Доход за месяц</div>
     <div class="kpi-income-panel" ${incomePanelAttr}>
@@ -7343,6 +7442,9 @@ function renderCeoDashboard() {
 
   // Всего в салоне (CRM + Дожим)
   const totalVsalone = [...crmMgrs, ...dozhimMgrs].reduce((s,m) => s + m.vsalone, 0);
+  // В КСО (подает заявку + в работе КСО + на рассмотрении банка)
+  const totalVkso = Object.values(crmStats).reduce((s,x) => s + (x.vkso||0), 0)
+                  + Object.values(dozhimStats).reduce((s,x) => s + (x.vkso||0), 0);
 
   // Суммарно сделки (CRM + Дожим)
   function sumStat(field) {
@@ -7392,7 +7494,7 @@ function renderCeoDashboard() {
   // Алерты — с кликабельными именами
   const noVisitsTodayList = crmMgrs.filter(m => m.vis === 0);
   const onEdgeList = [...crmMgrs, ...dozhimMgrs].filter(m => m.progPct >= 85 && m.progPct < 100);
-  const _clickMgr = m => `<span class="ceo-alert-name" onclick="openCeoMgrModalByName('${m.name.toLowerCase().replace(/'/g,"&#39;")}')">${m.firstName}</span>`;
+  const _clickMgr = m => `<span class="ceo-alert-name" onclick="openCeoMgrModalByName('${m.name.toLowerCase().replace(/'/g,"&#39;")}')">${m.firstName} <strong>${m.progPct}%</strong></span>`;
   const noVisitsToday = noVisitsTodayList.map(_clickMgr);
   const onEdge = onEdgeList.map(_clickMgr);
 
@@ -7475,8 +7577,8 @@ function renderCeoDashboard() {
         </div>
       </div>
 
-      <!-- Row 3: К цели, В салоне -->
-      <div class="ceo-metrics-grid ceo-metrics-grid-2" style="margin-top:8px">
+      <!-- Row 3: К цели, В салоне, В КСО -->
+      <div class="ceo-metrics-grid" style="margin-top:8px">
         <div class="ceo-metric-card">
           <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openCeoMgrsInPlanModal()" title="Список менеджеров">!</button>
           <div class="ceo-metric-lbl">К цели</div>
@@ -7488,6 +7590,11 @@ function renderCeoDashboard() {
           <div class="ceo-metric-lbl">В салоне</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalVsalone}</div>
           <div class="ceo-metric-sub">${totalVsalone > 0 ? 'клиентов сейчас' : 'никого нет'}</div>
+        </div>
+        <div class="ceo-metric-card">
+          <div class="ceo-metric-lbl">В КСО</div>
+          <div class="ceo-metric-val mv" style="color:var(--txt)">${totalVkso}</div>
+          <div class="ceo-metric-sub">заявок в банках</div>
         </div>
       </div>
 

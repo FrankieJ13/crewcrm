@@ -2502,10 +2502,15 @@ function getMgrAvatarHtml(name, progNum) {
 // Проигрывание плавной смены: default → final (привязка к анимации .avatar-trigger)
 function ceoAvatarPlay(wrap, force) {
   if (!wrap || !wrap.isConnected) return;
-  if (!force && wrap.dataset.played === '1') return;
   const defImg   = wrap.querySelector('.kpi-avatar-default');
   const finalImg = wrap.querySelector('.kpi-avatar-final');
   if (!finalImg) return;
+  // Если уже доиграно — просто восстанавливаем финальное состояние (после morph)
+  if (!force && wrap.dataset.played === '1') {
+    if (defImg) defImg.style.opacity = '0';
+    finalImg.style.opacity = '1';
+    return;
+  }
   clearTimeout(wrap._t);
   clearInterval(wrap._watch);
 
@@ -5769,13 +5774,11 @@ function renderPersonal(matched) {
       ${convRow ? `<div class="dept-sec-lbl">Конверсии</div>${convRow.replace('<div class="kpi-badge-sep"></div>','')}` : ''}
     </div>
   `);
-  // Запуск анимации аватара (только не во время silent refresh)
-  if (!S.silentRefresh) {
-    requestAnimationFrame(() => {
-      const wrap = document.querySelector('#c-personal .kpi-avatar-wrap');
-      if (wrap) ceoAvatarPlay(wrap);
-    });
-  }
+  // Анимация/восстановление аватара после каждого рендера
+  requestAnimationFrame(() => {
+    const wrap = document.querySelector('#c-personal .kpi-avatar-wrap');
+    if (wrap) ceoAvatarPlay(wrap);
+  });
 }
 
 // ==================== SALARY CALC ====================
@@ -7699,17 +7702,21 @@ function renderCeoDashboard() {
 
     </div>`);
 
-  // Запуск анимации аватара только при первом рендере (не silent refresh)
-  if (!S.silentRefresh) {
-    requestAnimationFrame(() => ceoAvatarInitOnRender());
-  }
+  // Анимация/восстановление аватара после каждого рендера
+  requestAnimationFrame(() => ceoAvatarInitOnRender());
 
-  // Анимация спидометра прогноза
+  // Анимация/восстановление спидометра прогноза
   requestAnimationFrame(() => {
     const path = document.getElementById('ceo-speed-progress');
     if (!path) return;
     const length = path.getTotalLength();
     const target = Math.max(0, Math.min(companyProg / 100, 1));
+    const finalDash = `${length * target},${length}`;
+    // Если уже было анимировано (silent refresh) — сразу восстановить
+    if (path.dataset.animated === '1') {
+      path.style.strokeDasharray = finalDash;
+      return;
+    }
     path.style.strokeDasharray = `0,${length}`;
     let start = null;
     function animate(ts) {
@@ -7717,12 +7724,9 @@ function renderCeoDashboard() {
       const ease = 1 - Math.pow(1 - Math.min((ts - start) / 1500, 1), 4);
       path.style.strokeDasharray = `${ease * length * target},${length}`;
       if (ease < 1) requestAnimationFrame(animate);
+      else path.dataset.animated = '1';
     }
-    if (S.silentRefresh) {
-      path.style.strokeDasharray = `${length * target},${length}`;
-    } else {
-      requestAnimationFrame(animate);
-    }
+    requestAnimationFrame(animate);
   });
 
   } catch(e) {

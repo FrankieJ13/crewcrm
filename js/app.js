@@ -7596,9 +7596,9 @@ function renderCeoDashboard() {
         ${getMgrAvatarHtml ? getMgrAvatarHtml(matched?.name || '', companyProg) : ''}
         <div class="ceo-speedo">
           <svg viewBox="0 0 200 200">
-            <defs><linearGradient id="ceoSpeedGradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#eb4d4b"/><stop offset="50%" stop-color="#fbad33"/><stop offset="100%" stop-color="#27ae60"/></linearGradient></defs>
+            <defs><linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#eb4d4b"/><stop offset="50%" stop-color="#fbad33"/><stop offset="100%" stop-color="#27ae60"/></linearGradient></defs>
             <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/>
-            <path id="ceo-speed-progress" class="progress-path" stroke="url(#ceoSpeedGradient)" d="M 40 160 A 85 85 0 1 1 160 160"/>
+            <path id="ceo-speed-progress" class="progress-path" style="stroke:url(#speedGradient)" d="M 40 160 A 85 85 0 1 1 160 160"/>
           </svg>
           <div class="ceo-speedo-value mv avatar-trigger">${companyProg}%</div>
         </div>

@@ -5914,6 +5914,7 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
   flex-shrink: 0;
   overflow: visible;
   display: flex; align-items: center; justify-content: center;
+  margin-left: -12px;
 }
 .ceo-speedo svg {
   width: 68px; height: 68px; display: block;

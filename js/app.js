@@ -7634,7 +7634,7 @@ function renderCeoDashboard() {
             <svg viewBox="-10 -10 220 220">
               <defs><linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#eb4d4b"/><stop offset="50%" stop-color="#fbad33"/><stop offset="100%" stop-color="#27ae60"/></linearGradient></defs>
               <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/>
-              <path id="ceo-speed-progress" class="progress-path" style="stroke:url(#speedGradient)" d="M 40 160 A 85 85 0 1 1 160 160"/>
+              <path id="ceo-speed-progress" class="progress-path" pathLength="1" stroke-dasharray="1" stroke-dashoffset="${Math.max(0, 1 - Math.min(companyProg/100, 1))}" style="stroke:url(#speedGradient);transition:stroke-dashoffset 1.5s cubic-bezier(.2,0,.2,1)" d="M 40 160 A 85 85 0 1 1 160 160"/>
             </svg>
             <div class="ceo-speedo-value mv avatar-trigger">${companyProg}%</div>
           </div>
@@ -7644,14 +7644,14 @@ function renderCeoDashboard() {
               <div class="ceo-mini-badge">
                 <div class="ceo-mini-lbl">Динамика за сегодня</div>
                 <div class="ceo-mini-val">
-                  <span style="color:${dynamicsColor}">${dynamicsArrow} <span class="mv">${Math.abs(dynamicsPct)}</span>%</span>
+                  <span style="color:${dynamicsColor}">${dynamicsArrow}</span> <span class="mv">${Math.abs(dynamicsPct)}</span>%
                   <span class="ceo-mini-sub">к вчера</span>
                 </div>
               </div>
               <div class="ceo-mini-badge">
                 <div class="ceo-mini-lbl">Прогноз выполнения</div>
                 <div class="ceo-mini-val">
-                  <span style="color:${eodColor}"><span class="mv">${eodProg}</span>%</span>
+                  <span class="mv" style="color:${eodColor} !important">${eodProg}</span><span style="color:${eodColor}">%</span>
                   <span class="ceo-mini-sub">к концу дня</span>
                 </div>
               </div>
@@ -7757,28 +7757,21 @@ function renderCeoDashboard() {
   // Анимация/восстановление аватара после каждого рендера
   requestAnimationFrame(() => ceoAvatarInitOnRender());
 
-  // Анимация/восстановление спидометра прогноза
+  // Спидометр: на первом рендере анимируем dashoffset от 1 (пусто) к нужному значению
   requestAnimationFrame(() => {
     const path = document.getElementById('ceo-speed-progress');
     if (!path) return;
-    const length = path.getTotalLength();
-    const target = Math.max(0, Math.min(companyProg / 100, 1));
-    const finalDash = `${length * target},${length}`;
-    // Если уже было анимировано (silent refresh) — сразу восстановить
+    const targetOffset = Math.max(0, 1 - Math.min(companyProg/100, 1));
     if (path.dataset.animated === '1') {
-      path.style.strokeDasharray = finalDash;
+      path.setAttribute('stroke-dashoffset', String(targetOffset));
       return;
     }
-    path.style.strokeDasharray = `0,${length}`;
-    let start = null;
-    function animate(ts) {
-      if (!start) start = ts;
-      const ease = 1 - Math.pow(1 - Math.min((ts - start) / 1500, 1), 4);
-      path.style.strokeDasharray = `${ease * length * target},${length}`;
-      if (ease < 1) requestAnimationFrame(animate);
-      else path.dataset.animated = '1';
-    }
-    requestAnimationFrame(animate);
+    // Стартуем с 1 (пусто), затем через rAF меняем — сработает CSS transition
+    path.setAttribute('stroke-dashoffset', '1');
+    requestAnimationFrame(() => {
+      path.setAttribute('stroke-dashoffset', String(targetOffset));
+      path.dataset.animated = '1';
+    });
   });
 
   } catch(e) {

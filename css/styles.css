@@ -5868,7 +5868,7 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
 .ceo-days-left strong { color: var(--txt2); font-weight: 600; }
 
 .ceo-forecast-panel {
-  text-align: left; padding: 3px 12px 5px;
+  text-align: left; padding: 12px;
   margin-bottom: 12px;
 }
 .ceo-forecast-body {
@@ -5911,13 +5911,13 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
 .ceo-speedo {
   position: relative;
   width: 80px;
-  height: 56px;
+  height: 40px;
   flex-shrink: 0;
   overflow: visible;
 }
 .ceo-speedo svg {
   width: 80px; height: 80px; display: block;
-  margin-top: -12px;
+  margin-top: -22px;
   overflow: visible;
   filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
 }
@@ -5926,7 +5926,7 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
   transition: stroke-dashoffset 1.5s cubic-bezier(.2,0,.2,1);
 }
 .ceo-speedo-value {
-  position: absolute; top: 75%; left: 50%;
+  position: absolute; top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   font-family: 'Unbounded', sans-serif;
   font-size: 14px; font-weight: 900;

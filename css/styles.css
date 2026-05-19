@@ -6097,8 +6097,8 @@ body.cinematic .ceo-speedo-value { color: var(--txt) !important; }
 .ceo-spark { display: block; margin-top: 4px; width: 100%; height: 28px; }
 
 /* Инкогнито режим (доход скрыт) */
-.kpi-income-panel.kpi-incognito > *:not(.kpi-avatar-wrap) { filter: blur(10px); transition: filter .3s; }
-.kpi-income-panel:not(.kpi-incognito) > *:not(.kpi-avatar-wrap) { transition: filter .3s; }
+.kpi-income-panel.kpi-incognito > *:not(.kpi-avatar-wrap):not(.kpi-incognito-btn):not(.ceo-metric-info-btn) { filter: blur(10px); transition: filter .3s; }
+.kpi-income-panel:not(.kpi-incognito) > *:not(.kpi-avatar-wrap):not(.kpi-incognito-btn):not(.ceo-metric-info-btn) { transition: filter .3s; }
 .kpi-incognito-btn {
   background: none; border: none; cursor: pointer;
   margin-left: 8px; font-size: 14px; padding: 0 2px;

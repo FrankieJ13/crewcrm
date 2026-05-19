@@ -8003,6 +8003,24 @@ function renderCeoDashboard() {
         </div>
       </div>
 
+      ${isRop ? `
+      <!-- ДОХОД ROP -->
+      <div class="sec-title">Доход</div>
+      <div class="kpi-income-panel ceo-rop-panel ${ropIncognito ? 'kpi-incognito' : ''}" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
+        <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openRopIncomeModal()" title="Схема премирования">!</button>
+        <button class="kpi-incognito-btn" onclick="event.stopPropagation();toggleIncognitoCeo()" title="Скрыть доход (или потряси телефон)">${ropIncognito ? '👁' : '🙈'}</button>
+        <div class="kpi-subtitle">Доход ROP за месяц</div>
+        <div class="ceo-rop-total mv">${fmtRub(ropIncomeTotal)}</div>
+        <div class="ceo-rop-formula">
+          <span>${fmtRub(ROP_OKLAD)}</span>
+          <span class="ceo-rop-dim">×</span>
+          <span style="color:${pctClr(ropProgPct)}">${ropKoef.toFixed(2)}</span>
+          <span class="ceo-rop-dim">+</span>
+          <span>${fmtRub(ROP_DOPLATA)}</span>
+        </div>
+        <div class="ceo-rop-sub">прогноз CRM: <strong style="color:${pctClr(ropProgPct)}">${ropProgPct}%</strong> · план ROP <strong>${Math.round(ropPlan)}</strong> виз.</div>
+      </div>` : ''}
+
       <!-- ТЕКУЩИЙ KPI -->
       <div class="sec-title">Текущий KPI</div>
       <div class="kpi-income-panel ceo-forecast-panel" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
@@ -8036,24 +8054,6 @@ function renderCeoDashboard() {
           </div>
         </div>
       </div>
-
-      ${isRop ? `
-      <!-- ДОХОД ROP -->
-      <div class="sec-title">Доход</div>
-      <div class="kpi-income-panel ceo-rop-panel ${ropIncognito ? 'kpi-incognito' : ''}" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
-        <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openRopIncomeModal()" title="Схема премирования">!</button>
-        <button class="kpi-incognito-btn" onclick="event.stopPropagation();toggleIncognitoCeo()" title="Скрыть доход (или потряси телефон)">${ropIncognito ? '👁' : '🙈'}</button>
-        <div class="kpi-subtitle">Доход ROP за месяц</div>
-        <div class="ceo-rop-total mv">${fmtRub(ropIncomeTotal)}</div>
-        <div class="ceo-rop-formula">
-          <span>${fmtRub(ROP_OKLAD)}</span>
-          <span class="ceo-rop-dim">×</span>
-          <span style="color:${pctClr(ropProgPct)}">${ropKoef.toFixed(2)}</span>
-          <span class="ceo-rop-dim">+</span>
-          <span>${fmtRub(ROP_DOPLATA)}</span>
-        </div>
-        <div class="ceo-rop-sub">прогноз CRM: <strong style="color:${pctClr(ropProgPct)}">${ropProgPct}%</strong> · план ROP <strong>${Math.round(ropPlan)}</strong> виз.</div>
-      </div>` : ''}
 
       <!-- МЕТРИКИ -->
       <div class="sec-title">Ключевые показатели</div>

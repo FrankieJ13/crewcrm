@@ -5507,6 +5507,9 @@ function _shakeHandle(ev) {
       if (document.getElementById('scr-personal')?.classList.contains('on')) {
         _shakeLastAt = now;
         toggleIncognito();
+      } else if (document.getElementById('scr-ceo')?.classList.contains('on')) {
+        _shakeLastAt = now;
+        toggleIncognitoCeo();
       }
     }
   }
@@ -5544,8 +5547,59 @@ function toggleIncognito() {
   if (panel) panel.classList.toggle('kpi-incognito', !cur);
   if (btn) btn.textContent = !cur ? '👁' : '🙈';
   if (typeof toast === 'function') toast(!cur ? 'Инкогнито: ON' : 'Инкогнито: OFF', 's');
-  // Параллельно запрашиваем разрешение (если ещё не дано) — будет работать со следующего тика
   requestShakePermission();
+}
+
+function toggleIncognitoCeo() {
+  const cur = localStorage.getItem('crm_incognito') === '1';
+  localStorage.setItem('crm_incognito', cur ? '0' : '1');
+  const panel = document.querySelector('#c-ceo .ceo-rop-panel');
+  const btn = document.querySelector('#c-ceo .ceo-rop-panel .kpi-incognito-btn');
+  if (panel) panel.classList.toggle('kpi-incognito', !cur);
+  if (btn) btn.textContent = !cur ? '👁' : '🙈';
+  if (typeof toast === 'function') toast(!cur ? 'Инкогнито: ON' : 'Инкогнито: OFF', 's');
+  requestShakePermission();
+}
+
+function openRopIncomeModal() {
+  const d = window._ropIncomeData;
+  if (!d) return;
+  const modalTitle = document.querySelector('#income-overlay .income-modal-title');
+  const mc = document.getElementById('income-modal-content');
+  if (modalTitle) modalTitle.innerHTML = `Схема премирования ROP`;
+  document.getElementById('income-overlay')?.classList.remove('visits-mode');
+  mc.removeAttribute('data-modal');
+  const koefRow = (p, k) => `<tr><td>${p}</td><td style="text-align:right;font-weight:800">×${k}</td></tr>`;
+  mc.innerHTML = `
+    <div class="rop-modal-block">
+      <div class="rop-modal-h">Состав дохода</div>
+      <div class="rop-modal-row"><span>Оклад</span><b>${fmtRub(d.oklad)}</b></div>
+      <div class="rop-modal-row"><span>× Коэфф. по прогнозу плана</span><b style="color:${pctClr(d.progPct)}">×${d.koef.toFixed(2)}</b></div>
+      <div class="rop-modal-row"><span>+ Доплата за отдел Дожим</span><b>${fmtRub(d.doplata)}</b></div>
+      <div class="rop-modal-row rop-modal-total"><span>Итого</span><b>${fmtRub(d.total)}</b></div>
+    </div>
+    <div class="rop-modal-block">
+      <div class="rop-modal-h">Шкала коэффициентов</div>
+      <table class="rop-modal-table">
+        <tbody>
+          ${koefRow('Прогноз менее 100%', '0.80')}
+          ${koefRow('100% → ровно план', '1.00')}
+          ${koefRow('110%', '1.10')}
+          ${koefRow('120%', '1.20')}
+          ${koefRow('130% и выше', '1.30 (макс)')}
+        </tbody>
+      </table>
+    </div>
+    <div class="rop-modal-block">
+      <div class="rop-modal-h">Расчёт плана ROP</div>
+      <div class="rop-modal-note">План ROP = План отдела CRM × <b>0.8</b><br>Это даёт ROP запас 20% — позволяет получать ×1.20 даже когда отдел выполняет свой план ровно.</div>
+      <div class="rop-modal-row"><span>План отдела CRM</span><b>${fmtRub(d.crmPlanSum)}</b></div>
+      <div class="rop-modal-row"><span>План ROP (×0.8)</span><b>${fmtRub(d.ropPlan)}</b></div>
+      <div class="rop-modal-row"><span>Факт CRM (сейчас)</span><b>${fmtRub(d.crmFact)}</b></div>
+      <div class="rop-modal-row"><span>Прогноз выполнения ROP</span><b style="color:${pctClr(d.progPct)}">${d.progPct}%</b></div>
+    </div>`;
+  document.getElementById('income-overlay').classList.add('open', 'ceo-mode');
+  document.body.style.overflow = 'hidden';
 }
 
 // На Android можно сразу прицепиться
@@ -7765,6 +7819,24 @@ function renderCeoDashboard() {
   const eodProg = totalPlan > 0 ? Math.round((factEod / totalPlan) * (daysInMonth / dayNum) * 100) : 0;
   const eodColor = eodProg >= 100 ? 'var(--grn)' : eodProg >= 85 ? '#ffd60a' : 'var(--red)';
 
+  // ===== ROP DOXOD =====
+  const ROP_OKLAD = 250000;
+  const ROP_DOPLATA = 100000;
+  const isRop = (matched?.role || '').toLowerCase().trim() === 'rop' ||
+                (matched?.role || '').toLowerCase().trim() === 'роп';
+  const ropPlan = crmPlanSum * 0.8;
+  const ropFactPct = ropPlan > 0 ? Math.round((crmFact / ropPlan) * 100) : 0;
+  const ropProgPct = computeProgPct(crmFact, ropPlan, sfx);
+  function ropKoefFn(p) {
+    if (p < 100) return 0.8;
+    return Math.min(1.3, p / 100);
+  }
+  const ropKoef = ropKoefFn(ropProgPct);
+  const ropIncomeBase = ROP_OKLAD * ropKoef;
+  const ropIncomeTotal = ropIncomeBase + ROP_DOPLATA;
+  const ropIncognito = localStorage.getItem('crm_incognito') === '1';
+  window._ropIncomeData = { oklad: ROP_OKLAD, doplata: ROP_DOPLATA, koef: ropKoef, base: ropIncomeBase, total: ropIncomeTotal, factPct: ropFactPct, progPct: ropProgPct, ropPlan, crmFact, crmPlanSum };
+
   // Тренд по дням до текущего: визиты за каждый день месяца
   function dailyVisits(scope) {
     const arr = new Array(dayNum).fill(0);
@@ -7963,6 +8035,24 @@ function renderCeoDashboard() {
           </div>
         </div>
       </div>
+
+      ${isRop ? `
+      <!-- ДОХОД ROP -->
+      <div class="sec-title">Доход</div>
+      <div class="kpi-income-panel ceo-rop-panel ${ropIncognito ? 'kpi-incognito' : ''}" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
+        <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openRopIncomeModal()" title="Схема премирования">!</button>
+        <button class="kpi-incognito-btn" onclick="event.stopPropagation();toggleIncognitoCeo()" title="Скрыть доход (или потряси телефон)">${ropIncognito ? '👁' : '🙈'}</button>
+        <div class="kpi-subtitle">Доход ROP за месяц</div>
+        <div class="ceo-rop-total mv">${fmtRub(ropIncomeTotal)}</div>
+        <div class="ceo-rop-formula">
+          <span>${fmtRub(ROP_OKLAD)}</span>
+          <span class="ceo-rop-dim">×</span>
+          <span style="color:${pctClr(ropProgPct)}">${ropKoef.toFixed(2)}</span>
+          <span class="ceo-rop-dim">+</span>
+          <span>${fmtRub(ROP_DOPLATA)}</span>
+        </div>
+        <div class="ceo-rop-sub">прогноз CRM: <strong style="color:${pctClr(ropProgPct)}">${ropProgPct}%</strong> · план ROP ${fmtRub(ropPlan)}</div>
+      </div>` : ''}
 
       <!-- МЕТРИКИ -->
       <div class="sec-title">Ключевые показатели</div>

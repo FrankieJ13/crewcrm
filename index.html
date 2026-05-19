@@ -36,8 +36,10 @@
         <div class="gooey-logo">
           <svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden;pointer-events:none">
             <defs>
-              <filter id="gooey-threshold-local">
-                <feColorMatrix in="SourceGraphic" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 255 -140"/>
+              <filter id="gooey-threshold-local" x="-10%" y="-10%" width="120%" height="120%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="0" result="blur"/>
+                <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -7" result="goo"/>
+                <feComposite in="SourceGraphic" in2="goo" operator="atop"/>
               </filter>
             </defs>
           </svg>

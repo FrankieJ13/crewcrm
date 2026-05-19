@@ -5583,9 +5583,8 @@ function openRopIncomeModal() {
       <table class="rop-modal-table">
         <tbody>
           ${koefRow('Прогноз менее 100%', '0.80')}
-          ${koefRow('100% → ровно план', '1.00')}
-          ${koefRow('110%', '1.10')}
-          ${koefRow('120%', '1.20')}
+          ${koefRow('100% – 119%', '1.00')}
+          ${koefRow('120% – 129%', '1.20')}
           ${koefRow('130% и выше', '1.30 (макс)')}
         </tbody>
       </table>
@@ -7829,7 +7828,9 @@ function renderCeoDashboard() {
   const ropProgPct = computeProgPct(crmFact, ropPlan, sfx);
   function ropKoefFn(p) {
     if (p < 100) return 0.8;
-    return Math.min(1.3, p / 100);
+    if (p < 120) return 1.0;
+    if (p < 130) return 1.2;
+    return 1.3;
   }
   const ropKoef = ropKoefFn(ropProgPct);
   const ropIncomeBase = ROP_OKLAD * ropKoef;

@@ -5965,37 +5965,42 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
 }
 
 /* === ROP доход панель === */
-.ceo-rop-panel {
-  padding: 10px 12px;
-  margin-bottom: 12px;
-  text-align: left;
+.ceo-rop-hdr {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 0;
 }
-.ceo-rop-panel .kpi-subtitle {
-  font-size: 10px; color: var(--txt3);
-  letter-spacing: 0.08em; text-transform: uppercase;
-  margin-bottom: 6px; padding: 0;
+.ceo-rop-hdr .sec-title { flex: 1; margin: 0; }
+.ceo-rop-incognito-btn {
+  flex-shrink: 0;
+  font-size: 16px; padding: 2px 6px;
+}
+.ceo-rop-panel {
+  padding: 14px 12px;
+  margin-bottom: 12px;
+  text-align: center;
 }
 .ceo-rop-total {
   font-family: 'Unbounded', sans-serif;
-  font-size: 26px; font-weight: 800;
+  font-size: 30px; font-weight: 800;
   line-height: 1; letter-spacing: -0.01em;
   color: var(--txt);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  text-align: center;
 }
 .ceo-rop-formula {
   display: flex; align-items: center; gap: 5px;
-  flex-wrap: wrap;
+  justify-content: center; flex-wrap: wrap;
   font-family: 'Unbounded', sans-serif;
   font-size: 11px; font-weight: 700;
   color: var(--txt2);
   margin-bottom: 4px;
 }
 .ceo-rop-dim { color: var(--txt3); font-weight: 500; }
-.ceo-rop-sub { font-size: 11px; color: var(--txt3); }
-.ceo-rop-sub strong { font-family: 'Unbounded', sans-serif; }
-.ceo-rop-panel .kpi-incognito-btn {
-  position: absolute; top: 6px; right: 32px;
+.ceo-rop-sub {
+  font-size: 11px; color: var(--txt3);
+  text-align: center;
 }
+.ceo-rop-sub strong { font-family: 'Unbounded', sans-serif; }
 .ceo-rop-panel .ceo-metric-info-btn { top: 6px; right: 6px; }
 
 /* === Модалка схемы ROP === */
@@ -6097,8 +6102,9 @@ body.cinematic .ceo-speedo-value { color: var(--txt) !important; }
 .ceo-spark { display: block; margin-top: 4px; width: 100%; height: 28px; }
 
 /* Инкогнито режим (доход скрыт) */
-.kpi-income-panel.kpi-incognito > *:not(.kpi-avatar-wrap):not(.kpi-incognito-btn):not(.ceo-metric-info-btn) { filter: blur(10px); transition: filter .3s; }
-.kpi-income-panel:not(.kpi-incognito) > *:not(.kpi-avatar-wrap):not(.kpi-incognito-btn):not(.ceo-metric-info-btn) { transition: filter .3s; }
+.kpi-income-panel.kpi-incognito > *:not(.kpi-avatar-wrap):not(.kpi-incognito-btn) { filter: blur(10px); transition: filter .3s; }
+.kpi-income-panel.kpi-incognito .ceo-metric-info-btn { pointer-events: none; }
+.kpi-income-panel:not(.kpi-incognito) > *:not(.kpi-avatar-wrap):not(.kpi-incognito-btn) { transition: filter .3s; }
 .kpi-incognito-btn {
   background: none; border: none; cursor: pointer;
   margin-left: 8px; font-size: 14px; padding: 0 2px;

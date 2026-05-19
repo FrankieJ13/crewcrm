@@ -8009,7 +8009,6 @@ function renderCeoDashboard() {
       <div class="kpi-income-panel ceo-rop-panel ${ropIncognito ? 'kpi-incognito' : ''}" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
         <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openRopIncomeModal()" title="Схема премирования">!</button>
         <button class="kpi-incognito-btn" onclick="event.stopPropagation();toggleIncognitoCeo()" title="Скрыть доход (или потряси телефон)">${ropIncognito ? '👁' : '🙈'}</button>
-        <div class="kpi-subtitle">Доход ROP за месяц</div>
         <div class="ceo-rop-total mv">${fmtRub(ropIncomeTotal)}</div>
         <div class="ceo-rop-formula">
           <span>${fmtRub(ROP_OKLAD)}</span>

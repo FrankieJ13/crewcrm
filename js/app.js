@@ -3234,12 +3234,12 @@ function setReportTab(tab) {
 
 function goHome() {
   const matched = findUserInSheet();
-  if (matched && !isCeoLike(matched.role)) {
-    goPersonal();
-  } else {
-    S.reportTab = 'dept';
-    goTab('otchet');
+  if (matched && isCeoLike(matched.role)) {
+    showScr('ceo');
     dockSetActive('home');
+    if (typeof loadCeoDashboard === 'function') loadCeoDashboard();
+  } else if (matched) {
+    goPersonal();
   }
 }
 

@@ -5592,9 +5592,9 @@ function openRopIncomeModal() {
     <div class="rop-modal-block">
       <div class="rop-modal-h">Расчёт плана ROP</div>
       <div class="rop-modal-note">План ROP = План отдела CRM × <b>0.8</b><br>Это даёт ROP запас 20% — позволяет получать ×1.20 даже когда отдел выполняет свой план ровно.</div>
-      <div class="rop-modal-row"><span>План отдела CRM</span><b>${fmtRub(d.crmPlanSum)}</b></div>
-      <div class="rop-modal-row"><span>План ROP (×0.8)</span><b>${fmtRub(d.ropPlan)}</b></div>
-      <div class="rop-modal-row"><span>Факт CRM (сейчас)</span><b>${fmtRub(d.crmFact)}</b></div>
+      <div class="rop-modal-row"><span>План отдела CRM</span><b>${Math.round(d.crmPlanSum)} виз.</b></div>
+      <div class="rop-modal-row"><span>План ROP (×0.8)</span><b>${Math.round(d.ropPlan)} виз.</b></div>
+      <div class="rop-modal-row"><span>Факт CRM (сейчас)</span><b>${Math.round(d.crmFact)} виз.</b></div>
       <div class="rop-modal-row"><span>Прогноз выполнения ROP</span><b style="color:${pctClr(d.progPct)}">${d.progPct}%</b></div>
     </div>`;
   document.getElementById('income-overlay').classList.add('open', 'ceo-mode');
@@ -8052,7 +8052,7 @@ function renderCeoDashboard() {
           <span class="ceo-rop-dim">+</span>
           <span>${fmtRub(ROP_DOPLATA)}</span>
         </div>
-        <div class="ceo-rop-sub">прогноз CRM: <strong style="color:${pctClr(ropProgPct)}">${ropProgPct}%</strong> · план ROP ${fmtRub(ropPlan)}</div>
+        <div class="ceo-rop-sub">прогноз CRM: <strong style="color:${pctClr(ropProgPct)}">${ropProgPct}%</strong> · план ROP <strong>${Math.round(ropPlan)}</strong> виз.</div>
       </div>` : ''}
 
       <!-- МЕТРИКИ -->

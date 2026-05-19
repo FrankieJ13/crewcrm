@@ -625,7 +625,7 @@ function getPresencePageLabel() {
   const deptLabel = dept => dept === 'dozhim' ? 'Дожим' : 'CRM';
   const matched = findUserInSheet();
   const role = matched?.role || 'crm';
-  const isCeo = role === 'ceo';
+  const isCeo = isCeoLike(role);
   const roleDept = role === 'dozhim' ? 'dozhim' : 'crm';
   const effectiveRatingDept = isCeo ? S.ratingDept : roleDept;
   const effectiveDohodDept = isCeo ? S.dohodTab : roleDept;
@@ -830,7 +830,7 @@ function startNotificationListener() {
   const p = firebasePresence;
   if (!p.db) return;
   const me = findUserInSheet();
-  if (me?.role === 'ceo') return; // CEO не получает свои же уведомления
+  if (isCeoLike(me?.role)) return; // CEO не получает свои же уведомления
   _notifyListenerStarted = true;
 
   p.db.ref('notification').on('value', snap => {
@@ -1324,7 +1324,7 @@ function renderUser() {
   av.title = 'Мой KPI';
   av.onclick = function() {
     const m = findUserInSheet();
-    if (m && m.role === 'ceo') return;
+    if (m && isCeoLike(m.role)) return;
     goPersonal();
   };
   if (S.user.name) {
@@ -1626,7 +1626,7 @@ async function loadTab(tab) {
     if (el && !S.silentRefresh) el.innerHTML = loader();  // показываем сразу при ручном переходе
     const matched = findUserInSheet();
     const role = matched?.role || '';
-    const isCeo = role === 'ceo';
+    const isCeo = isCeoLike(role);
     const isDozhim = role === 'dozhim';
 
     if (isCeo || !isDozhim) {
@@ -2131,7 +2131,7 @@ async function refreshVisibleDataLive() {
       if (dv) S.data.d_vizity = dv;
       renderOtchet();
     } else if (activeTab === 'dohod') {
-      const isCeo = role === 'ceo';
+      const isCeo = isCeoLike(role);
       const isDozhim = role === 'dozhim' || (isCeo && S.dohodTab === 'dozhim');
       if (isDozhim) {
         const [dv, pd, gr] = await Promise.all([
@@ -3234,7 +3234,7 @@ function setReportTab(tab) {
 
 function goHome() {
   const matched = findUserInSheet();
-  if (matched && matched.role !== 'ceo') {
+  if (matched && !isCeoLike(matched.role)) {
     goPersonal();
   } else {
     S.reportTab = 'dept';
@@ -3249,7 +3249,7 @@ function renderDohod() {
   const floating = document.getElementById('floating-dohod-subtabs');
   const matched = findUserInSheet();
   const role = matched?.role || '';
-  const isCeo = role === 'ceo';
+  const isCeo = isCeoLike(role);
 
   // CEO — без верхних вкладок, выбор через Dock
   if (isCeo) {
@@ -3613,7 +3613,7 @@ function schedBulkSelectChanged(sel) {
 function canEditScheduleName(name) {
   const matched = findUserInSheet();
   if (!matched) return false;
-  if (matched.role === 'ceo') return true;
+  if (isCeoLike(matched.role)) return true;
   return String(name || '').trim().toLowerCase() === String(matched.name || '').trim().toLowerCase();
 }
 
@@ -3837,7 +3837,7 @@ function renderGrafik() {
     if (!u || !u[1]) continue;
     const name = u[1].trim();
     const role = (u[2]||'crm').toLowerCase().trim();
-    if (role === 'ceo') continue;
+    if (isCeoLike(role)) continue;
     if (role === 'dozhim') dozhimNames.push(name);
     else crmNames.push(name);
   }
@@ -4080,7 +4080,7 @@ function openScheduleBulkEditor() {
     if (!u || !u[1]) continue;
     const name = String(u[1]).trim();
     const uRole = String(u[2] || 'crm').toLowerCase().trim();
-    if (uRole === 'ceo') continue;
+    if (isCeoLike(uRole)) continue;
     if (schedIndex[name.toLowerCase()]) names.push(name);
   }
   const longestNameLen = names.reduce((max, name) => Math.max(max, String(name || '').length), 0);
@@ -4089,7 +4089,7 @@ function openScheduleBulkEditor() {
   const dayHeads = Array.from({ length: daysInMonth }, (_, i) => `<div class="sched-bulk-day">${i + 1}</div>`).join('');
   const rows = names.map(name => {
     const entry = schedIndex[name.toLowerCase()];
-    const editable = role === 'ceo' || name.toLowerCase() === myName;
+    const editable = isCeoLike(role) || name.toLowerCase() === myName;
     const cells = Array.from({ length: daysInMonth }, (_, i) => {
       const day = i + 1;
       const colIdx = findSchedDayCol(entry.daysRow, day);
@@ -4812,13 +4812,13 @@ async function savePlan() {
 // Показываем кнопку «Планы» только CEO (старый btn + hamburger)
 function showPlanEditBtnIfCeo(matched) {
   const btn = document.getElementById('btn-plan-edit');
-  if (btn) btn.style.display = (matched && matched.role === 'ceo') ? 'flex' : 'none';
+  if (btn) btn.style.display = (matched && isCeoLike(matched.role)) ? 'flex' : 'none';
   // Кнопка уведомления — только CEO
   const notifyBtn = document.getElementById('btn-notify');
-  if (notifyBtn) notifyBtn.style.display = (matched && matched.role === 'ceo') ? 'flex' : 'none';
+  if (notifyBtn) notifyBtn.style.display = (matched && isCeoLike(matched.role)) ? 'flex' : 'none';
   const hmb = document.getElementById('hmb-plan-edit');
   const sep = document.getElementById('hmb-sep-plan');
-  const isCeo = matched && matched.role === 'ceo';
+  const isCeo = matched && isCeoLike(matched.role);
   if (hmb) hmb.style.display = isCeo ? '' : 'none';
   if (sep) sep.style.display = isCeo ? '' : 'none';
   // Кнопка экспорта отчёта — только CEO
@@ -5318,6 +5318,12 @@ function getRangByName(nameLow) {
 }
 
 // Возвращает role менеджера ('crm' | 'dozhim' | 'ceo') по имени из USERS
+// CEO и ROP имеют одинаковые права/доступы
+function isCeoLike(role) {
+  const r = String(role || '').toLowerCase().trim();
+  return r === 'ceo' || r === 'rop' || r === 'роп';
+}
+
 function getRoleByName(nameLow) {
   if (!S.usersData) return null;
   for (let i = 1; i < S.usersData.length; i++) {
@@ -5402,7 +5408,7 @@ async function loadUsersAndStart() {
     startNotificationListener();
     initSverkaToggle();
     // Проверяем режим технического обслуживания (не для CEO)
-    if (matched.role !== 'ceo' && S.svcMode) {
+    if (!isCeoLike(matched.role) && S.svcMode) {
       showMaintenancePage();
     }
     // Иконки автора в "О проекте" — показываем после авторизации
@@ -5434,7 +5440,7 @@ async function loadUsersAndStart() {
     }
     checkBirthdayNotifications();
     checkSelfBirthday();
-    if (matched.role === 'ceo') {
+    if (isCeoLike(matched.role)) {
       S.ratingDept = 'crm';
       S.authReady = true;
       showScr('ceo');
@@ -5454,7 +5460,7 @@ async function loadUsersAndStart() {
 // Фоновая предзагрузка данных всех вкладок после старта
 async function backgroundPrefetch(matched) {
   const role     = matched?.role || 'crm';
-  const isCeo    = role === 'ceo';
+  const isCeo    = isCeoLike(role);
   const isDozhim = role === 'dozhim';
 
   const fetches = [];
@@ -5648,7 +5654,7 @@ function getMgrGreeting(fullName) {
 function goPersonal() {
   const matched = findUserInSheet();
   if (!matched || !matched.name) { showAccessDenied(); return; }
-  if (matched.role === 'ceo') {
+  if (isCeoLike(matched.role)) {
     showScr('ceo');
     loadCeoDashboard();
     return;
@@ -6924,7 +6930,7 @@ function openSalInfo(roleHint) {
   let effectiveRole;
   if (roleHint) {
     effectiveRole = roleHint;
-  } else if (role === 'ceo') {
+  } else if (isCeoLike(role)) {
     // CEO видит инструкцию того отдела, чья вкладка сейчас открыта
     effectiveRole = S.dohodTab === 'dozhim' ? 'dozhim' : 'crm';
   } else {
@@ -7342,9 +7348,9 @@ function dockNav(id) {
 
   if (id === 'home') {
     const matched = findUserInSheet();
-    if (matched && matched.role !== 'ceo') {
+    if (matched && !isCeoLike(matched.role)) {
       goPersonal();
-    } else if (matched && matched.role === 'ceo') {
+    } else if (matched && isCeoLike(matched.role)) {
       showScr('ceo');
       loadCeoDashboard();
     } else {
@@ -8096,7 +8102,7 @@ function dockKpi(dept) {
 function dockDohodToggle(e) {
   e.stopPropagation();
   const matched = findUserInSheet();
-  if (!matched || matched.role !== 'ceo') {
+  if (!matched || !isCeoLike(matched.role)) {
     closeAllDockPopups();
     goTab('dohod');
     dockSetActive('dohod');
@@ -8125,7 +8131,7 @@ async function loadRating() {
 
   const matched = findUserInSheet();
   const role = matched?.role || 'crm';
-  const isCeo = role === 'ceo';
+  const isCeo = isCeoLike(role);
 
   // Определяем какой отдел показывать
   // S.ratingDept: 'crm' | 'dozhim' (только для CEO)
@@ -8167,7 +8173,7 @@ function renderRating() {
   const el = document.getElementById('c-rating');
   if (!el) return;
   const matched = findUserInSheet();
-  const isCeo = matched?.role === 'ceo';
+  const isCeo = isCeoLike(matched?.role);
   const dept = S.ratingDept || 'crm';
 
   const isLight = document.body.classList.contains('light') || document.body.classList.contains('tiffany');
@@ -8478,7 +8484,7 @@ function dockVizityToggle(e) {
   e.stopPropagation();
   const matched = findUserInSheet();
   // Попап только для CEO. Все остальные — прямо на свой отдел
-  if (!matched || matched.role !== 'ceo') {
+  if (!matched || !isCeoLike(matched.role)) {
     closeAllDockPopups();
     const dept = matched?.role === 'dozhim' ? 'dozhim' : 'crm';
     dockVizity(dept);
@@ -8555,7 +8561,7 @@ function buildManagerList(dept) {
     for (let i = 1; i < S.usersData.length; i++) {
       const row = S.usersData[i];
       const role = (row[2]||'').toLowerCase().trim();
-      if (role === 'ceo') continue;
+      if (isCeoLike(role)) continue;
       if (dept === 'dozhim' && role !== 'dozhim') continue;
       if (dept === 'crm' && role !== 'crm' && role !== '') continue;
       const name = (row[1]||'').trim();
@@ -8581,7 +8587,7 @@ function formatPhone(raw) {
 
 function isVizLocked() {
   const matched = findUserInSheet();
-  if (matched?.role === 'ceo') return false;
+  if (isCeoLike(matched?.role)) return false;
   const mo = parseInt(currentSuffix.slice(0,2));
   const yr = 2000 + parseInt(currentSuffix.slice(2,4));
   const now = new Date();
@@ -8875,7 +8881,7 @@ function renderVizForm(row, dept) {
   const catOpts = VIZ_COLS[6].opts[dept] || VIZ_COLS[6].opts.crm;
   const mgrList = buildManagerList(dept);
 
-  const isCeoRole = (findUserInSheet()?.role === 'ceo');
+  const isCeoRole = (findUserInSheet()?.isCeoLike(role));
 
   function field(idx, gridClass='') {
     const col = VIZ_COLS[idx];
@@ -9139,7 +9145,7 @@ async function vizDeleteRow(sheetRow) {
   const me = findUserInSheet();
   if (!me) return;
   const row = S.vizRows.find(r => r._sheetRow === sheetRow);
-  const isCeo = me.role === 'ceo';
+  const isCeo = isCeoLike(me.role);
   const isOwn = row && (row.data[8] || '').trim().toLowerCase() === (me.name || '').trim().toLowerCase();
   if (!isCeo && !isOwn) {
     toast('Можно удалять только свои визиты', 'e'); return;
@@ -9292,7 +9298,7 @@ function vizScrollTo(dir) {
 function hmbGoPersonal() {
   closeHamburger();
   const m = findUserInSheet();
-  if (m && m.role !== 'ceo') goPersonal();
+  if (m && !isCeoLike(m.role)) goPersonal();
 }
 
 function openAbout() {

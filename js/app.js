@@ -11702,21 +11702,12 @@ function toggleRemPanel(e) {
   if (pop.classList.contains('open')) { closeRemPanel(); return; }
   renderRemPanel();
   pop.classList.add('open');
-  // Закрытие по клику вне
-  setTimeout(() => {
-    document.addEventListener('click', _remDocClose, { once: true });
-  }, 50);
-}
-function _remDocClose(ev) {
-  const pop = document.getElementById('rem-popover');
-  const wrap = document.getElementById('rem-wrap');
-  if (!pop || !wrap) return;
-  if (!wrap.contains(ev.target)) closeRemPanel();
-  else document.addEventListener('click', _remDocClose, { once: true });
+  document.getElementById('rem-backdrop')?.classList.add('on');
 }
 function closeRemPanel() {
   const pop = document.getElementById('rem-popover');
   if (pop) pop.classList.remove('open');
+  document.getElementById('rem-backdrop')?.classList.remove('on');
 }
 
 function remMarkDone(id) {

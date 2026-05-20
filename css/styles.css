@@ -6451,9 +6451,19 @@ body.tiffany .az-field { background: rgba(0,0,0,0.08); }
   background: var(--bg2); border: 1px solid var(--line);
   border-radius: var(--r2);
   box-shadow: 0 12px 32px rgba(0,0,0,0.45);
-  z-index: 400; overflow: hidden;
+  z-index: 600; overflow: hidden;
 }
 .rem-popover.open { display: block; }
+.rem-backdrop {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  z-index: 500;
+}
+.rem-backdrop.on { display: block; animation: mFade .2s ease; }
+body.light .rem-backdrop,
+body.neo-light .rem-backdrop,
+body.tiffany .rem-backdrop { background: rgba(255,255,255,0.35); }
 .rem-hdr {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 14px; border-bottom: 1px solid var(--line);

@@ -5814,6 +5814,7 @@ async function loadUsersAndStart() {
     showPlanEditBtnIfCeo(matched);
     startNotificationListener();
     initSverkaToggle();
+    if (typeof startRemindersLoop === 'function') startRemindersLoop();
     // Проверяем режим технического обслуживания (не для CEO)
     if (!isCeoLike(matched.role) && S.svcMode) {
       showMaintenancePage();
@@ -7618,12 +7619,26 @@ function initSverkaToggle() {
   S.sverkaMode   = getSverkaMode();
   S.vizPasteMode = getVizPasteMode();
   S.svcMode      = getSvcMode();
+  S.remMode      = getRemMode();
   const cb  = document.getElementById('sverka-toggle-cb');
   const cb2 = document.getElementById('viz-paste-toggle-cb');
   const cb3 = document.getElementById('svc-toggle-cb');
+  const cb4 = document.getElementById('reminders-toggle-cb');
   if (cb)  cb.checked  = S.sverkaMode;
   if (cb2) cb2.checked = S.vizPasteMode;
   if (cb3) cb3.checked = S.svcMode;
+  if (cb4) cb4.checked = S.remMode;
+}
+
+function getRemMode() {
+  if (S.usersData) {
+    for (let i = 1; i < S.usersData.length; i++) {
+      const mode = (S.usersData[i][12] || '').trim().toLowerCase(); // колонка M
+      if (mode === 'on')  return true;
+      if (mode === 'off') return false;
+    }
+  }
+  return false;
 }
 
 function getVizPasteMode() {
@@ -7731,6 +7746,34 @@ async function savePlanAndSverka() {
     } catch(e) {
       toast('Ошибка сохранения режима обслуживания', 'e');
       S.svcMode = wasOn;
+    }
+  }
+
+  // Уведомления (напоминания CRM/Дожим)
+  const cb4 = document.getElementById('reminders-toggle-cb');
+  if (cb4) {
+    const wasOn = S.remMode;
+    S.remMode = cb4.checked;
+    const newMode4 = S.remMode ? 'On' : 'Off';
+    try {
+      const range4 = encodeURIComponent('USERS!M2:M2');
+      const url4 = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range4}?valueInputOption=USER_ENTERED`;
+      const resp4 = await fetch(url4, {
+        method: 'PUT',
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ values: [[newMode4]] })
+      });
+      if (resp4.ok) {
+        if (S.usersData && S.usersData[1]) S.usersData[1][12] = newMode4;
+        toast('Уведомления: ' + (S.remMode ? 'Вкл' : 'Выкл'), 's');
+        if (typeof remApplyVisibility === 'function') remApplyVisibility();
+      } else {
+        toast('Ошибка сохранения режима уведомлений', 'e');
+        S.remMode = wasOn;
+      }
+    } catch(e) {
+      toast('Ошибка сохранения режима уведомлений', 'e');
+      S.remMode = wasOn;
     }
   }
 
@@ -11526,3 +11569,239 @@ function exp_runPdf({ suffix, monthLabel, agg, plans, sections }) {
   try { win.focus(); } catch(e) { /* noop */ }
 }
 /* ════════════════════ END EXPORT REPORT ════════════════════ */
+
+/* ════════════════════ REMINDERS (CRM/Дожим) ════════════════════ */
+const REM_DEFS = [
+  { id: 'morning', startMin:  9*60+15, endMin: 10*60+ 0, text: 'Актуализируй визиты за прошлые дни в таблице' },
+  { id: 'noon',    startMin: 11*60+30, endMin: 12*60+ 0, text: 'Проверить в amoCRM сделки без задач' },
+  { id: 'evening', startMin: 14*60+ 0, endMin: 15*60+ 0, text: 'Посмотри, есть ли пропущенные MANGO звонки, которые не распределились' },
+];
+const REM_STORAGE_KEY = 'rem_state_v1';
+const REM_WORK_START_MIN = 9 * 60;
+const REM_WORK_END_MIN   = 18 * 60;
+let _remCheckTimer = null;
+let _remEnsuredHeader = false;
+
+function _remTodayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function _remNowMin() {
+  const d = new Date();
+  return d.getHours()*60 + d.getMinutes();
+}
+function _remLoadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(REM_STORAGE_KEY) || 'null');
+    if (s && s.date === _remTodayStr()) return s;
+  } catch(e) {}
+  return null;
+}
+function _remSaveState(state) { localStorage.setItem(REM_STORAGE_KEY, JSON.stringify(state)); }
+function _remResetForToday() {
+  const items = {};
+  REM_DEFS.forEach(d => {
+    const fireMin = d.startMin + Math.floor(Math.random() * (d.endMin - d.startMin + 1));
+    items[d.id] = { fireMin, shown: false, done: false };
+  });
+  const state = { date: _remTodayStr(), items };
+  _remSaveState(state);
+  return state;
+}
+function _remGetOrInit() {
+  return _remLoadState() || _remResetForToday();
+}
+
+// Проверка: пользователь сегодня по графику работает «Р»
+function _remIsInShiftToday() {
+  const matched = findUserInSheet();
+  if (!matched) return false;
+  const raw = S.data.grafik;
+  if (!raw || raw.length < 3) return false;
+  const idx = buildSchedIndex(raw);
+  const entry = idx[matched.name.toLowerCase()];
+  if (!entry) return false;
+  const { row: mgrRow, daysRow } = entry;
+  const today = new Date().getDate();
+  for (let c = 1; c < daysRow.length; c++) {
+    if (parseInt(daysRow[c]) === today) {
+      return normalizeSchedVal(mgrRow[c]) === 'Р';
+    }
+  }
+  return false;
+}
+
+function _remEligibleUser() {
+  if (!S.remMode) return false;
+  const matched = findUserInSheet();
+  if (!matched) return false;
+  const role = String(matched.role || '').toLowerCase();
+  if (role !== 'crm' && role !== 'dozhim') return false;
+  return true;
+}
+
+function remApplyVisibility() {
+  const wrap = document.getElementById('rem-wrap');
+  if (!wrap) return;
+  wrap.style.display = _remEligibleUser() ? '' : 'none';
+  remUpdateCounter();
+}
+
+function remUpdateCounter() {
+  const cnt = document.getElementById('rem-count');
+  const btn = document.getElementById('btn-rem');
+  if (!cnt || !btn) return;
+  const state = _remGetOrInit();
+  // Активные = показанные (хотя бы раз прозвучали) и не выполненные
+  const active = Object.entries(state.items).filter(([id, it]) => it.shown && !it.done).length;
+  if (active > 0) {
+    cnt.style.display = 'flex';
+    cnt.textContent = String(active);
+    btn.classList.add('has-active');
+  } else {
+    cnt.style.display = 'none';
+    btn.classList.remove('has-active');
+  }
+}
+
+function _remFormatTime(min) {
+  return `${String(Math.floor(min/60)).padStart(2,'0')}:${String(min%60).padStart(2,'0')}`;
+}
+
+function renderRemPanel() {
+  const body = document.getElementById('rem-body');
+  if (!body) return;
+  const state = _remGetOrInit();
+  const items = REM_DEFS.map(d => ({ ...d, ...state.items[d.id] }));
+  const shownItems = items.filter(i => i.shown);
+  if (!shownItems.length) {
+    body.innerHTML = `<div class="rem-empty">Сегодня пока нет напоминаний.<br>Жди свой первый сигнал в течение рабочего дня.</div>`;
+    return;
+  }
+  // Сортировка: сначала активные, потом выполненные
+  shownItems.sort((a,b) => {
+    if (a.done !== b.done) return a.done ? 1 : -1;
+    return a.fireMin - b.fireMin;
+  });
+  body.innerHTML = shownItems.map(it => `
+    <div class="rem-item ${it.done ? 'done' : ''}">
+      <div class="rem-item-time"><span class="dot"></span>${_remFormatTime(it.fireMin)}${it.done ? ' · выполнено' : ' · активно'}</div>
+      <div class="rem-item-text">${it.text}</div>
+      ${it.done ? '' : `<button class="rem-item-btn" onclick="remMarkDone('${it.id}')">Выполнено</button>`}
+    </div>`).join('');
+}
+
+function toggleRemPanel(e) {
+  if (e) e.stopPropagation();
+  const pop = document.getElementById('rem-popover');
+  if (!pop) return;
+  if (pop.classList.contains('open')) { closeRemPanel(); return; }
+  renderRemPanel();
+  pop.classList.add('open');
+  // Закрытие по клику вне
+  setTimeout(() => {
+    document.addEventListener('click', _remDocClose, { once: true });
+  }, 50);
+}
+function _remDocClose(ev) {
+  const pop = document.getElementById('rem-popover');
+  const wrap = document.getElementById('rem-wrap');
+  if (!pop || !wrap) return;
+  if (!wrap.contains(ev.target)) closeRemPanel();
+  else document.addEventListener('click', _remDocClose, { once: true });
+}
+function closeRemPanel() {
+  const pop = document.getElementById('rem-popover');
+  if (pop) pop.classList.remove('open');
+}
+
+function remMarkDone(id) {
+  const state = _remGetOrInit();
+  if (!state.items[id]) return;
+  state.items[id].done = true;
+  _remSaveState(state);
+  remUpdateCounter();
+  renderRemPanel();
+}
+
+function showRemBanner(id, text) {
+  const ov = document.getElementById('rem-banner-overlay');
+  const tx = document.getElementById('rem-banner-text');
+  if (!ov || !tx) return;
+  tx.textContent = text;
+  ov.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeRemBanner() {
+  const ov = document.getElementById('rem-banner-overlay');
+  if (ov) ov.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function _remTick() {
+  if (!_remEligibleUser()) return;
+  // День сменился — сбросить
+  const cur = _remLoadState();
+  if (!cur) _remResetForToday();
+
+  const nowMin = _remNowMin();
+  if (nowMin < REM_WORK_START_MIN || nowMin > REM_WORK_END_MIN) return;
+  if (!_remIsInShiftToday()) return;
+
+  const state = _remGetOrInit();
+  let changed = false;
+  REM_DEFS.forEach(d => {
+    const it = state.items[d.id];
+    if (!it || it.done || it.shown) return;
+    if (nowMin >= it.fireMin) {
+      it.shown = true;
+      changed = true;
+      // Покажем баннер только если не открыт другой
+      const ov = document.getElementById('rem-banner-overlay');
+      if (ov && !ov.classList.contains('open')) {
+        showRemBanner(d.id, d.text);
+      }
+    }
+  });
+  if (changed) {
+    _remSaveState(state);
+    remUpdateCounter();
+    if (document.getElementById('rem-popover')?.classList.contains('open')) {
+      renderRemPanel();
+    }
+  }
+}
+
+async function _remEnsureHeader() {
+  if (_remEnsuredHeader) return;
+  if (S.usersData && S.usersData[0] && (S.usersData[0][12] || '').toString().trim()) {
+    _remEnsuredHeader = true; return;
+  }
+  try {
+    const r = encodeURIComponent('USERS!M1:M1');
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${r}?valueInputOption=USER_ENTERED`, {
+      method: 'PUT',
+      headers: await authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ values: [['Notifications']] }),
+    });
+    if (S.usersData && S.usersData[0]) S.usersData[0][12] = 'Notifications';
+    _remEnsuredHeader = true;
+  } catch(e) { /* noop */ }
+}
+
+function startRemindersLoop() {
+  remApplyVisibility();
+  if (_remCheckTimer) clearInterval(_remCheckTimer);
+  // Проверяем каждые 30 секунд
+  _remCheckTimer = setInterval(_remTick, 30 * 1000);
+  // Сразу один тик
+  _remTick();
+  _remEnsureHeader();
+}
+
+// Запускаем после старта приложения
+document.addEventListener('DOMContentLoaded', () => {
+  // Дадим базовой инициализации завершиться
+  setTimeout(startRemindersLoop, 3000);
+});
+/* ════════════════════ END REMINDERS ════════════════════ */

@@ -173,6 +173,10 @@
               <span>Экспорт отчёта</span>
             </button>
             <div class="hmb-sep"></div>
+            <button class="hmb-item" id="hmb-trophies" onclick="openTrophies();closeHamburger()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+              <span>Трофеи</span>
+            </button>
             <button class="hmb-item" id="hmb-about-btn" onclick="openAbout();closeHamburger()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16" stroke-width="2.5"/></svg>
               <span>О проекте</span>
@@ -529,6 +533,24 @@
     <div id="scr-analiz" class="scr">
       <div class="w">
         <div id="c-analiz"></div>
+      </div>
+    </div>
+    <div id="scr-trophies" class="scr">
+      <div class="w">
+        <div id="c-trophies" class="trophies-stub">
+          <div class="trophies-stub-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+              <path d="M4 22h16"/>
+              <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+              <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+              <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+            </svg>
+          </div>
+          <div class="trophies-stub-title">Трофеи</div>
+          <div class="trophies-stub-text">Раздел в разработке…</div>
+        </div>
       </div>
     </div>
   </main>

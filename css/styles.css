@@ -6583,3 +6583,33 @@ body.tiffany .rem-popover {
   .rem-banner { max-width: 90vw; }
 }
 /* ══ END НАПОМИНАНИЯ ══ */
+
+/* ══ TROPHIES STUB ══ */
+.trophies-stub {
+  min-height: 60vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 40px 20px;
+}
+.trophies-stub-ico {
+  width: 88px; height: 88px;
+  border-radius: 50%;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--acc);
+  margin-bottom: 18px;
+}
+.trophies-stub-ico svg { width: 44px; height: 44px; }
+.trophies-stub-title {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 22px; font-weight: 900;
+  color: var(--txt); margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+.trophies-stub-text {
+  font-size: 13px; color: var(--txt2);
+  font-family: 'Unbounded', sans-serif; font-weight: 600;
+  letter-spacing: 0.04em;
+}
+/* ══ END TROPHIES STUB ══ */

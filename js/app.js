@@ -209,6 +209,7 @@ function syncTheme() {
     // Гамбургер
     'hmb-month-trigger':    COSMIC_ICON_BASE + 'cosmic_base.svg',
     'hmb-plan-edit':        COSMIC_ICON_BASE + 'cosmic_config.svg',
+    'hmb-trophies':         COSMIC_ICON_BASE + 'cosmic-trophies.svg',
     'hmb-logout':           COSMIC_ICON_BASE + 'cosmic_exit.svg',
     'hmb-about-btn':        COSMIC_ICON_BASE + 'cosmic_about.svg',
   };
@@ -226,6 +227,7 @@ function syncTheme() {
     'btn-hamburger':        DEFAULT_ICON_BASE + 'menu.svg',
     'hmb-month-trigger':    DEFAULT_ICON_BASE + 'base.svg',
     'hmb-plan-edit':        DEFAULT_ICON_BASE + 'config.svg',
+    'hmb-trophies':         DEFAULT_ICON_BASE + 'trophies.svg',
     'hmb-logout':           DEFAULT_ICON_BASE + 'exit.svg',
     'hmb-about-btn':        DEFAULT_ICON_BASE + 'about.svg',
   };
@@ -269,6 +271,7 @@ function syncTheme() {
     'hmb-plan-edit':        FLUENT_ICON_BASE + 'FluentColor-Settings.svg',
     'hmb-export':           FLUENT_ICON_BASE + 'FluentColor-Report.svg',
     'hmb-analiz':           FLUENT_ICON_BASE + 'FluentColor-Analysis.svg',
+    'hmb-trophies':         FLUENT_ICON_BASE + 'FluentColor-Trophies.svg',
     'hmb-logout':           FLUENT_ICON_BASE + 'FluentColor-Exit.svg',
     'hmb-about-btn':        FLUENT_ICON_BASE + 'FluentColor-About.svg',
   };
@@ -726,7 +729,7 @@ async function azImportSheet() {
 }
 
 function showScr(id) {
-  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo','analiz'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo','analiz','trophies'].forEach(t => {
     const el = document.getElementById('scr-'+t);
     if (el) el.classList.remove('on');
   });
@@ -1039,6 +1042,7 @@ function getPresencePageLabel() {
   const effectiveDohodDept = isCeo ? S.dohodTab : roleDept;
   if (document.getElementById('scr-ceo')?.classList.contains('on')) return 'Главная';
   if (document.getElementById('scr-analiz')?.classList.contains('on')) return 'Аналитик ИИ';
+  if (document.getElementById('scr-trophies')?.classList.contains('on')) return 'Трофеи';
   if (document.getElementById('scr-personal')?.classList.contains('on')) return 'Мой KPI';
   if (document.getElementById('scr-rating')?.classList.contains('on')) {
     return isCeo ? `Рейтинг ${deptLabel(effectiveRatingDept)}` : 'Рейтинг';
@@ -9870,6 +9874,10 @@ function openAbout() {
   const overlay = document.getElementById('about-overlay');
   if (overlay) { overlay.style.display = 'flex'; }
   // НЕ трогаем body.overflow — это ломает position:fixed на iOS
+}
+function openTrophies() {
+  showScr('trophies');
+  if (typeof dockSetActive === 'function') dockSetActive('home');
 }
 function closeAbout() {
   const overlay = document.getElementById('about-overlay');

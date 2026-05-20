@@ -8994,7 +8994,7 @@ function renderVizForm(row, dept) {
   const catOpts = VIZ_COLS[6].opts[dept] || VIZ_COLS[6].opts.crm;
   const mgrList = buildManagerList(dept);
 
-  const isCeoRole = (findUserInSheet()?.isCeoLike(role));
+  const isCeoRole = isCeoLike(findUserInSheet()?.role);
 
   function field(idx, gridClass='') {
     const col = VIZ_COLS[idx];

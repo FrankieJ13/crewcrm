@@ -317,8 +317,412 @@ function toast(msg, type='i') {
   clearTimeout(_tt); _tt = setTimeout(() => el.className='', 2600);
 }
 
+// ==================== АНАЛИТИК ИИ ====================
+const AZ_CITIES = ['Барнаул','Кемерово','Красноярск','Новокузнецк','Новосибирск','Омск','Оренбург','Пермь','Сургут','Томск','Тюмень','Челябинск'];
+const AZ_DEFAULT_CURR = {
+  'Барнаул':{budget:1905835,leads:500,badLeads:26,visits:100,deals:20,cash:0,buyout:0,creditIncome:925840},
+  'Кемерово':{budget:655583,leads:240,badLeads:22,visits:38,deals:8,cash:0,buyout:0,creditIncome:655584},
+  'Красноярск':{budget:1273852,leads:210,badLeads:18,visits:45,deals:1,cash:0,buyout:0,creditIncome:28308},
+  'Новокузнецк':{budget:830722,leads:250,badLeads:23,visits:67,deals:10,cash:0,buyout:0,creditIncome:550720},
+  'Новосибирск':{budget:975731,leads:300,badLeads:22,visits:43,deals:4,cash:0,buyout:0,creditIncome:835732},
+  'Омск':{budget:1870970,leads:460,badLeads:28,visits:122,deals:18,cash:0,buyout:0,creditIncome:1170970},
+  'Оренбург':{budget:574111,leads:360,badLeads:24,visits:60,deals:9,cash:0,buyout:0,creditIncome:294111},
+  'Пермь':{budget:1255038,leads:300,badLeads:25,visits:45,deals:17,cash:0,buyout:0,creditIncome:1115030},
+  'Сургут':{budget:612460,leads:270,badLeads:24,visits:41,deals:3,cash:0,buyout:0,creditIncome:332460},
+  'Томск':{budget:732725,leads:240,badLeads:23,visits:66,deals:14,cash:0,buyout:0,creditIncome:32732},
+  'Тюмень':{budget:800000,leads:280,badLeads:22,visits:50,deals:10,cash:0,buyout:0,creditIncome:500000},
+  'Челябинск':{budget:900000,leads:300,badLeads:25,visits:55,deals:12,cash:0,buyout:0,creditIncome:600000},
+};
+const AZ_FIELD_RANGES = {
+  budget:{min:0,max:5000000,step:10000,unit:'₽',lbl:'Бюджет на рекламу'},
+  leads:{min:0,max:1500,step:1,unit:'шт',lbl:'Заявок в AmoCRM'},
+  badLeads:{min:0,max:500,step:1,unit:'шт',lbl:'Нецелевых заявок'},
+  visits:{min:0,max:300,step:1,unit:'шт',lbl:'Визитов в салон'},
+  deals:{min:0,max:100,step:1,unit:'шт',lbl:'Сделок в кредит'},
+  cash:{min:0,max:10000000,step:50000,unit:'₽',lbl:'Наличка + Обмен'},
+  buyout:{min:0,max:5000000,step:10000,unit:'₽',lbl:'Выкуп + Комиссия'},
+  creditIncome:{min:0,max:5000000,step:10000,unit:'₽',lbl:'Доход с кредита'},
+};
+const AZ_STORAGE = 'az_analytics_data';
+let azState = { period:'curr', mode:'fact', view:'all', activeCity:'Барнаул', importType:'csv' };
+let azData = null;
+
+function azEmpty(){return {budget:0,leads:0,badLeads:0,visits:0,deals:0,cash:0,buyout:0,creditIncome:0};}
+function azLoad() {
+  try {
+    const s = localStorage.getItem(AZ_STORAGE);
+    if (s) return JSON.parse(s);
+  } catch(e) {}
+  return {
+    curr: {...AZ_DEFAULT_CURR},
+    prev: Object.fromEntries(AZ_CITIES.map(c=>[c,azEmpty()])),
+    plan: Object.fromEntries(AZ_CITIES.map(c=>[c,azEmpty()])),
+  };
+}
+function azSave() { localStorage.setItem(AZ_STORAGE, JSON.stringify(azData)); }
+function azEnsure(p) {
+  if (!azData[p]) azData[p] = Object.fromEntries(AZ_CITIES.map(c=>[c,azEmpty()]));
+  AZ_CITIES.forEach(c=>{if(!azData[p][c]) azData[p][c]=azEmpty();});
+}
+function azCompute(c) {
+  const quals = Math.max(0, c.leads - c.badLeads);
+  const gross = (c.cash||0)+(c.buyout||0)+(c.creditIncome||0);
+  return {
+    ...c, quals,
+    pctBad: c.leads ? c.badLeads/c.leads*100 : 0,
+    costLead: c.leads ? c.budget/c.leads : 0,
+    costQual: quals ? c.budget/quals : 0,
+    costVisit: c.visits ? c.budget/c.visits : 0,
+    costDeal: c.deals ? c.budget/c.deals : 0,
+    convLS: c.leads ? c.deals/c.leads*100 : 0,
+    convQS: quals ? c.deals/quals*100 : 0,
+    convVS: c.visits ? c.deals/c.visits*100 : 0,
+    convQV: quals ? c.visits/quals*100 : 0,
+    avgCreditIncome: c.deals ? c.creditIncome/c.deals : 0,
+    gross,
+    profit: c.creditIncome - c.budget,
+    roi: c.budget ? (c.creditIncome - c.budget)/c.budget*100 : 0,
+  };
+}
+function azAggregate(period) {
+  const all = AZ_CITIES.map(c => azData[period][c]);
+  const sum = k => all.reduce((a,b)=>a+(b[k]||0),0);
+  return azCompute({budget:sum('budget'),leads:sum('leads'),badLeads:sum('badLeads'),visits:sum('visits'),deals:sum('deals'),cash:sum('cash'),buyout:sum('buyout'),creditIncome:sum('creditIncome')});
+}
+function azFmtRub(n) {
+  if (!isFinite(n) || n===0) return '—';
+  const sign = n<0?'-':''; n = Math.abs(Math.round(n));
+  if (n>=1e9) return sign+(n/1e9).toFixed(2)+' млрд';
+  if (n>=1e6) return sign+(n/1e6).toFixed(2)+' млн';
+  if (n>=1e3) return sign+(n/1e3).toFixed(0)+' тыс';
+  return sign+n;
+}
+function azFmtRub2(n){return azFmtRub(n)+' ₽';}
+function azFmtPct(n){if(!isFinite(n))return '—';return (Math.round(n*10)/10)+'%';}
+function azFmtInt(n){if(!isFinite(n))return '—';return Math.round(n).toLocaleString('ru-RU');}
+
+function openAnaliz() {
+  const matched = findUserInSheet();
+  if (!matched || !isCeoLike(matched.role)) return;
+  azData = azLoad();
+  ['curr','prev','plan'].forEach(azEnsure);
+  showScr('analiz');
+  dockSetActive('home');
+  renderAnaliz();
+}
+
+function renderAnaliz() {
+  const el = document.getElementById('c-analiz');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="az-top">
+      <div class="az-eyebrow">// Аналитика воронки и финмодели</div>
+      <div class="az-title">Аналитик ИИ <span class="beta">(бета)</span></div>
+      <div class="az-sub">Введи фактические данные маркетинга и продаж. Система посчитает конверсии, цены, прибыль и выдаст инсайты.</div>
+    </div>
+    <div class="az-controls">
+      <div>
+        <div class="az-seg-lbl">Период</div>
+        <div class="az-seg" id="az-period-seg">
+          <button class="az-seg-btn ${azState.period==='prev'?'on':''}" data-period="prev">Прошлый</button>
+          <button class="az-seg-btn ${azState.period==='curr'?'on':''}" data-period="curr">Текущий</button>
+          <button class="az-seg-btn ${azState.period==='plan'?'on':''}" data-period="plan">План</button>
+        </div>
+      </div>
+      <div>
+        <div class="az-seg-lbl">Данные</div>
+        <div class="az-seg" id="az-view-seg">
+          <button class="az-seg-btn ${azState.view==='all'?'on':''}" data-view="all">Все города</button>
+          <button class="az-seg-btn ${azState.view==='single'?'on':''}" data-view="single">Один город</button>
+          <button class="az-seg-btn ${azState.view==='import'?'on':''}" data-view="import">Импорт</button>
+        </div>
+      </div>
+      <div id="az-single-wrap" style="display:${azState.view==='single'?'block':'none'}">
+        <div class="az-seg-lbl">Выбор города</div>
+        <select id="az-single-select" class="az-select"></select>
+      </div>
+    </div>
+    <div class="az-kpi-grid">
+      <div class="az-kpi-card"><div class="az-kpi-lbl">Валовая выручка</div><div class="az-kpi-val acc" id="az-kpi-gross">—</div><div class="az-kpi-sub" id="az-kpi-gross-sub">—</div></div>
+      <div class="az-kpi-card"><div class="az-kpi-lbl">Прибыль с кредита</div><div class="az-kpi-val grn" id="az-kpi-profit">—</div><div class="az-kpi-sub">доход − бюджет</div></div>
+      <div class="az-kpi-card"><div class="az-kpi-lbl">ROI</div><div class="az-kpi-val yel" id="az-kpi-roi">—</div><div class="az-kpi-sub" id="az-kpi-roi-sub">отдача</div></div>
+      <div class="az-kpi-card"><div class="az-kpi-lbl">Цена продажи</div><div class="az-kpi-val pur" id="az-kpi-cac">—</div><div class="az-kpi-sub">CAC</div></div>
+    </div>
+    <div class="sec-title">Воронка</div>
+    <div id="az-funnel"></div>
+    <div class="sec-title">Инсайты</div>
+    <div id="az-insights"></div>
+    <div id="az-cities-wrap"><div class="sec-title">Города</div><div id="az-cities"></div></div>
+    <div class="az-import" id="az-import">
+      <div class="sec-title">Импорт данных</div>
+      <div class="az-import-tabs">
+        <div class="az-import-tab on" data-imp="csv">CSV</div>
+        <div class="az-import-tab" data-imp="json">JSON</div>
+        <div class="az-import-tab" data-imp="sheet">Google Sheet</div>
+      </div>
+      <div class="az-import-body" id="az-imp-csv">
+        <textarea id="az-csv" placeholder="Город,Бюджет,Заявки,Нецелевые,Визиты,Сделки,Нал+Обмен,Выкуп+Комиссия,Доход кредит"></textarea>
+        <div class="az-import-actions"><button class="az-btn" onclick="azImportCSV()">Применить</button><button class="az-btn ghost" onclick="document.getElementById('az-csv').value=''">Очистить</button></div>
+        <div class="az-import-hint">Колонки: <code>Город, Бюджет, Заявки, Нецелевые, Визиты, Сделки, Нал+Обмен, Выкуп+Комиссия, Доход кредит</code></div>
+        <div class="az-import-status" id="az-csv-st"></div>
+      </div>
+      <div class="az-import-body" id="az-imp-json" style="display:none">
+        <textarea id="az-json" placeholder='[{"city":"Барнаул","budget":...,"leads":...,...}]'></textarea>
+        <div class="az-import-actions"><button class="az-btn" onclick="azImportJSON()">Применить</button><button class="az-btn ghost" onclick="document.getElementById('az-json').value=''">Очистить</button></div>
+        <div class="az-import-status" id="az-json-st"></div>
+      </div>
+      <div class="az-import-body" id="az-imp-sheet" style="display:none">
+        <input type="text" id="az-sheet" placeholder="https://docs.google.com/spreadsheets/d/.../edit#gid=...">
+        <div class="az-import-actions"><button class="az-btn" onclick="azImportSheet()">Загрузить</button><button class="az-btn ghost" onclick="document.getElementById('az-sheet').value=''">Очистить</button></div>
+        <div class="az-import-hint">Лист должен быть с доступом «Anyone with the link».</div>
+        <div class="az-import-status" id="az-sheet-st"></div>
+      </div>
+    </div>`;
+  // Bind events
+  el.querySelector('#az-period-seg').addEventListener('click', e => {
+    const b = e.target.closest('.az-seg-btn'); if (!b) return;
+    azState.period = b.dataset.period; renderAnaliz();
+  });
+  el.querySelector('#az-view-seg').addEventListener('click', e => {
+    const b = e.target.closest('.az-seg-btn'); if (!b) return;
+    azState.view = b.dataset.view; renderAnaliz();
+  });
+  el.querySelectorAll('.az-import-tab').forEach(t => t.addEventListener('click', () => {
+    el.querySelectorAll('.az-import-tab').forEach(x=>x.classList.remove('on'));
+    t.classList.add('on');
+    ['csv','json','sheet'].forEach(k => document.getElementById('az-imp-'+k).style.display = k===t.dataset.imp?'':'none');
+  }));
+  azUpdateAggregates();
+  if (azState.view === 'all') azRenderCities();
+  else if (azState.view === 'single') azRenderSingle();
+  document.getElementById('az-cities-wrap').style.display = azState.view==='import'?'none':'';
+  document.getElementById('az-import').classList.toggle('on', azState.view==='import');
+}
+
+function azFunnelHTML(a) {
+  return `
+    <div class="az-funnel-row">
+      <div><div class="az-funnel-lbl">Заявки в AmoCRM</div><span class="az-funnel-pct">из бюджета ${azFmtRub2(a.budget)}</span></div>
+      <div class="az-funnel-cnt">${azFmtInt(a.leads)}</div>
+      <div class="az-funnel-cost">${azFmtRub2(a.costLead)} / шт</div>
+    </div>
+    <div class="az-funnel-row q">
+      <div><div class="az-funnel-lbl">Квал. заявки</div><span class="az-funnel-pct">нецелевых ${azFmtPct(a.pctBad)}</span></div>
+      <div class="az-funnel-cnt">${azFmtInt(a.quals)}</div>
+      <div class="az-funnel-cost">${azFmtRub2(a.costQual)} / шт</div>
+    </div>
+    <div class="az-funnel-row v">
+      <div><div class="az-funnel-lbl">Визиты в салон</div><span class="az-funnel-pct">${azFmtPct(a.convQV)} из квала</span></div>
+      <div class="az-funnel-cnt">${azFmtInt(a.visits)}</div>
+      <div class="az-funnel-cost">${azFmtRub2(a.costVisit)} / визит</div>
+    </div>
+    <div class="az-funnel-row d">
+      <div><div class="az-funnel-lbl">Сделки (кредит)</div><span class="az-funnel-pct">${azFmtPct(a.convVS)} из визита · ${azFmtPct(a.convQS)} из квала</span></div>
+      <div class="az-funnel-cnt">${azFmtInt(a.deals)}</div>
+      <div class="az-funnel-cost">${azFmtRub2(a.costDeal)} / шт</div>
+    </div>`;
+}
+function azBuildInsights(agg) {
+  const out = [];
+  const cities = AZ_CITIES.map(n => ({name:n, ...azCompute(azData[azState.period][n])}));
+  const active = cities.filter(c => c.budget>0 && c.visits>0);
+  if (!active.length) { out.push({ico:'💡',cls:'',text:'Введите данные хотя бы по одному городу — будут авто-инсайты.'}); return out; }
+  const sortedRoi = [...active].sort((a,b)=>b.roi-a.roi);
+  if (sortedRoi.length) {
+    const t=sortedRoi[0], b=sortedRoi[sortedRoi.length-1];
+    out.push({ico:'🏆',cls:'good',text:`<b>${t.name}</b> — лучший ROI: <b>${azFmtPct(t.roi)}</b>. Бюджет ${azFmtRub2(t.budget)} → доход с кредита ${azFmtRub2(t.creditIncome)}.`});
+    if (b.roi < 0 && b.name !== t.name) out.push({ico:'⚠️',cls:'bad',text:`<b>${b.name}</b> в убытке: ROI <b>${azFmtPct(b.roi)}</b>.`});
+  }
+  active.forEach(c => {
+    if (c.costVisit > agg.costVisit*1.5 && c.visits>5) out.push({ico:'💸',cls:'warn',text:`<b>${c.name}</b>: визит обходится в <b>${azFmtRub2(c.costVisit)}</b> — это в ${(c.costVisit/agg.costVisit).toFixed(1)}× выше среднего (${azFmtRub2(agg.costVisit)}).`});
+    if (c.convQV < agg.convQV*0.6 && c.quals>50) out.push({ico:'📉',cls:'warn',text:`<b>${c.name}</b>: квал→визит <b>${azFmtPct(c.convQV)}</b> при среднем ${azFmtPct(agg.convQV)}.`});
+    if (c.visits>=30 && c.convVS < agg.convVS*0.5) out.push({ico:'📉',cls:'bad',text:`<b>${c.name}</b>: <b>${azFmtPct(c.convVS)}</b> закрытия с визита (среднее ${azFmtPct(agg.convVS)}).`});
+  });
+  const sortedAvg = [...active].filter(c=>c.deals>0).sort((a,b)=>b.avgCreditIncome-a.avgCreditIncome);
+  if (sortedAvg[0]) out.push({ico:'💎',cls:'good',text:`Самый высокий средний доход: <b>${sortedAvg[0].name}</b> — <b>${azFmtRub2(sortedAvg[0].avgCreditIncome)}</b>.`});
+  const sortedCAC = [...active].filter(c=>c.deals>0).sort((a,b)=>a.costDeal-b.costDeal);
+  if (sortedCAC[0]) out.push({ico:'⚡',cls:'good',text:`Самая дешёвая продажа: <b>${sortedCAC[0].name}</b> — <b>${azFmtRub2(sortedCAC[0].costDeal)}</b>.`});
+  const sortedBad = [...active].sort((a,b)=>b.pctBad-a.pctBad);
+  if (sortedBad[0] && sortedBad[0].pctBad>25) out.push({ico:'🚫',cls:'warn',text:`<b>${sortedBad[0].name}</b>: <b>${azFmtPct(sortedBad[0].pctBad)}</b> нецелевых заявок.`});
+  active.forEach(c => {
+    if (c.deals===0 && c.visits>10) out.push({ico:'🔥',cls:'bad',text:`<b>${c.name}</b>: <b>${c.visits}</b> визитов, 0 сделок. Бюджет ${azFmtRub2(c.budget)} — слив.`});
+  });
+  return out;
+}
+function azUpdateAggregates() {
+  const agg = azAggregate(azState.period);
+  document.getElementById('az-kpi-gross').textContent = azFmtRub2(agg.gross);
+  document.getElementById('az-kpi-gross-sub').textContent = `${azFmtInt(agg.deals)} продаж`;
+  document.getElementById('az-kpi-profit').textContent = azFmtRub2(agg.profit);
+  const roiEl = document.getElementById('az-kpi-roi');
+  roiEl.textContent = azFmtPct(agg.roi);
+  roiEl.className = 'az-kpi-val '+(agg.roi>=50?'grn':agg.roi>=0?'yel':'red');
+  document.getElementById('az-kpi-roi-sub').textContent = agg.roi>=0?'положительный':'убыток';
+  document.getElementById('az-kpi-cac').textContent = azFmtRub2(agg.costDeal);
+  document.getElementById('az-funnel').innerHTML = azFunnelHTML(agg);
+  const ins = azBuildInsights(agg);
+  document.getElementById('az-insights').innerHTML = ins.map(i=>`<div class="az-insight ${i.cls}"><span class="az-insight-ico">${i.ico}</span><div>${i.text}</div></div>`).join('');
+}
+function azCityFieldsHTML(name) {
+  const c = azData[azState.period][name];
+  return `<div class="az-fields">${Object.keys(AZ_FIELD_RANGES).map(k => {
+    const r = AZ_FIELD_RANGES[k]; const v = c[k]||0;
+    const dynMax = Math.max(r.max, v*2 || r.max);
+    return `<div class="az-field">
+      <div class="az-field-head">
+        <div class="az-field-lbl">${r.lbl}</div>
+        <div class="az-field-val"><input type="number" inputmode="numeric" class="az-field-input" data-city="${name}" data-key="${k}" value="${v}"><span class="az-field-unit">${r.unit}</span></div>
+      </div>
+      <input type="range" class="az-field-slider" data-city="${name}" data-key="${k}" min="${r.min}" max="${dynMax}" step="${r.step}" value="${v}">
+    </div>`;
+  }).join('')}</div>`;
+}
+function azCityDerivedHTML(c) {
+  return `<div class="az-derived">
+    <div class="az-derived-row"><span class="l">Квал. заявок</span><span class="v">${azFmtInt(c.quals)} · ${azFmtRub2(c.costQual)}/шт</span></div>
+    <div class="az-derived-row"><span class="l">Цена заявки</span><span class="v">${azFmtRub2(c.costLead)}</span></div>
+    <div class="az-derived-row"><span class="l">% нецелевых</span><span class="v">${azFmtPct(c.pctBad)}</span></div>
+    <div class="az-derived-row"><span class="l">% квал → визит</span><span class="v">${azFmtPct(c.convQV)}</span></div>
+    <div class="az-derived-row"><span class="l">Цена визита</span><span class="v">${azFmtRub2(c.costVisit)}</span></div>
+    <div class="az-derived-row"><span class="l">% визит → продажа</span><span class="v">${azFmtPct(c.convVS)}</span></div>
+    <div class="az-derived-row"><span class="l">% квал → продажа</span><span class="v">${azFmtPct(c.convQS)}</span></div>
+    <div class="az-derived-row"><span class="l">Цена продажи (CAC)</span><span class="v">${azFmtRub2(c.costDeal)}</span></div>
+    <div class="az-derived-row"><span class="l">Средний доход</span><span class="v">${azFmtRub2(c.avgCreditIncome)}</span></div>
+    <div class="az-derived-row"><span class="l">Прибыль с кредита</span><span class="v" style="color:${c.profit>=0?'var(--grn)':'var(--red)'}">${azFmtRub2(c.profit)}</span></div>
+    <div class="az-derived-row"><span class="l">ROI</span><span class="v" style="color:${c.roi>=0?'var(--grn)':'var(--red)'}">${azFmtPct(c.roi)}</span></div>
+  </div>`;
+}
+function azRenderCities() {
+  const list = document.getElementById('az-cities');
+  list.innerHTML = AZ_CITIES.map(name => {
+    const c = azCompute(azData[azState.period][name]);
+    const roiCls = c.roi>0?'up':c.roi<0?'dn':'nu';
+    return `<div class="az-city" data-city="${name}">
+      <div class="az-city-hdr" onclick="azToggleCity('${name}')">
+        <span class="az-city-toggle">▸</span>
+        <span class="az-city-name">${name}</span>
+        <span class="az-city-budget">${azFmtRub2(c.budget)}</span>
+        <span class="az-city-roi ${roiCls}">${azFmtPct(c.roi)}</span>
+      </div>
+      <div class="az-city-body">${azCityFieldsHTML(name)}${azCityDerivedHTML(c)}</div>
+    </div>`;
+  }).join('');
+  azBindFields();
+}
+function azRenderSingle() {
+  const sel = document.getElementById('az-single-select');
+  sel.innerHTML = AZ_CITIES.map(c=>`<option value="${c}">${c}</option>`).join('');
+  sel.value = azState.activeCity;
+  sel.onchange = () => { azState.activeCity = sel.value; azRenderSingle(); };
+  const name = azState.activeCity;
+  const c = azCompute(azData[azState.period][name]);
+  const roiCls = c.roi>0?'up':c.roi<0?'dn':'nu';
+  document.getElementById('az-cities').innerHTML = `<div class="az-city expanded" data-city="${name}">
+    <div class="az-city-hdr">
+      <span class="az-city-toggle">▾</span>
+      <span class="az-city-name">${name}</span>
+      <span class="az-city-budget">${azFmtRub2(c.budget)}</span>
+      <span class="az-city-roi ${roiCls}">${azFmtPct(c.roi)}</span>
+    </div>
+    <div class="az-city-body">${azCityFieldsHTML(name)}${azCityDerivedHTML(c)}</div>
+  </div>`;
+  azBindFields();
+}
+function azToggleCity(name) {
+  if (azState.view !== 'all') return;
+  const r = document.querySelector(`.az-city[data-city="${name}"]`);
+  if (r) r.classList.toggle('expanded');
+}
+function azUpdateSliderFill(s) {
+  if (!s) return;
+  const mn=parseFloat(s.min)||0, mx=parseFloat(s.max)||1, v=parseFloat(s.value)||0;
+  const p = mx>mn ? (v-mn)/(mx-mn)*100 : 0;
+  s.style.setProperty('--p', Math.max(0,Math.min(100,p))+'%');
+}
+function azUpdateCityDerived(name) {
+  const row = document.querySelector(`.az-city[data-city="${name}"]`);
+  if (!row) return;
+  const c = azCompute(azData[azState.period][name]);
+  const dEl = row.querySelector('.az-derived');
+  if (dEl) dEl.outerHTML = azCityDerivedHTML(c);
+  const roiBadge = row.querySelector('.az-city-roi');
+  if (roiBadge) { roiBadge.textContent = azFmtPct(c.roi); roiBadge.className = 'az-city-roi '+(c.roi>0?'up':c.roi<0?'dn':'nu'); }
+  const budEl = row.querySelector('.az-city-budget');
+  if (budEl) budEl.textContent = azFmtRub2(c.budget);
+}
+function azBindFields() {
+  document.querySelectorAll('.az-field-slider').forEach(azUpdateSliderFill);
+  document.querySelectorAll('.az-field-input, .az-field-slider').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const c = e.target.dataset.city, k = e.target.dataset.key;
+      const v = parseFloat(e.target.value)||0;
+      azData[azState.period][c][k] = v;
+      azSave();
+      document.querySelectorAll(`[data-city="${c}"][data-key="${k}"]`).forEach(el => { if (el!==e.target) el.value = v; });
+      const sl = e.target.classList.contains('az-field-slider') ? e.target : document.querySelector(`.az-field-slider[data-city="${c}"][data-key="${k}"]`);
+      azUpdateSliderFill(sl);
+      azUpdateCityDerived(c);
+      azUpdateAggregates();
+    });
+  });
+}
+function azParseCSV(text) {
+  const lines = text.trim().split('\n').filter(Boolean);
+  if (!lines.length) return [];
+  const first = lines[0].toLowerCase();
+  const hasHeader = first.includes('город') || first.includes('city') || first.includes('бюджет');
+  const rows = hasHeader ? lines.slice(1) : lines;
+  return rows.map(row => {
+    const parts = row.split(/[,;\t]/).map(s => s.trim());
+    const num = s => parseFloat((s||'').toString().replace(/\s/g,'').replace(/,/g,'.').replace(/[^\d.\-]/g,''))||0;
+    return { city:parts[0], budget:num(parts[1]), leads:num(parts[2]), badLeads:num(parts[3]), visits:num(parts[4]), deals:num(parts[5]), cash:num(parts[6]), buyout:num(parts[7]), creditIncome:num(parts[8]) };
+  }).filter(r=>r.city);
+}
+function azApplyImport(rows) {
+  let n=0;
+  rows.forEach(r => {
+    const match = AZ_CITIES.find(c => c.toLowerCase()===String(r.city||'').toLowerCase());
+    if (match) {
+      Object.assign(azData[azState.period][match], {budget:r.budget,leads:r.leads,badLeads:r.badLeads,visits:r.visits,deals:r.deals,cash:r.cash,buyout:r.buyout,creditIncome:r.creditIncome});
+      n++;
+    }
+  });
+  azSave(); return n;
+}
+function azStatus(id, msg, ok) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg; el.className = 'az-import-status on '+(ok?'ok':'err');
+  setTimeout(()=>el.classList.remove('on'), 4000);
+}
+function azImportCSV() {
+  try { const n=azApplyImport(azParseCSV(document.getElementById('az-csv').value)); azStatus('az-csv-st',`Применено: ${n} городов`,true); renderAnaliz(); }
+  catch(e){ azStatus('az-csv-st','Ошибка: '+e.message,false); }
+}
+function azImportJSON() {
+  try { const n=azApplyImport(JSON.parse(document.getElementById('az-json').value)); azStatus('az-json-st',`Применено: ${n} городов`,true); renderAnaliz(); }
+  catch(e){ azStatus('az-json-st','Ошибка JSON: '+e.message,false); }
+}
+async function azImportSheet() {
+  const url = document.getElementById('az-sheet').value.trim();
+  if (!url) { azStatus('az-sheet-st','Введите URL',false); return; }
+  const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  const gidM = url.match(/[#?&]gid=(\d+)/);
+  if (!m) { azStatus('az-sheet-st','URL не похож на Google Sheet',false); return; }
+  const csvUrl = `https://docs.google.com/spreadsheets/d/${m[1]}/gviz/tq?tqx=out:csv&gid=${gidM?gidM[1]:'0'}`;
+  azStatus('az-sheet-st','Загружаем…',true);
+  try {
+    const resp = await fetch(csvUrl);
+    if (!resp.ok) throw new Error('HTTP '+resp.status);
+    const text = await resp.text();
+    const n = azApplyImport(azParseCSV(text));
+    azStatus('az-sheet-st',`Загружено: ${n} городов`,true);
+    renderAnaliz();
+  } catch(e) { azStatus('az-sheet-st','Не удалось: '+e.message,false); }
+}
+
 function showScr(id) {
-  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo','analiz'].forEach(t => {
     const el = document.getElementById('scr-'+t);
     if (el) el.classList.remove('on');
   });
@@ -630,6 +1034,7 @@ function getPresencePageLabel() {
   const effectiveRatingDept = isCeo ? S.ratingDept : roleDept;
   const effectiveDohodDept = isCeo ? S.dohodTab : roleDept;
   if (document.getElementById('scr-ceo')?.classList.contains('on')) return 'Главная';
+  if (document.getElementById('scr-analiz')?.classList.contains('on')) return 'Аналитик ИИ';
   if (document.getElementById('scr-personal')?.classList.contains('on')) return 'Мой KPI';
   if (document.getElementById('scr-rating')?.classList.contains('on')) {
     return isCeo ? `Рейтинг ${deptLabel(effectiveRatingDept)}` : 'Рейтинг';
@@ -4824,6 +5229,8 @@ function showPlanEditBtnIfCeo(matched) {
   // Кнопка экспорта отчёта — только CEO
   const hmbExp = document.getElementById('hmb-export');
   if (hmbExp) hmbExp.style.display = isCeo ? '' : 'none';
+  const hmbAnaliz = document.getElementById('hmb-analiz');
+  if (hmbAnaliz) hmbAnaliz.style.display = isCeo ? '' : 'none';
   // Итоги — видны всем
   const itogiBtn = document.getElementById('dock-kpi-itogi');
   if (itogiBtn) itogiBtn.style.display = '';
@@ -8005,12 +8412,10 @@ function renderCeoDashboard() {
 
       ${isRop ? `
       <!-- ДОХОД ROP -->
-      <div class="ceo-rop-hdr">
-        <div class="sec-title">Доход</div>
-        <button class="kpi-incognito-btn ceo-rop-incognito-btn" onclick="event.stopPropagation();toggleIncognitoCeo()" title="Скрыть доход (или потряси телефон)">${ropIncognito ? '👁' : '🙈'}</button>
-      </div>
+      <div class="sec-title">Доход</div>
       <div class="kpi-income-panel ceo-rop-panel ${ropIncognito ? 'kpi-incognito' : ''}" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
         <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openRopIncomeModal()" title="Схема премирования">!</button>
+        <button class="kpi-incognito-btn ceo-rop-incognito-btn" onclick="event.stopPropagation();toggleIncognitoCeo()" title="Скрыть доход (или потряси телефон)">${ropIncognito ? '👁' : '🙈'}</button>
         <div class="ceo-rop-total mv">${fmtRub(ropIncomeTotal)}</div>
         <div class="ceo-rop-formula">
           <span>${fmtRub(ROP_OKLAD)}</span>

@@ -8728,15 +8728,36 @@ async function loadVizity() {
   if (!el) return;
   const sheet = vizSheetName();
   el.innerHTML = loader('Синхронизация визитов…');
-  await ensureVizSheet(sheet);
+  // Жёсткий таймаут на ensureVizSheet — иначе при сетевых сбоях лоадер висит вечно
+  try {
+    await Promise.race([
+      ensureVizSheet(sheet),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000)),
+    ]);
+  } catch(e) { /* идём дальше — api сам проверит существование листа */ }
   let raw = [];
   try { raw = await api(sheet, 'A:N'); }
-  catch(e) { if (e.message !== 'auth') el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`; return; }
+  catch(e) {
+    if (e.message === 'auth') {
+      el.innerHTML = `<div class="err">Сессия истекла — войдите заново</div>`;
+    } else if (e.message === 'NOT_FOUND') {
+      el.innerHTML = `<div class="empty">Лист «${sheet}» не найден. Проверьте доступ или дождитесь создания листа администратором.</div>`;
+    } else {
+      el.innerHTML = `<div class="err">Ошибка загрузки визитов: ${e.message}</div>`;
+    }
+    return;
+  }
   S.vizRows = raw.slice(1).map((row, i) => ({
     idx: i, _sheetRow: i + 2,
     data: Array.from({length:14}, (_,c) => row[c] || '')
   }));
-  renderVizity();
+  try {
+    renderVizity();
+  } catch(e) {
+    el.innerHTML = `<div class="err">Ошибка рендера визитов: ${e.message}</div>`;
+    console.error('renderVizity failed:', e);
+    return;
+  }
   // Скроллим к последнему визиту. Используем double-rAF чтобы layout успел посчитаться
   requestAnimationFrame(() => requestAnimationFrame(() => {
     const main = document.querySelector('main');

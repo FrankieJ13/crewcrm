@@ -11631,19 +11631,23 @@ function _remIsInShiftToday() {
   return false;
 }
 
-function _remEligibleUser() {
-  if (!S.remMode) return false;
+function _remIsManagerRole() {
   const matched = findUserInSheet();
   if (!matched) return false;
   const role = String(matched.role || '').toLowerCase();
-  if (role !== 'crm' && role !== 'dozhim') return false;
-  return true;
+  return role === 'crm' || role === 'dozhim';
+}
+
+function _remEligibleUser() {
+  // Для срабатывания уведомлений: роль + режим включён
+  return _remIsManagerRole() && S.remMode === true;
 }
 
 function remApplyVisibility() {
   const wrap = document.getElementById('rem-wrap');
   if (!wrap) return;
-  wrap.style.display = _remEligibleUser() ? '' : 'none';
+  // Иконка видна всегда у CRM/Дожим (вне зависимости от режима)
+  wrap.style.display = _remIsManagerRole() ? '' : 'none';
   remUpdateCounter();
 }
 

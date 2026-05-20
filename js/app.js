@@ -203,6 +203,7 @@ function syncTheme() {
     'dock-btn-vizity':      COSMIC_ICON_BASE + 'cosmic_vizity.svg',
     'btn-presence':         COSMIC_ICON_BASE + 'cosmic_online.svg',
     'btn-notify':           COSMIC_ICON_BASE + 'cosmic-send-noti.svg',
+    'btn-rem':              COSMIC_ICON_BASE + 'cosmic-alert.svg',
     'btn-refresh':          COSMIC_ICON_BASE + 'cosmic_refresh.svg',
     'btn-hamburger':        COSMIC_ICON_BASE + 'cosmic_menu.svg',
     // Гамбургер
@@ -261,10 +262,13 @@ function syncTheme() {
     'dock-btn-vizity':      FLUENT_ICON_BASE + 'FluentColor-Vizity.svg',
     'btn-presence':         FLUENT_ICON_BASE + 'FluentColor-Online.svg',
     'btn-notify':           FLUENT_ICON_BASE + 'FluentColor-Alert.svg',
+    'btn-rem':              FLUENT_ICON_BASE + 'FluentColor-Alert.svg',
     'btn-refresh':          FLUENT_ICON_BASE + 'FluentColor-Refresh.svg',
     'btn-hamburger':        FLUENT_ICON_BASE + 'FluentColor-Menu.svg',
     'hmb-month-trigger':    FLUENT_ICON_BASE + 'FluentColor-Archive.svg',
     'hmb-plan-edit':        FLUENT_ICON_BASE + 'FluentColor-Settings.svg',
+    'hmb-export':           FLUENT_ICON_BASE + 'FluentColor-Report.svg',
+    'hmb-analiz':           FLUENT_ICON_BASE + 'FluentColor-Analysis.svg',
     'hmb-logout':           FLUENT_ICON_BASE + 'FluentColor-Exit.svg',
     'hmb-about-btn':        FLUENT_ICON_BASE + 'FluentColor-About.svg',
   };

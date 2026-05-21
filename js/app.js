@@ -11662,14 +11662,17 @@ function _remGetOrInit() {
 }
 
 // Проверка: пользователь сегодня по графику работает «Р»
+// Fail-open: если график ещё не загружен — считаем что в смене,
+// иначе уведомления никогда не сработают до открытия таба «График».
 function _remIsInShiftToday() {
   const matched = findUserInSheet();
   if (!matched) return false;
   const raw = S.data.grafik;
-  if (!raw || raw.length < 3) return false;
-  const idx = buildSchedIndex(raw);
-  const entry = idx[matched.name.toLowerCase()];
-  if (!entry) return false;
+  if (!raw || raw.length < 3) return true; // график не загружен → пропускаем проверку
+  let idx;
+  try { idx = buildSchedIndex(raw); } catch(e) { return true; }
+  const entry = idx?.[matched.name.toLowerCase()];
+  if (!entry) return true; // имени нет в графике — не блокируем
   const { row: mgrRow, daysRow } = entry;
   const today = new Date().getDate();
   for (let c = 1; c < daysRow.length; c++) {
@@ -11677,7 +11680,7 @@ function _remIsInShiftToday() {
       return normalizeSchedVal(mgrRow[c]) === 'Р';
     }
   }
-  return false;
+  return true; // столбец сегодняшнего дня не найден — fail-open
 }
 
 function _remIsManagerRole() {
@@ -11841,7 +11844,35 @@ function startRemindersLoop() {
   // Сразу один тик
   _remTick();
   _remEnsureHeader();
+  // Подгрузим график (если ещё не загружен), чтобы _remIsInShiftToday работал
+  if (_remIsManagerRole() && (!S.data.grafik || (S.data.grafik || []).length < 3)) {
+    try {
+      api(SHEETS.grafik, 'A1:AI25')
+        .then(d => { S.data.grafik = d; })
+        .catch(() => {});
+    } catch(e) {}
+  }
 }
+
+// Диагностика в консоли: window.remDebug()
+window.remDebug = function() {
+  const matched = findUserInSheet();
+  const state = _remLoadState();
+  const info = {
+    nowMin: _remNowMin(),
+    today: _remTodayStr(),
+    role: matched?.role,
+    isManagerRole: _remIsManagerRole(),
+    remMode: S.remMode,
+    eligible: _remEligibleUser(),
+    grafikLoaded: !!(S.data.grafik && S.data.grafik.length >= 3),
+    inShift: _remIsInShiftToday(),
+    workWindow: [REM_WORK_START_MIN, REM_WORK_END_MIN],
+    state: state,
+  };
+  console.table(info);
+  return info;
+};
 
 // Запускаем после старта приложения
 document.addEventListener('DOMContentLoaded', () => {

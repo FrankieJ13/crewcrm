@@ -8483,19 +8483,25 @@ function renderCeoDashboard() {
       </div>` : ''}
 
       <!-- ТЕКУЩИЙ KPI -->
-      <div class="sec-title">Текущий KPI</div>
+      <div class="sec-title">Текущий KPI${isRop ? ' <span style="font-size:9px;color:var(--txt3);font-weight:600;letter-spacing:0.04em">· CRM</span>' : ''}</div>
+      ${(() => {
+        const _fact = isRop ? crmFact : totalFact;
+        const _plan = isRop ? crmPlanSum : totalPlan;
+        const _prog = isRop ? crmProg : companyProg;
+        const _progColor = _prog >= 100 ? 'var(--grn)' : _prog >= 85 ? '#ffd60a' : 'var(--red)';
+        return `
       <div class="kpi-income-panel ceo-forecast-panel" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
-        ${getMgrAvatarHtml ? getMgrAvatarHtml(matched?.name || '', companyProg) : ''}
+        ${getMgrAvatarHtml ? getMgrAvatarHtml(matched?.name || '', _prog) : ''}
         <div class="ceo-forecast-body">
           <div class="ceo-speedo">
             <svg viewBox="-10 -10 220 220">
               <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/>
-              <path id="ceo-speed-progress" class="ceo-speed-progress" stroke="url(#ceoSpeedGradientGlobal)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="${Math.max(0, 1 - Math.min(companyProg/100, 1))}" d="M 40 160 A 85 85 0 1 1 160 160"/>
+              <path id="ceo-speed-progress" class="ceo-speed-progress" stroke="url(#ceoSpeedGradientGlobal)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="${Math.max(0, 1 - Math.min(_prog/100, 1))}" d="M 40 160 A 85 85 0 1 1 160 160"/>
             </svg>
-            <div class="ceo-speedo-value mv avatar-trigger">${companyProg}%</div>
+            <div class="ceo-speedo-value mv avatar-trigger">${_prog}%</div>
           </div>
           <div class="ceo-forecast-info">
-            <div class="ceo-forecast-sub"><span class="mv">${totalFact}</span> из <span>${totalPlan||'—'}</span> визитов</div>
+            <div class="ceo-forecast-sub"><span class="mv">${_fact}</span> из <span>${_plan||'—'}</span> визитов</div>
             <div class="ceo-mini-badges">
               <div class="ceo-mini-badge">
                 <div class="ceo-mini-lbl">Динамика за сегодня</div>
@@ -8514,7 +8520,8 @@ function renderCeoDashboard() {
             </div>
           </div>
         </div>
-      </div>
+      </div>`;
+      })()}
 
       <!-- МЕТРИКИ -->
       <div class="sec-title">Ключевые показатели</div>

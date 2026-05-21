@@ -5822,7 +5822,7 @@ function showAccessDenied(reason = 'Почта не найдена в USERS') {
 async function loadUsersAndStart() {
   try {
     apiCacheInvalidate('USERS');
-    S.usersData = await api('USERS', 'A1:L500');
+    S.usersData = await api('USERS', 'A1:M500');
   } catch(e) { S.usersData = []; showAccessDenied('Нет доступа к таблице'); return; }
   const matched = findUserInSheet();
   refreshFirebaseProfile();

@@ -5990,8 +5990,9 @@ function openRopIncomeModal() {
     <div class="rop-modal-block">
       <div class="rop-modal-h">Состав дохода</div>
       <div class="rop-modal-row"><span>Оклад</span><b>${fmtRub(d.oklad)}</b></div>
-      <div class="rop-modal-row"><span>× Коэфф. по прогнозу плана</span><b style="color:${pctClr(d.progPct)}">×${d.koef.toFixed(2)}</b></div>
       <div class="rop-modal-row"><span>+ Доплата за отдел Дожим</span><b>${fmtRub(d.doplata)}</b></div>
+      <div class="rop-modal-row"><span>= База</span><b>${fmtRub(d.oklad + d.doplata)}</b></div>
+      <div class="rop-modal-row"><span>× Коэфф. по прогнозу плана</span><b style="color:${pctClr(d.progPct)}">×${d.koef.toFixed(2)}</b></div>
       <div class="rop-modal-row rop-modal-total"><span>Итого</span><b>${fmtRub(d.total)}</b></div>
     </div>
     <div class="rop-modal-block">
@@ -8291,8 +8292,9 @@ function renderCeoDashboard() {
     return 1.3;
   }
   const ropKoef = ropKoefFn(ropProgPct);
-  const ropIncomeBase = ROP_OKLAD * ropKoef;
-  const ropIncomeTotal = ropIncomeBase + ROP_DOPLATA;
+  // Коэффициент применяется к сумме (оклад + доплата за Дожим)
+  const ropIncomeBase = ROP_OKLAD + ROP_DOPLATA;
+  const ropIncomeTotal = ropIncomeBase * ropKoef;
   const ropIncognito = localStorage.getItem('crm_incognito') === '1';
   window._ropIncomeData = { oklad: ROP_OKLAD, doplata: ROP_DOPLATA, koef: ropKoef, base: ropIncomeBase, total: ropIncomeTotal, factPct: ropFactPct, progPct: ropProgPct, ropPlan, crmFact, crmPlanSum };
 
@@ -8469,11 +8471,13 @@ function renderCeoDashboard() {
         <button class="kpi-incognito-btn ceo-rop-incognito-btn" onclick="event.stopPropagation();toggleIncognitoCeo()" title="Скрыть доход (или потряси телефон)">${ropIncognito ? '👁' : '🙈'}</button>
         <div class="ceo-rop-total mv">${fmtRub(ropIncomeTotal)}</div>
         <div class="ceo-rop-formula">
+          <span class="ceo-rop-dim">(</span>
           <span>${fmtRub(ROP_OKLAD)}</span>
-          <span class="ceo-rop-dim">×</span>
-          <span style="color:${pctClr(ropProgPct)}">${ropKoef.toFixed(2)}</span>
           <span class="ceo-rop-dim">+</span>
           <span>${fmtRub(ROP_DOPLATA)}</span>
+          <span class="ceo-rop-dim">)</span>
+          <span class="ceo-rop-dim">×</span>
+          <span style="color:${pctClr(ropProgPct)}">${ropKoef.toFixed(2)}</span>
         </div>
         <div class="ceo-rop-sub">прогноз CRM: <strong style="color:${pctClr(ropProgPct)}">${ropProgPct}%</strong> · план ROP <strong>${Math.round(ropPlan)}</strong> виз.</div>
       </div>` : ''}

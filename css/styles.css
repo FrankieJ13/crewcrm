@@ -5952,6 +5952,10 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
   padding: 6px 8px; border: 1px solid var(--line);
   min-width: 0;
 }
+body.fluent .ceo-mini-badge-eod {
+  background: #c8c8c8;
+  border-color: #a8a8a8;
+}
 .ceo-mini-lbl { font-size: 9px; color: var(--txt3); margin-bottom: 2px; font-weight: 600; white-space: nowrap; }
 .ceo-mini-val {
   font-family: 'Unbounded', sans-serif; font-size: 12px; font-weight: 800;
@@ -6585,6 +6589,35 @@ body.tiffany .rem-popover {
 /* ══ END НАПОМИНАНИЯ ══ */
 
 /* ══ TROPHIES STUB ══ */
+.hmb-avatar-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1.5px solid #1a1a1a;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.hmb-avatar-circle img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+.hmb-avatar-circle img[src=""],
+.hmb-avatar-circle img:not([src]) { display: none; }
+body.light .hmb-avatar-circle,
+body.neo-light .hmb-avatar-circle,
+body.fluent .hmb-avatar-circle,
+body.tiffany .hmb-avatar-circle { border-color: #1a1a1a; }
+body.dark .hmb-avatar-circle,
+body.neo-dark .hmb-avatar-circle,
+body.cinematic .hmb-avatar-circle,
+body.cosmic .hmb-avatar-circle { border-color: #2a2a2a; }
 .trophies-stub {
   min-height: 60vh;
   display: flex; flex-direction: column;

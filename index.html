@@ -113,11 +113,13 @@
         <!-- Hamburger -->
           <div class="hamburger-dropdown" id="hamburger-dropdown">
             <!-- Аккаунт -->
-            <div class="hmb-item hmb-account" id="hmb-account-btn" onclick="hmbGoPersonal()" style="display:none;cursor:pointer">
-              <img id="hmb-avatar" src="" alt="" style="width:28px;height:28px;border-radius:50%;border:1.5px solid var(--line2);flex-shrink:0;object-fit:cover">
+            <div class="hmb-item hmb-account" id="hmb-account-btn" onclick="hmbOpenProfile()" style="display:none;cursor:pointer">
+              <span class="hmb-avatar-circle">
+                <img id="hmb-avatar" src="" alt="">
+              </span>
               <div style="display:flex;flex-direction:column;gap:1px;min-width:0">
                 <span id="hmb-account-name" style="font-size:12px;font-weight:700;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
-                <span style="font-size:10px;color:var(--txt3)">Личная страница</span>
+                <span style="font-size:10px;color:var(--txt3)">Мой профиль</span>
               </div>
             </div>
             <div class="hmb-sep" id="hmb-sep-account" style="display:none"></div>
@@ -533,6 +535,20 @@
     <div id="scr-analiz" class="scr">
       <div class="w">
         <div id="c-analiz"></div>
+      </div>
+    </div>
+    <div id="scr-profile" class="scr">
+      <div class="w">
+        <div id="c-profile" class="trophies-stub">
+          <div class="trophies-stub-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <div class="trophies-stub-title">Мой профиль</div>
+          <div class="trophies-stub-text">Раздел в разработке…</div>
+        </div>
       </div>
     </div>
     <div id="scr-trophies" class="scr">

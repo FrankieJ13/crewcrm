@@ -729,7 +729,7 @@ async function azImportSheet() {
 }
 
 function showScr(id) {
-  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo','analiz','trophies'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const el = document.getElementById('scr-'+t);
     if (el) el.classList.remove('on');
   });
@@ -1730,8 +1730,6 @@ function renderUser() {
   const av = document.getElementById('user-avatar');
   if (S.user.picture) {
     av.src = S.user.picture;
-    const hmbAv = document.getElementById('hmb-avatar');
-    if (hmbAv) hmbAv.src = S.user.picture;
   }
   av.style.cursor = 'pointer';
   av.title = 'Мой KPI';
@@ -1740,11 +1738,31 @@ function renderUser() {
     if (m && isCeoLike(m.role)) return;
     goPersonal();
   };
-  if (S.user.name) {
-    const nameParts = S.user.name.split(' ');
+  // Имя пользователя (из USERS если есть, иначе из Google)
+  const matchedU = (typeof findUserInSheet === 'function') ? findUserInSheet() : null;
+  const displayName = (matchedU && matchedU.name) ? matchedU.name : (S.user.name || '');
+  if (displayName) {
+    const nameParts = displayName.split(' ');
     document.getElementById('user-name').textContent = nameParts[0];
     const hmbName = document.getElementById('hmb-account-name');
-    if (hmbName) hmbName.textContent = S.user.name;
+    if (hmbName) hmbName.textContent = displayName;
+  }
+  // Аватар в гамбургере: из logos/avatar/{id}-default.png по ID из USERS
+  const hmbAv = document.getElementById('hmb-avatar');
+  if (hmbAv) {
+    const id = matchedU ? getMgrCrmId(matchedU.name) : null;
+    if (id) {
+      const src = `logos/avatar/${id}-default.png`;
+      hmbAv.onerror = function(){ this.style.display='none'; };
+      hmbAv.style.display = '';
+      hmbAv.src = src;
+    } else if (S.user.picture) {
+      hmbAv.onerror = function(){ this.style.display='none'; };
+      hmbAv.style.display = '';
+      hmbAv.src = S.user.picture;
+    } else {
+      hmbAv.style.display = 'none';
+    }
   }
   // Показываем аккаунт-блок в гамбургере
   const hmbAcc = document.getElementById('hmb-account-btn');
@@ -5808,6 +5826,8 @@ async function loadUsersAndStart() {
   } catch(e) { S.usersData = []; showAccessDenied('Нет доступа к таблице'); return; }
   const matched = findUserInSheet();
   refreshFirebaseProfile();
+  // Перерисуем имя/аватар в гамбургере, когда USERS уже загружен
+  try { if (typeof renderUser === 'function') renderUser(); } catch(_) {}
   if (matched && matched.name) {
     const parts = matched.name.trim().split(/\s+/);
     const firstName = parts.length >= 2 ? parts[1] : parts[0];
@@ -8483,11 +8503,11 @@ function renderCeoDashboard() {
       </div>` : ''}
 
       <!-- ТЕКУЩИЙ KPI -->
-      <div class="sec-title">Текущий KPI${isRop ? ' <span style="font-size:9px;color:var(--txt3);font-weight:600;letter-spacing:0.04em">· CRM</span>' : ''}</div>
+      <div class="sec-title">Текущий KPI <span style="font-size:9px;color:var(--txt3);font-weight:600;letter-spacing:0.04em">· CRM</span></div>
       ${(() => {
-        const _fact = isRop ? crmFact : totalFact;
-        const _plan = isRop ? crmPlanSum : totalPlan;
-        const _prog = isRop ? crmProg : companyProg;
+        const _fact = crmFact;
+        const _plan = crmPlanSum;
+        const _prog = crmProg;
         const _progColor = _prog >= 100 ? 'var(--grn)' : _prog >= 85 ? '#ffd60a' : 'var(--red)';
         return `
       <div class="kpi-income-panel ceo-forecast-panel" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
@@ -8510,7 +8530,7 @@ function renderCeoDashboard() {
                 </div>
                 <div class="ceo-mini-sub">к вчера</div>
               </div>
-              <div class="ceo-mini-badge">
+              <div class="ceo-mini-badge ceo-mini-badge-eod">
                 <div class="ceo-mini-lbl">Прогноз выполнения</div>
                 <div class="ceo-mini-val">
                   <span class="mv" style="color:${eodColor} !important">${eodProg}</span><span style="color:${eodColor}">%</span>
@@ -9879,6 +9899,12 @@ function hmbGoPersonal() {
   closeHamburger();
   const m = findUserInSheet();
   if (m && !isCeoLike(m.role)) goPersonal();
+}
+
+function hmbOpenProfile() {
+  closeHamburger();
+  showScr('profile');
+  if (typeof dockSetActive === 'function') dockSetActive('home');
 }
 
 function openAbout() {

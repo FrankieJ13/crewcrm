@@ -16,8 +16,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&family=Exo+2:wght@200;300;700&family=JetBrains+Mono:wght@300;400&family=Oswald:wght@400;700&display=swap" rel="stylesheet"/>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<link rel="stylesheet" href="./css/styles.css?v=38"/>
-<link rel="stylesheet" href="./css/autopodbor.css?v=38"/>
+<link rel="stylesheet" href="./css/styles.css?v=39"/>
+<link rel="stylesheet" href="./css/autopodbor.css?v=39"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -417,6 +417,25 @@
             </summary>
             <div class="cfg-spoiler-body" style="padding:12px 0 0">
               <div style="display:flex;flex-direction:column;gap:12px;font-size:12px;color:var(--txt2)">
+                <div>
+                  <div style="font-family:'Unbounded',sans-serif;font-size:10px;font-weight:900;color:var(--acc)">v2.2 — 2026 май (вторая половина)</div>
+                  <ul style="margin:6px 0 0 16px;line-height:1.8">
+                    <li>Роль ROP с правами CEO и панелью дохода (оклад + дожим-премия × ступенчатый коэфф)</li>
+                    <li>Аналитик ИИ — экран прогнозов с 12 городами, воронкой и ручным/CSV/JSON вводом</li>
+                    <li>Текущий KPI у CEO и ROP считается только по отделу CRM</li>
+                    <li>Уведомления-напоминания: 3 раза в день для CRM/Дожим (утро/обед/вечер), бейдж и панель</li>
+                    <li>Трофеи — заглушка-раздел, доступна всем</li>
+                    <li>Страница «Мой профиль»: инфо-карточка с аватаром, статистика за полгода с мини-графиками</li>
+                    <li>Модалка профиля из рейтинга — клик по иконке менеджера открывает его карточку поверх дашборда</li>
+                    <li>Автоподбор (CM66 BDCARS): фуллскрин-чат поиска авто по разговорному запросу, своя БД, темизация под дашборд, история в localStorage</li>
+                    <li>USERS: новая колонка J — Phone, режимы сдвинуты K-N, добавлен тогглер AutoS (O) для активации/заглушки автоподбора</li>
+                    <li>Presence: показывает «Автоподбор» и «Профиль {Имя}» при просмотре чужой карточки, ФИО в коротком формате «Виталий П.»</li>
+                    <li>Иконки тем: пре-кеш всех svg в Service Worker + warmup через Image(), убраны broken-icon заглушки</li>
+                    <li>Единая горизонтальная линия после секций — градиент к прозрачности</li>
+                    <li>Сохранение режимов: один тост вместо пяти, PUT идёт только если значение изменилось</li>
+                    <li>Toast поверх модалок (z-index 12500), модалки со sticky × и аккуратным скроллбаром</li>
+                  </ul>
+                </div>
                 <div>
                   <div style="font-family:'Unbounded',sans-serif;font-size:10px;font-weight:900;color:var(--acc)">v2.1 — 2026 май</div>
                   <ul style="margin:6px 0 0 16px;line-height:1.8">
@@ -907,7 +926,7 @@
   </div>
 </div>
 
-<script src="./js/app.js?v=38"></script>
+<script src="./js/app.js?v=39"></script>
 <!-- Затемнение фона при открытом popup напоминаний -->
 <div class="rem-backdrop" id="rem-backdrop" onclick="closeRemPanel()"></div>
 
@@ -938,9 +957,9 @@
     </form>
   </div>
 </div>
-<script src="./js/autopodbor-config.js?v=38"></script>
-<script src="./js/autopodbor-dictionary.js?v=38"></script>
-<script src="./js/autopodbor-chat.js?v=38"></script>
+<script src="./js/autopodbor-config.js?v=39"></script>
+<script src="./js/autopodbor-dictionary.js?v=39"></script>
+<script src="./js/autopodbor-chat.js?v=39"></script>
 
 <!-- Модалка профиля менеджера (открывается с рейтинга) -->
 <div id="profile-modal-overlay" class="profile-modal-overlay" onclick="if(event.target===this)closeProfileModal()">

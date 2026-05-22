@@ -9940,7 +9940,7 @@ function _profileMessengerBtns(tg, max) {
     </a>`);
   }
   if (max) {
-    items.push(`<a class="profile-msg-btn" href="${max}" target="_blank" rel="noopener" title="MAX">
+    items.push(`<a class="profile-msg-btn max-icon-link" href="${max}" target="_blank" rel="noopener" title="MAX">
       ${maxIconSvg(20)}
       <span>MAX</span>
     </a>`);
@@ -9976,9 +9976,11 @@ function renderProfile() {
       <div class="profile-sec-title"><span>Инфо</span><span class="profile-sec-line"></span></div>
       <div class="profile-panel profile-info">
         <div class="profile-avatar-wrap">
-          ${id
-            ? `<img class="profile-avatar" src="${avatarSrc}" alt="" onerror="if(this.dataset.fb!=='1'){this.dataset.fb='1';this.src='${avatarFallback}';}else{this.style.display='none';}">`
-            : `<div class="profile-avatar profile-avatar-placeholder">👤</div>`}
+          <div class="profile-avatar-inner">
+            ${id
+              ? `<img class="profile-avatar" src="${avatarSrc}" alt="" onerror="if(this.dataset.fb!=='1'){this.dataset.fb='1';this.src='${avatarFallback}';}else{this.style.display='none';}">`
+              : `<div class="profile-avatar profile-avatar-placeholder">👤</div>`}
+          </div>
         </div>
         <div class="profile-info-rows">
           <div class="profile-info-row"><div class="profile-info-lbl">ФИО</div><div class="profile-info-val">${fio}</div></div>

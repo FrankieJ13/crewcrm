@@ -1100,7 +1100,7 @@ function getPresencePageLabel() {
   }
   if (document.getElementById('scr-vizity')?.classList.contains('on')) return `Визиты ${deptLabel(S.vizDept || roleDept)}`;
   if (document.getElementById('scr-instruktsii')?.classList.contains('on')) {
-    const faq = S.faqTab === 'mango' ? 'MANGO' : S.faqTab === 'links' ? 'Ссылки' : S.faqTab === 'reglament' ? 'Регламент' : 'Инструкции';
+    const faq = S.faqTab === 'mango' ? 'MANGO' : S.faqTab === 'links' ? 'Ссылки' : S.faqTab === 'reglament' ? 'Регламент' : S.faqTab === 'autopodbor' ? 'Автоподбор' : 'Инструкции';
     return `FAQ ${faq}`;
   }
   if (document.getElementById('scr-otchet')?.classList.contains('on')) {
@@ -4683,6 +4683,7 @@ function renderInstruktsii() {
   if (S.faqTab === 'reglament') { el.innerHTML = renderReglamentTab(); return; }
   if (S.faqTab === 'mango') { el.innerHTML = renderMangoTab(); return; }
   if (S.faqTab === 'links') { el.innerHTML = renderLinksTab(); initLinksTab(); return; }
+  if (S.faqTab === 'autopodbor') { el.innerHTML = renderAutopodborTab(); return; }
   const raw = S.data.instruktsii;
   if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
   function buildStatusTable(rows) {
@@ -4711,6 +4712,20 @@ function renderInstruktsii() {
 
 function renderReglamentTab() {
   return `<div class="sec-title">Регламент</div><div class="faq-under-dev">Раздел в разработке...</div>`;
+}
+
+function renderAutopodborTab() {
+  return `
+    <div class="sec-title">Автоподбор</div>
+    <div class="autopodbor-stub">
+      <div class="autopodbor-stub-title">В разработке</div>
+      <div class="autopodbor-stub-text">
+        Ассистент в быстрой навигации и поиску авто на официальном сайте по простому запросу.
+        Например: <span class="autopodbor-stub-ex">«фольц тигуан в перми автомат»</span>
+        или <span class="autopodbor-stub-ex">«лада веста до 900»</span>.
+      </div>
+    </div>
+  `;
 }
 
 function toggleInstr(id) {

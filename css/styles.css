@@ -2703,6 +2703,42 @@ body.cosmic .sched-bulk-svg { color: #1a1a1a; }
   font-weight:800;
   text-align:center;
 }
+
+.autopodbor-stub {
+  margin: 4px 0 16px;
+  padding: 26px 18px 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--bg2);
+  text-align: center;
+}
+.autopodbor-stub-title {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--acc);
+  margin-bottom: 12px;
+  letter-spacing: 0.04em;
+}
+.autopodbor-stub-text {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--txt2);
+  max-width: 520px;
+  margin: 0 auto;
+}
+.autopodbor-stub-ex {
+  display: inline-block;
+  padding: 1px 7px;
+  margin: 1px 0;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--txt);
+  white-space: nowrap;
+}
 .table-scroll { overflow-x: auto; margin:0 -1px; }
 .instr-table { width:100%; border-collapse:collapse; font-size:13px; min-width:600px; }
 .instr-table th {

@@ -15,7 +15,44 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.appendChild(el);
     }
   });
+  // Прогреваем кеш иконок ВСЕХ тем — чтобы при переключении не было flash/broken
+  _preloadThemeIcons();
 });
+
+function _preloadThemeIcons() {
+  const list = [
+    // Fluent
+    'Fluent/FluentColor-About.svg','Fluent/FluentColor-Alert.svg','Fluent/FluentColor-Analysis.svg',
+    'Fluent/FluentColor-Archive.svg','Fluent/FluentColor-Cash.svg','Fluent/FluentColor-Close.svg',
+    'Fluent/FluentColor-Exit.svg','Fluent/FluentColor-FAQ.svg','Fluent/FluentColor-Grafik.svg',
+    'Fluent/FluentColor-Home.svg','Fluent/FluentColor-KPI.svg','Fluent/FluentColor-Menu.svg',
+    'Fluent/FluentColor-Online.svg','Fluent/FluentColor-profile.svg','Fluent/FluentColor-Rang.svg',
+    'Fluent/FluentColor-Refresh.svg','Fluent/FluentColor-Report.svg','Fluent/FluentColor-Settings.svg',
+    'Fluent/FluentColor-Themes.svg','Fluent/FluentColor-Trophies.svg','Fluent/FluentColor-Vizity.svg',
+    // Cosmic
+    'cosmic/cosmic-alert.svg','cosmic/cosmic-profile.svg','cosmic/cosmic-trophies.svg',
+    'cosmic/cosmic_about.svg','cosmic/cosmic_base.svg','cosmic/cosmic_config.svg',
+    'cosmic/cosmic_exit.svg','cosmic/cosmic_faq.svg','cosmic/cosmic_grafik.svg',
+    'cosmic/cosmic_home.svg','cosmic/cosmic_kpi.svg','cosmic/cosmic_menu.svg',
+    'cosmic/cosmic_money.svg','cosmic/cosmic_online.svg','cosmic/cosmic_rang.svg',
+    'cosmic/cosmic_refresh.svg','cosmic/cosmic_themes.svg','cosmic/cosmic_vizity.svg',
+    // Default
+    'default/about.svg','default/base.svg','default/config.svg','default/exit.svg',
+    'default/faq.svg','default/grafik.svg','default/home.svg','default/kpi.svg',
+    'default/menu.svg','default/money.svg','default/online.svg','default/profile.svg',
+    'default/rang.svg','default/refresh.svg','default/send-noti.svg','default/theme.svg',
+    'default/trophies.svg','default/vizity.svg',
+  ];
+  // requestIdleCallback на десктопе / fallback на мобильных
+  const ric = window.requestIdleCallback || ((cb) => setTimeout(cb, 200));
+  ric(() => {
+    list.forEach(p => {
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = 'logos/' + p;
+    });
+  });
+}
 
 /* ══ CONFIG ══ */
 const CFG = {
@@ -247,7 +284,17 @@ function syncTheme() {
       icon.style.setProperty('--app-icon-url', `url("${src}")`);
       icon.removeAttribute('src');
     } else {
-      icon.onerror = null;
+      // Прячем картинку пока она не загрузилась — никаких broken-image заглушек
+      icon.style.opacity = '0';
+      icon.onload  = () => { icon.style.opacity = ''; icon.dataset.loaded = '1'; };
+      icon.onerror = () => {
+        // Одна попытка retry с cache-bust. Если опять упало — оставляем прозрачный
+        if (icon.dataset.retry !== '1') {
+          icon.dataset.retry = '1';
+          setTimeout(() => { icon.src = src + (src.includes('?') ? '&' : '?') + '_=' + Date.now(); }, 500);
+        }
+      };
+      icon.alt = '';
       icon.src = src;
     }
     icon.style.display = '';

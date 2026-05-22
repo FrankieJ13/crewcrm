@@ -7780,7 +7780,7 @@ function getSvcMode() {
 
 async function savePlanAndSverka() {
   const cb = document.getElementById('sverka-toggle-cb');
-  if (cb) {
+  if (cb && cb.checked !== S.sverkaMode) {
     S.sverkaMode = cb.checked;
     const newMode = S.sverkaMode ? 'On' : 'Off';
     localStorage.setItem('crm_sverka', S.sverkaMode ? '1' : '0');
@@ -7813,7 +7813,7 @@ async function savePlanAndSverka() {
 
   // Режим вставки визитов
   const cb2 = document.getElementById('viz-paste-toggle-cb');
-  if (cb2) {
+  if (cb2 && cb2.checked !== S.vizPasteMode) {
     S.vizPasteMode = cb2.checked;
     const newMode2 = S.vizPasteMode ? 'On' : 'Off';
     localStorage.setItem('crm_viz_paste', S.vizPasteMode ? '1' : '0');
@@ -7839,7 +7839,7 @@ async function savePlanAndSverka() {
 
   // Техническое обслуживание
   const cb3 = document.getElementById('svc-toggle-cb');
-  if (cb3) {
+  if (cb3 && cb3.checked !== S.svcMode) {
     const wasOn = S.svcMode;
     S.svcMode = cb3.checked;
     const newMode3 = S.svcMode ? 'On' : 'Off';
@@ -7866,7 +7866,7 @@ async function savePlanAndSverka() {
 
   // Уведомления (напоминания CRM/Дожим)
   const cb4 = document.getElementById('reminders-toggle-cb');
-  if (cb4) {
+  if (cb4 && cb4.checked !== S.remMode) {
     const wasOn = S.remMode;
     S.remMode = cb4.checked;
     const newMode4 = S.remMode ? 'On' : 'Off';
@@ -7894,7 +7894,7 @@ async function savePlanAndSverka() {
 
   // Автоподбор-чат (активатор страницы)
   const cb5 = document.getElementById('autos-toggle-cb');
-  if (cb5) {
+  if (cb5 && cb5.checked !== S.autoSMode) {
     const wasOn5 = S.autoSMode;
     S.autoSMode = cb5.checked;
     const newMode5 = S.autoSMode ? 'On' : 'Off';

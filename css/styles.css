@@ -2807,7 +2807,7 @@ body.light #author {
   transform:translateX(-50%) translateY(-12px);
   padding:9px 16px; border-radius:var(--r);
   font-size:13px; opacity:0; pointer-events:none;
-  transition:all .25s; z-index:999; white-space:nowrap;
+  transition:all .25s; z-index:12500; white-space:nowrap;
   background: rgba(255,255,255,.84);
   border: 1px solid rgba(84,84,84,.26);
   color: #1a1a1a;

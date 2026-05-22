@@ -4,16 +4,16 @@
    чтобы не пересекаться с дашбордом.
    ════════════════════════════════════════════════════════════════ */
 
+/* CM66 локальные имена теперь просто алиасы на токены активной темы
+   дашборда — --bg/--bg2/--bg3/--line/--txt/--acc приходят из body.theme */
 #autopodbor-fullscreen {
-  --bg: #eef3f6;
-  --panel: #ffffff;
-  --ink: #17202a;
-  --muted: #667485;
-  --line: #d8e0e7;
-  --accent: #0f766e;
-  --accent-dark: #115e59;
-  --dark: #14213d;
-  --soft: #f6f9fb;
+  --panel: var(--bg2);
+  --ink: var(--txt);
+  --muted: var(--txt2);
+  --accent: var(--acc);
+  --accent-dark: var(--acc);
+  --dark: var(--bg3);
+  --soft: var(--bg3);
   --chat-font-size: 16px;
 }
 
@@ -24,8 +24,8 @@
   inset: 0;
   z-index: 12000;
   background: var(--bg);
-  color: var(--ink);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--txt);
+  font-family: 'Golos Text', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   overflow: hidden;
 }
 #autopodbor-fullscreen.open { display: block; }
@@ -93,22 +93,24 @@
   padding-right: 60px; /* место под X */
   border-bottom: 1px solid var(--line);
   background: var(--dark);
-  color: #ffffff;
+  color: var(--txt);
 }
 #autopodbor-fullscreen .chat-header p {
   margin: 0 0 3px;
-  color: #fbbf24;
+  color: var(--acc);
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 #autopodbor-fullscreen .chat-header h1 {
   margin: 0;
   font-size: clamp(20px, 3vw, 28px);
   line-height: 1.05;
+  color: var(--txt);
 }
 #autopodbor-fullscreen .chat-header span {
-  color: #cbd5e1;
+  color: var(--txt3);
   font-size: 12px;
   text-align: right;
   white-space: nowrap;
@@ -122,7 +124,7 @@
   min-height: 0;
   overflow-y: auto;
   padding: 16px 18px;
-  background: linear-gradient(#f8fafc, #eef3f6);
+  background: var(--bg);
   overscroll-behavior: contain;
 }
 
@@ -136,13 +138,14 @@
 #autopodbor-fullscreen .message.user {
   align-self: flex-end;
   width: min(68%, 620px);
-  background: var(--accent);
+  background: var(--acc);
   color: #ffffff;
 }
 #autopodbor-fullscreen .message.assistant {
   align-self: flex-start;
-  background: #ffffff;
+  background: var(--bg2);
   border: 1px solid var(--line);
+  color: var(--txt);
 }
 #autopodbor-fullscreen .message.assistant:has(.result-list) {
   width: min(900px, 100%);
@@ -161,7 +164,8 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 10px 20px;
-  background: var(--soft);
+  background: var(--bg3);
+  color: var(--txt);
   min-width: 0;
 }
 #autopodbor-fullscreen .result-card.has-image {
@@ -181,11 +185,13 @@
   height: clamp(118px, 19vw, 168px);
   border-radius: 8px;
   object-fit: cover;
-  background: #d8e0e7;
+  background: var(--line);
 }
 #autopodbor-fullscreen .result-card h2 { margin: 0; font-size: 21px; line-height: 1.08; }
 #autopodbor-fullscreen .price { margin-top: 6px; font-size: 32px; line-height: 1; font-weight: 850; }
-#autopodbor-fullscreen .meta { margin-top: 3px; color: var(--muted); font-size: 16px; line-height: 1.15; }
+#autopodbor-fullscreen .price { color: var(--txt); }
+#autopodbor-fullscreen .meta { margin-top: 3px; color: var(--txt2); font-size: 16px; line-height: 1.15; }
+#autopodbor-fullscreen .result-card h2 { color: var(--txt); }
 
 #autopodbor-fullscreen .specs {
   display: grid;
@@ -193,13 +199,13 @@
   column-gap: clamp(18px, 5vw, 58px);
   row-gap: 1px;
   margin: 8px 0 0;
-  color: var(--muted);
+  color: var(--txt2);
   font-size: 15px;
   line-height: 1.15;
 }
 #autopodbor-fullscreen .spec { display: flex; gap: 4px; min-width: 0; }
-#autopodbor-fullscreen .specs dt { color: #435265; font-weight: 800; white-space: nowrap; }
-#autopodbor-fullscreen .specs dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+#autopodbor-fullscreen .specs dt { color: var(--txt); font-weight: 800; white-space: nowrap; }
+#autopodbor-fullscreen .specs dd { margin: 0; min-width: 0; overflow-wrap: anywhere; color: var(--txt2); }
 #autopodbor-fullscreen .spec-кузов  { grid-column: 1; grid-row: 1; }
 #autopodbor-fullscreen .spec-руль   { grid-column: 2; grid-row: 1; }
 #autopodbor-fullscreen .spec-привод { grid-column: 1; grid-row: 2; }
@@ -246,7 +252,9 @@
 #autopodbor-fullscreen .chip {
   display: inline-flex; align-items: center;
   min-height: 28px; border-radius: 999px;
-  background: #e6eef3; color: #263442;
+  background: var(--acc-bg, rgba(0,0,0,0.06));
+  color: var(--acc);
+  border: 1px solid var(--acc-bdr, transparent);
   padding: 0 10px; font-size: 13px; font-weight: 750;
 }
 
@@ -259,7 +267,7 @@
   gap: 8px;
   padding: 10px 12px;
   border-top: 1px solid var(--line);
-  background: #ffffff;
+  background: var(--bg2);
 }
 #autopodbor-fullscreen .composer input {
   flex: 1 1 auto;
@@ -267,10 +275,17 @@
   height: 36px;
   min-height: 36px;
   max-height: 36px;
-  border: 1px solid var(--line); border-radius: 8px;
-  padding: 0 11px; color: var(--ink);
-  background: #ffffff;
+  border: 1px solid var(--line2, var(--line));
+  border-radius: 8px;
+  padding: 0 11px;
+  color: var(--txt);
+  background: var(--bg);
 }
+#autopodbor-fullscreen .composer input:focus {
+  outline: none;
+  border-color: var(--acc);
+}
+#autopodbor-fullscreen .composer input::placeholder { color: var(--txt3); }
 #autopodbor-fullscreen .composer button {
   flex: 0 0 auto;
   width: 40px;
@@ -278,13 +293,14 @@
   min-height: 36px;
   max-height: 36px;
   border: 0; border-radius: 8px;
-  background: var(--accent); color: #ffffff;
+  background: var(--acc); color: #ffffff;
   padding: 0; font-weight: 800; cursor: pointer;
+  transition: filter .15s;
 }
 #autopodbor-fullscreen .composer button svg {
   display: block; width: 19px; height: 19px; margin: auto; fill: currentColor;
 }
-#autopodbor-fullscreen .composer button:hover { background: var(--accent-dark); }
+#autopodbor-fullscreen .composer button:hover { filter: brightness(0.9); }
 
 #autopodbor-fullscreen .command-menu {
   position: absolute;
@@ -299,22 +315,22 @@
   padding: 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 0 14px 36px rgb(20 33 61 / 14%);
+  background: var(--bg2);
+  box-shadow: 0 14px 36px rgba(0,0,0,0.18);
 }
 #autopodbor-fullscreen .composer .command-item,
 #autopodbor-fullscreen .message .command-item {
   display: grid; gap: 2px;
   width: 100%; min-height: auto;
   border: 0; border-radius: 7px;
-  background: #f2f6f8; color: var(--ink);
+  background: var(--bg3); color: var(--txt);
   padding: 9px 10px;
   text-align: left; cursor: pointer;
 }
 #autopodbor-fullscreen .composer .command-item:hover,
-#autopodbor-fullscreen .message .command-item:hover { background: #e7eef3; }
-#autopodbor-fullscreen .command-item strong { font-size: 14px; color: var(--ink); }
-#autopodbor-fullscreen .command-item span   { color: var(--muted); font-size: 12px; }
+#autopodbor-fullscreen .message .command-item:hover { background: var(--line); }
+#autopodbor-fullscreen .command-item strong { font-size: 14px; color: var(--txt); }
+#autopodbor-fullscreen .command-item span   { color: var(--txt2); font-size: 12px; }
 #autopodbor-fullscreen .composer .command-item svg,
 #autopodbor-fullscreen .message .command-item svg { display: none; }
 
@@ -333,9 +349,9 @@
     justify-self: end;
     max-width: 45vw;
     border-radius: 999px;
-    background: rgb(255 255 255 / 10%);
+    background: var(--bg2);
     padding: 3px 7px;
-    color: #dbe6ef;
+    color: var(--txt2);
     font-size: 10px;
     line-height: 1.2;
     text-align: right;

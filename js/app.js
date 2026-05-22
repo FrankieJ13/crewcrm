@@ -1834,7 +1834,7 @@ function onLogout() {
   if (hdrGreeting2) { hdrGreeting2.style.display = 'none'; hdrGreeting2.classList.remove('aurora'); }
   closeHamburger();
   // Сбрасываем ВСЕ экраны
-  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const s = document.getElementById('scr-'+t);
     if (s) { s.classList.remove('on'); s.style.display = ''; }
   });
@@ -2007,7 +2007,17 @@ function setCurrentMonth(newSuffix) {
   S.data = { otchet:null, dohod:null, grafik:null, grafikFmt:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null };
   apiCacheInvalidate(); // сбрасываем кеш при смене месяца
   _schedWeek = null;
-  const activeTab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
+  // Определяем активный экран и перезагружаем его данные
+  const isActive = id => document.getElementById('scr-'+id)?.classList.contains('on');
+  if (isActive('profile'))      { if (typeof renderProfile === 'function') renderProfile(); return; }
+  if (isActive('ceo'))          { if (typeof loadCeoDashboard === 'function') loadCeoDashboard(); return; }
+  if (isActive('personal'))     { if (typeof goPersonal === 'function') goPersonal(); return; }
+  if (isActive('rating'))       { if (typeof loadRating === 'function') loadRating(); return; }
+  if (isActive('analiz'))       { if (typeof renderAnaliz === 'function') renderAnaliz(); return; }
+  if (isActive('vizity'))       { if (typeof loadTab === 'function') loadTab('vizity'); return; }
+  const activeTab = document.querySelector('.tab.on')?.dataset.tab
+    || ['otchet','dohod','grafik','instruktsii'].find(t => isActive(t))
+    || 'otchet';
   loadTab(activeTab);
 }
 
@@ -5807,7 +5817,7 @@ function showAccessDenied(reason = 'Почта не найдена в USERS') {
   const hmbsl = document.getElementById('hmb-sep-logout'); if (hmbsl) hmbsl.style.display = 'none';
   const hmbAcc = document.getElementById('hmb-account-btn'); if (hmbAcc) hmbAcc.style.display = 'none';
   const hmbAccSep = document.getElementById('hmb-sep-account'); if (hmbAccSep) hmbAccSep.style.display = 'none';
-  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const s = document.getElementById('scr-'+t);
     if (s) { s.classList.remove('on'); s.style.display = ''; }
   });
@@ -7893,7 +7903,7 @@ function dockNav(id) {
 
   if (id === 'rating') {
     dockSetActive('rating');
-    ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo'].forEach(t => {
+    ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo','analiz','trophies','profile'].forEach(t => {
       const s = document.getElementById('scr-'+t);
       if (s) s.classList.remove('on');
     });

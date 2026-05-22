@@ -10036,21 +10036,25 @@ function _profileSuffixes() {
 function _profileAggMonth(rows, nameLow) {
   const r = { vis:0, kred:0, nal:0, kom:0, otkaz:0, fssp:0 };
   if (!Array.isArray(rows) || rows.length < 2) return r;
+  // Статусы из колонки E (row[4]) — комментарий итоговой сделки/состояния
+  const KRED  = 'покупка (кредит)';
+  const NAL   = 'покупка (наличные)';
+  const OBMEN = 'обмен';
+  const KOM   = 'комиссия';
+  const OTKAZ = 'отказ';
+  const FSSP  = 'фссп не подаем';
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
     if (!row) continue;
     const mgr = String(row[8]||'').toLowerCase().trim();
     if (mgr !== nameLow) continue;
-    const cat = String(row[6]||'').toLowerCase().trim();
-    const st  = String(row[4]||'').toLowerCase().trim();
-    const isCat = cat === 'кат 800' || cat === 'кат 1200' || cat === 'кат 1000';
-    if (!isCat) continue;
-    r.vis++;
-    if      (st === 'покупка (кредит)')                          r.kred++;
-    else if (st === 'покупка (наличные)' || st === 'обмен')      r.nal++;
-    else if (st === 'комиссия')                                  r.kom++;
-    if      (st === 'отказ')                                     r.otkaz++;
-    if      (st === 'фссп не подаем')                            r.fssp++;
+    r.vis++; // общее кол-во визитов = все строки менеджера за месяц
+    const st = String(row[4]||'').toLowerCase().trim();
+    if      (st === KRED)                  r.kred++;
+    else if (st === NAL || st === OBMEN)   r.nal++;
+    else if (st === KOM)                   r.kom++;
+    else if (st === OTKAZ)                 r.otkaz++;
+    else if (st === FSSP)                  r.fssp++;
   }
   return r;
 }

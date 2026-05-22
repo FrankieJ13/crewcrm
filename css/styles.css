@@ -6875,6 +6875,76 @@ body.cosmic .ps-card { background: rgba(255,255,255,0.03); }
   .ps-card-val { font-size: 20px; }
   .ps-bars { height: 36px; }
 }
+/* ──── Profile-modal trigger icon (рейтинг) ──── */
+body.fluent .pmt-ico-fluent  { display: inline-block !important; }
+body.cosmic .pmt-ico-cosmic  { display: inline-block !important; }
+body:not(.fluent):not(.cosmic) .pmt-ico-default { display: inline-block !important; }
+
+/* ──── PROFILE MODAL ──── */
+.profile-modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 11500;
+  align-items: flex-start;
+  justify-content: center;
+  padding: calc(52px + 12px) 12px calc(88px + env(safe-area-inset-bottom,0px) + 16px);
+  overflow-y: auto;
+}
+.profile-modal-overlay.open { display: flex; }
+.profile-modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px 14px 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+  max-height: calc(100vh - 52px - 88px - env(safe-area-inset-bottom,0px) - 32px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+body.light .profile-modal-content,
+body.neo-light .profile-modal-content,
+body.fluent .profile-modal-content,
+body.tiffany .profile-modal-content { background: var(--bg2); }
+body.cosmic .profile-modal-content {
+  background: linear-gradient(135deg, #1c1c1e 0%, #2a2a2c 100%);
+}
+.profile-modal-body { padding-top: 4px; }
+.profile-modal-body .profile-section:first-child { margin-top: 6px; }
+.profile-modal-close {
+  position: sticky;
+  top: 0;
+  margin-left: auto;
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  color: var(--txt);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 2;
+  transition: background .15s, transform .1s;
+}
+.profile-modal-close:active { transform: scale(0.94); }
+.profile-modal-close:hover { background: var(--line); }
+/* Fluent / Cosmic — иконка X в стиле темы */
+body.fluent .profile-modal-close {
+  background: var(--bg3) url('../logos/Fluent/FluentColor-Close.svg') center/16px no-repeat !important;
+  color: transparent !important;
+  font-size: 0 !important;
+}
+body.cosmic .profile-modal-close {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.15);
+  color: #e8e8ea;
+}
 /* ════════════ END PROFILE PAGE ════════════ */
 
 /* ══ TROPHIES STUB ══ */

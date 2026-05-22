@@ -9,7 +9,7 @@ if ('serviceWorker' in navigator && ['http:', 'https:'].includes(location.protoc
 // Переносим оверлеи из #app в <body>, иначе #app (z:10) кэпит их z-index
 // в корневом stacking context — они проигрывают mop-overlay (sibling #app в body).
 document.addEventListener('DOMContentLoaded', () => {
-  ['plan-editor-overlay', 'about-overlay'].forEach(id => {
+  ['plan-editor-overlay', 'about-overlay', 'profile-modal-overlay'].forEach(id => {
     const el = document.getElementById(id);
     if (el && el.parentElement && el.parentElement.id !== 'document-body-root') {
       document.body.appendChild(el);
@@ -8874,10 +8874,11 @@ function renderRating() {
     return { tg: null, max: null };
   }
 
-  function messengerIcons(links) {
+  function messengerIcons(links, mgrName) {
     let html = '';
     if (links.tg) html += `<a href="${links.tg}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Telegram" style="display:inline-flex;text-decoration:none;opacity:0.6;transition:opacity .15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'"><svg width="20" height="20" viewBox="0 0 24 24" fill="#2CA5E0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8l-1.68 7.93c-.12.55-.44.69-.9.43l-2.48-1.83-1.2 1.16c-.13.13-.25.25-.5.25l.18-2.52 4.56-4.12c.2-.18-.04-.27-.3-.1L7.92 14.45l-2.42-.75c-.52-.17-.53-.52.11-.77l9.48-3.66c.43-.16.82.11.55.53z"/></svg></a>`;
     if (links.max) html += `<a href="${links.max}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="MAX" class="max-icon-link" style="display:inline-flex;text-decoration:none;margin-left:2px">${maxIconSvg(18)}</a>`;
+    if (mgrName && typeof _profileTriggerIconHtml === 'function') html += _profileTriggerIconHtml(mgrName);
     return html ? `<span style="display:inline-flex;align-items:center;gap:3px;margin-left:5px">${html}</span>` : '';
   }
   const rankColors = [
@@ -8955,7 +8956,7 @@ function renderRating() {
     const isMe = nl === myName;
     const sal = getMgrSalary(nl);
     const links = getMgrLinks(nl);
-    const messengerHtml = messengerIcons(links);
+    const messengerHtml = messengerIcons(links, m.name);
     const salDisplay = sal !== null
       ? (isCeo || isMe) ? fmtRub(Math.round(sal)) : blurSalary(sal)
       : null;
@@ -9960,27 +9961,20 @@ function _profileMessengerBtns(tg, max) {
     : `<div class="profile-msg-empty">мессенджеры не указаны</div>`;
 }
 
-function renderProfile() {
-  const el = document.getElementById('c-profile');
-  if (!el) return;
-  const matched = findUserInSheet();
-  if (!matched) {
-    el.innerHTML = `<div class="trophies-stub"><div class="trophies-stub-title">Профиль</div><div class="trophies-stub-text">Не удалось определить пользователя.</div></div>`;
-    return;
-  }
+function _profileBuildSectionsHtml(matched, opts = {}) {
+  const statsPanelId = opts.statsPanelId || 'profile-stats-panel';
   const row = _profileGetUserRow(matched.name) || [];
   const dob   = (row[5] || '').toString().trim();
   const id    = (row[6] || '').toString().trim();
   const tg    = (row[7] || '').toString().trim();
   const max   = (row[8] || '').toString().trim();
-  const phone = (row[13] || '').toString().trim(); // колонка N (если есть)
+  const phone = (row[13] || '').toString().trim();
   const fio   = matched.name || '—';
-  const position = _profilePositionLabel(matched.role);
+  const position  = _profilePositionLabel(matched.role);
   const phoneHref = _profilePhoneHref(phone);
-  const avatarSrc = id ? `logos/avatar/${id}-joy.png` : '';
+  const avatarSrc      = id ? `logos/avatar/${id}-joy.png` : '';
   const avatarFallback = id ? `logos/avatar/${id}-default.png` : '';
-
-  el.innerHTML = `
+  return `
     <!-- ИНФО -->
     <div class="profile-section">
       <div class="profile-sec-title"><span>Инфо</span><span class="profile-sec-line"></span></div>
@@ -10007,26 +10001,68 @@ function renderProfile() {
         </div>
       </div>
     </div>
-
     <!-- СТАТИСТИКА -->
     <div class="profile-section">
       <div class="profile-sec-title"><span>Статистика</span><span class="profile-sec-line"></span></div>
-      <div class="profile-panel" id="profile-stats-panel">
+      <div class="profile-panel" id="${statsPanelId}">
         <div class="profile-stats-loading">
           <div class="profile-stats-spinner"></div>
           <div>Собираю данные за полгода…</div>
         </div>
       </div>
     </div>
-
     <!-- ТРОФЕИ -->
     <div class="profile-section">
       <div class="profile-sec-title"><span>Трофеи</span><span class="profile-sec-line"></span></div>
       <div class="profile-panel profile-empty-panel">В разработке</div>
     </div>
   `;
-  // Асинхронно подгружаем статистику за полгода
-  _profileLoadAndRenderStats(matched.name);
+}
+
+function renderProfile() {
+  const el = document.getElementById('c-profile');
+  if (!el) return;
+  const matched = findUserInSheet();
+  if (!matched) {
+    el.innerHTML = `<div class="trophies-stub"><div class="trophies-stub-title">Профиль</div><div class="trophies-stub-text">Не удалось определить пользователя.</div></div>`;
+    return;
+  }
+  el.innerHTML = _profileBuildSectionsHtml(matched, { statsPanelId: 'profile-stats-panel' });
+  _profileLoadAndRenderStats(matched.name, 'profile-stats-panel');
+}
+
+/* ──── PROFILE MODAL (для просмотра карточек других менеджеров) ──── */
+function openProfileModalFor(name) {
+  if (!name) return;
+  const row = _profileGetUserRow(name);
+  if (!row) return;
+  const matched = {
+    name: (row[1] || name).toString().trim(),
+    role: String(row[2] || '').toLowerCase().trim(),
+  };
+  const body = document.getElementById('profile-modal-body');
+  if (!body) return;
+  body.innerHTML = _profileBuildSectionsHtml(matched, { statsPanelId: 'profile-modal-stats-panel' });
+  document.getElementById('profile-modal-overlay')?.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  _profileLoadAndRenderStats(matched.name, 'profile-modal-stats-panel');
+}
+function closeProfileModal() {
+  document.getElementById('profile-modal-overlay')?.classList.remove('open');
+  document.body.style.overflow = '';
+}
+window.openProfileModalFor = openProfileModalFor;
+window.closeProfileModal = closeProfileModal;
+
+// HTML для иконки «Профиль» в строке мессенджеров рейтинга.
+// Три варианта картинки сразу в DOM, переключение чисто через CSS body.*.
+function _profileTriggerIconHtml(name) {
+  const safe = String(name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  return `<a class="profile-modal-trigger" onclick="event.stopPropagation();openProfileModalFor('${safe}')" title="Профиль" style="cursor:pointer;display:inline-flex;align-items:center;text-decoration:none;margin-left:2px;opacity:0.7;transition:opacity .15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
+    <img class="pmt-ico pmt-ico-fluent" src="logos/Fluent/FluentColor-profile.svg" alt="" style="width:20px;height:20px;display:none">
+    <img class="pmt-ico pmt-ico-cosmic" src="logos/cosmic/cosmic-profile.svg" alt="" style="width:20px;height:20px;display:none">
+    <span class="pmt-ico pmt-ico-default" style="display:none;width:20px;height:20px;background:currentColor;-webkit-mask:url('logos/default/profile.svg') center/contain no-repeat;mask:url('logos/default/profile.svg') center/contain no-repeat"></span>
+  </a>`;
 }
 
 /* ──── PROFILE STATS (последние 6 месяцев) ──── */
@@ -10069,8 +10105,8 @@ function _profileAggMonth(rows, nameLow) {
   return r;
 }
 
-async function _profileLoadAndRenderStats(name) {
-  const panel = document.getElementById('profile-stats-panel');
+async function _profileLoadAndRenderStats(name, panelId) {
+  const panel = document.getElementById(panelId || 'profile-stats-panel');
   if (!panel) return;
   const nameLow = String(name||'').toLowerCase().trim();
   const months = _profileSuffixes();

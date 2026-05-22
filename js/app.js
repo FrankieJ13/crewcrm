@@ -5894,7 +5894,7 @@ function showAccessDenied(reason = 'Почта не найдена в USERS') {
 async function loadUsersAndStart() {
   try {
     apiCacheInvalidate('USERS');
-    S.usersData = await api('USERS', 'A1:N500');
+    S.usersData = await api('USERS', 'A1:O500');
   } catch(e) { S.usersData = []; showAccessDenied('Нет доступа к таблице'); return; }
   const matched = findUserInSheet();
   refreshFirebaseProfile();
@@ -7721,14 +7721,28 @@ function initSverkaToggle() {
   S.vizPasteMode = getVizPasteMode();
   S.svcMode      = getSvcMode();
   S.remMode      = getRemMode();
+  S.autoSMode    = getAutoSMode();
   const cb  = document.getElementById('sverka-toggle-cb');
   const cb2 = document.getElementById('viz-paste-toggle-cb');
   const cb3 = document.getElementById('svc-toggle-cb');
   const cb4 = document.getElementById('reminders-toggle-cb');
+  const cb5 = document.getElementById('autos-toggle-cb');
   if (cb)  cb.checked  = S.sverkaMode;
   if (cb2) cb2.checked = S.vizPasteMode;
   if (cb3) cb3.checked = S.svcMode;
   if (cb4) cb4.checked = S.remMode;
+  if (cb5) cb5.checked = S.autoSMode;
+}
+
+function getAutoSMode() {
+  if (S.usersData) {
+    for (let i = 1; i < S.usersData.length; i++) {
+      const mode = (S.usersData[i][14] || '').trim().toLowerCase(); // колонка O
+      if (mode === 'on')  return true;
+      if (mode === 'off') return false;
+    }
+  }
+  return true; // дефолт — включён, чтобы пустая ячейка не отключала чат
 }
 
 function getRemMode() {
@@ -7875,6 +7889,33 @@ async function savePlanAndSverka() {
     } catch(e) {
       toast('Ошибка сохранения режима уведомлений', 'e');
       S.remMode = wasOn;
+    }
+  }
+
+  // Автоподбор-чат (активатор страницы)
+  const cb5 = document.getElementById('autos-toggle-cb');
+  if (cb5) {
+    const wasOn5 = S.autoSMode;
+    S.autoSMode = cb5.checked;
+    const newMode5 = S.autoSMode ? 'On' : 'Off';
+    try {
+      const range5 = encodeURIComponent('USERS!O2:O2');
+      const url5 = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range5}?valueInputOption=USER_ENTERED`;
+      const resp5 = await fetch(url5, {
+        method: 'PUT',
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ values: [[newMode5]] })
+      });
+      if (resp5.ok) {
+        if (S.usersData && S.usersData[1]) S.usersData[1][14] = newMode5;
+        toast('Автоподбор-чат: ' + (S.autoSMode ? 'Вкл' : 'Выкл'), 's');
+      } else {
+        toast('Ошибка сохранения режима автоподбора', 'e');
+        S.autoSMode = wasOn5;
+      }
+    } catch(e) {
+      toast('Ошибка сохранения режима автоподбора', 'e');
+      S.autoSMode = wasOn5;
     }
   }
 
@@ -9134,6 +9175,14 @@ function dockFaq(tab) {
 }
 
 function openAutopodbor() {
+  // Гейт: режим Off — открываем заглушку «В разработке» вместо чата
+  if (S.autoSMode === false) {
+    showScr('instruktsii');
+    S.faqTab = 'autopodbor';
+    if (typeof renderInstruktsii === 'function') renderInstruktsii();
+    if (typeof dockSetActive === 'function') dockSetActive('instruktsii');
+    return;
+  }
   const fs = document.getElementById('autopodbor-fullscreen');
   if (!fs) return;
   fs.classList.add('open');

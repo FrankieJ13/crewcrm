@@ -16,7 +16,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&family=Exo+2:wght@200;300;700&family=JetBrains+Mono:wght@300;400&family=Oswald:wght@400;700&display=swap" rel="stylesheet"/>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<link rel="stylesheet" href="./css/styles.css?v=25"/>
+<link rel="stylesheet" href="./css/styles.css?v=26"/>
+<link rel="stylesheet" href="./css/autopodbor.css?v=26"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -886,9 +887,40 @@
   </div>
 </div>
 
-<script src="./js/app.js?v=25"></script>
+<script src="./js/app.js?v=26"></script>
 <!-- Затемнение фона при открытом popup напоминаний -->
 <div class="rem-backdrop" id="rem-backdrop" onclick="closeRemPanel()"></div>
+
+<!-- АВТОПОДБОР — фуллскрин-ассистент CM66 (см. https://github.com/FrankieJ13/CM66-BDCARS) -->
+<div id="autopodbor-fullscreen" aria-hidden="true">
+  <button type="button" class="autopodbor-close" onclick="closeAutopodbor()" aria-label="Закрыть">×</button>
+  <main class="chat-shell">
+    <header class="chat-header">
+      <div>
+        <p>Crystal Motors</p>
+        <h1>Ассистент поиска авто</h1>
+      </div>
+      <span id="catalogStatus">Загрузка каталога...</span>
+    </header>
+    <section class="chat-window" id="chatWindow" aria-live="polite">
+      <article class="message assistant">
+        <p>Напишите запрос клиента. Например: «фольц тигуан в перми автомат» или «лада веста до 900».</p>
+      </article>
+    </section>
+    <form class="composer" id="chatForm">
+      <div class="command-menu" id="commandMenu" hidden></div>
+      <input id="chatInput" type="text" autocomplete="off" placeholder="Что ищем?">
+      <button type="submit" class="search-button" aria-label="Найти">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M10.5 18a7.5 7.5 0 1 1 5.3-12.8 7.5 7.5 0 0 1 0 10.6l3.7 3.7-1.4 1.4-3.7-3.7A7.4 7.4 0 0 1 10.5 18Zm0-2a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Z"/>
+        </svg>
+      </button>
+    </form>
+  </main>
+</div>
+<script src="./js/autopodbor-config.js?v=26"></script>
+<script src="./js/autopodbor-dictionary.js?v=26"></script>
+<script src="./js/autopodbor-chat.js?v=26"></script>
 
 <!-- Модалка профиля менеджера (открывается с рейтинга) -->
 <div id="profile-modal-overlay" class="profile-modal-overlay" onclick="if(event.target===this)closeProfileModal()">

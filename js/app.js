@@ -9125,11 +9125,39 @@ function dockFaqToggle(e) {
 }
 function dockFaq(tab) {
   closeAllDockPopups();
+  // АВТОПОДБОР — открывается отдельной фуллскрин-модалкой, не как таб
+  if (tab === 'autopodbor') { openAutopodbor(); return; }
   S.faqTab = tab;
   updateFirebasePage();
   goTab('instruktsii');
   dockSetActive('instruktsii');
 }
+
+function openAutopodbor() {
+  const fs = document.getElementById('autopodbor-fullscreen');
+  if (!fs) return;
+  fs.classList.add('open');
+  fs.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('autopodbor-open');
+  // Lazy init CM66 BDCARS на первом открытии
+  try { if (typeof window.cm66Init === 'function') window.cm66Init(); } catch(e) { console.warn('cm66Init failed', e); }
+  // Фокус на инпут (после layout)
+  requestAnimationFrame(() => document.getElementById('chatInput')?.focus());
+}
+function closeAutopodbor() {
+  const fs = document.getElementById('autopodbor-fullscreen');
+  if (!fs) return;
+  fs.classList.remove('open');
+  fs.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('autopodbor-open');
+}
+window.openAutopodbor = openAutopodbor;
+window.closeAutopodbor = closeAutopodbor;
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('autopodbor-fullscreen')?.classList.contains('open')) {
+    closeAutopodbor();
+  }
+});
 
 // ==================== VIZITY DOCK ====================
 function dockVizityToggle(e) {

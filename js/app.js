@@ -10170,12 +10170,16 @@ async function _profileLoadAndRenderStats(name, panelId) {
     }).join('');
     return `
       <div class="ps-card" style="--ps-accent:${m.accent}">
-        <div class="ps-card-hdr">
-          <div class="ps-card-ico">${m.ico}</div>
-          <div class="ps-card-lbl">${m.label}</div>
+        <div class="ps-card-top">
+          <div class="ps-card-hdr">
+            <div class="ps-card-ico">${m.ico}</div>
+            <div class="ps-card-lbl">${m.label}</div>
+          </div>
+          <div class="ps-card-right">
+            <div class="ps-card-val mv">${total}</div>
+            <div class="ps-card-sub">за полгода</div>
+          </div>
         </div>
-        <div class="ps-card-val mv">${total}</div>
-        <div class="ps-card-sub">за полгода</div>
         <div class="ps-bars">${bars}</div>
       </div>`;
   }).join('');

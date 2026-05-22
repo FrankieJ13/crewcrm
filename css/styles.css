@@ -6775,8 +6775,15 @@ body.cosmic .profile-avatar-wrap::before { border-color: rgba(190,190,190,0.55);
   opacity: 0.55;
 }
 .ps-card:hover { transform: translateY(-1px); }
+.ps-card-top {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
 .ps-card-hdr {
   display: flex; align-items: center; gap: 6px;
+  min-width: 0;
 }
 .ps-card-ico {
   width: 16px; height: 16px;
@@ -6793,18 +6800,23 @@ body.cosmic .profile-avatar-wrap::before { border-color: rgba(190,190,190,0.55);
   white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis;
 }
+.ps-card-right {
+  display: flex; flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  flex-shrink: 0;
+}
 .ps-card-val {
   font-family: 'Unbounded', sans-serif;
   font-size: 22px;
   font-weight: 800;
   color: var(--txt);
   line-height: 1;
-  margin-top: 2px;
 }
 .ps-card-sub {
   font-size: 10px;
   color: var(--txt3);
-  margin-bottom: 6px;
+  margin-top: 2px;
 }
 .ps-bars {
   display: flex;

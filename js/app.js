@@ -1087,6 +1087,10 @@ function getPresencePageLabel() {
   const roleDept = role === 'dozhim' ? 'dozhim' : 'crm';
   const effectiveRatingDept = isCeo ? S.ratingDept : roleDept;
   const effectiveDohodDept = isCeo ? S.dohodTab : roleDept;
+  // Автоподбор — фуллскрин-оверлей, не scr-* — проверяем по классу .open
+  if (document.getElementById('autopodbor-fullscreen')?.classList.contains('open')) return 'Автоподбор';
+  if (document.getElementById('profile-modal-overlay')?.classList.contains('open')) return 'Профиль';
+  if (document.getElementById('scr-profile')?.classList.contains('on')) return 'Мой профиль';
   if (document.getElementById('scr-ceo')?.classList.contains('on')) return 'Главная';
   if (document.getElementById('scr-analiz')?.classList.contains('on')) return 'Аналитик ИИ';
   if (document.getElementById('scr-trophies')?.classList.contains('on')) return 'Трофеи';
@@ -9192,6 +9196,8 @@ function openAutopodbor() {
   try { if (typeof window.cm66Init === 'function') window.cm66Init(); } catch(e) { console.warn('cm66Init failed', e); }
   // Фокус на инпут (после layout)
   requestAnimationFrame(() => document.getElementById('chatInput')?.focus());
+  // Обновляем presence — текущая страница теперь «Автоподбор»
+  if (typeof updateFirebasePage === 'function') updateFirebasePage();
 }
 function closeAutopodbor() {
   const fs = document.getElementById('autopodbor-fullscreen');
@@ -9199,6 +9205,7 @@ function closeAutopodbor() {
   fs.classList.remove('open');
   fs.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('autopodbor-open');
+  if (typeof updateFirebasePage === 'function') updateFirebasePage();
 }
 window.openAutopodbor = openAutopodbor;
 window.closeAutopodbor = closeAutopodbor;
@@ -10186,6 +10193,7 @@ function openProfileModalFor(name) {
   document.body.style.overflow = 'hidden';
   _profileLoadAndRenderStats(matched.name, 'profile-modal-stats-panel');
   _attachScrollFadeUI(body);
+  if (typeof updateFirebasePage === 'function') updateFirebasePage();
 }
 
 // Скроллбар виден только во время активного скролла
@@ -10202,6 +10210,7 @@ function _attachScrollFadeUI(el) {
 function closeProfileModal() {
   document.getElementById('profile-modal-overlay')?.classList.remove('open');
   document.body.style.overflow = '';
+  if (typeof updateFirebasePage === 'function') updateFirebasePage();
 }
 window.openProfileModalFor = openProfileModalFor;
 window.closeProfileModal = closeProfileModal;

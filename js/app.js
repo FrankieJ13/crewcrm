@@ -10001,7 +10001,12 @@ function renderProfile() {
     <!-- СТАТИСТИКА -->
     <div class="profile-section">
       <div class="profile-sec-title"><span>Статистика</span><span class="profile-sec-line"></span></div>
-      <div class="profile-panel profile-empty-panel">В разработке</div>
+      <div class="profile-panel" id="profile-stats-panel">
+        <div class="profile-stats-loading">
+          <div class="profile-stats-spinner"></div>
+          <div>Собираю данные за полгода…</div>
+        </div>
+      </div>
     </div>
 
     <!-- ТРОФЕИ -->
@@ -10010,7 +10015,127 @@ function renderProfile() {
       <div class="profile-panel profile-empty-panel">В разработке</div>
     </div>
   `;
+  // Асинхронно подгружаем статистику за полгода
+  _profileLoadAndRenderStats(matched.name);
 }
+
+/* ──── PROFILE STATS (последние 6 месяцев) ──── */
+function _profileSuffixes() {
+  const list = [];
+  const now = new Date();
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yy = String(d.getFullYear()).slice(-2);
+    const label = d.toLocaleString('ru', { month: 'short' }).replace('.', '');
+    list.push({ sfx: mm + yy, label, year: d.getFullYear(), month: d.getMonth() + 1 });
+  }
+  return list.reverse(); // от старого к новому
+}
+
+function _profileAggMonth(rows, nameLow) {
+  const r = { vis:0, kred:0, nal:0, kom:0, otkaz:0, fssp:0 };
+  if (!Array.isArray(rows) || rows.length < 2) return r;
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row) continue;
+    const mgr = String(row[8]||'').toLowerCase().trim();
+    if (mgr !== nameLow) continue;
+    const cat = String(row[6]||'').toLowerCase().trim();
+    const st  = String(row[4]||'').toLowerCase().trim();
+    const isCat = cat === 'кат 800' || cat === 'кат 1200' || cat === 'кат 1000';
+    if (!isCat) continue;
+    r.vis++;
+    if      (st === 'покупка (кредит)')                          r.kred++;
+    else if (st === 'покупка (наличные)' || st === 'обмен')      r.nal++;
+    else if (st === 'комиссия')                                  r.kom++;
+    if      (st === 'отказ')                                     r.otkaz++;
+    if      (st === 'фссп не подаем')                            r.fssp++;
+  }
+  return r;
+}
+
+async function _profileLoadAndRenderStats(name) {
+  const panel = document.getElementById('profile-stats-panel');
+  if (!panel) return;
+  const nameLow = String(name||'').toLowerCase().trim();
+  const months = _profileSuffixes();
+
+  // Параллельно тянем по два листа на каждый месяц, ошибки → пустой массив
+  const monthly = await Promise.all(months.map(async m => {
+    const [crm, doz] = await Promise.all([
+      api('ВИЗИТЫ'   + m.sfx, 'A:N').catch(() => null),
+      api('Д_ВИЗИТЫ' + m.sfx, 'A:N').catch(() => null),
+    ]);
+    const aC = _profileAggMonth(crm, nameLow);
+    const aD = _profileAggMonth(doz, nameLow);
+    return {
+      ...m,
+      hasData: !!(crm || doz),
+      vis:   aC.vis   + aD.vis,
+      kred:  aC.kred  + aD.kred,
+      nal:   aC.nal   + aD.nal,
+      kom:   aC.kom   + aD.kom,
+      otkaz: aC.otkaz + aD.otkaz,
+      fssp:  aC.fssp  + aD.fssp,
+    };
+  }));
+
+  // Если ни один месяц не доступен
+  if (!monthly.some(m => m.hasData)) {
+    panel.innerHTML = `<div class="profile-stats-error">Данные не удалось загрузить ни за один месяц.</div>`;
+    return;
+  }
+
+  const METRICS = [
+    { key:'vis',   label:'Визиты',     accent:'var(--acc)',
+      ico:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>' },
+    { key:'kred',  label:'Кредиты',    accent:'#16a34a',
+      ico:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>' },
+    { key:'nal',   label:'Нал + Обмен', accent:'#0ea5e9',
+      ico:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 6v12M9 9h4.5a2.5 2.5 0 0 1 0 5H9m0 0h5.5a2.5 2.5 0 0 1 0 5H9"/></svg>' },
+    { key:'kom',   label:'Комиссия',   accent:'#a855f7',
+      ico:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5L5 19M9 5h0M19 15h0"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>' },
+    { key:'otkaz', label:'Отказ',      accent:'#ef4444',
+      ico:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' },
+    { key:'fssp',  label:'ФССП',       accent:'#f59e0b',
+      ico:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-12V5l-8-3-8 3v5c0 8 8 12 8 12z"/></svg>' },
+  ];
+
+  // Общий total и max-значение для нормализации мини-баров
+  const totals = {};
+  METRICS.forEach(m => totals[m.key] = monthly.reduce((s,x)=>s+x[m.key],0));
+  const failedCount = monthly.filter(m => !m.hasData).length;
+
+  const cardHtml = METRICS.map(m => {
+    const total = totals[m.key];
+    const max   = Math.max(1, ...monthly.map(x => x[m.key]));
+    const bars  = monthly.map(x => {
+      const h = x.hasData ? Math.max(2, Math.round((x[m.key] / max) * 100)) : 0;
+      const isMissing = !x.hasData;
+      return `<div class="ps-bar-col" title="${x.label} ${x.year}: ${isMissing ? 'нет данных' : x[m.key]}">
+        <div class="ps-bar-wrap"><div class="ps-bar ${isMissing?'ps-bar-missing':''}" style="height:${h}%;background:${m.accent}"></div></div>
+        <div class="ps-bar-lbl">${x.label}</div>
+      </div>`;
+    }).join('');
+    return `
+      <div class="ps-card" style="--ps-accent:${m.accent}">
+        <div class="ps-card-hdr">
+          <div class="ps-card-ico">${m.ico}</div>
+          <div class="ps-card-lbl">${m.label}</div>
+        </div>
+        <div class="ps-card-val mv">${total}</div>
+        <div class="ps-card-sub">за полгода</div>
+        <div class="ps-bars">${bars}</div>
+      </div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div class="ps-hdr-note">${failedCount ? `Загружено ${6-failedCount} из 6 месяцев` : 'Данные за последние 6 месяцев'}</div>
+    <div class="ps-grid">${cardHtml}</div>
+  `;
+}
+/* ──── END PROFILE STATS ──── */
 
 function openAbout() {
   const overlay = document.getElementById('about-overlay');

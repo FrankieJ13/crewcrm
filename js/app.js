@@ -5822,7 +5822,7 @@ function showAccessDenied(reason = 'Почта не найдена в USERS') {
 async function loadUsersAndStart() {
   try {
     apiCacheInvalidate('USERS');
-    S.usersData = await api('USERS', 'A1:M500');
+    S.usersData = await api('USERS', 'A1:N500');
   } catch(e) { S.usersData = []; showAccessDenied('Нет доступа к таблице'); return; }
   const matched = findUserInSheet();
   refreshFirebaseProfile();
@@ -9905,6 +9905,109 @@ function hmbOpenProfile() {
   closeHamburger();
   showScr('profile');
   if (typeof dockSetActive === 'function') dockSetActive('home');
+  renderProfile();
+}
+
+function _profileGetUserRow(name) {
+  if (!S.usersData || !name) return null;
+  const nl = String(name).toLowerCase().trim();
+  for (let i = 1; i < S.usersData.length; i++) {
+    const row = S.usersData[i];
+    if ((row[1]||'').toLowerCase().trim() === nl) return row;
+  }
+  return null;
+}
+
+function _profilePositionLabel(role) {
+  const r = String(role||'').toLowerCase().trim();
+  if (r === 'crm' || r === 'dozhim' || r === 'дожим') return 'Менеджер по продажам';
+  if (r === 'ceo') return 'CEO';
+  if (r === 'rop' || r === 'роп') return 'Руководитель отдела продаж';
+  return role || '—';
+}
+
+function _profilePhoneHref(phone) {
+  const digits = String(phone||'').replace(/[^\d+]/g, '');
+  return digits ? `tel:${digits}` : '';
+}
+
+function _profileMessengerBtns(tg, max) {
+  const items = [];
+  if (tg) {
+    items.push(`<a class="profile-msg-btn" href="${tg}" target="_blank" rel="noopener" title="Telegram">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#2CA5E0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8l-1.68 7.93c-.12.55-.44.69-.9.43l-2.48-1.83-1.2 1.16c-.13.13-.25.25-.5.25l.18-2.52 4.56-4.12c.2-.18-.04-.27-.3-.1L7.92 14.45l-2.42-.75c-.52-.17-.53-.52.11-.77l9.48-3.66c.43-.16.82.11.55.53z"/></svg>
+      <span>Telegram</span>
+    </a>`);
+  }
+  if (max) {
+    items.push(`<a class="profile-msg-btn" href="${max}" target="_blank" rel="noopener" title="MAX">
+      ${maxIconSvg(20)}
+      <span>MAX</span>
+    </a>`);
+  }
+  return items.length
+    ? `<div class="profile-msg-row">${items.join('')}</div>`
+    : `<div class="profile-msg-empty">мессенджеры не указаны</div>`;
+}
+
+function renderProfile() {
+  const el = document.getElementById('c-profile');
+  if (!el) return;
+  const matched = findUserInSheet();
+  if (!matched) {
+    el.innerHTML = `<div class="trophies-stub"><div class="trophies-stub-title">Профиль</div><div class="trophies-stub-text">Не удалось определить пользователя.</div></div>`;
+    return;
+  }
+  const row = _profileGetUserRow(matched.name) || [];
+  const dob   = (row[5] || '').toString().trim();
+  const id    = (row[6] || '').toString().trim();
+  const tg    = (row[7] || '').toString().trim();
+  const max   = (row[8] || '').toString().trim();
+  const phone = (row[13] || '').toString().trim(); // колонка N (если есть)
+  const fio   = matched.name || '—';
+  const position = _profilePositionLabel(matched.role);
+  const phoneHref = _profilePhoneHref(phone);
+  const avatarSrc = id ? `logos/avatar/${id}-joy.png` : '';
+  const avatarFallback = id ? `logos/avatar/${id}-default.png` : '';
+
+  el.innerHTML = `
+    <!-- ИНФО -->
+    <div class="profile-section">
+      <div class="profile-sec-title"><span>Инфо</span><span class="profile-sec-line"></span></div>
+      <div class="profile-panel profile-info">
+        <div class="profile-avatar-wrap">
+          ${id
+            ? `<img class="profile-avatar" src="${avatarSrc}" alt="" onerror="if(this.dataset.fb!=='1'){this.dataset.fb='1';this.src='${avatarFallback}';}else{this.style.display='none';}">`
+            : `<div class="profile-avatar profile-avatar-placeholder">👤</div>`}
+        </div>
+        <div class="profile-info-rows">
+          <div class="profile-info-row"><div class="profile-info-lbl">ФИО</div><div class="profile-info-val">${fio}</div></div>
+          <div class="profile-info-row"><div class="profile-info-lbl">Дата рождения</div><div class="profile-info-val">${dob || '—'}</div></div>
+          <div class="profile-info-row"><div class="profile-info-lbl">Должность</div><div class="profile-info-val">${position}</div></div>
+          <div class="profile-info-row">
+            <div class="profile-info-lbl">Телефон</div>
+            <div class="profile-info-val">${phoneHref ? `<a href="${phoneHref}" class="profile-phone-link">${phone}</a>` : '—'}</div>
+          </div>
+          <div class="profile-info-row profile-info-row-msg">
+            <div class="profile-info-lbl">Мессенджеры</div>
+            <div class="profile-info-val">${_profileMessengerBtns(tg, max)}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- СТАТИСТИКА -->
+    <div class="profile-section">
+      <div class="profile-sec-title"><span>Статистика</span><span class="profile-sec-line"></span></div>
+      <div class="profile-panel profile-empty-panel">В разработке</div>
+    </div>
+
+    <!-- ТРОФЕИ -->
+    <div class="profile-section">
+      <div class="profile-sec-title"><span>Трофеи</span><span class="profile-sec-line"></span></div>
+      <div class="profile-panel profile-empty-panel">В разработке</div>
+    </div>
+  `;
 }
 
 function openAbout() {

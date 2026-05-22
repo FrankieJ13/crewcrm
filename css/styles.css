@@ -6588,6 +6588,107 @@ body.tiffany .rem-popover {
 }
 /* ══ END НАПОМИНАНИЯ ══ */
 
+/* ════════════ PROFILE PAGE ════════════ */
+.profile-section { margin: 18px 0; }
+.profile-section:first-child { margin-top: 12px; }
+.profile-sec-title {
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'Unbounded', sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--acc);
+  margin-bottom: 8px;
+}
+.profile-sec-title > span:first-child { flex-shrink: 0; }
+.profile-sec-line {
+  flex: 1; height: 1px;
+  background: linear-gradient(to right, var(--acc) 0%, transparent 100%);
+  opacity: 0.4;
+}
+.profile-panel {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+}
+.profile-info {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.profile-avatar-wrap {
+  width: 96px; height: 96px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #1a1a1a;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+body.dark .profile-avatar-wrap,
+body.neo-dark .profile-avatar-wrap,
+body.cinematic .profile-avatar-wrap,
+body.cosmic .profile-avatar-wrap { border-color: #2a2a2a; }
+.profile-avatar {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.profile-avatar-placeholder {
+  font-size: 44px;
+  color: #999;
+  background: #f0f0f0;
+}
+.profile-info-rows {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+  gap: 8px;
+}
+.profile-info-row {
+  display: flex; flex-direction: column; gap: 1px;
+  min-width: 0;
+}
+.profile-info-lbl {
+  font-size: 10px; color: var(--txt3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.profile-info-val {
+  font-size: 14px; color: var(--txt);
+  font-weight: 600;
+  word-wrap: break-word;
+}
+.profile-phone-link { color: var(--acc); text-decoration: none; }
+.profile-phone-link:hover { text-decoration: underline; }
+.profile-msg-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.profile-msg-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  color: var(--txt);
+  text-decoration: none;
+  font-size: 12px; font-weight: 600;
+  transition: background .15s, transform .1s;
+}
+.profile-msg-btn:active { transform: scale(0.96); }
+.profile-msg-btn:hover { background: var(--bg2); }
+.profile-msg-empty {
+  font-size: 12px;
+  color: var(--txt3);
+  font-style: italic;
+}
+.profile-empty-panel {
+  text-align: center;
+  font-size: 13px;
+  color: var(--txt3);
+  font-style: italic;
+  padding: 28px 16px;
+}
+/* ════════════ END PROFILE PAGE ════════════ */
+
 /* ══ TROPHIES STUB ══ */
 .hmb-avatar-circle {
   width: 42px;

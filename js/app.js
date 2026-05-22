@@ -1079,6 +1079,18 @@ function dedupePresenceUsers(users) {
     .sort((a, b) => String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'ru'));
 }
 
+// «Бочаров Юлиан» → «Юлиан Б.», «Виталий» → «Виталий».
+// В USERS хранится «Фамилия Имя», поэтому имя — parts[1], фамилия — parts[0].
+function _presenceShortName(full) {
+  if (!full) return '';
+  const parts = String(full).trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return parts[0] || '';
+  const surname = parts[0];
+  const firstName = parts[1];
+  const initial = surname.charAt(0).toUpperCase();
+  return `${firstName} ${initial}.`;
+}
+
 function getPresencePageLabel() {
   const deptLabel = dept => dept === 'dozhim' ? 'Дожим' : 'CRM';
   const matched = findUserInSheet();
@@ -1089,7 +1101,19 @@ function getPresencePageLabel() {
   const effectiveDohodDept = isCeo ? S.dohodTab : roleDept;
   // Автоподбор — фуллскрин-оверлей, не scr-* — проверяем по классу .open
   if (document.getElementById('autopodbor-fullscreen')?.classList.contains('open')) return 'Автоподбор';
-  if (document.getElementById('profile-modal-overlay')?.classList.contains('open')) return 'Профиль';
+  if (document.getElementById('profile-modal-overlay')?.classList.contains('open')) {
+    // Если в S.viewingProfileOf лежит имя — показываем «Чекает стр. {Имя}»;
+    // если открыт собственный профиль или имя не передано — короткий лейбл.
+    const target = (S.viewingProfileOf || '').trim();
+    const me = matched?.name || '';
+    if (target && target.toLowerCase() !== me.toLowerCase()) {
+      const parts = target.split(/\s+/).filter(Boolean);
+      // Имя в USERS: «Фамилия Имя» → берём parts[1], иначе parts[0]
+      const firstName = parts[1] || parts[0] || target;
+      return `Чекает стр. ${firstName}`;
+    }
+    return 'Профиль';
+  }
   if (document.getElementById('scr-profile')?.classList.contains('on')) return 'Мой профиль';
   if (document.getElementById('scr-ceo')?.classList.contains('on')) return 'Главная';
   if (document.getElementById('scr-analiz')?.classList.contains('on')) return 'Аналитик ИИ';
@@ -1159,7 +1183,7 @@ function renderPresenceState() {
   const rows = users.map(u => `
     <div class="presence-row">
       <span class="presence-dot"></span>
-      <span class="presence-name">${escapeHtml(u.name || u.email || 'Без имени')}</span>
+      <span class="presence-name">${escapeHtml(_presenceShortName(u.name) || u.email || 'Без имени')}</span>
       <span class="presence-page">${escapeHtml(u.page || 'Сайт')}</span>
     </div>
   `).join('');
@@ -10193,6 +10217,8 @@ function openProfileModalFor(name) {
   document.body.style.overflow = 'hidden';
   _profileLoadAndRenderStats(matched.name, 'profile-modal-stats-panel');
   _attachScrollFadeUI(body);
+  // Сохраняем имя просматриваемого профиля для presence-лейбла «Чекает стр. {имя}»
+  S.viewingProfileOf = matched.name;
   if (typeof updateFirebasePage === 'function') updateFirebasePage();
 }
 
@@ -10210,6 +10236,7 @@ function _attachScrollFadeUI(el) {
 function closeProfileModal() {
   document.getElementById('profile-modal-overlay')?.classList.remove('open');
   document.body.style.overflow = '';
+  S.viewingProfileOf = null;
   if (typeof updateFirebasePage === 'function') updateFirebasePage();
 }
 window.openProfileModalFor = openProfileModalFor;

@@ -6934,18 +6934,19 @@ body.cosmic .profile-modal-content {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding: 14px 14px 16px;
-  /* Скроллбар появляется только во время активного скролла */
-  scrollbar-width: none;          /* Firefox */
-  -ms-overflow-style: none;       /* IE/Edge */
+  /* Резервируем место под скроллбар всегда → его появление/скрытие
+     не двигает контент. Сам трек невидим, видим только thumb во
+     время скролла. */
+  scrollbar-gutter: stable;
 }
-.profile-modal-body::-webkit-scrollbar { width: 0; height: 0; background: transparent; }
-.profile-modal-body.scrolling { scrollbar-width: thin; }
-.profile-modal-body.scrolling::-webkit-scrollbar { width: 6px; }
-.profile-modal-body.scrolling::-webkit-scrollbar-track { background: transparent; }
-.profile-modal-body.scrolling::-webkit-scrollbar-thumb {
-  background: var(--line2, var(--line));
-  border-radius: 3px;
-}
+/* Firefox: тонкий, без видимого трека */
+.profile-modal-body { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+.profile-modal-body.scrolling { scrollbar-color: var(--line2, var(--line)) transparent; }
+/* WebKit: width фиксированный, thumb прозрачный по умолчанию */
+.profile-modal-body::-webkit-scrollbar { width: 6px; height: 6px; }
+.profile-modal-body::-webkit-scrollbar-track { background: transparent; }
+.profile-modal-body::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; transition: background .2s; }
+.profile-modal-body.scrolling::-webkit-scrollbar-thumb { background: var(--line2, var(--line)); }
 .profile-modal-body .profile-section:first-child { margin-top: 6px; padding-right: 40px; }
 .profile-modal-close {
   position: absolute;

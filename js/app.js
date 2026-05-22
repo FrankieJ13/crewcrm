@@ -10093,6 +10093,19 @@ function openProfileModalFor(name) {
   document.getElementById('profile-modal-overlay')?.classList.add('open');
   document.body.style.overflow = 'hidden';
   _profileLoadAndRenderStats(matched.name, 'profile-modal-stats-panel');
+  _attachScrollFadeUI(body);
+}
+
+// Скроллбар виден только во время активного скролла
+function _attachScrollFadeUI(el) {
+  if (!el || el._scrollFadeBound) return;
+  el._scrollFadeBound = true;
+  let timer = null;
+  el.addEventListener('scroll', () => {
+    el.classList.add('scrolling');
+    clearTimeout(timer);
+    timer = setTimeout(() => el.classList.remove('scrolling'), 700);
+  }, { passive: true });
 }
 function closeProfileModal() {
   document.getElementById('profile-modal-overlay')?.classList.remove('open');

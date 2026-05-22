@@ -6776,7 +6776,7 @@ body.cosmic .profile-avatar-wrap::before { border-color: rgba(190,190,190,0.55);
 }
 .ps-card:hover { transform: translateY(-1px); }
 .ps-card-top {
-  display: flex; align-items: center;
+  display: flex; align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 6px;
@@ -6784,6 +6784,8 @@ body.cosmic .profile-avatar-wrap::before { border-color: rgba(190,190,190,0.55);
 .ps-card-hdr {
   display: flex; align-items: center; gap: 6px;
   min-width: 0;
+  /* Подтягиваем шапку к строке с большим числом справа */
+  padding-top: 4px;
 }
 .ps-card-ico {
   width: 16px; height: 16px;
@@ -6932,11 +6934,15 @@ body.cosmic .profile-modal-content {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding: 14px 14px 16px;
-  scrollbar-gutter: stable;
+  /* Скроллбар появляется только во время активного скролла */
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* IE/Edge */
 }
-.profile-modal-body::-webkit-scrollbar { width: 6px; }
-.profile-modal-body::-webkit-scrollbar-track { background: transparent; }
-.profile-modal-body::-webkit-scrollbar-thumb {
+.profile-modal-body::-webkit-scrollbar { width: 0; height: 0; background: transparent; }
+.profile-modal-body.scrolling { scrollbar-width: thin; }
+.profile-modal-body.scrolling::-webkit-scrollbar { width: 6px; }
+.profile-modal-body.scrolling::-webkit-scrollbar-track { background: transparent; }
+.profile-modal-body.scrolling::-webkit-scrollbar-thumb {
   background: var(--line2, var(--line));
   border-radius: 3px;
 }

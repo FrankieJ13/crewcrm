@@ -6617,23 +6617,21 @@ body.tiffany .rem-popover {
   align-items: flex-start;
 }
 .profile-avatar-wrap {
-  width: 100px; height: 100px;
+  width: 84px; height: 112px; /* портрет 3:4 */
   flex-shrink: 0;
-  background: #3a3a3a; /* тёмно-серый контур пентагона */
-  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
-  padding: 3px;
-  box-sizing: border-box;
+  background: #ffffff;
+  border: 2px solid #3a3a3a; /* тёмно-серый контур */
+  border-radius: 10px;
+  overflow: hidden;
   display: flex; align-items: center; justify-content: center;
+  box-sizing: border-box;
 }
 body.dark .profile-avatar-wrap,
 body.neo-dark .profile-avatar-wrap,
 body.cinematic .profile-avatar-wrap,
-body.cosmic .profile-avatar-wrap { background: #4a4a4a; }
+body.cosmic .profile-avatar-wrap { border-color: #4a4a4a; }
 .profile-avatar-inner {
   width: 100%; height: 100%;
-  background: #ffffff;
-  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
-  overflow: hidden;
   display: flex; align-items: center; justify-content: center;
 }
 .profile-avatar {

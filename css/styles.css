@@ -1574,7 +1574,11 @@ body.tiffany .gate-card {
   margin-top:8px; margin-bottom:10px;
   display:flex; align-items:center; gap:8px;
 }
-.sec-title::after { content:''; flex:1; height:1px; background:var(--line) }
+.sec-title::after {
+  content:''; flex:1; height:1px;
+  background: linear-gradient(to right, var(--acc) 0%, transparent 100%);
+  opacity: 0.4;
+}
 .loader {
   display:flex; flex-direction:column; align-items:center;
   justify-content:center; gap:12px; padding:60px 20px;
@@ -1814,7 +1818,11 @@ body.light .mm { background:rgba(0,0,0,0.03); }
   margin-bottom:8px;
   display:flex; align-items:center; gap:8px;
 }
-.modal-sec-title::after { content:''; flex:1; height:1px; background:var(--line2) }
+.modal-sec-title::after {
+  content:''; flex:1; height:1px;
+  background: linear-gradient(to right, var(--acc) 0%, transparent 100%);
+  opacity: 0.4;
+}
 .modal-grid {
   display:grid; gap:6px;
   grid-template-columns:repeat(4, minmax(0, 1fr));
@@ -3281,7 +3289,11 @@ body.cosmic #presence-popover::before {
   letter-spacing:.1em; text-transform:uppercase; color:var(--acc);
   margin:12px 0 8px; display:flex; align-items:center; gap:8px;
 }
-.income-sec-title::after { content:''; flex:1; height:1px; background:var(--line2) }
+.income-sec-title::after {
+  content:''; flex:1; height:1px;
+  background: linear-gradient(to right, var(--acc) 0%, transparent 100%);
+  opacity: 0.4;
+}
 .income-badges { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:6px; }
 .income-badge {
   background:rgba(255,255,255,0.05); border-radius:8px;

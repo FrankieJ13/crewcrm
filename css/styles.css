@@ -6453,13 +6453,15 @@ body.tiffany .az-field { background: rgba(0,0,0,0.08); }
 .rem-btn.has-active { color: var(--acc); border-color: var(--acc); }
 .rem-count {
   position: absolute; top: -4px; right: -4px;
-  min-width: 16px; height: 16px; padding: 0 4px;
-  border-radius: 8px;
+  min-width: 15px; height: 15px; padding: 0 4px;
+  border-radius: 999px;
   background: var(--red); color: #fff;
   font-family: 'Unbounded', sans-serif;
-  font-size: 9px; font-weight: 800;
+  font-size: 8px; font-weight: 900;
+  line-height: 1;
   display: flex; align-items: center; justify-content: center;
-  border: 2px solid var(--bg);
+  border: 1px solid var(--bg);
+  box-sizing: border-box;
 }
 .rem-popover {
   display: none; position: absolute; top: calc(100% + 8px); right: 0;
@@ -6901,11 +6903,10 @@ body:not(.fluent):not(.cosmic) .pmt-ico-default { display: inline-block !importa
   background: var(--bg);
   border: 1px solid var(--line);
   border-radius: 18px;
-  padding: 14px 14px 16px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.45);
   max-height: calc(100vh - 52px - 88px - env(safe-area-inset-bottom,0px) - 32px);
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden; /* скруглённые края не дают вылезать скроллбару */
+  display: flex; flex-direction: column;
 }
 body.light .profile-modal-content,
 body.neo-light .profile-modal-content,
@@ -6914,12 +6915,24 @@ body.tiffany .profile-modal-content { background: var(--bg2); }
 body.cosmic .profile-modal-content {
   background: linear-gradient(135deg, #1c1c1e 0%, #2a2a2c 100%);
 }
-.profile-modal-body { padding-top: 4px; }
-.profile-modal-body .profile-section:first-child { margin-top: 6px; }
+.profile-modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 14px 14px 16px;
+  scrollbar-gutter: stable;
+}
+.profile-modal-body::-webkit-scrollbar { width: 6px; }
+.profile-modal-body::-webkit-scrollbar-track { background: transparent; }
+.profile-modal-body::-webkit-scrollbar-thumb {
+  background: var(--line2, var(--line));
+  border-radius: 3px;
+}
+.profile-modal-body .profile-section:first-child { margin-top: 6px; padding-right: 40px; }
 .profile-modal-close {
-  position: sticky;
-  top: 0;
-  margin-left: auto;
+  position: absolute;
+  top: 10px;
+  right: 10px;
   display: flex; align-items: center; justify-content: center;
   width: 32px; height: 32px;
   border-radius: 10px;
@@ -6929,7 +6942,7 @@ body.cosmic .profile-modal-content {
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
-  z-index: 2;
+  z-index: 5;
   transition: background .15s, transform .1s;
 }
 .profile-modal-close:active { transform: scale(0.94); }

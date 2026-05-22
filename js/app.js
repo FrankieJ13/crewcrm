@@ -10059,9 +10059,9 @@ window.closeProfileModal = closeProfileModal;
 function _profileTriggerIconHtml(name) {
   const safe = String(name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
   return `<a class="profile-modal-trigger" onclick="event.stopPropagation();openProfileModalFor('${safe}')" title="Профиль" style="cursor:pointer;display:inline-flex;align-items:center;text-decoration:none;margin-left:2px;opacity:0.7;transition:opacity .15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
-    <img class="pmt-ico pmt-ico-fluent" src="logos/Fluent/FluentColor-profile.svg" alt="" style="width:20px;height:20px;display:none">
-    <img class="pmt-ico pmt-ico-cosmic" src="logos/cosmic/cosmic-profile.svg" alt="" style="width:20px;height:20px;display:none">
-    <span class="pmt-ico pmt-ico-default" style="display:none;width:20px;height:20px;background:currentColor;-webkit-mask:url('logos/default/profile.svg') center/contain no-repeat;mask:url('logos/default/profile.svg') center/contain no-repeat"></span>
+    <img class="pmt-ico pmt-ico-fluent" src="logos/Fluent/FluentColor-profile.svg" alt="" style="width:18px;height:18px;display:none">
+    <img class="pmt-ico pmt-ico-cosmic" src="logos/cosmic/cosmic-profile.svg" alt="" style="width:18px;height:18px;display:none">
+    <span class="pmt-ico pmt-ico-default" style="display:none;width:18px;height:18px;background:currentColor;-webkit-mask:url('logos/default/profile.svg') center/contain no-repeat;mask:url('logos/default/profile.svg') center/contain no-repeat"></span>
   </a>`;
 }
 

@@ -10029,7 +10029,7 @@ function _profileBuildSectionsHtml(matched, opts = {}) {
         <div class="profile-avatar-wrap">
           <div class="profile-avatar-inner">
             ${id
-              ? `<img class="profile-avatar" src="${avatarSrc}" alt="" onerror="if(this.dataset.fb!=='1'){this.dataset.fb='1';this.src='${avatarFallback}';}else{this.style.display='none';}">`
+              ? `<img class="profile-avatar" src="${avatarSrc}" alt="" width="384" height="512" decoding="async" loading="eager" onerror="if(this.dataset.fb!=='1'){this.dataset.fb='1';this.src='${avatarFallback}';}else{this.style.display='none';}">`
               : `<div class="profile-avatar profile-avatar-placeholder">👤</div>`}
           </div>
         </div>

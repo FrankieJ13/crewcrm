@@ -6635,8 +6635,8 @@ body.tiffany .rem-popover {
   border-radius: 10px;
   pointer-events: none;
   z-index: 2;
-  -webkit-mask-image: linear-gradient(to top, #000 35%, transparent 100%);
-          mask-image: linear-gradient(to top, #000 35%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 95%);
+          mask-image: linear-gradient(to top, #000 10%, transparent 95%);
 }
 body.dark .profile-avatar-wrap::before,
 body.neo-dark .profile-avatar-wrap::before,

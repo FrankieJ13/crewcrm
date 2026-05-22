@@ -6619,8 +6619,8 @@ body.tiffany .rem-popover {
 .profile-avatar-wrap {
   width: 84px; height: 112px; /* портрет 3:4 */
   flex-shrink: 0;
-  background: #ffffff;
-  border: 2px solid #3a3a3a; /* тёмно-серый контур */
+  background: transparent;
+  border: 1px solid rgba(140,140,140,0.55); /* тонкий светлый контур */
   border-radius: 10px;
   overflow: hidden;
   display: flex; align-items: center; justify-content: center;
@@ -6629,10 +6629,13 @@ body.tiffany .rem-popover {
 body.dark .profile-avatar-wrap,
 body.neo-dark .profile-avatar-wrap,
 body.cinematic .profile-avatar-wrap,
-body.cosmic .profile-avatar-wrap { border-color: #4a4a4a; }
+body.cosmic .profile-avatar-wrap { border-color: rgba(180,180,180,0.45); }
 .profile-avatar-inner {
   width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
+  /* плавный уход в прозрачность снизу→вверх (низ непрозрачный, верх прозрачный) */
+  -webkit-mask-image: linear-gradient(to top, #000 35%, transparent 100%);
+          mask-image: linear-gradient(to top, #000 35%, transparent 100%);
 }
 .profile-avatar {
   width: 100%; height: 100%;

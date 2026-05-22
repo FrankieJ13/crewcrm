@@ -133,6 +133,7 @@
   border-radius: 8px;
   padding: 10px 12px;
   line-height: 1.35;
+  animation: autopodbor-message-in 180ms ease-out both;
 }
 #autopodbor-fullscreen .message p { margin: 0; }
 #autopodbor-fullscreen .message.user {
@@ -167,6 +168,21 @@
   background: var(--bg3);
   color: var(--txt);
   min-width: 0;
+  transform-origin: top center;
+  animation: autopodbor-result-card-drop 380ms cubic-bezier(0.2, 0.8, 0.25, 1) both;
+}
+@keyframes autopodbor-message-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes autopodbor-result-card-drop {
+  from { opacity: 0; transform: translateY(-14px) scaleY(0.94); filter: blur(1px); }
+  to   { opacity: 1; transform: translateY(0)     scaleY(1);     filter: blur(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #autopodbor-fullscreen .message,
+  #autopodbor-fullscreen .result-card { animation: none; }
+  #autopodbor-fullscreen .chat-window { scroll-behavior: auto; }
 }
 #autopodbor-fullscreen .result-card.has-image {
   grid-template-columns: minmax(0, 1fr) clamp(180px, 26%, 232px);

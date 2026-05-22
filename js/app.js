@@ -1110,7 +1110,7 @@ function getPresencePageLabel() {
       const parts = target.split(/\s+/).filter(Boolean);
       // Имя в USERS: «Фамилия Имя» → берём parts[1], иначе parts[0]
       const firstName = parts[1] || parts[0] || target;
-      return `Чекает стр. ${firstName}`;
+      return `Профиль ${firstName}`;
     }
     return 'Профиль';
   }

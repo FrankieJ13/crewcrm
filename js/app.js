@@ -7708,7 +7708,7 @@ S.svcMode       = false;
 function getSverkaMode() {
   if (S.usersData) {
     for (let i = 1; i < S.usersData.length; i++) {
-      const mode = (S.usersData[i][9]||'').trim().toLowerCase();
+      const mode = (S.usersData[i][10]||'').trim().toLowerCase(); // колонка K
       if (mode === 'on') return true;
       if (mode === 'off') return false;
     }
@@ -7734,7 +7734,7 @@ function initSverkaToggle() {
 function getRemMode() {
   if (S.usersData) {
     for (let i = 1; i < S.usersData.length; i++) {
-      const mode = (S.usersData[i][12] || '').trim().toLowerCase(); // колонка M
+      const mode = (S.usersData[i][13] || '').trim().toLowerCase(); // колонка N
       if (mode === 'on')  return true;
       if (mode === 'off') return false;
     }
@@ -7745,7 +7745,7 @@ function getRemMode() {
 function getVizPasteMode() {
   if (S.usersData) {
     for (let i = 1; i < S.usersData.length; i++) {
-      const mode = (S.usersData[i][10] || '').trim().toLowerCase(); // колонка K
+      const mode = (S.usersData[i][11] || '').trim().toLowerCase(); // колонка L
       if (mode === 'on')  return true;
       if (mode === 'off') return false;
     }
@@ -7756,7 +7756,7 @@ function getVizPasteMode() {
 function getSvcMode() {
   if (S.usersData) {
     for (let i = 1; i < S.usersData.length; i++) {
-      const mode = (S.usersData[i][11] || '').trim().toLowerCase(); // колонка L
+      const mode = (S.usersData[i][12] || '').trim().toLowerCase(); // колонка M
       if (mode === 'on')  return true;
       if (mode === 'off') return false;
     }
@@ -7771,7 +7771,7 @@ async function savePlanAndSverka() {
     const newMode = S.sverkaMode ? 'On' : 'Off';
     localStorage.setItem('crm_sverka', S.sverkaMode ? '1' : '0');
     try {
-      const range = encodeURIComponent('USERS!J2:J2');
+      const range = encodeURIComponent('USERS!K2:K2');
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
       const resp = await fetch(url, {
         method: 'PUT',
@@ -7779,7 +7779,7 @@ async function savePlanAndSverka() {
         body: JSON.stringify({ values: [[newMode]] })
       });
       if (resp.ok) {
-        if (S.usersData && S.usersData[1]) S.usersData[1][9] = newMode;
+        if (S.usersData && S.usersData[1]) S.usersData[1][10] = newMode;
         if (document.getElementById('scr-dohod')?.classList.contains('on')) renderDohod();
         if (document.getElementById('scr-personal')?.classList.contains('on')) {
           const matched = findUserInSheet();
@@ -7804,7 +7804,7 @@ async function savePlanAndSverka() {
     const newMode2 = S.vizPasteMode ? 'On' : 'Off';
     localStorage.setItem('crm_viz_paste', S.vizPasteMode ? '1' : '0');
     try {
-      const range2 = encodeURIComponent('USERS!K2:K2');
+      const range2 = encodeURIComponent('USERS!L2:L2');
       const url2 = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range2}?valueInputOption=USER_ENTERED`;
       const resp2 = await fetch(url2, {
         method: 'PUT',
@@ -7812,7 +7812,7 @@ async function savePlanAndSverka() {
         body: JSON.stringify({ values: [[newMode2]] })
       });
       if (resp2.ok) {
-        if (S.usersData && S.usersData[1]) S.usersData[1][10] = newMode2;
+        if (S.usersData && S.usersData[1]) S.usersData[1][11] = newMode2;
         toast('Режим вставки визитов: ' + (S.vizPasteMode ? 'Вкл' : 'Выкл'), 's');
         if (document.getElementById('scr-vizity')?.classList.contains('on')) renderVizity();
       } else {
@@ -7830,7 +7830,7 @@ async function savePlanAndSverka() {
     S.svcMode = cb3.checked;
     const newMode3 = S.svcMode ? 'On' : 'Off';
     try {
-      const range3 = encodeURIComponent('USERS!L2:L2');
+      const range3 = encodeURIComponent('USERS!M2:M2');
       const url3 = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range3}?valueInputOption=USER_ENTERED`;
       const resp3 = await fetch(url3, {
         method: 'PUT',
@@ -7838,7 +7838,7 @@ async function savePlanAndSverka() {
         body: JSON.stringify({ values: [[newMode3]] })
       });
       if (resp3.ok) {
-        if (S.usersData && S.usersData[1]) S.usersData[1][11] = newMode3;
+        if (S.usersData && S.usersData[1]) S.usersData[1][12] = newMode3;
         toast('Техническое обслуживание: ' + (S.svcMode ? 'Вкл' : 'Выкл'), 's');
       } else {
         toast('Ошибка сохранения режима обслуживания', 'e');
@@ -7857,7 +7857,7 @@ async function savePlanAndSverka() {
     S.remMode = cb4.checked;
     const newMode4 = S.remMode ? 'On' : 'Off';
     try {
-      const range4 = encodeURIComponent('USERS!M2:M2');
+      const range4 = encodeURIComponent('USERS!N2:N2');
       const url4 = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range4}?valueInputOption=USER_ENTERED`;
       const resp4 = await fetch(url4, {
         method: 'PUT',
@@ -7865,7 +7865,7 @@ async function savePlanAndSverka() {
         body: JSON.stringify({ values: [[newMode4]] })
       });
       if (resp4.ok) {
-        if (S.usersData && S.usersData[1]) S.usersData[1][12] = newMode4;
+        if (S.usersData && S.usersData[1]) S.usersData[1][13] = newMode4;
         toast('Уведомления: ' + (S.remMode ? 'Вкл' : 'Выкл'), 's');
         if (typeof remApplyVisibility === 'function') remApplyVisibility();
       } else {
@@ -10058,7 +10058,7 @@ function _profileBuildSectionsHtml(matched, opts = {}) {
   const id    = (row[6] || '').toString().trim();
   const tg    = (row[7] || '').toString().trim();
   const max   = (row[8] || '').toString().trim();
-  const phone = (row[13] || '').toString().trim();
+  const phone = (row[9] || '').toString().trim(); // колонка J
   const fio   = matched.name || '—';
   const position  = _profilePositionLabel(matched.role);
   const phoneHref = _profilePhoneHref(phone);
@@ -12208,17 +12208,17 @@ function _remTick() {
 
 async function _remEnsureHeader() {
   if (_remEnsuredHeader) return;
-  if (S.usersData && S.usersData[0] && (S.usersData[0][12] || '').toString().trim()) {
+  if (S.usersData && S.usersData[0] && (S.usersData[0][13] || '').toString().trim()) {
     _remEnsuredHeader = true; return;
   }
   try {
-    const r = encodeURIComponent('USERS!M1:M1');
+    const r = encodeURIComponent('USERS!N1:N1');
     await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${r}?valueInputOption=USER_ENTERED`, {
       method: 'PUT',
       headers: await authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ values: [['Notifications']] }),
     });
-    if (S.usersData && S.usersData[0]) S.usersData[0][12] = 'Notifications';
+    if (S.usersData && S.usersData[0]) S.usersData[0][13] = 'Notifications';
     _remEnsuredHeader = true;
   } catch(e) { /* noop */ }
 }

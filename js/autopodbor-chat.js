@@ -290,7 +290,22 @@ window.cm66Init = function () {
     if (options.transient) message.dataset.transient = "true";
     message.innerHTML = html;
     els.window.appendChild(message);
-    els.window.scrollTop = els.window.scrollHeight;
+    // Для нового ответа ассистента ставим его НАЧАЛО к верху окна
+    // (длинные ответы пользователь читает с заголовка, а не с хвоста).
+    // Для пользовательских сообщений и при восстановлении истории —
+    // обычный скролл к низу.
+    if (type === "assistant" && options.save !== false) {
+      // requestAnimationFrame чтобы layout успел просчитаться
+      requestAnimationFrame(() => {
+        try {
+          message.scrollIntoView({ block: "start", behavior: "auto" });
+        } catch (_) {
+          els.window.scrollTop = message.offsetTop;
+        }
+      });
+    } else {
+      els.window.scrollTop = els.window.scrollHeight;
+    }
     if (options.save !== false) saveHistory();
   }
 

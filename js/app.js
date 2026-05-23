@@ -5929,7 +5929,7 @@ function showAccessDenied(reason = 'Почта не найдена в USERS') {
 async function loadUsersAndStart() {
   try {
     apiCacheInvalidate('USERS');
-    S.usersData = await api('USERS', 'A1:O500');
+    S.usersData = await api('USERS', 'A1:P500');
   } catch(e) { S.usersData = []; showAccessDenied('Нет доступа к таблице'); return; }
   const matched = findUserInSheet();
   refreshFirebaseProfile();
@@ -7757,16 +7757,19 @@ function initSverkaToggle() {
   S.svcMode      = getSvcMode();
   S.remMode      = getRemMode();
   S.autoSMode    = getAutoSMode();
+  S.trophiesMode = getTrophiesMode();
   const cb  = document.getElementById('sverka-toggle-cb');
   const cb2 = document.getElementById('viz-paste-toggle-cb');
   const cb3 = document.getElementById('svc-toggle-cb');
   const cb4 = document.getElementById('reminders-toggle-cb');
   const cb5 = document.getElementById('autos-toggle-cb');
+  const cb6 = document.getElementById('trophies-toggle-cb');
   if (cb)  cb.checked  = S.sverkaMode;
   if (cb2) cb2.checked = S.vizPasteMode;
   if (cb3) cb3.checked = S.svcMode;
   if (cb4) cb4.checked = S.remMode;
   if (cb5) cb5.checked = S.autoSMode;
+  if (cb6) cb6.checked = S.trophiesMode;
 }
 
 function getAutoSMode() {
@@ -7778,6 +7781,17 @@ function getAutoSMode() {
     }
   }
   return true; // дефолт — включён, чтобы пустая ячейка не отключала чат
+}
+
+function getTrophiesMode() {
+  if (S.usersData) {
+    for (let i = 1; i < S.usersData.length; i++) {
+      const mode = (S.usersData[i][15] || '').trim().toLowerCase(); // колонка P
+      if (mode === 'on')  return true;
+      if (mode === 'off') return false;
+    }
+  }
+  return false; // дефолт — выключено для всех кроме CEO (бета)
 }
 
 function getRemMode() {
@@ -7951,6 +7965,33 @@ async function savePlanAndSverka() {
     } catch(e) {
       toast('Ошибка сохранения режима автоподбора', 'e');
       S.autoSMode = wasOn5;
+    }
+  }
+
+  // Трофеи — активатор страницы (бета у CEO при Off)
+  const cb6 = document.getElementById('trophies-toggle-cb');
+  if (cb6 && cb6.checked !== S.trophiesMode) {
+    const wasOn6 = S.trophiesMode;
+    S.trophiesMode = cb6.checked;
+    const newMode6 = S.trophiesMode ? 'On' : 'Off';
+    try {
+      const range6 = encodeURIComponent('USERS!P2:P2');
+      const url6 = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range6}?valueInputOption=USER_ENTERED`;
+      const resp6 = await fetch(url6, {
+        method: 'PUT',
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ values: [[newMode6]] })
+      });
+      if (resp6.ok) {
+        if (S.usersData && S.usersData[1]) S.usersData[1][15] = newMode6;
+        toast('Трофеи: ' + (S.trophiesMode ? 'Вкл' : 'Выкл'), 's');
+      } else {
+        toast('Ошибка сохранения режима трофеев', 'e');
+        S.trophiesMode = wasOn6;
+      }
+    } catch(e) {
+      toast('Ошибка сохранения режима трофеев', 'e');
+      S.trophiesMode = wasOn6;
     }
   }
 
@@ -10394,7 +10435,35 @@ function openAbout() {
 function openTrophies() {
   showScr('trophies');
   if (typeof dockSetActive === 'function') dockSetActive('home');
+  // Гейт: если режим Off — все кроме CEO видят заглушку (бета у CEO).
+  const matched = (typeof findUserInSheet === 'function') ? findUserInSheet() : null;
+  const role = String(matched?.role || '').toLowerCase().trim();
+  const isCEO = role === 'ceo';
+  if (S.trophiesMode === false && !isCEO) {
+    _renderTrophiesStub();
+    return;
+  }
   renderTrophiesPage();
+}
+
+function _renderTrophiesStub() {
+  const el = document.getElementById('c-trophies');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="trophies-stub">
+      <div class="trophies-stub-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+          <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+          <path d="M4 22h16"/>
+          <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+          <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+          <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+        </svg>
+      </div>
+      <div class="trophies-stub-title">Трофеи</div>
+      <div class="trophies-stub-text">Раздел в разработке…</div>
+    </div>`;
 }
 
 /* ════════════════════ ТРОФЕИ ════════════════════ */

@@ -16,8 +16,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&family=Exo+2:wght@200;300;700&family=JetBrains+Mono:wght@300;400&family=Oswald:wght@400;700&display=swap" rel="stylesheet"/>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<link rel="stylesheet" href="./css/styles.css?v=44"/>
-<link rel="stylesheet" href="./css/autopodbor.css?v=44"/>
+<link rel="stylesheet" href="./css/styles.css?v=45"/>
+<link rel="stylesheet" href="./css/autopodbor.css?v=45"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -307,6 +307,26 @@
                 </div>
                 <p style="font-size:11px;color:var(--txt3);line-height:1.6;margin:0">
                   Чат-ассистент поиска авто на сайтах сети. Когда <b style="color:var(--txt2)">Вкл</b> — открывается полноэкранный чат с поиском по базе автомобилей. Когда <b style="color:var(--txt2)">Выкл</b> — на месте чата показывается заглушка «Раздел в разработке».
+                </p>
+              </div>
+            </details>
+
+            <!-- Вложенный: Трофеи -->
+            <details class="cfg-spoiler-inner">
+              <summary class="cfg-spoiler-inner-hdr">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                Трофеи
+              </summary>
+              <div class="cfg-spoiler-inner-body">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+                  <label style="font-size:12px;color:var(--txt2);flex:1">Состояние</label>
+                  <label class="sverka-toggle" id="trophies-toggle-label" title="Активация раздела Трофеи">
+                    <input type="checkbox" id="trophies-toggle-cb">
+                    <span class="sverka-slider"></span>
+                  </label>
+                </div>
+                <p style="font-size:11px;color:var(--txt3);line-height:1.6;margin:0">
+                  Когда <b style="color:var(--txt2)">Вкл</b> — раздел «Трофеи» открыт всем. Когда <b style="color:var(--txt2)">Выкл</b> — у всех висит заглушка, <b style="color:var(--txt2)">CEO</b> видит рабочую модель для бета-теста.
                 </p>
               </div>
             </details>
@@ -913,7 +933,7 @@
   </div>
 </div>
 
-<script src="./js/app.js?v=44"></script>
+<script src="./js/app.js?v=45"></script>
 <!-- Затемнение фона при открытом popup напоминаний -->
 <div class="rem-backdrop" id="rem-backdrop" onclick="closeRemPanel()"></div>
 
@@ -944,9 +964,9 @@
     </form>
   </div>
 </div>
-<script src="./js/autopodbor-config.js?v=44"></script>
-<script src="./js/autopodbor-dictionary.js?v=44"></script>
-<script src="./js/autopodbor-chat.js?v=44"></script>
+<script src="./js/autopodbor-config.js?v=45"></script>
+<script src="./js/autopodbor-dictionary.js?v=45"></script>
+<script src="./js/autopodbor-chat.js?v=45"></script>
 
 <!-- Модалка профиля менеджера (открывается с рейтинга) -->
 <div id="profile-modal-overlay" class="profile-modal-overlay" onclick="if(event.target===this)closeProfileModal()">

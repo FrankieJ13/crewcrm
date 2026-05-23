@@ -12326,17 +12326,18 @@ function _remGetOrInit() {
 }
 
 // Проверка: пользователь сегодня по графику работает «Р»
-// Fail-open: если график ещё не загружен — считаем что в смене,
-// иначе уведомления никогда не сработают до открытия таба «График».
+// Fail-CLOSED: уведомление шлём ТОЛЬКО когда точно знаем, что сегодня «Р».
+// Если график не загружен / имени нет / колонка дня не найдена / стоит «В» —
+// тик пропускается. Это исключает ложные срабатывания у выходных.
 function _remIsInShiftToday() {
   const matched = findUserInSheet();
   if (!matched) return false;
   const raw = S.data.grafik;
-  if (!raw || raw.length < 3) return true; // график не загружен → пропускаем проверку
+  if (!raw || raw.length < 3) return false; // график не загружен → подождём
   let idx;
-  try { idx = buildSchedIndex(raw); } catch(e) { return true; }
+  try { idx = buildSchedIndex(raw); } catch(e) { return false; }
   const entry = idx?.[matched.name.toLowerCase()];
-  if (!entry) return true; // имени нет в графике — не блокируем
+  if (!entry) return false; // имени нет в графике — не дёргаем
   const { row: mgrRow, daysRow } = entry;
   const today = new Date().getDate();
   for (let c = 1; c < daysRow.length; c++) {
@@ -12344,7 +12345,7 @@ function _remIsInShiftToday() {
       return normalizeSchedVal(mgrRow[c]) === 'Р';
     }
   }
-  return true; // столбец сегодняшнего дня не найден — fail-open
+  return false; // колонка сегодняшнего дня не найдена → не дёргаем
 }
 
 function _remIsManagerRole() {
@@ -12457,6 +12458,20 @@ function _remTick() {
 
   const nowMin = _remNowMin();
   if (nowMin < REM_WORK_START_MIN || nowMin > REM_WORK_END_MIN) return;
+
+  // Если график ещё не подгружен — подтягиваем и выходим (fail-closed).
+  // Следующий тик через 30с проверит уже с реальным графиком.
+  const raw = S.data.grafik;
+  if (!raw || raw.length < 3) {
+    if (!window._remGrafikFetching) {
+      window._remGrafikFetching = true;
+      api(SHEETS.grafik, 'A1:AI25')
+        .then(d => { S.data.grafik = d; })
+        .catch(() => {})
+        .finally(() => { window._remGrafikFetching = false; });
+    }
+    return;
+  }
   if (!_remIsInShiftToday()) return;
 
   const state = _remGetOrInit();

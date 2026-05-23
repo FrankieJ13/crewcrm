@@ -303,6 +303,8 @@
   z-index: 4;
   gap: 8px;
   padding: 10px 12px;
+  /* Учитываем home-indicator/закругление экрана на телефонах */
+  padding-bottom: max(14px, calc(10px + env(safe-area-inset-bottom, 0px)));
   border-top: 1px solid var(--line);
   background: var(--bg2);
 }

@@ -1873,6 +1873,9 @@ function onLogin() {
     if (!S.token) return;
     // Не обновляем пока открыт журнал визитов — пользователь может вводить данные
     if (document.getElementById('scr-vizity')?.classList.contains('on')) return;
+    // Не обновляем пока открыт фуллскрин-Автоподбор — нет смысла дёргать API
+    // и под оверлеем; на закрытии следующий тик пойдёт по обычному расписанию.
+    if (document.getElementById('autopodbor-fullscreen')?.classList.contains('open')) return;
     const isPersonal = document.getElementById('scr-personal')?.classList.contains('on');
     const ratingOn = document.getElementById('scr-rating')?.classList.contains('on');
     const activeTab = ratingOn ? 'rating' : (document.querySelector('.tab.on')?.dataset.tab || 'otchet');

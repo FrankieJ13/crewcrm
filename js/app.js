@@ -10232,7 +10232,9 @@ function _profileBuildSectionsHtml(matched, opts = {}) {
     <!-- ТРОФЕИ -->
     <div class="profile-section">
       <div class="profile-sec-title"><span>Трофеи</span><span class="profile-sec-line"></span></div>
-      <div class="profile-panel profile-empty-panel">В разработке</div>
+      <div class="profile-panel" id="${(opts.trophiesPanelId || 'profile-trophies-panel')}">
+        <div class="profile-trophies-loading">…</div>
+      </div>
     </div>
   `;
 }
@@ -10245,8 +10247,9 @@ function renderProfile() {
     el.innerHTML = `<div class="trophies-stub"><div class="trophies-stub-title">Профиль</div><div class="trophies-stub-text">Не удалось определить пользователя.</div></div>`;
     return;
   }
-  el.innerHTML = _profileBuildSectionsHtml(matched, { statsPanelId: 'profile-stats-panel' });
+  el.innerHTML = _profileBuildSectionsHtml(matched, { statsPanelId: 'profile-stats-panel', trophiesPanelId: 'profile-trophies-panel' });
   _profileLoadAndRenderStats(matched.name, 'profile-stats-panel');
+  _profileLoadAndRenderTrophies(matched.name, 'profile-trophies-panel');
 }
 
 /* ──── PROFILE MODAL (для просмотра карточек других менеджеров) ──── */
@@ -10260,10 +10263,11 @@ function openProfileModalFor(name) {
   };
   const body = document.getElementById('profile-modal-body');
   if (!body) return;
-  body.innerHTML = _profileBuildSectionsHtml(matched, { statsPanelId: 'profile-modal-stats-panel' });
+  body.innerHTML = _profileBuildSectionsHtml(matched, { statsPanelId: 'profile-modal-stats-panel', trophiesPanelId: 'profile-modal-trophies-panel' });
   document.getElementById('profile-modal-overlay')?.classList.add('open');
   document.body.style.overflow = 'hidden';
   _profileLoadAndRenderStats(matched.name, 'profile-modal-stats-panel');
+  _profileLoadAndRenderTrophies(matched.name, 'profile-modal-trophies-panel');
   _attachScrollFadeUI(body);
   // Сохраняем имя просматриваемого профиля для presence-лейбла «Чекает стр. {имя}»
   S.viewingProfileOf = matched.name;
@@ -10468,13 +10472,17 @@ function _renderTrophiesStub() {
 
 /* ════════════════════ ТРОФЕИ ════════════════════ */
 
-// Кеш справочника (грузим один раз за сессию)
+// Кеш справочника (грузим один раз за сессию).
+// Используем абсолютный URL через document.baseURI + retry один раз.
 let _trophiesCatalogPromise = null;
 function loadTrophiesCatalog() {
   if (S.trophies) return Promise.resolve(S.trophies);
   if (_trophiesCatalogPromise) return _trophiesCatalogPromise;
-  _trophiesCatalogPromise = fetch('data/trophies.json?v=1', { cache: 'no-cache' })
-    .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+  const url = new URL('data/trophies.json?v=' + Date.now(), document.baseURI).href;
+  const fetchOnce = () => fetch(url, { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)));
+  _trophiesCatalogPromise = fetchOnce()
+    .catch(() => new Promise(res => setTimeout(res, 500)).then(fetchOnce)) // 1 retry
     .then(j => { S.trophies = j; return j; })
     .catch(e => { _trophiesCatalogPromise = null; throw e; });
   return _trophiesCatalogPromise;
@@ -10553,12 +10561,20 @@ async function renderTrophiesPage() {
   const myName = matched?.name || '';
   const isCeoLikeRole = isCeoLike(matched?.role);
 
-  // Целевой менеджер для просмотра (для CEO/ROP — выбираемый, для остальных — себя)
-  let viewName = S.trophiesView === 'self' ? myName : (S.trophiesView || myName);
-  if (!isCeoLikeRole) viewName = myName;
-  const awardsByCode = _trophyAwardsForManager(viewName);
+  // Определяем режим отображения:
+  //   CEO/ROP, view='catalog' (дефолт)  → весь каталог, без awards-привязки
+  //   CEO/ROP, view='Имя'              → перечень полученных у этого менеджера
+  //   обычный менеджер                 → только полученные у себя
+  if (isCeoLikeRole) {
+    if (!S.trophiesView || S.trophiesView === 'self') S.trophiesView = 'catalog';
+  } else {
+    S.trophiesView = myName;
+  }
+  const isCatalogMode = isCeoLikeRole && S.trophiesView === 'catalog';
+  const viewName = isCatalogMode ? '' : (isCeoLikeRole ? S.trophiesView : myName);
+  const awardsByCode = isCatalogMode ? {} : _trophyAwardsForManager(viewName);
 
-  // Список менеджеров (для CEO/ROP — selector)
+  // Список менеджеров для селектора (только CEO/ROP)
   let mgrPicker = '';
   if (isCeoLikeRole && S.usersData) {
     const mgrs = [];
@@ -10570,28 +10586,35 @@ async function renderTrophiesPage() {
       if (rl === 'crm' || rl === 'dozhim') mgrs.push(nm);
     }
     mgrs.sort((a, b) => a.localeCompare(b, 'ru'));
-    const options = ['<option value="self">— Мои трофеи —</option>']
+    const opts = [`<option value="catalog"${isCatalogMode ? ' selected' : ''}>— Каталог (все трофеи) —</option>`]
       .concat(mgrs.map(n => `<option value="${escapeHtml(n)}"${n === viewName ? ' selected' : ''}>${escapeHtml(n)}</option>`));
     mgrPicker = `<div class="trophies-picker">
       <label class="trophies-picker-lbl">Просмотр:</label>
-      <select class="trophies-picker-sel" onchange="trophiesSelectView(this.value)">${options.join('')}</select>
+      <select class="trophies-picker-sel" onchange="trophiesSelectView(this.value)">${opts.join('')}</select>
     </div>`;
   }
 
-  // Категория из поля или суффикса code: _monthly / _annual / _once
+  // Категория из поля или суффикса code
   const _trophyCat = (t) => {
     const c = String(t.category || '').toLowerCase();
     if (c === 'monthly' || c === 'annual' || c === 'once') return c;
     const code = String(t.code || '').toLowerCase();
-    if (code.endsWith('_once')) return 'once';
-    if (code.endsWith('_annual')) return 'annual';
+    if (code.endsWith('_once'))    return 'once';
+    if (code.endsWith('_annual'))  return 'annual';
     if (code.endsWith('_monthly')) return 'monthly';
     return 'monthly';
   };
-  // Порядок типов внутри секции: позитив → нейтрал → негатив
   const _typeOrder = { positive: 0, neutral: 1, negative: 2 };
+
+  // Источник карточек:
+  //   - catalog mode: все трофеи как есть
+  //   - manager mode: только те, что есть в awardsByCode
+  const sourceList = isCatalogMode
+    ? catalog.slice()
+    : catalog.filter(t => awardsByCode[t.code]);
+
   const groups = { monthly: [], annual: [], once: [] };
-  catalog.forEach(t => {
+  sourceList.forEach(t => {
     const cat = _trophyCat(t);
     (groups[cat] || groups.monthly).push(t);
   });
@@ -10602,8 +10625,7 @@ async function renderTrophiesPage() {
     );
   });
 
-  // Подсчёт полученных
-  const earnedCount = Object.values(awardsByCode).reduce((a, b) => a + (b.count || 0), 0);
+  const earnedCount    = Object.values(awardsByCode).reduce((a, b) => a + (b.count || 0), 0);
   const earnedDistinct = Object.keys(awardsByCode).length;
 
   const renderCard = (t) => {
@@ -10611,15 +10633,16 @@ async function renderTrophiesPage() {
     const earned = !!award;
     const type = (t.type || 'neutral').toLowerCase();
     const iconSrc = `logos/trophies/${t.icon || ''}`;
-    const dateLbl = earned ? _trophyFormatDate(award.lastDate) : '';
+    const dateLbl  = earned ? _trophyFormatDate(award.lastDate) : '';
     const countLbl = (earned && award.count > 1) ? ` ×${award.count}` : '';
-    const lockedHint = !earned ? '<div class="trophy-card-locked">пока не получен</div>' : '';
+    // В каталог-режиме показываем источник как «авто/вручную» нейтрально,
+    // в режиме менеджера — реальный источник конкретной выдачи.
     const srcChip = earned
       ? `<span class="trophy-src trophy-src-${award.items[0]?.src || 'manual'}">${award.items[0]?.src === 'auto' ? 'авто' : 'вручную'}</span>`
       : (t.auto ? '<span class="trophy-src trophy-src-auto trophy-src-mute">авто</span>'
                 : '<span class="trophy-src trophy-src-manual trophy-src-mute">вручную</span>');
     return `
-      <div class="trophy-card trophy-card-${type} ${earned ? 'trophy-earned' : 'trophy-locked'}">
+      <div class="trophy-card trophy-card-${type} ${earned ? 'trophy-earned' : (isCatalogMode ? '' : 'trophy-locked')}">
         <div class="trophy-card-ico">
           <img src="${iconSrc}" alt="" loading="lazy" onerror="this.style.display='none'">
         </div>
@@ -10630,7 +10653,7 @@ async function renderTrophiesPage() {
             ${srcChip}
           </div>
           <div class="trophy-card-desc">${escapeHtml(t.description || '')}</div>
-          ${dateLbl ? `<div class="trophy-card-date">получен: ${dateLbl}</div>` : lockedHint}
+          ${dateLbl ? `<div class="trophy-card-date">получен: ${dateLbl}</div>` : ''}
         </div>
       </div>`;
   };
@@ -10644,18 +10667,34 @@ async function renderTrophiesPage() {
       </div>`;
   };
 
+  // Шапка / счётчик
+  let headerTitle, counterHtml;
+  if (isCatalogMode) {
+    headerTitle = 'Каталог трофеев';
+    counterHtml = `<div class="trophies-counter">всего <span class="mv">${catalog.length}</span> трофеев</div>`;
+  } else {
+    headerTitle = viewName || 'Трофеи';
+    counterHtml = `<div class="trophies-counter"><span class="mv">${earnedDistinct}</span> из ${catalog.length}<span class="trophies-counter-sub"> · всего выдач ${earnedCount}</span></div>`;
+  }
+
+  // Пустое состояние для менеджера: получено пока ноль
+  const emptyHint = (!isCatalogMode && !sourceList.length)
+    ? `<div class="empty" style="margin-top:18px">Пока нет полученных трофеев.</div>`
+    : '';
+
   el.innerHTML = `
     <div class="trophies-page">
       <div class="trophies-hdr">
         <div class="trophies-title-row">
-          <div class="trophies-title">${escapeHtml(viewName || 'Трофеи')}</div>
-          <div class="trophies-counter"><span class="mv">${earnedDistinct}</span> из ${catalog.length}<span class="trophies-counter-sub"> · всего выдач ${earnedCount}</span></div>
+          <div class="trophies-title">${escapeHtml(headerTitle)}</div>
+          ${counterHtml}
         </div>
         ${mgrPicker}
       </div>
       ${renderSection('Ежемесячные',   'monthly', groups.monthly)}
       ${renderSection('Ежегодные',     'annual',  groups.annual)}
       ${renderSection('Единоразовые',  'once',    groups.once)}
+      ${emptyHint}
     </div>
   `;
 }
@@ -10665,6 +10704,47 @@ function trophiesSelectView(v) {
   renderTrophiesPage();
 }
 window.trophiesSelectView = trophiesSelectView;
+
+// Маленькая панель трофеев внутри профиля: только иконки полученных трофеев,
+// без описаний и подписей. Грузит каталог + TrophyAwards если ещё не подгружены.
+async function _profileLoadAndRenderTrophies(name, panelId) {
+  const panel = document.getElementById(panelId || 'profile-trophies-panel');
+  if (!panel) return;
+  try {
+    await Promise.all([loadTrophiesCatalog(), loadTrophyAwards()]);
+  } catch (e) {
+    panel.innerHTML = `<div class="profile-trophies-empty">Не удалось загрузить трофеи</div>`;
+    return;
+  }
+  const catalog = (S.trophies && Array.isArray(S.trophies.trophies)) ? S.trophies.trophies : [];
+  const byCode = {};
+  catalog.forEach(t => { byCode[t.code] = t; });
+  const awards = _trophyAwardsForManager(name);
+  const codes = Object.keys(awards);
+  if (!codes.length) {
+    panel.innerHTML = `<div class="profile-trophies-empty">Пока нет трофеев</div>`;
+    return;
+  }
+  // Сортируем: по дате последней выдачи (свежие первыми), затем алфавит
+  codes.sort((a, b) => {
+    const da = awards[a].lastDate || '', db = awards[b].lastDate || '';
+    if (db !== da) return db.localeCompare(da);
+    return String(byCode[a]?.name || a).localeCompare(String(byCode[b]?.name || b), 'ru');
+  });
+  const items = codes.map(code => {
+    const t = byCode[code];
+    const award = awards[code];
+    const icon = t?.icon || '';
+    const title = (t?.name || code) + (award.count > 1 ? ` ×${award.count}` : '');
+    const countBadge = award.count > 1 ? `<span class="profile-trophy-count">×${award.count}</span>` : '';
+    return `<div class="profile-trophy" title="${escapeAttr(title)}">
+      ${icon ? `<img src="logos/trophies/${escapeHtml(icon)}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}
+      ${countBadge}
+    </div>`;
+  }).join('');
+  panel.innerHTML = `<div class="profile-trophies-grid">${items}</div>`;
+}
+window._profileLoadAndRenderTrophies = _profileLoadAndRenderTrophies;
 /* ════════════════════ END ТРОФЕИ ════════════════════ */
 function closeAbout() {
   const overlay = document.getElementById('about-overlay');

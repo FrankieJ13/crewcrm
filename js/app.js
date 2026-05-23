@@ -1862,6 +1862,9 @@ function onLogin() {
   const hmbsl = document.getElementById('hmb-sep-logout'); if (hmbsl) hmbsl.style.display = '';
   const hmbm = document.getElementById('hmb-month-trigger'); if (hmbm) hmbm.style.display = '';
   const hmbms = document.getElementById('hmb-sep-month'); if (hmbms) hmbms.style.display = '';
+  // Трофеи и «О проекте» показываем только после авторизации
+  const hmbt = document.getElementById('hmb-trophies'); if (hmbt) hmbt.style.display = '';
+  const hmba = document.getElementById('hmb-about-btn'); if (hmba) hmba.style.display = '';
   updateBadge();
   const ls = document.getElementById('scr-login');
   ls.classList.remove('on'); ls.style.display = 'none'; document.body.classList.remove('login-active');
@@ -1910,6 +1913,9 @@ function onLogout() {
   const hmbsl2 = document.getElementById('hmb-sep-logout'); if (hmbsl2) hmbsl2.style.display = 'none';
   const hmbAcc2 = document.getElementById('hmb-account-btn'); if (hmbAcc2) hmbAcc2.style.display = 'none';
   const hmbAccSep2 = document.getElementById('hmb-sep-account'); if (hmbAccSep2) hmbAccSep2.style.display = 'none';
+  // Скрываем Трофеи и «О проекте» при выходе — экран авторизации без них
+  const hmbt2 = document.getElementById('hmb-trophies'); if (hmbt2) hmbt2.style.display = 'none';
+  const hmba2 = document.getElementById('hmb-about-btn'); if (hmba2) hmba2.style.display = 'none';
   const hdrMain2 = document.getElementById('hdr-title');
   const hdrGreeting2 = document.getElementById('hdr-greeting');
   /* hdr-title aurora is always-on — don't remove it on logout */
@@ -5914,6 +5920,8 @@ function showAccessDenied(reason = 'Почта не найдена в USERS') {
   const hmbsl = document.getElementById('hmb-sep-logout'); if (hmbsl) hmbsl.style.display = 'none';
   const hmbAcc = document.getElementById('hmb-account-btn'); if (hmbAcc) hmbAcc.style.display = 'none';
   const hmbAccSep = document.getElementById('hmb-sep-account'); if (hmbAccSep) hmbAccSep.style.display = 'none';
+  const hmbT = document.getElementById('hmb-trophies'); if (hmbT) hmbT.style.display = 'none';
+  const hmbA = document.getElementById('hmb-about-btn'); if (hmbA) hmbA.style.display = 'none';
   ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const s = document.getElementById('scr-'+t);
     if (s) { s.classList.remove('on'); s.style.display = ''; }
@@ -9119,9 +9127,7 @@ function renderRating() {
   }
 
   const cardsHTML = managers.map((m, idx) => {
-    // Медаль и цветная полоса для всех топ-3 без условия по плану.
-    // Раньше требовали progNum >= 100, из-за чего бронза часто пропадала.
-    const isTop = idx < 3;
+    const isTop = idx < 3 && m.progNum >= 100;
     const rc = isTop ? rankColors[idx] : null;
     const stripColor = rc ? rc.strip : null;
     const stripEnd   = rc ? rc.stripEnd : null;

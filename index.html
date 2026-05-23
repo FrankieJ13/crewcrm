@@ -16,8 +16,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&family=Exo+2:wght@200;300;700&family=JetBrains+Mono:wght@300;400&family=Oswald:wght@400;700&display=swap" rel="stylesheet"/>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<link rel="stylesheet" href="./css/styles.css?v=47"/>
-<link rel="stylesheet" href="./css/autopodbor.css?v=47"/>
+<link rel="stylesheet" href="./css/styles.css?v=48"/>
+<link rel="stylesheet" href="./css/autopodbor.css?v=48"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -176,11 +176,11 @@
               <span>Экспорт отчёта</span>
             </button>
             <div class="hmb-sep"></div>
-            <button class="hmb-item" id="hmb-trophies" onclick="openTrophies();closeHamburger()">
+            <button class="hmb-item" id="hmb-trophies" onclick="openTrophies();closeHamburger()" style="display:none">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
               <span>Трофеи</span>
             </button>
-            <button class="hmb-item" id="hmb-about-btn" onclick="openAbout();closeHamburger()">
+            <button class="hmb-item" id="hmb-about-btn" onclick="openAbout();closeHamburger()" style="display:none">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16" stroke-width="2.5"/></svg>
               <span>О проекте</span>
             </button>
@@ -933,7 +933,7 @@
   </div>
 </div>
 
-<script src="./js/app.js?v=47"></script>
+<script src="./js/app.js?v=48"></script>
 <!-- Затемнение фона при открытом popup напоминаний -->
 <div class="rem-backdrop" id="rem-backdrop" onclick="closeRemPanel()"></div>
 
@@ -964,9 +964,9 @@
     </form>
   </div>
 </div>
-<script src="./js/autopodbor-config.js?v=47"></script>
-<script src="./js/autopodbor-dictionary.js?v=47"></script>
-<script src="./js/autopodbor-chat.js?v=47"></script>
+<script src="./js/autopodbor-config.js?v=48"></script>
+<script src="./js/autopodbor-dictionary.js?v=48"></script>
+<script src="./js/autopodbor-chat.js?v=48"></script>
 
 <!-- Модалка профиля менеджера (открывается с рейтинга) -->
 <div id="profile-modal-overlay" class="profile-modal-overlay" onclick="if(event.target===this)closeProfileModal()">

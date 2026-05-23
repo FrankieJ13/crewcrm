@@ -105,6 +105,7 @@ function getSheetNames(suffix) {
     vizity:      'ВИЗИТЫ'   + suffix,
     plan:        'ПЛАН'     + suffix,
     d_vizity:    'Д_ВИЗИТЫ' + suffix,
+    trophyAwards:'TrophyAwards',
   };
 }
 
@@ -176,6 +177,9 @@ const S = {
   silentRefresh: false,
   authReady: false,
   sverkaMode: false,
+  trophies: null,         // справочник из /data/trophies.json
+  trophyAwards: null,     // факты выдачи из листа TrophyAwards
+  trophiesView: 'self',   // 'self' или имя менеджера (для CEO/ROP)
 };
 
 /* ══ THEME ══ */
@@ -10390,7 +10394,192 @@ function openAbout() {
 function openTrophies() {
   showScr('trophies');
   if (typeof dockSetActive === 'function') dockSetActive('home');
+  renderTrophiesPage();
 }
+
+/* ════════════════════ ТРОФЕИ ════════════════════ */
+
+// Кеш справочника (грузим один раз за сессию)
+let _trophiesCatalogPromise = null;
+function loadTrophiesCatalog() {
+  if (S.trophies) return Promise.resolve(S.trophies);
+  if (_trophiesCatalogPromise) return _trophiesCatalogPromise;
+  _trophiesCatalogPromise = fetch('data/trophies.json?v=1', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+    .then(j => { S.trophies = j; return j; })
+    .catch(e => { _trophiesCatalogPromise = null; throw e; });
+  return _trophiesCatalogPromise;
+}
+
+// Факты выдачи из листа TrophyAwards
+// Столбцы (0-based): A=trophy_code, B=manager_name, C=awarded_at,
+//   D=awarded_by, E=source(auto/manual), F=status(active/override/locked), G=note
+function loadTrophyAwards() {
+  if (S.trophyAwards) return Promise.resolve(S.trophyAwards);
+  return api(SHEETS.trophyAwards, 'A:G')
+    .then(rows => { S.trophyAwards = rows || []; return S.trophyAwards; })
+    .catch(() => { S.trophyAwards = []; return S.trophyAwards; });
+}
+
+// Группировка выдач по trophy_code для конкретного менеджера
+function _trophyAwardsForManager(name) {
+  const nl = String(name || '').toLowerCase().trim();
+  if (!nl || !Array.isArray(S.trophyAwards)) return {};
+  const map = {};
+  for (let i = 1; i < S.trophyAwards.length; i++) {
+    const row = S.trophyAwards[i];
+    if (!row) continue;
+    const code = String(row[0] || '').trim();
+    const mgr  = String(row[1] || '').toLowerCase().trim();
+    const status = String(row[5] || 'active').toLowerCase().trim();
+    if (!code || mgr !== nl) continue;
+    if (status === 'locked') continue; // locked не показываем как полученные
+    if (!map[code]) map[code] = { count: 0, items: [], lastDate: null };
+    map[code].count++;
+    const at = (row[2] || '').toString().trim();
+    const item = {
+      date:  at,
+      by:    (row[3] || '').toString().trim(),
+      src:   (row[4] || 'manual').toString().toLowerCase().trim(),
+      stat:  status,
+      note:  (row[6] || '').toString().trim(),
+    };
+    map[code].items.push(item);
+    if (at && (!map[code].lastDate || at > map[code].lastDate)) map[code].lastDate = at;
+  }
+  return map;
+}
+
+function _trophyFormatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function _trophyTypeBadge(type) {
+  if (type === 'positive') return '<span class="trophy-badge trophy-badge-pos">+</span>';
+  if (type === 'negative') return '<span class="trophy-badge trophy-badge-neg">−</span>';
+  return '<span class="trophy-badge trophy-badge-neu">·</span>';
+}
+
+async function renderTrophiesPage() {
+  const el = document.getElementById('c-trophies');
+  if (!el) return;
+  el.innerHTML = loader();
+
+  try {
+    await Promise.all([loadTrophiesCatalog(), loadTrophyAwards()]);
+  } catch (e) {
+    el.innerHTML = `<div class="empty">Не удалось загрузить трофеи: ${e?.message || 'ошибка'}</div>`;
+    return;
+  }
+  const catalog = (S.trophies && Array.isArray(S.trophies.trophies)) ? S.trophies.trophies : [];
+  if (!catalog.length) {
+    el.innerHTML = '<div class="empty">Справочник трофеев пуст</div>';
+    return;
+  }
+
+  const matched = findUserInSheet();
+  const myName = matched?.name || '';
+  const isCeoLikeRole = isCeoLike(matched?.role);
+
+  // Целевой менеджер для просмотра (для CEO/ROP — выбираемый, для остальных — себя)
+  let viewName = S.trophiesView === 'self' ? myName : (S.trophiesView || myName);
+  if (!isCeoLikeRole) viewName = myName;
+  const awardsByCode = _trophyAwardsForManager(viewName);
+
+  // Список менеджеров (для CEO/ROP — selector)
+  let mgrPicker = '';
+  if (isCeoLikeRole && S.usersData) {
+    const mgrs = [];
+    for (let i = 1; i < S.usersData.length; i++) {
+      const r = S.usersData[i];
+      const nm = (r[1] || '').trim();
+      const rl = (r[2] || '').toLowerCase().trim();
+      if (!nm) continue;
+      if (rl === 'crm' || rl === 'dozhim') mgrs.push(nm);
+    }
+    mgrs.sort((a, b) => a.localeCompare(b, 'ru'));
+    const options = ['<option value="self">— Мои трофеи —</option>']
+      .concat(mgrs.map(n => `<option value="${escapeHtml(n)}"${n === viewName ? ' selected' : ''}>${escapeHtml(n)}</option>`));
+    mgrPicker = `<div class="trophies-picker">
+      <label class="trophies-picker-lbl">Просмотр:</label>
+      <select class="trophies-picker-sel" onchange="trophiesSelectView(this.value)">${options.join('')}</select>
+    </div>`;
+  }
+
+  // Группируем по типу
+  const groups = { positive: [], negative: [], neutral: [] };
+  catalog.forEach(t => {
+    const type = (t.type || 'neutral').toLowerCase();
+    (groups[type] || groups.neutral).push(t);
+  });
+
+  // Подсчёт полученных
+  const earnedCount = Object.values(awardsByCode).reduce((a, b) => a + (b.count || 0), 0);
+  const earnedDistinct = Object.keys(awardsByCode).length;
+
+  const renderCard = (t) => {
+    const award = awardsByCode[t.code];
+    const earned = !!award;
+    const type = (t.type || 'neutral').toLowerCase();
+    const iconSrc = `logos/trophies/${t.icon || ''}`;
+    const dateLbl = earned ? _trophyFormatDate(award.lastDate) : '';
+    const countLbl = (earned && award.count > 1) ? ` ×${award.count}` : '';
+    const lockedHint = !earned ? '<div class="trophy-card-locked">пока не получен</div>' : '';
+    const srcChip = earned
+      ? `<span class="trophy-src trophy-src-${award.items[0]?.src || 'manual'}">${award.items[0]?.src === 'auto' ? 'авто' : 'вручную'}</span>`
+      : (t.auto ? '<span class="trophy-src trophy-src-auto trophy-src-mute">авто</span>'
+                : '<span class="trophy-src trophy-src-manual trophy-src-mute">вручную</span>');
+    return `
+      <div class="trophy-card trophy-card-${type} ${earned ? 'trophy-earned' : 'trophy-locked'}">
+        <div class="trophy-card-ico">
+          <img src="${iconSrc}" alt="" loading="lazy" onerror="this.style.display='none'">
+        </div>
+        <div class="trophy-card-body">
+          <div class="trophy-card-hdr">
+            ${_trophyTypeBadge(type)}
+            <div class="trophy-card-name">${escapeHtml(t.name || t.code)}${countLbl}</div>
+            ${srcChip}
+          </div>
+          <div class="trophy-card-desc">${escapeHtml(t.description || '')}</div>
+          ${dateLbl ? `<div class="trophy-card-date">получен: ${dateLbl}</div>` : lockedHint}
+        </div>
+      </div>`;
+  };
+
+  const renderSection = (title, type, list) => {
+    if (!list.length) return '';
+    return `
+      <div class="sec-title">${title}</div>
+      <div class="trophies-grid trophies-grid-${type}">
+        ${list.map(renderCard).join('')}
+      </div>`;
+  };
+
+  el.innerHTML = `
+    <div class="trophies-page">
+      <div class="trophies-hdr">
+        <div class="trophies-title-row">
+          <div class="trophies-title">${escapeHtml(viewName || 'Трофеи')}</div>
+          <div class="trophies-counter"><span class="mv">${earnedDistinct}</span> из ${catalog.length}<span class="trophies-counter-sub"> · всего выдач ${earnedCount}</span></div>
+        </div>
+        ${mgrPicker}
+      </div>
+      ${renderSection('Позитивные',  'positive', groups.positive)}
+      ${renderSection('Негативные',  'negative', groups.negative)}
+      ${renderSection('Нейтральные', 'neutral',  groups.neutral)}
+    </div>
+  `;
+}
+
+function trophiesSelectView(v) {
+  S.trophiesView = v;
+  renderTrophiesPage();
+}
+window.trophiesSelectView = trophiesSelectView;
+/* ════════════════════ END ТРОФЕИ ════════════════════ */
 function closeAbout() {
   const overlay = document.getElementById('about-overlay');
   if (overlay) { overlay.style.display = 'none'; }

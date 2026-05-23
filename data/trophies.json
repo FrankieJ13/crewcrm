@@ -1,0 +1,166 @@
+{
+  "version": 1,
+  "updatedAt": "2026-05-22",
+  "trophies": [
+    {
+      "code": "first_visit",
+      "name": "Первый визит",
+      "description": "Зафиксирован первый визит клиента в системе.",
+      "type": "positive",
+      "auto": true,
+      "icon": "01.png"
+    },
+    {
+      "code": "streak_7",
+      "name": "Серия 7 дней",
+      "description": "Семь рабочих дней подряд с активностью без пропусков.",
+      "type": "positive",
+      "auto": true,
+      "icon": "02.png"
+    },
+    {
+      "code": "monthly_top1",
+      "name": "Лидер месяца",
+      "description": "Первое место по выполнению плана за календарный месяц.",
+      "type": "positive",
+      "auto": true,
+      "icon": "03.png"
+    },
+    {
+      "code": "monthly_top3",
+      "name": "Призёр месяца",
+      "description": "Топ-3 по выполнению плана за календарный месяц.",
+      "type": "positive",
+      "auto": true,
+      "icon": "04.png"
+    },
+    {
+      "code": "kpi_100",
+      "name": "План 100%",
+      "description": "Личный план выполнен на 100% и выше за месяц.",
+      "type": "positive",
+      "auto": true,
+      "icon": "05.png"
+    },
+    {
+      "code": "kpi_120",
+      "name": "Перевыполнение 120%",
+      "description": "Личный план перевыполнен на 120% и выше за месяц.",
+      "type": "positive",
+      "auto": true,
+      "icon": "06.png"
+    },
+    {
+      "code": "sales_100",
+      "name": "Сотня продаж",
+      "description": "Накопительно 100 успешных сделок за всё время работы.",
+      "type": "positive",
+      "auto": true,
+      "icon": "07.png"
+    },
+    {
+      "code": "mvp_week",
+      "name": "MVP недели",
+      "description": "Лучший результат недели по конверсии в покупку.",
+      "type": "positive",
+      "auto": true,
+      "icon": "08.png"
+    },
+    {
+      "code": "team_player",
+      "name": "Командный игрок",
+      "description": "За помощь коллегам и закрытие сделок в команде.",
+      "type": "positive",
+      "auto": false,
+      "icon": "09.png"
+    },
+    {
+      "code": "mentor",
+      "name": "Наставник",
+      "description": "За адаптацию и обучение новых сотрудников.",
+      "type": "positive",
+      "auto": false,
+      "icon": "10.png"
+    },
+    {
+      "code": "no_visits_3d",
+      "name": "Тишина 3 дня",
+      "description": "Три рабочих дня подряд без зафиксированных визитов.",
+      "type": "negative",
+      "auto": true,
+      "icon": "11.png"
+    },
+    {
+      "code": "kpi_below_50",
+      "name": "План ниже 50%",
+      "description": "Выполнение личного плана меньше 50% за месяц.",
+      "type": "negative",
+      "auto": true,
+      "icon": "12.png"
+    },
+    {
+      "code": "late_arrivals",
+      "name": "Опоздания",
+      "description": "Зафиксированы опоздания на смены.",
+      "type": "negative",
+      "auto": false,
+      "icon": "13.png"
+    },
+    {
+      "code": "client_complaint",
+      "name": "Жалоба клиента",
+      "description": "Получена обоснованная жалоба от клиента.",
+      "type": "negative",
+      "auto": false,
+      "icon": "14.png"
+    },
+    {
+      "code": "birthday",
+      "name": "День рождения",
+      "description": "Поздравление с днём рождения от команды.",
+      "type": "neutral",
+      "auto": true,
+      "icon": "15.png"
+    },
+    {
+      "code": "anniversary",
+      "name": "Годовщина в команде",
+      "description": "Отметка очередного года работы в Crystal Motors.",
+      "type": "neutral",
+      "auto": true,
+      "icon": "16.png"
+    },
+    {
+      "code": "welcome",
+      "name": "Добро пожаловать",
+      "description": "Стартовый трофей нового сотрудника.",
+      "type": "neutral",
+      "auto": false,
+      "icon": "17.png"
+    },
+    {
+      "code": "fastest_close",
+      "name": "Самая быстрая сделка",
+      "description": "Закрытие сделки в кратчайшие сроки за период.",
+      "type": "positive",
+      "auto": true,
+      "icon": "18.png"
+    },
+    {
+      "code": "perfect_week",
+      "name": "Идеальная неделя",
+      "description": "Неделя без отказов и жалоб, KPI ≥ 100%.",
+      "type": "positive",
+      "auto": true,
+      "icon": "19.png"
+    },
+    {
+      "code": "special",
+      "name": "Особая отметка",
+      "description": "Универсальный трофей с произвольным комментарием.",
+      "type": "neutral",
+      "auto": false,
+      "icon": "20.png"
+    }
+  ]
+}

@@ -2217,6 +2217,15 @@ async function loadTab(tab) {
 }
 
 function reloadCurrent() {
+  // Страница Трофеев — сбрасываем кеш каталога и фактов выдачи
+  if (document.getElementById('scr-trophies')?.classList.contains('on')) {
+    apiCacheInvalidate('TrophyAwards');
+    S.trophies = null;
+    S.trophyAwards = null;
+    _trophiesCatalogPromise = null;
+    renderTrophiesPage().then(() => toast('Обновлено','s'));
+    return;
+  }
   if (document.getElementById('scr-ceo')?.classList.contains('on')) {
     apiCacheInvalidate();
     S.data.vizity = null; S.data.d_vizity = null;

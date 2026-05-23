@@ -6777,16 +6777,15 @@ body.cosmic .profile-avatar-wrap::before { border-color: rgba(190,190,190,0.55);
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
-  border-radius: 10px;
-  background: var(--bg3);
-  border: 1px solid var(--line);
+  background: transparent;
+  border: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  overflow: visible;
   transition: transform .12s;
 }
-.profile-trophy:hover { transform: translateY(-1px); }
+.profile-trophy:hover { transform: translateY(-2px); }
 .profile-trophy img {
   width: 100%;
   height: 100%;

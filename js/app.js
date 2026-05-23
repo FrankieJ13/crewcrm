@@ -9119,7 +9119,9 @@ function renderRating() {
   }
 
   const cardsHTML = managers.map((m, idx) => {
-    const isTop = idx < 3 && m.progNum >= 100;
+    // Медаль и цветная полоса для всех топ-3 без условия по плану.
+    // Раньше требовали progNum >= 100, из-за чего бронза часто пропадала.
+    const isTop = idx < 3;
     const rc = isTop ? rankColors[idx] : null;
     const stripColor = rc ? rc.strip : null;
     const stripEnd   = rc ? rc.stripEnd : null;
@@ -10545,15 +10547,14 @@ async function renderTrophiesPage() {
   if (!el) return;
   el.innerHTML = loader();
 
-  try {
-    await Promise.all([loadTrophiesCatalog(), loadTrophyAwards()]);
-  } catch (e) {
-    el.innerHTML = `<div class="empty">Не удалось загрузить трофеи: ${e?.message || 'ошибка'}</div>`;
-    return;
-  }
+  // Грузим независимо: каталог критичен, awards — нет (пустой лист или offline ОК).
+  // Если каталог уже в S.trophies — отрисуемся даже при network-error.
+  try { await loadTrophiesCatalog(); } catch (e) { /* fallback ниже */ }
+  try { await loadTrophyAwards(); } catch (e) { S.trophyAwards = S.trophyAwards || []; }
+
   const catalog = (S.trophies && Array.isArray(S.trophies.trophies)) ? S.trophies.trophies : [];
   if (!catalog.length) {
-    el.innerHTML = '<div class="empty">Справочник трофеев пуст</div>';
+    el.innerHTML = `<div class="empty">Не удалось загрузить справочник трофеев.<br><span style="font-size:11px;color:var(--txt3)">Проверьте подключение и обновите страницу.</span></div>`;
     return;
   }
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crm-crew-dashboard-v46';
+const CACHE_NAME = 'crm-crew-dashboard-v47';
 const STATIC_ASSETS = [
   './logos/pwa-192.png',
   './logos/pwa-512.png',
@@ -118,8 +118,23 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  if (url.pathname.endsWith('.html') || url.pathname.endsWith('.js') || url.pathname.endsWith('.css') || url.pathname.endsWith('.json')) {
+  if (url.pathname.endsWith('.html') || url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
     event.respondWith(fetch(req));
+    return;
+  }
+
+  // Для .json (data/trophies.json и подобных) — network-first с fallback на cache.
+  // Это спасает от Failed to fetch при сетевых блипах и iOS PWA-офлайне.
+  if (url.pathname.endsWith('.json')) {
+    event.respondWith(
+      fetch(req).then(resp => {
+        if (resp && resp.ok) {
+          const copy = resp.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+        }
+        return resp;
+      }).catch(() => caches.match(req).then(cached => cached || Promise.reject(new Error('offline'))))
+    );
     return;
   }
 

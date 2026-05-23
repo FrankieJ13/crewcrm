@@ -264,6 +264,27 @@
   #autopodbor-fullscreen .price { font-size: 23px; }
 }
 
+/* Paged results — кнопка «Показать ещё» */
+#autopodbor-fullscreen .reply-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+#autopodbor-fullscreen .show-more-cars {
+  min-height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--acc);
+  color: #ffffff;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter .15s;
+}
+#autopodbor-fullscreen .show-more-cars:hover { filter: brightness(0.9); }
+#autopodbor-fullscreen .show-more-cars:disabled { cursor: default; opacity: 0.65; }
+
 #autopodbor-fullscreen .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 #autopodbor-fullscreen .chip {
   display: inline-flex; align-items: center;

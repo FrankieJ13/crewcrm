@@ -1,166 +1,196 @@
 {
-  "version": 1,
-  "updatedAt": "2026-05-22",
+  "version": 2,
+  "updatedAt": "2026-05-23",
+  "notes": "Категория определяется суффиксом code: _monthly | _annual | _once. AUTO-трофеи начисляются автоматизацией (Apps Script) 2-го числа следующего месяца. MANUAL — вручную через лист TrophyAwards. Менеджер может получать один и тот же трофей несколько раз (повторные строки в TrophyAwards).",
   "trophies": [
     {
-      "code": "first_visit",
-      "name": "Первый визит",
-      "description": "Зафиксирован первый визит клиента в системе.",
+      "code": "numberone_monthly",
+      "name": "ТОП1",
+      "description": "Первое место по выполнению плана за месяц (план ≥ 100%).",
       "type": "positive",
+      "category": "monthly",
       "auto": true,
-      "icon": "01.png"
+      "icon": "numberone_monthly.png"
     },
     {
-      "code": "streak_7",
-      "name": "Серия 7 дней",
-      "description": "Семь рабочих дней подряд с активностью без пропусков.",
+      "code": "numbertwo_monthly",
+      "name": "ТОП2",
+      "description": "Второе место по выполнению плана за месяц (план ≥ 100%).",
       "type": "positive",
+      "category": "monthly",
       "auto": true,
-      "icon": "02.png"
+      "icon": "numbertwo_monthly.png"
     },
     {
-      "code": "monthly_top1",
-      "name": "Лидер месяца",
-      "description": "Первое место по выполнению плана за календарный месяц.",
+      "code": "numberthree_monthly",
+      "name": "ТОП3",
+      "description": "Третье место по выполнению плана за месяц (план ≥ 100%).",
       "type": "positive",
+      "category": "monthly",
       "auto": true,
-      "icon": "03.png"
+      "icon": "numberthree_monthly.png"
     },
     {
-      "code": "monthly_top3",
-      "name": "Призёр месяца",
-      "description": "Топ-3 по выполнению плана за календарный месяц.",
+      "code": "snatch_monthly",
+      "name": "Большой куш",
+      "description": "Самый высокий совокупный доход (CRM + Дожим) за последние 6 месяцев.",
       "type": "positive",
+      "category": "monthly",
       "auto": true,
-      "icon": "04.png"
+      "icon": "snatch_monthly.png"
     },
     {
-      "code": "kpi_100",
-      "name": "План 100%",
-      "description": "Личный план выполнен на 100% и выше за месяц.",
+      "code": "star_monthly",
+      "name": "AWESOME",
+      "description": "План закрыт на 130% и более + 30 продаж в кредит за месяц.",
       "type": "positive",
+      "category": "monthly",
       "auto": true,
-      "icon": "05.png"
+      "icon": "star_monthly.png"
     },
     {
-      "code": "kpi_120",
-      "name": "Перевыполнение 120%",
-      "description": "Личный план перевыполнен на 120% и выше за месяц.",
+      "code": "star2_monthly",
+      "name": "NICE",
+      "description": "План закрыт на 120% и более + 20 продаж в кредит за месяц.",
       "type": "positive",
+      "category": "monthly",
       "auto": true,
-      "icon": "06.png"
+      "icon": "star2_monthly.png"
     },
     {
-      "code": "sales_100",
-      "name": "Сотня продаж",
-      "description": "Накопительно 100 успешных сделок за всё время работы.",
+      "code": "emolument_monthly",
+      "name": "ВА-Банк",
+      "description": "Самый высокий доход по итогу месяца.",
       "type": "positive",
+      "category": "monthly",
       "auto": true,
-      "icon": "07.png"
+      "icon": "emolument_monthly.png"
     },
     {
-      "code": "mvp_week",
-      "name": "MVP недели",
-      "description": "Лучший результат недели по конверсии в покупку.",
+      "code": "commission_monthly",
+      "name": "Коллектор",
+      "description": "Больше всего сделок со статусом «Комиссия» за месяц.",
       "type": "positive",
+      "category": "monthly",
       "auto": true,
-      "icon": "08.png"
+      "icon": "commission_monthly.png"
     },
     {
-      "code": "team_player",
-      "name": "Командный игрок",
-      "description": "За помощь коллегам и закрытие сделок в команде.",
+      "code": "kd_monthly",
+      "name": "Счастливое число CRM",
+      "description": "33 продажи в кредит (Покупка (кредит)) за месяц.",
       "type": "positive",
-      "auto": false,
-      "icon": "09.png"
+      "category": "monthly",
+      "auto": true,
+      "icon": "kd_monthly.png"
     },
     {
-      "code": "mentor",
-      "name": "Наставник",
-      "description": "За адаптацию и обучение новых сотрудников.",
+      "code": "cash_monthly",
+      "name": "Туз в рукаве",
+      "description": "10 продаж за наличные (Покупка (наличные)) за месяц.",
       "type": "positive",
-      "auto": false,
-      "icon": "10.png"
-    },
-    {
-      "code": "no_visits_3d",
-      "name": "Тишина 3 дня",
-      "description": "Три рабочих дня подряд без зафиксированных визитов.",
-      "type": "negative",
+      "category": "monthly",
       "auto": true,
-      "icon": "11.png"
+      "icon": "cash_monthly.png"
     },
     {
-      "code": "kpi_below_50",
-      "name": "План ниже 50%",
-      "description": "Выполнение личного плана меньше 50% за месяц.",
-      "type": "negative",
-      "auto": true,
-      "icon": "12.png"
-    },
-    {
-      "code": "late_arrivals",
-      "name": "Опоздания",
-      "description": "Зафиксированы опоздания на смены.",
-      "type": "negative",
-      "auto": false,
-      "icon": "13.png"
-    },
-    {
-      "code": "client_complaint",
-      "name": "Жалоба клиента",
-      "description": "Получена обоснованная жалоба от клиента.",
-      "type": "negative",
-      "auto": false,
-      "icon": "14.png"
-    },
-    {
-      "code": "birthday",
-      "name": "День рождения",
-      "description": "Поздравление с днём рождения от команды.",
-      "type": "neutral",
-      "auto": true,
-      "icon": "15.png"
-    },
-    {
-      "code": "anniversary",
-      "name": "Годовщина в команде",
-      "description": "Отметка очередного года работы в Crystal Motors.",
-      "type": "neutral",
-      "auto": true,
-      "icon": "16.png"
-    },
-    {
-      "code": "welcome",
-      "name": "Добро пожаловать",
-      "description": "Стартовый трофей нового сотрудника.",
-      "type": "neutral",
-      "auto": false,
-      "icon": "17.png"
-    },
-    {
-      "code": "fastest_close",
-      "name": "Самая быстрая сделка",
-      "description": "Закрытие сделки в кратчайшие сроки за период.",
+      "code": "3in1_monthly",
+      "name": "Три в ряд",
+      "description": "Три кредитные сделки подряд в один день в текущем месяце.",
       "type": "positive",
+      "category": "monthly",
       "auto": true,
-      "icon": "18.png"
+      "icon": "3in1_monthly.png"
     },
     {
-      "code": "perfect_week",
+      "code": "notfailure_monthly",
       "name": "Идеальная неделя",
-      "description": "Неделя без отказов и жалоб, KPI ≥ 100%.",
+      "description": "7 дней без отказов банка (статусы «Отказ» / «ФССП не подаем»).",
       "type": "positive",
+      "category": "monthly",
       "auto": true,
-      "icon": "19.png"
+      "icon": "notfailure_monthly.png"
     },
     {
-      "code": "special",
-      "name": "Особая отметка",
-      "description": "Универсальный трофей с произвольным комментарием.",
-      "type": "neutral",
+      "code": "profitability_monthly",
+      "name": "MVP",
+      "description": "Самая большая доходность с одной сделки в текущем месяце.",
+      "type": "positive",
+      "category": "monthly",
       "auto": false,
-      "icon": "20.png"
+      "icon": "profitability_monthly.png"
+    },
+    {
+      "code": "slaughter_monthly",
+      "name": "Болтун",
+      "description": "Больше всех разговаривал с клиентами за месяц.",
+      "type": "neutral",
+      "category": "monthly",
+      "auto": false,
+      "icon": "slaughter_monthly.png"
+    },
+    {
+      "code": "parking_monthly",
+      "name": "Автоколлапс",
+      "description": "Опоздание по причине поиска парковки.",
+      "type": "negative",
+      "category": "monthly",
+      "auto": false,
+      "icon": "parking_monthly.png"
+    },
+    {
+      "code": "lateness_monthly",
+      "name": "Опоздун",
+      "description": "Опоздание на смену.",
+      "type": "negative",
+      "category": "monthly",
+      "auto": false,
+      "icon": "lateness_monthly.png"
+    },
+    {
+      "code": "overslept_monthly",
+      "name": "Ловец снов",
+      "description": "Опоздание по причине «проспал».",
+      "type": "negative",
+      "category": "monthly",
+      "auto": false,
+      "icon": "overslept_monthly.png"
+    },
+    {
+      "code": "anniversary_annual",
+      "name": "Anniversary Edition",
+      "description": "За очередной год работы в Crystal Motors.",
+      "type": "neutral",
+      "category": "annual",
+      "auto": true,
+      "icon": "anniversary_annual.png"
+    },
+    {
+      "code": "hb_annual",
+      "name": "Happy Birthday",
+      "description": "В день рождения, ежегодно (старт 2026).",
+      "type": "neutral",
+      "category": "annual",
+      "auto": true,
+      "icon": "hb_annual.png"
+    },
+    {
+      "code": "hny_annual",
+      "name": "HNY",
+      "description": "Всем в честь Нового года (с 31.12 на 01.01, старт 2026).",
+      "type": "neutral",
+      "category": "annual",
+      "auto": true,
+      "icon": "hny_annual.png"
+    },
+    {
+      "code": "mentor_once",
+      "name": "деМентор",
+      "description": "За наставничество над новым сотрудником.",
+      "type": "positive",
+      "category": "once",
+      "auto": false,
+      "icon": "mentor_once.png"
     }
   ]
 }

@@ -10509,11 +10509,28 @@ async function renderTrophiesPage() {
     </div>`;
   }
 
-  // Группируем по типу
-  const groups = { positive: [], negative: [], neutral: [] };
+  // Категория из поля или суффикса code: _monthly / _annual / _once
+  const _trophyCat = (t) => {
+    const c = String(t.category || '').toLowerCase();
+    if (c === 'monthly' || c === 'annual' || c === 'once') return c;
+    const code = String(t.code || '').toLowerCase();
+    if (code.endsWith('_once')) return 'once';
+    if (code.endsWith('_annual')) return 'annual';
+    if (code.endsWith('_monthly')) return 'monthly';
+    return 'monthly';
+  };
+  // Порядок типов внутри секции: позитив → нейтрал → негатив
+  const _typeOrder = { positive: 0, neutral: 1, negative: 2 };
+  const groups = { monthly: [], annual: [], once: [] };
   catalog.forEach(t => {
-    const type = (t.type || 'neutral').toLowerCase();
-    (groups[type] || groups.neutral).push(t);
+    const cat = _trophyCat(t);
+    (groups[cat] || groups.monthly).push(t);
+  });
+  Object.keys(groups).forEach(k => {
+    groups[k].sort((a, b) =>
+      (_typeOrder[(a.type||'neutral').toLowerCase()] - _typeOrder[(b.type||'neutral').toLowerCase()])
+      || String(a.name||a.code).localeCompare(String(b.name||b.code), 'ru')
+    );
   });
 
   // Подсчёт полученных
@@ -10567,9 +10584,9 @@ async function renderTrophiesPage() {
         </div>
         ${mgrPicker}
       </div>
-      ${renderSection('Позитивные',  'positive', groups.positive)}
-      ${renderSection('Негативные',  'negative', groups.negative)}
-      ${renderSection('Нейтральные', 'neutral',  groups.neutral)}
+      ${renderSection('Ежемесячные',   'monthly', groups.monthly)}
+      ${renderSection('Ежегодные',     'annual',  groups.annual)}
+      ${renderSection('Единоразовые',  'once',    groups.once)}
     </div>
   `;
 }

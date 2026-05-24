@@ -6284,15 +6284,20 @@ body.cinematic .ceo-speedo-value { color: var(--txt) !important; }
   .personal-vis-row .pv-right-bot { font-size: 14px; }
 }
 
-/* +15% к мини-бейджам Динамика/Прогноз в панели спидометра */
+/* Мини-бейджи Динамика/Прогноз: всегда в одной строке, текст внутри
+   при нехватке места переносится. */
+#c-personal .ceo-mini-badges { flex-wrap: nowrap; }
 #c-personal .ceo-mini-badge {
+  flex: 1 1 0;
+  min-width: 0;
   padding: 7px 9px;
-  min-width: max-content; /* шире самого длинного подзаголовка, чтобы не обрезался */
 }
-#c-personal .ceo-mini-lbl { font-size: 10px; white-space: nowrap; }
+#c-personal .ceo-mini-lbl { font-size: clamp(9px, 2.5vw, 10px); line-height: 1.15; }
 #c-personal .ceo-mini-val { font-size: 14px; }
-#c-personal .ceo-mini-sub { font-size: 10px; white-space: nowrap; }
-#c-personal .ceo-mini-badges { flex-wrap: wrap; }
+#c-personal .ceo-mini-sub { font-size: clamp(9px, 2.3vw, 10px); }
+
+/* Светлый текст значения спидометра на тёмных темах */
+#c-personal .ceo-speedo-value { color: var(--txt) !important; }
 
 /* Карточка «Отказ + ФССП» — нежно-красная заливка, тёмный текст */
 .personal-metric-otkaz {

@@ -6745,7 +6745,7 @@ function renderPersonal(matched) {
       <div class="ceo-metric-card ceo-clickable" onclick="openMgrDealsModal(${visitsModalName},'komis')">
         <div class="ceo-metric-lbl">Комиссия</div>
         <div class="ceo-metric-val mv" style="color:var(--txt)">${_kom}</div>
-        <div class="ceo-metric-sub">за месяц</div>
+        <div class="ceo-metric-sub">${num(_vs.kom800)||'0'} / ${num(_vs.kom1200)||'0'} (crm/тл)</div>
       </div>
     </div>
 
@@ -6782,11 +6782,21 @@ function renderPersonal(matched) {
     const wrap = document.querySelector('#c-personal .kpi-avatar-wrap');
     if (wrap) ceoAvatarPlay(wrap);
     const path = document.getElementById('ceo-speed-progress');
-    if (path) {
-      const target = Math.max(0, 1 - Math.min(progNum/100, 1));
-      path.setAttribute('stroke-dashoffset', '1');
-      requestAnimationFrame(() => path.setAttribute('stroke-dashoffset', String(target)));
+    if (!path) return;
+    const target = Math.max(0, 1 - Math.min(progNum/100, 1));
+    // На повторных рендерах (silent refresh) — не анимируем заново, просто ставим итог
+    if (path.dataset.animated === '1') {
+      path.setAttribute('stroke-dashoffset', String(target));
+      return;
     }
+    // Стартуем с 1 (пусто), форсим layout, в следующем rAF ставим target —
+    // CSS transition 1.5s сработает плавно с самого начала.
+    path.setAttribute('stroke-dashoffset', '1');
+    void path.getBoundingClientRect();
+    requestAnimationFrame(() => {
+      path.setAttribute('stroke-dashoffset', String(target));
+      path.dataset.animated = '1';
+    });
   });
 
   // Подгрузим погоду в фоне (используется shared cache S._ceoWeatherCache)

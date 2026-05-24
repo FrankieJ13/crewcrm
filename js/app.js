@@ -8893,10 +8893,26 @@ function renderCeoDashboard() {
     Object.values(dozhimStats).forEach(s => { n += (s[field] || 0); });
     return n;
   }
-  const totalKredit  = sumStat('kred800') + sumStat('kred1200') + sumStat('kred1000');
-  const totalNalObm  = sumStat('nal800') + sumStat('nal1200') + sumStat('nal1000')
-                     + sumStat('obmen800') + sumStat('obmen1200');
-  const totalKomis   = sumStat('kom800') + sumStat('kom1200') + sumStat('kom1000');
+  // Раздельные суммы по отделам — для подписей «CRM N / Дожим M»
+  function sumCrm(...fields) {
+    let n = 0;
+    Object.values(crmStats).forEach(s => { fields.forEach(f => { n += (s[f] || 0); }); });
+    return n;
+  }
+  function sumDoz(...fields) {
+    let n = 0;
+    Object.values(dozhimStats).forEach(s => { fields.forEach(f => { n += (s[f] || 0); }); });
+    return n;
+  }
+  const kreditCrm = sumCrm('kred800', 'kred1200');
+  const kreditDoz = sumDoz('kred800', 'kred1000');
+  const nalObmCrm = sumCrm('nal800', 'nal1200', 'obmen800', 'obmen1200');
+  const nalObmDoz = sumDoz('nal800', 'nal1000', 'obmen800');
+  const komisCrm  = sumCrm('kom800', 'kom1200');
+  const komisDoz  = sumDoz('kom800', 'kom1000');
+  const totalKredit = kreditCrm + kreditDoz;
+  const totalNalObm = nalObmCrm + nalObmDoz;
+  const totalKomis  = komisCrm + komisDoz;
 
   // Менеджеры в плане
   const allMgrs = [...crmMgrs, ...dozhimMgrs];
@@ -9220,19 +9236,19 @@ function renderCeoDashboard() {
           ${deltaBadge(deltaKredit, 'Кредиты')}
           <div class="ceo-metric-lbl">Кредиты</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalKredit}</div>
-          <div class="ceo-metric-sub">CRM + Дожим</div>
+          <div class="ceo-metric-sub">${kreditCrm} / ${kreditDoz} (CRM / Дожим)</div>
         </div>
         <div class="ceo-metric-card ceo-clickable" onclick="openCeoDealsModal('nalobm')">
           ${deltaBadge(deltaNalObm, 'Нал+Обмен')}
           <div class="ceo-metric-lbl">Нал+Обмен</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalNalObm}</div>
-          <div class="ceo-metric-sub">CRM + Дожим</div>
+          <div class="ceo-metric-sub">${nalObmCrm} / ${nalObmDoz} (CRM / Дожим)</div>
         </div>
         <div class="ceo-metric-card ceo-clickable" onclick="openCeoDealsModal('komis')">
           ${deltaBadge(deltaKomis, 'Комиссия')}
           <div class="ceo-metric-lbl">Комиссия</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalKomis}</div>
-          <div class="ceo-metric-sub">CRM + Дожим</div>
+          <div class="ceo-metric-sub">${komisCrm} / ${komisDoz} (CRM / Дожим)</div>
         </div>
       </div>
 

@@ -9618,7 +9618,7 @@ function renderRating() {
           <div class="rating-card-bar-fill" data-w="${barW}" style="width:0%;background:${pctColor}"></div>
         </div>
         <div class="rating-card-stats">
-          <div class="rating-card-stat highlight"><span>Визитов</span><b>${m.vis}/${m.plan||'—'}</b></div>
+          <div class="rating-card-stat highlight"><span>Виз.</span><b>${m.vis}/${m.plan||'—'}</b></div>
           ${m.kred ? `<div class="rating-card-stat"><span>Кред.</span><b>${m.kred}</b></div>` : ''}
           ${m.nal  ? `<div class="rating-card-stat"><span>Нал.</span><b>${m.nal}</b></div>` : ''}
           ${m.kom  ? `<div class="rating-card-stat"><span>Ком.</span><b>${m.kom}</b></div>` : ''}
@@ -10826,11 +10826,12 @@ function _profileTriggerIconHtml(name) {
 function _profileSuffixes() {
   const list = [];
   const now = new Date();
+  const MONTH_ABBR = ['ЯНВ','ФЕВ','МАР','АПР','МАЙ','ИЮН','ИЮЛ','АВГ','СЕН','ОКТ','НОЯ','ДЕК'];
   for (let i = 0; i < 6; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const yy = String(d.getFullYear()).slice(-2);
-    const label = d.toLocaleString('ru', { month: 'short' }).replace('.', '');
+    const label = MONTH_ABBR[d.getMonth()];
     list.push({ sfx: mm + yy, label, year: d.getFullYear(), month: d.getMonth() + 1 });
   }
   return list.reverse(); // от старого к новому

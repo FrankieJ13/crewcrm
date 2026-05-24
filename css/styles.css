@@ -3543,7 +3543,7 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
 .kpi-manager-name {
   font-family:'Unbounded',sans-serif;
   font-size:18px; font-weight:800; letter-spacing:.03em;
-  color:var(--txt); margin:8px 0 4px; line-height:1.2;
+  color:var(--txt); margin:0 0 4px; line-height:1.2;
 }
 .kpi-divider { height:1px; background:var(--line2); margin-bottom:14px; }
 .kpi-bare-text { color: var(--txt2); }
@@ -6207,11 +6207,12 @@ body.cinematic .ceo-speedo-value { color: var(--txt) !important; }
     "lblMain lblSplit chart rightT"
     "valMain valSplit chart rightB";
   align-items: center;
-  column-gap: 12px;
+  column-gap: 20px;
   row-gap: 4px;
   padding: 14px 14px;
   position: relative;
 }
+.personal-vis-row .pv-chart { padding: 0 10px; }
 .personal-vis-row .pv-lbl-main   { grid-area: lblMain; }
 .personal-vis-row .pv-lbl-split  { grid-area: lblSplit; }
 .personal-vis-row .pv-val-main   { grid-area: valMain; }
@@ -6261,9 +6262,10 @@ body.cinematic .ceo-speedo-value { color: var(--txt) !important; }
 
 @media (max-width: 540px) {
   .personal-vis-row {
-    column-gap: 8px;
+    column-gap: 14px;
     padding: 12px 12px;
   }
+  .personal-vis-row .pv-chart { padding: 0 6px; }
   .personal-vis-row .pv-val-main .mv  { font-size: 18px; }
   .personal-vis-row .pv-val-main .pv-plan { font-size: 12px; }
   .personal-vis-row .pv-val-split { font-size: 13px; }

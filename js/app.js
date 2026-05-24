@@ -6735,12 +6735,12 @@ function renderPersonal(matched) {
       <div class="ceo-metric-card ceo-clickable" onclick="openMgrDealsModal(${visitsModalName},'kredit')">
         <div class="ceo-metric-lbl">Кредиты</div>
         <div class="ceo-metric-val mv" style="color:var(--txt)">${_kred}</div>
-        <div class="ceo-metric-sub">${mgrRow[8]||'0'} / ${mgrRow[12]||'0'} (800/1200)</div>
+        <div class="ceo-metric-sub">${mgrRow[8]||'0'} / ${mgrRow[12]||'0'} (crm/тл)</div>
       </div>
       <div class="ceo-metric-card ceo-clickable" onclick="openMgrDealsModal(${visitsModalName},'nalobm')">
         <div class="ceo-metric-lbl">Нал + Обмен</div>
         <div class="ceo-metric-val mv" style="color:var(--txt)">${_nalObm}</div>
-        <div class="ceo-metric-sub">${_nal800}/${_nal1200} (800/1200)</div>
+        <div class="ceo-metric-sub">${_nal800}/${_nal1200} (crm/тл)</div>
       </div>
       <div class="ceo-metric-card ceo-clickable" onclick="openMgrDealsModal(${visitsModalName},'komis')">
         <div class="ceo-metric-lbl">Комиссия</div>

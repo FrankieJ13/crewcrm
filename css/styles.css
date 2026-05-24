@@ -4338,14 +4338,14 @@ body.neo-dark .income-col .ic-lbl {
 /* Trophy count badge — нижний правый угол карточки рейтинга */
 .rating-trophy-badge {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
+  right: 12px;
+  bottom: 10px;
   z-index: 3;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 4px 8px;
-  border-radius: 999px;
+  border-radius: 8px;
   background: var(--bg3);
   border: 1px solid var(--line);
   font-family: 'Unbounded', sans-serif;
@@ -4353,6 +4353,11 @@ body.neo-dark .income-col .ic-lbl {
   font-weight: 800;
   color: var(--txt);
   pointer-events: none;
+}
+/* Резервируем место справа в строке статов, чтобы «Ком.» не уезжал
+   под бейдж трофеев. Применяется только когда бейдж есть в карточке. */
+.rating-card:has(.rating-trophy-badge) .rating-card-stats {
+  padding-right: 70px;
 }
 .rt-badge-num { line-height: 1; }
 .rt-badge-ico {

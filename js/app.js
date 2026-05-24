@@ -10548,7 +10548,9 @@ function _trophyFormatDate(iso) {
   if (!iso) return '';
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short', year: 'numeric' });
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dd}.${mm}.${d.getFullYear()}`;
 }
 
 function _trophyTypeBadge(type) {
@@ -10651,12 +10653,6 @@ async function renderTrophiesPage() {
     const iconSrc = `logos/trophies/${t.icon || ''}`;
     const dateLbl  = earned ? _trophyFormatDate(award.lastDate) : '';
     const countLbl = (earned && award.count > 1) ? ` ×${award.count}` : '';
-    // В каталог-режиме показываем источник как «авто/вручную» нейтрально,
-    // в режиме менеджера — реальный источник конкретной выдачи.
-    const srcChip = earned
-      ? `<span class="trophy-src trophy-src-${award.items[0]?.src || 'manual'}">${award.items[0]?.src === 'auto' ? 'авто' : 'вручную'}</span>`
-      : (t.auto ? '<span class="trophy-src trophy-src-auto trophy-src-mute">авто</span>'
-                : '<span class="trophy-src trophy-src-manual trophy-src-mute">вручную</span>');
     return `
       <div class="trophy-card trophy-card-${type} ${earned ? 'trophy-earned' : (isCatalogMode ? '' : 'trophy-locked')}">
         <div class="trophy-card-ico">
@@ -10666,7 +10662,6 @@ async function renderTrophiesPage() {
           <div class="trophy-card-hdr">
             ${_trophyTypeBadge(type)}
             <div class="trophy-card-name">${escapeHtml(t.name || t.code)}${countLbl}</div>
-            ${srcChip}
           </div>
           <div class="trophy-card-desc">${escapeHtml(t.description || '')}</div>
           ${dateLbl ? `<div class="trophy-card-date">получен: ${dateLbl}</div>` : ''}
@@ -10690,7 +10685,10 @@ async function renderTrophiesPage() {
     counterHtml = `<div class="trophies-counter">всего <span class="mv">${catalog.length}</span> трофеев</div>`;
   } else {
     headerTitle = viewName || 'Трофеи';
-    counterHtml = `<div class="trophies-counter"><span class="mv">${earnedDistinct}</span> из ${catalog.length}<span class="trophies-counter-sub"> · всего выдач ${earnedCount}</span></div>`;
+    // У CEO/ROP остаётся «N из M», у менеджера CRM/Дожим — только «всего трофеев N»
+    counterHtml = isCeoLikeRole
+      ? `<div class="trophies-counter"><span class="mv">${earnedDistinct}</span> из ${catalog.length}<span class="trophies-counter-sub"> · всего трофеев ${earnedCount}</span></div>`
+      : `<div class="trophies-counter">всего трофеев <span class="mv">${earnedCount}</span></div>`;
   }
 
   // Пустое состояние для менеджера: получено пока ноль

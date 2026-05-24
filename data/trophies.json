@@ -1,12 +1,12 @@
 {
-  "version": 2,
-  "updatedAt": "2026-05-23",
+  "version": 3,
+  "updatedAt": "2026-05-24",
   "notes": "Категория определяется суффиксом code: _monthly | _annual | _once. AUTO-трофеи начисляются автоматизацией (Apps Script) 2-го числа следующего месяца. MANUAL — вручную через лист TrophyAwards. Менеджер может получать один и тот же трофей несколько раз (повторные строки в TrophyAwards).",
   "trophies": [
     {
       "code": "numberone_monthly",
       "name": "ТОП1",
-      "description": "Первое место по выполнению плана за месяц (план ≥ 100%).",
+      "description": "За выполнение плана на 100% и более — первое место.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -15,7 +15,7 @@
     {
       "code": "numbertwo_monthly",
       "name": "ТОП2",
-      "description": "Второе место по выполнению плана за месяц (план ≥ 100%).",
+      "description": "За выполнение плана на 100% и более — второе место.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -24,7 +24,7 @@
     {
       "code": "numberthree_monthly",
       "name": "ТОП3",
-      "description": "Третье место по выполнению плана за месяц (план ≥ 100%).",
+      "description": "За выполнение плана на 100% и более — третье место.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -33,7 +33,7 @@
     {
       "code": "snatch_monthly",
       "name": "Большой куш",
-      "description": "Самый высокий совокупный доход (CRM + Дожим) за последние 6 месяцев.",
+      "description": "За последние полгода самый высокий доход по отделу (CRM + ДОЖИМ).",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -42,7 +42,7 @@
     {
       "code": "star_monthly",
       "name": "AWESOME",
-      "description": "План закрыт на 130% и более + 30 продаж в кредит за месяц.",
+      "description": "Закрыл план по итогу месяца на 130% и более + сделал 30 продаж в кредит.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -51,7 +51,7 @@
     {
       "code": "star2_monthly",
       "name": "NICE",
-      "description": "План закрыт на 120% и более + 20 продаж в кредит за месяц.",
+      "description": "Закрыл план по итогу месяца на 120% и более + сделал 20 продаж в кредит.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -60,7 +60,7 @@
     {
       "code": "emolument_monthly",
       "name": "ВА-Банк",
-      "description": "Самый высокий доход по итогу месяца.",
+      "description": "За самый высокий доход по итогу месяца.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -69,7 +69,7 @@
     {
       "code": "commission_monthly",
       "name": "Коллектор",
-      "description": "Больше всего сделок со статусом «Комиссия» за месяц.",
+      "description": "Поставил больше всех авто на комиссию в текущем месяце.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -78,7 +78,7 @@
     {
       "code": "kd_monthly",
       "name": "Счастливое число CRM",
-      "description": "33 продажи в кредит (Покупка (кредит)) за месяц.",
+      "description": "За месяц сделал 33 продажи в кредит.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -87,7 +87,7 @@
     {
       "code": "cash_monthly",
       "name": "Туз в рукаве",
-      "description": "10 продаж за наличные (Покупка (наличные)) за месяц.",
+      "description": "За месяц сделал 10 продаж за наличные.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -96,7 +96,7 @@
     {
       "code": "3in1_monthly",
       "name": "Три в ряд",
-      "description": "Три кредитные сделки подряд в один день в текущем месяце.",
+      "description": "3 кредитных сделки подряд (день в день) в текущем месяце.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -105,7 +105,7 @@
     {
       "code": "notfailure_monthly",
       "name": "Идеальная неделя",
-      "description": "7 дней без отказов банка (статусы «Отказ» / «ФССП не подаем»).",
+      "description": "7 дней подряд не было отказов банка.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -114,7 +114,7 @@
     {
       "code": "profitability_monthly",
       "name": "MVP",
-      "description": "Самая большая доходность с одной сделки в текущем месяце.",
+      "description": "За самую большую доходность с одной сделки в текущем месяце.",
       "type": "positive",
       "category": "monthly",
       "auto": false,
@@ -123,7 +123,7 @@
     {
       "code": "slaughter_monthly",
       "name": "Болтун",
-      "description": "Больше всех разговаривал с клиентами за месяц.",
+      "description": "Больше всех разговаривал с клиентами в текущем месяце.",
       "type": "neutral",
       "category": "monthly",
       "auto": false,
@@ -132,7 +132,7 @@
     {
       "code": "parking_monthly",
       "name": "Автоколлапс",
-      "description": "Опоздание по причине поиска парковки.",
+      "description": "Опоздал из-за поиска парковки.",
       "type": "negative",
       "category": "monthly",
       "auto": false,
@@ -141,7 +141,7 @@
     {
       "code": "lateness_monthly",
       "name": "Опоздун",
-      "description": "Опоздание на смену.",
+      "description": "За опоздание, любому из менеджеров.",
       "type": "negative",
       "category": "monthly",
       "auto": false,
@@ -150,7 +150,7 @@
     {
       "code": "overslept_monthly",
       "name": "Ловец снов",
-      "description": "Опоздание по причине «проспал».",
+      "description": "Опоздание, по причине «проспал».",
       "type": "negative",
       "category": "monthly",
       "auto": false,
@@ -159,7 +159,7 @@
     {
       "code": "anniversary_annual",
       "name": "Anniversary Edition",
-      "description": "За очередной год работы в Crystal Motors.",
+      "description": "Год работы в Crystal Motors.",
       "type": "neutral",
       "category": "annual",
       "auto": true,
@@ -168,7 +168,7 @@
     {
       "code": "hb_annual",
       "name": "Happy Birthday",
-      "description": "В день рождения, ежегодно (старт 2026).",
+      "description": "С днём рождения, коллега!",
       "type": "neutral",
       "category": "annual",
       "auto": true,
@@ -177,7 +177,7 @@
     {
       "code": "hny_annual",
       "name": "HNY",
-      "description": "Всем в честь Нового года (с 31.12 на 01.01, старт 2026).",
+      "description": "С Новым годом, коллега!",
       "type": "neutral",
       "category": "annual",
       "auto": true,
@@ -186,7 +186,7 @@
     {
       "code": "mentor_once",
       "name": "деМентор",
-      "description": "За наставничество над новым сотрудником.",
+      "description": "Был наставником нового сотрудника.",
       "type": "positive",
       "category": "once",
       "auto": false,

@@ -6024,7 +6024,7 @@ body.cosmic .ceo-leaders-hdr .rating-toggle-pill {
 .ceo-forecast-body {
   display: flex; align-items: stretch; gap: 10px;
 }
-.ceo-forecast-info { flex: 1; min-width: 0; padding-right: 76px; }
+.ceo-forecast-info { flex: 1; min-width: 0; padding-right: 30px; }
 .ceo-mini-badges {
   display: flex; gap: 6px; margin-top: 4px;
 }

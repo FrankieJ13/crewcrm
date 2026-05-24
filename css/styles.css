@@ -7132,12 +7132,6 @@ body.cosmic .profile-modal-close {
   gap: 8px;
   margin-bottom: 18px;
 }
-@media (min-width: 560px) {
-  .trophies-grid { grid-template-columns: 1fr 1fr; }
-}
-@media (min-width: 900px) {
-  .trophies-grid { grid-template-columns: 1fr 1fr 1fr; }
-}
 
 .trophy-card {
   position: relative;

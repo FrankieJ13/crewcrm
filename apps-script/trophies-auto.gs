@@ -60,11 +60,12 @@ function awardMonthlyTrophies() {
 }
 
 /**
- * Дайли-задачи: ДР. Аналогично можно дернуть тест-руком.
+ * Дайли-задачи: ДР + кумулятивные milestone-трофеи (Бронза/Серебро/Золото/Платина).
  */
 function awardDailyTrophies() {
   const now = new Date();
   awardBirthdayFor(now);
+  awardMilestoneTrophies(now);
 }
 
 /**
@@ -225,6 +226,64 @@ function awardHnyFor(now) {
   console.log(`[trophies] hny ${awardedAt}: ${toAppend.length}`);
 }
 
+/* ─────── MILESTONE: 25/50/75/100 трофеев (once, AUTO) ─────── */
+const MILESTONE_TROPHIES = [
+  { code: '25trophies_once',  threshold: 25 },
+  { code: '50trophies_once',  threshold: 50 },
+  { code: '75trophies_once',  threshold: 75 },
+  { code: '100trophies_once', threshold: 100 },
+];
+
+function awardMilestoneTrophies(now) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const usersRows = readSheetSafe(ss, SHEET_USERS);
+  const awardRows = readSheetSafe(ss, SHEET_TROPHY_AWARDS);
+  const awardedAt = isoDate(now);
+
+  // Карта менеджеров: nameLow → ФИО
+  const mgrMap = {};
+  for (let i = 1; i < usersRows.length; i++) {
+    const row = usersRows[i]; if (!row) continue;
+    const name = String(row[U_NAME] || '').trim();
+    const role = String(row[U_ROLE] || '').toLowerCase().trim();
+    if (!name || (role !== 'crm' && role !== 'dozhim')) continue;
+    mgrMap[name.toLowerCase()] = name;
+  }
+
+  // Подсчёт всех активных выдач у каждого менеджера + регистрация уже
+  // полученных milestone-кодов, чтобы не дублировать
+  const milestoneCodes = MILESTONE_TROPHIES.map(m => m.code);
+  const counts = {};                // nameLow → число выданных трофеев (без milestone)
+  const hasMilestone = {};          // 'code|nameLow' → true
+
+  for (let i = 1; i < awardRows.length; i++) {
+    const r = awardRows[i]; if (!r) continue;
+    const code = String(r[0] || '').trim();
+    const name = String(r[1] || '').toLowerCase().trim();
+    const status = String(r[5] || 'active').toLowerCase().trim();
+    if (!code || !name || status === 'locked') continue;
+    if (milestoneCodes.indexOf(code) >= 0) {
+      hasMilestone[code + '|' + name] = true;
+      continue; // milestone-трофеи в счёт не идут
+    }
+    counts[name] = (counts[name] || 0) + 1;
+  }
+
+  const toAppend = [];
+  Object.keys(mgrMap).forEach(nameLow => {
+    const total = counts[nameLow] || 0;
+    MILESTONE_TROPHIES.forEach(m => {
+      if (total < m.threshold) return;
+      if (hasMilestone[m.code + '|' + nameLow]) return;
+      toAppend.push([m.code, mgrMap[nameLow], awardedAt, 'system', 'auto', 'active', `milestone ${m.threshold}`]);
+      hasMilestone[m.code + '|' + nameLow] = true;
+    });
+  });
+
+  if (toAppend.length) appendRows(ss, SHEET_TROPHY_AWARDS, toAppend);
+  console.log(`[trophies] milestones ${awardedAt}: ${toAppend.length}`);
+}
+
 /* ──────────────────────── АГРЕГАТОР ВИЗИТОВ ──────────────────────── */
 
 function emptyStats() {
@@ -368,6 +427,7 @@ function parseDob(val) {
 function debugLastMonth()   { awardMonthlyTrophies(); }
 function debugTodayBirthday() { awardDailyTrophies(); }
 function debugHnyNow()      { awardHnyTrophies(); }
+function debugMilestonesNow() { awardMilestoneTrophies(new Date()); }
 
 /**
  * Ручной прогон за конкретный месяц (формат '2026-05').

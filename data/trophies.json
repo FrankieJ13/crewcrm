@@ -191,6 +191,42 @@
       "category": "once",
       "auto": false,
       "icon": "mentor_once.png"
+    },
+    {
+      "code": "25trophies_once",
+      "name": "Бронза",
+      "description": "За получение 25 трофеев.",
+      "type": "positive",
+      "category": "once",
+      "auto": true,
+      "icon": "25trophies_once.png"
+    },
+    {
+      "code": "50trophies_once",
+      "name": "Серебро",
+      "description": "За получение 50 трофеев.",
+      "type": "positive",
+      "category": "once",
+      "auto": true,
+      "icon": "50trophies_once.png"
+    },
+    {
+      "code": "75trophies_once",
+      "name": "Золото",
+      "description": "За получение 75 трофеев.",
+      "type": "positive",
+      "category": "once",
+      "auto": true,
+      "icon": "75trophies_once.png"
+    },
+    {
+      "code": "100trophies_once",
+      "name": "Платина",
+      "description": "За получение 100 трофеев.",
+      "type": "positive",
+      "category": "once",
+      "auto": true,
+      "icon": "100trophies_once.png"
     }
   ]
 }

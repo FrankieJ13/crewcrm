@@ -4424,16 +4424,16 @@ body.light .rating-card-bar-track { background: rgba(0,0,0,.06); }
 .rating-card-stats {
   display: flex; gap: 6px; padding: 0 12px 10px;
   flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .rating-card-stat {
   background: var(--bg3); border: 1px solid var(--line);
   border-radius: 6px; padding: 3px 8px;
   font-size: 10px; color: var(--txt2);
-  display: flex; align-items: center; gap: 4px;
-  min-width: 0;
-  flex: 1 1 0;
+  display: inline-flex; align-items: center; gap: 4px;
+  flex: 0 0 auto;          /* размер строго под контент */
   white-space: nowrap;
-  overflow: hidden;
 }
 .rating-card-stat b { white-space: nowrap; }
 .rating-card-stat b { color: var(--txt); font-weight: 700; }

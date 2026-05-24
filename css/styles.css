@@ -6181,6 +6181,7 @@ body.cinematic .ceo-speedo-value { color: var(--txt) !important; }
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  margin-top: 12px;
   margin-bottom: 4px;
 }
 .personal-hdr-row .ceo-header-right {
@@ -6192,53 +6193,83 @@ body.cinematic .ceo-speedo-value { color: var(--txt) !important; }
 }
 .personal-metrics-vis { grid-template-columns: 1fr; }
 
-/* Широкая карточка «Визиты» — 4 колонки: метрика / split CRM-ТЛ / sparkline / delta+% */
+/* Широкая карточка «Визиты» — строгий грид 4×2:
+   ┌─────────┬───────────┬───────────┬────────┐
+   │ Визиты  │ CRM / ТЛ  │ sparkline │ delta  │
+   │ 84/170  │  46/38    │ (span 2)  │  64%   │
+   └─────────┴───────────┴───────────┴────────┘
+   Лейблы выровнены по верху, значения по низу — никаких смещений. */
 .personal-vis-row {
   display: grid;
-  grid-template-columns: auto auto 1fr auto;
+  grid-template-columns: minmax(0, auto) minmax(0, auto) minmax(40px, 1fr) minmax(0, auto);
+  grid-template-rows: auto auto;
+  grid-template-areas:
+    "lblMain lblSplit chart rightT"
+    "valMain valSplit chart rightB";
   align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
+  column-gap: 12px;
+  row-gap: 4px;
+  padding: 14px 14px;
   position: relative;
 }
-.personal-vis-row .pv-col { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.personal-vis-row .pv-col-main .pv-main-val {
-  font-family: 'Unbounded', sans-serif;
-  font-weight: 800;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-}
-.personal-vis-row .pv-col-main .pv-main-val .mv { font-size: 24px; color: var(--txt); }
-.personal-vis-row .pv-col-main .pv-plan { font-size: 14px; color: var(--txt3); font-weight: 700; }
-.personal-vis-row .pv-col-split .pv-split-val {
-  font-family: 'Unbounded', sans-serif;
-  font-size: 18px;
-  font-weight: 800;
+.personal-vis-row .pv-lbl-main   { grid-area: lblMain; }
+.personal-vis-row .pv-lbl-split  { grid-area: lblSplit; }
+.personal-vis-row .pv-val-main   { grid-area: valMain; }
+.personal-vis-row .pv-val-split  { grid-area: valSplit; }
+.personal-vis-row .pv-chart      { grid-area: chart; }
+.personal-vis-row .pv-right-top  { grid-area: rightT; justify-self: end; align-self: start; }
+.personal-vis-row .pv-right-bot  { grid-area: rightB; justify-self: end; align-self: end; }
+
+.personal-vis-row .pv-lbl {
+  font-size: 10px;
   color: var(--txt3);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 600;
   white-space: nowrap;
 }
-.personal-vis-row .pv-col-chart { align-items: center; justify-content: center; }
-.personal-vis-row .pv-col-chart .ceo-sparkline {
+.personal-vis-row .pv-val {
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 800;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  line-height: 1;
+}
+.personal-vis-row .pv-val-main .mv { font-size: 22px; color: var(--txt); }
+.personal-vis-row .pv-val-main .pv-plan { font-size: 13px; color: var(--txt3); font-weight: 700; }
+.personal-vis-row .pv-val-split { font-size: 16px; color: var(--txt3); }
+
+.personal-vis-row .pv-chart {
+  align-self: center;
+  width: 100%;
+  min-width: 0;
+}
+.personal-vis-row .pv-chart .ceo-sparkline {
   width: 100%;
   height: 42px;
   display: block;
 }
-.personal-vis-row .pv-col-right { align-items: flex-end; gap: 4px; }
-.personal-vis-row .pv-col-right .ceo-card-delta { position: static; }
-.personal-vis-row .pv-prog {
+.personal-vis-row .pv-right-top .ceo-card-delta { position: static; }
+.personal-vis-row .pv-right-bot {
   font-family: 'Unbounded', sans-serif;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 900;
+  line-height: 1;
 }
+
 @media (max-width: 540px) {
   .personal-vis-row {
-    grid-template-columns: auto 1fr auto;
-    gap: 10px;
+    column-gap: 8px;
     padding: 12px 12px;
   }
-  .personal-vis-row .pv-col-split { display: none; }
-  .personal-vis-row .pv-col-chart .ceo-sparkline { height: 38px; }
+  .personal-vis-row .pv-val-main .mv  { font-size: 18px; }
+  .personal-vis-row .pv-val-main .pv-plan { font-size: 12px; }
+  .personal-vis-row .pv-val-split { font-size: 13px; }
+  .personal-vis-row .pv-lbl { font-size: 9px; letter-spacing: 0.02em; }
+  .personal-vis-row .pv-chart .ceo-sparkline { height: 36px; }
+  .personal-vis-row .pv-right-bot { font-size: 14px; }
 }
 
 /* +15% к мини-бейджам Динамика/Прогноз в панели спидометра */

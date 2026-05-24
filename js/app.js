@@ -8614,11 +8614,11 @@ async function loadCeoDashboard() {
   }
 }
 
-// Цвета заливки column A для ВИЗИТЫ и Д_ВИЗИТЫ — определяем «план/не приехал»
+// Цвета заливки column E для ВИЗИТЫ и Д_ВИЗИТЫ — определяем «план/не приехал»
 async function fetchVizityFmts() {
   async function _one(sheetName) {
     try {
-      const range  = encodeURIComponent(`'${sheetName}'!A1:A1000`);
+      const range  = encodeURIComponent(`'${sheetName}'!E1:E1000`);
       const fields = 'sheets.data.rowData.values.userEnteredFormat.backgroundColor';
       const url    = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}`
                    + `?ranges=${range}&fields=${fields}&includeGridData=true`;

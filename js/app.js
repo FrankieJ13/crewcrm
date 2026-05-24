@@ -6729,33 +6729,33 @@ function renderPersonal(matched) {
       </div>
     </div>
 
-    <!-- Row 2: Кредиты, Нал+Обмен, Комиссия -->
+    <!-- Row 2: Кредиты, Нал+Обмен, Комиссия — клик открывает свою модалку по этому менеджеру -->
     <div class="ceo-metrics-grid" style="margin-top:8px">
-      <div class="ceo-metric-card ceo-clickable" onclick="${personalModalOpen}">
+      <div class="ceo-metric-card ceo-clickable" onclick="openMgrDealsModal(${visitsModalName},'kredit')">
         <div class="ceo-metric-lbl">Кредиты</div>
         <div class="ceo-metric-val mv" style="color:var(--txt)">${_kred}</div>
         <div class="ceo-metric-sub">${mgrRow[8]||'0'} / ${mgrRow[12]||'0'} (800/1200)</div>
       </div>
-      <div class="ceo-metric-card ceo-clickable" onclick="${personalModalOpen}">
+      <div class="ceo-metric-card ceo-clickable" onclick="openMgrDealsModal(${visitsModalName},'nalobm')">
         <div class="ceo-metric-lbl">Нал + Обмен</div>
         <div class="ceo-metric-val mv" style="color:var(--txt)">${_nalObm}</div>
         <div class="ceo-metric-sub">${_nal800}/${_nal1200} (800/1200)</div>
       </div>
-      <div class="ceo-metric-card ceo-clickable" onclick="${personalModalOpen}">
+      <div class="ceo-metric-card ceo-clickable" onclick="openMgrDealsModal(${visitsModalName},'komis')">
         <div class="ceo-metric-lbl">Комиссия</div>
         <div class="ceo-metric-val mv" style="color:var(--txt)">${_kom}</div>
         <div class="ceo-metric-sub">за месяц</div>
       </div>
     </div>
 
-    <!-- Row 3: В салоне, В КСО, Отказ + ФССП -->
+    <!-- Row 3: В салоне, В КСО, Отказ + ФССП — клик по первым двум открывает свою модалку по менеджеру -->
     <div class="ceo-metrics-grid" style="margin-top:8px">
-      <div class="ceo-metric-card ceo-clickable${vsaloneN > 0 ? ' ceo-salon-alarm' : ''}" onclick="${personalModalOpen}">
+      <div class="ceo-metric-card ceo-clickable${vsaloneN > 0 ? ' ceo-salon-alarm' : ''}" onclick="openMgrSalonModal(${visitsModalName})">
         <div class="ceo-metric-lbl">В салоне</div>
         <div class="ceo-metric-val mv" style="color:var(--txt)">${vsaloneN}</div>
         <div class="ceo-metric-sub">${vsaloneN > 0 ? 'клиентов сейчас' : 'никого нет'}</div>
       </div>
-      <div class="ceo-metric-card ceo-clickable ceo-kso-fill" onclick="${personalModalOpen}">
+      <div class="ceo-metric-card ceo-clickable ceo-kso-fill" onclick="openMgrKsoModal(${visitsModalName})">
         <div class="ceo-metric-lbl">В КСО</div>
         <div class="ceo-metric-val mv" style="color:var(--txt)">${_vkso}</div>
         <div class="ceo-metric-sub">заявок в банках</div>
@@ -7566,6 +7566,199 @@ function openCeoDealsModal(kind) {
   document.getElementById('income-overlay').classList.add('open', 'ceo-mode');
   document.body.style.overflow = 'hidden';
 }
+
+/* ────── ПЕРСОНАЛЬНЫЕ МОДАЛКИ ПО МЕНЕДЖЕРУ ──────
+   Те же таблицы, что у CEO, только отфильтровано по одному менеджеру (nameLow).
+   Колонка «Менеджер» убрана как лишняя. */
+
+function _mgrDisplayName(nameLow) {
+  // Восстанавливаем нормальный регистр имени из USERS
+  if (S.usersData) {
+    for (let i = 1; i < S.usersData.length; i++) {
+      const r = S.usersData[i];
+      if ((r[1]||'').toLowerCase().trim() === nameLow) return (r[1]||'').trim();
+    }
+  }
+  return nameLow;
+}
+
+function openMgrDealsModal(nameLow, kind) {
+  const KINDS = {
+    kredit: { title: 'Кредиты',   match: s => s === 'покупка (кредит)' },
+    nalobm: { title: 'Нал+Обмен', match: s => s === 'покупка (наличные)' || s === 'обмен' },
+    komis:  { title: 'Комиссия',  match: s => s === 'комиссия' },
+  };
+  const cfg = KINDS[kind]; if (!cfg) return;
+  const target = String(nameLow || '').toLowerCase().trim();
+  const collected = [];
+  const sources = [S.data.vizity || [], S.data.d_vizity || []];
+  sources.forEach(rows => {
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || !row[8]) continue;
+      if (String(row[8]).toLowerCase().trim() !== target) continue;
+      if (!isSverkaRow(row)) continue;
+      const status = String(row[4] || '').trim().toLowerCase();
+      if (!cfg.match(status)) continue;
+      collected.push({
+        date:   String(row[0] || '').trim(),
+        city:   String(row[3] || '').trim() || '—',
+        source: String(row[5] || '').trim() || '—',
+        status: String(row[4] || '').trim() || '—',
+      });
+    }
+  });
+  collected.sort((a, b) => {
+    const [da, ma] = a.date.split('.').map(n => parseInt(n) || 0);
+    const [db, mb] = b.date.split('.').map(n => parseInt(n) || 0);
+    if (ma !== mb) return ma - mb;
+    return da - db;
+  });
+
+  let rowsHtml = '';
+  if (!collected.length) {
+    rowsHtml = `<tr><td colspan="4" class="ceo-deals-empty">Нет сделок</td></tr>`;
+  } else {
+    let curDay = null, dayCount = 0, buffer = '';
+    function flushDay() {
+      if (curDay !== null) {
+        rowsHtml += buffer;
+        rowsHtml += `<tr class="ceo-deals-daytotal"><td colspan="4">Итого за ${curDay}: <b>${dayCount}</b> шт.</td></tr>`;
+      }
+      buffer = ''; dayCount = 0;
+    }
+    collected.forEach(d => {
+      const dd = d.date.split('.').slice(0, 2).join('.');
+      if (curDay !== null && dd !== curDay) flushDay();
+      curDay = dd; dayCount++;
+      buffer += `<tr>
+        <td class="ceo-deals-date">${dd}</td>
+        <td class="ceo-deals-city">${d.city}</td>
+        <td class="ceo-deals-src">${d.source}</td>
+        <td class="ceo-deals-src">${d.status}</td>
+      </tr>`;
+    });
+    flushDay();
+  }
+
+  const modalTitle = document.querySelector('#income-overlay .income-modal-title');
+  const mc = document.getElementById('income-modal-content');
+  if (modalTitle) modalTitle.innerHTML = `${cfg.title}<div class="visits-modal-mgr-name">${_mgrDisplayName(target)} · ${collected.length} · ${getMonthName(currentSuffix)}</div>`;
+  document.getElementById('income-overlay')?.classList.remove('visits-mode');
+  mc.removeAttribute('data-modal');
+  mc.innerHTML = `
+    <table class="ceo-deals-table">
+      <thead><tr><th>Дата</th><th>Город</th><th>Источник</th><th>Статус</th></tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>`;
+  document.getElementById('income-overlay').classList.add('open', 'ceo-mode');
+  document.body.style.overflow = 'hidden';
+}
+
+function openMgrSalonModal(nameLow) {
+  const target = String(nameLow || '').toLowerCase().trim();
+  const collected = [];
+  const sources = [S.data.vizity || [], S.data.d_vizity || []];
+  sources.forEach(rows => {
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || !row[8]) continue;
+      if (String(row[8]).toLowerCase().trim() !== target) continue;
+      if (!isSverkaRow(row)) continue;
+      const status = String(row[4] || '').trim().toLowerCase();
+      if (status !== 'в салоне') continue;
+      collected.push({
+        date:    String(row[0] || '').trim(),
+        city:    String(row[3] || '').trim() || '—',
+        phone:   String(row[2] || '').trim() || '—',
+        comment: String(row[4] || '').trim() || '—',
+      });
+    }
+  });
+  collected.sort((a, b) => {
+    const [da, ma] = a.date.split('.').map(n => parseInt(n) || 0);
+    const [db, mb] = b.date.split('.').map(n => parseInt(n) || 0);
+    if (ma !== mb) return ma - mb;
+    return da - db;
+  });
+  const rowsHtml = collected.length
+    ? collected.map(d => `
+      <tr>
+        <td class="ceo-deals-date">${d.date.split('.').slice(0,2).join('.')}</td>
+        <td class="ceo-deals-city">${d.city}</td>
+        <td class="ceo-deals-src">${d.phone}</td>
+        <td class="ceo-deals-src">${d.comment}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="4" class="ceo-deals-empty">Никого нет в салоне</td></tr>`;
+
+  const modalTitle = document.querySelector('#income-overlay .income-modal-title');
+  const mc = document.getElementById('income-modal-content');
+  if (modalTitle) modalTitle.innerHTML = `В салоне<div class="visits-modal-mgr-name">${_mgrDisplayName(target)} · ${collected.length} · ${getMonthName(currentSuffix)}</div>`;
+  document.getElementById('income-overlay')?.classList.remove('visits-mode');
+  mc.removeAttribute('data-modal');
+  mc.innerHTML = `
+    <table class="ceo-deals-table">
+      <thead><tr><th>Дата</th><th>Город</th><th>Телефон</th><th>Коммент</th></tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>`;
+  document.getElementById('income-overlay').classList.add('open', 'ceo-mode');
+  document.body.style.overflow = 'hidden';
+}
+
+function openMgrKsoModal(nameLow) {
+  const ksoStatuses = ['подает заявку', 'в работе ксо', 'на рассмотрении банка'];
+  const target = String(nameLow || '').toLowerCase().trim();
+  const collected = [];
+  const sources = [S.data.vizity || [], S.data.d_vizity || []];
+  sources.forEach(rows => {
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || !row[8]) continue;
+      if (String(row[8]).toLowerCase().trim() !== target) continue;
+      if (!isSverkaRow(row)) continue;
+      const status = String(row[4] || '').trim().toLowerCase();
+      if (!ksoStatuses.includes(status)) continue;
+      collected.push({
+        date:    String(row[0] || '').trim(),
+        city:    String(row[3] || '').trim() || '—',
+        phone:   String(row[2] || '').trim() || '—',
+        comment: String(row[4] || '').trim() || '—',
+      });
+    }
+  });
+  collected.sort((a, b) => {
+    const [da, ma] = a.date.split('.').map(n => parseInt(n) || 0);
+    const [db, mb] = b.date.split('.').map(n => parseInt(n) || 0);
+    if (ma !== mb) return ma - mb;
+    return da - db;
+  });
+  const rowsHtml = collected.length
+    ? collected.map(d => `
+      <tr>
+        <td class="ceo-deals-date">${d.date.split('.').slice(0,2).join('.')}</td>
+        <td class="ceo-deals-city">${d.city}</td>
+        <td class="ceo-deals-src">${d.phone}</td>
+        <td class="ceo-deals-src">${d.comment}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="4" class="ceo-deals-empty">Нет заявок в банках</td></tr>`;
+
+  const modalTitle = document.querySelector('#income-overlay .income-modal-title');
+  const mc = document.getElementById('income-modal-content');
+  if (modalTitle) modalTitle.innerHTML = `В КСО<div class="visits-modal-mgr-name">${_mgrDisplayName(target)} · ${collected.length} · ${getMonthName(currentSuffix)}</div>`;
+  document.getElementById('income-overlay')?.classList.remove('visits-mode');
+  mc.removeAttribute('data-modal');
+  mc.innerHTML = `
+    <table class="ceo-deals-table">
+      <thead><tr><th>Дата</th><th>Город</th><th>Телефон</th><th>Статус</th></tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>`;
+  document.getElementById('income-overlay').classList.add('open', 'ceo-mode');
+  document.body.style.overflow = 'hidden';
+}
+
+window.openMgrDealsModal = openMgrDealsModal;
+window.openMgrSalonModal = openMgrSalonModal;
+window.openMgrKsoModal   = openMgrKsoModal;
 
 function pluralVisits(n) {
   const v = Math.abs(Number(n) || 0) % 100;

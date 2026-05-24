@@ -168,7 +168,7 @@ const S = {
   token:null,
   user:null,
   usersData:null,
-  data:{ otchet:null, dohod:null, grafik:null, grafikFmt:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null },
+  data:{ otchet:null, dohod:null, grafik:null, grafikFmt:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null, vizityFmt:null, d_vizityFmt:null },
   reportTab: 'dept',
   dohodTab: 'crm',
   faqTab: 'instr',
@@ -1902,7 +1902,7 @@ function onLogout() {
   if (S.token) google.accounts.oauth2.revoke(S.token, ()=>{});
   tokenExpiresAt = 0;
   S.token=null; S.user=null; S.usersData=null;
-  S.data = { otchet:null, dohod:null, grafik:null, grafikFmt:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null };
+  S.data = { otchet:null, dohod:null, grafik:null, grafikFmt:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null, vizityFmt:null, d_vizityFmt:null };
   ['crm_tok','crm_exp','crm_user'].forEach(k => localStorage.removeItem(k));
   document.getElementById('user-wrap').style.display = 'none';
   const _bo2 = document.getElementById('btn-out');
@@ -2092,7 +2092,7 @@ function setCurrentMonth(newSuffix) {
   currentSuffix = newSuffix;
   updateBadge();
   SHEETS = getSheetNames(currentSuffix);
-  S.data = { otchet:null, dohod:null, grafik:null, grafikFmt:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null };
+  S.data = { otchet:null, dohod:null, grafik:null, grafikFmt:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null, vizityFmt:null, d_vizityFmt:null };
   apiCacheInvalidate(); // сбрасываем кеш при смене месяца
   _schedWeek = null;
   // Определяем активный экран и перезагружаем его данные
@@ -5922,7 +5922,7 @@ function showAccessDenied(reason = 'Почта не найдена в USERS') {
   S.token = null;
   S.user = null;
   S.usersData = null;
-  S.data = { otchet:null, dohod:null, grafik:null, grafikFmt:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null };
+  S.data = { otchet:null, dohod:null, grafik:null, grafikFmt:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null, vizityFmt:null, d_vizityFmt:null };
   ['crm_tok','crm_exp','crm_user'].forEach(k => localStorage.removeItem(k));
   document.getElementById('main-nav').style.display = 'none';
   document.getElementById('main-dock').style.display = 'none';
@@ -8604,6 +8604,52 @@ async function loadCeoDashboard() {
   }
   renderCeoDashboard();
   loadCeoWeather();
+  // Подгружаем цвета заливки колонки A у ВИЗИТЫ/Д_ВИЗИТЫ — нужны
+  // чтобы исключить «запланированные но не приехавшие» визиты
+  // (заливка #fee1c8) из счётчика «Без визитов сегодня».
+  if (!S.data.vizityFmt || !S.data.d_vizityFmt) {
+    fetchVizityFmts().then(() => {
+      if (document.getElementById('scr-ceo')?.classList.contains('on')) renderCeoDashboard();
+    });
+  }
+}
+
+// Цвета заливки column A для ВИЗИТЫ и Д_ВИЗИТЫ — определяем «план/не приехал»
+async function fetchVizityFmts() {
+  async function _one(sheetName) {
+    try {
+      const range  = encodeURIComponent(`'${sheetName}'!A1:A1000`);
+      const fields = 'sheets.data.rowData.values.userEnteredFormat.backgroundColor';
+      const url    = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}`
+                   + `?ranges=${range}&fields=${fields}&includeGridData=true`;
+      const resp = await fetch(url, { headers: await authHeaders() });
+      if (!resp.ok) return {};
+      const data = await resp.json();
+      const rowData = data?.sheets?.[0]?.data?.[0]?.rowData || [];
+      const planned = {};
+      rowData.forEach((row, ri) => {
+        const bg = row?.values?.[0]?.userEnteredFormat?.backgroundColor;
+        if (_isPlannedColor(bg)) planned[ri] = true;
+      });
+      return planned;
+    } catch (e) { return {}; }
+  }
+  const [v1, v2] = await Promise.all([_one(SHEETS.vizity), _one(SHEETS.d_vizity)]);
+  S.data.vizityFmt   = v1;
+  S.data.d_vizityFmt = v2;
+}
+
+// Сравниваем цвет с #fee1c8 — «запланированный визит, не приехал»
+function _isPlannedColor(bg) {
+  if (!bg) return false;
+  const r = bg.red   ?? 0;
+  const g = bg.green ?? 0;
+  const b = bg.blue  ?? 0;
+  // #fee1c8 = 254/225/200 ≈ 0.996/0.882/0.784
+  const dr = Math.abs(r - 254/255);
+  const dg = Math.abs(g - 225/255);
+  const db = Math.abs(b - 200/255);
+  return dr < 0.04 && dg < 0.04 && db < 0.04;
 }
 
 function loadCeoWeather() {
@@ -9112,17 +9158,21 @@ function renderCeoDashboard() {
   }
 
   // Алерты — с кликабельными именами.
-  // Считаем визиты сегодня по каждому менеджеру (раздельно по обоим листам)
+  // Считаем визиты сегодня по каждому менеджеру (раздельно по обоим листам).
+  // Строки с заливкой ячейки даты #fee1c8 — это «план/не приехал», их не учитываем.
   const _today_dd = today.getDate();
+  const _plannedFmt = [S.data.vizityFmt || {}, S.data.d_vizityFmt || {}];
   function _visitsTodayForMgr(name) {
     const nl = String(name).toLowerCase();
     let n = 0;
-    [vizData, dvData].forEach(rows => {
+    [vizData, dvData].forEach((rows, srcIdx) => {
+      const planned = _plannedFmt[srcIdx] || {};
       for (let i = 1; i < rows.length; i++) {
         const r = rows[i];
         if (!r || !r[8]) continue;
         if (!isSverkaRow(r)) continue;
         if (String(r[8]).toLowerCase().trim() !== nl) continue;
+        if (planned[i]) continue; // запланирован, по факту не приехал — пропускаем
         const d = parseInt(String(r[0]||'').trim().split('.')[0]);
         if (d === _today_dd) n++;
       }

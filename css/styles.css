@@ -4331,6 +4331,39 @@ body.neo-dark .income-col .ic-lbl {
 .rating-card-stats {
   position:relative; z-index:1;
 }
+
+/* Trophy count badge — нижний правый угол карточки рейтинга */
+.rating-trophy-badge {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  font-family: 'Unbounded', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--txt);
+  pointer-events: none;
+}
+.rt-badge-num { line-height: 1; }
+.rt-badge-ico {
+  width: 16px; height: 16px;
+  display: none;
+  flex-shrink: 0;
+}
+.rt-badge-ico-default {
+  background: currentColor;
+  color: var(--acc);
+}
+body.fluent .rt-badge-ico-fluent   { display: inline-block; }
+body.cosmic .rt-badge-ico-cosmic   { display: inline-block; }
+body:not(.fluent):not(.cosmic) .rt-badge-ico-default { display: inline-block; }
 /* Rank accent strip */
 .rating-card-strip {
   position: absolute; left: 0; top: 0; bottom: 0; width: 100%;
@@ -6759,6 +6792,28 @@ body.cosmic .profile-avatar-wrap::before { border-color: rgba(190,190,190,0.55);
   font-style: italic;
 }
 /* ──── Trophies-mini в профиле: только иконки ──── */
+#profile-trophies-panel,
+#profile-modal-trophies-panel { position: relative; }
+.profile-trophies-total {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 2;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--acc);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Unbounded', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.18);
+  pointer-events: none;
+}
 .profile-trophies-loading,
 .profile-trophies-empty {
   text-align: center;

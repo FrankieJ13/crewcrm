@@ -3207,6 +3207,8 @@ function getMgrMessengerHtml(name) {
   let html = '';
   if (tg) html += `<a href="${tg}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Telegram" style="display:inline-flex;text-decoration:none;opacity:0.6;transition:opacity .15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'"><svg width="20" height="20" viewBox="0 0 24 24" fill="#2CA5E0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8l-1.68 7.93c-.12.55-.44.69-.9.43l-2.48-1.83-1.2 1.16c-.13.13-.25.25-.5.25l.18-2.52 4.56-4.12c.2-.18-.04-.27-.3-.1L7.92 14.45l-2.42-.75c-.52-.17-.53-.52.11-.77l9.48-3.66c.43-.16.82.11.55.53z"/></svg></a>`;
   if (max) html += `<a href="${max}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="MAX" class="max-icon-link" style="display:inline-flex;text-decoration:none;margin-left:2px">${maxIconSvg(16)}</a>`;
+  // Кнопка открытия модалки профиля (третья иконка, тема-зависимая)
+  if (typeof _profileTriggerIconHtml === 'function') html += _profileTriggerIconHtml(name);
   return html ? `<span style="display:inline-flex;align-items:center;gap:3px;margin-left:6px">${html}</span>` : '';
 }
 
@@ -8914,6 +8916,10 @@ async function loadRating() {
   const el = document.getElementById('c-rating');
   if (!el) return;
 
+  // Подтягиваем трофеи в фоне — нужно для бейджа кол-ва в карточках
+  try { loadTrophiesCatalog(); } catch(_) {}
+  try { await loadTrophyAwards(); } catch(_) {}
+
   const matched = findUserInSheet();
   const role = matched?.role || 'crm';
   const isCeo = isCeoLike(role);
@@ -9157,10 +9163,12 @@ function renderRating() {
       ? (isCeo || isMe) ? fmtRub(Math.round(sal)) : blurSalary(sal)
       : null;
 
+    const trophyBadgeHtml = _trophyCountBadgeHtml(m.name);
     return `
       <div class="rating-card ${rankClass}">
         ${petalsHtml}
         ${stripColor ? `<div class="rating-card-strip" style="background:${stripColor}"></div>` : ''}
+        ${trophyBadgeHtml}
         <div class="rating-card-top">
           <div class="rating-rank-num" style="background:${rankNumBg};color:${rankNumColor};font-size:${isTop?'16px':'10px'}">${isTop ? medalBtn(idx) : idx+1}</div>
           <div class="rating-card-name">
@@ -10313,6 +10321,38 @@ window.closeProfileModal = closeProfileModal;
 
 // HTML для иконки «Профиль» в строке мессенджеров рейтинга.
 // Три варианта картинки сразу в DOM, переключение чисто через CSS body.*.
+// Бейдж кол-ва трофеев у менеджера для карточки в рейтинге
+// (число + тема-зависимая иконка трофеев из гамбургера).
+function _trophyTotalForManager(name) {
+  if (!Array.isArray(S.trophyAwards) || !name) return 0;
+  const nl = String(name).toLowerCase().trim();
+  let total = 0;
+  for (let i = 1; i < S.trophyAwards.length; i++) {
+    const row = S.trophyAwards[i];
+    if (!row) continue;
+    const code = String(row[0] || '').trim();
+    const mgr  = String(row[1] || '').toLowerCase().trim();
+    const status = String(row[5] || 'active').toLowerCase().trim();
+    if (!code || mgr !== nl) continue;
+    if (status === 'locked') continue;
+    total++;
+  }
+  return total;
+}
+
+function _trophyCountBadgeHtml(name) {
+  const count = _trophyTotalForManager(name);
+  if (!count) return '';
+  // 3 варианта иконки трофея под темы дашборда (как в гамбургере),
+  // переключаются CSS-правилами body.fluent / body.cosmic.
+  return `<div class="rating-trophy-badge" title="Трофеев: ${count}">
+    <span class="rt-badge-num">${count}</span>
+    <img class="rt-badge-ico rt-badge-ico-fluent" src="logos/Fluent/FluentColor-Trophies.svg" alt="" loading="lazy">
+    <img class="rt-badge-ico rt-badge-ico-cosmic" src="logos/cosmic/cosmic-trophies.svg" alt="" loading="lazy">
+    <span class="rt-badge-ico rt-badge-ico-default" style="background:currentColor;-webkit-mask:url('logos/default/trophies.svg') center/contain no-repeat;mask:url('logos/default/trophies.svg') center/contain no-repeat"></span>
+  </div>`;
+}
+
 function _profileTriggerIconHtml(name) {
   const safe = String(name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
   return `<a class="profile-modal-trigger" onclick="event.stopPropagation();openProfileModalFor('${safe}')" title="Профиль" style="cursor:pointer;display:inline-flex;align-items:center;text-decoration:none;margin-left:2px;opacity:0.7;transition:opacity .15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
@@ -10743,7 +10783,11 @@ async function _profileLoadAndRenderTrophies(name, panelId) {
     if (db !== da) return db.localeCompare(da);
     return String(byCode[a]?.name || a).localeCompare(String(byCode[b]?.name || b), 'ru');
   });
-  const items = codes.map(code => {
+  // Общее число всех трофеев (с учётом ×N) — для бейджа в углу
+  const totalAwards = codes.reduce((sum, code) => sum + (awards[code].count || 0), 0);
+  // Показываем последние 8 (сортировка уже по lastDate desc)
+  const slice = codes.slice(0, 8);
+  const items = slice.map(code => {
     const t = byCode[code];
     const award = awards[code];
     const icon = t?.icon || '';
@@ -10754,7 +10798,10 @@ async function _profileLoadAndRenderTrophies(name, panelId) {
       ${countBadge}
     </div>`;
   }).join('');
-  panel.innerHTML = `<div class="profile-trophies-grid">${items}</div>`;
+  panel.innerHTML = `
+    <div class="profile-trophies-total" title="Всего трофеев">${totalAwards}</div>
+    <div class="profile-trophies-grid">${items}</div>
+  `;
 }
 window._profileLoadAndRenderTrophies = _profileLoadAndRenderTrophies;
 /* ════════════════════ END ТРОФЕИ ════════════════════ */

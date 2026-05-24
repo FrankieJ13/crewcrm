@@ -10612,16 +10612,6 @@ async function renderTrophiesPage() {
     </div>`;
   }
 
-  // Категория из поля или суффикса code
-  const _trophyCat = (t) => {
-    const c = String(t.category || '').toLowerCase();
-    if (c === 'monthly' || c === 'annual' || c === 'once') return c;
-    const code = String(t.code || '').toLowerCase();
-    if (code.endsWith('_once'))    return 'once';
-    if (code.endsWith('_annual'))  return 'annual';
-    if (code.endsWith('_monthly')) return 'monthly';
-    return 'monthly';
-  };
   const _typeOrder = { positive: 0, neutral: 1, negative: 2 };
 
   // Источник карточек:
@@ -10631,17 +10621,22 @@ async function renderTrophiesPage() {
     ? catalog.slice()
     : catalog.filter(t => awardsByCode[t.code]);
 
-  const groups = { monthly: [], annual: [], once: [] };
-  sourceList.forEach(t => {
-    const cat = _trophyCat(t);
-    (groups[cat] || groups.monthly).push(t);
-  });
-  Object.keys(groups).forEach(k => {
-    groups[k].sort((a, b) =>
+  // Сортировка единым списком:
+  //   - режим менеджера: по дате последнего получения, свежие → старые
+  //   - каталог-режим (CEO): по типу (позитив → нейтрал → негатив), потом алфавит
+  if (isCatalogMode) {
+    sourceList.sort((a, b) =>
       (_typeOrder[(a.type||'neutral').toLowerCase()] - _typeOrder[(b.type||'neutral').toLowerCase()])
       || String(a.name||a.code).localeCompare(String(b.name||b.code), 'ru')
     );
-  });
+  } else {
+    sourceList.sort((a, b) => {
+      const da = awardsByCode[a.code]?.lastDate || '';
+      const db = awardsByCode[b.code]?.lastDate || '';
+      if (db !== da) return db.localeCompare(da);
+      return String(a.name||a.code).localeCompare(String(b.name||b.code), 'ru');
+    });
+  }
 
   const earnedCount    = Object.values(awardsByCode).reduce((a, b) => a + (b.count || 0), 0);
   const earnedDistinct = Object.keys(awardsByCode).length;
@@ -10678,13 +10673,9 @@ async function renderTrophiesPage() {
       </div>`;
   };
 
-  const renderSection = (title, type, list) => {
+  const renderFlatGrid = (list) => {
     if (!list.length) return '';
-    return `
-      <div class="sec-title">${title}</div>
-      <div class="trophies-grid trophies-grid-${type}">
-        ${list.map(renderCard).join('')}
-      </div>`;
+    return `<div class="trophies-grid">${list.map(renderCard).join('')}</div>`;
   };
 
   // Шапка / счётчик
@@ -10714,9 +10705,7 @@ async function renderTrophiesPage() {
         </div>
         ${mgrPicker}
       </div>
-      ${renderSection('Ежемесячные',   'monthly', groups.monthly)}
-      ${renderSection('Ежегодные',     'annual',  groups.annual)}
-      ${renderSection('Единоразовые',  'once',    groups.once)}
+      ${renderFlatGrid(sourceList)}
       ${emptyHint}
     </div>
   `;

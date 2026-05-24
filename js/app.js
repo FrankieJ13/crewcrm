@@ -10653,6 +10653,14 @@ async function renderTrophiesPage() {
     const iconSrc = `logos/trophies/${t.icon || ''}`;
     const dateLbl  = earned ? _trophyFormatDate(award.lastDate) : '';
     const countLbl = (earned && award.count > 1) ? ` ×${award.count}` : '';
+    // Чип «авто/вручную» — только для CEO/ROP, остальным не показываем.
+    let srcChip = '';
+    if (isCeoLikeRole) {
+      srcChip = earned
+        ? `<span class="trophy-src trophy-src-${award.items[0]?.src || 'manual'}">${award.items[0]?.src === 'auto' ? 'авто' : 'вручную'}</span>`
+        : (t.auto ? '<span class="trophy-src trophy-src-auto trophy-src-mute">авто</span>'
+                  : '<span class="trophy-src trophy-src-manual trophy-src-mute">вручную</span>');
+    }
     return `
       <div class="trophy-card trophy-card-${type} ${earned ? 'trophy-earned' : (isCatalogMode ? '' : 'trophy-locked')}">
         <div class="trophy-card-ico">
@@ -10662,6 +10670,7 @@ async function renderTrophiesPage() {
           <div class="trophy-card-hdr">
             ${_trophyTypeBadge(type)}
             <div class="trophy-card-name">${escapeHtml(t.name || t.code)}${countLbl}</div>
+            ${srcChip}
           </div>
           <div class="trophy-card-desc">${escapeHtml(t.description || '')}</div>
           ${dateLbl ? `<div class="trophy-card-date">получен: ${dateLbl}</div>` : ''}

@@ -6191,6 +6191,16 @@ body.cinematic .ceo-speedo-value { color: var(--txt) !important; }
   flex-shrink: 0;
   text-align: right;
 }
+/* Динамический шрифт приветствия + максимум 2 строки */
+.personal-hdr-row .kpi-manager-name {
+  font-size: clamp(13px, 4.2vw, 18px);
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
 .personal-metrics-vis { grid-template-columns: 1fr; }
 
 /* Широкая карточка «Визиты» — строгий грид 4×2:
@@ -6275,10 +6285,25 @@ body.cinematic .ceo-speedo-value { color: var(--txt) !important; }
 }
 
 /* +15% к мини-бейджам Динамика/Прогноз в панели спидометра */
-#c-personal .ceo-mini-badge { padding: 7px 9px; }
-#c-personal .ceo-mini-lbl { font-size: 10px; }
+#c-personal .ceo-mini-badge {
+  padding: 7px 9px;
+  min-width: max-content; /* шире самого длинного подзаголовка, чтобы не обрезался */
+}
+#c-personal .ceo-mini-lbl { font-size: 10px; white-space: nowrap; }
 #c-personal .ceo-mini-val { font-size: 14px; }
-#c-personal .ceo-mini-sub { font-size: 10px; }
+#c-personal .ceo-mini-sub { font-size: 10px; white-space: nowrap; }
+#c-personal .ceo-mini-badges { flex-wrap: wrap; }
+
+/* Карточка «Отказ + ФССП» — нежно-красная заливка, тёмный текст */
+.personal-metric-otkaz {
+  background: rgba(239, 68, 68, 0.18) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+}
+.personal-metric-otkaz .ceo-metric-lbl,
+.personal-metric-otkaz .ceo-metric-val,
+.personal-metric-otkaz .ceo-metric-sub {
+  color: #1a1a1a !important;
+}
 .ceo-metric-card {
   background: var(--bg2); border-radius: var(--r2);
   padding: 10px 10px; border: 1px solid var(--line);

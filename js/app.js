@@ -6687,7 +6687,7 @@ function renderPersonal(matched) {
             <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/>
             <path id="ceo-speed-progress" class="ceo-speed-progress" stroke="url(#ceoSpeedGradientGlobal)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="${Math.max(0, 1 - Math.min(progNum/100, 1))}" d="M 40 160 A 85 85 0 1 1 160 160"/>
           </svg>
-          <div class="ceo-speedo-value mv">${progNum}%</div>
+          <div class="ceo-speedo-value mv" style="color:var(--txt)">${progNum}%</div>
         </div>
         <div class="ceo-forecast-info">
           <div class="ceo-forecast-sub"><span class="mv">${factN}</span> из <span>${plan||'—'}</span> визитов</div>
@@ -6761,9 +6761,9 @@ function renderPersonal(matched) {
         <div class="ceo-metric-val mv" style="color:var(--txt)">${_vkso}</div>
         <div class="ceo-metric-sub">заявок в банках</div>
       </div>
-      <div class="ceo-metric-card">
+      <div class="ceo-metric-card personal-metric-otkaz">
         <div class="ceo-metric-lbl">Отказ + ФССП</div>
-        <div class="ceo-metric-val mv" style="color:var(--red)">${_otkazFssp}</div>
+        <div class="ceo-metric-val mv">${_otkazFssp}</div>
         <div class="ceo-metric-sub">не подаём / отказы</div>
       </div>
     </div>

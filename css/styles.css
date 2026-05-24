@@ -4344,12 +4344,12 @@ body.neo-dark .income-col .ic-lbl {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 8px;
-  border-radius: 8px;
+  padding: 3px 8px;          /* как у .rating-card-stat */
+  border-radius: 6px;        /* как у .rating-card-stat */
   background: var(--bg3);
   border: 1px solid var(--line);
   font-family: 'Unbounded', sans-serif;
-  font-size: 12px;
+  font-size: 12px;           /* размер числа сохраняем */
   font-weight: 800;
   color: var(--txt);
   pointer-events: none;

@@ -6761,7 +6761,7 @@ function renderPersonal(matched) {
         <div class="ceo-metric-val mv" style="color:var(--txt)">${_vkso}</div>
         <div class="ceo-metric-sub">заявок в банках</div>
       </div>
-      <div class="ceo-metric-card personal-metric-otkaz">
+      <div class="ceo-metric-card ceo-clickable personal-metric-otkaz" onclick="openMgrDealsModal(${visitsModalName},'otkazfssp')">
         <div class="ceo-metric-lbl">Отказ + ФССП</div>
         <div class="ceo-metric-val mv">${_otkazFssp}</div>
         <div class="ceo-metric-sub">не подаём / отказы</div>
@@ -7595,9 +7595,10 @@ function _mgrDisplayName(nameLow) {
 
 function openMgrDealsModal(nameLow, kind) {
   const KINDS = {
-    kredit: { title: 'Кредиты',   match: s => s === 'покупка (кредит)' },
-    nalobm: { title: 'Нал+Обмен', match: s => s === 'покупка (наличные)' || s === 'обмен' },
-    komis:  { title: 'Комиссия',  match: s => s === 'комиссия' },
+    kredit:    { title: 'Кредиты',     match: s => s === 'покупка (кредит)' },
+    nalobm:    { title: 'Нал+Обмен',   match: s => s === 'покупка (наличные)' || s === 'обмен' },
+    komis:     { title: 'Комиссия',    match: s => s === 'комиссия' },
+    otkazfssp: { title: 'Отказ + ФССП', match: s => s === 'отказ' || s === 'фссп не подаем' },
   };
   const cfg = KINDS[kind]; if (!cfg) return;
   const target = String(nameLow || '').toLowerCase().trim();

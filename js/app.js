@@ -9709,6 +9709,24 @@ function dockFaq(tab) {
   dockSetActive('instruktsii');
 }
 
+// Подстраиваем высоту/смещение оверлея под visualViewport — нужно
+// чтобы на iOS PWA при появлении клавиатуры шелл сжимался, composer
+// оставался над клавиатурой, а шапка не уезжала вверх.
+function _apSyncViewport() {
+  const fs = document.getElementById('autopodbor-fullscreen');
+  if (!fs || !fs.classList.contains('open')) return;
+  const vv = window.visualViewport;
+  if (!vv) return;
+  document.documentElement.style.setProperty('--ap-vh', vv.height + 'px');
+  document.documentElement.style.setProperty('--ap-top', (vv.offsetTop || 0) + 'px');
+}
+function _apBindViewport() {
+  if (!window.visualViewport || window._apVpBound) return;
+  window._apVpBound = true;
+  window.visualViewport.addEventListener('resize', _apSyncViewport);
+  window.visualViewport.addEventListener('scroll', _apSyncViewport);
+}
+
 function openAutopodbor() {
   // Гейт: режим Off — открываем заглушку «В разработке» вместо чата
   if (S.autoSMode === false) {
@@ -9723,10 +9741,15 @@ function openAutopodbor() {
   fs.classList.add('open');
   fs.setAttribute('aria-hidden', 'false');
   document.body.classList.add('autopodbor-open');
+  _apBindViewport();
+  _apSyncViewport();
   // Lazy init CM66 BDCARS на первом открытии
   try { if (typeof window.cm66Init === 'function') window.cm66Init(); } catch(e) { console.warn('cm66Init failed', e); }
-  // Фокус на инпут (после layout)
-  requestAnimationFrame(() => document.getElementById('chatInput')?.focus());
+  // Фокус на инпут (после layout). На мобильных не автофокусим — клава
+  // выскакивала бы сразу при открытии чата.
+  if (!matchMedia('(max-width: 720px)').matches) {
+    requestAnimationFrame(() => document.getElementById('chatInput')?.focus());
+  }
   // Обновляем presence — текущая страница теперь «Автоподбор»
   if (typeof updateFirebasePage === 'function') updateFirebasePage();
 }
@@ -9736,6 +9759,9 @@ function closeAutopodbor() {
   fs.classList.remove('open');
   fs.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('autopodbor-open');
+  // Сбрасываем CSS-переменные, чтобы они не влияли на остальной UI
+  document.documentElement.style.removeProperty('--ap-vh');
+  document.documentElement.style.removeProperty('--ap-top');
   if (typeof updateFirebasePage === 'function') updateFirebasePage();
 }
 window.openAutopodbor = openAutopodbor;

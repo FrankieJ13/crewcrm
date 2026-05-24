@@ -17,11 +17,16 @@
   --chat-font-size: 16px;
 }
 
-/* Сам оверлей: фуллскрин поверх всего */
+/* Сам оверлей: фуллскрин поверх всего.
+   Высота управляется JS через --ap-vh (visualViewport.height) — это нужно
+   для iOS, чтобы при появлении клавиатуры шелл сжимался и composer оставался
+   видимым над клавиатурой. Фоллбэк — 100dvh. */
 #autopodbor-fullscreen {
   display: none;
   position: fixed;
-  inset: 0;
+  top: var(--ap-top, 0);
+  left: 0; right: 0;
+  height: var(--ap-vh, 100dvh);
   z-index: 12000;
   background: var(--bg);
   color: var(--txt);
@@ -65,14 +70,14 @@
   border-color: rgba(255,255,255,0.5);
 }
 
-/* Основной шелл — flexbox для предсказуемости поверх дашбордного сброса */
+/* Основной шелл — flexbox для предсказуемости поверх дашбордного сброса.
+   Высота наследуется от оверлея (var(--ap-vh) или 100dvh). */
 #autopodbor-fullscreen .chat-shell {
   display: flex !important;
   flex-direction: column !important;
   width: min(980px, 100%);
-  height: 100vh;
-  height: 100dvh;
-  min-height: 100dvh;
+  height: 100%;
+  min-height: 0;
   margin: 0 auto;
   background: var(--panel);
   border-left: 1px solid var(--line);
@@ -302,9 +307,9 @@
   position: relative;
   z-index: 4;
   gap: 8px;
-  padding: 10px 12px;
-  /* Учитываем home-indicator/закругление экрана на телефонах */
-  padding-bottom: max(14px, calc(10px + env(safe-area-inset-bottom, 0px)));
+  padding: 12px 12px;
+  /* Поднимаем над home-indicator + закруглением экрана на телефонах */
+  padding-bottom: max(20px, calc(14px + env(safe-area-inset-bottom, 0px)));
   border-top: 1px solid var(--line);
   background: var(--bg2);
 }

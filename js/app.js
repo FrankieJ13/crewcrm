@@ -6655,12 +6655,13 @@ function renderPersonal(matched) {
   const _accColor = pctClr(progNum);
 
   const _cachedWeather = S._ceoWeatherCache || '';
+  // Подсчёты для расширенной подписи на «Нал + Обмен»: 800 / 1200
+  const _nal800 = num(_vs.nal800) + num(_vs.obmen800);
+  const _nal1200 = num(_vs.nal1200) + num(_vs.obmen1200);
   setLiveHTML(el, `
-    <div class="kpi-manager-name">${_greet.html}</div>
-
-    <!-- Дата / погода / остаток дней -->
-    <div class="ceo-header" style="margin-top:6px">
-      <div></div>
+    <!-- Шапка: приветствие слева, дата/погода/остаток справа на одной линии -->
+    <div class="personal-hdr-row">
+      <div class="kpi-manager-name" style="flex:1;min-width:0">${_greet.html}</div>
       <div class="ceo-header-right">
         <div class="ceo-date-weather">
           <span class="ceo-date">${_dateShort}</span>
@@ -6670,24 +6671,23 @@ function renderPersonal(matched) {
       </div>
     </div>
 
-    <div class="kpi-divider"></div>
-    <div class="kpi-subtitle">Доход за месяц <button class="kpi-incognito-btn" onclick="event.stopPropagation();toggleIncognito()" title="Скрыть доход (или потряси телефон)">${localStorage.getItem('crm_incognito') === '1' ? '👁' : '🙈'}</button></div>
+    <!-- ДОХОД ЗА МЕСЯЦ -->
+    <div class="sec-title">Доход за месяц <button class="kpi-incognito-btn" onclick="event.stopPropagation();toggleIncognito()" title="Скрыть доход (или потряси телефон)">${localStorage.getItem('crm_incognito') === '1' ? '👁' : '🙈'}</button></div>
     <div class="kpi-income-panel ${localStorage.getItem('crm_incognito') === '1' ? 'kpi-incognito' : ''}" ${incomePanelAttr}>
       ${incomePanelContent}
       ${getMgrAvatarHtml(name, progNum)}
     </div>
 
-    <!-- ТЕКУЩИЙ KPI -->
+    <!-- ТЕКУЩИЙ KPI (без аватара в этой панели) -->
     <div class="sec-title">Текущий KPI</div>
     <div class="kpi-income-panel ceo-forecast-panel" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
-      ${getMgrAvatarHtml(name, progNum)}
       <div class="ceo-forecast-body">
         <div class="ceo-speedo">
           <svg viewBox="-10 -10 220 220">
             <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/>
             <path id="ceo-speed-progress" class="ceo-speed-progress" stroke="url(#ceoSpeedGradientGlobal)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="${Math.max(0, 1 - Math.min(progNum/100, 1))}" d="M 40 160 A 85 85 0 1 1 160 160"/>
           </svg>
-          <div class="ceo-speedo-value mv avatar-trigger">${progNum}%</div>
+          <div class="ceo-speedo-value mv">${progNum}%</div>
         </div>
         <div class="ceo-forecast-info">
           <div class="ceo-forecast-sub"><span class="mv">${factN}</span> из <span>${plan||'—'}</span> визитов</div>
@@ -6716,8 +6716,10 @@ function renderPersonal(matched) {
       <div class="sec-title" style="margin:0">Ключевые показатели</div>
       <button class="mop-info-btn" onclick="${personalModalOpen}" title="Детали">!</button>
     </div>
-    <div class="ceo-metrics-grid">
-      <div class="ceo-metric-card ceo-clickable" onclick="openVisitsDayModal(${visitsModalName},false)">
+
+    <!-- Row 1: Визиты, на всю ширину, размер как у KPI/Доход панелей -->
+    <div class="ceo-metrics-grid personal-metrics-vis">
+      <div class="ceo-metric-card ceo-clickable personal-metric-vis-card" onclick="openVisitsDayModal(${visitsModalName},false)">
         ${_deltaBadge(_deltaToday, 'Визиты')}
         <div class="ceo-metric-lbl">Визиты</div>
         <div class="ceo-metric-val"><span class="mv">${factN}</span> <span class="ceo-metric-plan">/ ${plan||'—'}</span></div>
@@ -6725,27 +6727,35 @@ function renderPersonal(matched) {
         <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${_accColor} !important">${progNum}</span><span style="color:${_accColor}">%</span></div>
         ${_sparkline(_trend, _accColor, 'p')}
       </div>
-      <div class="ceo-metric-card">
+    </div>
+
+    <!-- Row 2: Кредиты, Нал+Обмен, Комиссия -->
+    <div class="ceo-metrics-grid" style="margin-top:8px">
+      <div class="ceo-metric-card ceo-clickable" onclick="${personalModalOpen}">
         <div class="ceo-metric-lbl">Кредиты</div>
         <div class="ceo-metric-val mv" style="color:var(--txt)">${_kred}</div>
         <div class="ceo-metric-sub">${mgrRow[8]||'0'} / ${mgrRow[12]||'0'} (800/1200)</div>
       </div>
-      <div class="ceo-metric-card">
+      <div class="ceo-metric-card ceo-clickable" onclick="${personalModalOpen}">
         <div class="ceo-metric-lbl">Нал + Обмен</div>
         <div class="ceo-metric-val mv" style="color:var(--txt)">${_nalObm}</div>
-        <div class="ceo-metric-sub">нал + tradein</div>
+        <div class="ceo-metric-sub">${_nal800}/${_nal1200} (800/1200)</div>
       </div>
-      <div class="ceo-metric-card">
+      <div class="ceo-metric-card ceo-clickable" onclick="${personalModalOpen}">
         <div class="ceo-metric-lbl">Комиссия</div>
         <div class="ceo-metric-val mv" style="color:var(--txt)">${_kom}</div>
         <div class="ceo-metric-sub">за месяц</div>
       </div>
-      <div class="ceo-metric-card${vsaloneN > 0 ? ' ceo-salon-alarm' : ''}">
+    </div>
+
+    <!-- Row 3: В салоне, В КСО, Отказ + ФССП -->
+    <div class="ceo-metrics-grid" style="margin-top:8px">
+      <div class="ceo-metric-card ceo-clickable${vsaloneN > 0 ? ' ceo-salon-alarm' : ''}" onclick="${personalModalOpen}">
         <div class="ceo-metric-lbl">В салоне</div>
         <div class="ceo-metric-val mv" style="color:var(--txt)">${vsaloneN}</div>
         <div class="ceo-metric-sub">${vsaloneN > 0 ? 'клиентов сейчас' : 'никого нет'}</div>
       </div>
-      <div class="ceo-metric-card ceo-kso-fill">
+      <div class="ceo-metric-card ceo-clickable ceo-kso-fill" onclick="${personalModalOpen}">
         <div class="ceo-metric-lbl">В КСО</div>
         <div class="ceo-metric-val mv" style="color:var(--txt)">${_vkso}</div>
         <div class="ceo-metric-sub">заявок в банках</div>

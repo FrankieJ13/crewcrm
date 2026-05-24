@@ -6717,15 +6717,24 @@ function renderPersonal(matched) {
       <button class="mop-info-btn" onclick="${personalModalOpen}" title="Детали">!</button>
     </div>
 
-    <!-- Row 1: Визиты, на всю ширину, размер как у KPI/Доход панелей -->
+    <!-- Row 1: Визиты — широкая карточка в 4 колонки -->
     <div class="ceo-metrics-grid personal-metrics-vis">
-      <div class="ceo-metric-card ceo-clickable personal-metric-vis-card" onclick="openVisitsDayModal(${visitsModalName},false)">
-        ${_deltaBadge(_deltaToday, 'Визиты')}
-        <div class="ceo-metric-lbl">Визиты</div>
-        <div class="ceo-metric-val"><span class="mv">${factN}</span> <span class="ceo-metric-plan">/ ${plan||'—'}</span></div>
-        <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, planNum ? Math.round(factN/planNum*100) : 0)}%;background:${_accColor}"></div></div>
-        <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${_accColor} !important">${progNum}</span><span style="color:${_accColor}">%</span></div>
-        ${_sparkline(_trend, _accColor, 'p')}
+      <div class="ceo-metric-card ceo-clickable personal-vis-row" onclick="openVisitsDayModal(${visitsModalName},false)">
+        <div class="pv-col pv-col-main">
+          <div class="ceo-metric-lbl">Визиты</div>
+          <div class="pv-main-val"><span class="mv">${factN}</span><span class="pv-plan">/ ${plan||'—'}</span></div>
+        </div>
+        <div class="pv-col pv-col-split">
+          <div class="ceo-metric-lbl">CRM / ТЛ</div>
+          <div class="pv-split-val mv">${mgrRow[1]||'0'} / ${mgrRow[2]||'0'}</div>
+        </div>
+        <div class="pv-col pv-col-chart">
+          ${_sparkline(_trend, _accColor, 'p')}
+        </div>
+        <div class="pv-col pv-col-right">
+          ${_deltaBadge(_deltaToday, 'Визиты')}
+          <div class="pv-prog" style="color:${_accColor}">${progNum}%</div>
+        </div>
       </div>
     </div>
 

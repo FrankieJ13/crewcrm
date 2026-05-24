@@ -9111,12 +9111,39 @@ function renderCeoDashboard() {
     }).join('');
   }
 
-  // Алерты — с кликабельными именами
-  const noVisitsTodayList = crmMgrs.filter(m => m.vis === 0);
-  const onEdgeList = [...crmMgrs, ...dozhimMgrs].filter(m => m.progPct >= 85 && m.progPct < 100);
+  // Алерты — с кликабельными именами.
+  // Считаем визиты сегодня по каждому менеджеру (раздельно по обоим листам)
+  const _today_dd = today.getDate();
+  function _visitsTodayForMgr(name) {
+    const nl = String(name).toLowerCase();
+    let n = 0;
+    [vizData, dvData].forEach(rows => {
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || !r[8]) continue;
+        if (!isSverkaRow(r)) continue;
+        if (String(r[8]).toLowerCase().trim() !== nl) continue;
+        const d = parseInt(String(r[0]||'').trim().split('.')[0]);
+        if (d === _today_dd) n++;
+      }
+    });
+    return n;
+  }
+  // «Без визитов сегодня» — у кого 0 визитов сегодня, но в этом месяце
+  // визиты были (значит, активный менеджер, но сегодня молчит).
+  const noVisitsTodayList = [...crmMgrs, ...dozhimMgrs]
+    .filter(m => m.vis > 0 && _visitsTodayForMgr(m.name) === 0);
+  // «Низкий прогноз» — прогноз меньше 50% (явно отстают от плана)
+  const lowProgList = [...crmMgrs, ...dozhimMgrs]
+    .filter(m => m.plan > 0 && m.progPct > 0 && m.progPct < 50);
+  // «На грани плана» — 85–99% (нужен ещё небольшой толчок)
+  const onEdgeList = [...crmMgrs, ...dozhimMgrs]
+    .filter(m => m.progPct >= 85 && m.progPct < 100);
+
   const _clickMgr = m => `<span class="ceo-alert-name" onclick="openCeoMgrModalByName('${m.name.toLowerCase().replace(/'/g,"&#39;")}')">${m.firstName} <strong>${m.progPct}%</strong></span>`;
   const noVisitsToday = noVisitsTodayList.map(_clickMgr);
-  const onEdge = onEdgeList.map(_clickMgr);
+  const lowProg       = lowProgList.map(_clickMgr);
+  const onEdge        = onEdgeList.map(_clickMgr);
 
   // accent rgb
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--acc').trim() || '#5137dd';
@@ -9290,8 +9317,9 @@ function renderCeoDashboard() {
       <div class="sec-title" style="margin-top:18px">Внимание</div>
       <div class="ceo-alerts">
         ${noVisitsToday.length ? `<div class="ceo-alert ceo-alert-red"><span class="ceo-alert-icon">🔴</span><div><div class="ceo-alert-title">Без визитов сегодня</div><div class="ceo-alert-sub">${noVisitsToday.join(' ')}</div></div></div>` : ''}
+        ${lowProg.length ? `<div class="ceo-alert ceo-alert-red"><span class="ceo-alert-icon">⚠️</span><div><div class="ceo-alert-title">Прогноз ниже 50%</div><div class="ceo-alert-sub">${lowProg.join(' ')}</div></div></div>` : ''}
         ${onEdge.length ? `<div class="ceo-alert ceo-alert-yellow"><span class="ceo-alert-icon">📊</span><div><div class="ceo-alert-title">На грани плана (85–99%)</div><div class="ceo-alert-sub">${onEdge.join(' ')}</div></div></div>` : ''}
-        ${!noVisitsToday.length && !onEdgeList.length ? `<div class="ceo-alert-ok">✅ Всё в порядке</div>` : ''}
+        ${!noVisitsToday.length && !lowProg.length && !onEdgeList.length ? `<div class="ceo-alert-ok">✅ Всё в порядке</div>` : ''}
       </div>
 
     </div>`);

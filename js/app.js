@@ -6514,54 +6514,274 @@ function renderPersonal(matched) {
   }
 
   const _greet = getMgrGreeting(name);
+
+  // ─── ДОЖИМ: оставляем прежнюю раскладку ───
+  if (isDozhim) {
+    setLiveHTML(el, `
+      <div class="kpi-manager-name">${_greet.html}</div>
+      <div class="kpi-divider"></div>
+      <div class="kpi-subtitle">Доход за месяц <button class="kpi-incognito-btn" onclick="event.stopPropagation();toggleIncognito()" title="Скрыть доход (или потряси телефон)">${localStorage.getItem('crm_incognito') === '1' ? '👁' : '🙈'}</button></div>
+      <div class="kpi-income-panel ${localStorage.getItem('crm_incognito') === '1' ? 'kpi-incognito' : ''}" ${incomePanelAttr}>
+        ${incomePanelContent}
+        ${getMgrAvatarHtml(name, progNum)}
+      </div>
+      <div class="kpi-divider"></div>
+      <div class="kpi-subtitle">Текущий KPI</div>
+      <div class="kpi-stats-panel">
+        <div class="kpi-stats-panel-hdr">
+          <div class="dept-sec-lbl" style="margin:0">Ключевые показатели</div>
+          <button class="mop-info-btn" onclick="${personalModalOpen}">!</button>
+        </div>
+        <div class="kpi-badges">
+          <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">План</div><div class="kb-val">${plan}</div></div>
+          <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Дневной</div><div class="kb-val">${daily}</div></div>
+          <div class="kpi-badge kpi-core-badge kpi-visits-drill" onclick="openVisitsDayModal(${visitsModalName},${isDozhim})" style="cursor:pointer" title="Хронология визитов"><div class="kb-lbl">Визиты</div><div class="kb-val">${factN}</div></div>
+          <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Остаток</div><div class="kb-val">${ost}</div></div>
+        </div>
+        <div class="kpi-badges">
+          <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Продажи</div><div class="kb-val" style="color:${pctClr(salesProgNum)}">${salesFactN}</div></div>
+          <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">План</div><div class="kb-val">${dSalesPlanNum||'—'}</div></div>
+          <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Остаток</div><div class="kb-val">${salesOst}</div></div>
+          <div class="kpi-badge"><div class="kb-lbl">Прогноз</div><div class="kb-val avatar-trigger" style="color:${pctClr(salesProgNum)}">${salesProgStr}</div></div>
+        </div>
+        <div class="dept-sec-lbl">Сделки</div>
+        <div class="kpi-badges">
+          <div class="kpi-badge"><div class="kb-lbl">Кредит</div><div class="kb-val">${kred}</div></div>
+          <div class="kpi-badge"><div class="kb-lbl">Наличные</div><div class="kb-val">${nal}</div></div>
+          <div class="kpi-badge"><div class="kb-lbl">Комиссия</div><div class="kb-val">${kom}</div></div>
+          <div class="kpi-badge"><div class="kb-lbl">Задаток</div><div class="kb-val">${zadatok}</div></div>
+        </div>
+      </div>
+    `);
+    requestAnimationFrame(() => {
+      const wrap = document.querySelector('#c-personal .kpi-avatar-wrap');
+      if (wrap) ceoAvatarPlay(wrap);
+    });
+    return;
+  }
+
+  // ─── CRM: новая раскладка с спидометром и метриками в стиле CEO ───
+  const _today = new Date();
+  const _dayNum = _today.getDate();
+  const _daysInMonth = new Date(_today.getFullYear(), _today.getMonth() + 1, 0).getDate();
+  const _daysLeft = Math.max(0, _daysInMonth - _dayNum);
+  const _dateShort = `${String(_dayNum).padStart(2,'0')}.${String(_today.getMonth()+1).padStart(2,'0')}`;
+  const _ddTodayStr = String(_dayNum).padStart(2,'0');
+  const _ydayDate = new Date(_today.getTime() - 24*60*60*1000);
+  const _ddYdayStr = String(_ydayDate.getDate()).padStart(2,'0');
+
+  // Визиты этого менеджера по дням текущего месяца
+  function _visitsForDay(dayStr) {
+    let n = 0;
+    const rows = S.data.vizity || [];
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r || !r[0]) continue;
+      if (String(r[8]||'').toLowerCase().trim() !== nameLow) continue;
+      const d = String(r[0]).trim().split('.')[0].padStart(2,'0');
+      if (d === dayStr) n++;
+    }
+    return n;
+  }
+  const _visitsToday = _visitsForDay(_ddTodayStr);
+  const _visitsYday  = _visitsForDay(_ddYdayStr);
+  const _dynamicsPct = _visitsYday > 0 ? Math.round((_visitsToday - _visitsYday) / _visitsYday * 100) : (_visitsToday > 0 ? 100 : 0);
+  const _dynamicsArrow = _visitsToday > _visitsYday ? '↑' : (_visitsToday < _visitsYday ? '↓' : '→');
+  const _dynamicsColor = _visitsToday > _visitsYday ? 'var(--grn)' : (_visitsToday < _visitsYday ? 'var(--red)' : 'var(--txt2)');
+
+  const _hour = _today.getHours() + _today.getMinutes()/60;
+  const _workStart = 9, _workEnd = 18;
+  const _dayFrac = Math.max(0.01, Math.min(1, (_hour - _workStart) / (_workEnd - _workStart)));
+  const _visitsEod = _dayFrac > 0 ? Math.round(_visitsToday / _dayFrac) : _visitsToday;
+  const _factEod = factN - _visitsToday + _visitsEod;
+  const _eodProg = planNum > 0 ? Math.round((_factEod / planNum) * (_daysInMonth / _dayNum) * 100) : 0;
+  const _eodColor = _eodProg >= 100 ? 'var(--grn)' : _eodProg >= 85 ? '#ffd60a' : 'var(--red)';
+
+  // Тренд по дням (визиты до сегодня)
+  function _dailyVisits() {
+    const arr = new Array(_dayNum).fill(0);
+    const rows = S.data.vizity || [];
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r || !r[0]) continue;
+      if (String(r[8]||'').toLowerCase().trim() !== nameLow) continue;
+      const d = parseInt(String(r[0]).trim().split('.')[0]);
+      if (d >= 1 && d <= _dayNum) arr[d-1]++;
+    }
+    return arr;
+  }
+  const _trend = _dailyVisits();
+  function _deltaVisits() { return (_trend[_trend.length-1]||0) - (_trend[_trend.length-2]||0); }
+  const _deltaToday = _deltaVisits();
+
+  // Helpers (повторяют CEO-логику локально)
+  function _deltaBadge(delta, label) {
+    const tip = delta === 0 ? `${label}: столько же, как вчера` : delta > 0 ? `${label}: на ${delta} больше, чем вчера` : `${label}: на ${Math.abs(delta)} меньше, чем вчера`;
+    const safe = tip.replace(/"/g,'&quot;');
+    if (delta > 0) return `<span class="ceo-card-delta up" title="${safe}">↑+${delta}</span>`;
+    if (delta < 0) return `<span class="ceo-card-delta down" title="${safe}">↓${delta}</span>`;
+    return `<span class="ceo-card-delta zero" title="${safe}">→ 0</span>`;
+  }
+  function _sparkline(values, color, suffix) {
+    if (!values.length) return '';
+    const w = 100, h = 28;
+    const max = Math.max(1, ...values);
+    const stepX = values.length > 1 ? w / (values.length - 1) : w;
+    const pts = values.map((v,i)=>[i*stepX, h - 2 - (v/max)*(h-4)]);
+    function smooth(pts) {
+      if (pts.length < 2) return '';
+      if (pts.length === 2) return `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)} L${pts[1][0].toFixed(1)},${pts[1][1].toFixed(1)}`;
+      const t = 0.35;
+      let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[i-1] || pts[i], p1 = pts[i], p2 = pts[i+1], p3 = pts[i+2] || p2;
+        const c1x = p1[0] + (p2[0]-p0[0])*t*0.5, c1y = p1[1] + (p2[1]-p0[1])*t*0.5;
+        const c2x = p2[0] - (p3[0]-p1[0])*t*0.5, c2y = p2[1] - (p3[1]-p1[1])*t*0.5;
+        d += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+      }
+      return d;
+    }
+    const path = smooth(pts);
+    return `<svg class="ceo-sparkline" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><path d="${path}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/></svg>`;
+  }
+
+  // Сделки + штрафы из crmStats
+  const _vs = (buildCrmStats(S.data.vizity || []))[nameLow] || {};
+  const _kred = (num(_vs.kred800) + num(_vs.kred1200)) || 0;
+  const _nalObm = (num(_vs.nal800) + num(_vs.obmen800) + num(_vs.nal1200) + num(_vs.obmen1200)) || 0;
+  const _kom = (num(_vs.kom800) + num(_vs.kom1200)) || 0;
+  const _vkso = num(_vs.vkso) || 0;
+  const _otkazFssp = (num(_vs.otkaz) + num(_vs.vfssп)) || 0;
+  const _accColor = pctClr(progNum);
+
+  const _cachedWeather = S._ceoWeatherCache || '';
   setLiveHTML(el, `
     <div class="kpi-manager-name">${_greet.html}</div>
+
+    <!-- Дата / погода / остаток дней -->
+    <div class="ceo-header" style="margin-top:6px">
+      <div></div>
+      <div class="ceo-header-right">
+        <div class="ceo-date-weather">
+          <span class="ceo-date">${_dateShort}</span>
+          <span id="ceo-weather" class="ceo-weather">${_cachedWeather || '…'}</span>
+        </div>
+        <div class="ceo-days-left">остаток <strong>${_daysLeft}</strong> д.</div>
+      </div>
+    </div>
+
     <div class="kpi-divider"></div>
     <div class="kpi-subtitle">Доход за месяц <button class="kpi-incognito-btn" onclick="event.stopPropagation();toggleIncognito()" title="Скрыть доход (или потряси телефон)">${localStorage.getItem('crm_incognito') === '1' ? '👁' : '🙈'}</button></div>
     <div class="kpi-income-panel ${localStorage.getItem('crm_incognito') === '1' ? 'kpi-incognito' : ''}" ${incomePanelAttr}>
       ${incomePanelContent}
       ${getMgrAvatarHtml(name, progNum)}
     </div>
-    <div class="kpi-divider"></div>
-    <div class="kpi-subtitle">Текущий KPI</div>
-    <div class="kpi-stats-panel">
-      <div class="kpi-stats-panel-hdr">
-        <div class="dept-sec-lbl" style="margin:0">Ключевые показатели</div>
-        <button class="mop-info-btn" onclick="${personalModalOpen}">!</button>
+
+    <!-- ТЕКУЩИЙ KPI -->
+    <div class="sec-title">Текущий KPI</div>
+    <div class="kpi-income-panel ceo-forecast-panel" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
+      ${getMgrAvatarHtml(name, progNum)}
+      <div class="ceo-forecast-body">
+        <div class="ceo-speedo">
+          <svg viewBox="-10 -10 220 220">
+            <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/>
+            <path id="ceo-speed-progress" class="ceo-speed-progress" stroke="url(#ceoSpeedGradientGlobal)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="${Math.max(0, 1 - Math.min(progNum/100, 1))}" d="M 40 160 A 85 85 0 1 1 160 160"/>
+          </svg>
+          <div class="ceo-speedo-value mv avatar-trigger">${progNum}%</div>
+        </div>
+        <div class="ceo-forecast-info">
+          <div class="ceo-forecast-sub"><span class="mv">${factN}</span> из <span>${plan||'—'}</span> визитов</div>
+          <div class="ceo-mini-badges">
+            <div class="ceo-mini-badge">
+              <div class="ceo-mini-lbl">Динамика за сегодня</div>
+              <div class="ceo-mini-val">
+                <span style="color:${_dynamicsColor}">${_dynamicsArrow}</span> <span class="mv">${Math.abs(_dynamicsPct)}</span>%
+              </div>
+              <div class="ceo-mini-sub">к вчера</div>
+            </div>
+            <div class="ceo-mini-badge ceo-mini-badge-eod">
+              <div class="ceo-mini-lbl">Прогноз выполнения</div>
+              <div class="ceo-mini-val">
+                <span class="mv" style="color:${_eodColor} !important">${_eodProg}</span><span style="color:${_eodColor}">%</span>
+              </div>
+              <div class="ceo-mini-sub">к концу дня</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="kpi-badges">
-        <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">План</div><div class="kb-val">${plan}</div></div>
-        <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Дневной</div><div class="kb-val">${daily}</div></div>
-        <div class="kpi-badge kpi-core-badge kpi-visits-drill" onclick="openVisitsDayModal(${visitsModalName},${isDozhim})" style="cursor:pointer" title="Хронология визитов"><div class="kb-lbl">Визиты</div><div class="kb-val">${factN}</div></div>
-        <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Остаток</div><div class="kb-val">${ost}</div></div>
+    </div>
+
+    <!-- КЛЮЧЕВЫЕ ПОКАЗАТЕЛИ -->
+    <div class="ceo-leaders-hdr" style="margin-top:14px">
+      <div class="sec-title" style="margin:0">Ключевые показатели</div>
+      <button class="mop-info-btn" onclick="${personalModalOpen}" title="Детали">!</button>
+    </div>
+    <div class="ceo-metrics-grid">
+      <div class="ceo-metric-card ceo-clickable" onclick="openVisitsDayModal(${visitsModalName},false)">
+        ${_deltaBadge(_deltaToday, 'Визиты')}
+        <div class="ceo-metric-lbl">Визиты</div>
+        <div class="ceo-metric-val"><span class="mv">${factN}</span> <span class="ceo-metric-plan">/ ${plan||'—'}</span></div>
+        <div class="ceo-progress-bar"><div class="ceo-progress-fill" style="width:${Math.min(100, planNum ? Math.round(factN/planNum*100) : 0)}%;background:${_accColor}"></div></div>
+        <div class="ceo-metric-pct">прогноз <span class="mv" style="color:${_accColor} !important">${progNum}</span><span style="color:${_accColor}">%</span></div>
+        ${_sparkline(_trend, _accColor, 'p')}
       </div>
-      ${isDozhim ? `<div class="kpi-badges">
-        <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Продажи</div><div class="kb-val" style="color:${pctClr(salesProgNum)}">${salesFactN}</div></div>
-        <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">План</div><div class="kb-val">${dSalesPlanNum||'—'}</div></div>
-        <div class="kpi-badge kpi-core-badge"><div class="kb-lbl">Остаток</div><div class="kb-val">${salesOst}</div></div>
-        <div class="kpi-badge"><div class="kb-lbl">Прогноз</div><div class="kb-val avatar-trigger" style="color:${pctClr(salesProgNum)}">${salesProgStr}</div></div>
-      </div>` : ''}
-      ${!isDozhim ? `<div class="kpi-badges">
-        <div class="kpi-badge"><div class="kb-lbl">Прогноз %</div><div class="kb-val avatar-trigger" style="color:${pctClr(progNum)}">${prog}</div></div>
-        <div class="kpi-badge"><div class="kb-lbl">Прогноз шт</div><div class="kb-val" style="color:${pctClr(progNum)}">${progVisN}</div></div>
-        <div class="kpi-badge"><div class="kb-lbl">Факт %</div><div class="kb-val" style="color:${pctClr(factPct)}">${prc}</div></div>
-        <div class="kpi-badge${salAlarm ? ' kpi-badge-salon-alarm' : ''}"><div class="kb-lbl">В салоне</div><div class="kb-val">${vsaloneN}</div></div>
-      </div>` : ''}
-      <div class="dept-sec-lbl">Сделки</div>
-      <div class="kpi-badges">
-        <div class="kpi-badge"><div class="kb-lbl">${isDozhim ? 'Кредит' : 'КД CRM/ТЛ'}</div><div class="kb-val">${kred}</div>${!isDozhim ? `<div class="kb-sub">${kredSub}</div>` : ''}</div>
-        <div class="kpi-badge"><div class="kb-lbl">${isDozhim ? 'Наличные' : 'НАЛ CRM/ТЛ'}</div><div class="kb-val">${nal}</div>${!isDozhim ? `<div class="kb-sub">${nalSub}</div>` : ''}</div>
-        <div class="kpi-badge"><div class="kb-lbl">${isDozhim ? 'Комиссия' : 'КОМ CRM/ТЛ'}</div><div class="kb-val">${kom}</div>${!isDozhim ? `<div class="kb-sub">${komSub}</div>` : ''}</div>
-        <div class="kpi-badge"><div class="kb-lbl">Задаток</div><div class="kb-val">${zadatok}</div></div>
+      <div class="ceo-metric-card">
+        <div class="ceo-metric-lbl">Кредиты</div>
+        <div class="ceo-metric-val mv" style="color:var(--txt)">${_kred}</div>
+        <div class="ceo-metric-sub">${mgrRow[8]||'0'} / ${mgrRow[12]||'0'} (800/1200)</div>
       </div>
-      ${convRow ? `<div class="dept-sec-lbl">Конверсии</div>${convRow.replace('<div class="kpi-badge-sep"></div>','')}` : ''}
+      <div class="ceo-metric-card">
+        <div class="ceo-metric-lbl">Нал + Обмен</div>
+        <div class="ceo-metric-val mv" style="color:var(--txt)">${_nalObm}</div>
+        <div class="ceo-metric-sub">нал + tradein</div>
+      </div>
+      <div class="ceo-metric-card">
+        <div class="ceo-metric-lbl">Комиссия</div>
+        <div class="ceo-metric-val mv" style="color:var(--txt)">${_kom}</div>
+        <div class="ceo-metric-sub">за месяц</div>
+      </div>
+      <div class="ceo-metric-card${vsaloneN > 0 ? ' ceo-salon-alarm' : ''}">
+        <div class="ceo-metric-lbl">В салоне</div>
+        <div class="ceo-metric-val mv" style="color:var(--txt)">${vsaloneN}</div>
+        <div class="ceo-metric-sub">${vsaloneN > 0 ? 'клиентов сейчас' : 'никого нет'}</div>
+      </div>
+      <div class="ceo-metric-card ceo-kso-fill">
+        <div class="ceo-metric-lbl">В КСО</div>
+        <div class="ceo-metric-val mv" style="color:var(--txt)">${_vkso}</div>
+        <div class="ceo-metric-sub">заявок в банках</div>
+      </div>
+      <div class="ceo-metric-card">
+        <div class="ceo-metric-lbl">Отказ + ФССП</div>
+        <div class="ceo-metric-val mv" style="color:var(--red)">${_otkazFssp}</div>
+        <div class="ceo-metric-sub">не подаём / отказы</div>
+      </div>
+    </div>
+
+    <!-- КОНВЕРСИИ -->
+    <div class="sec-title" style="margin-top:14px">Конверсии</div>
+    <div class="kpi-badges">
+      <div class="kpi-badge"><div class="kb-lbl"><b><i>К</i></b> визиты</div><div class="kb-val">${convVis}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl"><b><i>К</i></b> кредит</div><div class="kb-val">${convKred}</div></div>
+      <div class="kpi-badge"><div class="kb-lbl">% целевых</div><div class="kb-val">${pctTarget}</div></div>
     </div>
   `);
-  // Анимация/восстановление аватара после каждого рендера
+
+  // Анимация спидометра + аватар
   requestAnimationFrame(() => {
     const wrap = document.querySelector('#c-personal .kpi-avatar-wrap');
     if (wrap) ceoAvatarPlay(wrap);
+    const path = document.getElementById('ceo-speed-progress');
+    if (path) {
+      const target = Math.max(0, 1 - Math.min(progNum/100, 1));
+      path.setAttribute('stroke-dashoffset', '1');
+      requestAnimationFrame(() => path.setAttribute('stroke-dashoffset', String(target)));
+    }
   });
+
+  // Подгрузим погоду в фоне (используется shared cache S._ceoWeatherCache)
+  if (typeof loadCeoWeather === 'function') {
+    try { loadCeoWeather(); } catch(_) {}
+  }
 }
 
 // ==================== SALARY CALC ====================

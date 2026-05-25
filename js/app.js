@@ -9343,19 +9343,19 @@ function renderCeoDashboard() {
           ${deltaBadge(deltaKredit, 'Кредиты')}
           <div class="ceo-metric-lbl">Кредиты</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalKredit}</div>
-          <div class="ceo-metric-sub">${kreditCrm} / ${kreditDoz} (CRM / Дожим)</div>
+          <div class="ceo-metric-sub">${kreditCrm}/${kreditDoz} (CRM/Дожим)</div>
         </div>
         <div class="ceo-metric-card ceo-clickable" onclick="openCeoDealsModal('nalobm')">
           ${deltaBadge(deltaNalObm, 'Нал+Обмен')}
           <div class="ceo-metric-lbl">Нал+Обмен</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalNalObm}</div>
-          <div class="ceo-metric-sub">${nalObmCrm} / ${nalObmDoz} (CRM / Дожим)</div>
+          <div class="ceo-metric-sub">${nalObmCrm}/${nalObmDoz} (CRM/Дожим)</div>
         </div>
         <div class="ceo-metric-card ceo-clickable" onclick="openCeoDealsModal('komis')">
           ${deltaBadge(deltaKomis, 'Комиссия')}
           <div class="ceo-metric-lbl">Комиссия</div>
           <div class="ceo-metric-val mv" style="color:var(--txt)">${totalKomis}</div>
-          <div class="ceo-metric-sub">${komisCrm} / ${komisDoz} (CRM / Дожим)</div>
+          <div class="ceo-metric-sub">${komisCrm}/${komisDoz} (CRM/Дожим)</div>
         </div>
       </div>
 

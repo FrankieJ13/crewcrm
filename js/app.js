@@ -11276,12 +11276,18 @@ async function renderTrophiesPage() {
 
   const _typeOrder = { positive: 0, neutral: 1, negative: 2 };
 
+  // Карта быстрого поиска базы каталога по коду
+  const _byCode = {};
+  catalog.forEach(t => { _byCode[t.code] = t; });
+
   // Источник карточек:
-  //   - catalog mode: все трофеи как есть
-  //   - manager mode: только те, что есть в awardsByCode
+  //   - catalog mode: все базовые трофеи (без годовых суффиксов).
+  //   - manager mode: каждая выдача = карточка. Если код имеет
+  //     суффикс года (hb_2026_annual), резолвим базовую запись
+  //     из каталога и подменяем имя/иконку под этот год.
   const sourceList = isCatalogMode
     ? catalog.slice()
-    : catalog.filter(t => awardsByCode[t.code]);
+    : Object.keys(awardsByCode).map(code => _resolveTrophyCode(code, _byCode)).filter(Boolean);
 
   // Сортировка единым списком:
   //   - режим менеджера: по дате последнего получения, свежие → старые
@@ -11379,6 +11385,26 @@ function trophiesSelectView(v) {
 }
 window.trophiesSelectView = trophiesSelectView;
 
+// Резолвим выдачу с возможным годовым суффиксом (hb_2026_annual)
+// к базовой записи каталога (hb_annual) + подменяем имя/иконку под этот год.
+function _resolveTrophyCode(code, byCode) {
+  if (!code) return null;
+  if (byCode[code]) return byCode[code];
+  const m = String(code).match(/^(.+)_(\d{4})_annual$/);
+  if (m) {
+    const base = byCode[m[1] + '_annual'];
+    if (base) {
+      return Object.assign({}, base, {
+        code: code,
+        icon: `${m[1]}_${m[2]}_annual.png`,
+        name: `${base.name} ${m[2]}`,
+      });
+    }
+  }
+  return null;
+}
+window._resolveTrophyCode = _resolveTrophyCode;
+
 // Маленькая панель трофеев внутри профиля: только иконки полученных трофеев,
 // без описаний и подписей. Грузит каталог + TrophyAwards если ещё не подгружены.
 async function _profileLoadAndRenderTrophies(name, panelId) {
@@ -11410,7 +11436,7 @@ async function _profileLoadAndRenderTrophies(name, panelId) {
   // Показываем последние 8 (сортировка уже по lastDate desc)
   const slice = codes.slice(0, 8);
   const items = slice.map(code => {
-    const t = byCode[code];
+    const t = _resolveTrophyCode(code, byCode);
     const award = awards[code];
     const icon = t?.icon || '';
     const title = (t?.name || code) + (award.count > 1 ? ` ×${award.count}` : '');

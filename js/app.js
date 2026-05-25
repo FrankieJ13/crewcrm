@@ -8630,7 +8630,7 @@ async function loadCeoDashboard() {
 async function fetchVizityFmts() {
   async function _one(sheetName) {
     try {
-      const range  = encodeURIComponent(`'${sheetName}'!L2:L1000`);
+      const range  = encodeURIComponent(`'${sheetName}'!L2:L`);
       const fields = 'sheets.data.rowData.values.userEnteredFormat.backgroundColor';
       const url    = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}`
                    + `?ranges=${range}&fields=${fields}&includeGridData=true`;

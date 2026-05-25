@@ -11266,8 +11266,16 @@ async function renderTrophiesPage() {
       if (rl === 'crm' || rl === 'dozhim') mgrs.push(nm);
     }
     mgrs.sort((a, b) => a.localeCompare(b, 'ru'));
+    // Считаем количество выданных трофеев у каждого менеджера (для подписи в селекторе)
+    const _trophyCnt = (typeof _trophyTotalForManager === 'function')
+      ? (n => _trophyTotalForManager(n))
+      : () => 0;
     const opts = [`<option value="catalog"${isCatalogMode ? ' selected' : ''}>— Каталог (все трофеи) —</option>`]
-      .concat(mgrs.map(n => `<option value="${escapeHtml(n)}"${n === viewName ? ' selected' : ''}>${escapeHtml(n)}</option>`));
+      .concat(mgrs.map(n => {
+        const cnt = _trophyCnt(n);
+        const cntLbl = cnt > 0 ? ` · 🏆 ${cnt}` : '';
+        return `<option value="${escapeHtml(n)}"${n === viewName ? ' selected' : ''}>${escapeHtml(n)}${cntLbl}</option>`;
+      }));
     mgrPicker = `<div class="trophies-picker">
       <label class="trophies-picker-lbl">Просмотр:</label>
       <select class="trophies-picker-sel" onchange="trophiesSelectView(this.value)">${opts.join('')}</select>

@@ -7526,6 +7526,24 @@ body.cosmic .hmb-avatar-circle { border-color: #2a2a2a; }
 }
 /* ══ END TROPHIES STUB ══ */
 
+/* ════════════ ROP Доход — спойлер ════════════ */
+.rop-income-spoiler { margin: 12px 0 8px; }
+.rop-income-spoiler > summary.rop-income-summary {
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer; list-style: none;
+  padding: 4px 0;
+  user-select: none;
+}
+.rop-income-spoiler > summary::-webkit-details-marker { display: none; }
+.rop-income-spoiler > summary svg {
+  flex-shrink: 0;
+  transition: transform .2s;
+  color: var(--acc);
+  opacity: 0.7;
+}
+.rop-income-spoiler[open] > summary svg { transform: rotate(90deg); }
+.rop-income-spoiler > .kpi-income-panel { margin-top: 8px; }
+
 /* ════════════ АДАПТИВНЫЕ ШРИФТЫ ДЛЯ ПЕРС/CEO/ROP СТРАНИЦ ════════════
    До 500px размер текста сжимается через clamp(); от 500px и выше
    значения фиксированные (как раньше). */

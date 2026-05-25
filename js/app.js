@@ -17,7 +17,24 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   // Прогреваем кеш иконок ВСЕХ тем — чтобы при переключении не было flash/broken
   _preloadThemeIcons();
+  // Аккордеон в Конфигураторе режимов: открытие одного схлопа
+  // автоматически закрывает остальные открытые в той же группе.
+  _initCfgAccordion();
 });
+
+function _initCfgAccordion() {
+  const group = document.querySelectorAll('.cfg-modes-body > details.cfg-spoiler-inner');
+  if (!group.length) return;
+  group.forEach(det => {
+    det.addEventListener('toggle', () => {
+      if (det.open) {
+        group.forEach(other => {
+          if (other !== det && other.open) other.open = false;
+        });
+      }
+    });
+  });
+}
 
 function _preloadThemeIcons() {
   const list = [
@@ -8931,12 +8948,26 @@ function renderCeoDashboard() {
   });
 
   // ---- Агрегаты ----
-  const crmFact = crmMgrs.reduce((s,m) => s + m.vis, 0);
+  // Суммируем визиты так же, как модалка «Хронология» (getVisitsByDayAll) —
+  // все строки с валидной датой и сверкой, без фильтра по принадлежности
+  // менеджера к ПЛАН. Это устраняет расхождение карточек с хронологией.
+  const _sumChrono = (rows) => {
+    if (!Array.isArray(rows)) return 0;
+    let n = 0;
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i]; if (!r) continue;
+      if (!isSverkaRow(r)) continue;
+      const d = parseInt(String(r[0]||'').trim().split('.')[0]);
+      if (!d || d < 1) continue;
+      n++;
+    }
+    return n;
+  };
+  const crmFact    = _sumChrono(vizData);
+  const dozhimFact = _sumChrono(dvData);
   const crmPlanSum = crmMgrs.reduce((s,m) => s + m.plan, 0);
-  const crmProg = computeProgPct(crmFact, crmPlanSum, sfx);
-
-  const dozhimFact = dozhimMgrs.reduce((s,m) => s + m.vis, 0);
   const dozhimPlanSum = dozhimMgrs.reduce((s,m) => s + m.plan, 0);
+  const crmProg    = computeProgPct(crmFact,    crmPlanSum,    sfx);
   const dozhimProg = computeProgPct(dozhimFact, dozhimPlanSum, sfx);
 
   // Всего в салоне (CRM + Дожим)
@@ -9250,23 +9281,28 @@ function renderCeoDashboard() {
       </div>
 
       ${isRop ? `
-      <!-- ДОХОД ROP -->
-      <div class="sec-title">Доход</div>
-      <div class="kpi-income-panel ceo-rop-panel ${ropIncognito ? 'kpi-incognito' : ''}" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
-        <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openRopIncomeModal()" title="Схема премирования">!</button>
-        <button class="kpi-incognito-btn ceo-rop-incognito-btn" onclick="event.stopPropagation();toggleIncognitoCeo()" title="Скрыть доход (или потряси телефон)">${ropIncognito ? '👁' : '🙈'}</button>
-        <div class="ceo-rop-total mv">${fmtRub(ropIncomeTotal)}</div>
-        <div class="ceo-rop-formula">
-          <span class="ceo-rop-dim">(</span>
-          <span>${fmtRub(ROP_OKLAD)}</span>
-          <span class="ceo-rop-dim">+</span>
-          <span>${fmtRub(ROP_DOPLATA)}</span>
-          <span class="ceo-rop-dim">)</span>
-          <span class="ceo-rop-dim">×</span>
-          <span style="color:${pctClr(ropProgPct)}">${ropKoef.toFixed(2)}</span>
+      <!-- ДОХОД ROP (под схлопом, по умолчанию свёрнут) -->
+      <details class="rop-income-spoiler">
+        <summary class="rop-income-summary">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span class="sec-title" style="margin:0;display:inline">Доход</span>
+        </summary>
+        <div class="kpi-income-panel ceo-rop-panel ${ropIncognito ? 'kpi-incognito' : ''}" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
+          <button class="ceo-metric-info-btn" onclick="event.stopPropagation();openRopIncomeModal()" title="Схема премирования">!</button>
+          <button class="kpi-incognito-btn ceo-rop-incognito-btn" onclick="event.stopPropagation();toggleIncognitoCeo()" title="Скрыть доход (или потряси телефон)">${ropIncognito ? '👁' : '🙈'}</button>
+          <div class="ceo-rop-total mv">${fmtRub(ropIncomeTotal)}</div>
+          <div class="ceo-rop-formula">
+            <span class="ceo-rop-dim">(</span>
+            <span>${fmtRub(ROP_OKLAD)}</span>
+            <span class="ceo-rop-dim">+</span>
+            <span>${fmtRub(ROP_DOPLATA)}</span>
+            <span class="ceo-rop-dim">)</span>
+            <span class="ceo-rop-dim">×</span>
+            <span style="color:${pctClr(ropProgPct)}">${ropKoef.toFixed(2)}</span>
+          </div>
+          <div class="ceo-rop-sub">прогноз CRM: <strong style="color:${pctClr(ropProgPct)}">${ropProgPct}%</strong> · план ROP <strong>${Math.round(ropPlan)}</strong> виз.</div>
         </div>
-        <div class="ceo-rop-sub">прогноз CRM: <strong style="color:${pctClr(ropProgPct)}">${ropProgPct}%</strong> · план ROP <strong>${Math.round(ropPlan)}</strong> виз.</div>
-      </div>` : ''}
+      </details>` : ''}
 
       <!-- ТЕКУЩИЙ KPI -->
       <div class="sec-title">Текущий KPI <span style="font-size:9px;color:var(--txt3);font-weight:600;letter-spacing:0.04em">· CRM</span></div>

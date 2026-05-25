@@ -2837,6 +2837,7 @@ function buildCrmStats(vizData, opts = {}) {
     if (!mgrs[mgrL]) {
       mgrs[mgrL] = {
         name: mgr,
+        vis:0,             // общее число всех строк менеджера — соответствует хронологии
         vis800:0, vis1200:0,
         kred800:0, nal800:0, obmen800:0, vykup800:0, kom800:0,
         kred1200:0, nal1200:0, obmen1200:0, vykup1200:0, kom1200:0,
@@ -2851,6 +2852,7 @@ function buildCrmStats(vizData, opts = {}) {
     const city = String(row[3]||'').trim() || '—';        // col D = город
     const zadSum = parseFloat(String(row[9]||'0').replace(/[^\d.]/g,'')) || 0; // col J
 
+    m.vis++;  // считаем КАЖДУЮ строку менеджера, как хронология
     if (cat === CAT800)  m.vis800++;
     if (cat === CAT1200) m.vis1200++;
 
@@ -2922,6 +2924,7 @@ function buildDozhimStats(dVizData, opts = {}) {
     if (!mgrs[mgrL]) {
       mgrs[mgrL] = {
         name: mgr,
+        vis:0,             // общее число строк менеджера — для единообразия с хронологией
         vis800:0, vis1000:0,
         kred800:0, nal800:0, obmen800:0, kom800:0,
         kred1000:0, nal1000:0, kom1000:0,
@@ -2932,6 +2935,7 @@ function buildDozhimStats(dVizData, opts = {}) {
     const cat = String(row[6]||'').trim().toLowerCase(); // col G = категория
     const st  = String(row[4]||'').trim().toLowerCase(); // col E = комментарий (итоговый статус сделки)
     const zadSum = parseFloat(String(row[9]||'0').replace(/[^\d.]/g,'')) || 0; // col J
+    m.vis++; // каждая строка менеджера, как хронология
 
     if (cat === CAT800)  m.vis800++;
     if (cat === CAT1000) m.vis1000++;
@@ -3257,7 +3261,7 @@ function renderOtchet() {
     const plan = planMap[nl] || 0;
     const vis800  = s.vis800  || 0;
     const vis1200 = s.vis1200 || 0;
-    const allVis  = vis800 + vis1200;
+    const allVis  = (typeof s.vis === 'number') ? s.vis : (vis800 + vis1200);
     const ost     = Math.max(0, plan - allVis);
     const row     = new Array(30).fill('');
     row[0]  = name;
@@ -3290,11 +3294,12 @@ function renderOtchet() {
   const mgrRows = planNames.map(makeRow);
 
   // Котёл — суммируем тех кто не в ПЛАН (если есть)
-  const kotelStats = { vis800:0, vis1200:0, kred800:0, nal800:0, obmen800:0, kom800:0,
+  const kotelStats = { vis:0, vis800:0, vis1200:0, kred800:0, nal800:0, obmen800:0, kom800:0,
                        kred1200:0, nal1200:0, obmen1200:0, kom1200:0, zadatok:0 };
   const planNamesLow = new Set(planNames.map(n => n.toLowerCase()));
   Object.values(crmStats).forEach(s => {
     if (!planNamesLow.has(s.name.toLowerCase())) {
+      kotelStats.vis       += (s.vis || 0);
       kotelStats.vis800    += s.vis800;
       kotelStats.vis1200   += s.vis1200;
       kotelStats.kred800   += s.kred800;
@@ -3317,7 +3322,9 @@ function renderOtchet() {
 
   const vis800sum  = mgrRows.reduce((s,r) => s + num(r[1]), 0) + num(kot[1]);
   const vis1200sum = mgrRows.reduce((s,r) => s + num(r[2]), 0) + num(kot[2]);
-  const allVis     = vis800sum + vis1200sum;
+  // Total visits = сумма m.vis по всем менеджерам отдела (включая Котёл).
+  // row[7] хранит s.vis (без фильтра по категориям) — корректно соответствует хронологии.
+  const allVis     = mgrRows.reduce((s,r) => s + num(r[7]), 0) + (kotelStats.vis || 0);
   const planTotal  = mgrRows.reduce((s,r) => s + num(r[3]), 0);
 
   const mo  = parseInt(currentSuffix.slice(0,2));
@@ -6330,7 +6337,7 @@ function renderPersonal(matched) {
     const s      = dStats[nameLow] || {};
     const planVal = planM[nameLow] || 0;
     dSalesPlanNum = dSalesM[nameLow] || 0;
-    const allVis  = (s.vis800||0) + (s.vis1000||0);
+    const allVis  = (typeof s.vis === 'number') ? s.vis : ((s.vis800||0) + (s.vis1000||0));
     const synRow  = new Array(20).fill('');
     synRow[0] = name;
     synRow[1] = s.vis800||0;  synRow[2] = s.vis1000||0;
@@ -6348,7 +6355,7 @@ function renderPersonal(matched) {
     const planM    = getPlanMap(S.data.plan || []);
     const s        = vizStats[nameLow] || {};
     const planVal  = planM[nameLow] || 0;
-    const allVis   = (s.vis800||0) + (s.vis1200||0);
+    const allVis   = (typeof s.vis === 'number') ? s.vis : ((s.vis800||0) + (s.vis1200||0));
     const synRow   = new Array(30).fill('');
     synRow[0] = name; synRow[1] = s.vis800||0; synRow[2] = s.vis1200||0;
     synRow[3] = planVal; synRow[4] = Math.max(0, planVal - allVis);
@@ -8583,19 +8590,22 @@ async function loadCeoDashboard() {
     const needPlan    = !S.data.plan;
     const needCnvrs   = !S.data.cnvrs;
     const needStavki  = !S.data.stavki;
-    if (needVizity || needDVizity || needPlan || needCnvrs || needStavki) {
-      const [vd, dv, pd, cv, sd] = await Promise.all([
+    const needGrafik  = !S.data.grafik;
+    if (needVizity || needDVizity || needPlan || needCnvrs || needStavki || needGrafik) {
+      const [vd, dv, pd, cv, sd, gr] = await Promise.all([
         needVizity  ? api(SHEETS.vizity,   'A:N').catch(() => [])      : Promise.resolve(S.data.vizity),
         needDVizity ? api(SHEETS.d_vizity, 'A:N').catch(() => [])      : Promise.resolve(S.data.d_vizity),
         needPlan    ? api(SHEETS.plan,     'A:D').catch(() => [])      : Promise.resolve(S.data.plan),
         needCnvrs   ? api(SHEETS.cnvrs,    'A1:N40').catch(() => [])   : Promise.resolve(S.data.cnvrs),
         needStavki  ? api(SHEETS.stavki,   'A1:B25').catch(() => [])   : Promise.resolve(S.data.stavki),
+        needGrafik  ? api(SHEETS.grafik,   'A1:AI25').catch(() => [])  : Promise.resolve(S.data.grafik),
       ]);
       if (vd?.length)  S.data.vizity   = vd;
       if (dv?.length)  S.data.d_vizity = dv;
       if (pd?.length)  S.data.plan     = pd;
       if (cv?.length)  S.data.cnvrs    = cv;
       if (sd?.length)  S.data.stavki   = sd;
+      if (gr?.length)  S.data.grafik   = gr;
     }
   } catch(e) {
     if (e.message === 'auth') return;
@@ -8614,11 +8624,13 @@ async function loadCeoDashboard() {
   }
 }
 
-// Цвета заливки column E для ВИЗИТЫ и Д_ВИЗИТЫ — определяем «план/не приехал»
+// Цвета заливки column L для ВИЗИТЫ и Д_ВИЗИТЫ — определяем «план/не приехал».
+// Запрос L2:L1000 — заголовок (row 1) пропускаем; ключи карты выравниваем
+// под индексы S.data.vizity (i = 1 для первой data-строки).
 async function fetchVizityFmts() {
   async function _one(sheetName) {
     try {
-      const range  = encodeURIComponent(`'${sheetName}'!E1:E1000`);
+      const range  = encodeURIComponent(`'${sheetName}'!L2:L1000`);
       const fields = 'sheets.data.rowData.values.userEnteredFormat.backgroundColor';
       const url    = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}`
                    + `?ranges=${range}&fields=${fields}&includeGridData=true`;
@@ -8629,7 +8641,8 @@ async function fetchVizityFmts() {
       const planned = {};
       rowData.forEach((row, ri) => {
         const bg = row?.values?.[0]?.userEnteredFormat?.backgroundColor;
-        if (_isPlannedColor(bg)) planned[ri] = true;
+        // ri=0 → sheet row 2 → S.data.vizity[1]; смещаем на +1
+        if (_isPlannedColor(bg)) planned[ri + 1] = true;
       });
       return planned;
     } catch (e) { return {}; }
@@ -8802,7 +8815,7 @@ function _ceoComputeLeaders() {
     const nl = name.toLowerCase();
     const s = stats[nl] || {};
     const plan = planMap[nl] || 0;
-    const vis = (s.vis800 || 0) + (s.vis1200 || 0) + (s.vis1000 || 0);
+    const vis = (typeof s.vis === 'number') ? s.vis : ((s.vis800 || 0) + (s.vis1200 || 0) + (s.vis1000 || 0));
     return { name, firstName: name.split(' ').slice(-1)[0] || name, progPct: computeProgPct(vis, plan, sfx) };
   }
   const crmNames = allPlanNames.filter(n => { const r = getRoleByName(n.toLowerCase().trim()); return r === 'crm' || r === ''; });
@@ -8898,7 +8911,7 @@ function renderCeoDashboard() {
     const nl = name.toLowerCase();
     const s = stats[nl] || {};
     const plan = planMap[nl] || 0;
-    const vis = (s.vis800 || 0) + (s.vis1200 || 0) + (s.vis1000 || 0);
+    const vis = (typeof s.vis === 'number') ? s.vis : ((s.vis800 || 0) + (s.vis1200 || 0) + (s.vis1000 || 0));
     const factPct = computeFactPct(vis, plan);
     const progPct = computeProgPct(vis, plan, suffix);
     const vsalone = s.vsalone || 0;
@@ -9179,10 +9192,27 @@ function renderCeoDashboard() {
     });
     return n;
   }
-  // «Без визитов сегодня» — у кого 0 визитов сегодня, но в этом месяце
-  // визиты были (значит, активный менеджер, но сегодня молчит).
+  // Индекс графика — чтобы исключить из алерта тех, у кого сегодня «В» (выходной)
+  const _grafikIdx = (S.data.grafik && S.data.grafik.length >= 3)
+    ? (function() { try { return buildSchedIndex(S.data.grafik); } catch (_) { return {}; } })()
+    : {};
+  function _isOffToday(name) {
+    const entry = _grafikIdx[String(name).toLowerCase()];
+    if (!entry) return false; // нет в графике — не считаем что выходной
+    const { row: mgrRow, daysRow } = entry;
+    const day = _today_dd;
+    for (let c = 1; c < daysRow.length; c++) {
+      if (parseInt(daysRow[c]) === day) {
+        const v = normalizeSchedVal(mgrRow[c]);
+        return v === 'В' || v === ''; // выходной либо пустая клетка
+      }
+    }
+    return false;
+  }
+  // «Без визитов сегодня» — у кого 0 визитов сегодня, в этом месяце
+  // визиты были (активный), И сегодня в смене «Р» (не выходной).
   const noVisitsTodayList = [...crmMgrs, ...dozhimMgrs]
-    .filter(m => m.vis > 0 && _visitsTodayForMgr(m.name) === 0);
+    .filter(m => m.vis > 0 && !_isOffToday(m.name) && _visitsTodayForMgr(m.name) === 0);
   // «Низкий прогноз» — прогноз меньше 50% (явно отстают от плана)
   const lowProgList = [...crmMgrs, ...dozhimMgrs]
     .filter(m => m.plan > 0 && m.progPct > 0 && m.progPct < 50);

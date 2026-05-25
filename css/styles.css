@@ -7525,3 +7525,18 @@ body.cosmic .hmb-avatar-circle { border-color: #2a2a2a; }
   letter-spacing: 0.04em;
 }
 /* ══ END TROPHIES STUB ══ */
+
+/* ════════════ АДАПТИВНЫЕ ШРИФТЫ ДЛЯ ПЕРС/CEO/ROP СТРАНИЦ ════════════
+   До 500px размер текста сжимается через clamp(); от 500px и выше
+   значения фиксированные (как раньше). */
+@media (max-width: 499.98px) {
+  .ceo-metric-val   { font-size: clamp(14px, 4.8vw, 22px); min-height: 0 !important; }
+  .ceo-metric-lbl   { font-size: clamp(8px,  2.2vw, 10px); }
+  .ceo-metric-sub   { font-size: clamp(9px,  2.4vw, 11px); }
+  .ceo-speedo-value { font-size: clamp(11px, 2.8vw, 13px); }
+  .ceo-forecast-sub { font-size: clamp(10px, 2.6vw, 14px); }
+  .ceo-rop-total    { font-size: clamp(18px, 5.5vw, 24px); }
+  .ceo-rop-formula  { font-size: clamp(10px, 2.4vw, 12px); }
+  .ceo-greeting     { font-size: clamp(13px, 4.2vw, 18px); line-height: 1.2; }
+  .ceo-days-left, .ceo-date, .ceo-weather { font-size: clamp(10px, 2.5vw, 12px); }
+}

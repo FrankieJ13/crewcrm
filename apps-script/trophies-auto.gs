@@ -188,6 +188,8 @@ function awardBirthdayFor(now) {
   const existing = readAwardsIndex(ss, period);
   const toAppend = [];
 
+  // Код трофея ДР зависит от года: hb_2026_annual, hb_2027_annual, ...
+  const hbCode = 'hb_' + period + '_annual';
   for (let i = 1; i < usersRows.length; i++) {
     const row = usersRows[i]; if (!row) continue;
     const name = String(row[U_NAME] || '').trim();
@@ -195,9 +197,9 @@ function awardBirthdayFor(now) {
     if (!name || (role !== 'crm' && role !== 'dozhim')) continue;
     const dob = parseDob(row[U_DOB]);
     if (!dob || dob.day !== d || dob.month !== m) continue;
-    const key = 'hb_annual|' + name.toLowerCase();
+    const key = hbCode + '|' + name.toLowerCase();
     if (existing[key]) continue;
-    toAppend.push(['hb_annual', name, awardedAt, 'system', 'auto', 'active', period]);
+    toAppend.push([hbCode, name, awardedAt, 'system', 'auto', 'active', period]);
   }
   if (toAppend.length) appendRows(ss, SHEET_TROPHY_AWARDS, toAppend);
   console.log(`[trophies] hb ${awardedAt}: ${toAppend.length}`);
@@ -213,14 +215,16 @@ function awardHnyFor(now) {
   const existing = readAwardsIndex(ss, period);
   const toAppend = [];
 
+  // Код трофея HNY зависит от года: hny_2026_annual, hny_2027_annual, ...
+  const hnyCode = 'hny_' + period + '_annual';
   for (let i = 1; i < usersRows.length; i++) {
     const row = usersRows[i]; if (!row) continue;
     const name = String(row[U_NAME] || '').trim();
     const role = String(row[U_ROLE] || '').toLowerCase().trim();
     if (!name || (role !== 'crm' && role !== 'dozhim')) continue;
-    const key = 'hny_annual|' + name.toLowerCase();
+    const key = hnyCode + '|' + name.toLowerCase();
     if (existing[key]) continue;
-    toAppend.push(['hny_annual', name, awardedAt, 'system', 'auto', 'active', period]);
+    toAppend.push([hnyCode, name, awardedAt, 'system', 'auto', 'active', period]);
   }
   if (toAppend.length) appendRows(ss, SHEET_TROPHY_AWARDS, toAppend);
   console.log(`[trophies] hny ${awardedAt}: ${toAppend.length}`);

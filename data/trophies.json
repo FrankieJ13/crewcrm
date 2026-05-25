@@ -157,31 +157,31 @@
       "icon": "overslept_monthly.png"
     },
     {
-      "code": "anniversary_annual",
-      "name": "Anniversary Edition",
+      "code": "anniversary_2026_annual",
+      "name": "Anniversary Edition 2026",
       "description": "Год работы в Crystal Motors.",
       "type": "neutral",
       "category": "annual",
       "auto": true,
-      "icon": "anniversary_annual.png"
+      "icon": "anniversary_2026_annual.png"
     },
     {
-      "code": "hb_annual",
-      "name": "Happy Birthday",
+      "code": "hb_2026_annual",
+      "name": "Happy Birthday 2026",
       "description": "С днём рождения, коллега!",
       "type": "neutral",
       "category": "annual",
       "auto": true,
-      "icon": "hb_annual.png"
+      "icon": "hb_2026_annual.png"
     },
     {
-      "code": "hny_annual",
-      "name": "HNY",
+      "code": "hny_2026_annual",
+      "name": "HNY 2026",
       "description": "С Новым годом, коллега!",
       "type": "neutral",
       "category": "annual",
       "auto": true,
-      "icon": "hny_annual.png"
+      "icon": "hny_2026_annual.png"
     },
     {
       "code": "mentor_once",

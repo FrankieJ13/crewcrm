@@ -6332,7 +6332,7 @@ body.cinematic .ceo-speedo-value { color: var(--txt) !important; }
 #c-personal .ceo-mini-sub { font-size: clamp(9px, 2.3vw, 10px); }
 
 /* Светлый текст значения спидометра на тёмных темах */
-#c-personal .ceo-speedo-value { color: var(--txt) !important; }
+#c-personal .ceo-speedo-value { color: var(--acc) !important; }
 
 /* Карточка «Отказ + ФССП» — нежно-красная заливка, тёмный текст */
 .personal-metric-otkaz {
@@ -7685,16 +7685,46 @@ body.cosmic .vac-month-badge { color: #1a1a1a; }
   transition: transform .2s ease;
   opacity: .8;
 }
-details.vac-month > .vac-month-title {
-  cursor: pointer;
-  list-style: none;
-  user-select: none;
+/* Группа прошедших месяцев */
+.vac-past-group {
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--bg2);
+  overflow: hidden;
+  margin-bottom: 14px;
 }
-details.vac-month > .vac-month-title::-webkit-details-marker { display: none; }
-details.vac-month[open] > .vac-month-title .vac-month-chev { transform: rotate(180deg); }
-details.vac-month:not([open]) > .vac-month-title { border-bottom: 0; }
-.vac-month-past { opacity: 0.85; }
-.vac-month-past:not([open]) { background: var(--bg3); }
+.vac-past-summary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 14px;
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 800;
+  background: var(--bg3);
+  color: var(--txt);
+}
+.vac-past-summary::-webkit-details-marker { display: none; }
+.vac-past-sum-left { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.vac-past-sum-title { font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
+.vac-past-sum-range {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--txt2);
+  white-space: nowrap;
+}
+.vac-month-chev { flex-shrink: 0; transition: transform .2s ease; opacity: .8; }
+.vac-past-group[open] .vac-month-chev { transform: rotate(180deg); }
+.vac-past-body {
+  padding: 12px;
+  display: flex; flex-direction: column; gap: 12px;
+  background: var(--bg);
+}
+.vac-past-body > .vac-month { margin-bottom: 0; }
 .vac-month-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);

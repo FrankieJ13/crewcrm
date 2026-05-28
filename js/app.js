@@ -4630,8 +4630,8 @@ function renderVacationCalendarInto(el, blocks) {
   // Длительность месяцев 2026 (год не високосный)
   const MONTH_DAYS = [31,28,31,30,31,30,31,31,30,31,30,31];
 
-  // Считаем смещение первого дня для каждого месяца, чтобы выложить в сетке 7 колонок
-  const html = blocks.map((b, mi) => {
+  // Рендерим один месяц-блок (без обёртки <details> вокруг)
+  function renderMonth(b, mi) {
     const monthLen = MONTH_DAYS[mi] || 31;
     // Собираем дни по менеджерам внутри месяца (поддерживаем несколько менеджеров в одной ячейке)
     const byMgr = {};
@@ -4654,17 +4654,8 @@ function renderVacationCalendarInto(el, blocks) {
       ? `<span class="vac-month-badge"><svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" style="vertical-align:-1px"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4 0-9 2-9 6v2h18v-2c0-4-5-6-9-6Z"/></svg> ${mgrCount}</span>`
       : '';
 
-    // Прошедшие месяца — схлопнуты по умолчанию
-    const isPast = curMonthIdx >= 0 && mi < curMonthIdx;
-    const tag = isPast ? 'details' : 'div';
-    const openAttr = isPast ? '' : ''; // details закрыт по умолчанию (без open)
-    const chevron = isPast
-      ? `<svg class="vac-month-chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`
-      : '';
-    const titleTag = isPast ? 'summary' : 'div';
-
     if (!b.days.length) {
-      return `<${tag} class="vac-month${isPast?' vac-month-past':''}"${openAttr}><${titleTag} class="vac-month-title"><span class="vac-month-title-left">${chevron}<span>${escapeHtml(b.title)}</span></span>${badgeHtml}</${titleTag}><div class="vac-cal-loading" style="padding:14px">Пусто</div></${tag}>`;
+      return `<div class="vac-month"><div class="vac-month-title"><span class="vac-month-title-left"><span>${escapeHtml(b.title)}</span></span>${badgeHtml}</div><div class="vac-cal-loading" style="padding:14px">Пусто</div></div>`;
     }
     // Найдём минимальный день и его dow → пустые ячейки до него
     const byDay = {};
@@ -4689,9 +4680,34 @@ function renderVacationCalendarInto(el, blocks) {
     // Дополнить до кратного 7
     while (cells.length % 7 !== 0) cells.push('<div class="vac-cell vac-empty"></div>');
     const dowHdr = DOW_RU.map((d,i) => `<div class="vac-dow${i>=5?' we':''}">${d}</div>`).join('');
-    return `<${tag} class="vac-month${isPast?' vac-month-past':''}"${openAttr}><${titleTag} class="vac-month-title"><span class="vac-month-title-left">${chevron}<span>${escapeHtml(b.title)}</span></span>${badgeHtml}</${titleTag}><div class="vac-month-grid">${dowHdr}${cells.join('')}</div></${tag}>`;
-  }).join('');
-  el.innerHTML = html;
+    return `<div class="vac-month"><div class="vac-month-title"><span class="vac-month-title-left"><span>${escapeHtml(b.title)}</span></span>${badgeHtml}</div><div class="vac-month-grid">${dowHdr}${cells.join('')}</div></div>`;
+  }
+
+  // Разделяем на прошедшие и текущие/будущие
+  const pastBlocks = [];
+  const liveBlocks = [];
+  blocks.forEach((b, mi) => {
+    if (curMonthIdx >= 0 && mi < curMonthIdx) pastBlocks.push({ b, mi });
+    else liveBlocks.push({ b, mi });
+  });
+  const liveHtml = liveBlocks.map(x => renderMonth(x.b, x.mi)).join('');
+  let pastHtml = '';
+  if (pastBlocks.length) {
+    const innerPast = pastBlocks.map(x => renderMonth(x.b, x.mi)).join('');
+    const rangeText = pastBlocks.length === 1
+      ? pastBlocks[0].b.title
+      : `${pastBlocks[0].b.title} – ${pastBlocks[pastBlocks.length-1].b.title}`;
+    const chevron = `<svg class="vac-month-chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+    pastHtml = `<details class="vac-past-group">
+        <summary class="vac-past-summary">
+          <span class="vac-past-sum-left">${chevron}<span class="vac-past-sum-title">Прошедшие месяцы</span></span>
+          <span class="vac-past-sum-range">${escapeHtml(rangeText)}</span>
+        </summary>
+        <div class="vac-past-body">${innerPast}</div>
+      </details>`;
+  }
+
+  el.innerHTML = pastHtml + liveHtml;
 }
 
 function _ensureVacOverlay() {
@@ -6941,7 +6957,7 @@ function renderPersonal(matched) {
             <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/>
             <path id="ceo-speed-progress" class="ceo-speed-progress" stroke="url(#ceoSpeedGradientGlobal)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="${Math.max(0, 1 - Math.min(progNum/100, 1))}" d="M 40 160 A 85 85 0 1 1 160 160"/>
           </svg>
-          <div class="ceo-speedo-value mv" style="color:var(--txt)">${progNum}%</div>
+          <div class="ceo-speedo-value mv" style="color:var(--acc) !important">${progNum}%</div>
         </div>
         <div class="ceo-forecast-info">
           <div class="ceo-forecast-sub"><span class="mv">${factN}</span> из <span>${plan||'—'}</span> визитов</div>

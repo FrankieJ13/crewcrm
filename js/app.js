@@ -7020,7 +7020,7 @@ function renderPersonal(matched) {
             <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/>
             <path id="ceo-speed-progress" class="ceo-speed-progress" stroke="url(#ceoSpeedGradientGlobal)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="${Math.max(0, 1 - Math.min(progNum/100, 1))}" d="M 40 160 A 85 85 0 1 1 160 160"/>
           </svg>
-          <div class="ceo-speedo-value mv" style="color:var(--acc) !important">${progNum}%</div>
+          <div class="ceo-speedo-value mv" style="color:${pctClr(progNum)} !important">${progNum}%</div>
         </div>
         <div class="ceo-forecast-info">
           <div class="ceo-forecast-sub"><span class="mv">${factN}</span> из <span>${plan||'—'}</span> визитов</div>
@@ -7035,7 +7035,7 @@ function renderPersonal(matched) {
             <div class="ceo-mini-badge ceo-mini-badge-eod">
               <div class="ceo-mini-lbl">Прогноз выполнения</div>
               <div class="ceo-mini-val">
-                <span class="mv" style="color:var(--acc) !important">${_eodProg}</span><span style="color:var(--acc)">%</span>
+                <span class="mv" style="color:${pctClr(_eodProg)} !important">${_eodProg}</span><span style="color:${pctClr(_eodProg)}">%</span>
               </div>
               <div class="ceo-mini-sub">к концу дня</div>
             </div>

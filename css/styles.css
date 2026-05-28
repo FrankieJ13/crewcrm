@@ -6332,7 +6332,7 @@ body.cinematic .ceo-speedo-value { color: var(--txt) !important; }
 #c-personal .ceo-mini-sub { font-size: clamp(9px, 2.3vw, 10px); }
 
 /* Светлый текст значения спидометра на тёмных темах */
-#c-personal .ceo-speedo-value { color: var(--acc) !important; }
+/* Цвет задаётся inline через pctClr(progNum) — здесь без !important, чтобы inline-стиль с !important побеждал */
 
 /* Карточка «Отказ + ФССП» — нежно-красная заливка, тёмный текст */
 .personal-metric-otkaz {

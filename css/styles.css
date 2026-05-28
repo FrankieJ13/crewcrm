@@ -7617,10 +7617,10 @@ body.cosmic .hmb-avatar-circle { border-color: #2a2a2a; }
 .vac-cal-hdr {
   flex: 0 0 auto;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 16px;
+  padding: 5px 12px;
   border-bottom: 1px solid var(--line);
   background: var(--bg2);
-  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  padding-top: calc(5px + env(safe-area-inset-top, 0px));
 }
 .vac-cal-title {
   font-family: 'Unbounded', sans-serif;
@@ -7628,7 +7628,7 @@ body.cosmic .hmb-avatar-circle { border-color: #2a2a2a; }
   letter-spacing: 0.02em;
 }
 .vac-cal-close {
-  width: 36px; height: 36px; border-radius: 50%;
+  width: 30px; height: 30px; border-radius: 50%;
   border: 1px solid var(--line);
   background: transparent; color: var(--txt);
   font-size: 22px; line-height: 1; cursor: pointer;
@@ -7836,7 +7836,7 @@ body.fluent .vac-month-title { color: #003d7a; }
 body.fluent .vac-cell        { color: #111; }
 
 @media (max-width: 499.98px) {
-  .vac-cal-hdr  { padding: 10px 12px; padding-top: calc(10px + env(safe-area-inset-top, 0px)); }
+  .vac-cal-hdr  { padding: 5px 12px; padding-top: calc(5px + env(safe-area-inset-top, 0px)); }
   .vac-cal-title { font-size: 12px; }
   .vac-cal-body  { padding: 10px; gap: 10px; }
   .vac-month-title { font-size: 10px; padding: 7px 8px; }

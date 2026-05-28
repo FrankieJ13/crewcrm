@@ -4600,22 +4600,30 @@ function parseVacationsList(rows) {
   return periods;
 }
 
-// Строим 12-месячный массив blocks из периодов (совместим с renderVacationCalendarInto)
+// Строим 12-месячный массив blocks из периодов (совместим с renderVacationCalendarInto).
+// ВАЖНО: в days попадают ВСЕ дни месяца (1..monthLen), даже без отпусков —
+// иначе в календаре пропадают пустые ячейки с номером дня.
 function buildBlocksFromPeriods(periods, year) {
   const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь',
                   'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  const MONTH_DAYS = [31,28,31,30,31,30,31,31,30,31,30,31];
   const blocks = [];
   for (let mi = 0; mi < 12; mi++) {
-    // day → { day, dow, names[], bg }
+    const monthLen = MONTH_DAYS[mi];
+    // Инициализируем все дни месяца
     const seen = {};
+    for (let day = 1; day <= monthLen; day++) {
+      const d = new Date(Date.UTC(year, mi, day));
+      const dow = (d.getUTCDay() + 6) % 7; // Пн=0 … Вс=6
+      seen[day] = { day, dow, names: [], bg: null };
+    }
+    // Накладываем периоды
     periods.forEach(p => {
       let ts = p.start.ts;
       while (ts <= p.end.ts) {
         const d = new Date(ts);
         if (d.getUTCFullYear() === year && d.getUTCMonth() === mi) {
           const day = d.getUTCDate();
-          const dow = (d.getUTCDay() + 6) % 7; // Пн=0 … Вс=6
-          if (!seen[day]) seen[day] = { day, dow, names: [], bg: null };
           seen[day].names.push(p.name);
           if (!seen[day].bg && p.bg) seen[day].bg = p.bg;
         }
@@ -4816,9 +4824,10 @@ function renderVacationCalendarInto(el, blocks) {
       const styleBg = info.bg ? `background:${info.bg};` : '';
       const arr = info.names && info.names.length ? info.names : (info.name ? [info.name] : []);
       const hasVac  = arr.length ? ' has-vac' : '';
-      const nameHtml = arr.map(n =>
-        `<div class="vac-name" title="${escapeAttr(n)}">${escapeHtml(n)}</div>`
-      ).join('');
+      const nameHtml = arr.map(n => {
+        const surname = String(n).trim().split(/\s+/)[0] || n;
+        return `<div class="vac-name" title="${escapeAttr(n)}">${escapeHtml(surname)}</div>`;
+      }).join('');
       cells.push(`<div class="vac-cell${hasVac}" style="${styleBg}"><div class="vac-d">${d}</div>${nameHtml}</div>`);
     }
     // Дополнить до кратного 7

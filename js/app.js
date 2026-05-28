@@ -124,6 +124,7 @@ function getSheetNames(suffix) {
     d_vizity:    'Д_ВИЗИТЫ' + suffix,
     trophyAwards:'TrophyAwards',
     vacationCalendar: 'Календарь 2026',
+    vacationsList: 'Отпуска 2026',
   };
 }
 
@@ -4553,6 +4554,86 @@ async function fetchVacationCalendar() {
   return grid;
 }
 
+// Парсим лист «Отпуска 2026» (A:Менеджер, B:Начало, C:Конец, D:Комментарий)
+// с цветом фона A-ячейки как идентификатором менеджера.
+async function fetchVacationsList() {
+  const sheetName = SHEETS.vacationsList || 'Отпуска 2026';
+  const range  = encodeURIComponent(`'${sheetName}'!A1:D300`);
+  const fields = 'sheets.data.rowData.values(formattedValue,userEnteredFormat.backgroundColor)';
+  const url    = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}`
+               + `?ranges=${range}&fields=${fields}&includeGridData=true`;
+  const resp = await fetch(url, { headers: await authHeaders() });
+  if (!resp.ok) throw new Error('vac-list fetch failed: ' + resp.status);
+  const data = await resp.json();
+  const rowData = data?.sheets?.[0]?.data?.[0]?.rowData || [];
+  const rows = rowData.map(r => r.values || []);
+  return rows;
+}
+
+function _parseRuDate(s) {
+  const m = String(s||'').trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/);
+  if (!m) return null;
+  const dd = parseInt(m[1],10);
+  const mo = parseInt(m[2],10) - 1;
+  const yr = m[3].length === 2 ? 2000 + parseInt(m[3],10) : parseInt(m[3],10);
+  if (mo < 0 || mo > 11 || dd < 1 || dd > 31) return null;
+  return { year: yr, month: mo, day: dd, ts: Date.UTC(yr, mo, dd) };
+}
+
+function parseVacationsList(rows) {
+  const periods = [];
+  // Пропускаем заголовок (строка 0)
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i] || [];
+    const name = (r[0]?.formattedValue || '').trim();
+    const startStr = (r[1]?.formattedValue || '').trim();
+    const endStr = (r[2]?.formattedValue || '').trim();
+    if (!name || !startStr || !endStr) continue;
+    const start = _parseRuDate(startStr);
+    const end = _parseRuDate(endStr);
+    if (!start || !end) continue;
+    if (end.ts < start.ts) continue;
+    const bg = _vacBgToCss(r[0]?.userEnteredFormat?.backgroundColor);
+    const comment = (r[3]?.formattedValue || '').trim();
+    periods.push({ name, start, end, bg, comment });
+  }
+  return periods;
+}
+
+// Строим 12-месячный массив blocks из периодов (совместим с renderVacationCalendarInto)
+function buildBlocksFromPeriods(periods, year) {
+  const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь',
+                  'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  const blocks = [];
+  for (let mi = 0; mi < 12; mi++) {
+    // day → { day, dow, names[], bg }
+    const seen = {};
+    periods.forEach(p => {
+      let ts = p.start.ts;
+      while (ts <= p.end.ts) {
+        const d = new Date(ts);
+        if (d.getUTCFullYear() === year && d.getUTCMonth() === mi) {
+          const day = d.getUTCDate();
+          const dow = (d.getUTCDay() + 6) % 7; // Пн=0 … Вс=6
+          if (!seen[day]) seen[day] = { day, dow, names: [], bg: null };
+          seen[day].names.push(p.name);
+          if (!seen[day].bg && p.bg) seen[day].bg = p.bg;
+        }
+        ts += 86400000;
+      }
+    });
+    const days = Object.values(seen).map(d => ({
+      day: d.day,
+      dow: d.dow,
+      names: d.names,
+      name: d.names.join(' / '),
+      bg: d.bg,
+    }));
+    blocks.push({ title: MONTHS[mi], monthIdx: mi, days });
+  }
+  return blocks;
+}
+
 function _vacBgToCss(bg) {
   if (!bg) return null;
   const r = Math.round((bg.red   || 0) * 255);
@@ -4804,15 +4885,18 @@ async function openVacationCalendar() {
   // Сбросить скролл на начало списка
   requestAnimationFrame(() => { body.scrollTop = 0; });
   if (_vacCalCache) {
-    renderVacationCalendarInto(body, parseVacationCalendar(_vacCalCache));
+    const blocks = buildBlocksFromPeriods(_vacCalCache, 2026);
+    renderVacationCalendarInto(body, blocks);
     requestAnimationFrame(() => { body.scrollTop = 0; });
     return;
   }
   body.innerHTML = '<div class="vac-cal-loading">Загрузка…</div>';
   try {
-    const grid = await fetchVacationCalendar();
-    _vacCalCache = grid;
-    renderVacationCalendarInto(body, parseVacationCalendar(grid));
+    const rows = await fetchVacationsList();
+    const periods = parseVacationsList(rows);
+    _vacCalCache = periods;
+    const blocks = buildBlocksFromPeriods(periods, 2026);
+    renderVacationCalendarInto(body, blocks);
     requestAnimationFrame(() => { body.scrollTop = 0; });
   } catch (e) {
     body.innerHTML = '<div class="vac-cal-loading">Не удалось загрузить календарь</div>';

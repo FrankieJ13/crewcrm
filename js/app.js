@@ -4630,32 +4630,95 @@ function renderVacationCalendarInto(el, blocks) {
   // Длительность месяцев 2026 (год не високосный)
   const MONTH_DAYS = [31,28,31,30,31,30,31,31,30,31,30,31];
 
-  // Рендерим один месяц-блок (без обёртки <details> вокруг)
-  function renderMonth(b, mi) {
-    const monthLen = MONTH_DAYS[mi] || 31;
-    // Собираем дни по менеджерам внутри месяца (поддерживаем несколько менеджеров в одной ячейке)
-    const byMgr = {};
+  // ─── Собираем непрерывные периоды отпусков по всем месяцам ───
+  // Период = последовательность подряд идущих дней одного менеджера (включая переходы через границу месяца).
+  const allEntries = []; // {name, mi, day, ts}
+  blocks.forEach((b, mi) => {
     b.days.forEach(d => {
       const arr = d.names && d.names.length ? d.names : (d.name ? [d.name] : []);
-      arr.forEach(n => { (byMgr[n] = byMgr[n] || []).push(d.day); });
+      arr.forEach(n => {
+        const ts = Date.UTC(curYear, mi, d.day);
+        allEntries.push({ name: n, mi, day: d.day, ts });
+      });
     });
-    // Менеджер считается в бейдже, если у него >3 дней в месяце ИЛИ его дни не «перетекают» из соседнего месяца
-    const mgrCount = Object.keys(byMgr).reduce((acc, name) => {
-      const ds = byMgr[name].slice().sort((a,b) => a - b);
-      if (ds.length > 3) return acc + 1;
-      // Все дни в начале месяца (1..3) — спилловер из предыдущего месяца
-      const allAtStart = ds.every(d => d <= 3);
-      // Все дни в конце месяца (последние 3) — спилловер в следующий месяц
-      const allAtEnd = ds.every(d => d >= monthLen - 2);
-      if (allAtStart || allAtEnd) return acc; // не считаем
-      return acc + 1;
-    }, 0);
+  });
+  const byMgrAll = {};
+  allEntries.forEach(e => { (byMgrAll[e.name] = byMgrAll[e.name] || []).push(e); });
+
+  const periods = []; // {name, startTs, endTs, startMi, startDay, endMi, endDay, days, dominantMi}
+  Object.entries(byMgrAll).forEach(([name, list]) => {
+    list.sort((a, b) => a.ts - b.ts);
+    let cur = null;
+    list.forEach(e => {
+      if (!cur) {
+        cur = { name, entries: [e] };
+      } else {
+        const prev = cur.entries[cur.entries.length - 1];
+        const diffDays = (e.ts - prev.ts) / 86400000;
+        if (diffDays === 1) {
+          cur.entries.push(e);
+        } else {
+          periods.push(cur); cur = { name, entries: [e] };
+        }
+      }
+    });
+    if (cur) periods.push(cur);
+  });
+  // Заполняем агрегаты периода
+  periods.forEach(p => {
+    const ents = p.entries;
+    const s = ents[0], en = ents[ents.length - 1];
+    p.startTs = s.ts; p.endTs = en.ts;
+    p.startMi = s.mi; p.startDay = s.day;
+    p.endMi = en.mi;  p.endDay = en.day;
+    p.days = ents.length;
+    const cnt = {};
+    ents.forEach(e => { cnt[e.mi] = (cnt[e.mi] || 0) + 1; });
+    let bestMi = s.mi, bestCnt = -1;
+    Object.entries(cnt).forEach(([mi, c]) => {
+      if (c > bestCnt || (c === bestCnt && +mi < bestMi)) { bestCnt = c; bestMi = +mi; }
+    });
+    p.dominantMi = bestMi;
+  });
+  // Группируем периоды по «основному» месяцу
+  const periodsByMonth = {};
+  periods.forEach(p => {
+    (periodsByMonth[p.dominantMi] = periodsByMonth[p.dominantMi] || []).push(p);
+  });
+  Object.values(periodsByMonth).forEach(arr => arr.sort((a, b) => a.startTs - b.startTs));
+
+  function fmtDate(mi, day) {
+    const dd = String(day).padStart(2, '0');
+    const mm = String(mi + 1).padStart(2, '0');
+    const yy = String(curYear).slice(-2);
+    return `${dd}.${mm}.${yy}`;
+  }
+  function pluralDays(n) {
+    const a = Math.abs(n) % 100;
+    const b = a % 10;
+    if (a > 10 && a < 20) return 'дней';
+    if (b === 1) return 'день';
+    if (b >= 2 && b <= 4) return 'дня';
+    return 'дней';
+  }
+
+  // Рендерим один месяц-блок (без обёртки <details> вокруг)
+  function renderMonth(b, mi) {
+    const monthPeriods = periodsByMonth[mi] || [];
+    const mgrCount = monthPeriods.length;
     const badgeHtml = mgrCount > 0
       ? `<span class="vac-month-badge"><svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" style="vertical-align:-1px"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4 0-9 2-9 6v2h18v-2c0-4-5-6-9-6Z"/></svg> ${mgrCount}</span>`
       : '';
+    const summaryHtml = monthPeriods.length
+      ? `<div class="vac-month-summary">${
+          monthPeriods.map(p =>
+            `<div class="vac-summary-row"><span class="vac-sum-name">${escapeHtml(p.name)}</span><span class="vac-sum-dash">·</span><span class="vac-sum-days">${p.days} ${pluralDays(p.days)}</span><span class="vac-sum-dash">·</span><span class="vac-sum-range">${fmtDate(p.startMi, p.startDay)} – ${fmtDate(p.endMi, p.endDay)}</span></div>`
+          ).join('')
+        }</div>`
+      : '';
 
     if (!b.days.length) {
-      return `<div class="vac-month"><div class="vac-month-title"><span class="vac-month-title-left"><span>${escapeHtml(b.title)}</span></span>${badgeHtml}</div><div class="vac-cal-loading" style="padding:14px">Пусто</div></div>`;
+      return `<div class="vac-month"><div class="vac-month-title"><span class="vac-month-title-left"><span>${escapeHtml(b.title)}</span></span>${badgeHtml}</div><div class="vac-cal-loading" style="padding:14px">Пусто</div>${summaryHtml}</div>`;
     }
     // Найдём минимальный день и его dow → пустые ячейки до него
     const byDay = {};
@@ -4680,7 +4743,7 @@ function renderVacationCalendarInto(el, blocks) {
     // Дополнить до кратного 7
     while (cells.length % 7 !== 0) cells.push('<div class="vac-cell vac-empty"></div>');
     const dowHdr = DOW_RU.map((d,i) => `<div class="vac-dow${i>=5?' we':''}">${d}</div>`).join('');
-    return `<div class="vac-month"><div class="vac-month-title"><span class="vac-month-title-left"><span>${escapeHtml(b.title)}</span></span>${badgeHtml}</div><div class="vac-month-grid">${dowHdr}${cells.join('')}</div></div>`;
+    return `<div class="vac-month"><div class="vac-month-title"><span class="vac-month-title-left"><span>${escapeHtml(b.title)}</span></span>${badgeHtml}</div><div class="vac-month-grid">${dowHdr}${cells.join('')}</div>${summaryHtml}</div>`;
   }
 
   // Разделяем на прошедшие и текущие/будущие

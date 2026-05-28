@@ -4559,7 +4559,7 @@ async function fetchVacationCalendar() {
 async function fetchVacationsList() {
   const sheetName = SHEETS.vacationsList || 'Отпуска 2026';
   const range  = encodeURIComponent(`'${sheetName}'!A1:D300`);
-  const fields = 'sheets.data.rowData.values(formattedValue,userEnteredFormat.backgroundColor)';
+  const fields = 'sheets.data.rowData.values(formattedValue,userEnteredFormat.backgroundColor,effectiveFormat.backgroundColor)';
   const url    = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}`
                + `?ranges=${range}&fields=${fields}&includeGridData=true`;
   const resp = await fetch(url, { headers: await authHeaders() });
@@ -4593,7 +4593,10 @@ function parseVacationsList(rows) {
     const end = _parseRuDate(endStr);
     if (!start || !end) continue;
     if (end.ts < start.ts) continue;
-    const bg = _vacBgToCss(r[0]?.userEnteredFormat?.backgroundColor);
+    const bgRaw = r[0]?.userEnteredFormat?.backgroundColor
+               || r[0]?.effectiveFormat?.backgroundColor
+               || null;
+    const bg = _vacBgToCss(bgRaw);
     const comment = (r[3]?.formattedValue || '').trim();
     periods.push({ name, start, end, bg, comment });
   }
@@ -4647,8 +4650,8 @@ function _vacBgToCss(bg) {
   const r = Math.round((bg.red   || 0) * 255);
   const g = Math.round((bg.green || 0) * 255);
   const b = Math.round((bg.blue  || 0) * 255);
-  // белый/прозрачный считаем "нет фона"
-  if (r >= 248 && g >= 248 && b >= 248) return null;
+  // только чистый/почти белый считаем "нет фона" — пастельные оттенки оставляем
+  if (r >= 253 && g >= 253 && b >= 253) return null;
   return `rgb(${r}, ${g}, ${b})`;
 }
 

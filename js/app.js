@@ -4649,8 +4649,29 @@ function renderVacationCalendarInto(el, blocks) {
   el.innerHTML = html;
 }
 
+function _ensureVacOverlay() {
+  let ov = document.getElementById('vac-cal-overlay');
+  if (ov) return ov;
+  ov = document.createElement('div');
+  ov.id = 'vac-cal-overlay';
+  ov.className = 'vac-cal-overlay';
+  ov.setAttribute('aria-hidden', 'true');
+  ov.innerHTML = `
+    <div class="vac-cal-shell">
+      <header class="vac-cal-hdr">
+        <div class="vac-cal-title">Календарь отпусков 2026</div>
+        <button class="vac-cal-close" onclick="closeVacationCalendar()" aria-label="Закрыть">×</button>
+      </header>
+      <div class="vac-cal-body" id="vac-cal-body">
+        <div class="vac-cal-loading">Загрузка…</div>
+      </div>
+    </div>`;
+  document.body.appendChild(ov); // вне #app, чтобы перекрыть header и dock
+  return ov;
+}
+
 async function openVacationCalendar() {
-  const ov = document.getElementById('vac-cal-overlay');
+  const ov = _ensureVacOverlay();
   const body = document.getElementById('vac-cal-body');
   if (!ov || !body) return;
   ov.classList.add('open');

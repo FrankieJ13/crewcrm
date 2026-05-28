@@ -7622,10 +7622,12 @@ body.cosmic .hmb-avatar-circle { border-color: #2a2a2a; }
 .vac-cal-body {
   flex: 1 1 auto;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 14px;
   padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-  display: flex; flex-direction: column; gap: 14px;
 }
+.vac-cal-body > .vac-month { margin-bottom: 14px; }
+.vac-cal-body > .vac-month:last-child { margin-bottom: 0; }
 .vac-cal-loading { text-align: center; color: var(--txt3); padding: 40px 12px; font-size: 13px; }
 .vac-month {
   border: 1px solid var(--line);
@@ -7645,6 +7647,7 @@ body.cosmic .hmb-avatar-circle { border-color: #2a2a2a; }
 .vac-month-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: minmax(48px, auto);
   gap: 1px;
   background: var(--line);
 }

@@ -4593,8 +4593,11 @@ function parseVacationsList(rows) {
     const end = _parseRuDate(endStr);
     if (!start || !end) continue;
     if (end.ts < start.ts) continue;
-    const bgRaw = r[0]?.userEnteredFormat?.backgroundColor
-               || r[0]?.effectiveFormat?.backgroundColor
+    // effectiveFormat — конечный цвет на листе (с учётом условного форматирования
+    // и чередования строк). userEnteredFormat может быть mint (от alternating rows),
+    // а реальный цвет менеджера — в effective. Берём effective в первую очередь.
+    const bgRaw = r[0]?.effectiveFormat?.backgroundColor
+               || r[0]?.userEnteredFormat?.backgroundColor
                || null;
     const bg = _vacBgToCss(bgRaw);
     const comment = (r[3]?.formattedValue || '').trim();

@@ -7587,15 +7587,22 @@ body.cosmic .hmb-avatar-circle { border-color: #2a2a2a; }
   position: fixed; inset: 0;
   z-index: 100000;
   display: none;
-  background: var(--bg);
+  background: rgba(0, 0, 0, 0.55);
   color: var(--txt);
   overflow: hidden;
 }
-.vac-cal-overlay.open { display: flex; flex-direction: column; }
+.vac-cal-overlay.open {
+  display: flex; flex-direction: column;
+  align-items: center;
+  justify-content: stretch;
+}
 .vac-cal-shell {
-  width: 100%; height: 100%;
+  width: 100%;
+  max-width: 560px;
+  height: 100%;
   display: flex; flex-direction: column;
   background: var(--bg);
+  box-shadow: 0 0 60px rgba(0,0,0,.4);
 }
 .vac-cal-hdr {
   flex: 0 0 auto;
@@ -7634,6 +7641,7 @@ body.cosmic .hmb-avatar-circle { border-color: #2a2a2a; }
   border-radius: var(--r2);
   background: var(--bg2);
   overflow: hidden;
+  container-type: inline-size;
 }
 .vac-month-title {
   font-family: 'Unbounded', sans-serif;
@@ -7684,17 +7692,25 @@ body.cosmic .hmb-avatar-circle { border-color: #2a2a2a; }
 }
 .vac-cell .vac-d {
   font-family: 'Unbounded', sans-serif;
-  font-size: 11px; font-weight: 700;
+  font-size: clamp(10px, 3.2cqi, 16px);
+  font-weight: 700;
   color: var(--txt);
-  margin-bottom: 1px;
+  margin-bottom: 2px;
   line-height: 1;
 }
 .vac-cell .vac-name {
-  font-size: 8.5px; font-weight: 600;
+  font-size: clamp(8px, 2.4cqi, 12px);
+  font-weight: 600;
   color: var(--txt);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   letter-spacing: -0.02em;
-  line-height: 1.05;
+  line-height: 1.1;
+}
+.vac-dow {
+  font-size: clamp(9px, 2.6cqi, 13px) !important;
+}
+.vac-month-title {
+  font-size: clamp(11px, 3cqi, 14px) !important;
 }
 .vac-cell.has-vac .vac-d,
 .vac-cell.has-vac .vac-name { color: #111; }

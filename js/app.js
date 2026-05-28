@@ -4658,10 +4658,10 @@ function _ensureVacOverlay() {
   ov.setAttribute('aria-hidden', 'true');
   ov.innerHTML = `
     <div class="vac-cal-shell">
-      <header class="vac-cal-hdr">
+      <div class="vac-cal-hdr">
         <div class="vac-cal-title">Календарь отпусков 2026</div>
         <button class="vac-cal-close" onclick="closeVacationCalendar()" aria-label="Закрыть">×</button>
-      </header>
+      </div>
       <div class="vac-cal-body" id="vac-cal-body">
         <div class="vac-cal-loading">Загрузка…</div>
       </div>

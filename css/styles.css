@@ -7672,8 +7672,8 @@ body.cosmic .hmb-avatar-circle { border-color: #2a2a2a; }
 .vac-dow.we { color: var(--red); }
 .vac-cell {
   background: var(--bg2);
-  aspect-ratio: 1 / 1;
-  padding: 3px 4px;
+  min-height: clamp(38px, 9cqi, 64px);
+  padding: 4px 5px;
   font-size: 11px;
   color: var(--txt);
   display: flex; flex-direction: column;

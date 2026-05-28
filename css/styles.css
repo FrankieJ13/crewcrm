@@ -7647,12 +7647,33 @@ body.cosmic .hmb-avatar-circle { border-color: #2a2a2a; }
   font-family: 'Unbounded', sans-serif;
   font-size: 12px; font-weight: 800;
   background: var(--bg3); color: var(--acc);
-  text-align: center;
-  padding: 9px 10px;
+  padding: 9px 12px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
+.vac-month-badge {
+  font-family: 'Unbounded', sans-serif;
+  font-size: clamp(9px, 2.4cqi, 11px);
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--bg2);
+  background: var(--acc);
+  border-radius: 999px;
+  padding: 3px 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1;
+  white-space: nowrap;
+}
+body.fluent .vac-month-badge { color: #fff; }
+body.cosmic .vac-month-badge { color: #1a1a1a; }
 .vac-month-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);

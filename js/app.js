@@ -4621,8 +4621,15 @@ function renderVacationCalendarInto(el, blocks) {
   }
   // Считаем смещение первого дня для каждого месяца, чтобы выложить в сетке 7 колонок
   const html = blocks.map(b => {
+    // Считаем уникальных менеджеров в отпуске за месяц
+    const mgrSet = new Set();
+    b.days.forEach(d => { if (d.name) mgrSet.add(d.name); });
+    const mgrCount = mgrSet.size;
+    const badgeHtml = mgrCount > 0
+      ? `<span class="vac-month-badge"><svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" style="vertical-align:-1px"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4 0-9 2-9 6v2h18v-2c0-4-5-6-9-6Z"/></svg> ${mgrCount}</span>`
+      : '';
     if (!b.days.length) {
-      return `<div class="vac-month"><div class="vac-month-title">${escapeHtml(b.title)}</div><div class="vac-cal-loading" style="padding:14px">Пусто</div></div>`;
+      return `<div class="vac-month"><div class="vac-month-title"><span>${escapeHtml(b.title)}</span>${badgeHtml}</div><div class="vac-cal-loading" style="padding:14px">Пусто</div></div>`;
     }
     // Найдём минимальный день и его dow → пустые ячейки до него
     const byDay = {};
@@ -4644,7 +4651,7 @@ function renderVacationCalendarInto(el, blocks) {
     // Дополнить до кратного 7
     while (cells.length % 7 !== 0) cells.push('<div class="vac-cell vac-empty"></div>');
     const dowHdr = DOW_RU.map((d,i) => `<div class="vac-dow${i>=5?' we':''}">${d}</div>`).join('');
-    return `<div class="vac-month"><div class="vac-month-title">${escapeHtml(b.title)}</div><div class="vac-month-grid">${dowHdr}${cells.join('')}</div></div>`;
+    return `<div class="vac-month"><div class="vac-month-title"><span>${escapeHtml(b.title)}</span>${badgeHtml}</div><div class="vac-month-grid">${dowHdr}${cells.join('')}</div></div>`;
   }).join('');
   el.innerHTML = html;
 }
@@ -6911,7 +6918,7 @@ function renderPersonal(matched) {
             <div class="ceo-mini-badge ceo-mini-badge-eod">
               <div class="ceo-mini-lbl">Прогноз выполнения</div>
               <div class="ceo-mini-val">
-                <span class="mv" style="color:${_eodColor} !important">${_eodProg}</span><span style="color:${_eodColor}">%</span>
+                <span class="mv" style="color:var(--acc) !important">${_eodProg}</span><span style="color:var(--acc)">%</span>
               </div>
               <div class="ceo-mini-sub">к концу дня</div>
             </div>

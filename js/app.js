@@ -4619,17 +4619,47 @@ function renderVacationCalendarInto(el, blocks) {
     el.innerHTML = '<div class="vac-cal-loading">Нет данных</div>';
     return;
   }
+  const now = new Date();
+  const curYear = 2026; // календарь на 2026
+  const curMonthIdx = (now.getFullYear() === curYear) ? now.getMonth() : (now.getFullYear() > curYear ? 12 : -1);
+  // Длительность месяцев 2026 (год не високосный)
+  const MONTH_DAYS = [31,28,31,30,31,30,31,31,30,31,30,31];
+
   // Считаем смещение первого дня для каждого месяца, чтобы выложить в сетке 7 колонок
-  const html = blocks.map(b => {
-    // Считаем уникальных менеджеров в отпуске за месяц
-    const mgrSet = new Set();
-    b.days.forEach(d => { if (d.name) mgrSet.add(d.name); });
-    const mgrCount = mgrSet.size;
+  const html = blocks.map((b, mi) => {
+    const monthLen = MONTH_DAYS[mi] || 31;
+    // Собираем дни по менеджерам внутри месяца
+    const byMgr = {};
+    b.days.forEach(d => {
+      if (!d.name) return;
+      (byMgr[d.name] = byMgr[d.name] || []).push(d.day);
+    });
+    // Менеджер считается в бейдже, если у него >3 дней в месяце ИЛИ его дни не «перетекают» из соседнего месяца
+    const mgrCount = Object.keys(byMgr).reduce((acc, name) => {
+      const ds = byMgr[name].slice().sort((a,b) => a - b);
+      if (ds.length > 3) return acc + 1;
+      // Все дни в начале месяца (1..3) — спилловер из предыдущего месяца
+      const allAtStart = ds.every(d => d <= 3);
+      // Все дни в конце месяца (последние 3) — спилловер в следующий месяц
+      const allAtEnd = ds.every(d => d >= monthLen - 2);
+      if (allAtStart || allAtEnd) return acc; // не считаем
+      return acc + 1;
+    }, 0);
     const badgeHtml = mgrCount > 0
       ? `<span class="vac-month-badge"><svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" style="vertical-align:-1px"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4 0-9 2-9 6v2h18v-2c0-4-5-6-9-6Z"/></svg> ${mgrCount}</span>`
       : '';
+
+    // Прошедшие месяца — схлопнуты по умолчанию
+    const isPast = curMonthIdx >= 0 && mi < curMonthIdx;
+    const tag = isPast ? 'details' : 'div';
+    const openAttr = isPast ? '' : ''; // details закрыт по умолчанию (без open)
+    const chevron = isPast
+      ? `<svg class="vac-month-chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`
+      : '';
+    const titleTag = isPast ? 'summary' : 'div';
+
     if (!b.days.length) {
-      return `<div class="vac-month"><div class="vac-month-title"><span>${escapeHtml(b.title)}</span>${badgeHtml}</div><div class="vac-cal-loading" style="padding:14px">Пусто</div></div>`;
+      return `<${tag} class="vac-month${isPast?' vac-month-past':''}"${openAttr}><${titleTag} class="vac-month-title"><span class="vac-month-title-left">${chevron}<span>${escapeHtml(b.title)}</span></span>${badgeHtml}</${titleTag}><div class="vac-cal-loading" style="padding:14px">Пусто</div></${tag}>`;
     }
     // Найдём минимальный день и его dow → пустые ячейки до него
     const byDay = {};
@@ -4651,7 +4681,7 @@ function renderVacationCalendarInto(el, blocks) {
     // Дополнить до кратного 7
     while (cells.length % 7 !== 0) cells.push('<div class="vac-cell vac-empty"></div>');
     const dowHdr = DOW_RU.map((d,i) => `<div class="vac-dow${i>=5?' we':''}">${d}</div>`).join('');
-    return `<div class="vac-month"><div class="vac-month-title"><span>${escapeHtml(b.title)}</span>${badgeHtml}</div><div class="vac-month-grid">${dowHdr}${cells.join('')}</div></div>`;
+    return `<${tag} class="vac-month${isPast?' vac-month-past':''}"${openAttr}><${titleTag} class="vac-month-title"><span class="vac-month-title-left">${chevron}<span>${escapeHtml(b.title)}</span></span>${badgeHtml}</${titleTag}><div class="vac-month-grid">${dowHdr}${cells.join('')}</div></${tag}>`;
   }).join('');
   el.innerHTML = html;
 }

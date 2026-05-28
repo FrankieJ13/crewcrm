@@ -6342,7 +6342,17 @@ body.cinematic .ceo-speedo-value { color: var(--txt) !important; }
 .personal-metric-otkaz .ceo-metric-lbl,
 .personal-metric-otkaz .ceo-metric-val,
 .personal-metric-otkaz .ceo-metric-sub {
-  color: #1a1a1a !important;
+  color: var(--txt) !important;
+}
+/* На тёмных темах усиливаем фон и подсвечиваем текст */
+body:not(.light):not(.neo-light):not(.tiffany):not(.fluent) .personal-metric-otkaz {
+  background: rgba(239, 68, 68, 0.28) !important;
+  border-color: rgba(239, 68, 68, 0.55) !important;
+}
+body:not(.light):not(.neo-light):not(.tiffany):not(.fluent) .personal-metric-otkaz .ceo-metric-lbl,
+body:not(.light):not(.neo-light):not(.tiffany):not(.fluent) .personal-metric-otkaz .ceo-metric-val,
+body:not(.light):not(.neo-light):not(.tiffany):not(.fluent) .personal-metric-otkaz .ceo-metric-sub {
+  color: #ffe4e4 !important;
 }
 .ceo-metric-card {
   background: var(--bg2); border-radius: var(--r2);

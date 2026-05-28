@@ -4600,10 +4600,15 @@ function parseVacationCalendar(grid) {
           const m = txt.match(/^(\d{1,2})(?:[\s\n\r]+(.+))?$/s);
           if (!m) continue;
           const dayNum = parseInt(m[1], 10);
-          const name = (m[2] || '').replace(/[\r\n]+/g, ' ').trim();
+          // Несколько фамилий через перенос строки → массив имён
+          const names = (m[2] || '')
+            .split(/[\r\n]+/)
+            .map(s => s.trim())
+            .filter(Boolean);
+          const name = names.join(' / '); // совместимость
           const bg = _vacBgToCss(cell.bg);
           const dow = cc - c0; // 0=Пн … 6=Вс
-          days.push({ day: dayNum, name, bg, dow });
+          days.push({ day: dayNum, name, names, bg, dow });
         }
       }
       blocks.push({ title: titleText, monthIdx, days });
@@ -4628,11 +4633,11 @@ function renderVacationCalendarInto(el, blocks) {
   // Считаем смещение первого дня для каждого месяца, чтобы выложить в сетке 7 колонок
   const html = blocks.map((b, mi) => {
     const monthLen = MONTH_DAYS[mi] || 31;
-    // Собираем дни по менеджерам внутри месяца
+    // Собираем дни по менеджерам внутри месяца (поддерживаем несколько менеджеров в одной ячейке)
     const byMgr = {};
     b.days.forEach(d => {
-      if (!d.name) return;
-      (byMgr[d.name] = byMgr[d.name] || []).push(d.day);
+      const arr = d.names && d.names.length ? d.names : (d.name ? [d.name] : []);
+      arr.forEach(n => { (byMgr[n] = byMgr[n] || []).push(d.day); });
     });
     // Менеджер считается в бейдже, если у него >3 дней в месяце ИЛИ его дни не «перетекают» из соседнего месяца
     const mgrCount = Object.keys(byMgr).reduce((acc, name) => {
@@ -4674,8 +4679,11 @@ function renderVacationCalendarInto(el, blocks) {
       const info = byDay[d];
       if (!info) { cells.push('<div class="vac-cell vac-empty"></div>'); continue; }
       const styleBg = info.bg ? `background:${info.bg};` : '';
-      const hasVac  = info.name ? ' has-vac' : '';
-      const nameHtml = info.name ? `<div class="vac-name" title="${escapeAttr(info.name)}">${escapeHtml(info.name)}</div>` : '';
+      const arr = info.names && info.names.length ? info.names : (info.name ? [info.name] : []);
+      const hasVac  = arr.length ? ' has-vac' : '';
+      const nameHtml = arr.map(n =>
+        `<div class="vac-name" title="${escapeAttr(n)}">${escapeHtml(n)}</div>`
+      ).join('');
       cells.push(`<div class="vac-cell${hasVac}" style="${styleBg}"><div class="vac-d">${d}</div>${nameHtml}</div>`);
     }
     // Дополнить до кратного 7

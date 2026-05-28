@@ -7638,73 +7638,70 @@ body.cosmic .hmb-avatar-circle { border-color: #2a2a2a; }
 .vac-month-title {
   font-family: 'Unbounded', sans-serif;
   font-size: 12px; font-weight: 800;
-  background: #2c3e8c; color: #fff;
+  background: var(--bg3); color: var(--acc);
   text-align: center;
-  padding: 8px 10px;
-  letter-spacing: 0.04em;
+  padding: 9px 10px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
 }
 .vac-month-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  grid-auto-rows: minmax(48px, auto);
   gap: 1px;
   background: var(--line);
 }
 .vac-dow {
-  background: #2c3e8c; color: #fff;
+  background: var(--bg3); color: var(--txt2);
   font-family: 'Unbounded', sans-serif;
   font-size: 10px; font-weight: 700;
   text-align: center;
-  padding: 6px 2px;
+  padding: 5px 2px;
   letter-spacing: 0.04em;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 0;
 }
-.vac-dow.we { background: #d83a2d; }
+.vac-dow.we { color: var(--red); }
 .vac-cell {
   background: var(--bg2);
-  min-height: 46px;
-  padding: 4px 6px;
+  aspect-ratio: 1 / 1;
+  padding: 3px 4px;
   font-size: 11px;
   color: var(--txt);
   display: flex; flex-direction: column;
-  line-height: 1.15;
+  line-height: 1.1;
   position: relative;
+  overflow: hidden;
 }
-.vac-cell.empty { background: transparent; }
+.vac-cell.empty { background: var(--bg); }
 .vac-cell .vac-d {
   font-family: 'Unbounded', sans-serif;
   font-size: 11px; font-weight: 700;
   color: var(--txt);
-  margin-bottom: 2px;
+  margin-bottom: 1px;
+  line-height: 1;
 }
 .vac-cell .vac-name {
-  font-size: 9px; font-weight: 600;
+  font-size: 8.5px; font-weight: 600;
   color: var(--txt);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
 }
-.vac-cell.has-vac { border-radius: 2px; }
-body.light .vac-cell.has-vac .vac-d,
-body.light .vac-cell.has-vac .vac-name { color: #111; }
+.vac-cell.has-vac .vac-d,
+.vac-cell.has-vac .vac-name { color: #111; }
 
-/* Fluent: чуть мягче палитра */
-body.fluent .vac-month-title { background: #003d7a; }
-body.fluent .vac-dow         { background: #003d7a; }
-body.fluent .vac-dow.we      { background: #c4232f; }
+/* Fluent */
+body.fluent .vac-month-title { color: #003d7a; }
 body.fluent .vac-cell        { color: #111; }
-
-/* Cosmic */
-body.cosmic .vac-month-title { background: #1a1a1a; color: #fff; }
-body.cosmic .vac-dow         { background: #1a1a1a; color: #fff; }
-body.cosmic .vac-dow.we      { background: #ff3b30; color: #fff; }
 
 @media (max-width: 499.98px) {
   .vac-cal-hdr  { padding: 10px 12px; padding-top: calc(10px + env(safe-area-inset-top, 0px)); }
   .vac-cal-title { font-size: 12px; }
   .vac-cal-body  { padding: 10px; gap: 10px; }
   .vac-month-title { font-size: 10px; padding: 7px 8px; }
-  .vac-dow        { font-size: 9px; padding: 5px 1px; }
-  .vac-cell       { min-height: 40px; padding: 3px 4px; }
+  .vac-dow        { font-size: 9px; padding: 4px 1px; }
+  .vac-cell       { padding: 2px 3px; }
   .vac-cell .vac-d    { font-size: 10px; }
-  .vac-cell .vac-name { font-size: 8px; }
+  .vac-cell .vac-name { font-size: 7.5px; }
 }

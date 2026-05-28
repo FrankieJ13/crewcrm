@@ -123,6 +123,7 @@ function getSheetNames(suffix) {
     plan:        'ПЛАН'     + suffix,
     d_vizity:    'Д_ВИЗИТЫ' + suffix,
     trophyAwards:'TrophyAwards',
+    vacationCalendar: 'Календарь 2026',
   };
 }
 
@@ -4514,7 +4515,10 @@ function renderGrafik() {
     const leftIco  = document.body.classList.contains('fluent') ? 'FluentColor-Left.svg'       : 'left.svg';
     const rightIco = document.body.classList.contains('fluent') ? 'FluentColor-Right.svg'      : 'right.svg';
     const editIco  = document.body.classList.contains('fluent') ? 'FluentColor-GrafikEdit.svg' : 'edit.svg';
-    stickyInner.innerHTML = `<div class="sched-nav"><button class="sched-nav-btn" onclick="schedNav(-1)" ${prevDis} aria-label="Предыдущая неделя"><span class="sched-nav-icon" style="--sched-nav-icon:url('${schedIconBase}${leftIco}')"></span></button><div class="sched-nav-title">${wStart}–${wEnd} ${mName}</div><button class="sched-edit-btn" onclick="openScheduleBulkEditor()" aria-label="Редактировать график"><span class="sched-edit-icon" style="--sched-edit-icon:url('${schedIconBase}${editIco}')"></span></button><button class="sched-nav-btn" onclick="schedNav(1)" ${nextDis} aria-label="Следующая неделя"><span class="sched-nav-icon" style="--sched-nav-icon:url('${schedIconBase}${rightIco}')"></span></button></div>${weekHeader}`;
+    const vacIco   = document.body.classList.contains('fluent') ? 'FluentColor-Vacation.svg'
+                   : document.body.classList.contains('cosmic') ? 'cosmic_vacation.svg'
+                   : 'vacation.svg';
+    stickyInner.innerHTML = `<div class="sched-nav"><button class="sched-nav-btn" onclick="schedNav(-1)" ${prevDis} aria-label="Предыдущая неделя"><span class="sched-nav-icon" style="--sched-nav-icon:url('${schedIconBase}${leftIco}')"></span></button><div class="sched-nav-title">${wStart}–${wEnd} ${mName}</div><button class="sched-vac-btn" onclick="openVacationCalendar()" aria-label="Календарь отпусков"><span class="sched-vac-icon" style="--sched-vac-icon:url('${schedIconBase}${vacIco}')"></span></button><button class="sched-edit-btn" onclick="openScheduleBulkEditor()" aria-label="Редактировать график"><span class="sched-edit-icon" style="--sched-edit-icon:url('${schedIconBase}${editIco}')"></span></button><button class="sched-nav-btn" onclick="schedNav(1)" ${nextDis} aria-label="Следующая неделя"><span class="sched-nav-icon" style="--sched-nav-icon:url('${schedIconBase}${rightIco}')"></span></button></div>${weekHeader}`;
     const hdr = document.querySelector('header');
     const nav = document.getElementById('main-nav');
     if (hdr && nav) stickyEl.style.top = (hdr.offsetHeight + nav.offsetHeight) + 'px';
@@ -4525,6 +4529,162 @@ function schedNav(dir) {
   _schedWeek = (_schedWeek||0) + dir;
   if (S.data.grafik) renderGrafik();
 }
+
+/* ═══ Календарь отпусков ═══ */
+let _vacCalCache = null; // { rows, fmts } — cached per session
+
+async function fetchVacationCalendar() {
+  const sheetName = SHEETS.vacationCalendar || 'Календарь 2026';
+  const range  = encodeURIComponent(`'${sheetName}'!A1:W40`);
+  const fields = 'sheets.data.rowData.values(formattedValue,effectiveValue,userEnteredFormat.backgroundColor)';
+  const url    = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}`
+               + `?ranges=${range}&fields=${fields}&includeGridData=true`;
+  const resp = await fetch(url, { headers: await authHeaders() });
+  if (!resp.ok) throw new Error('vac fetch failed: ' + resp.status);
+  const data = await resp.json();
+  const rowData = data?.sheets?.[0]?.data?.[0]?.rowData || [];
+  // Преобразуем в массив строк объектов { v, bg }
+  const grid = rowData.map(row =>
+    (row.values || []).map(cell => ({
+      v: (cell?.formattedValue ?? '').toString(),
+      bg: cell?.userEnteredFormat?.backgroundColor || null,
+    }))
+  );
+  return grid;
+}
+
+function _vacBgToCss(bg) {
+  if (!bg) return null;
+  const r = Math.round((bg.red   || 0) * 255);
+  const g = Math.round((bg.green || 0) * 255);
+  const b = Math.round((bg.blue  || 0) * 255);
+  // белый/прозрачный считаем "нет фона"
+  if (r >= 248 && g >= 248 && b >= 248) return null;
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+// Парсит лист на 12 блоков-месяцев. Сетка: 4 ряда × 3 колонки.
+// Каждый блок: 7 столбцов (A-G | I-O | Q-W), 8 строк (title + dow + 6 weeks).
+function parseVacationCalendar(grid) {
+  const MONTHS = [
+    'Январь','Февраль','Март','Апрель','Май','Июнь',
+    'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'
+  ];
+  const blocks = [];
+  // 4 ряда × 3 столбца блоков
+  const blockRowStarts = [0, 10, 20, 30];
+  const blockColStarts = [0, 8, 16];
+  let monthIdx = 0;
+  for (let br = 0; br < blockRowStarts.length; br++) {
+    for (let bc = 0; bc < blockColStarts.length; bc++) {
+      const r0 = blockRowStarts[br];
+      const c0 = blockColStarts[bc];
+      // Заголовок месяца (в листе он может быть объединён — берём первую непустую ячейку из строки r0)
+      let titleRow = grid[r0] || [];
+      let titleText = '';
+      for (let ci = c0; ci < c0 + 7; ci++) {
+        if (titleRow[ci] && titleRow[ci].v && titleRow[ci].v.trim()) { titleText = titleRow[ci].v.trim(); break; }
+      }
+      if (!titleText) titleText = MONTHS[monthIdx] || '';
+      const days = []; // массив { day, name, bg }
+      // строки недель: r0+2 .. r0+7
+      for (let rr = r0 + 2; rr <= r0 + 7; rr++) {
+        const row = grid[rr] || [];
+        for (let cc = c0; cc < c0 + 7; cc++) {
+          const cell = row[cc];
+          if (!cell) continue;
+          const txt = (cell.v || '').trim();
+          if (!txt) continue;
+          // Текст ячейки: "5" или "5\nКиричок" или "5 Киричок"
+          // Извлекаем число и опционально имя
+          const m = txt.match(/^(\d{1,2})(?:[\s\n\r]+(.+))?$/s);
+          if (!m) continue;
+          const dayNum = parseInt(m[1], 10);
+          const name = (m[2] || '').replace(/[\r\n]+/g, ' ').trim();
+          const bg = _vacBgToCss(cell.bg);
+          const dow = cc - c0; // 0=Пн … 6=Вс
+          days.push({ day: dayNum, name, bg, dow });
+        }
+      }
+      blocks.push({ title: titleText, monthIdx, days });
+      monthIdx++;
+    }
+  }
+  return blocks;
+}
+
+function renderVacationCalendarInto(el, blocks) {
+  const DOW_RU = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  if (!blocks || !blocks.length) {
+    el.innerHTML = '<div class="vac-cal-loading">Нет данных</div>';
+    return;
+  }
+  // Считаем смещение первого дня для каждого месяца, чтобы выложить в сетке 7 колонок
+  const html = blocks.map(b => {
+    if (!b.days.length) {
+      return `<div class="vac-month"><div class="vac-month-title">${escapeHtml(b.title)}</div><div class="vac-cal-loading" style="padding:14px">Пусто</div></div>`;
+    }
+    // Найдём минимальный день и его dow → пустые ячейки до него
+    const byDay = {};
+    b.days.forEach(d => { byDay[d.day] = d; });
+    const sorted = b.days.slice().sort((a,b) => a.day - b.day);
+    const firstDay = sorted[0];
+    const lastDay  = sorted[sorted.length - 1].day;
+    // Расставляем по dow первой ячейки
+    const cells = [];
+    for (let i = 0; i < firstDay.dow; i++) cells.push('<div class="vac-cell empty"></div>');
+    for (let d = firstDay.day; d <= lastDay; d++) {
+      const info = byDay[d];
+      if (!info) { cells.push('<div class="vac-cell empty"></div>'); continue; }
+      const styleBg = info.bg ? `background:${info.bg};` : '';
+      const hasVac  = info.name ? ' has-vac' : '';
+      const nameHtml = info.name ? `<div class="vac-name" title="${escapeAttr(info.name)}">${escapeHtml(info.name)}</div>` : '';
+      cells.push(`<div class="vac-cell${hasVac}" style="${styleBg}"><div class="vac-d">${d}</div>${nameHtml}</div>`);
+    }
+    // Дополнить до кратного 7
+    while (cells.length % 7 !== 0) cells.push('<div class="vac-cell empty"></div>');
+    const dowHdr = DOW_RU.map((d,i) => `<div class="vac-dow${i>=5?' we':''}">${d}</div>`).join('');
+    return `<div class="vac-month"><div class="vac-month-title">${escapeHtml(b.title)}</div><div class="vac-month-grid">${dowHdr}${cells.join('')}</div></div>`;
+  }).join('');
+  el.innerHTML = html;
+}
+
+async function openVacationCalendar() {
+  const ov = document.getElementById('vac-cal-overlay');
+  const body = document.getElementById('vac-cal-body');
+  if (!ov || !body) return;
+  ov.classList.add('open');
+  ov.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  if (_vacCalCache) {
+    renderVacationCalendarInto(body, parseVacationCalendar(_vacCalCache));
+    return;
+  }
+  body.innerHTML = '<div class="vac-cal-loading">Загрузка…</div>';
+  try {
+    const grid = await fetchVacationCalendar();
+    _vacCalCache = grid;
+    renderVacationCalendarInto(body, parseVacationCalendar(grid));
+  } catch (e) {
+    body.innerHTML = '<div class="vac-cal-loading">Не удалось загрузить календарь</div>';
+  }
+}
+
+function closeVacationCalendar() {
+  const ov = document.getElementById('vac-cal-overlay');
+  if (!ov) return;
+  ov.classList.remove('open');
+  ov.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+// ESC закрывает календарь отпусков
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const ov = document.getElementById('vac-cal-overlay');
+    if (ov && ov.classList.contains('open')) closeVacationCalendar();
+  }
+});
 
 function closeSchedCellEditor() {
   if (_schedEditPopover) {

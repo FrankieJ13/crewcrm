@@ -2303,6 +2303,29 @@ body.light .zp-row {
   -webkit-mask: var(--sched-edit-icon) center / contain no-repeat;
 }
 body.cosmic .sched-edit-icon { background: #1a1a1a; }
+.sched-vac-btn {
+  width:34px; height:34px;
+  background:transparent; border:0;
+  cursor:pointer; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  padding:0;
+  transition:opacity .15s, transform .15s;
+  margin-left:auto; margin-right:4px;
+}
+.sched-vac-btn:hover { opacity:.82; transform:scale(1.06); }
+.sched-vac-icon {
+  width:24px; height:24px; display:block;
+  background: var(--acc);
+  mask: var(--sched-vac-icon) center / contain no-repeat;
+  -webkit-mask: var(--sched-vac-icon) center / contain no-repeat;
+}
+body.cosmic .sched-vac-icon,
+body.fluent .sched-vac-icon {
+  background: var(--sched-vac-icon) center/contain no-repeat !important;
+  mask:none !important; -webkit-mask:none !important;
+}
+/* при наличии vac-btn убираем margin-left:auto у edit-btn — auto уже на vac */
+.sched-nav .sched-vac-btn + .sched-edit-btn { margin-left:0; }
 .sched-nav-btn {
   width:34px; height:34px; border-radius:0;
   background:transparent; border:0;
@@ -7557,4 +7580,128 @@ body.cosmic .hmb-avatar-circle { border-color: #2a2a2a; }
   .ceo-rop-formula  { font-size: clamp(10px, 2.4vw, 12px); }
   .ceo-greeting     { font-size: clamp(13px, 4.2vw, 18px); line-height: 1.2; }
   .ceo-days-left, .ceo-date, .ceo-weather { font-size: clamp(10px, 2.5vw, 12px); }
+}
+
+/* ═══ Vacation Calendar Modal ═══ */
+.vac-cal-overlay {
+  position: fixed; inset: 0;
+  z-index: 100000;
+  display: none;
+  background: var(--bg);
+  color: var(--txt);
+  overflow: hidden;
+}
+.vac-cal-overlay.open { display: flex; flex-direction: column; }
+.vac-cal-shell {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  background: var(--bg);
+}
+.vac-cal-hdr {
+  flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg2);
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+}
+.vac-cal-title {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 14px; font-weight: 800; color: var(--txt);
+  letter-spacing: 0.02em;
+}
+.vac-cal-close {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent; color: var(--txt);
+  font-size: 22px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, transform .15s;
+}
+.vac-cal-close:hover { background: var(--bg3); transform: scale(1.06); }
+.vac-cal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 14px;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: 14px;
+}
+.vac-cal-loading { text-align: center; color: var(--txt3); padding: 40px 12px; font-size: 13px; }
+.vac-month {
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--bg2);
+  overflow: hidden;
+}
+.vac-month-title {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 12px; font-weight: 800;
+  background: #2c3e8c; color: #fff;
+  text-align: center;
+  padding: 8px 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.vac-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: var(--line);
+}
+.vac-dow {
+  background: #2c3e8c; color: #fff;
+  font-family: 'Unbounded', sans-serif;
+  font-size: 10px; font-weight: 700;
+  text-align: center;
+  padding: 6px 2px;
+  letter-spacing: 0.04em;
+}
+.vac-dow.we { background: #d83a2d; }
+.vac-cell {
+  background: var(--bg2);
+  min-height: 46px;
+  padding: 4px 6px;
+  font-size: 11px;
+  color: var(--txt);
+  display: flex; flex-direction: column;
+  line-height: 1.15;
+  position: relative;
+}
+.vac-cell.empty { background: transparent; }
+.vac-cell .vac-d {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 11px; font-weight: 700;
+  color: var(--txt);
+  margin-bottom: 2px;
+}
+.vac-cell .vac-name {
+  font-size: 9px; font-weight: 600;
+  color: var(--txt);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+.vac-cell.has-vac { border-radius: 2px; }
+body.light .vac-cell.has-vac .vac-d,
+body.light .vac-cell.has-vac .vac-name { color: #111; }
+
+/* Fluent: чуть мягче палитра */
+body.fluent .vac-month-title { background: #003d7a; }
+body.fluent .vac-dow         { background: #003d7a; }
+body.fluent .vac-dow.we      { background: #c4232f; }
+body.fluent .vac-cell        { color: #111; }
+
+/* Cosmic */
+body.cosmic .vac-month-title { background: #1a1a1a; color: #fff; }
+body.cosmic .vac-dow         { background: #1a1a1a; color: #fff; }
+body.cosmic .vac-dow.we      { background: #ff3b30; color: #fff; }
+
+@media (max-width: 499.98px) {
+  .vac-cal-hdr  { padding: 10px 12px; padding-top: calc(10px + env(safe-area-inset-top, 0px)); }
+  .vac-cal-title { font-size: 12px; }
+  .vac-cal-body  { padding: 10px; gap: 10px; }
+  .vac-month-title { font-size: 10px; padding: 7px 8px; }
+  .vac-dow        { font-size: 9px; padding: 5px 1px; }
+  .vac-cell       { min-height: 40px; padding: 3px 4px; }
+  .vac-cell .vac-d    { font-size: 10px; }
+  .vac-cell .vac-name { font-size: 8px; }
 }

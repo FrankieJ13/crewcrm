@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crm-crew-dashboard-v82';
+const CACHE_NAME = 'crm-crew-dashboard-v83';
 const STATIC_ASSETS = [
   './logos/pwa-192.png',
   './logos/pwa-512.png',
@@ -33,6 +33,7 @@ const STATIC_ASSETS = [
   './logos/Fluent/FluentColor-Settings.svg',
   './logos/Fluent/FluentColor-Themes.svg',
   './logos/Fluent/FluentColor-Trophies.svg',
+  './logos/Fluent/FluentColor-Vacation.svg',
   './logos/Fluent/FluentColor-Vizity.svg',
   // Cosmic theme icons
   './logos/cosmic/cosmic-alert.svg',
@@ -58,6 +59,7 @@ const STATIC_ASSETS = [
   './logos/cosmic/cosmic_rang.svg',
   './logos/cosmic/cosmic_refresh.svg',
   './logos/cosmic/cosmic_themes.svg',
+  './logos/cosmic/cosmic_vacation.svg',
   './logos/cosmic/cosmic_vizity.svg',
   // Default theme icons
   './logos/default/about.svg',
@@ -85,6 +87,7 @@ const STATIC_ASSETS = [
   './logos/default/send-noti.svg',
   './logos/default/theme.svg',
   './logos/default/trophies.svg',
+  './logos/default/vacation.svg',
   './logos/default/vizity.svg',
 ];
 

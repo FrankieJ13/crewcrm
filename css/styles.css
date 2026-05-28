@@ -7673,7 +7673,15 @@ body.cosmic .hmb-avatar-circle { border-color: #2a2a2a; }
   position: relative;
   overflow: hidden;
 }
-.vac-cell.empty { background: var(--bg); }
+.vac-cell.vac-empty {
+  background: var(--bg) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: none !important;
+  min-height: 0 !important;
+}
 .vac-cell .vac-d {
   font-family: 'Unbounded', sans-serif;
   font-size: 11px; font-weight: 700;

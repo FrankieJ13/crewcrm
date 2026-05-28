@@ -4632,17 +4632,17 @@ function renderVacationCalendarInto(el, blocks) {
     const lastDay  = sorted[sorted.length - 1].day;
     // Расставляем по dow первой ячейки
     const cells = [];
-    for (let i = 0; i < firstDay.dow; i++) cells.push('<div class="vac-cell empty"></div>');
+    for (let i = 0; i < firstDay.dow; i++) cells.push('<div class="vac-cell vac-empty"></div>');
     for (let d = firstDay.day; d <= lastDay; d++) {
       const info = byDay[d];
-      if (!info) { cells.push('<div class="vac-cell empty"></div>'); continue; }
+      if (!info) { cells.push('<div class="vac-cell vac-empty"></div>'); continue; }
       const styleBg = info.bg ? `background:${info.bg};` : '';
       const hasVac  = info.name ? ' has-vac' : '';
       const nameHtml = info.name ? `<div class="vac-name" title="${escapeAttr(info.name)}">${escapeHtml(info.name)}</div>` : '';
       cells.push(`<div class="vac-cell${hasVac}" style="${styleBg}"><div class="vac-d">${d}</div>${nameHtml}</div>`);
     }
     // Дополнить до кратного 7
-    while (cells.length % 7 !== 0) cells.push('<div class="vac-cell empty"></div>');
+    while (cells.length % 7 !== 0) cells.push('<div class="vac-cell vac-empty"></div>');
     const dowHdr = DOW_RU.map((d,i) => `<div class="vac-dow${i>=5?' we':''}">${d}</div>`).join('');
     return `<div class="vac-month"><div class="vac-month-title">${escapeHtml(b.title)}</div><div class="vac-month-grid">${dowHdr}${cells.join('')}</div></div>`;
   }).join('');
@@ -4677,8 +4677,11 @@ async function openVacationCalendar() {
   ov.classList.add('open');
   ov.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
+  // Сбросить скролл на начало списка
+  requestAnimationFrame(() => { body.scrollTop = 0; });
   if (_vacCalCache) {
     renderVacationCalendarInto(body, parseVacationCalendar(_vacCalCache));
+    requestAnimationFrame(() => { body.scrollTop = 0; });
     return;
   }
   body.innerHTML = '<div class="vac-cal-loading">Загрузка…</div>';
@@ -4686,6 +4689,7 @@ async function openVacationCalendar() {
     const grid = await fetchVacationCalendar();
     _vacCalCache = grid;
     renderVacationCalendarInto(body, parseVacationCalendar(grid));
+    requestAnimationFrame(() => { body.scrollTop = 0; });
   } catch (e) {
     body.innerHTML = '<div class="vac-cal-loading">Не удалось загрузить календарь</div>';
   }

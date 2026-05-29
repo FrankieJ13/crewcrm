@@ -4559,7 +4559,9 @@ async function fetchVacationCalendar() {
 async function fetchVacationsList() {
   const sheetName = SHEETS.vacationsList || 'Отпуска 2026';
   const range  = encodeURIComponent(`'${sheetName}'!A1:D300`);
-  const fields = 'sheets.data.rowData.values(formattedValue,userEnteredFormat.backgroundColor,effectiveFormat.backgroundColor)';
+  // Берём все возможные источники цвета: старое backgroundColor и новое
+  // backgroundColorStyle.rgbColor — на случай conditional formatting с rgbColor
+  const fields = 'sheets.data.rowData.values(formattedValue,userEnteredFormat(backgroundColor,backgroundColorStyle/rgbColor),effectiveFormat(backgroundColor,backgroundColorStyle/rgbColor))';
   const url    = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}`
                + `?ranges=${range}&fields=${fields}&includeGridData=true`;
   const resp = await fetch(url, { headers: await authHeaders() });
@@ -4593,13 +4595,15 @@ function parseVacationsList(rows) {
     const end = _parseRuDate(endStr);
     if (!start || !end) continue;
     if (end.ts < start.ts) continue;
-    // effectiveFormat — конечный цвет на листе (с учётом условного форматирования
-    // и чередования строк). userEnteredFormat может быть mint (от alternating rows),
-    // а реальный цвет менеджера — в effective. Берём effective в первую очередь.
-    const bgRaw = r[0]?.effectiveFormat?.backgroundColor
-               || r[0]?.userEnteredFormat?.backgroundColor
-               || null;
-    const bg = _vacBgToCss(bgRaw);
+    // Собираем все источники цвета (новый/старый API × userEntered/effective)
+    // и выбираем самый «отличный от белого/банинга» — это и есть цвет менеджера.
+    const candidates = [
+      r[0]?.effectiveFormat?.backgroundColorStyle?.rgbColor,
+      r[0]?.effectiveFormat?.backgroundColor,
+      r[0]?.userEnteredFormat?.backgroundColorStyle?.rgbColor,
+      r[0]?.userEnteredFormat?.backgroundColor,
+    ].filter(Boolean);
+    const bg = _vacPickBestBg(candidates);
     const comment = (r[3]?.formattedValue || '').trim();
     periods.push({ name, start, end, bg, comment });
   }
@@ -4656,6 +4660,33 @@ function _vacBgToCss(bg) {
   // только чистый/почти белый считаем "нет фона" — пастельные оттенки оставляем
   if (r >= 253 && g >= 253 && b >= 253) return null;
   return `rgb(${r}, ${g}, ${b})`;
+}
+
+// Из нескольких источников цвета выбираем «самый отличающийся» — у банинга
+// (alternating rows) цвет монотонно повторяется у всех ячеек, а conditional
+// formatting даёт уникальные оттенки. Берём кандидата, наиболее далёкого
+// от серого/белого (по сумме отклонений каналов от среднего и от 255).
+function _vacPickBestBg(candidates) {
+  if (!candidates || !candidates.length) return null;
+  let best = null;
+  let bestScore = -1;
+  for (const c of candidates) {
+    if (!c) continue;
+    const r = Math.round((c.red   || 0) * 255);
+    const g = Math.round((c.green || 0) * 255);
+    const b = Math.round((c.blue  || 0) * 255);
+    if (r >= 253 && g >= 253 && b >= 253) continue; // почти белый — мимо
+    // Score: насколько далеко от белого + насколько цвет «насыщенный»
+    const fromWhite = (255 - r) + (255 - g) + (255 - b);
+    const avg = (r + g + b) / 3;
+    const sat = Math.abs(r - avg) + Math.abs(g - avg) + Math.abs(b - avg);
+    const score = fromWhite + sat * 2;
+    if (score > bestScore) {
+      bestScore = score;
+      best = `rgb(${r}, ${g}, ${b})`;
+    }
+  }
+  return best;
 }
 
 // Парсит лист на 12 блоков-месяцев. Сетка: 4 ряда × 3 колонки.

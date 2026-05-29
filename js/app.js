@@ -4930,17 +4930,16 @@ async function openVacationCalendar() {
   document.body.style.overflow = 'hidden';
   // Сбросить скролл на начало списка
   requestAnimationFrame(() => { body.scrollTop = 0; });
-  if (_vacCalCache) {
-    const blocks = buildBlocksFromPeriods(_vacCalCache, 2026);
-    renderVacationCalendarInto(body, blocks);
-    requestAnimationFrame(() => { body.scrollTop = 0; });
-    return;
-  }
+  // На время отладки цветов — не используем сессионный кэш, чтобы каждый
+  // открыв модалку гарантированно подтягивал свежие данные с листа.
+  _vacCalCache = null;
   body.innerHTML = '<div class="vac-cal-loading">Загрузка…</div>';
   try {
     const rows = await fetchVacationsList();
     const periods = parseVacationsList(rows);
     _vacCalCache = periods;
+    // Диагностика цветов — посмотрим в консоли что приходит
+    try { console.log('[vac-cal] периоды:', periods.map(p => ({ name: p.name, bg: p.bg, start: p.start.ts, end: p.end.ts }))); } catch(e){}
     const blocks = buildBlocksFromPeriods(periods, 2026);
     renderVacationCalendarInto(body, blocks);
     requestAnimationFrame(() => { body.scrollTop = 0; });

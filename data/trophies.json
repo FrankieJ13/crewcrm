@@ -1,6 +1,6 @@
 {
-  "version": 3,
-  "updatedAt": "2026-05-24",
+  "version": 4,
+  "updatedAt": "2026-05-29",
   "notes": "Категория определяется суффиксом code: _monthly | _annual | _once. AUTO-трофеи начисляются автоматизацией (Apps Script) 2-го числа следующего месяца. MANUAL — вручную через лист TrophyAwards. Менеджер может получать один и тот же трофей несколько раз (повторные строки в TrophyAwards).",
   "trophies": [
     {
@@ -182,6 +182,15 @@
       "category": "annual",
       "auto": true,
       "icon": "hny_annual.png"
+    },
+    {
+      "code": "welcome_annual",
+      "name": "Welcome",
+      "description": "Приветственный трофей — добро пожаловать в команду Crystal Motors!",
+      "type": "positive",
+      "category": "annual",
+      "auto": false,
+      "icon": "welcome_annual.png"
     },
     {
       "code": "mentor_once",

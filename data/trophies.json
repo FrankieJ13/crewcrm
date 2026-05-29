@@ -184,11 +184,11 @@
       "icon": "hny_annual.png"
     },
     {
-      "code": "welcome_annual",
+      "code": "welcome_once",
       "name": "Welcome",
       "description": "Приветственный трофей — добро пожаловать в команду Crystal Motors!",
       "type": "positive",
-      "category": "annual",
+      "category": "once",
       "auto": false,
       "icon": "welcome_annual.png"
     },

@@ -125,6 +125,7 @@ function getSheetNames(suffix) {
     trophyAwards:'TrophyAwards',
     vacationCalendar: 'Календарь 2026',
     vacationsList: 'Отпуска 2026',
+    vacationManagers: 'Менеджеры Отпусков 2026',
   };
 }
 
@@ -4572,6 +4573,36 @@ async function fetchVacationsList() {
   return rows;
 }
 
+// Парсим лист «Менеджеры Отпусков 2026» — словарь { имя → цвет }.
+// Колонка A: ФИО, колонка B: ячейка с заливкой (без текста). Берём цвет фона B.
+async function fetchVacationManagerColors() {
+  const sheetName = SHEETS.vacationManagers || 'Менеджеры Отпусков 2026';
+  const range  = encodeURIComponent(`'${sheetName}'!A1:B100`);
+  const fields = 'sheets.data.rowData.values(formattedValue,userEnteredFormat(backgroundColor,backgroundColorStyle/rgbColor),effectiveFormat(backgroundColor,backgroundColorStyle/rgbColor))';
+  const url    = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}`
+               + `?ranges=${range}&fields=${fields}&includeGridData=true`;
+  const resp = await fetch(url, { headers: await authHeaders() });
+  if (!resp.ok) throw new Error('vac-mgr fetch failed: ' + resp.status);
+  const data = await resp.json();
+  const rowData = data?.sheets?.[0]?.data?.[0]?.rowData || [];
+  const map = {};
+  // Пропускаем заголовок (строка 0)
+  for (let i = 1; i < rowData.length; i++) {
+    const r = rowData[i]?.values || [];
+    const name = (r[0]?.formattedValue || '').trim();
+    if (!name) continue;
+    const candidates = [
+      r[1]?.effectiveFormat?.backgroundColorStyle?.rgbColor,
+      r[1]?.effectiveFormat?.backgroundColor,
+      r[1]?.userEnteredFormat?.backgroundColorStyle?.rgbColor,
+      r[1]?.userEnteredFormat?.backgroundColor,
+    ].filter(Boolean);
+    const bg = _vacPickBestBg(candidates);
+    if (bg) map[name] = bg;
+  }
+  return map;
+}
+
 function _parseRuDate(s) {
   const m = String(s||'').trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/);
   if (!m) return null;
@@ -4935,11 +4966,18 @@ async function openVacationCalendar() {
   _vacCalCache = null;
   body.innerHTML = '<div class="vac-cal-loading">Загрузка…</div>';
   try {
-    const rows = await fetchVacationsList();
+    const [rows, mgrColors] = await Promise.all([
+      fetchVacationsList(),
+      fetchVacationManagerColors().catch(() => ({})),
+    ]);
     const periods = parseVacationsList(rows);
+    // Подставляем цвет из словаря, если есть
+    periods.forEach(p => {
+      if (mgrColors[p.name]) p.bg = mgrColors[p.name];
+    });
     _vacCalCache = periods;
-    // Диагностика цветов — посмотрим в консоли что приходит
-    try { console.log('[vac-cal] периоды:', periods.map(p => ({ name: p.name, bg: p.bg, start: p.start.ts, end: p.end.ts }))); } catch(e){}
+    try { console.log('[vac-cal] цвета менеджеров:', mgrColors); } catch(e){}
+    try { console.log('[vac-cal] периоды:', periods.map(p => ({ name: p.name, bg: p.bg }))); } catch(e){}
     const blocks = buildBlocksFromPeriods(periods, 2026);
     renderVacationCalendarInto(body, blocks);
     requestAnimationFrame(() => { body.scrollTop = 0; });

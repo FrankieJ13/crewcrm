@@ -1893,6 +1893,29 @@ body.fluent .mop-city-count { background:rgba(0,0,0,0.05); }
   background:rgba(255,255,255,0.05); border-radius:8px;
   padding:8px 6px; text-align:center;
 }
+.modal-cell-clickable {
+  cursor: pointer;
+  transition: background .15s, transform .12s, box-shadow .15s;
+}
+.modal-cell-clickable:hover {
+  background: rgba(var(--acc-rgb), 0.16);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+}
+.modal-cell-clickable:active { transform: translateY(0); }
+.modal-cell-clickable::after {
+  content: '';
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 6px; height: 6px;
+  border-top: 1.5px solid var(--acc);
+  border-right: 1.5px solid var(--acc);
+  transform: rotate(45deg);
+  opacity: 0;
+  transition: opacity .15s;
+}
+.modal-cell-clickable { position: relative; }
+.modal-cell-clickable:hover::after { opacity: .85; }
 /* В САЛОНЕ — будильник: моргание фоном + тряска по таймеру.
    Фон через ::before чтобы тема (Fluent с !important) не перебивала анимацию. */
 .modal-cell.salon-alarm {

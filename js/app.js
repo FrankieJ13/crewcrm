@@ -5376,7 +5376,11 @@ function openMopModal(dataStr) {
   const vsaloneN = num(d.vsalone) || 0;
   const salAlarm = vsaloneN > 0;
 
+  // Имя для drilldown-модалок (используем nameLow, escapнутый для inline-атрибутов)
+  const nameLowAttr = JSON.stringify(String(d.nameLow || (d.name||'').toLowerCase())).replace(/"/g, '&quot;');
+
   // Бейджи "Общий результат" — основные показатели
+  // 5-й элемент кортежа — onclick (для кликабельных бейджей)
   const genBadges = [
     ['План',          d.rplan],
     ['Дневной',       d.daily || '—'],
@@ -5385,21 +5389,23 @@ function openMopModal(dataStr) {
     ['Прогноз',       d.prog,    `color:${pctClr(progPct)}`],
     ['Прогноз',       progVis,   `color:${pctClr(progPct)}`],
     ['Факт',          d.prc,     `color:${pctClr(factPctRaw)}`],
-    ['Кредит',        tKred],
-    ['Наличные',      tNal],
-    ['Обмен',         tObmen],
+    ['Кредит',        tKred,     '', '', `openMgrDealsModal(${nameLowAttr},'kredit')`],
+    ['Наличные',      tNal,      '', '', `openMgrDealsModal(${nameLowAttr},'nal')`],
+    ['Обмен',         tObmen,    '', '', `openMgrDealsModal(${nameLowAttr},'obmen')`],
     ['Выкуп',         tVykup],
-    ['Комиссия',      tKom],
+    ['Комиссия',      tKom,      '', '', `openMgrDealsModal(${nameLowAttr},'komis')`],
     ['Задаток',       d.zadatok],
-    ['Отказ',         d.otkaz],
-    ['ФССП',          d.vfSSP],
-    ['Одоб. н/к', d.odobNeKupil || 0],
-    ['В салоне',      vsaloneN,  '', salAlarm ? 'salon-alarm' : ''],
-    ['В КСО',         d.vkso],
+    ['Отказ',         d.otkaz,   '', '', `openMgrDealsModal(${nameLowAttr},'otkaz')`],
+    ['ФССП',          d.vfSSP,   '', '', `openMgrDealsModal(${nameLowAttr},'fssp')`],
+    ['Одоб. н/к',     d.odobNeKupil || 0],
+    ['В салоне',      vsaloneN,  '', salAlarm ? 'salon-alarm' : '', `openMgrSalonModal(${nameLowAttr})`],
+    ['В КСО',         d.vkso,    '', '', `openMgrKsoModal(${nameLowAttr})`],
   ];
-  const genHtml = genBadges.map(([l,v,st,cls]) =>
-    `<div class="modal-cell ${cls||''}"><div class="mc-l">${l}</div><div class="mc-v" style="${st||''}">${v}</div></div>`
-  ).join('');
+  const genHtml = genBadges.map(([l,v,st,cls,click]) => {
+    const clickAttr = click ? ` onclick="${click}"` : '';
+    const clickCls  = click ? ' modal-cell-clickable' : '';
+    return `<div class="modal-cell ${cls||''}${clickCls}"${clickAttr}><div class="mc-l">${l}</div><div class="mc-v" style="${st||''}">${v}</div></div>`;
+  }).join('');
 
   // Конверсии (общий)
   const convHtml = `
@@ -8107,10 +8113,14 @@ function _mgrDisplayName(nameLow) {
 
 function openMgrDealsModal(nameLow, kind) {
   const KINDS = {
-    kredit:    { title: 'Кредиты',     match: s => s === 'покупка (кредит)' },
-    nalobm:    { title: 'Нал+Обмен',   match: s => s === 'покупка (наличные)' || s === 'обмен' },
-    komis:     { title: 'Комиссия',    match: s => s === 'комиссия' },
+    kredit:    { title: 'Кредиты',      match: s => s === 'покупка (кредит)' },
+    nalobm:    { title: 'Нал+Обмен',    match: s => s === 'покупка (наличные)' || s === 'обмен' },
+    nal:       { title: 'Наличные',     match: s => s === 'покупка (наличные)' },
+    obmen:     { title: 'Обмен',        match: s => s === 'обмен' },
+    komis:     { title: 'Комиссия',     match: s => s === 'комиссия' },
     otkazfssp: { title: 'Отказ + ФССП', match: s => s === 'отказ' || s === 'фссп не подаем' },
+    otkaz:     { title: 'Отказы',       match: s => s === 'отказ' },
+    fssp:      { title: 'ФССП',         match: s => s === 'фссп не подаем' },
   };
   const cfg = KINDS[kind]; if (!cfg) return;
   const target = String(nameLow || '').toLowerCase().trim();

@@ -6859,6 +6859,12 @@ function renderPersonal(matched) {
     synRow[14]= s.obmen1200||0; synRow[15]= s.kom1200||0;
     synRow[16]= s.zadatok||0;
     synRow[19]= s.vsalone||0;
+    synRow[22]= s.vkso||0;
+    synRow[23]= s.vfssп||0;
+    synRow[24]= s.vbanke||0;
+    synRow[25]= s.otkaz||0;
+    synRow[26]= s.odobNeKupil||0;
+    synRow[27]= s.byCity||{};
     mgrRow = synRow;
     salObj = calcSalary(nameLow);
   }

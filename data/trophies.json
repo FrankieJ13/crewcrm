@@ -190,7 +190,7 @@
       "type": "positive",
       "category": "once",
       "auto": false,
-      "icon": "welcome_annual.png"
+      "icon": "welcome_once.png"
     },
     {
       "code": "mentor_once",

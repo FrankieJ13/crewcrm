@@ -5384,7 +5384,7 @@ function openMopModal(dataStr) {
   const genBadges = [
     ['План',          d.rplan],
     ['Дневной',       d.daily || '—'],
-    ['Визиты',        d.allV],
+    ['Визиты',        d.allV,    '', '', `openMgrDealsModal(${nameLowAttr},'vizity')`],
     ['Остаток',       d.ost],
     ['Прогноз',       d.prog,    `color:${pctClr(progPct)}`],
     ['Прогноз',       progVis,   `color:${pctClr(progPct)}`],
@@ -5392,12 +5392,12 @@ function openMopModal(dataStr) {
     ['Кредит',        tKred,     '', '', `openMgrDealsModal(${nameLowAttr},'kredit')`],
     ['Наличные',      tNal,      '', '', `openMgrDealsModal(${nameLowAttr},'nal')`],
     ['Обмен',         tObmen,    '', '', `openMgrDealsModal(${nameLowAttr},'obmen')`],
-    ['Выкуп',         tVykup],
+    ['Выкуп',         tVykup,    '', '', `openMgrDealsModal(${nameLowAttr},'vykup')`],
     ['Комиссия',      tKom,      '', '', `openMgrDealsModal(${nameLowAttr},'komis')`],
-    ['Задаток',       d.zadatok],
+    ['Задаток',       d.zadatok, '', '', `openMgrDealsModal(${nameLowAttr},'zadatok')`],
     ['Отказ',         d.otkaz,   '', '', `openMgrDealsModal(${nameLowAttr},'otkaz')`],
     ['ФССП',          d.vfSSP,   '', '', `openMgrDealsModal(${nameLowAttr},'fssp')`],
-    ['Одоб. н/к',     d.odobNeKupil || 0],
+    ['Одоб. н/к',     d.odobNeKupil || 0, '', '', `openMgrDealsModal(${nameLowAttr},'odob_nk')`],
     ['В салоне',      vsaloneN,  '', salAlarm ? 'salon-alarm' : '', `openMgrSalonModal(${nameLowAttr})`],
     ['В КСО',         d.vkso,    '', '', `openMgrKsoModal(${nameLowAttr})`],
   ];
@@ -8117,10 +8117,14 @@ function openMgrDealsModal(nameLow, kind) {
     nalobm:    { title: 'Нал+Обмен',    match: s => s === 'покупка (наличные)' || s === 'обмен' },
     nal:       { title: 'Наличные',     match: s => s === 'покупка (наличные)' },
     obmen:     { title: 'Обмен',        match: s => s === 'обмен' },
+    vykup:     { title: 'Выкуп',        match: s => s === 'выкуп' },
     komis:     { title: 'Комиссия',     match: s => s === 'комиссия' },
     otkazfssp: { title: 'Отказ + ФССП', match: s => s === 'отказ' || s === 'фссп не подаем' },
     otkaz:     { title: 'Отказы',       match: s => s === 'отказ' },
     fssp:      { title: 'ФССП',         match: s => s === 'фссп не подаем' },
+    odob_nk:   { title: 'Одоб. не купил', match: s => s === 'одобрено банком, но не купил' },
+    vizity:    { title: 'Визиты',       match: () => true }, // все sverka-строки
+    zadatok:   { title: 'Задаток',      matchRow: row => (parseFloat(String(row[9]||'0').replace(/[^\d.]/g,'')) || 0) > 1000 },
   };
   const cfg = KINDS[kind]; if (!cfg) return;
   const target = String(nameLow || '').toLowerCase().trim();
@@ -8133,7 +8137,8 @@ function openMgrDealsModal(nameLow, kind) {
       if (String(row[8]).toLowerCase().trim() !== target) continue;
       if (!isSverkaRow(row)) continue;
       const status = String(row[4] || '').trim().toLowerCase();
-      if (!cfg.match(status)) continue;
+      const ok = cfg.matchRow ? cfg.matchRow(row) : cfg.match(status);
+      if (!ok) continue;
       collected.push({
         date:   String(row[0] || '').trim(),
         city:   String(row[3] || '').trim() || '—',

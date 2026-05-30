@@ -13975,14 +13975,67 @@ function _rsEnsureOverlay() {
   ov.className = 'repeats-overlay';
   ov.innerHTML = `
     <div class="repeats-shell">
-      <div class="repeats-hdr">
+      <div class="repeats-hdr" id="repeats-hdr">
         <div class="repeats-title">Поиск повторов</div>
-        <button class="repeats-close" onclick="closeRepeatSearchModal()" aria-label="Закрыть">×</button>
+        <div class="repeats-hdr-stats" id="repeats-hdr-stats" aria-hidden="true"></div>
+        <div class="repeats-hdr-actions">
+          <button class="repeats-icon-btn repeats-hdr-back" onclick="_rsBackToConfig()" aria-label="Настройки" title="Настройки">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+          <button class="repeats-icon-btn repeats-hdr-export" onclick="repeatSearchExportXlsx()" aria-label="Скачать XLSX" title="Скачать XLSX">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </button>
+          <button class="repeats-close" onclick="closeRepeatSearchModal()" aria-label="Закрыть">×</button>
+        </div>
       </div>
       <div class="repeats-body" id="repeats-body"></div>
     </div>`;
   document.body.appendChild(ov);
   return ov;
+}
+
+// Обновляем компактную сводку и видимость кнопок в шапке модалки
+let _rsToolbarObserver = null;
+let _rsStuckObserver = null;
+function _rsBindHdrScrollState(perMgrCount, crossCount) {
+  const hdr = document.getElementById('repeats-hdr');
+  const body = document.getElementById('repeats-body');
+  const stats = document.getElementById('repeats-hdr-stats');
+  if (!hdr || !body) return;
+
+  // Сводка: 83к./52с./31м.
+  if (stats) {
+    const total = perMgrCount + crossCount;
+    stats.textContent = total
+      ? `${total}к./${perMgrCount}с./${crossCount}м.`
+      : '';
+  }
+
+  // Сбрасываем предыдущий observer
+  if (_rsToolbarObserver) { _rsToolbarObserver.disconnect(); _rsToolbarObserver = null; }
+  if (_rsStuckObserver)   { _rsStuckObserver.disconnect();   _rsStuckObserver = null; }
+  hdr.classList.remove('scrolled');
+
+  // Toolbar — если за пределами viewport, показываем компактные действия в шапке
+  const tb = body.querySelector('.rs-toolbar');
+  if (tb) {
+    _rsToolbarObserver = new IntersectionObserver(([e]) => {
+      hdr.classList.toggle('scrolled', !e.isIntersecting);
+    }, { root: body, threshold: 0 });
+    _rsToolbarObserver.observe(tb);
+  }
+
+  // Stuck-state для шапок менеджеров — через sentinel 1px перед каждой шапкой.
+  // Если sentinel НЕ в viewport И прошёл выше — соответствующая шапка приклеилась.
+  _rsStuckObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      const block = e.target.parentElement;
+      if (!block || !block.classList.contains('rs-mgr-block')) return;
+      const stuck = !e.isIntersecting && e.boundingClientRect.top < 0;
+      block.classList.toggle('rs-stuck', stuck);
+    });
+  }, { root: body, threshold: 0 });
+  body.querySelectorAll('.rs-sentinel').forEach(s => _rsStuckObserver.observe(s));
 }
 
 function openRepeatSearchModal() {
@@ -13998,6 +14051,10 @@ function closeRepeatSearchModal() {
   if (!ov) return;
   ov.classList.remove('open');
   document.body.style.overflow = '';
+  const hdr = document.getElementById('repeats-hdr');
+  if (hdr) hdr.classList.remove('scrolled');
+  if (_rsToolbarObserver) { _rsToolbarObserver.disconnect(); _rsToolbarObserver = null; }
+  if (_rsStuckObserver)   { _rsStuckObserver.disconnect();   _rsStuckObserver = null; }
 }
 
 function _rsRenderConfigHtml() {
@@ -14123,6 +14180,8 @@ async function runRepeatSearchReport() {
 
   _rsLastReport = { perMgr, cross, enabledCols, months };
   body.innerHTML = _rsRenderResultHtml(perMgr, cross, enabledCols);
+  const totalPerMgr = Object.values(perMgr).reduce((a, arr) => a + arr.length, 0);
+  _rsBindHdrScrollState(totalPerMgr, cross.length);
 }
 
 function _rsRenderResultHtml(perMgr, cross, cols) {
@@ -14140,7 +14199,7 @@ function _rsRenderResultHtml(perMgr, cross, cols) {
 
   const mgrSorted = Object.keys(perMgr).sort((a, b) => a.localeCompare(b, 'ru'));
   mgrSorted.forEach(mgr => {
-    html += `<div class="rs-mgr-block"><div class="rs-mgr-hdr">${escapeHtml(mgr.toUpperCase())}</div>`;
+    html += `<div class="rs-mgr-block"><div class="rs-sentinel"></div><div class="rs-mgr-hdr">${escapeHtml(mgr.toUpperCase())}</div>`;
     perMgr[mgr].forEach(({ phone, visits }) => {
       html += `<div class="rs-client-hdr">Клиент: ${escapeHtml(visits[0].name||'—')}, ${escapeHtml(phone)}</div>`;
       html += _rsRowsTable(visits, cols, false);
@@ -14149,7 +14208,7 @@ function _rsRenderResultHtml(perMgr, cross, cols) {
   });
 
   if (cross.length) {
-    html += `<div class="rs-mgr-block"><div class="rs-mgr-hdr">ПО ВСЕМ МЕНЕДЖЕРАМ СОВПАДЕНИЯ</div>`;
+    html += `<div class="rs-mgr-block"><div class="rs-sentinel"></div><div class="rs-mgr-hdr">ПО ВСЕМ МЕНЕДЖЕРАМ СОВПАДЕНИЯ</div>`;
     cross.forEach(({ phone, visits }) => {
       html += `<div class="rs-client-hdr">Клиент: ${escapeHtml(visits[0].name||'—')}, ${escapeHtml(phone)}</div>`;
       html += _rsRowsTable(visits, cols, true);
@@ -14173,6 +14232,12 @@ function _rsRowsTable(visits, cols, withMgr) {
 function _rsBackToConfig() {
   const body = document.getElementById('repeats-body');
   if (body) body.innerHTML = _rsRenderConfigHtml();
+  const hdr = document.getElementById('repeats-hdr');
+  if (hdr) hdr.classList.remove('scrolled');
+  const stats = document.getElementById('repeats-hdr-stats');
+  if (stats) stats.textContent = '';
+  if (_rsToolbarObserver) { _rsToolbarObserver.disconnect(); _rsToolbarObserver = null; }
+  if (_rsStuckObserver)   { _rsStuckObserver.disconnect();   _rsStuckObserver = null; }
 }
 
 async function repeatSearchExportXlsx() {

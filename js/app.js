@@ -11794,6 +11794,21 @@ async function renderTrophiesPage() {
       if (db !== da) return db.localeCompare(da);
       return String(a.name||a.code).localeCompare(String(b.name||b.code), 'ru');
     });
+    // Добавляем «инкогнито»-карточки нерасполученных трофеев в конец списка.
+    // База для аннуальных — без года (hb_annual), у пользователя могут быть
+    // hb_2025_annual / hb_2026_annual — считаем такой трофей полученным.
+    const earnedBaseCodes = new Set();
+    Object.keys(awardsByCode).forEach(code => {
+      const m = String(code).match(/^(.+?)_(\d{4})_annual$/);
+      earnedBaseCodes.add(m ? `${m[1]}_annual` : code);
+    });
+    const lockedCatalog = catalog
+      .filter(t => !earnedBaseCodes.has(t.code))
+      .sort((a, b) =>
+        (_typeOrder[(a.type||'neutral').toLowerCase()] - _typeOrder[(b.type||'neutral').toLowerCase()])
+        || String(a.name||a.code).localeCompare(String(b.name||b.code), 'ru')
+      );
+    sourceList.push(...lockedCatalog);
   }
 
   const earnedCount    = Object.values(awardsByCode).reduce((a, b) => a + (b.count || 0), 0);

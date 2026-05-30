@@ -7390,9 +7390,23 @@ body.cosmic .profile-modal-close {
 .trophy-card-neutral::before  { background: var(--acc); }
 
 .trophy-card.trophy-locked {
-  opacity: 0.55;
-  filter: grayscale(0.7);
+  opacity: 0.92;
 }
+.trophy-card.trophy-locked .trophy-card-ico img {
+  filter: grayscale(1) blur(2.5px) brightness(0.85);
+  -webkit-filter: grayscale(1) blur(2.5px) brightness(0.85);
+}
+.trophy-card.trophy-locked .trophy-card-name {
+  filter: blur(4px);
+  -webkit-filter: blur(4px);
+  user-select: none;
+}
+/* Описание у локированных — без блюра, но чуть приглушённое */
+.trophy-card.trophy-locked .trophy-card-desc {
+  color: var(--txt2);
+}
+.trophy-card.trophy-locked .trophy-src,
+.trophy-card.trophy-locked .trophy-card-date { display: none; }
 .trophy-card.trophy-earned:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 18px rgba(0,0,0,0.08);

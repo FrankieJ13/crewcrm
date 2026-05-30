@@ -5879,6 +5879,9 @@ function showPlanEditBtnIfCeo(matched) {
   // Кнопка экспорта отчёта — только CEO
   const hmbExp = document.getElementById('hmb-export');
   if (hmbExp) hmbExp.style.display = isCeo ? '' : 'none';
+  // Кнопка «Поиск повторов» — только CEO/ROP
+  const hmbRep = document.getElementById('hmb-repeats');
+  if (hmbRep) hmbRep.style.display = isCeo ? '' : 'none';
   const hmbAnaliz = document.getElementById('hmb-analiz');
   if (hmbAnaliz) hmbAnaliz.style.display = isCeo ? '' : 'none';
   // Итоги — видны всем
@@ -13940,3 +13943,314 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(startRemindersLoop, 3000);
 });
 /* ════════════════════ END REMINDERS ════════════════════ */
+
+/* ════════════════════════════════════════════════════════════════════
+ * REPEAT SEARCH — поиск повторных визитов одного клиента (по телефону)
+ * за последние N месяцев. Отчёт показывается в модалке и экспортируется
+ * в XLSX (использует ExcelJS, который грузится для экспорта отчёта).
+ * ═══════════════════════════════════════════════════════════════════ */
+
+const RS_COL_DEFS = [
+  { key: 'date',    idx: 0, label: 'ДАТА' },
+  { key: 'name',    idx: 1, label: 'ФИО' },
+  { key: 'phone',   idx: 2, label: 'ТЕЛЕФОН' },
+  { key: 'city',    idx: 3, label: 'ГОРОД' },
+  { key: 'comment', idx: 4, label: 'КОММЕНТАРИЙ' },
+  { key: 'source',  idx: 5, label: 'ИСТОЧНИК' },
+  { key: 'cat',     idx: 6, label: 'КАТЕГОРИЯ' },
+  { key: 'buy',     idx: 7, label: 'СПОСОБ ПОКУПКИ' },
+];
+const RS_MGR_COL = 8; // I — менеджер
+
+let _rsLastReport = null;
+
+function _rsEnsureOverlay() {
+  let ov = document.getElementById('repeats-overlay');
+  if (ov) return ov;
+  ov = document.createElement('div');
+  ov.id = 'repeats-overlay';
+  ov.className = 'repeats-overlay';
+  ov.innerHTML = `
+    <div class="repeats-shell">
+      <div class="repeats-hdr">
+        <div class="repeats-title">Поиск повторов</div>
+        <button class="repeats-close" onclick="closeRepeatSearchModal()" aria-label="Закрыть">×</button>
+      </div>
+      <div class="repeats-body" id="repeats-body"></div>
+    </div>`;
+  document.body.appendChild(ov);
+  return ov;
+}
+
+function openRepeatSearchModal() {
+  const ov = _rsEnsureOverlay();
+  const body = document.getElementById('repeats-body');
+  ov.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  body.innerHTML = _rsRenderConfigHtml();
+}
+
+function closeRepeatSearchModal() {
+  const ov = document.getElementById('repeats-overlay');
+  if (!ov) return;
+  ov.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function _rsRenderConfigHtml() {
+  const colsHtml = RS_COL_DEFS.map(c =>
+    `<label class="rs-col-chip"><input type="checkbox" data-col="${c.key}" ${c.key==='phone'?'checked disabled':'checked'}> ${escapeHtml(c.label)}</label>`
+  ).join('');
+  const pills = [2,3,4,5,6].map(n =>
+    `<button class="rs-pill${n===3?' on':''}" data-months="${n}" onclick="_rsSelectMonths(${n})">${n}</button>`
+  ).join('');
+  return `
+    <div class="rs-config">
+      <div class="rs-section">
+        <div class="rs-label">Период (последние N месяцев)</div>
+        <div class="rs-pills" id="rs-months-pills">${pills}</div>
+      </div>
+      <div class="rs-section">
+        <div class="rs-label">Столбцы в отчёте</div>
+        <div class="rs-cols">${colsHtml}</div>
+        <div class="rs-hint">Телефон обязателен — по нему ищутся повторы.</div>
+      </div>
+      <button class="rs-run-btn" onclick="runRepeatSearchReport()">Сформировать отчёт</button>
+    </div>`;
+}
+
+function _rsSelectMonths(n) {
+  document.querySelectorAll('#rs-months-pills .rs-pill').forEach(b => b.classList.toggle('on', +b.dataset.months === n));
+}
+
+function _rsCleanPhone(s) {
+  let d = String(s||'').replace(/\D/g,'');
+  if (d.length === 11 && (d[0] === '7' || d[0] === '8')) d = d.slice(1);
+  return d.length === 10 ? d : '';
+}
+
+function _rsDateMs(s) {
+  const m = String(s||'').match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})/);
+  if (!m) return 0;
+  const yr = m[3].length === 2 ? 2000 + +m[3] : +m[3];
+  return new Date(yr, +m[2]-1, +m[1]).getTime();
+}
+
+async function runRepeatSearchReport() {
+  const body = document.getElementById('repeats-body');
+  if (!body) return;
+  const monthsBtn = document.querySelector('#rs-months-pills .rs-pill.on');
+  const months = monthsBtn ? +monthsBtn.dataset.months : 3;
+  const enabledCols = RS_COL_DEFS.filter(c => {
+    const cb = document.querySelector(`input[data-col="${c.key}"]`);
+    return cb ? cb.checked : false;
+  });
+
+  body.innerHTML = `<div class="rs-loading">Загрузка визитов за ${months} мес…</div>`;
+
+  // Генерим суффиксы за последние N месяцев (включая текущий)
+  const suffixes = [];
+  const now = new Date();
+  for (let i = 0; i < months; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yy = String(d.getFullYear()).slice(-2);
+    suffixes.push(mm + yy);
+  }
+
+  let allRows = [];
+  try {
+    const arrays = await Promise.all(suffixes.map(sfx =>
+      api('ВИЗИТЫ' + sfx, 'A2:I2000').catch(() => [])
+    ));
+    arrays.forEach(rows => (rows||[]).forEach(r => { if (r && r[2]) allRows.push(r); }));
+  } catch (e) {
+    body.innerHTML = `<div class="rs-loading">Не удалось загрузить визиты</div>`;
+    return;
+  }
+
+  // Группируем по чистому телефону
+  const byPhone = {};
+  allRows.forEach(r => {
+    const ph = _rsCleanPhone(r[2]);
+    if (!ph) return;
+    const mgr = String(r[RS_MGR_COL]||'').trim();
+    if (!mgr) return;
+    (byPhone[ph] = byPhone[ph] || []).push({ row: r, mgr, date: r[0], name: r[1] });
+  });
+
+  // Отбираем телефоны с 2+ визитами
+  const duplicates = {};
+  Object.entries(byPhone).forEach(([ph, visits]) => {
+    if (visits.length >= 2) duplicates[ph] = visits;
+  });
+
+  // Сортируем визиты каждого клиента по дате asc
+  Object.values(duplicates).forEach(visits => {
+    visits.sort((a, b) => _rsDateMs(a.date) - _rsDateMs(b.date));
+  });
+
+  // Разделяем: один менеджер vs несколько
+  const perMgr = {}; // mgrName → [{ phone, visits }]
+  const cross = [];  // [{ phone, visits }]
+  Object.entries(duplicates).forEach(([phone, visits]) => {
+    const mgrs = new Set(visits.map(v => v.mgr));
+    if (mgrs.size === 1) {
+      const m = visits[0].mgr;
+      (perMgr[m] = perMgr[m] || []).push({ phone, visits });
+    } else {
+      cross.push({ phone, visits });
+    }
+  });
+
+  // Сортируем клиентов внутри каждой секции по первой дате
+  Object.values(perMgr).forEach(arr => arr.sort((a, b) => _rsDateMs(a.visits[0].date) - _rsDateMs(b.visits[0].date)));
+  cross.sort((a, b) => _rsDateMs(a.visits[0].date) - _rsDateMs(b.visits[0].date));
+
+  _rsLastReport = { perMgr, cross, enabledCols, months };
+  body.innerHTML = _rsRenderResultHtml(perMgr, cross, enabledCols);
+}
+
+function _rsRenderResultHtml(perMgr, cross, cols) {
+  const totalPerMgr = Object.values(perMgr).reduce((a, arr) => a + arr.length, 0);
+  const totalCross = cross.length;
+  let html = `<div class="rs-toolbar">
+    <button class="rs-back" onclick="_rsBackToConfig()">← Настройки</button>
+    <div class="rs-stats">${totalPerMgr + totalCross} клиент(ов) с повторами · своих ${totalPerMgr} · между менеджерами ${totalCross}</div>
+    <button class="rs-export" onclick="repeatSearchExportXlsx()">Скачать XLSX</button>
+  </div>`;
+  if (!totalPerMgr && !totalCross) {
+    html += `<div class="rs-empty">Повторных визитов не найдено</div>`;
+    return html;
+  }
+
+  const mgrSorted = Object.keys(perMgr).sort((a, b) => a.localeCompare(b, 'ru'));
+  mgrSorted.forEach(mgr => {
+    html += `<div class="rs-mgr-block"><div class="rs-mgr-hdr">${escapeHtml(mgr.toUpperCase())}</div>`;
+    perMgr[mgr].forEach(({ phone, visits }) => {
+      html += `<div class="rs-client-hdr">Клиент: ${escapeHtml(visits[0].name||'—')}, ${escapeHtml(phone)}</div>`;
+      html += _rsRowsTable(visits, cols, false);
+    });
+    html += `</div>`;
+  });
+
+  if (cross.length) {
+    html += `<div class="rs-mgr-block"><div class="rs-mgr-hdr">ПО ВСЕМ МЕНЕДЖЕРАМ СОВПАДЕНИЯ</div>`;
+    cross.forEach(({ phone, visits }) => {
+      html += `<div class="rs-client-hdr">Клиент: ${escapeHtml(visits[0].name||'—')}, ${escapeHtml(phone)}</div>`;
+      html += _rsRowsTable(visits, cols, true);
+    });
+    html += `</div>`;
+  }
+  return html;
+}
+
+function _rsRowsTable(visits, cols, withMgr) {
+  const headers = cols.map(c => `<th>${escapeHtml(c.label)}</th>`).join('') + (withMgr ? '<th>МЕНЕДЖЕР</th>' : '');
+  const rows = visits.map(v => {
+    const cells = cols.map(c => `<td>${escapeHtml(String(v.row[c.idx]||''))}</td>`).join('') + (withMgr ? `<td>${escapeHtml(v.mgr)}</td>` : '');
+    return `<tr>${cells}</tr>`;
+  }).join('');
+  return `<table class="rs-tbl"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function _rsBackToConfig() {
+  const body = document.getElementById('repeats-body');
+  if (body) body.innerHTML = _rsRenderConfigHtml();
+}
+
+async function repeatSearchExportXlsx() {
+  if (!_rsLastReport) return;
+  const { perMgr, cross, enabledCols } = _rsLastReport;
+  try { await exp_loadExcelJS(); }
+  catch (e) { toast('Не удалось загрузить ExcelJS', 'e'); return; }
+
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Повторы');
+  const teal  = 'FF4FD0D6';
+  const green = 'FFCDE9C4';
+  const grey  = 'FFE8E8E8';
+  let rowI = 1;
+  const baseCols = enabledCols.length;
+
+  function setRow(values, fillArgb, bold, mergeWidth) {
+    const row = ws.getRow(rowI++);
+    values.forEach((v, i) => { row.getCell(i+1).value = v; });
+    if (fillArgb) {
+      const width = mergeWidth || values.length;
+      for (let i = 1; i <= width; i++) {
+        row.getCell(i).fill = { type:'pattern', pattern:'solid', fgColor:{ argb: fillArgb } };
+        if (bold) row.getCell(i).font = { bold: true };
+      }
+      if (mergeWidth && mergeWidth > 1) {
+        ws.mergeCells(rowI-1, 1, rowI-1, mergeWidth);
+      }
+    } else if (bold) {
+      values.forEach((_, i) => row.getCell(i+1).font = { bold: true });
+    }
+    return row;
+  }
+
+  function emitTableHeader(extraHeaders) {
+    const all = [...enabledCols.map(c => c.label), ...(extraHeaders||[])];
+    setRow(all, grey, true);
+  }
+  function emitDataRow(visit, extraVals) {
+    const row = ws.getRow(rowI++);
+    enabledCols.forEach((c, i) => row.getCell(i+1).value = String(visit.row[c.idx]||''));
+    (extraVals||[]).forEach((v, i) => row.getCell(baseCols + i + 1).value = v);
+  }
+
+  const mgrSorted = Object.keys(perMgr).sort((a, b) => a.localeCompare(b, 'ru'));
+  mgrSorted.forEach(mgr => {
+    setRow([mgr.toUpperCase()], teal, true, Math.max(baseCols, 1));
+    perMgr[mgr].forEach(({ phone, visits }) => {
+      setRow([`Клиент: ${visits[0].name||'—'}, ${phone}`], green, true, Math.max(baseCols, 1));
+      emitTableHeader();
+      visits.forEach(v => emitDataRow(v));
+    });
+    rowI++; // отступ между менеджерами
+  });
+
+  if (cross.length) {
+    setRow(['ПО ВСЕМ МЕНЕДЖЕРАМ СОВПАДЕНИЯ'], teal, true, Math.max(baseCols + 1, 1));
+    cross.forEach(({ phone, visits }) => {
+      setRow([`Клиент: ${visits[0].name||'—'}, ${phone}`], green, true, Math.max(baseCols + 1, 1));
+      emitTableHeader(['МЕНЕДЖЕР']);
+      visits.forEach(v => emitDataRow(v, [v.mgr]));
+    });
+  }
+
+  // Авто-ширины
+  ws.columns.forEach(col => {
+    let max = 10;
+    col.eachCell({ includeEmpty: false }, c => {
+      const len = String(c.value||'').length;
+      if (len > max) max = len;
+    });
+    col.width = Math.min(max + 2, 50);
+  });
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const ts = new Date().toISOString().slice(0,10);
+  a.download = `Повторы-${ts}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 500);
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const ov = document.getElementById('repeats-overlay');
+  if (ov && ov.classList.contains('open')) closeRepeatSearchModal();
+});
+
+window.openRepeatSearchModal = openRepeatSearchModal;
+window.closeRepeatSearchModal = closeRepeatSearchModal;
+window.runRepeatSearchReport  = runRepeatSearchReport;
+window.repeatSearchExportXlsx = repeatSearchExportXlsx;
+window._rsSelectMonths        = _rsSelectMonths;
+window._rsBackToConfig        = _rsBackToConfig;

@@ -271,6 +271,7 @@ function syncTheme() {
     'hmb-month-trigger':    COSMIC_ICON_BASE + 'cosmic_base.svg',
     'hmb-plan-edit':        COSMIC_ICON_BASE + 'cosmic_config.svg',
     'hmb-trophies':         COSMIC_ICON_BASE + 'cosmic-trophies.svg',
+    'hmb-repeats':          COSMIC_ICON_BASE + 'cosmic_find_duble.svg',
     'hmb-logout':           COSMIC_ICON_BASE + 'cosmic_exit.svg',
     'hmb-about-btn':        COSMIC_ICON_BASE + 'cosmic_about.svg',
   };
@@ -289,6 +290,7 @@ function syncTheme() {
     'hmb-month-trigger':    DEFAULT_ICON_BASE + 'base.svg',
     'hmb-plan-edit':        DEFAULT_ICON_BASE + 'config.svg',
     'hmb-trophies':         DEFAULT_ICON_BASE + 'trophies.svg',
+    'hmb-repeats':          DEFAULT_ICON_BASE + 'find-duble.svg',
     'hmb-logout':           DEFAULT_ICON_BASE + 'exit.svg',
     'hmb-about-btn':        DEFAULT_ICON_BASE + 'about.svg',
   };
@@ -343,6 +345,7 @@ function syncTheme() {
     'hmb-export':           FLUENT_ICON_BASE + 'FluentColor-Report.svg',
     'hmb-analiz':           FLUENT_ICON_BASE + 'FluentColor-Analysis.svg',
     'hmb-trophies':         FLUENT_ICON_BASE + 'FluentColor-Trophies.svg',
+    'hmb-repeats':          FLUENT_ICON_BASE + 'FluentColor-FindDuble.svg',
     'hmb-logout':           FLUENT_ICON_BASE + 'FluentColor-Exit.svg',
     'hmb-about-btn':        FLUENT_ICON_BASE + 'FluentColor-About.svg',
   };
@@ -14148,7 +14151,9 @@ function _rsRenderResultHtml(perMgr, cross, cols) {
 function _rsRowsTable(visits, cols, withMgr) {
   const headers = cols.map(c => `<th>${escapeHtml(c.label)}</th>`).join('') + (withMgr ? '<th>МЕНЕДЖЕР</th>' : '');
   const rows = visits.map(v => {
-    const cells = cols.map(c => `<td>${escapeHtml(String(v.row[c.idx]||''))}</td>`).join('') + (withMgr ? `<td>${escapeHtml(v.mgr)}</td>` : '');
+    const cells = cols.map(c =>
+      `<td data-label="${escapeAttr(c.label)}">${escapeHtml(String(v.row[c.idx]||''))}</td>`
+    ).join('') + (withMgr ? `<td data-label="МЕНЕДЖЕР">${escapeHtml(v.mgr)}</td>` : '');
     return `<tr>${cells}</tr>`;
   }).join('');
   return `<table class="rs-tbl"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;

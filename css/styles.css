@@ -7938,13 +7938,19 @@ body.fluent .vac-cell        { color: #111; }
 
 .rs-mgr-block {
   margin-bottom: 18px; border: 1px solid var(--line);
-  border-radius: 10px; overflow: hidden; background: var(--bg2);
+  border-radius: 10px; background: var(--bg2);
+  /* overflow:visible — чтобы sticky-шапка менеджера могла залипать
+     относительно скролл-контейнера .repeats-body */
+  overflow: visible;
 }
 .rs-mgr-hdr {
   background: #4fd0d6; color: #000;
   padding: 10px 14px;
   font-family: 'Unbounded', sans-serif;
   font-weight: 800; font-size: 12px; letter-spacing: 0.04em;
+  /* Залипает под шапкой модалки */
+  position: sticky; top: 0; z-index: 5;
+  border-top-left-radius: 10px; border-top-right-radius: 10px;
 }
 .rs-client-hdr {
   background: #cde9c4; color: #000;
@@ -7955,13 +7961,44 @@ body.fluent .vac-cell        { color: #111; }
 .rs-tbl th, .rs-tbl td {
   padding: 6px 10px; font-size: 11px;
   border-bottom: 1px solid var(--line); text-align: left; color: var(--txt);
+  vertical-align: top;
 }
 .rs-tbl th { background: var(--bg2); font-weight: 700; color: var(--txt); }
 .rs-tbl tr:last-child td { border-bottom: 0; }
+/* На широких экранах — разрешаем перенос текста (не схлопываем колонки) */
+.rs-tbl td { word-break: break-word; }
 
-@media (max-width: 499.98px) {
+/* ── Адаптив для узких экранов: таблица → карточки (стек) ── */
+@media (max-width: 640px) {
   .repeats-body { padding: 12px; }
   .rs-mgr-hdr { font-size: 11px; padding: 8px 10px; }
   .rs-client-hdr { font-size: 11px; padding: 5px 10px; }
-  .rs-tbl th, .rs-tbl td { font-size: 10px; padding: 5px 6px; }
+  .rs-tbl, .rs-tbl thead, .rs-tbl tbody, .rs-tbl tr, .rs-tbl th, .rs-tbl td { display: block; width: 100%; }
+  .rs-tbl thead { display: none; }
+  .rs-tbl tr {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: minmax(110px, 35%) 1fr;
+    gap: 2px 10px;
+    align-items: baseline;
+  }
+  .rs-tbl tr:last-child { border-bottom: 0; }
+  .rs-tbl td {
+    padding: 2px 0;
+    border: 0;
+    font-size: 11px;
+    word-break: break-word;
+    display: contents;
+  }
+  .rs-tbl td::before {
+    content: attr(data-label);
+    font-family: 'Unbounded', sans-serif;
+    font-weight: 700;
+    font-size: 9px;
+    text-transform: uppercase;
+    color: var(--txt3);
+    letter-spacing: 0.04em;
+    align-self: baseline;
+  }
 }

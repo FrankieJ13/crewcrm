@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crm-crew-dashboard-v115';
+const CACHE_NAME = 'crm-crew-dashboard-v116';
 const STATIC_ASSETS = [
   './logos/pwa-192.png',
   './logos/pwa-512.png',
@@ -32,6 +32,7 @@ const STATIC_ASSETS = [
   './logos/Fluent/FluentColor-Right.svg',
   './logos/Fluent/FluentColor-Settings.svg',
   './logos/Fluent/FluentColor-Themes.svg',
+  './logos/Fluent/FluentColor-FindDuble.svg',
   './logos/Fluent/FluentColor-Trophies.svg',
   './logos/Fluent/FluentColor-Vacation.svg',
   './logos/Fluent/FluentColor-Vizity.svg',
@@ -58,6 +59,7 @@ const STATIC_ASSETS = [
   './logos/cosmic/cosmic_online.svg',
   './logos/cosmic/cosmic_rang.svg',
   './logos/cosmic/cosmic_refresh.svg',
+  './logos/cosmic/cosmic_find_duble.svg',
   './logos/cosmic/cosmic_themes.svg',
   './logos/cosmic/cosmic_vacation.svg',
   './logos/cosmic/cosmic_vizity.svg',
@@ -86,6 +88,7 @@ const STATIC_ASSETS = [
   './logos/default/s_verified.svg',
   './logos/default/send-noti.svg',
   './logos/default/theme.svg',
+  './logos/default/find-duble.svg',
   './logos/default/trophies.svg',
   './logos/default/vacation.svg',
   './logos/default/vizity.svg',

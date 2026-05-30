@@ -135,10 +135,15 @@ function awardMonthlyTrophiesFor(targetDate) {
   if (top[1]) push('numbertwo_monthly',   top[1].name, `${period} · ${Math.round(top[1].prog)}%`);
   if (top[2]) push('numberthree_monthly', top[2].name, `${period} · ${Math.round(top[2].prog)}%`);
 
-  // 2) AWESOME / NICE
+  // 2) Normal / Hard / I'm Super-man — выдаём по самой высокой достигнутой планке
   arr.forEach(m => {
-    if (m.prog >= 130 && m.stats.kred >= 30) push('star_monthly',  m.name, `${period} · ${Math.round(m.prog)}% · ${m.stats.kred} кредитов`);
-    if (m.prog >= 120 && m.stats.kred >= 20) push('star2_monthly', m.name, `${period} · ${Math.round(m.prog)}% · ${m.stats.kred} кредитов`);
+    if (m.prog >= 150 && m.stats.kred >= 50) {
+      push('veryhard_monthly', m.name, `${period} · ${Math.round(m.prog)}% · ${m.stats.kred} кредитов`);
+    } else if (m.prog >= 130 && m.stats.kred >= 30) {
+      push('hard_monthly',     m.name, `${period} · ${Math.round(m.prog)}% · ${m.stats.kred} кредитов`);
+    } else if (m.prog >= 120 && m.stats.kred >= 20) {
+      push('normal_monthly',   m.name, `${period} · ${Math.round(m.prog)}% · ${m.stats.kred} кредитов`);
+    }
   });
 
   // 3) Коллектор — max сделок «Комиссия»

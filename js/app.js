@@ -11911,7 +11911,12 @@ async function _profileLoadAndRenderTrophies(name, panelId) {
   catalog.forEach(t => { byCode[t.code] = t; });
   const awards = _trophyAwardsForManager(name);
   const codes = Object.keys(awards);
+
+  // Заголовок секции — обновляем «Трофеи · N шт» (или просто «Трофеи»)
+  const sectionTitleSpan = panel.parentElement?.querySelector('.profile-sec-title > span:first-child');
+
   if (!codes.length) {
+    if (sectionTitleSpan) sectionTitleSpan.textContent = 'Трофеи';
     panel.innerHTML = `<div class="profile-trophies-empty">Пока нет трофеев</div>`;
     return;
   }
@@ -11921,8 +11926,9 @@ async function _profileLoadAndRenderTrophies(name, panelId) {
     if (db !== da) return db.localeCompare(da);
     return String(byCode[a]?.name || a).localeCompare(String(byCode[b]?.name || b), 'ru');
   });
-  // Общее число всех трофеев (с учётом ×N) — для бейджа в углу
+  // Общее число всех трофеев (с учётом ×N) — для заголовка секции
   const totalAwards = codes.reduce((sum, code) => sum + (awards[code].count || 0), 0);
+  if (sectionTitleSpan) sectionTitleSpan.textContent = `Трофеи · ${totalAwards} шт`;
   // Показываем последние 8 (сортировка уже по lastDate desc)
   const slice = codes.slice(0, 8);
   const items = slice.map(code => {
@@ -11936,10 +11942,7 @@ async function _profileLoadAndRenderTrophies(name, panelId) {
       ${countBadge}
     </div>`;
   }).join('');
-  panel.innerHTML = `
-    <div class="profile-trophies-total" title="Всего трофеев">${totalAwards}</div>
-    <div class="profile-trophies-grid">${items}</div>
-  `;
+  panel.innerHTML = `<div class="profile-trophies-grid">${items}</div>`;
 }
 window._profileLoadAndRenderTrophies = _profileLoadAndRenderTrophies;
 /* ════════════════════ END ТРОФЕИ ════════════════════ */

@@ -7889,9 +7889,17 @@ body.fluent .vac-cell        { color: #111; }
 }
 .repeats-body {
   flex: 1 1 auto; overflow-y: auto;
-  padding: 16px;
+  /* убираем top-padding, чтобы sticky-шапка менеджера садилась
+     ровно под шапку модалки без зазора, через который видно
+     уезжающее содержимое предыдущей секции */
+  padding: 0 14px;
   padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
 }
+.repeats-body > .rs-toolbar,
+.repeats-body > .rs-config,
+.repeats-body > .rs-loading,
+.repeats-body > .rs-empty { margin-top: 14px; }
+.repeats-body > .rs-mgr-block:first-of-type { margin-top: 14px; }
 
 /* Config */
 .rs-config { display: flex; flex-direction: column; gap: 18px; max-width: 560px; margin: 0 auto; }
@@ -7922,6 +7930,10 @@ body.fluent .vac-cell        { color: #111; }
 }
 .rs-run-btn:hover { opacity: 0.9; }
 .rs-loading, .rs-empty { text-align: center; padding: 40px 12px; color: var(--txt3); font-size: 13px; }
+.rs-loading { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.rs-spinner { color: var(--acc); display: inline-flex; }
+/* На тёмных темах акцент яркий — оставляем его. На светлых тоже var(--acc) контрастен фону */
+.rs-loading-lbl { color: var(--txt2); font-size: 12px; }
 
 /* Result */
 .rs-toolbar {

@@ -447,3 +447,27 @@ function rerunFor(periodStr) {
   if (!m) throw new Error('rerunFor: ожидается YYYY-MM, получено ' + periodStr);
   awardMonthlyTrophiesFor(new Date(parseInt(m[1]), parseInt(m[2]) - 1, 1));
 }
+
+/**
+ * Миграция старых кодов star_monthly → hard_monthly и star2_monthly → normal_monthly.
+ * Запускать вручную ОДИН РАЗ из редактора (Run → migrateLegacyMonthlyTrophyCodes).
+ */
+function migrateLegacyMonthlyTrophyCodes() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sh = ss.getSheetByName(SHEET_TROPHY_AWARDS);
+  if (!sh) { console.log('TrophyAwards не найден'); return; }
+  const range = sh.getDataRange();
+  const values = range.getValues();
+  const map = { 'star_monthly': 'hard_monthly', 'star2_monthly': 'normal_monthly' };
+  let changed = 0;
+  for (let i = 1; i < values.length; i++) {
+    const code = String(values[i][0] || '').trim();
+    if (map[code]) { values[i][0] = map[code]; changed++; }
+  }
+  if (changed) {
+    range.setValues(values);
+    console.log(`[migrate] переименовано выдач: ${changed}`);
+  } else {
+    console.log('[migrate] записей star_monthly/star2_monthly не найдено');
+  }
+}

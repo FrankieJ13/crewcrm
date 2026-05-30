@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "updatedAt": "2026-05-30",
   "notes": "Категория определяется суффиксом code: _monthly | _annual | _once. AUTO-трофеи начисляются автоматизацией (Apps Script) 2-го числа следующего месяца. MANUAL — вручную через лист TrophyAwards. Менеджер может получать один и тот же трофей несколько раз (повторные строки в TrophyAwards).",
   "trophies": [
@@ -41,7 +41,7 @@
     },
     {
       "code": "normal_monthly",
-      "name": "Normal",
+      "name": "Hmm, nice!",
       "description": "Закрыл план по итогу месяца на 120% и более + сделал 20 продаж в кредит.",
       "type": "positive",
       "category": "monthly",
@@ -50,7 +50,7 @@
     },
     {
       "code": "hard_monthly",
-      "name": "Hard",
+      "name": "You're awesome!",
       "description": "Закрыл план по итогу месяца на 130% и более + сделал 30 продаж в кредит.",
       "type": "positive",
       "category": "monthly",

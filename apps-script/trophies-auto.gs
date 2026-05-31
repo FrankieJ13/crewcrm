@@ -66,6 +66,7 @@ function awardDailyTrophies() {
   const now = new Date();
   awardBirthdayFor(now);
   awardMilestoneTrophies(now);
+  awardVacationAnnual(now);
 }
 
 /**
@@ -193,12 +194,124 @@ function awardMonthlyTrophiesFor(targetDate) {
   //   - emolument_monthly (макс доход месяца)
   //   - snatch_monthly    (макс доход за 6 мес)
   //   - profitability_monthly (макс доходность с одной сделки — manual)
+  //   - broke_monthly / bankrupt_monthly — мин доход (требуется ZP{suffix})
+  //   - sisyphus_monthly / effective_monthly — min/max conv в визит (CNVRS)
 
   // Anniversary — если у юзера год работы исполнился в течение месяца
   // (по DOB не определишь; пока MANUAL или добавь поле hire_date в USERS)
 
   if (toAppend.length) appendRows(ss, SHEET_TROPHY_AWARDS, toAppend);
   console.log(`[trophies] ${period}: добавлено выдач ${toAppend.length}`);
+
+  // ===== Многомесячные трофеи с cooldown'ом ===========================
+  awardMultiMonthTrophies(ss, targetDate, awardedAt);
+}
+
+/**
+ * Multi-month трофеи с burn-логикой:
+ *   loser_monthly    — 3 месяца подряд худшая эффективность
+ *   mastodon_monthly — за 6 месяцев 1000 визитов
+ *   mammoth_monthly  — за 6 месяцев 130 кредитов
+ * После выдачи входящие месяцы пишутся в note "burned:YYYY-MM,..." и
+ * больше не учитываются в будущих накоплениях для этого кода.
+ */
+function awardMultiMonthTrophies(ss, targetDate, awardedAt) {
+  const usersRows = readSheetSafe(ss, SHEET_USERS);
+  const mgrs = {};
+  for (let i = 1; i < usersRows.length; i++) {
+    const r = usersRows[i]; if (!r) continue;
+    const name = String(r[U_NAME]||'').trim();
+    const role = String(r[U_ROLE]||'').toLowerCase().trim();
+    if (!name || (role !== 'crm' && role !== 'dozhim')) continue;
+    mgrs[name.toLowerCase()] = name;
+  }
+  // Подгрузим планы и визиты за нужные периоды (макс 6 для cumulative-кодов)
+  const periods6 = lastNPeriods(targetDate, 6);   // от старого к новому
+  const periods3 = periods6.slice(-3);            // последние 3
+
+  // mgrLow → period → { vis, kred, prog }
+  const data = {};
+  Object.keys(mgrs).forEach(nl => { data[nl] = {}; periods6.forEach(p => data[nl][p] = { vis:0, kred:0, prog:0, plan:0 }); });
+
+  // Заполняем визиты за 6 месяцев
+  periods6.forEach(p => {
+    const [y, mm] = p.split('-');
+    const sfx = String(parseInt(mm)).padStart(2,'0') + String(y).slice(-2);
+    const vizityRows  = readSheetSafe(ss, PREFIX_VIZITY   + sfx);
+    const dVizityRows = readSheetSafe(ss, PREFIX_D_VIZITY + sfx);
+    const planRows    = readSheetSafe(ss, PREFIX_PLAN     + sfx);
+    const planMap = {};
+    for (let i = 1; i < planRows.length; i++) {
+      const row = planRows[i]; if (!row || !row[0]) continue;
+      const nm = String(row[0]).trim();
+      const pl = parseInt(String(row[1]||'0').replace(/\D/g,''))||0;
+      if (nm) planMap[nm.toLowerCase()] = pl;
+    }
+    const tmpStats = {};
+    Object.keys(mgrs).forEach(nl => { tmpStats[nl] = emptyStats(); });
+    aggregateInto(vizityRows,  tmpStats.__dummy ? {} : Object.fromEntries(Object.entries(mgrs).map(([k,v]) => [k, { name: v, role: 'crm', stats: tmpStats[k] }])));
+    aggregateInto(dVizityRows, Object.fromEntries(Object.entries(mgrs).map(([k,v]) => [k, { name: v, role: 'dozhim', stats: tmpStats[k] }])));
+    Object.keys(mgrs).forEach(nl => {
+      const st = tmpStats[nl];
+      const plan = planMap[nl] || 0;
+      data[nl][p] = {
+        vis: st.vis,
+        kred: st.kred,
+        plan: plan,
+        prog: plan > 0 ? (st.vis / plan * 100) : 0,
+      };
+    });
+  });
+
+  const toAppend = [];
+
+  // === loser_monthly — 3 последних месяца, худшая суммарная эффективность ===
+  // Только если у менеджера есть план хотя бы в одном из 3 месяцев И ни один из них не burned.
+  (function awardLoser() {
+    const code = 'loser_monthly';
+    const candidates = [];
+    Object.entries(mgrs).forEach(([nl, name]) => {
+      const burned = readBurnedPeriods(ss, code, name);
+      if (periods3.some(p => burned.has(p))) return;
+      const totals = periods3.reduce((acc, p) => {
+        const d = data[nl][p];
+        acc.plan += d.plan; acc.vis += d.vis;
+        return acc;
+      }, { plan: 0, vis: 0 });
+      if (totals.plan <= 0) return;
+      candidates.push({ nl, name, eff: (totals.vis / totals.plan * 100) });
+    });
+    if (!candidates.length) return;
+    candidates.sort((a, b) => a.eff - b.eff);
+    const w = candidates[0];
+    const note = `${periods3[0]}..${periods3[2]} · ${Math.round(w.eff)}% · burned:${periods3.join(',')}`;
+    toAppend.push([code, w.name, awardedAt, 'system', 'auto', 'active', note]);
+  })();
+
+  // === mastodon_monthly — 1000+ визитов за 6 непрерывных месяцев ===
+  Object.entries(mgrs).forEach(([nl, name]) => {
+    const code = 'mastodon_monthly';
+    const burned = readBurnedPeriods(ss, code, name);
+    if (periods6.some(p => burned.has(p))) return;
+    const totalVis = periods6.reduce((s, p) => s + (data[nl][p].vis||0), 0);
+    if (totalVis < 1000) return;
+    const note = `${periods6[0]}..${periods6[5]} · ${totalVis} виз · burned:${periods6.join(',')}`;
+    toAppend.push([code, name, awardedAt, 'system', 'auto', 'active', note]);
+  });
+
+  // === mammoth_monthly — 130+ кредитов за 6 непрерывных месяцев ===
+  Object.entries(mgrs).forEach(([nl, name]) => {
+    const code = 'mammoth_monthly';
+    const burned = readBurnedPeriods(ss, code, name);
+    if (periods6.some(p => burned.has(p))) return;
+    const totalKred = periods6.reduce((s, p) => s + (data[nl][p].kred||0), 0);
+    if (totalKred < 130) return;
+    const note = `${periods6[0]}..${periods6[5]} · ${totalKred} кред · burned:${periods6.join(',')}`;
+    toAppend.push([code, name, awardedAt, 'system', 'auto', 'active', note]);
+  });
+
+  if (toAppend.length) appendRows(ss, SHEET_TROPHY_AWARDS, toAppend);
+  console.log(`[trophies] multi-month: добавлено выдач ${toAppend.length}`);
 }
 
 /* ──────────────────────── DAILY: BIRTHDAY ──────────────────────── */
@@ -252,6 +365,50 @@ function awardHnyFor(now) {
   }
   if (toAppend.length) appendRows(ss, SHEET_TROPHY_AWARDS, toAppend);
   console.log(`[trophies] hny ${awardedAt}: ${toAppend.length}`);
+}
+
+/* ─────── VACATION (annual, AUTO) ───────
+   Раз в год: если у менеджера в листе «Отпуска {year}» есть хотя бы одна
+   строка, у которой дата начала ≤ today — выдаём vacation_{year}_annual.
+   Идемпотентно: повторно не выдаём (читаем существующие awards с этим кодом). */
+function awardVacationAnnual(now) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const year = now.getFullYear();
+  const code = 'vacation_' + year + '_annual';
+  const period = String(year);
+  const awardedAt = isoDate(now);
+  const sheetName = 'Отпуска ' + year;
+  const rows = readSheetSafe(ss, sheetName);
+  if (!rows.length) { console.log('[trophies] vacation: лист ' + sheetName + ' не найден'); return; }
+  const existing = readAwardsIndex(ss, period);
+  const toAppend = [];
+  const seen = new Set();
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i]; if (!r) continue;
+    const name = String(r[0]||'').trim();
+    const startStr = String(r[1]||'').trim();
+    if (!name || !startStr) continue;
+    // Парсим начало отпуска (DD.MM.YYYY или Date)
+    let startDate = null;
+    if (r[1] instanceof Date) startDate = r[1];
+    else {
+      const m = startStr.match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})/);
+      if (m) {
+        let y = parseInt(m[3]); if (y < 100) y += 2000;
+        startDate = new Date(y, parseInt(m[2])-1, parseInt(m[1]));
+      }
+    }
+    if (!startDate || startDate > now) continue;
+    if (startDate.getFullYear() !== year) continue;
+    const nl = name.toLowerCase();
+    if (seen.has(nl)) continue;
+    seen.add(nl);
+    const key = code + '|' + nl;
+    if (existing[key]) continue;
+    toAppend.push([code, name, awardedAt, 'system', 'auto', 'active', period]);
+  }
+  if (toAppend.length) appendRows(ss, SHEET_TROPHY_AWARDS, toAppend);
+  console.log(`[trophies] vacation ${year}: ${toAppend.length}`);
 }
 
 /* ─────── MILESTONE: 25/50/75/100 трофеев (once, AUTO) ─────── */
@@ -405,6 +562,40 @@ function readAwardsIndex(ss, period) {
     if (note.indexOf(period) >= 0) idx[code + '|' + name.toLowerCase()] = true;
   }
   return idx;
+}
+
+/**
+ * Возвращает Set «сожжённых» (использованных) периодов YYYY-MM
+ * для конкретной пары trophy_code + manager. Накопительные многомесячные
+ * трофеи (например loser_monthly / bankrupt_monthly / mastodon_monthly /
+ * mammoth_monthly) пишут в note строку вида "burned:YYYY-MM,YYYY-MM,..."
+ * Эти месяцы не должны учитываться в следующих накоплениях.
+ */
+function readBurnedPeriods(ss, code, mgrName) {
+  const rows = readSheetSafe(ss, SHEET_TROPHY_AWARDS);
+  const nl = String(mgrName||'').toLowerCase().trim();
+  const burned = new Set();
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i]; if (!r) continue;
+    if (String(r[0]||'').trim() !== code) continue;
+    if (String(r[1]||'').toLowerCase().trim() !== nl) continue;
+    const status = String(r[5]||'active').toLowerCase().trim();
+    if (status === 'locked') continue;
+    const note = String(r[6]||'');
+    const m = note.match(/burned:([\d\-,\s]+)/);
+    if (m) m[1].split(',').forEach(p => { const v = p.trim(); if (/^\d{4}-\d{2}$/.test(v)) burned.add(v); });
+  }
+  return burned;
+}
+
+/** Список последних N периодов YYYY-MM включая targetDate. */
+function lastNPeriods(targetDate, n) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const d = new Date(targetDate.getFullYear(), targetDate.getMonth() - i, 1);
+    out.push(ymKey(d));
+  }
+  return out.reverse(); // от старого к новому
 }
 
 function appendRows(ss, sheetName, rows) {

@@ -1,6 +1,6 @@
 {
-  "version": 7,
-  "updatedAt": "2026-05-30",
+  "version": 8,
+  "updatedAt": "2026-05-31",
   "notes": "script — внутренний сценарий выдачи (виден только CEO/ROP); description — пользовательский текст (виден всем). Категория определяется суффиксом code: _monthly | _annual | _once. AUTO-трофеи начисляются автоматизацией (Apps Script). MANUAL — вручную через лист TrophyAwards.",
   "trophies": [
     {
@@ -244,6 +244,76 @@
       "icon": "antinumberthree_monthly.png"
     },
     {
+      "code": "broke_monthly",
+      "name": "На мели",
+      "script": "Выпадает менеджеру, у которого по итогу месяца самый низкий доход (CRM+ДОЖИМ).",
+      "description": "Самый низкий доход по итогу месяца.",
+      "type": "negative",
+      "category": "monthly",
+      "auto": false,
+      "icon": "broke_monthly.png"
+    },
+    {
+      "code": "bankrupt_monthly",
+      "name": "Банкрот",
+      "script": "Выпадает менеджеру, у которого по итогу 6 месяцев подряд самый низкий доход (CRM+ДОЖИМ). После выдачи эти 6 месяцев не учитываются в следующих накоплениях.",
+      "description": "За последние полгода самый низкий доход.",
+      "type": "negative",
+      "category": "monthly",
+      "auto": false,
+      "icon": "bankrupt_monthly.png"
+    },
+    {
+      "code": "loser_monthly",
+      "name": "Лузееер",
+      "script": "Выпадает менеджеру, у которого по итогу 3 месяцев подряд самый худший результат по эффективности. После выдачи эти 3 месяца не учитываются в следующих накоплениях.",
+      "description": "За последние 3 месяца подряд самый худший результат по эффективности.",
+      "type": "negative",
+      "category": "monthly",
+      "auto": true,
+      "icon": "loser_monthly.png"
+    },
+    {
+      "code": "sisyphus_monthly",
+      "name": "Сизифов труд",
+      "script": "Выпадает менеджеру, у которого по итогу месяца самая низкая конверсия «из заявки в визит».",
+      "description": "Самая низкая конверсия в визит.",
+      "type": "negative",
+      "category": "monthly",
+      "auto": false,
+      "icon": "sisyphus_monthly.png"
+    },
+    {
+      "code": "effective_monthly",
+      "name": "Эффективный менеджер",
+      "script": "Выпадает менеджеру, у которого по итогу месяца самая высокая конверсия «из заявки в визит».",
+      "description": "Самая высокая конверсия в визит.",
+      "type": "positive",
+      "category": "monthly",
+      "auto": false,
+      "icon": "effective_monthly.png"
+    },
+    {
+      "code": "mastodon_monthly",
+      "name": "Мастодонт",
+      "script": "Выпадает менеджеру, у которого за последние 6 месяцев было 1000 визитов. После выдачи эти 6 месяцев не учитываются в следующих накоплениях.",
+      "description": "1000 визитов за последние 6 месяцев.",
+      "type": "positive",
+      "category": "monthly",
+      "auto": true,
+      "icon": "mastodon_monthly.png"
+    },
+    {
+      "code": "mammoth_monthly",
+      "name": "Мамонт",
+      "script": "Выпадает менеджеру, у которого за последние 6 месяцев было 130 кредитных выдач. После выдачи эти 6 месяцев не учитываются в следующих накоплениях.",
+      "description": "130 кредитов за последние 6 месяцев.",
+      "type": "positive",
+      "category": "monthly",
+      "auto": true,
+      "icon": "mammoth_monthly.png"
+    },
+    {
       "code": "anniversary_annual",
       "name": "Anniversary Edition",
       "script": "За год работы в Crystal Motors. Накопительный — выдаётся каждый год, иконка с годом.",
@@ -274,6 +344,26 @@
       "icon": "hny_annual.png"
     },
     {
+      "code": "vacation_annual",
+      "name": "Передышка",
+      "script": "Выпадает менеджеру, который ушел в официальный отпуск. Выдается раз в год, даже если отпусков было несколько.",
+      "description": "Решил сделать передышку.",
+      "type": "neutral",
+      "category": "annual",
+      "auto": true,
+      "icon": "vacation_annual.png"
+    },
+    {
+      "code": "sickleave_annual",
+      "name": "Слабость",
+      "script": "Выпадает менеджеру, который ушел официально на больничный. Выдается раз в год, даже если больничных было несколько.",
+      "description": "Решил сделать передышку.",
+      "type": "neutral",
+      "category": "annual",
+      "auto": false,
+      "icon": "sickleave_annual.png"
+    },
+    {
       "code": "welcome_once",
       "name": "Welcome to the Crystal Motors!",
       "script": "Приветственный трофей. Выдается новому сотруднику после успешного трудоустройства.",
@@ -292,6 +382,16 @@
       "category": "once",
       "auto": false,
       "icon": "mentor_once.png"
+    },
+    {
+      "code": "quit_once",
+      "name": "Финита ля комедия, Сантьяго!",
+      "script": "Выпадает менеджеру, который уволился.",
+      "description": "Я сам решу. Увольняюсь!",
+      "type": "neutral",
+      "category": "once",
+      "auto": false,
+      "icon": "quit_once.png"
     },
     {
       "code": "25trophies_once",

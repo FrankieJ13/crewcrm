@@ -2158,21 +2158,26 @@ const FUTURE_SHEET_PREFIXES = [
   'ВИЗИТЫ', 'Д_ВИЗИТЫ', 'ПЛАН', 'ОТЧЁТ', 'Д_ОТЧЁТ',
   'ГРАФИКИ', 'CNVRS', 'СТАВКИ', 'Д_СТАВКИ',
 ];
+// Для каких префиксов после дублирования надо очистить данные (оставив
+// заголовок 1-й строки) — это «листы ввода» в которые льётся транзакционная
+// инфа за конкретный месяц. Для ПЛАН/СТАВКИ/ГРАФИКИ/ОТЧЁТ/CNVRS дубликат
+// остаётся как есть — там либо справочные значения, либо формулы.
+const FUTURE_SHEET_CLEAR_DATA = new Set(['ВИЗИТЫ', 'Д_ВИЗИТЫ']);
 let _ensureFutureRunning = false;
 async function ensureFutureMonthSheets(newSuffix) {
-  // newSuffix формат MMYY
   if (!/^\d{4}$/.test(newSuffix)) return;
+  // Только для CEO/ROP
+  const me = (typeof findUserInSheet === 'function') ? findUserInSheet() : null;
+  if (!me || (typeof isCeoLike === 'function' && !isCeoLike(me.role))) return;
+
   const now = new Date();
   const curSfx = String(now.getMonth() + 1).padStart(2, '0') + String(now.getFullYear()).slice(-2);
-  // newSuffix считается «будущим», если он строго больше календарного текущего
-  // (сравниваем по YY+MM — но YY двухзначное — преобразуем в YYYY+MM)
   const yKey = sfx => 2000 + parseInt(sfx.slice(2, 4)) + parseInt(sfx.slice(0, 2)) / 100;
   if (yKey(newSuffix) <= yKey(curSfx)) return;
   if (_ensureFutureRunning) return;
   _ensureFutureRunning = true;
   try {
-    // Берём предыдущий месяц как источник: для targetMonth = newSuffix
-    // sourceSuffix = newSuffix − 1 месяц
+    // Берём предыдущий календарный месяц как источник
     const mo = parseInt(newSuffix.slice(0, 2));
     const yr = 2000 + parseInt(newSuffix.slice(2, 4));
     const prev = new Date(yr, mo - 2, 1);
@@ -2191,15 +2196,15 @@ async function ensureFutureMonthSheets(newSuffix) {
 
     // 2) Какие листы нужно создать
     const requests = [];
-    const created = [];
+    const created = [];     // [{ prefix, target }]
     for (const prefix of FUTURE_SHEET_PREFIXES) {
       const target = prefix + newSuffix;
       if (titles.has(target)) continue;
       const source = prefix + sourceSuffix;
       const sourceId = byTitle[source];
-      if (sourceId == null) continue; // нет исходника — пропускаем
+      if (sourceId == null) continue;
       requests.push({ duplicateSheet: { sourceSheetId: sourceId, newSheetName: target } });
-      created.push(target);
+      created.push({ prefix, target });
     }
     if (!requests.length) return;
     toast('Создаю листы на ' + getMonthName(newSuffix) + '…', 'i');
@@ -2208,6 +2213,21 @@ async function ensureFutureMonthSheets(newSuffix) {
       { method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ requests }) }
     );
     if (!dupResp.ok) throw new Error('duplicate failed: ' + dupResp.status);
+
+    // 3) Для листов «ввода» — чистим данные (строки 2+), сохраняя заголовок и
+    // форматирование. Используется values:batchClear.
+    const clearRanges = created
+      .filter(c => FUTURE_SHEET_CLEAR_DATA.has(c.prefix))
+      .map(c => `'${c.target}'!A2:Z10000`);
+    if (clearRanges.length) {
+      try {
+        const clearResp = await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values:batchClear`,
+          { method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ ranges: clearRanges }) }
+        );
+        if (!clearResp.ok) console.warn('batchClear failed', clearResp.status);
+      } catch (e) { console.warn('batchClear error', e); }
+    }
     toast('Создано листов: ' + created.length, 's');
     apiCacheInvalidate();
   } catch (e) {

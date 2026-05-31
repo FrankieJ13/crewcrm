@@ -4134,19 +4134,21 @@ function normalizeSchedVal(v) {
   if (s === 'Р' || s === 'Р*') return 'Р';
   if (s === 'В' || s === 'В*') return 'В';
   if (s === 'ВС') return 'ВС';
+  if (s === 'О')  return 'О';
   return '';
 }
-// Возвращает сырое значение ячейки (Р, Р*, В, В*, ВС, '')
+// Возвращает сырое значение ячейки (Р, Р*, В, В*, ВС, О, '')
 function rawSchedVal(v) {
   const s = String(v || '').trim().toUpperCase();
   if (s === 'Р' || s === 'Р*') return s;
   if (s === 'В' || s === 'В*') return s;
   if (s === 'ВС') return 'ВС';
+  if (s === 'О')  return 'О';
   return '';
 }
 // Цвет/стиль ячейки в приложении по сырому значению
-const SCHED_CELL_BG = { 'В': '#f50e02', 'В*': '#ffff00', 'Р*': '#4386f5' };
-const SCHED_CELL_FG = { 'В': '#fff',    'В*': '#222',    'Р*': '#fff'    };
+const SCHED_CELL_BG = { 'В': '#f50e02', 'В*': '#ffff00', 'Р*': '#4386f5', 'О': '#ff9500' };
+const SCHED_CELL_FG = { 'В': '#fff',    'В*': '#222',    'Р*': '#fff',    'О': '#fff'    };
 function schedCellAppStyle(rawVal) {
   const bg = SCHED_CELL_BG[rawVal];
   if (!bg) return '';
@@ -4157,6 +4159,7 @@ const SCHED_SHEET_BG = {
   'В':  { red: 0.961, green: 0.055, blue: 0.008 },
   'В*': { red: 1,     green: 1,     blue: 0     },
   'Р*': { red: 0.263, green: 0.525, blue: 0.961 },
+  'О':  { red: 1,     green: 0.584, blue: 0     }, // #ff9500 — отпуск
 };
 // Показываем звёздочки в дропдауне (перед открытием)
 function schedBulkShowStars(sel) {
@@ -4312,13 +4315,14 @@ function parseGroup(rows, daysRow, weekDays) {
   });
 }
 
-// Определяет Р* или В* по цвету фона ячейки из Google Sheets API (float 0-1)
+// Определяет Р* / В* / О по цвету фона ячейки из Google Sheets API (float 0-1)
 function colorToSchedVariant(bg) {
   if (!bg) return null;
   const r = bg.red || 0, g = bg.green || 0, b = bg.blue || 0;
   const near = (a, x) => Math.abs(a - x) < 0.06;
   if (near(r, 0.263) && near(g, 0.525) && near(b, 0.961)) return 'Р*'; // #4386f5
   if (near(r, 1)     && near(g, 1)     && near(b, 0))     return 'В*'; // #ffff00
+  if (near(r, 1)     && near(g, 0.584) && near(b, 0))     return 'О';  // #ff9500 — отпуск
   return null;
 }
 
@@ -4354,6 +4358,7 @@ function resolveSchedVal(textVal, sheetRow, colIdx) {
   const norm = normalizeSchedVal(textVal);
   if (variant === 'Р*' && norm === 'Р') return 'Р*';
   if (variant === 'В*' && norm === 'В') return 'В*';
+  if (variant === 'О'  && norm === 'О') return 'О';
   return textVal;
 }
 
@@ -4466,6 +4471,7 @@ function renderGrafik() {
         let cls, extraStyle;
         if (raw === 'Р*')      { cls = 'dr-star'; extraStyle = ''; }
         else if (raw === 'В*') { cls = 'dv-star'; extraStyle = ''; }
+        else if (raw === 'О')  { cls = 'do-vac';  extraStyle = schedCellAppStyle('О'); }
         else {
           cls = norm==='Р'?'dr':norm==='В'?'dv':norm==='ВС'?'dvs':val?'':'empty';
           extraStyle = schedCellAppStyle(raw); // для В — inline #f50e02
@@ -5031,6 +5037,7 @@ function openSchedCellEditor(e, sheetRow, colIdx, name, dayNum) {
       <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'Р*')" style="background:#4386f5;color:#fff" title="Рабочий день + проверка анкет">Р*</button>
       <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'В')" style="background:#f50e02;color:#fff" title="Выходной день">В</button>
       <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'В*')" style="background:#ffff00;color:#222" title="Обязательный выходной день">В*</button>
+      <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'О')" style="background:#ff9500;color:#fff" title="Отпускной день (засчитывается как выходной)">О</button>
     </div>
     <div class="sched-edit-pop-saving" id="sched-pop-saving" style="display:none">
       <svg class="sched-save-anim" xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
@@ -5147,6 +5154,7 @@ function openScheduleBulkEditor() {
         <option value="Р*" ${val==='Р*'?'selected':''}>Р</option>
         <option value="В"  ${val==='В' ?'selected':''}>В</option>
         <option value="В*" ${val==='В*'?'selected':''}>В</option>
+        <option value="О"  ${val==='О' ?'selected':''}>О</option>
       </select>`; /* звёздочки восстанавливаются через onmousedown перед открытием */
     }).join('');
     return `<div class="sched-bulk-row${editable?'':' locked'}">
@@ -6761,6 +6769,8 @@ function getMgrGreeting(fullName) {
 
   if (sched.today === 'В') {
     phrase = 'отдыхай и набирайся сил!';
+  } else if (sched.today === 'О') {
+    phrase = 'наслаждайся отпуском!';
   } else if (todayR && hour >= 9 && hour < 18) {
     // Рабочее время → ротация каждые 2 часа
     const dayOfYear = Math.floor((ekt - new Date(ekt.getFullYear(), 0, 0)) / 86400000);
@@ -9756,7 +9766,7 @@ function renderCeoDashboard() {
     for (let c = 1; c < daysRow.length; c++) {
       if (parseInt(daysRow[c]) === day) {
         const v = normalizeSchedVal(mgrRow[c]);
-        return v === 'В' || v === ''; // выходной либо пустая клетка
+        return v === 'В' || v === 'О' || v === ''; // выходной / отпуск / пустая
       }
     }
     return false;

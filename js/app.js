@@ -894,20 +894,16 @@ function rankStyles(pos, total) {
   const badgeBg = `rgba(${r},${g},${b},.25)`;
   return { color, border, badgeBg, r, g, b };
 }
-function loader(text='Синхронизация…') {
-  const parts = Array(13).fill('<i></i>').join('');
-  return `<div class="loader"><div class="ldv2">${parts}</div><span class="loader-text">${text}</span></div>`;
-}
-
-// Прогрессирующие фразы. При появлении нового .loader в DOM, через
-// определённые интервалы фразы плавно сменяются (fade-out → fade-in).
-// Цикла нет — последняя фраза остаётся до перезагрузки.
+// Прогрессирующие фразы. После вставки .loader в DOM, через определённые
+// интервалы фразы плавно сменяются (fade-out → fade-in). Без цикла —
+// последняя фраза остаётся до перезагрузки.
 const LOADER_PHRASES = [
   { at: 3000,  text: 'Подождите ещё чуть-чуть…' },
   { at: 6000,  text: 'Данных много, загружаем…' },
   { at: 10000, text: 'Хмм, удивительно, насколько сильно разрослась BD…' },
   { at: 18000, text: 'Что-то наебнулось, обнови ручками…' },
 ];
+let _loaderIdSeq = 0;
 function _attachLoaderProgression(loaderEl) {
   if (!loaderEl || loaderEl.dataset.lpAttached === '1') return;
   loaderEl.dataset.lpAttached = '1';
@@ -925,26 +921,17 @@ function _attachLoaderProgression(loaderEl) {
     }, p.at);
   });
 }
-const _loaderObserver = new MutationObserver(records => {
-  for (const r of records) {
-    r.addedNodes.forEach(node => {
-      if (node.nodeType !== 1) return;
-      if (node.classList && node.classList.contains('loader')) {
-        _attachLoaderProgression(node);
-      } else if (node.querySelectorAll) {
-        node.querySelectorAll('.loader').forEach(_attachLoaderProgression);
-      }
-    });
-  }
-});
-if (typeof document !== 'undefined' && document.body) {
-  _loaderObserver.observe(document.body, { childList: true, subtree: true });
-  document.querySelectorAll('.loader').forEach(_attachLoaderProgression);
-} else {
-  document.addEventListener('DOMContentLoaded', () => {
-    _loaderObserver.observe(document.body, { childList: true, subtree: true });
-    document.querySelectorAll('.loader').forEach(_attachLoaderProgression);
+function loader(text='Синхронизация…') {
+  const id = 'ldr-' + (++_loaderIdSeq);
+  // После вставки HTML — через rAF находим .loader по id и навешиваем прогрессию.
+  // Это заменяет глобальный MutationObserver, который слушал ВСЕ DOM-мутации
+  // и был дорогой на дашборде с частыми перерисовками.
+  requestAnimationFrame(() => {
+    const el = document.getElementById(id);
+    if (el) _attachLoaderProgression(el);
   });
+  const parts = Array(13).fill('<i></i>').join('');
+  return `<div class="loader" id="${id}"><div class="ldv2">${parts}</div><span class="loader-text">${text}</span></div>`;
 }
 
 function medalBtn(idx) {
@@ -958,7 +945,7 @@ let refreshTimer = null;
 let autoRefreshTimer = null;
 let tokenExpiresAt = 0;
 let tokenRequest = null;
-const AUTO_REFRESH_INTERVAL = 60 * 1000; // 1 минута
+const AUTO_REFRESH_INTERVAL = 3 * 60 * 1000; // 3 минуты
 const PRESENCE_STALE_MS = 15 * 60 * 1000;
 
 const firebasePresence = {
@@ -2140,8 +2127,14 @@ async function _apiFetch(sheet, range, key, retryCount = 0) {
     const msg = e.error?.message || r.statusText;
     if (r.status === 401 || r.status === 403 || msg.includes('insufficient')) {
       if (retryCount < 3) {
+        // Чистим и кеш в памяти, и токен в localStorage — иначе ensureToken
+        // вернёт тот же протухший токен и retry снова словит 401
         S.token = null;
         tokenExpiresAt = 0;
+        try {
+          localStorage.removeItem('crm_tok');
+          localStorage.removeItem('crm_exp');
+        } catch (e) { /* iOS PWA private mode иногда блокирует */ }
         try {
           await ensureToken();
           return _apiFetch(sheet, range, key, retryCount + 1);

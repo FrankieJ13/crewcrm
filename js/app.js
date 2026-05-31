@@ -2105,6 +2105,8 @@ async function _apiFetch(sheet, range, key, retryCount = 0) {
       throw new Error('auth');
     }
     if (r.status === 404) throw new Error('NOT_FOUND');
+    // Лист не существует — Sheets API возвращает 400 с «Unable to parse range»
+    if (msg && msg.indexOf('Unable to parse range') >= 0) throw new Error('NOT_FOUND');
     throw new Error(msg);
   }
 
@@ -2122,7 +2124,7 @@ function apiCacheInvalidate(sheetName) {
   }
 }
 
-function setCurrentMonth(newSuffix) {
+async function setCurrentMonth(newSuffix) {
   if (newSuffix === currentSuffix) return;
   currentSuffix = newSuffix;
   updateBadge();
@@ -2130,6 +2132,9 @@ function setCurrentMonth(newSuffix) {
   S.data = { otchet:null, dohod:null, grafik:null, grafikFmt:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null, vizityFmt:null, d_vizityFmt:null };
   apiCacheInvalidate(); // сбрасываем кеш при смене месяца
   _schedWeek = null;
+  // Если выбран будущий месяц — сначала создаём недостающие листы (фон), ПОТОМ грузим вкладку
+  try { await ensureFutureMonthSheets(newSuffix); }
+  catch (e) { console.warn('ensureFutureMonthSheets:', e); }
   // Определяем активный экран и перезагружаем его данные
   const isActive = id => document.getElementById('scr-'+id)?.classList.contains('on');
   if (isActive('profile'))      { if (typeof renderProfile === 'function') renderProfile(); return; }
@@ -2142,6 +2147,74 @@ function setCurrentMonth(newSuffix) {
     || ['otchet','dohod','grafik','instruktsii'].find(t => isActive(t))
     || 'otchet';
   loadTab(activeTab);
+}
+
+/**
+ * Если newSuffix — будущий месяц (относительно сегодня), и не все «месячные»
+ * листы созданы, дублируем их из предыдущего календарного месяца (как
+ * заготовку — с пустой/прошлой структурой). Идемпотентно. Бежит фоном.
+ */
+const FUTURE_SHEET_PREFIXES = [
+  'ВИЗИТЫ', 'Д_ВИЗИТЫ', 'ПЛАН', 'ОТЧЁТ', 'Д_ОТЧЁТ',
+  'ГРАФИКИ', 'CNVRS', 'СТАВКИ', 'Д_СТАВКИ',
+];
+let _ensureFutureRunning = false;
+async function ensureFutureMonthSheets(newSuffix) {
+  // newSuffix формат MMYY
+  if (!/^\d{4}$/.test(newSuffix)) return;
+  const now = new Date();
+  const curSfx = String(now.getMonth() + 1).padStart(2, '0') + String(now.getFullYear()).slice(-2);
+  // newSuffix считается «будущим», если он строго больше календарного текущего
+  // (сравниваем по YY+MM — но YY двухзначное — преобразуем в YYYY+MM)
+  const yKey = sfx => 2000 + parseInt(sfx.slice(2, 4)) + parseInt(sfx.slice(0, 2)) / 100;
+  if (yKey(newSuffix) <= yKey(curSfx)) return;
+  if (_ensureFutureRunning) return;
+  _ensureFutureRunning = true;
+  try {
+    // Берём предыдущий месяц как источник: для targetMonth = newSuffix
+    // sourceSuffix = newSuffix − 1 месяц
+    const mo = parseInt(newSuffix.slice(0, 2));
+    const yr = 2000 + parseInt(newSuffix.slice(2, 4));
+    const prev = new Date(yr, mo - 2, 1);
+    const sourceSuffix = String(prev.getMonth() + 1).padStart(2, '0') + String(prev.getFullYear()).slice(-2);
+
+    // 1) Список существующих листов
+    const metaResp = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}?fields=sheets.properties(sheetId,title)`,
+      { headers: await authHeaders() }
+    );
+    if (!metaResp.ok) throw new Error('meta fetch failed');
+    const meta = await metaResp.json();
+    const sheets = (meta.sheets || []).map(s => s.properties);
+    const titles = new Set(sheets.map(s => s.title));
+    const byTitle = Object.fromEntries(sheets.map(s => [s.title, s.sheetId]));
+
+    // 2) Какие листы нужно создать
+    const requests = [];
+    const created = [];
+    for (const prefix of FUTURE_SHEET_PREFIXES) {
+      const target = prefix + newSuffix;
+      if (titles.has(target)) continue;
+      const source = prefix + sourceSuffix;
+      const sourceId = byTitle[source];
+      if (sourceId == null) continue; // нет исходника — пропускаем
+      requests.push({ duplicateSheet: { sourceSheetId: sourceId, newSheetName: target } });
+      created.push(target);
+    }
+    if (!requests.length) return;
+    toast('Создаю листы на ' + getMonthName(newSuffix) + '…', 'i');
+    const dupResp = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`,
+      { method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ requests }) }
+    );
+    if (!dupResp.ok) throw new Error('duplicate failed: ' + dupResp.status);
+    toast('Создано листов: ' + created.length, 's');
+    apiCacheInvalidate();
+  } catch (e) {
+    console.warn('ensureFutureMonthSheets error', e);
+  } finally {
+    _ensureFutureRunning = false;
+  }
 }
 
 function goTab(tab) {

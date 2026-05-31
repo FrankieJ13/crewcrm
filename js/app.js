@@ -5924,6 +5924,7 @@ function toGenitive(firstName) {
   if (n.endsWith('ия')) return n.slice(0,-1) + 'и';   // Анастасия → Анастасии
   if (n.endsWith('ий')) return n.slice(0,-2) + 'ия';   // Дмитрий → Дмитрия
   if (n.endsWith('ья')) return n.slice(0,-1) + 'и';    // Илья → Ильи, Наталья → Натальи
+  if (n.endsWith('й'))  return n.slice(0,-1) + 'я';    // Николай → Николая, Сергей → Сергея, Андрей → Андрея
   if (n.endsWith('я'))  return n.slice(0,-1) + 'и';    // прочие на -я
   if (n.endsWith('а'))  return n.slice(0,-1) + 'ы';    // Никита → Никиты, Анна → Анны
   return n + 'а';                                        // Кирилл → Кирилла, Эдуард → Эдуарда

@@ -163,10 +163,22 @@ function toggleHmbMonth(e) {
     tSub.classList.remove('open');
     if (tTrig) tTrig.classList.remove('expanded');
   }
-  // Строим список месяцев
+  // Строим список месяцев. Если до конца текущего месяца ≤5 дней (включая
+  // сегодня) — добавляем БУДУЩИЙ месяц в начало списка (но дефолтно активен
+  // всегда текущий — currentSuffix инициализирован под сегодня).
   sub.innerHTML = '';
+  const months = [];
+  const today = new Date();
+  const daysInCur = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const daysLeftIncl = daysInCur - today.getDate() + 1;
+  if (daysLeftIncl <= 5) {
+    months.push(new Date(today.getFullYear(), today.getMonth() + 1, 1));
+  }
   for (let i = 0; i < 6; i++) {
     const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
+    months.push(d);
+  }
+  months.forEach(d => {
     const yy = d.getFullYear().toString().slice(-2);
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const suffix = mm + yy;
@@ -176,7 +188,7 @@ function toggleHmbMonth(e) {
     btn.innerHTML = `<span style="font-family:'Unbounded',sans-serif;font-size:11px;font-weight:800;min-width:20px;${isActive?'color:var(--acc)':''}">${mm}</span><span style="${isActive?'color:var(--acc)':''}">${getMonthName(suffix)}</span>${isActive?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>':''}`;
     btn.onclick = () => { setCurrentMonth(suffix); closeHamburger(); };
     sub.appendChild(btn);
-  }
+  });
   sub.style.display = 'flex';
   sub.style.flexDirection = 'column';
   if (trigger) trigger.classList.add('expanded');

@@ -896,7 +896,55 @@ function rankStyles(pos, total) {
 }
 function loader(text='Синхронизация…') {
   const parts = Array(13).fill('<i></i>').join('');
-  return `<div class="loader"><div class="ldv2">${parts}</div><span>${text}</span></div>`;
+  return `<div class="loader"><div class="ldv2">${parts}</div><span class="loader-text">${text}</span></div>`;
+}
+
+// Прогрессирующие фразы. При появлении нового .loader в DOM, через
+// определённые интервалы фразы плавно сменяются (fade-out → fade-in).
+// Цикла нет — последняя фраза остаётся до перезагрузки.
+const LOADER_PHRASES = [
+  { at: 3000,  text: 'Подождите ещё чуть-чуть…' },
+  { at: 6000,  text: 'Данных много, загружаем…' },
+  { at: 10000, text: 'Хмм, удивительно, насколько сильно разрослась BD…' },
+  { at: 18000, text: 'Что-то наебнулось, обнови ручками…' },
+];
+function _attachLoaderProgression(loaderEl) {
+  if (!loaderEl || loaderEl.dataset.lpAttached === '1') return;
+  loaderEl.dataset.lpAttached = '1';
+  const span = loaderEl.querySelector('.loader-text');
+  if (!span) return;
+  LOADER_PHRASES.forEach(p => {
+    setTimeout(() => {
+      if (!loaderEl.isConnected) return;
+      span.classList.add('loader-text-fade');
+      setTimeout(() => {
+        if (!loaderEl.isConnected) return;
+        span.textContent = p.text;
+        span.classList.remove('loader-text-fade');
+      }, 320);
+    }, p.at);
+  });
+}
+const _loaderObserver = new MutationObserver(records => {
+  for (const r of records) {
+    r.addedNodes.forEach(node => {
+      if (node.nodeType !== 1) return;
+      if (node.classList && node.classList.contains('loader')) {
+        _attachLoaderProgression(node);
+      } else if (node.querySelectorAll) {
+        node.querySelectorAll('.loader').forEach(_attachLoaderProgression);
+      }
+    });
+  }
+});
+if (typeof document !== 'undefined' && document.body) {
+  _loaderObserver.observe(document.body, { childList: true, subtree: true });
+  document.querySelectorAll('.loader').forEach(_attachLoaderProgression);
+} else {
+  document.addEventListener('DOMContentLoaded', () => {
+    _loaderObserver.observe(document.body, { childList: true, subtree: true });
+    document.querySelectorAll('.loader').forEach(_attachLoaderProgression);
+  });
 }
 
 function medalBtn(idx) {
@@ -2213,20 +2261,52 @@ async function ensureFutureMonthSheets(newSuffix) {
       { method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ requests }) }
     );
     if (!dupResp.ok) throw new Error('duplicate failed: ' + dupResp.status);
+    // Собираем новые sheetId из ответа (нужны для сброса форматирования)
+    const dupBody = await dupResp.json().catch(() => ({}));
+    const newSheetIds = {};
+    (dupBody.replies || []).forEach(rep => {
+      const props = rep.duplicateSheet?.properties;
+      if (props && props.title) newSheetIds[props.title] = props.sheetId;
+    });
 
-    // 3) Для листов «ввода» — чистим данные (строки 2+), сохраняя заголовок и
-    // форматирование. Используется values:batchClear.
-    const clearRanges = created
-      .filter(c => FUTURE_SHEET_CLEAR_DATA.has(c.prefix))
-      .map(c => `'${c.target}'!A2:Z10000`);
-    if (clearRanges.length) {
+    // 3) Для листов «ввода» — чистим данные и сбрасываем формат (фон → белый,
+    // текст → чёрный), чтобы не было «шлейфа» от ручных заливок прошлого месяца.
+    const toClear = created.filter(c => FUTURE_SHEET_CLEAR_DATA.has(c.prefix));
+    if (toClear.length) {
+      // 3a) Очистка значений
       try {
         const clearResp = await fetch(
           `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values:batchClear`,
-          { method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ ranges: clearRanges }) }
+          { method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ ranges: toClear.map(c => `'${c.target}'!A2:Z10000`) }) }
         );
         if (!clearResp.ok) console.warn('batchClear failed', clearResp.status);
       } catch (e) { console.warn('batchClear error', e); }
+      // 3b) Сброс формата (bg=#fff, text=#000) для строк 2+
+      const fmtReqs = toClear.map(c => {
+        const sheetId = newSheetIds[c.target];
+        if (sheetId == null) return null;
+        return {
+          repeatCell: {
+            range: { sheetId, startRowIndex: 1, startColumnIndex: 0 }, // строки 2..N, все колонки
+            cell: {
+              userEnteredFormat: {
+                backgroundColor: { red: 1, green: 1, blue: 1 },
+                textFormat: { foregroundColor: { red: 0, green: 0, blue: 0 } },
+              },
+            },
+            fields: 'userEnteredFormat.backgroundColor,userEnteredFormat.textFormat.foregroundColor',
+          },
+        };
+      }).filter(Boolean);
+      if (fmtReqs.length) {
+        try {
+          const fmtResp = await fetch(
+            `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`,
+            { method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ requests: fmtReqs }) }
+          );
+          if (!fmtResp.ok) console.warn('format reset failed', fmtResp.status);
+        } catch (e) { console.warn('format reset error', e); }
+      }
     }
     toast('Создано листов: ' + created.length, 's');
     apiCacheInvalidate();

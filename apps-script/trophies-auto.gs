@@ -135,6 +135,12 @@ function awardMonthlyTrophiesFor(targetDate) {
   if (top[1]) push('numbertwo_monthly',   top[1].name, `${period} · ${Math.round(top[1].prog)}%`);
   if (top[2]) push('numberthree_monthly', top[2].name, `${period} · ${Math.round(top[2].prog)}%`);
 
+  // 1b) АНТИ-ТОП1/2/3 — худший прогресс (среди тех у кого был план > 0)
+  const antiTop = arr.filter(m => m.plan > 0).sort((a, b) => a.prog - b.prog);
+  if (antiTop[0]) push('antinumberone_monthly',   antiTop[0].name, `${period} · ${Math.round(antiTop[0].prog)}%`);
+  if (antiTop[1]) push('antinumbertwo_monthly',   antiTop[1].name, `${period} · ${Math.round(antiTop[1].prog)}%`);
+  if (antiTop[2]) push('antinumberthree_monthly', antiTop[2].name, `${period} · ${Math.round(antiTop[2].prog)}%`);
+
   // 2) Normal / Hard / I'm Super-man — выдаём по самой высокой достигнутой планке
   arr.forEach(m => {
     if (m.prog >= 150 && m.stats.kred >= 50) {
@@ -150,19 +156,32 @@ function awardMonthlyTrophiesFor(targetDate) {
   const byKom = arr.filter(m => m.stats.kom > 0).sort((a, b) => b.stats.kom - a.stats.kom);
   if (byKom[0]) push('commission_monthly', byKom[0].name, `${period} · ${byKom[0].stats.kom} комиссии`);
 
-  // 4) Счастливое число CRM — 33 кредита
+  // 4) Кредиты по дням: 50+ → Святой Грааль, иначе 33+ → Счастливое число CRM
   arr.forEach(m => {
-    if (m.stats.kred >= 33) push('kd_monthly', m.name, `${period} · ${m.stats.kred} кредитов`);
+    if (m.stats.kred >= 50) {
+      push('megakd_monthly', m.name, `${period} · ${m.stats.kred} кредитов`);
+    } else if (m.stats.kred >= 33) {
+      push('kd_monthly',     m.name, `${period} · ${m.stats.kred} кредитов`);
+    }
   });
 
-  // 5) Туз в рукаве — 10 наличных продаж (без обмена)
+  // 5) Наличные: 20+ → Гамбит, иначе 10+ → Туз в рукаве
   arr.forEach(m => {
-    if (m.stats.nalOnly >= 10) push('cash_monthly', m.name, `${period} · ${m.stats.nalOnly} налом`);
+    if (m.stats.nalOnly >= 20) {
+      push('megacash_monthly', m.name, `${period} · ${m.stats.nalOnly} налом`);
+    } else if (m.stats.nalOnly >= 10) {
+      push('cash_monthly',     m.name, `${period} · ${m.stats.nalOnly} налом`);
+    }
   });
 
-  // 6) Три в ряд — 3 кредитные сделки в один день
+  // 6) Подряд в один день: 10+ → Флеш-рояль, иначе 3+ → Три в ряд
   arr.forEach(m => {
-    if (hasTripleCreditDay(m.stats.kreditDays)) push('3in1_monthly', m.name, period);
+    const maxInDay = maxCreditsInSingleDay(m.stats.kreditDays);
+    if (maxInDay >= 10) {
+      push('10in1_monthly', m.name, `${period} · ${maxInDay} в день`);
+    } else if (maxInDay >= 3) {
+      push('3in1_monthly',  m.name, period);
+    }
   });
 
   // 7) Идеальная неделя — 7 дней подряд без отказов/ФССП
@@ -241,6 +260,9 @@ const MILESTONE_TROPHIES = [
   { code: '50trophies_once',  threshold: 50 },
   { code: '75trophies_once',  threshold: 75 },
   { code: '100trophies_once', threshold: 100 },
+  { code: '150trophies_once', threshold: 150 },
+  { code: '200trophies_once', threshold: 200 },
+  { code: '300trophies_once', threshold: 300 },
 ];
 
 function awardMilestoneTrophies(now) {
@@ -349,6 +371,11 @@ function aggregateInto(rows, mgrs) {
 function hasTripleCreditDay(byDay) {
   for (const k in byDay) if (byDay[k] >= 3) return true;
   return false;
+}
+function maxCreditsInSingleDay(byDay) {
+  let m = 0;
+  for (const k in byDay) if (byDay[k] > m) m = byDay[k];
+  return m;
 }
 
 /* ──────────────────────── УТИЛИТЫ ──────────────────────── */

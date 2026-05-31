@@ -11940,7 +11940,8 @@ async function renderTrophiesPage() {
             <div class="trophy-card-name">${escapeHtml(t.name || t.code)}${countLbl}</div>
             ${srcChip}
           </div>
-          <div class="trophy-card-desc">${escapeHtml(t.description || '')}</div>
+          <div class="trophy-card-desc">${escapeHtml(t.description || t.script || '')}</div>
+          ${isCeoLikeRole && t.script ? `<div class="trophy-card-script" title="Сценарий выдачи (виден только CEO/ROP)">${escapeHtml(t.script)}</div>` : ''}
           ${dateLbl ? `<div class="trophy-card-date">получен: ${dateLbl}</div>` : ''}
         </div>
       </div>`;

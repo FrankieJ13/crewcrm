@@ -1,12 +1,13 @@
 {
-  "version": 6,
+  "version": 7,
   "updatedAt": "2026-05-30",
-  "notes": "Категория определяется суффиксом code: _monthly | _annual | _once. AUTO-трофеи начисляются автоматизацией (Apps Script) 2-го числа следующего месяца. MANUAL — вручную через лист TrophyAwards. Менеджер может получать один и тот же трофей несколько раз (повторные строки в TrophyAwards).",
+  "notes": "script — внутренний сценарий выдачи (виден только CEO/ROP); description — пользовательский текст (виден всем). Категория определяется суффиксом code: _monthly | _annual | _once. AUTO-трофеи начисляются автоматизацией (Apps Script). MANUAL — вручную через лист TrophyAwards.",
   "trophies": [
     {
       "code": "numberone_monthly",
       "name": "ТОП1",
-      "description": "За выполнение плана на 100% и более — первое место.",
+      "script": "За выполнение плана на 100% и более в текущем месяце — 1-ое место.",
+      "description": "1-ое место за эффективность в текущем месяце.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -15,7 +16,8 @@
     {
       "code": "numbertwo_monthly",
       "name": "ТОП2",
-      "description": "За выполнение плана на 100% и более — второе место.",
+      "script": "За выполнение плана на 100% и более в текущем месяце — 2-ое место.",
+      "description": "2-ое место за эффективность в текущем месяце.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -24,7 +26,8 @@
     {
       "code": "numberthree_monthly",
       "name": "ТОП3",
-      "description": "За выполнение плана на 100% и более — третье место.",
+      "script": "За выполнение плана на 100% и более в текущем месяце — 3-ое место.",
+      "description": "3-е место за эффективность в текущем месяце.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -33,7 +36,8 @@
     {
       "code": "snatch_monthly",
       "name": "Большой куш",
-      "description": "За последние полгода самый высокий доход по отделу (CRM + ДОЖИМ).",
+      "script": "За последние 6 месяцев у менеджера самый высокий результат по доходу (зарплата) по отделу (CRM+ДОЖИМ).",
+      "description": "Последние полгода самый высокий доход по отделу (CRM+ДОЖИМ).",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -42,7 +46,8 @@
     {
       "code": "normal_monthly",
       "name": "Hmm, nice!",
-      "description": "Закрыл план по итогу месяца на 120% и более + сделал 20 продаж в кредит.",
+      "script": "Закрыл план по итогу месяца на 120% и более + сделал 20 продаж в кредит. Получить может несколько менеджеров с таким результатом.",
+      "description": "План по итогу месяца закрыт на 120% и более + сделал 20 продаж в кредит.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -51,7 +56,8 @@
     {
       "code": "hard_monthly",
       "name": "You're awesome!",
-      "description": "Закрыл план по итогу месяца на 130% и более + сделал 30 продаж в кредит.",
+      "script": "Закрыл план по итогу месяца на 130% и более + сделал 30 продаж в кредит. Получить может несколько менеджеров с таким результатом.",
+      "description": "План по итогу месяца закрыт на 130% и более + сделал 30 продаж в кредит.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -60,7 +66,8 @@
     {
       "code": "veryhard_monthly",
       "name": "I'm Super-man",
-      "description": "Закрыл план по итогу месяца на 150% и более + сделал 50 продаж в кредит.",
+      "script": "Закрыл план по итогу месяца на 150% и более + сделал 50 продаж в кредит. Получить может несколько менеджеров с таким результатом.",
+      "description": "План по итогу месяца закрыт на 150% и более + сделал 50 продаж в кредит.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -69,7 +76,8 @@
     {
       "code": "emolument_monthly",
       "name": "ВА-Банк",
-      "description": "За самый высокий доход по итогу месяца.",
+      "script": "За самый высокий доход по итогу месяца среди всех менеджеров CRM+ДОЖИМ.",
+      "description": "Самый высокий доход по итогу месяца.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
@@ -78,6 +86,7 @@
     {
       "code": "commission_monthly",
       "name": "Коллектор",
+      "script": "Поставил больше всех авто на комиссию в текущем месяце, после успешной сверки.",
       "description": "Поставил больше всех авто на комиссию в текущем месяце.",
       "type": "positive",
       "category": "monthly",
@@ -87,24 +96,47 @@
     {
       "code": "kd_monthly",
       "name": "Счастливое число CRM",
-      "description": "За месяц сделал 33 и более продажи в кредит.",
+      "script": "За месяц сделал 33 и более продаж в кредит.",
+      "description": "За месяц 33 и более успешных реализаций в кредит.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
       "icon": "kd_monthly.png"
     },
     {
+      "code": "megakd_monthly",
+      "name": "Святой Грааль",
+      "script": "За месяц сделал 50 и более продаж в кредит.",
+      "description": "За месяц 50 и более успешных реализаций в кредит.",
+      "type": "positive",
+      "category": "monthly",
+      "auto": true,
+      "icon": "megakd_monthly.png"
+    },
+    {
       "code": "cash_monthly",
       "name": "Туз в рукаве",
-      "description": "За месяц сделал 10 продаж за наличные.",
+      "script": "За месяц сделал 10 продаж за наличные.",
+      "description": "За месяц 10 и более успешных реализаций за наличные.",
       "type": "positive",
       "category": "monthly",
       "auto": true,
       "icon": "cash_monthly.png"
     },
     {
+      "code": "megacash_monthly",
+      "name": "Гамбит",
+      "script": "За месяц сделал 20 продаж за наличные.",
+      "description": "За месяц 20 и более успешных реализаций за наличные.",
+      "type": "positive",
+      "category": "monthly",
+      "auto": true,
+      "icon": "megacash_monthly.png"
+    },
+    {
       "code": "3in1_monthly",
       "name": "Три в ряд",
+      "script": "3 кредитных сделки подряд (день в день) в текущем месяце.",
       "description": "3 кредитных сделки подряд (день в день) в текущем месяце.",
       "type": "positive",
       "category": "monthly",
@@ -112,8 +144,19 @@
       "icon": "3in1_monthly.png"
     },
     {
+      "code": "10in1_monthly",
+      "name": "Флеш-рояль",
+      "script": "10 кредитных сделок подряд (день в день) в текущем месяце.",
+      "description": "10 кредитных сделок подряд (день в день) в текущем месяце.",
+      "type": "positive",
+      "category": "monthly",
+      "auto": true,
+      "icon": "10in1_monthly.png"
+    },
+    {
       "code": "notfailure_monthly",
       "name": "Идеальная неделя",
+      "script": "У менеджера 7 дней подряд не было ОТКАЗ банка и ФССП, не подаем.",
       "description": "7 дней подряд не было отказов банка.",
       "type": "positive",
       "category": "monthly",
@@ -123,7 +166,8 @@
     {
       "code": "profitability_monthly",
       "name": "MVP",
-      "description": "За самую большую доходность с одной сделки в текущем месяце.",
+      "script": "За самую большую доходность с одной сделки в текущем месяце (проверяется по amoCRM).",
+      "description": "Самая большая доходность с одной сделки в текущем месяце.",
       "type": "positive",
       "category": "monthly",
       "auto": false,
@@ -132,6 +176,7 @@
     {
       "code": "slaughter_monthly",
       "name": "Болтун",
+      "script": "Больше всех разговаривал с клиентами в текущем месяце (проверяется по amoCRM).",
       "description": "Больше всех разговаривал с клиентами в текущем месяце.",
       "type": "neutral",
       "category": "monthly",
@@ -141,7 +186,8 @@
     {
       "code": "parking_monthly",
       "name": "Автоколлапс",
-      "description": "Опоздал из-за поиска парковки.",
+      "script": "Опоздал из-за поиска парковки.",
+      "description": "Опоздал по причине поиска парковки.",
       "type": "negative",
       "category": "monthly",
       "auto": false,
@@ -150,7 +196,8 @@
     {
       "code": "lateness_monthly",
       "name": "Опоздун",
-      "description": "За опоздание, любому из менеджеров.",
+      "script": "За опоздание без уважительной причины, любому из менеджеров.",
+      "description": "Опоздание на работу без уважительной причины.",
       "type": "negative",
       "category": "monthly",
       "auto": false,
@@ -158,17 +205,49 @@
     },
     {
       "code": "overslept_monthly",
-      "name": "Ловец снов",
-      "description": "Опоздание, по причине «проспал».",
+      "name": "Ержан, вставай!",
+      "script": "За опоздание по причине «Я — проспал», любому из менеджеров.",
+      "description": "Опоздание, по причине «Я — проспал».",
       "type": "negative",
       "category": "monthly",
       "auto": false,
       "icon": "overslept_monthly.png"
     },
     {
+      "code": "antinumberone_monthly",
+      "name": "АНТИ-ТОП1",
+      "script": "За худшее невыполнение плана в текущем месяце — 1-ое место с конца.",
+      "description": "1-ое место за худший результат в текущем месяце.",
+      "type": "negative",
+      "category": "monthly",
+      "auto": true,
+      "icon": "antinumberone_monthly.png"
+    },
+    {
+      "code": "antinumbertwo_monthly",
+      "name": "АНТИ-ТОП2",
+      "script": "За худшее невыполнение плана в текущем месяце — 2-ое место с конца.",
+      "description": "2-ое место за худший результат в текущем месяце.",
+      "type": "negative",
+      "category": "monthly",
+      "auto": true,
+      "icon": "antinumbertwo_monthly.png"
+    },
+    {
+      "code": "antinumberthree_monthly",
+      "name": "АНТИ-ТОП3",
+      "script": "За худшее невыполнение плана в текущем месяце — 3-ое место с конца.",
+      "description": "3-е место за худший результат в текущем месяце.",
+      "type": "negative",
+      "category": "monthly",
+      "auto": true,
+      "icon": "antinumberthree_monthly.png"
+    },
+    {
       "code": "anniversary_annual",
       "name": "Anniversary Edition",
-      "description": "Год работы в Crystal Motors. Накопительный — выдаётся каждый год, иконка с годом.",
+      "script": "За год работы в Crystal Motors. Накопительный — выдаётся каждый год, иконка с годом.",
+      "description": "Ты в Crystal Motors год!",
       "type": "neutral",
       "category": "annual",
       "auto": true,
@@ -177,7 +256,8 @@
     {
       "code": "hb_annual",
       "name": "Happy Birthday",
-      "description": "С днём рождения, коллега! Накопительный — выдаётся каждый год.",
+      "script": "С днём рождения, коллега! Накопительный — выдаётся каждый год.",
+      "description": "С днём рождения, коллега!",
       "type": "neutral",
       "category": "annual",
       "auto": true,
@@ -186,7 +266,8 @@
     {
       "code": "hny_annual",
       "name": "HNY",
-      "description": "С Новым годом, коллега! Накопительный — выдаётся каждый год.",
+      "script": "С Новым годом, коллега! Накопительный — выдаётся каждый год.",
+      "description": "С Новым годом, коллега!",
       "type": "neutral",
       "category": "annual",
       "auto": true,
@@ -194,8 +275,9 @@
     },
     {
       "code": "welcome_once",
-      "name": "Welcome",
-      "description": "Приветственный трофей — добро пожаловать в команду Crystal Motors!",
+      "name": "Welcome to the Crystal Motors!",
+      "script": "Приветственный трофей. Выдается новому сотруднику после успешного трудоустройства.",
+      "description": "Добро пожаловать в команду Crystal Motors!",
       "type": "positive",
       "category": "once",
       "auto": false,
@@ -204,6 +286,7 @@
     {
       "code": "mentor_once",
       "name": "деМентор",
+      "script": "Выдается самому активному члену команды, который участвовал в обучении нового сотрудника.",
       "description": "Был наставником нового сотрудника.",
       "type": "positive",
       "category": "once",
@@ -213,6 +296,7 @@
     {
       "code": "25trophies_once",
       "name": "Бронза",
+      "script": "Выпадает за получение 25 трофеев.",
       "description": "За получение 25 трофеев.",
       "type": "positive",
       "category": "once",
@@ -222,6 +306,7 @@
     {
       "code": "50trophies_once",
       "name": "Серебро",
+      "script": "Выпадает за получение 50 трофеев.",
       "description": "За получение 50 трофеев.",
       "type": "positive",
       "category": "once",
@@ -231,6 +316,7 @@
     {
       "code": "75trophies_once",
       "name": "Золото",
+      "script": "Выпадает за получение 75 трофеев.",
       "description": "За получение 75 трофеев.",
       "type": "positive",
       "category": "once",
@@ -240,11 +326,42 @@
     {
       "code": "100trophies_once",
       "name": "Платина",
+      "script": "Выпадает за получение 100 трофеев.",
       "description": "За получение 100 трофеев.",
       "type": "positive",
       "category": "once",
       "auto": true,
       "icon": "100trophies_once.png"
+    },
+    {
+      "code": "150trophies_once",
+      "name": "Изумруд",
+      "script": "Выпадает за получение 150 трофеев.",
+      "description": "За получение 150 трофеев.",
+      "type": "positive",
+      "category": "once",
+      "auto": true,
+      "icon": "150trophies_once.png"
+    },
+    {
+      "code": "200trophies_once",
+      "name": "Бриллиант",
+      "script": "Выпадает за получение 200 трофеев.",
+      "description": "За получение 200 трофеев.",
+      "type": "positive",
+      "category": "once",
+      "auto": true,
+      "icon": "200trophies_once.png"
+    },
+    {
+      "code": "300trophies_once",
+      "name": "Алмаз",
+      "script": "Выпадает за получение 300 трофеев.",
+      "description": "За получение 300 трофеев.",
+      "type": "positive",
+      "category": "once",
+      "auto": true,
+      "icon": "300trophies_once.png"
     }
   ]
 }

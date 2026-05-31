@@ -7476,6 +7476,17 @@ body.cosmic .profile-modal-close {
   color: var(--txt2);
   line-height: 1.4;
 }
+/* Сценарий выдачи — только для CEO/ROP, мелкий, с боковой акцент-линией */
+.trophy-card-script {
+  font-size: 10.5px;
+  color: var(--txt3);
+  line-height: 1.35;
+  margin-top: 4px;
+  padding-left: 8px;
+  border-left: 2px solid var(--acc-bdr);
+  font-style: italic;
+}
+body.cosmic .trophy-card-script { color: #b0b0b0 !important; border-color: rgba(255,255,255,0.18) !important; }
 .trophy-card-date {
   font-size: 10px;
   color: var(--txt3);

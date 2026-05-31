@@ -8105,3 +8105,144 @@ body.fluent .vac-cell        { color: #111; }
     align-self: baseline;
   }
 }
+
+/* ═══ Award trophy modal (CEO/ROP) ═══ */
+.trophies-award-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 10px;
+  padding: 8px 14px; border-radius: 999px;
+  background: var(--acc); color: var(--bg);
+  border: 0; cursor: pointer;
+  font-family: 'Unbounded', sans-serif;
+  font-size: 11px; font-weight: 800;
+  letter-spacing: 0.04em;
+  transition: opacity .15s, transform .12s;
+}
+.trophies-award-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.award-trophy-overlay {
+  position: fixed; inset: 0; z-index: 100001;
+  background: rgba(0,0,0,.55);
+  display: none;
+  align-items: center; justify-content: center;
+  padding: 14px;
+}
+.award-trophy-overlay.open { display: flex; }
+.award-trophy-shell {
+  width: 100%; max-width: 460px;
+  max-height: 88vh;
+  background: var(--bg2); color: var(--txt);
+  border-radius: var(--r2);
+  border: 1px solid var(--line);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(0,0,0,.45);
+}
+.award-trophy-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg2);
+}
+.award-trophy-title {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 14px; font-weight: 800; color: var(--txt);
+}
+.award-trophy-close {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid var(--line); background: transparent; color: var(--txt);
+  font-size: 20px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.award-trophy-body {
+  padding: 14px; overflow-y: auto;
+}
+.award-loading { text-align: center; padding: 30px; color: var(--txt3); font-size: 13px; }
+
+.award-form { display: flex; flex-direction: column; gap: 12px; }
+.award-field { display: flex; flex-direction: column; gap: 6px; }
+.award-label {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--acc);
+}
+.award-hint { font-family: -apple-system, sans-serif; font-weight: 500; color: var(--txt3); text-transform: none; }
+.award-input {
+  font: inherit; font-size: 13px;
+  padding: 10px 12px; border-radius: 8px;
+  background: var(--bg); color: var(--txt);
+  border: 1px solid var(--line);
+  outline: none;
+}
+.award-input:focus { border-color: var(--acc); }
+.award-actions {
+  display: flex; gap: 8px; margin-top: 6px;
+}
+.award-cancel, .award-submit {
+  flex: 1; padding: 11px; border-radius: 10px;
+  border: 1px solid var(--line); cursor: pointer;
+  font-family: 'Unbounded', sans-serif;
+  font-size: 12px; font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.award-cancel { background: transparent; color: var(--txt); }
+.award-submit { background: var(--acc); color: var(--bg); border-color: var(--acc); }
+.award-submit:disabled { opacity: .5; cursor: not-allowed; }
+.award-msg { font-size: 12px; min-height: 16px; text-align: center; color: var(--txt2); }
+.award-msg.award-ok  { color: var(--grn); font-weight: 700; }
+.award-msg.award-err { color: var(--red); font-weight: 700; }
+
+/* ═══ Sverka quick-edit popover (CEO/ROP) ═══ */
+.vt-sverka-clickable {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: transform .12s, filter .15s;
+  border-radius: 6px;
+}
+.vt-sverka-clickable:hover { transform: scale(1.12); filter: brightness(1.15); }
+.vt-sverka-clickable:active { transform: scale(0.95); }
+
+.sverka-popover {
+  position: fixed; z-index: 100002;
+  width: 180px;
+  padding: 8px;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.sverka-pop-title {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--txt3);
+  text-align: center;
+  padding: 0 2px;
+}
+.sverka-pop-actions { display: flex; gap: 4px; }
+.sverka-pop-btn {
+  flex: 1;
+  padding: 7px 4px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--txt);
+  font-family: 'Unbounded', sans-serif;
+  font-size: 11px; font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, transform .12s;
+}
+.sverka-pop-btn:hover { transform: translateY(-1px); }
+.sverka-pop-btn.yes   { color: var(--grn); border-color: rgba(46,213,115,0.45); }
+.sverka-pop-btn.yes:hover   { background: rgba(46,213,115,0.18); }
+.sverka-pop-btn.no    { color: var(--red); border-color: rgba(255,71,87,0.45); }
+.sverka-pop-btn.no:hover    { background: rgba(255,71,87,0.18); }
+.sverka-pop-btn.clear { color: var(--txt2); }
+.sverka-pop-btn.active {
+  background: rgba(var(--acc-rgb), 0.18);
+  border-color: var(--acc);
+  color: var(--acc);
+}

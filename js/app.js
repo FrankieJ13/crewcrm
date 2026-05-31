@@ -8141,8 +8141,8 @@ function openMgrDealsModal(nameLow, kind) {
       if (!ok) continue;
       collected.push({
         date:   String(row[0] || '').trim(),
+        phone:  String(row[2] || '').trim() || '—',
         city:   String(row[3] || '').trim() || '—',
-        source: String(row[5] || '').trim() || '—',
         status: String(row[4] || '').trim() || '—',
       });
     }
@@ -8173,7 +8173,7 @@ function openMgrDealsModal(nameLow, kind) {
       buffer += `<tr>
         <td class="ceo-deals-date">${dd}</td>
         <td class="ceo-deals-city">${d.city}</td>
-        <td class="ceo-deals-src">${d.source}</td>
+        <td class="ceo-deals-src">${d.phone}</td>
         <td class="ceo-deals-src">${d.status}</td>
       </tr>`;
     });
@@ -8187,7 +8187,7 @@ function openMgrDealsModal(nameLow, kind) {
   mc.removeAttribute('data-modal');
   mc.innerHTML = `
     <table class="ceo-deals-table">
-      <thead><tr><th>Дата</th><th>Город</th><th>Источник</th><th>Статус</th></tr></thead>
+      <thead><tr><th>Дата</th><th>Город</th><th>Телефон</th><th>Статус</th></tr></thead>
       <tbody>${rowsHtml}</tbody>
     </table>`;
   document.getElementById('income-overlay').classList.add('open', 'ceo-mode');
@@ -10784,7 +10784,13 @@ function renderVizRow(row, dept, locked, isFirstOfDate) {
     ? `<span class="vt-status-chip ${chipClass}" title="${label}">${label.slice(0,18)}${label.length>18?'…':''}</span>` : '';
   const formHTML = locked ? '' : renderVizForm(row, dept);
   const dateStyle = isFirstOfDate ? 'font-weight:700;color:var(--txt)' : '';
-  const sverka = getVizSverkaMark(d[13]);
+  const sverkaIcon = getVizSverkaMark(d[13]);
+  // Для CEO/ROP — оборачиваем иконку сверки в кликабельный попап
+  const meRow = findUserInSheet();
+  const isCeoView = meRow && isCeoLike(meRow.role);
+  const sverkaWrap = isCeoView
+    ? `<span class="vt-sverka-clickable" onclick="event.stopPropagation();openSverkaPopup(event, '${dept}', ${row._sheetRow}, ${JSON.stringify(String(d[13]||'')).replace(/"/g,'&quot;')})">${sverkaIcon}</span>`
+    : sverkaIcon;
   return `
     <div class="vt-row" id="vt-row-${row._sheetRow}">
       <div class="vt-row-card" id="vt-card-${row._sheetRow}">
@@ -10794,7 +10800,7 @@ function renderVizRow(row, dept, locked, isFirstOfDate) {
             <div class="vt-row-name">${d[1]||'—'}</div>
             <div class="vt-row-meta"><span class="vt-row-meta-text">${d[8]||''}${d[6]?' · '+d[6]:''}</span></div>
           </div>
-          ${sverka}
+          ${sverkaWrap}
           ${chip}
           <button class="vt-expand-btn" onclick="event.stopPropagation();vizToggleExpand(${row._sheetRow})">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
@@ -10804,6 +10810,79 @@ function renderVizRow(row, dept, locked, isFirstOfDate) {
       </div>
     </div>`;
 }
+
+/* ─── Попап быстрой сверки в таблице ВИЗИТЫ (для CEO/ROP) ─── */
+let _sverkaPopover = null;
+function closeSverkaPopup() {
+  if (_sverkaPopover) { _sverkaPopover.remove(); _sverkaPopover = null; }
+}
+function openSverkaPopup(e, dept, sheetRow, currentVal) {
+  e.preventDefault(); e.stopPropagation();
+  closeSverkaPopup();
+  const sfx = currentSuffix;
+  const sheetName = dept === 'dozhim' ? ('Д_ВИЗИТЫ' + sfx) : ('ВИЗИТЫ' + sfx);
+  const target = e.currentTarget;
+  const rect = target.getBoundingClientRect();
+  const cur = String(currentVal || '').trim().toLowerCase();
+  const pop = document.createElement('div');
+  pop.className = 'sverka-popover';
+  pop.innerHTML = `
+    <div class="sverka-pop-title">Сверка</div>
+    <div class="sverka-pop-actions">
+      <button class="sverka-pop-btn yes${cur === 'да' ? ' active':''}" onclick="saveSverkaValue('${sheetName}', ${sheetRow}, 'Да')">Да</button>
+      <button class="sverka-pop-btn no${cur === 'нет' ? ' active':''}"  onclick="saveSverkaValue('${sheetName}', ${sheetRow}, 'Нет')">Нет</button>
+      <button class="sverka-pop-btn clear${!cur ? ' active':''}" onclick="saveSverkaValue('${sheetName}', ${sheetRow}, '')">—</button>
+    </div>`;
+  document.body.appendChild(pop);
+  // Позиционируем под иконкой
+  const popW = 180;
+  let left = rect.left + rect.width/2 - popW/2;
+  left = Math.max(8, Math.min(left, window.innerWidth - popW - 8));
+  const top = rect.bottom + 6;
+  pop.style.left = left + 'px';
+  pop.style.top  = top + 'px';
+  _sverkaPopover = pop;
+  // Закрытие по клику вне
+  setTimeout(() => {
+    document.addEventListener('mousedown', _sverkaOutsideHandler, { capture: true });
+    document.addEventListener('touchstart', _sverkaOutsideHandler, { capture: true });
+  }, 0);
+}
+function _sverkaOutsideHandler(ev) {
+  if (_sverkaPopover && !_sverkaPopover.contains(ev.target)) {
+    closeSverkaPopup();
+    document.removeEventListener('mousedown', _sverkaOutsideHandler, { capture: true });
+    document.removeEventListener('touchstart', _sverkaOutsideHandler, { capture: true });
+  }
+}
+async function saveSverkaValue(sheetName, sheetRow, value) {
+  closeSverkaPopup();
+  try {
+    const range = encodeURIComponent(`'${sheetName}'!N${sheetRow}`);
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
+    const resp = await fetch(url, {
+      method: 'PUT',
+      headers: await authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ values: [[value]] }),
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    // Обновляем локальный кеш и перерисовываем
+    const isDozhim = sheetName.startsWith('Д_');
+    const arr = isDozhim ? (S.data.d_vizity||[]) : (S.data.vizity||[]);
+    if (arr[sheetRow-1]) arr[sheetRow-1][13] = value;
+    try { toast('Сверка обновлена', 's'); } catch(_) {}
+    if (typeof renderVizityScreen === 'function' && document.getElementById('scr-vizity')?.classList.contains('on')) {
+      renderVizityScreen();
+    } else if (typeof renderVizity === 'function') {
+      try { renderVizity(); } catch(_){}
+    }
+  } catch (err) {
+    try { toast('Ошибка сверки: ' + err.message, 'e'); } catch(_) {}
+  }
+}
+window.openSverkaPopup  = openSverkaPopup;
+window.saveSverkaValue  = saveSverkaValue;
+window.closeSverkaPopup = closeSverkaPopup;
 
 function getVizSverkaMark(value) {
   const s = String(value || '').trim().toLowerCase();
@@ -11890,6 +11969,13 @@ async function renderTrophiesPage() {
     ? `<div class="empty" style="margin-top:18px">Пока нет полученных трофеев.</div>`
     : '';
 
+  const awardBtn = isCeoLikeRole
+    ? `<button class="trophies-award-btn" onclick="openAwardTrophyModal()" title="Выдать трофей вручную">
+         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+         <span>Выдать трофей</span>
+       </button>`
+    : '';
+
   el.innerHTML = `
     <div class="trophies-page">
       <div class="trophies-hdr">
@@ -11898,6 +11984,7 @@ async function renderTrophiesPage() {
           ${counterHtml}
         </div>
         ${mgrPicker}
+        ${awardBtn}
       </div>
       ${renderFlatGrid(sourceList)}
       ${emptyHint}
@@ -11910,6 +11997,148 @@ function trophiesSelectView(v) {
   renderTrophiesPage();
 }
 window.trophiesSelectView = trophiesSelectView;
+
+/* ──────── ВЫДАЧА ТРОФЕЯ ВРУЧНУЮ (CEO/ROP) ──────── */
+function _awardEnsureOverlay() {
+  let ov = document.getElementById('award-trophy-overlay');
+  if (ov) return ov;
+  ov = document.createElement('div');
+  ov.id = 'award-trophy-overlay';
+  ov.className = 'award-trophy-overlay';
+  ov.innerHTML = `
+    <div class="award-trophy-shell">
+      <div class="award-trophy-hdr">
+        <div class="award-trophy-title">Выдать трофей</div>
+        <button class="award-trophy-close" onclick="closeAwardTrophyModal()" aria-label="Закрыть">×</button>
+      </div>
+      <div class="award-trophy-body" id="award-trophy-body"></div>
+    </div>`;
+  document.body.appendChild(ov);
+  return ov;
+}
+
+async function openAwardTrophyModal() {
+  const ov = _awardEnsureOverlay();
+  const body = document.getElementById('award-trophy-body');
+  ov.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  body.innerHTML = `<div class="award-loading">Загрузка…</div>`;
+  try {
+    await Promise.all([loadTrophiesCatalog(), loadTrophyAwards()]);
+  } catch (e) {}
+  const catalog = (S.trophies && Array.isArray(S.trophies.trophies)) ? S.trophies.trophies : [];
+  if (!catalog.length) {
+    body.innerHTML = `<div class="award-loading">Не удалось загрузить каталог трофеев</div>`;
+    return;
+  }
+  // Список менеджеров
+  const mgrs = [];
+  if (S.usersData) {
+    for (let i = 1; i < S.usersData.length; i++) {
+      const r = S.usersData[i];
+      const nm = (r[1]||'').trim();
+      const rl = (r[2]||'').toLowerCase().trim();
+      if (!nm) continue;
+      if (rl === 'crm' || rl === 'dozhim') mgrs.push(nm);
+    }
+    mgrs.sort((a,b) => a.localeCompare(b, 'ru'));
+  }
+  // Сортируем каталог: тип → имя
+  const order = { positive: 0, neutral: 1, negative: 2 };
+  const cat = catalog.slice().sort((a,b) =>
+    (order[(a.type||'neutral').toLowerCase()] - order[(b.type||'neutral').toLowerCase()])
+    || String(a.name||a.code).localeCompare(String(b.name||b.code), 'ru')
+  );
+  const trophyOpts = cat.map(t =>
+    `<option value="${escapeAttr(t.code)}">${escapeHtml(t.name||t.code)} · ${escapeHtml((t.type||'neutral'))}${t.category?' · '+escapeHtml(t.category):''}</option>`
+  ).join('');
+  const mgrOpts = mgrs.map(n => `<option value="${escapeAttr(n)}">${escapeHtml(n)}</option>`).join('');
+  const today = new Date().toISOString().slice(0,10);
+  body.innerHTML = `
+    <div class="award-form">
+      <div class="award-field">
+        <label class="award-label">Трофей</label>
+        <select class="award-input" id="award-code" required>
+          <option value="">— Выберите трофей —</option>
+          ${trophyOpts}
+        </select>
+      </div>
+      <div class="award-field">
+        <label class="award-label">Менеджер</label>
+        <select class="award-input" id="award-mgr" required>
+          <option value="">— Выберите менеджера —</option>
+          ${mgrOpts}
+        </select>
+      </div>
+      <div class="award-field">
+        <label class="award-label">Дата выдачи</label>
+        <input type="date" class="award-input" id="award-date" value="${today}">
+      </div>
+      <div class="award-field">
+        <label class="award-label">Примечание <span class="award-hint">(необязательно)</span></label>
+        <input type="text" class="award-input" id="award-note" placeholder="например: 2026-05 · ручная выдача">
+      </div>
+      <div class="award-actions">
+        <button class="award-cancel" onclick="closeAwardTrophyModal()">Отмена</button>
+        <button class="award-submit" id="award-submit-btn" onclick="submitAwardTrophy()">Выдать</button>
+      </div>
+      <div class="award-msg" id="award-msg"></div>
+    </div>`;
+}
+
+function closeAwardTrophyModal() {
+  const ov = document.getElementById('award-trophy-overlay');
+  if (!ov) return;
+  ov.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function submitAwardTrophy() {
+  const code = document.getElementById('award-code')?.value || '';
+  const mgr  = document.getElementById('award-mgr')?.value || '';
+  const date = document.getElementById('award-date')?.value || new Date().toISOString().slice(0,10);
+  const note = (document.getElementById('award-note')?.value || '').trim();
+  const msg = document.getElementById('award-msg');
+  const btn = document.getElementById('award-submit-btn');
+  if (!code || !mgr) { if (msg) { msg.textContent = 'Выберите трофей и менеджера'; msg.className = 'award-msg award-err'; } return; }
+  if (btn) btn.disabled = true;
+  if (msg) { msg.textContent = 'Сохраняю…'; msg.className = 'award-msg'; }
+  try {
+    const me = findUserInSheet();
+    const awardedBy = me?.name || 'system';
+    const row = [[code, mgr, date, awardedBy, 'manual', 'active', note]];
+    const sheetName = SHEETS.trophyAwards || 'TrophyAwards';
+    const range = encodeURIComponent(`'${sheetName}'!A:G`);
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: await authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ values: row }),
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    // Сбрасываем кеш и обновляем страницу трофеев
+    S.trophyAwards = null;
+    if (msg) { msg.textContent = '✓ Трофей выдан'; msg.className = 'award-msg award-ok'; }
+    try { toast('Трофей выдан: ' + code + ' → ' + mgr, 's'); } catch(_) {}
+    setTimeout(() => {
+      closeAwardTrophyModal();
+      if (document.getElementById('scr-trophies')?.classList.contains('on')) renderTrophiesPage();
+    }, 700);
+  } catch (e) {
+    if (msg) { msg.textContent = 'Ошибка: ' + e.message; msg.className = 'award-msg award-err'; }
+    if (btn) btn.disabled = false;
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const ov = document.getElementById('award-trophy-overlay');
+  if (ov && ov.classList.contains('open')) closeAwardTrophyModal();
+});
+
+window.openAwardTrophyModal  = openAwardTrophyModal;
+window.closeAwardTrophyModal = closeAwardTrophyModal;
+window.submitAwardTrophy     = submitAwardTrophy;
 
 // Резолвим выдачу с возможным годовым суффиксом (hb_2026_annual)
 // к базовой записи каталога (hb_annual) + подменяем имя/иконку под этот год.
@@ -11965,8 +12194,8 @@ async function _profileLoadAndRenderTrophies(name, panelId) {
   // Общее число всех трофеев (с учётом ×N) — для заголовка секции
   const totalAwards = codes.reduce((sum, code) => sum + (awards[code].count || 0), 0);
   if (sectionTitleSpan) sectionTitleSpan.textContent = `Трофеи · ${totalAwards} шт`;
-  // Показываем последние 8 (сортировка уже по lastDate desc)
-  const slice = codes.slice(0, 8);
+  // Показываем последние 6 (сортировка уже по lastDate desc)
+  const slice = codes.slice(0, 6);
   const items = slice.map(code => {
     const t = _resolveTrophyCode(code, byCode);
     const award = awards[code];

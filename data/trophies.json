@@ -87,7 +87,7 @@
     {
       "code": "kd_monthly",
       "name": "Счастливое число CRM",
-      "description": "За месяц сделал 33 продажи в кредит.",
+      "description": "За месяц сделал 33 и более продажи в кредит.",
       "type": "positive",
       "category": "monthly",
       "auto": true,

@@ -3396,6 +3396,11 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
 }
 .income-subtotal .ist-lbl { font-size:9px; color:var(--txt2); text-transform:uppercase; letter-spacing:.06em; }
 .income-subtotal .ist-val { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:800; color:var(--acc); }
+/* Дельта от коэффициента: + зелёный (прирост), − красный (потеря) */
+.income-subtotal.income-delta-pos { background: rgba(46,213,115,0.12); border-color: rgba(46,213,115,0.35); margin-top:4px; }
+.income-subtotal.income-delta-pos .ist-val { color: var(--grn); }
+.income-subtotal.income-delta-neg { background: rgba(255,71,87,0.12);  border-color: rgba(255,71,87,0.35);  margin-top:4px; }
+.income-subtotal.income-delta-neg .ist-val { color: var(--red); }
 /* Day breakdown calendar */
 .inc-day-panel {
   margin-top:12px;

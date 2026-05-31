@@ -7726,9 +7726,26 @@ function openIncomeDetail(btn) {
   const okladRow = oklad > 0 ? `<div class="income-sec-title">Оклад</div>${subtotal(d.workedR != null ? `Оклад (${d.workedR}/${d.totalR} дн.)` : 'Оклад', oklad)}` : '';
   const kotelRow = (d.inFund && kotel > 0) ? `<div class="income-sec-title">Котёл</div><div style="font-size:10px;color:var(--txt2);margin-bottom:6px">Участников котла: ${fundCount}</div>${subtotal('Доля котла', kotel)}` : '';
   const noKoefTotal = Math.round(baseOklad + crmSum + warmSum + kotel);
-  const noKoefRow = `<div class="income-sec-title">Без коэффициентов</div>${subtotal('Оклад 100% + Премия + Котёл', noKoefTotal)}`;
   const factKoef = d.fact ? d.fact.koef : null;
   const progKoef = d.prognoz ? d.prognoz.koef : null;
+  // Дельта от коэффициента: premium × (koef − 1). Показываем сумму потерь
+  // при понижающем (<1.0) или прироста при повышающем (>1.0).
+  function koefDeltaRow(lbl, koef) {
+    if (koef == null || !isFinite(koef)) return '';
+    const delta = Math.round(premium * (koef - 1));
+    if (!delta) return '';
+    const sign = delta > 0 ? '+' : '−';
+    const colorCls = delta > 0 ? 'income-delta-pos' : 'income-delta-neg';
+    const verb = delta > 0 ? 'прирост' : 'потеря';
+    return `<div class="income-subtotal ${colorCls}">
+      <span class="ist-lbl">${lbl} ×${koef.toFixed(1)} · ${verb}</span>
+      <span class="ist-val">${sign}${fmtRub(Math.abs(delta))}</span>
+    </div>`;
+  }
+  const deltaRowsHtml = (factKoef != null || progKoef != null) ? `
+    ${koefDeltaRow('Коэфф. ФАКТ', factKoef)}
+    ${koefDeltaRow('Коэфф. ПРОГНОЗ', progKoef)}` : '';
+  const noKoefRow = `<div class="income-sec-title">Без коэффициентов</div>${subtotal('Оклад 100% + Премия + Котёл', noKoefTotal)}${deltaRowsHtml}`;
   const okladFormula = d.workedR != null
     ? `(${fmtRub(d.baseOklad)}÷${d.totalR}×${d.workedR}) + (${fmtRub(Math.round(premium))} × ${factKoef ? factKoef.toFixed(1) : '—'}) = ${fmtRub(Math.round(d.fact ? d.fact.total : 0))}`
     : `${fmtRub(oklad)} + (${fmtRub(Math.round(premium))} × ${factKoef ? factKoef.toFixed(1) : '—'}) = ${fmtRub(Math.round(d.fact ? d.fact.total : 0))}`;

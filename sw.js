@@ -1,5 +1,6 @@
-const CACHE_NAME = 'crm-crew-dashboard-v149';
+const CACHE_NAME = 'crm-crew-dashboard-v150';
 const STATIC_ASSETS = [
+  './manifest.json',
   './logos/pwa-192.png',
   './logos/pwa-512.png',
   // Fluent theme icons

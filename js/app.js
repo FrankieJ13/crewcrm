@@ -4113,8 +4113,8 @@ function renderDohod() {
     function subtotal(lbl, sum) {
       return `<div class="income-subtotal"><span class="ist-lbl">${lbl}</span><span class="ist-val">${fmtRub(sum)}</span></div>`;
     }
-    const crmSum  = n(d.detail.crm.vis)+n(d.detail.crm.kred)+n(d.detail.crm.nal)+n(d.detail.crm.obmen)+n(d.detail.crm.kom)+n(d.detail.crm.zadatok);
-    const warmSum = n(d.detail.warm.vis)+n(d.detail.warm.kred)+n(d.detail.warm.nal)+n(d.detail.warm.obmen)+n(d.detail.warm.kom);
+    const crmSum  = n(d.detail.crm.vis)+n(d.detail.crm.kred)+n(d.detail.crm.nal)+n(d.detail.crm.obmen)+n(d.detail.crm.vykup||0)+n(d.detail.crm.kom)+n(d.detail.crm.zadatok);
+    const warmSum = n(d.detail.warm.vis)+n(d.detail.warm.kred)+n(d.detail.warm.nal)+n(d.detail.warm.obmen)+n(d.detail.warm.vykup||0)+n(d.detail.warm.kom);
     const oklad      = n(d.detail.oklad);
     const baseOklad  = n(d.detail.baseOklad) || oklad;
     const kotel      = n(d.detail.kotel);
@@ -4156,18 +4156,18 @@ function renderDohod() {
           ${okladRow}
           <div class="income-sec-title">CRM</div>
           <div class="income-badges">
-            ${badge('Визиты', d.detail.crm.vis, d.detail.crm.cnt?.vis)}${badge('Кредит', d.detail.crm.kred, d.detail.crm.cnt?.kred)}${badge('Наличка', d.detail.crm.nal, d.detail.crm.cnt?.nal)}
+            ${badge('Визиты', d.detail.crm.vis, d.detail.crm.cnt?.vis)}${badge('Кредит', d.detail.crm.kred, d.detail.crm.cnt?.kred)}${badge('Нал+Обмен', n(d.detail.crm.nal)+n(d.detail.crm.obmen), (d.detail.crm.cnt?.nal||0)+(d.detail.crm.cnt?.obmen||0))}
           </div>
           <div class="income-badges">
-            ${badge('Обмен', d.detail.crm.obmen, d.detail.crm.cnt?.obmen)}${badge('Комиссия', d.detail.crm.kom, d.detail.crm.cnt?.kom)}${badge('Задаток', d.detail.crm.zadatok, d.detail.crm.cnt?.zadatok)}
+            ${badge('Комиссия', d.detail.crm.kom, d.detail.crm.cnt?.kom)}${badge('Выкуп', d.detail.crm.vykup||0, d.detail.crm.cnt?.vykup||0)}${badge('Задаток', d.detail.crm.zadatok, d.detail.crm.cnt?.zadatok)}
           </div>
           ${subtotal('Итого CRM', crmSum)}
           <div class="income-sec-title">Тёплые лиды</div>
           <div class="income-badges">
-            ${badge('Визиты', d.detail.warm.vis, d.detail.warm.cnt?.vis)}${badge('Кредит', d.detail.warm.kred, d.detail.warm.cnt?.kred)}${badge('Наличка', d.detail.warm.nal, d.detail.warm.cnt?.nal)}
+            ${badge('Визиты', d.detail.warm.vis, d.detail.warm.cnt?.vis)}${badge('Кредит', d.detail.warm.kred, d.detail.warm.cnt?.kred)}${badge('Нал+Обмен', n(d.detail.warm.nal)+n(d.detail.warm.obmen), (d.detail.warm.cnt?.nal||0)+(d.detail.warm.cnt?.obmen||0))}
           </div>
           <div class="income-badges" style="grid-template-columns:repeat(2,1fr)">
-            ${badge('Обмен', d.detail.warm.obmen, d.detail.warm.cnt?.obmen)}${badge('Комиссия', d.detail.warm.kom, d.detail.warm.cnt?.kom)}
+            ${badge('Комиссия', d.detail.warm.kom, d.detail.warm.cnt?.kom)}${badge('Выкуп', d.detail.warm.vykup||0, d.detail.warm.cnt?.vykup||0)}
           </div>
           ${subtotal('Итого Тёплые лиды', warmSum)}
           ${kotelRow}
@@ -8119,28 +8119,26 @@ function openIncomeDetail(btn) {
     ${okladRow}
     <div class="income-sec-title">CRM</div>
     <div class="income-badges">
-      ${badge('Визиты',   d.crm.vis,     d.crm.cnt?.vis)}
-      ${badge('Кредит',   d.crm.kred,    d.crm.cnt?.kred)}
-      ${badge('Наличка',  d.crm.nal,     d.crm.cnt?.nal)}
+      ${badge('Визиты',     d.crm.vis,                          d.crm.cnt?.vis)}
+      ${badge('Кредит',     d.crm.kred,                         d.crm.cnt?.kred)}
+      ${badge('Нал+Обмен',  n(d.crm.nal) + n(d.crm.obmen),      (d.crm.cnt?.nal || 0) + (d.crm.cnt?.obmen || 0))}
     </div>
     <div class="income-badges">
-      ${badge('Обмен',    d.crm.obmen,   d.crm.cnt?.obmen)}
-      ${badge('Комиссия', d.crm.kom,     d.crm.cnt?.kom)}
-      ${badge('Задаток',  d.crm.zadatok, d.crm.cnt?.zadatok)}
+      ${badge('Комиссия',   d.crm.kom,                          d.crm.cnt?.kom)}
+      ${badge('Выкуп',      d.crm.vykup || 0,                   d.crm.cnt?.vykup || 0)}
+      ${badge('Задаток',    d.crm.zadatok,                      d.crm.cnt?.zadatok)}
     </div>
-    ${(d.crm.cnt?.vykup || 0) > 0 ? `<div class="income-badges" style="grid-template-columns:repeat(1,1fr)">${badge('Выкуп', d.crm.vykup, d.crm.cnt?.vykup)}</div>` : ''}
     ${subtotal('Итого CRM', crmSum)}
     <div class="income-sec-title">Тёплые лиды</div>
     <div class="income-badges">
-      ${badge('Визиты',   d.warm.vis,   d.warm.cnt?.vis)}
-      ${badge('Кредит',   d.warm.kred,  d.warm.cnt?.kred)}
-      ${badge('Наличка',  d.warm.nal,   d.warm.cnt?.nal)}
+      ${badge('Визиты',     d.warm.vis,                         d.warm.cnt?.vis)}
+      ${badge('Кредит',     d.warm.kred,                        d.warm.cnt?.kred)}
+      ${badge('Нал+Обмен',  n(d.warm.nal) + n(d.warm.obmen),    (d.warm.cnt?.nal || 0) + (d.warm.cnt?.obmen || 0))}
     </div>
-    <div class="income-badges" style="grid-template-columns:repeat(2,1fr)">
-      ${badge('Обмен',    d.warm.obmen, d.warm.cnt?.obmen)}
-      ${badge('Комиссия', d.warm.kom,   d.warm.cnt?.kom)}
+    <div class="income-badges">
+      ${badge('Комиссия',   d.warm.kom,                         d.warm.cnt?.kom)}
+      ${badge('Выкуп',      d.warm.vykup || 0,                  d.warm.cnt?.vykup || 0)}
     </div>
-    ${(d.warm.cnt?.vykup || 0) > 0 ? `<div class="income-badges" style="grid-template-columns:repeat(1,1fr)">${badge('Выкуп', d.warm.vykup, d.warm.cnt?.vykup)}</div>` : ''}
     ${subtotal('Итого Тёплые лиды', warmSum)}
     ${kotelRow}
     ${noKoefRow}

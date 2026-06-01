@@ -3083,9 +3083,12 @@ function buildCrmStats(vizData, opts = {}) {
     const city = String(row[3]||'').trim() || '—';                // col D
     const zadSum = parseFloat(String(row[9]||'0').replace(/[^\d.]/g,'')) || 0; // col J
 
-    m.vis++;  // один визит на строку (даже если в комментарии комбо)
-    if (cat === CAT800)  m.vis800++;
-    if (cat === CAT1200) m.vis1200++;
+    // КРИТИЧНО: m.vis считаем только для строк с валидной CRM-категорией.
+    // Иначе m.vis > vis800+vis1200 (если в листе попалась «кат 1000» или
+    // другая), и разные экраны (personal vs rating vs доход) показывают
+    // разные числа визитов. Теперь m.vis ≡ vis800 + vis1200.
+    if (cat === CAT800)  { m.vis++; m.vis800++; }
+    if (cat === CAT1200) { m.vis++; m.vis1200++; }
 
     if (!m.byCity[city] && (cat === CAT800 || cat === CAT1200)) {
       m.byCity[city] = emptyCity(city);
@@ -3172,10 +3175,10 @@ function buildDozhimStats(dVizData, opts = {}) {
     const cat = String(row[6]||'').trim().toLowerCase();          // col G
     const statuses = parseVizStatuses(row[4]);                    // col E — combo через «+»
     const zadSum = parseFloat(String(row[9]||'0').replace(/[^\d.]/g,'')) || 0; // col J
-    m.vis++; // один визит на строку, даже если в комментарии комбо-сделка
 
-    if (cat === CAT800)  m.vis800++;
-    if (cat === CAT1000) m.vis1000++;
+    // m.vis считаем только для валидных Дожим-категорий → m.vis ≡ vis800 + vis1000
+    if (cat === CAT800)  { m.vis++; m.vis800++; }
+    if (cat === CAT1000) { m.vis++; m.vis1000++; }
 
     statuses.forEach(st => {
       if (cat === CAT800) {

@@ -2992,10 +2992,17 @@ function computeDailyPlan(plan, fact, progNum, suffix, name) {
 // ==================== RENDER OTCHET ====================
 // ==================== CRM STATS FROM ВИЗИТЫ ====================
 // Фильтр сверки применяется только там, где он явно нужен: сверка и расчёт дохода.
+// Проверка «строка прошла сверку». Раньше принимали ровно 'да'/'yes' и
+// теряли визиты, если в листе оказалось 'Да!', 'TRUE', '+', 'ok',
+// латинская 'a' в кириллическом «дa», NBSP внутри строки и пр.
+// Теперь принимаем ЛЮБОЕ непустое значение, кроме явных negatives.
+const SVERKA_NEGATIVES = new Set(['нет','no','n','false','0','-','−','—','f','off']);
 function isSverkaRow(row, sverkaOnly = false) {
   if (!sverkaOnly || !S || !S.sverkaMode) return true;
-  const sverka = (row[13]||'').trim().toLowerCase();
-  return sverka === 'да' || sverka === 'yes';
+  // Нормализуем: убираем все пробелы (включая NBSP  ) и приводим к lower
+  const raw = String(row[13]||'').replace(/[\s ]/g,'').toLowerCase();
+  if (!raw) return false;
+  return !SVERKA_NEGATIVES.has(raw);
 }
 
 // Полная строка визита: заполнены ВСЕ колонки A..I

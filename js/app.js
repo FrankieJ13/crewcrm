@@ -8128,7 +8128,7 @@ function openIncomeDetail(btn) {
       ${badge('Комиссия', d.crm.kom,     d.crm.cnt?.kom)}
       ${badge('Задаток',  d.crm.zadatok, d.crm.cnt?.zadatok)}
     </div>
-    ${n(d.crm.vykup) > 0 ? `<div class="income-badges" style="grid-template-columns:repeat(1,1fr)">${badge('Выкуп', d.crm.vykup, d.crm.cnt?.vykup)}</div>` : ''}
+    ${(d.crm.cnt?.vykup || 0) > 0 ? `<div class="income-badges" style="grid-template-columns:repeat(1,1fr)">${badge('Выкуп', d.crm.vykup, d.crm.cnt?.vykup)}</div>` : ''}
     ${subtotal('Итого CRM', crmSum)}
     <div class="income-sec-title">Тёплые лиды</div>
     <div class="income-badges">
@@ -8140,7 +8140,7 @@ function openIncomeDetail(btn) {
       ${badge('Обмен',    d.warm.obmen, d.warm.cnt?.obmen)}
       ${badge('Комиссия', d.warm.kom,   d.warm.cnt?.kom)}
     </div>
-    ${n(d.warm.vykup) > 0 ? `<div class="income-badges" style="grid-template-columns:repeat(1,1fr)">${badge('Выкуп', d.warm.vykup, d.warm.cnt?.vykup)}</div>` : ''}
+    ${(d.warm.cnt?.vykup || 0) > 0 ? `<div class="income-badges" style="grid-template-columns:repeat(1,1fr)">${badge('Выкуп', d.warm.vykup, d.warm.cnt?.vykup)}</div>` : ''}
     ${subtotal('Итого Тёплые лиды', warmSum)}
     ${kotelRow}
     ${noKoefRow}

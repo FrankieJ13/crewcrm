@@ -1743,6 +1743,27 @@ function scheduleTokenRefresh(expiresIn) {
   }, delay);
 }
 
+// audit#6: подстраховка для swappnутой/долго-фоновой PWA.
+// setTimeout на iOS/macOS background душится — refreshTimer может выстрелить
+// с большим опозданием, и первый же запрос auto-refresh уйдёт с протухшим
+// токеном. Когда вкладка снова видна — если токен близок к истечению
+// (тот же 5-минутный буфер, что у scheduleTokenRefresh), просим свежий
+// заранее. Существующий refreshTimer не трогаем — он остаётся primary path.
+let _lastVisibilityTokenRefresh = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return;
+  if (!S.token || !tokenClient) return;
+  // Антидребезг: не чаще раза в минуту (защита от serial focus/blur)
+  if (Date.now() - _lastVisibilityTokenRefresh < 60_000) return;
+  // Токен ещё свежий (>5 мин до истечения) — ничего не делаем
+  if (tokenExpiresAt && Date.now() < tokenExpiresAt - 5 * 60_000) return;
+  // Уже идёт запрос (lock в requestGoogleToken) — пусть завершится сам
+  if (tokenRequest) return;
+  _lastVisibilityTokenRefresh = Date.now();
+  try { tokenClient.requestAccessToken({ prompt: '' }); }
+  catch (e) { console.warn('visibility token refresh failed', e); }
+});
+
 function cleanupTokenRequest() {
   if (!tokenRequest) return;
   if (tokenRequest.timer) clearTimeout(tokenRequest.timer);

@@ -3143,6 +3143,7 @@ function buildDozhimStats(dVizData, opts = {}) {
   const BUY_KREDIT = 'покупка (кредит)';
   const BUY_NAL    = 'покупка (наличные)';
   const BUY_OBMEN  = 'обмен';
+  const BUY_VYKUP  = 'выкуп';
   const BUY_KOM    = 'комиссия';
   const CAT800     = 'кат 800';
   const CAT1000    = 'кат 1000';
@@ -3162,8 +3163,8 @@ function buildDozhimStats(dVizData, opts = {}) {
         name: mgr,
         vis:0,             // общее число строк менеджера — для единообразия с хронологией
         vis800:0, vis1000:0,
-        kred800:0, nal800:0, obmen800:0, kom800:0,
-        kred1000:0, nal1000:0, kom1000:0,
+        kred800:0, nal800:0, obmen800:0, vykup800:0, kom800:0,
+        kred1000:0, nal1000:0, vykup1000:0, kom1000:0,
         zadatok:0,
       };
     }
@@ -3181,11 +3182,13 @@ function buildDozhimStats(dVizData, opts = {}) {
         if (st === BUY_KREDIT) m.kred800++;
         if (st === BUY_NAL)    m.nal800++;
         if (st === BUY_OBMEN)  m.obmen800++;
+        if (st === BUY_VYKUP)  m.vykup800++;
         if (st === BUY_KOM)    m.kom800++;
       }
       if (cat === CAT1000) {
         if (st === BUY_KREDIT) m.kred1000++;
         if (st === BUY_NAL)    m.nal1000++;
+        if (st === BUY_VYKUP)  m.vykup1000++;
         if (st === BUY_KOM)    m.kom1000++;
       }
     });
@@ -3210,19 +3213,23 @@ function calcSalaryDozhimFromVizity(nameLow) {
   if (!mgrStat) return null;
 
   const R = DOZHIM_RATES;
+  // Выкуп — динамическая ставка из Д_СТАВКИ row 14 (index 13). Если пусто/0 —
+  // мотивация по выкупу выключена. Одна ставка применяется к обоим каналам.
+  const dstavki = S.data.d_stavki || [];
+  const rVykup  = parseRate(dstavki[13]?.[1]);
   const schedInfo = getWorkedAndTotalR(nameLow);
   const oklad = (schedInfo && schedInfo.totalR > 0)
     ? Math.round(R.baseOklad / schedInfo.totalR * schedInfo.workedR)
     : R.baseOklad;
 
-  const ch800 = { vis: mgrStat.vis800, kred: mgrStat.kred800, nal: mgrStat.nal800, obmen: mgrStat.obmen800, kom: mgrStat.kom800, zadatok: mgrStat.zadatok };
-  const ch1000 = { vis: mgrStat.vis1000, kred: mgrStat.kred1000, nal: mgrStat.nal1000, kom: mgrStat.kom1000 };
+  const ch800 = { vis: mgrStat.vis800, kred: mgrStat.kred800, nal: mgrStat.nal800, obmen: mgrStat.obmen800, vykup: mgrStat.vykup800||0, kom: mgrStat.kom800, zadatok: mgrStat.zadatok };
+  const ch1000 = { vis: mgrStat.vis1000, kred: mgrStat.kred1000, nal: mgrStat.nal1000, vykup: mgrStat.vykup1000||0, kom: mgrStat.kom1000 };
 
-  const pure800  = Math.max(0, ch800.vis  - ch800.kred  - ch800.nal  - ch800.obmen - ch800.kom);
-  const pure1000 = Math.max(0, ch1000.vis - ch1000.kred - ch1000.nal - ch1000.kom);
+  const pure800  = Math.max(0, ch800.vis  - ch800.kred  - ch800.nal  - ch800.obmen - ch800.vykup - ch800.kom);
+  const pure1000 = Math.max(0, ch1000.vis - ch1000.kred - ch1000.nal - ch1000.vykup - ch1000.kom);
 
-  const earn800  = pure800*R.r800Vis  + ch800.kred*R.r800Kred  + ch800.nal*R.r800Nal  + ch800.obmen*R.r800Obmen  + ch800.kom*R.r800Kom  + ch800.zadatok*R.rZadatok;
-  const earn1000 = pure1000*R.r1000Vis + ch1000.kred*R.r1000Kred + ch1000.nal*R.r1000Nal + ch1000.kom*R.r1000Kom;
+  const earn800  = pure800*R.r800Vis  + ch800.kred*R.r800Kred  + ch800.nal*R.r800Nal  + ch800.obmen*R.r800Obmen  + ch800.vykup*rVykup  + ch800.kom*R.r800Kom  + ch800.zadatok*R.rZadatok;
+  const earn1000 = pure1000*R.r1000Vis + ch1000.kred*R.r1000Kred + ch1000.nal*R.r1000Nal + ch1000.vykup*rVykup + ch1000.kom*R.r1000Kom;
 
   // Котёл — суммируем тех кто не в ПЛАН (dozhim-менеджеры)
   const planM = getPlanMap(S.data.plan || []);
@@ -3230,10 +3237,12 @@ function calcSalaryDozhimFromVizity(nameLow) {
   let kotelEarn800 = 0, kotelEarn1000 = 0;
   Object.values(allStats).forEach(s => {
     if (!planNamesLow.has(s.name.toLowerCase())) {
-      const p8  = Math.max(0, s.vis800  - s.kred800  - s.nal800  - s.obmen800 - s.kom800);
-      const p10 = Math.max(0, s.vis1000 - s.kred1000 - s.nal1000 - s.kom1000);
-      kotelEarn800  += p8*R.r800Vis  + s.kred800*R.r800Kred  + s.nal800*R.r800Nal  + s.obmen800*R.r800Obmen  + s.kom800*R.r800Kom  + s.zadatok*R.rZadatok;
-      kotelEarn1000 += p10*R.r1000Vis + s.kred1000*R.r1000Kred + s.nal1000*R.r1000Nal + s.kom1000*R.r1000Kom;
+      const sv800  = s.vykup800  || 0;
+      const sv1000 = s.vykup1000 || 0;
+      const p8  = Math.max(0, s.vis800  - s.kred800  - s.nal800  - s.obmen800 - sv800  - s.kom800);
+      const p10 = Math.max(0, s.vis1000 - s.kred1000 - s.nal1000 - sv1000 - s.kom1000);
+      kotelEarn800  += p8*R.r800Vis  + s.kred800*R.r800Kred  + s.nal800*R.r800Nal  + s.obmen800*R.r800Obmen  + sv800*rVykup  + s.kom800*R.r800Kom  + s.zadatok*R.rZadatok;
+      kotelEarn1000 += p10*R.r1000Vis + s.kred1000*R.r1000Kred + s.nal1000*R.r1000Nal + sv1000*rVykup + s.kom1000*R.r1000Kom;
     }
   });
   const kotelTotal = kotelEarn800 + kotelEarn1000;
@@ -7885,14 +7894,18 @@ function openDozhimIncomeModal(btn) {
   const kotelTotal = n(d.kotelTotal);
   const fundCount  = d.fundCount || '—';
 
+  // Выкуп для дожима — ставка из Д_СТАВКИ row 14 (index 13). Если 0 — не платится.
+  const rVykup = parseRate((S.data.d_stavki||[])[13]?.[1]);
   // Пересчитываем премию из ch800/ch1000
   const ch8  = d.ch800  || {};
   const ch10 = d.ch1000 || {};
-  const p8   = Math.max(0, n(ch8.vis)  - n(ch8.kred)  - n(ch8.nal)  - n(ch8.obmen) - n(ch8.kom));
-  const p10  = Math.max(0, n(ch10.vis) - n(ch10.kred) - n(ch10.nal) - n(ch10.kom));
+  const v8   = n(ch8.vykup||0);
+  const v10  = n(ch10.vykup||0);
+  const p8   = Math.max(0, n(ch8.vis)  - n(ch8.kred)  - n(ch8.nal)  - n(ch8.obmen) - v8  - n(ch8.kom));
+  const p10  = Math.max(0, n(ch10.vis) - n(ch10.kred) - n(ch10.nal) - v10 - n(ch10.kom));
 
-  const earn8  = n(d.earn800)  || (p8*R.r800Vis   + n(ch8.kred)*R.r800Kred  + n(ch8.nal)*R.r800Nal  + n(ch8.obmen)*R.r800Obmen  + n(ch8.kom)*R.r800Kom  + n(ch8.zadatok)*R.rZadatok);
-  const earn10 = n(d.earn1000) || (p10*R.r1000Vis + n(ch10.kred)*R.r1000Kred + n(ch10.nal)*R.r1000Nal + n(ch10.kom)*R.r1000Kom);
+  const earn8  = n(d.earn800)  || (p8*R.r800Vis   + n(ch8.kred)*R.r800Kred  + n(ch8.nal)*R.r800Nal  + n(ch8.obmen)*R.r800Obmen  + v8*rVykup  + n(ch8.kom)*R.r800Kom  + n(ch8.zadatok)*R.rZadatok);
+  const earn10 = n(d.earn1000) || (p10*R.r1000Vis + n(ch10.kred)*R.r1000Kred + n(ch10.nal)*R.r1000Nal + v10*rVykup + n(ch10.kom)*R.r1000Kom);
 
   const okladLbl = d.workedR != null ? `Оклад (${d.workedR}/${d.totalR} дн.)` : 'Оклад';
 
@@ -7919,6 +7932,7 @@ function openDozhimIncomeModal(btn) {
       ${dzBadge('Обмен',    n(ch8.obmen),    Math.round(n(ch8.obmen)*R.r800Obmen))}
       ${dzBadge('Комиссия', n(ch8.kom),      Math.round(n(ch8.kom)*R.r800Kom))}
       ${dzBadge('Задаток',  n(ch8.zadatok),  Math.round(n(ch8.zadatok)*R.rZadatok))}
+      ${v8 > 0 ? dzBadge('Выкуп', v8, Math.round(v8*rVykup)) : ''}
     </div>
     ${subtotal('Итого КАТ 800', Math.round(earn8))}
     <div class="income-sec-title">КАТ 1000</div>
@@ -7927,12 +7941,13 @@ function openDozhimIncomeModal(btn) {
       ${dzBadge('Кредит',   n(ch10.kred),    Math.round(n(ch10.kred)*R.r1000Kred))}
       ${dzBadge('Наличка',  n(ch10.nal),     Math.round(n(ch10.nal)*R.r1000Nal))}
       ${dzBadge('Комиссия', n(ch10.kom),     Math.round(n(ch10.kom)*R.r1000Kom))}
+      ${v10 > 0 ? dzBadge('Выкуп', v10, Math.round(v10*rVykup)) : ''}
     </div>
     ${subtotal('Итого КАТ 1000', Math.round(earn10))}
     ${kotelRow}
     <div class="income-sec-title">Итого</div>
     ${subtotal('Фактический доход', Math.round(n(d.fact?.total)))}
-    ${buildDayCalendar(d.nameLow||'', S.data.d_vizity||[], DOZHIM_RATES, true)}
+    ${buildDayCalendar(d.nameLow||'', S.data.d_vizity||[], { ...DOZHIM_RATES, r800Vykup: rVykup, r1000Vykup: rVykup }, true)}
   `;
   document.getElementById('income-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -8725,18 +8740,20 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
         (stat.warm.vykup || 0) * (R.rWarmVykup || 0) +
         stat.warm.kom * (R.rWarmKom || 0);
     } else {
-      const pure800  = Math.max(0, stat.ch800.vis  - stat.ch800.kred  - stat.ch800.nal  - stat.ch800.obmen  - stat.ch800.kom);
-      const pure1000 = Math.max(0, stat.ch1000.vis - stat.ch1000.kred - stat.ch1000.nal - stat.ch1000.obmen - stat.ch1000.kom);
+      const pure800  = Math.max(0, stat.ch800.vis  - stat.ch800.kred  - stat.ch800.nal  - stat.ch800.obmen  - (stat.ch800.vykup||0)  - stat.ch800.kom);
+      const pure1000 = Math.max(0, stat.ch1000.vis - stat.ch1000.kred - stat.ch1000.nal - stat.ch1000.obmen - (stat.ch1000.vykup||0) - stat.ch1000.kom);
       earn =
         pure800 * (R.r800Vis || 0) +
         stat.ch800.kred * (R.r800Kred || 0) +
         stat.ch800.nal * (R.r800Nal || 0) +
         stat.ch800.obmen * (R.r800Obmen || 0) +
+        (stat.ch800.vykup || 0) * (R.r800Vykup || 0) +
         stat.ch800.kom * (R.r800Kom || 0) +
         stat.ch800.zadatok * (R.rZadatok || 0) +
         pure1000 * (R.r1000Vis || 0) +
         stat.ch1000.kred * (R.r1000Kred || 0) +
         stat.ch1000.nal * (R.r1000Nal || 0) +
+        (stat.ch1000.vykup || 0) * (R.r1000Vykup || 0) +
         stat.ch1000.kom * (R.r1000Kom || 0);
     }
     if (earn > 0) dayMap[day] = earn;

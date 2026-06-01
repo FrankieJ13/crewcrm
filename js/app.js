@@ -1694,9 +1694,15 @@ async function syncFirebaseAuth(accessToken) {
     startFirebasePresence(result.user);
     return result.user;
   } catch(e) {
-    console.warn('Firebase Auth/Presence не запущен', e);
     const code = e?.code || e?.message || 'unknown';
-    if (code === 'auth/invalid-credential') return signInFirebaseAnonymously();
+    // Штатный путь: Google access_token выпущен под OAuth client_id другого
+    // проекта (Sheets), Firebase Google-провайдер его не принимает.
+    // Тихо падаем в anonymous — presence продолжит работать.
+    if (code === 'auth/invalid-credential') {
+      console.info('Firebase: используем анонимный presence (Google-токен из другого проекта)');
+      return signInFirebaseAnonymously();
+    }
+    console.warn('Firebase Auth/Presence не запущен', e);
     firebasePresence.error = `Firebase Auth не подключился: ${code}`;
     renderPresenceState();
     return null;
@@ -10788,13 +10794,15 @@ function renderRating() {
     el.querySelectorAll('.rating-card-bar-fill').forEach((bar, i) => {
       setTimeout(() => { bar.style.width = bar.dataset.w + '%'; }, i * 80);
     });
-    // Фейерверки для топ-3 с небольшой задержкой
-    el.querySelectorAll('.rating-card.rank-1, .rating-card.rank-2, .rating-card.rank-3').forEach((card, i) => {
-      setTimeout(() => {
-        const rect = card.getBoundingClientRect();
-        launchFirework(rect.left + rect.width * 0.8, rect.top + rect.height / 2);
-      }, 400 + i * 300);
-    });
+    // Фейерверки для топ-3 с небольшой задержкой (если функция доступна)
+    if (typeof launchFirework === 'function') {
+      el.querySelectorAll('.rating-card.rank-1, .rating-card.rank-2, .rating-card.rank-3').forEach((card, i) => {
+        setTimeout(() => {
+          const rect = card.getBoundingClientRect();
+          launchFirework(rect.left + rect.width * 0.8, rect.top + rect.height / 2);
+        }, 400 + i * 300);
+      });
+    }
   });
 }
 
@@ -10979,6 +10987,8 @@ const VIZ_SOURCE_OPTS = [
 ];
 const VIZ_COMMENT_OPTS = [
   'В салоне','ПОКУПКА (кредит)','ПОКУПКА (наличные)','КОМИССИЯ','ОБМЕН','ВЫКУП',
+  'ПОКУПКА (кредит) + КОМИССИЯ','ПОКУПКА (наличные) + КОМИССИЯ',
+  'ПОКУПКА (кредит) + ВЫКУП','ПОКУПКА (наличные) + ВЫКУП',
   'ФССП не подаем','ОТКАЗ','Подает заявку','В работе КСО','на рассмотрении банка',
   'Одобрено банком','Одобрено банком, но не купил','не подобрали авто',
   'не устроила оценка его авто','не устроило состояние нашего авто',
@@ -11544,20 +11554,45 @@ function vizFormatPhone(el) {
 }
 
 // Глобальный фокус-handler: когда юзер фокусится в поле внутри vt-row-form
-// (на телефоне), скроллим его в центр viewport — иначе клавиатура накрывает
-// поле, особенно «Комментарий» в нижней части формы.
+// (на телефоне), и поле оказывается под клавиатурой — скроллим main-контейнер
+// чтобы поле было выше неё. Раньше использовали scrollIntoView({center}),
+// но iOS-клавиатура не учитывается в window.innerHeight: scrollIntoView
+// центрирует относительно ПОЛНОГО viewport, и поле всё равно остаётся под
+// клавиатурой. Решение — visualViewport.height + ручной scrollBy.
 if (!window._vizFocusBound) {
   window._vizFocusBound = true;
+  const _vizFocusScroll = (el) => {
+    if (!el || !el.getBoundingClientRect) return;
+    const rect = el.getBoundingClientRect();
+    const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    const marginAboveKbd = 80;
+    // Если поле под видимой областью (выше — ок, ничего не делаем)
+    if (rect.bottom > vh - marginAboveKbd) {
+      const delta = rect.bottom - (vh - marginAboveKbd);
+      const mainEl = document.querySelector('main');
+      if (mainEl && mainEl.scrollBy) mainEl.scrollBy({ top: delta, behavior: 'smooth' });
+      else window.scrollBy({ top: delta, behavior: 'smooth' });
+    }
+  };
   document.addEventListener('focusin', (e) => {
     const el = e.target;
     if (!el || !el.closest) return;
     if (!el.closest('.vt-row-form')) return;
     if (!/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
-    // Даём клавиатуре подняться, потом скроллим
-    setTimeout(() => {
-      try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch(_){}
-    }, 300);
+    // Даём клавиатуре полностью подняться и visualViewport обновиться,
+    // затем скроллим. Первый таймаут — если visualViewport ещё не среагировал,
+    // второй — finalize после полного появления клавиатуры.
+    setTimeout(() => _vizFocusScroll(el), 350);
+    setTimeout(() => _vizFocusScroll(el), 700);
   });
+  // Реакция на динамическое изменение visualViewport (например клавиатура
+  // переключилась между обычной/расширенной с подсказками)
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      const ae = document.activeElement;
+      if (ae && ae.closest && ae.closest('.vt-row-form')) _vizFocusScroll(ae);
+    });
+  }
 }
 
 function vizOnChange(el) {
@@ -12407,14 +12442,43 @@ async function renderTrophiesPage() {
     const m = String(code||'').match(/(\d+)/);
     return m ? parseInt(m[1], 10) : -1;
   }
+  // Явные смысловые группы — трофеи разных «семей» (по коду), но
+  // относящиеся к одной механике. Внутри группы — фиксированный порядок
+  // по «силе/прогрессии». Ключ группы выбран так, чтобы при сортировке
+  // по группе как строке, группа располагалась в логичном месте среди
+  // одиночных трофеев своего типа.
+  // Формат: code → { g: 'group-key', o: orderIndex }
+  const _trophyGroupMap = {
+    // План месяца + кредитные сделки
+    'normal_monthly':   { g: 'plancredit', o: 1 },
+    'hard_monthly':     { g: 'plancredit', o: 2 },
+    'veryhard_monthly': { g: 'plancredit', o: 3 },
+    // Кредитные сделки подряд (день в день)
+    '3in1_monthly':     { g: 'streakcredit', o: 1 },
+    '10in1_monthly':    { g: 'streakcredit', o: 2 },
+    // Реализации за наличные
+    'cash_monthly':     { g: 'cashsales', o: 1 },
+    'megacash_monthly': { g: 'cashsales', o: 2 },
+    // Реализации в кредит
+    'kd_monthly':       { g: 'creditsales', o: 1 },
+    'megakd_monthly':   { g: 'creditsales', o: 2 },
+    // Самый высокий доход (месяц / полгода)
+    'emolument_monthly':{ g: 'topincome', o: 1 },
+    'snatch_monthly':   { g: 'topincome', o: 2 },
+  };
+  function _trophyGroup(code) {
+    const m = _trophyGroupMap[code];
+    // Если не входит в явную группу — отдаём family как «группу из одного»,
+    // чтобы соседние одиночные трофеи не примыкали к серии не туда.
+    return m ? { g: m.g, o: m.o } : { g: _trophyFamily(code), o: _trophyNumber(code) };
+  }
   if (isCatalogMode) {
     sourceList.sort((a, b) => {
       const tDiff = _typeOrder[(a.type||'neutral').toLowerCase()] - _typeOrder[(b.type||'neutral').toLowerCase()];
       if (tDiff) return tDiff;
-      const fA = _trophyFamily(a.code), fB = _trophyFamily(b.code);
-      if (fA !== fB) return fA.localeCompare(fB, 'ru');
-      const nA = _trophyNumber(a.code), nB = _trophyNumber(b.code);
-      if (nA !== nB) return nA - nB;
+      const gA = _trophyGroup(a.code), gB = _trophyGroup(b.code);
+      if (gA.g !== gB.g) return String(gA.g).localeCompare(String(gB.g), 'ru');
+      if (gA.o !== gB.o) return gA.o - gB.o;
       return String(a.name||a.code).localeCompare(String(b.name||b.code), 'ru');
     });
   } else {
@@ -12437,10 +12501,9 @@ async function renderTrophiesPage() {
       .sort((a, b) => {
         const tDiff = _typeOrder[(a.type||'neutral').toLowerCase()] - _typeOrder[(b.type||'neutral').toLowerCase()];
         if (tDiff) return tDiff;
-        const fA = _trophyFamily(a.code), fB = _trophyFamily(b.code);
-        if (fA !== fB) return fA.localeCompare(fB, 'ru');
-        const nA = _trophyNumber(a.code), nB = _trophyNumber(b.code);
-        if (nA !== nB) return nA - nB;
+        const gA = _trophyGroup(a.code), gB = _trophyGroup(b.code);
+        if (gA.g !== gB.g) return String(gA.g).localeCompare(String(gB.g), 'ru');
+        if (gA.o !== gB.o) return gA.o - gB.o;
         return String(a.name||a.code).localeCompare(String(b.name||b.code), 'ru');
       });
     sourceList.push(...lockedCatalog);
@@ -14830,8 +14893,11 @@ async function _remEnsureHeader() {
 function startRemindersLoop() {
   remApplyVisibility();
   if (_remCheckTimer) clearInterval(_remCheckTimer);
-  // Проверяем каждые 30 секунд
-  _remCheckTimer = setInterval(_remTick, 30 * 1000);
+  // Проверяем раз в 2 минуты. Милестоны напоминаний выставлены в минутах
+  // (fireMin), поэтому максимальная задержка показа — 2 мин, что приемлемо
+  // для смены/обеда. Раньше тикали каждые 30с — это ~120 лишних вызовов
+  // _remTick в час, часть которых триггерила api(SHEETS.grafik) на cold-state.
+  _remCheckTimer = setInterval(_remTick, 2 * 60 * 1000);
   // Сразу один тик
   _remTick();
   _remEnsureHeader();

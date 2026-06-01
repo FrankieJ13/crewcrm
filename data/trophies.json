@@ -1,6 +1,6 @@
 {
-  "version": 8,
-  "updatedAt": "2026-05-31",
+  "version": 9,
+  "updatedAt": "2026-06-01",
   "notes": "script — внутренний сценарий выдачи (виден только CEO/ROP); description — пользовательский текст (виден всем). Категория определяется суффиксом code: _monthly | _annual | _once. AUTO-трофеи начисляются автоматизацией (Apps Script). MANUAL — вручную через лист TrophyAwards.",
   "trophies": [
     {
@@ -357,7 +357,7 @@
       "code": "sickleave_annual",
       "name": "Слабость",
       "script": "Выпадает менеджеру, который ушел официально на больничный. Выдается раз в год, даже если больничных было несколько.",
-      "description": "Решил сделать передышку.",
+      "description": "Вы меня все зае… я хочу на Бали!",
       "type": "neutral",
       "category": "annual",
       "auto": false,

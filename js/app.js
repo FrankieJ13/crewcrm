@@ -2998,6 +2998,31 @@ function isSverkaRow(row, sverkaOnly = false) {
   return sverka === 'да' || sverka === 'yes';
 }
 
+// Полная строка визита: заполнены ВСЕ колонки A..I
+// (ДАТА, ФИО, ТЕЛЕФОН, ГОРОД, КОММЕНТАРИЙ, ИСТОЧНИК, КАТЕГОРИЯ, СПОСОБ, МЕНЕДЖЕР).
+// Если хоть одна пуста — это «черновик», его не учитываем в статистике.
+function isCompleteVizRow(row) {
+  if (!row) return false;
+  for (let c = 0; c <= 8; c++) {
+    if (!String(row[c]||'').trim()) return false;
+  }
+  return true;
+}
+
+// Парсит комбо-комментарий в массив статусов.
+// Пример: «ПОКУПКА (кредит) + КОМИССИЯ» → ['покупка (кредит)', 'комиссия']
+// Один статус → массив из одного элемента. Поддерживаем разделители: + & ,
+function parseVizStatuses(commentRaw) {
+  const s = String(commentRaw || '').trim().toLowerCase().replace(/ё/g, 'е');
+  if (!s) return [];
+  return s.split(/\s*[+&,]\s*/).map(p => p.trim()).filter(Boolean);
+}
+// Помогает в фильтрах: совпадает ли target-статус с любым из combo
+function vizCommentMatches(comment, predicate) {
+  const sts = parseVizStatuses(comment);
+  return sts.some(predicate);
+}
+
 // Строит агрегат по каждому менеджеру из листа ВИЗИТЫ
 function buildCrmStats(vizData, opts = {}) {
   const mgrs = {};
@@ -3030,6 +3055,9 @@ function buildCrmStats(vizData, opts = {}) {
   for (let i = 1; i < vizData.length; i++) {
     const row = vizData[i];
     if (!row || !row[8]) continue;
+    // Чёрновики (не все поля A..I заполнены) — не учитываем в статистике.
+    // Это убирает «фантомные» визиты, когда внесена только дата.
+    if (!isCompleteVizRow(row)) continue;
     if (!isSverkaRow(row, sverkaOnly)) continue;
     const mgr  = String(row[8]).trim();
     const mgrL = mgr.toLowerCase();
@@ -3048,51 +3076,56 @@ function buildCrmStats(vizData, opts = {}) {
       };
     }
     const m   = mgrs[mgrL];
-    const cat = String(row[6]||'').trim().toLowerCase();  // col G = категория
-    const st  = String(row[4]||'').trim().toLowerCase();  // col E = способ/статус
-    const city = String(row[3]||'').trim() || '—';        // col D = город
+    const cat = String(row[6]||'').trim().toLowerCase();          // col G
+    // Комментарий может содержать комбо-сделку: «ПОКУПКА (кредит) + КОМИССИЯ».
+    // Парсим в массив; каждая сделка считается отдельно, а визит — один.
+    const statuses = parseVizStatuses(row[4]);                    // col E
+    const city = String(row[3]||'').trim() || '—';                // col D
     const zadSum = parseFloat(String(row[9]||'0').replace(/[^\d.]/g,'')) || 0; // col J
 
-    m.vis++;  // считаем КАЖДУЮ строку менеджера, как хронология
+    m.vis++;  // один визит на строку (даже если в комментарии комбо)
     if (cat === CAT800)  m.vis800++;
     if (cat === CAT1200) m.vis1200++;
 
-    if (cat === CAT800) {
-      if (st === BUY_KREDIT) m.kred800++;
-      if (st === BUY_NAL)    m.nal800++;
-      if (st === BUY_OBMEN)  m.obmen800++;
-      if (st === BUY_VYKUP)  m.vykup800++;
-      if (st === BUY_KOM)    m.kom800++;
+    if (!m.byCity[city] && (cat === CAT800 || cat === CAT1200)) {
+      m.byCity[city] = emptyCity(city);
     }
-    if (cat === CAT1200) {
-      if (st === BUY_KREDIT) m.kred1200++;
-      if (st === BUY_NAL)    m.nal1200++;
-      if (st === BUY_OBMEN)  m.obmen1200++;
-      if (st === BUY_VYKUP)  m.vykup1200++;
-      if (st === BUY_KOM)    m.kom1200++;
-    }
+    const cityBucket = m.byCity[city];
+    if (cityBucket) cityBucket.vis++;
+
+    statuses.forEach(st => {
+      if (cat === CAT800) {
+        if (st === BUY_KREDIT) m.kred800++;
+        if (st === BUY_NAL)    m.nal800++;
+        if (st === BUY_OBMEN)  m.obmen800++;
+        if (st === BUY_VYKUP)  m.vykup800++;
+        if (st === BUY_KOM)    m.kom800++;
+      }
+      if (cat === CAT1200) {
+        if (st === BUY_KREDIT) m.kred1200++;
+        if (st === BUY_NAL)    m.nal1200++;
+        if (st === BUY_OBMEN)  m.obmen1200++;
+        if (st === BUY_VYKUP)  m.vykup1200++;
+        if (st === BUY_KOM)    m.kom1200++;
+      }
+      if (st === ST_SALON)  m.vsalone++;
+      if (st === ST_KSO1 || st === ST_KSO2 || st === ST_KSO3) m.vkso++;
+      if (st === ST_FSSП)   m.vfssп++;
+      if (st === ST_OTKAZ)  m.otkaz++;
+      if (st === ST_ODOB_NK) m.odobNeKupil++;
+
+      if (cityBucket) {
+        if (st === BUY_KREDIT) cityBucket.kred++;
+        else if (st === BUY_NAL)    cityBucket.nal++;
+        else if (st === BUY_OBMEN)  cityBucket.obmen++;
+        else if (st === BUY_VYKUP)  cityBucket.vykup++;
+        else if (st === BUY_KOM)    cityBucket.kom++;
+        else if (st === ST_OTKAZ)   cityBucket.otkaz++;
+        else if (st === ST_FSSП)    cityBucket.fssp++;
+        else if (st === ST_ODOB_NK) cityBucket.odobNeKupil++;
+      }
+    });
     if (zadSum > 1000) m.zadatok++;
-
-    if (st === ST_SALON)  m.vsalone++;
-    if (st === ST_KSO1 || st === ST_KSO2 || st === ST_KSO3) m.vkso++;
-    if (st === ST_FSSП)   m.vfssп++;
-    if (st === ST_OTKAZ)  m.otkaz++;
-    if (st === ST_ODOB_NK) m.odobNeKupil++;
-
-    // По городам (только кат 800 + 1200 — все визиты этого менеджера)
-    if (cat === CAT800 || cat === CAT1200) {
-      if (!m.byCity[city]) m.byCity[city] = emptyCity(city);
-      const c = m.byCity[city];
-      c.vis++;
-      if (st === BUY_KREDIT) c.kred++;
-      else if (st === BUY_NAL)    c.nal++;
-      else if (st === BUY_OBMEN)  c.obmen++;
-      else if (st === BUY_VYKUP)  c.vykup++;
-      else if (st === BUY_KOM)    c.kom++;
-      else if (st === ST_OTKAZ)   c.otkaz++;
-      else if (st === ST_FSSП)    c.fssp++;
-      else if (st === ST_ODOB_NK) c.odobNeKupil++;
-    }
   }
   return mgrs;
 }
@@ -3117,6 +3150,8 @@ function buildDozhimStats(dVizData, opts = {}) {
   for (let i = 1; i < dVizData.length; i++) {
     const row = dVizData[i];
     if (!row || !row[8]) continue;
+    // Чёрновики (не все A..I заполнены) — не считаем
+    if (!isCompleteVizRow(row)) continue;
     if (!isSverkaRow(row, sverkaOnly)) continue;
     const mgr  = String(row[8]).trim();
     const mgrL = mgr.toLowerCase();
@@ -3133,25 +3168,27 @@ function buildDozhimStats(dVizData, opts = {}) {
       };
     }
     const m   = mgrs[mgrL];
-    const cat = String(row[6]||'').trim().toLowerCase(); // col G = категория
-    const st  = String(row[4]||'').trim().toLowerCase(); // col E = комментарий (итоговый статус сделки)
+    const cat = String(row[6]||'').trim().toLowerCase();          // col G
+    const statuses = parseVizStatuses(row[4]);                    // col E — combo через «+»
     const zadSum = parseFloat(String(row[9]||'0').replace(/[^\d.]/g,'')) || 0; // col J
-    m.vis++; // каждая строка менеджера, как хронология
+    m.vis++; // один визит на строку, даже если в комментарии комбо-сделка
 
     if (cat === CAT800)  m.vis800++;
     if (cat === CAT1000) m.vis1000++;
 
-    if (cat === CAT800) {
-      if (st === BUY_KREDIT) m.kred800++;
-      if (st === BUY_NAL)    m.nal800++;
-      if (st === BUY_OBMEN)  m.obmen800++;
-      if (st === BUY_KOM)    m.kom800++;
-    }
-    if (cat === CAT1000) {
-      if (st === BUY_KREDIT) m.kred1000++;
-      if (st === BUY_NAL)    m.nal1000++;
-      if (st === BUY_KOM)    m.kom1000++;
-    }
+    statuses.forEach(st => {
+      if (cat === CAT800) {
+        if (st === BUY_KREDIT) m.kred800++;
+        if (st === BUY_NAL)    m.nal800++;
+        if (st === BUY_OBMEN)  m.obmen800++;
+        if (st === BUY_KOM)    m.kom800++;
+      }
+      if (cat === CAT1000) {
+        if (st === BUY_KREDIT) m.kred1000++;
+        if (st === BUY_NAL)    m.nal1000++;
+        if (st === BUY_KOM)    m.kom1000++;
+      }
+    });
     if (zadSum >= 1000) m.zadatok++;
   }
   return mgrs;
@@ -8357,8 +8394,10 @@ function openMgrDealsModal(nameLow, kind) {
       if (!row || !row[8]) continue;
       if (String(row[8]).toLowerCase().trim() !== target) continue;
       if (!isSverkaRow(row)) continue;
-      const status = String(row[4] || '').trim().toLowerCase();
-      const ok = cfg.matchRow ? cfg.matchRow(row) : cfg.match(status);
+      if (!isCompleteVizRow(row)) continue;
+      // Поддержка combo: «ПОКУПКА (кредит) + КОМИССИЯ» матчит и kredit, и komis
+      const statuses = parseVizStatuses(row[4]);
+      const ok = cfg.matchRow ? cfg.matchRow(row) : statuses.some(cfg.match);
       if (!ok) continue;
       collected.push({
         date:   String(row[0] || '').trim(),
@@ -8425,8 +8464,8 @@ function openMgrSalonModal(nameLow) {
       if (!row || !row[8]) continue;
       if (String(row[8]).toLowerCase().trim() !== target) continue;
       if (!isSverkaRow(row)) continue;
-      const status = String(row[4] || '').trim().toLowerCase();
-      if (status !== 'в салоне') continue;
+      if (!isCompleteVizRow(row)) continue;
+      if (!parseVizStatuses(row[4]).includes('в салоне')) continue;
       collected.push({
         date:    String(row[0] || '').trim(),
         city:    String(row[3] || '').trim() || '—',
@@ -8476,8 +8515,9 @@ function openMgrKsoModal(nameLow) {
       if (!row || !row[8]) continue;
       if (String(row[8]).toLowerCase().trim() !== target) continue;
       if (!isSverkaRow(row)) continue;
-      const status = String(row[4] || '').trim().toLowerCase();
-      if (!ksoStatuses.includes(status)) continue;
+      if (!isCompleteVizRow(row)) continue;
+      const statuses = parseVizStatuses(row[4]);
+      if (!statuses.some(s => ksoStatuses.includes(s))) continue;
       collected.push({
         date:    String(row[0] || '').trim(),
         city:    String(row[3] || '').trim() || '—',
@@ -8606,12 +8646,15 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
     return dayStats[day];
   }
 
-  function addDealCounters(bucket, status) {
-    if (status === BUY_KREDIT) bucket.kred++;
-    if (status === BUY_NAL)    bucket.nal++;
-    if (status === BUY_OBMEN && Object.prototype.hasOwnProperty.call(bucket, 'obmen')) bucket.obmen++;
-    if (status === BUY_VYKUP && Object.prototype.hasOwnProperty.call(bucket, 'vykup')) bucket.vykup++;
-    if (status === BUY_KOM)    bucket.kom++;
+  function addDealCounters(bucket, deals) {
+    // deals — массив статусов (combo-сделка может содержать несколько)
+    deals.forEach(status => {
+      if (status === BUY_KREDIT) bucket.kred++;
+      if (status === BUY_NAL)    bucket.nal++;
+      if (status === BUY_OBMEN && Object.prototype.hasOwnProperty.call(bucket, 'obmen')) bucket.obmen++;
+      if (status === BUY_VYKUP && Object.prototype.hasOwnProperty.call(bucket, 'vykup')) bucket.vykup++;
+      if (status === BUY_KOM)    bucket.kom++;
+    });
   }
 
   if (vizData) {
@@ -8621,6 +8664,7 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
       const mgr = (row[8]||'').trim().toLowerCase();
       if (mgr !== nameLow) continue;
       if (!isSverkaRow(row, true)) continue;
+      if (!isCompleteVizRow(row)) continue;
 
       const dateStr = (row[0]||'').trim();
       const parts = dateStr.split('.');
@@ -8628,8 +8672,8 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
       const day = parseInt(parts[0]);
       if (!day || day < 1 || day > 31) continue;
 
-      const cat  = (row[6]||'').trim().toLowerCase();
-      const deal = (row[4]||'').trim().toLowerCase();
+      const cat   = (row[6]||'').trim().toLowerCase();
+      const deals = parseVizStatuses(row[4]); // combo-разбор
       const zadSum = parseFloat(String(row[9]||'0').replace(/[^\d.]/g,'')) || 0;
 
       if (!isDozhim) {
@@ -8637,12 +8681,12 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
         const is1200 = cat === 'кат 1200';
         const stat = ensureDayStats(day);
         if (is800) {
-          stat.crm.vis++;
-          addDealCounters(stat.crm, deal);
+          stat.crm.vis++; // один визит на строку
+          addDealCounters(stat.crm, deals);
           if (zadSum > 1000) stat.crm.zadatok++;
         } else if (is1200) {
           stat.warm.vis++;
-          addDealCounters(stat.warm, deal);
+          addDealCounters(stat.warm, deals);
         }
 
       } else {
@@ -8651,11 +8695,11 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
         const stat = ensureDayStats(day);
         if (is800) {
           stat.ch800.vis++;
-          addDealCounters(stat.ch800, deal);
+          addDealCounters(stat.ch800, deals);
           if (zadSum >= 1000) stat.ch800.zadatok++;
         } else if (is1000) {
           stat.ch1000.vis++;
-          addDealCounters(stat.ch1000, deal);
+          addDealCounters(stat.ch1000, deals);
         }
       }
     }
@@ -9947,6 +9991,7 @@ function renderCeoDashboard() {
       for (let i = 1; i < rows.length; i++) {
         const r = rows[i];
         if (!r || !r[8]) continue;
+        if (!isCompleteVizRow(r)) continue; // черновики не считаем как визит
         if (!isSverkaRow(r)) continue;
         if (String(r[8]).toLowerCase().trim() !== nl) continue;
         if (planned[i]) continue; // запланирован, по факту не приехал — пропускаем

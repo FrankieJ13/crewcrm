@@ -1961,6 +1961,7 @@ function onLogin() {
   // Hamburger: сразу показываем Выйти + Месяц
   const hmbl = document.getElementById('hmb-logout'); if (hmbl) hmbl.style.display = '';
   const hmbsl = document.getElementById('hmb-sep-logout'); if (hmbsl) hmbsl.style.display = '';
+  const hmbcc = document.getElementById('hmb-clearcache'); if (hmbcc) hmbcc.style.display = '';
   const hmbm = document.getElementById('hmb-month-trigger'); if (hmbm) hmbm.style.display = '';
   const hmbms = document.getElementById('hmb-sep-month'); if (hmbms) hmbms.style.display = '';
   // Трофеи и «О проекте» показываем только после авторизации
@@ -2000,6 +2001,71 @@ function onLogin() {
   }, AUTO_REFRESH_INTERVAL);
 }
 
+/**
+ * Полная очистка кэша + деавторизация + reload.
+ * Чистит: localStorage, sessionStorage, Service Worker caches, IndexedDB
+ * (Firebase офлайн-кэш и др.), OAuth-токен на сервере Google, SW-регистрацию.
+ * После всего — location.reload(), чтобы стартовать с чистого листа.
+ */
+async function clearAllCacheAndLogout() {
+  if (!confirm('Очистить весь локальный кэш и выйти?\nПонадобится войти заново.')) return;
+  // Показываем «системный» loader пока всё вычищается
+  try { document.body.style.cursor = 'wait'; } catch(e){}
+  // 1) OAuth revoke (асинхронно, не ждём)
+  try {
+    if (S.token && window.google?.accounts?.oauth2?.revoke) {
+      google.accounts.oauth2.revoke(S.token, () => {});
+    }
+  } catch(e) { console.warn('cache-clear: oauth revoke', e); }
+  // 2) Firebase signOut (если инициализирован)
+  try {
+    if (window.firebase && firebase.apps && firebase.apps.length) {
+      await firebase.auth().signOut().catch(()=>{});
+    }
+  } catch(e) { console.warn('cache-clear: firebase signOut', e); }
+  // 3) localStorage / sessionStorage — под ноль
+  try { localStorage.clear(); } catch(e) { console.warn('cache-clear: localStorage', e); }
+  try { sessionStorage.clear(); } catch(e) { console.warn('cache-clear: sessionStorage', e); }
+  // 4) Service Worker caches — удаляем все кеши (precache + рантайм)
+  if (typeof caches !== 'undefined') {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k).catch(()=>{})));
+    } catch(e) { console.warn('cache-clear: caches', e); }
+  }
+  // 5) IndexedDB — Firebase RTDB/auth держит несколько баз.
+  // databases() есть не везде (Safari/iOS) — поэтому ещё прибиваем по
+  // известным именам как fallback.
+  const knownDbs = [
+    'firebaseLocalStorageDb', 'firebase-installations-database',
+    'firebase-heartbeat-database',
+  ];
+  if (indexedDB.databases) {
+    try {
+      const dbs = await indexedDB.databases();
+      for (const db of dbs) if (db?.name && !knownDbs.includes(db.name)) knownDbs.push(db.name);
+    } catch(e) {}
+  }
+  await Promise.all(knownDbs.map(name => new Promise(resolve => {
+    try {
+      const req = indexedDB.deleteDatabase(name);
+      req.onsuccess = req.onerror = req.onblocked = () => resolve();
+      // На случай если ни один event не выстрелит — таймаут
+      setTimeout(resolve, 1500);
+    } catch(e) { resolve(); }
+  })));
+  // 6) Unregister всех Service Worker — следующий заход переустановит чистый
+  if (navigator.serviceWorker) {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister().catch(()=>{})));
+    } catch(e) { console.warn('cache-clear: sw unregister', e); }
+  }
+  // 7) Перезагрузка из сети (минуем HTTP-кеш)
+  try { location.reload(); } catch(e) { location.href = location.href; }
+}
+window.clearAllCacheAndLogout = clearAllCacheAndLogout;
+
 function onLogout() {
   if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
   S.authReady = false;
@@ -2018,6 +2084,7 @@ function onLogout() {
   document.getElementById('main-dock').style.display = 'none';
   const hmbl2 = document.getElementById('hmb-logout'); if (hmbl2) hmbl2.style.display = 'none';
   const hmbsl2 = document.getElementById('hmb-sep-logout'); if (hmbsl2) hmbsl2.style.display = 'none';
+  const hmbcc2 = document.getElementById('hmb-clearcache'); if (hmbcc2) hmbcc2.style.display = 'none';
   const hmbAcc2 = document.getElementById('hmb-account-btn'); if (hmbAcc2) hmbAcc2.style.display = 'none';
   const hmbAccSep2 = document.getElementById('hmb-sep-account'); if (hmbAccSep2) hmbAccSep2.style.display = 'none';
   // Скрываем Трофеи и «О проекте» при выходе — экран авторизации без них
@@ -6842,6 +6909,7 @@ function showAccessDenied(reason = 'Почта не найдена в USERS') {
   document.getElementById('user-wrap').style.display = 'none';
   const hmbl = document.getElementById('hmb-logout'); if (hmbl) hmbl.style.display = 'none';
   const hmbsl = document.getElementById('hmb-sep-logout'); if (hmbsl) hmbsl.style.display = 'none';
+  const hmbcc = document.getElementById('hmb-clearcache'); if (hmbcc) hmbcc.style.display = 'none';
   const hmbAcc = document.getElementById('hmb-account-btn'); if (hmbAcc) hmbAcc.style.display = 'none';
   const hmbAccSep = document.getElementById('hmb-sep-account'); if (hmbAccSep) hmbAccSep.style.display = 'none';
   const hmbT = document.getElementById('hmb-trophies'); if (hmbT) hmbT.style.display = 'none';

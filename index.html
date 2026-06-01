@@ -17,8 +17,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&family=Exo+2:wght@200;300;700&family=JetBrains+Mono:wght@300;400&family=Oswald:wght@400;700&display=swap" rel="stylesheet"/>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<link rel="stylesheet" href="./css/styles.css?v=150"/>
-<link rel="stylesheet" href="./css/autopodbor.css?v=150"/>
+<link rel="stylesheet" href="./css/styles.css?v=151"/>
+<link rel="stylesheet" href="./css/autopodbor.css?v=151"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -190,6 +190,10 @@
               <span>О проекте</span>
             </button>
             <div class="hmb-sep" id="hmb-sep-logout" style="display:none"></div>
+            <button class="hmb-item" id="hmb-clearcache" onclick="clearAllCacheAndLogout();closeHamburger()" style="display:none">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+              <span>Очистить кэш</span>
+            </button>
             <button class="hmb-item hmb-danger" id="hmb-logout" onclick="onLogout();closeHamburger()" style="display:none">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
               <span>Выйти</span>
@@ -936,7 +940,7 @@
   </div>
 </div>
 
-<script src="./js/app.js?v=150"></script>
+<script src="./js/app.js?v=151"></script>
 <!-- Затемнение фона при открытом popup напоминаний -->
 <div class="rem-backdrop" id="rem-backdrop" onclick="closeRemPanel()"></div>
 
@@ -967,9 +971,9 @@
     </form>
   </div>
 </div>
-<script src="./js/autopodbor-config.js?v=150"></script>
-<script src="./js/autopodbor-dictionary.js?v=150"></script>
-<script src="./js/autopodbor-chat.js?v=150"></script>
+<script src="./js/autopodbor-config.js?v=151"></script>
+<script src="./js/autopodbor-dictionary.js?v=151"></script>
+<script src="./js/autopodbor-chat.js?v=151"></script>
 
 <!-- Модалка профиля менеджера (открывается с рейтинга) -->
 <div id="profile-modal-overlay" class="profile-modal-overlay" onclick="if(event.target===this)closeProfileModal()">

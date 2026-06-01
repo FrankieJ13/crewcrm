@@ -7512,6 +7512,7 @@ function renderPersonal(matched) {
       return d;
     }
     const path = smooth(pts);
+    if (!path) return ''; // <2 точек → нет валидного пути, не рисуем SVG
     return `<svg class="ceo-sparkline" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><path d="${path}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/></svg>`;
   }
 
@@ -10126,6 +10127,8 @@ function renderCeoDashboard() {
       return d;
     }
     const linePath = smoothPath(pts);
+    // Если точек 0/1 — smoothPath вернёт '', и areaPath начнётся с L → SVG ругается
+    if (!linePath) return '';
     const areaPath = linePath + ` L ${w} ${h} L 0 ${h} Z`;
     const gid = `spark-grad-${idSuffix}`;
     return `<svg class="ceo-spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" width="100%" height="${h}">

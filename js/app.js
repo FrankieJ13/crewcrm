@@ -174,7 +174,7 @@ function toggleHmbMonth(e) {
   if (daysLeftIncl <= 5) {
     months.push(new Date(today.getFullYear(), today.getMonth() + 1, 1));
   }
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 12; i++) {
     const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
     months.push(d);
   }
@@ -11540,6 +11540,23 @@ function vizFormatPhone(el) {
   }
 }
 
+// Глобальный фокус-handler: когда юзер фокусится в поле внутри vt-row-form
+// (на телефоне), скроллим его в центр viewport — иначе клавиатура накрывает
+// поле, особенно «Комментарий» в нижней части формы.
+if (!window._vizFocusBound) {
+  window._vizFocusBound = true;
+  document.addEventListener('focusin', (e) => {
+    const el = e.target;
+    if (!el || !el.closest) return;
+    if (!el.closest('.vt-row-form')) return;
+    if (!/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+    // Даём клавиатуре подняться, потом скроллим
+    setTimeout(() => {
+      try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch(_){}
+    }, 300);
+  });
+}
+
 function vizOnChange(el) {
   const sheetRow = +el.dataset.row;
   const col      = +el.dataset.col;
@@ -12376,12 +12393,27 @@ async function renderTrophiesPage() {
 
   // Сортировка единым списком:
   //   - режим менеджера: по дате последнего получения, свежие → старые
-  //   - каталог-режим (CEO): по типу (позитив → нейтрал → негатив), потом алфавит
+  //   - каталог-режим (CEO): по типу (позитив → нейтрал → негатив),
+  //     внутри типа — по «семейству» кода (буквенная часть), внутри семьи —
+  //     по числу. Это группирует серии: 25trophies → 50 → 75 → 100 → 150 → ...
+  //     Аннуальные с годом-суффиксом тоже идут по году.
+  function _trophyFamily(code) {
+    return String(code||'').replace(/\d+/g, '').replace(/_+/g, '_').toLowerCase();
+  }
+  function _trophyNumber(code) {
+    const m = String(code||'').match(/(\d+)/);
+    return m ? parseInt(m[1], 10) : -1;
+  }
   if (isCatalogMode) {
-    sourceList.sort((a, b) =>
-      (_typeOrder[(a.type||'neutral').toLowerCase()] - _typeOrder[(b.type||'neutral').toLowerCase()])
-      || String(a.name||a.code).localeCompare(String(b.name||b.code), 'ru')
-    );
+    sourceList.sort((a, b) => {
+      const tDiff = _typeOrder[(a.type||'neutral').toLowerCase()] - _typeOrder[(b.type||'neutral').toLowerCase()];
+      if (tDiff) return tDiff;
+      const fA = _trophyFamily(a.code), fB = _trophyFamily(b.code);
+      if (fA !== fB) return fA.localeCompare(fB, 'ru');
+      const nA = _trophyNumber(a.code), nB = _trophyNumber(b.code);
+      if (nA !== nB) return nA - nB;
+      return String(a.name||a.code).localeCompare(String(b.name||b.code), 'ru');
+    });
   } else {
     sourceList.sort((a, b) => {
       const da = awardsByCode[a.code]?.lastDate || '';
@@ -12399,10 +12431,15 @@ async function renderTrophiesPage() {
     });
     const lockedCatalog = catalog
       .filter(t => !earnedBaseCodes.has(t.code))
-      .sort((a, b) =>
-        (_typeOrder[(a.type||'neutral').toLowerCase()] - _typeOrder[(b.type||'neutral').toLowerCase()])
-        || String(a.name||a.code).localeCompare(String(b.name||b.code), 'ru')
-      );
+      .sort((a, b) => {
+        const tDiff = _typeOrder[(a.type||'neutral').toLowerCase()] - _typeOrder[(b.type||'neutral').toLowerCase()];
+        if (tDiff) return tDiff;
+        const fA = _trophyFamily(a.code), fB = _trophyFamily(b.code);
+        if (fA !== fB) return fA.localeCompare(fB, 'ru');
+        const nA = _trophyNumber(a.code), nB = _trophyNumber(b.code);
+        if (nA !== nB) return nA - nB;
+        return String(a.name||a.code).localeCompare(String(b.name||b.code), 'ru');
+      });
     sourceList.push(...lockedCatalog);
   }
 

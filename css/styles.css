@@ -1368,6 +1368,30 @@ body.neo-light .gooey-text {
 .hmb-theme-trigger.expanded .hmb-chevron { transform: rotate(90deg); }
 .hmb-theme-sub { display: none; flex-direction: column; background: var(--bg3); }
 .hmb-sub-item { padding-left: 28px; font-size: 12px; }
+/* Скроллируемый суб-список (месяцы / темы) — видно 4 пункта, остальные за скроллом.
+   Анимированная стрелка-намёк снизу подсказывает что можно скроллить. */
+#hmb-month-sub, .hmb-theme-sub {
+  max-height: calc(4 * 36px); /* ~4 пункта по 36px */
+  overflow-y: auto;
+  scrollbar-width: thin;
+  position: relative;
+}
+#hmb-month-sub::after, .hmb-theme-sub::after {
+  /* Намёк-стрелка вниз; скрывается когда контейнер скроллнут до конца */
+  content: '⌄';
+  position: sticky; bottom: 0; left: 0; right: 0;
+  display: block; text-align: center;
+  font-size: 14px; line-height: 14px;
+  color: var(--acc);
+  padding: 2px 0 4px;
+  background: linear-gradient(to top, var(--bg3) 60%, transparent 100%);
+  pointer-events: none;
+  animation: hmbScrollHint 1.4s ease-in-out infinite;
+}
+@keyframes hmbScrollHint {
+  0%, 100% { transform: translateY(0); opacity: .9; }
+  50%      { transform: translateY(3px); opacity: .55; }
+}
 .hmb-sub-item.theme-active::after {
   content: '✓';
   margin-left: auto;

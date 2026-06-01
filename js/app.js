@@ -4254,8 +4254,72 @@ function renderDohodCrm(el) {
     return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span>${getMgrMessengerHtml(item.name)}</div>${incomeCols}</div>`;
   }).join('');
 
-  setLiveHTML(el, `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15);position:relative"><div class="zl">Прогноз фонда отдела</div><div class="zv">${fmtRub(totalFund)}</div><button class="income-modal-info-btn" onclick="openSalInfo('crm')" title="Как считается зарплата" style="position:absolute;top:10px;right:10px">i</button></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`);
+  // Кнопка «Копировать всю ЗП» — только CEO/ROP. Копирует ЗП по обоим
+  // отделам (CRM + Дожим) в буфер обмена в виде «ФИО - СУММА ₽».
+  const _me = (typeof findUserInSheet === 'function') ? findUserInSheet() : null;
+  const _isCeo = _me && (typeof isCeoLike === 'function') && isCeoLike(_me.role);
+  const copyBtn = _isCeo
+    ? `<button class="zp-copy-btn" onclick="copyAllSalariesToClipboard()" title="Скопировать ЗП всех менеджеров (CRM + Дожим)" style="position:absolute;top:10px;left:10px">
+         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+       </button>`
+    : '';
+
+  setLiveHTML(el, `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">${copyBtn}<div class="zl">Прогноз фонда отдела</div><div class="zv">${fmtRub(totalFund)}</div><button class="income-modal-info-btn" onclick="openSalInfo('crm')" title="Как считается зарплата" style="position:absolute;top:10px;right:10px">i</button></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`);
 }
+
+// Копирует список ФИО → ЗП по факту за выбранный месяц в буфер обмена.
+// Объединяет CRM + Дожим, сортирует по убыванию суммы.
+async function copyAllSalariesToClipboard() {
+  const planData = S.data.plan || [];
+  const allNames = planData.slice(1)
+    .filter(r => r && r[0])
+    .map(r => String(r[0]).trim())
+    .filter(Boolean);
+  if (!allNames.length) { try { toast('Нет данных по менеджерам', 'e'); } catch(_) {} return; }
+
+  const rows = [];
+  allNames.forEach(name => {
+    const nameLow = name.toLowerCase().trim();
+    const role = (typeof getRoleByName === 'function') ? getRoleByName(nameLow) : '';
+    let sal = null;
+    try {
+      if (role === 'dozhim') sal = (typeof calcSalaryDozhimFromVizity === 'function') ? calcSalaryDozhimFromVizity(nameLow) : null;
+      else                   sal = (typeof calcSalary === 'function') ? calcSalary(nameLow) : null;
+    } catch (e) { sal = null; }
+    if (sal && sal.fact && isFinite(sal.fact.total)) {
+      rows.push({ name: name.toUpperCase(), total: Math.round(sal.fact.total) });
+    }
+  });
+  if (!rows.length) { try { toast('Не удалось собрать данные по ЗП', 'e'); } catch(_) {} return; }
+
+  rows.sort((a, b) => b.total - a.total);
+  const text = rows.map(r => `${r.name} - ${fmtRub(r.total)}`).join('\n');
+
+  // Пытаемся через Clipboard API; если недоступно — fallback на execCommand
+  let copied = false;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      copied = true;
+    }
+  } catch (e) { /* fallthrough */ }
+  if (!copied) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      copied = document.execCommand('copy');
+      document.body.removeChild(ta);
+    } catch (e) { copied = false; }
+  }
+  try {
+    if (copied) toast(`Скопировано: ${rows.length} менеджеров`, 's');
+    else        toast('Не удалось скопировать в буфер', 'e');
+  } catch (e) { /* noop */ }
+}
+window.copyAllSalariesToClipboard = copyAllSalariesToClipboard;
 
 function renderDohodDozhim(el) {
   if (!S.data.d_vizity || !S.data.plan) { if (!S.silentRefresh) el.innerHTML = loader(); return; }

@@ -8275,3 +8275,23 @@ body.fluent .vac-cell        { color: #111; }
   border-color: var(--acc);
   color: var(--acc);
 }
+
+/* ═══ Кнопка копирования ЗП (CEO/ROP) ═══ */
+.zp-copy-btn {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--txt);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0;
+  transition: background .15s, transform .12s, color .15s;
+}
+.zp-copy-btn:hover {
+  background: rgba(var(--acc-rgb), 0.18);
+  color: var(--acc);
+  transform: scale(1.06);
+}
+.zp-copy-btn:active { transform: scale(0.94); }
+.zp-copy-btn svg { display: block; }

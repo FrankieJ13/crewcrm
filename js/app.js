@@ -3218,7 +3218,10 @@ const DOZHIM_RATES = {
 
 function calcSalaryDozhimFromVizity(nameLow) {
   const dVizData = S.data.d_vizity || [];
-  const allStats = buildDozhimStats(dVizData, { sverkaOnly: true });
+  // sverkaOnly УБРАН: счёт визитов/сделок в доходе ДОЛЖЕН совпадать
+  // с тем, что показывает Personal/KPI/CEO (1:1). Раньше доход фильтровал
+  // по col N → расхождение в 1+ визитов с другими экранами.
+  const allStats = buildDozhimStats(dVizData);
   const mgrStat  = allStats[nameLow];
   if (!mgrStat) return null;
 
@@ -7742,7 +7745,9 @@ function calcSalary(nameLow) {
   const rZadatok     = parseRate(stavki[20]?.[1]);
 
   // Агрегируем данные менеджера из ВИЗИТЫ
-  const allStats = buildCrmStats(vizData, { sverkaOnly: true });
+  // sverkaOnly УБРАН: счёт визитов/сделок в доходе ДОЛЖЕН совпадать
+  // с тем, что показывает Personal/KPI/CEO (1:1).
+  const allStats = buildCrmStats(vizData);
   const mgrStat  = allStats[nameLow];
   if (!mgrStat) return null;
 

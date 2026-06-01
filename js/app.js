@@ -4277,6 +4277,22 @@ async function copyAllSalariesToClipboard() {
     .filter(Boolean);
   if (!allNames.length) { try { toast('Нет данных по менеджерам', 'e'); } catch(_) {} return; }
 
+  // На вкладке ДОХОД (CRM-вид) обычно не загружены d_vizity и d_stavki —
+  // дотягиваем их сейчас, иначе calcSalaryDozhimFromVizity вернёт null
+  // для всех дожимщиков, и они выпадут из отчёта.
+  try {
+    const tasks = [];
+    if (!S.data.d_vizity)  tasks.push(api(SHEETS.d_vizity, 'A:N').then(d => S.data.d_vizity = d).catch(() => S.data.d_vizity = S.data.d_vizity || []));
+    if (!S.data.d_stavki)  tasks.push(api(SHEETS.d_stavki, 'A1:B25').then(d => S.data.d_stavki = d).catch(() => S.data.d_stavki = S.data.d_stavki || []));
+    if (!S.data.vizity)    tasks.push(api(SHEETS.vizity, 'A:N').then(d => S.data.vizity = d).catch(() => S.data.vizity = S.data.vizity || []));
+    if (!S.data.stavki)    tasks.push(api(SHEETS.stavki, 'A1:B25').then(d => S.data.stavki = d).catch(() => S.data.stavki = S.data.stavki || []));
+    if (!S.data.grafik)    tasks.push(api(SHEETS.grafik, 'A1:AI25').then(d => S.data.grafik = d).catch(() => S.data.grafik = S.data.grafik || []));
+    if (tasks.length) {
+      try { toast('Собираю данные…', 'i'); } catch(_){}
+      await Promise.all(tasks);
+    }
+  } catch(_) { /* продолжаем — что есть, тем и считаем */ }
+
   const rows = [];
   allNames.forEach(name => {
     const nameLow = name.toLowerCase().trim();

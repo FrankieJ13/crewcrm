@@ -3238,8 +3238,20 @@ function calcSalaryDozhimFromVizity(nameLow) {
   const pure800  = Math.max(0, ch800.vis  - ch800.kred  - ch800.nal  - ch800.obmen - ch800.vykup - ch800.kom);
   const pure1000 = Math.max(0, ch1000.vis - ch1000.kred - ch1000.nal - ch1000.vykup - ch1000.kom);
 
-  const earn800  = pure800*R.r800Vis  + ch800.kred*R.r800Kred  + ch800.nal*R.r800Nal  + ch800.obmen*R.r800Obmen  + ch800.vykup*rVykup  + ch800.kom*R.r800Kom  + ch800.zadatok*R.rZadatok;
-  const earn1000 = pure1000*R.r1000Vis + ch1000.kred*R.r1000Kred + ch1000.nal*R.r1000Nal + ch1000.vykup*rVykup + ch1000.kom*R.r1000Kom;
+  // Если у типа сделки нет ставки (0/пусто) — оплачивается как визит КАТ.
+  const dealRate = (rDeal, rVisitFallback) => (rDeal > 0 ? rDeal : rVisitFallback);
+  const earn800  = pure800*R.r800Vis
+                 + ch800.kred  * dealRate(R.r800Kred,  R.r800Vis)
+                 + ch800.nal   * dealRate(R.r800Nal,   R.r800Vis)
+                 + ch800.obmen * dealRate(R.r800Obmen, R.r800Vis)
+                 + ch800.vykup * dealRate(rVykup,      R.r800Vis)
+                 + ch800.kom   * dealRate(R.r800Kom,   R.r800Vis)
+                 + ch800.zadatok * R.rZadatok;
+  const earn1000 = pure1000*R.r1000Vis
+                 + ch1000.kred  * dealRate(R.r1000Kred, R.r1000Vis)
+                 + ch1000.nal   * dealRate(R.r1000Nal,  R.r1000Vis)
+                 + ch1000.vykup * dealRate(rVykup,      R.r1000Vis)
+                 + ch1000.kom   * dealRate(R.r1000Kom,  R.r1000Vis);
 
   // Котёл — суммируем тех кто не в ПЛАН (dozhim-менеджеры)
   const planM = getPlanMap(S.data.plan || []);
@@ -3251,8 +3263,18 @@ function calcSalaryDozhimFromVizity(nameLow) {
       const sv1000 = s.vykup1000 || 0;
       const p8  = Math.max(0, s.vis800  - s.kred800  - s.nal800  - s.obmen800 - sv800  - s.kom800);
       const p10 = Math.max(0, s.vis1000 - s.kred1000 - s.nal1000 - sv1000 - s.kom1000);
-      kotelEarn800  += p8*R.r800Vis  + s.kred800*R.r800Kred  + s.nal800*R.r800Nal  + s.obmen800*R.r800Obmen  + sv800*rVykup  + s.kom800*R.r800Kom  + s.zadatok*R.rZadatok;
-      kotelEarn1000 += p10*R.r1000Vis + s.kred1000*R.r1000Kred + s.nal1000*R.r1000Nal + sv1000*rVykup + s.kom1000*R.r1000Kom;
+      kotelEarn800  += p8*R.r800Vis
+                     + s.kred800  * dealRate(R.r800Kred,  R.r800Vis)
+                     + s.nal800   * dealRate(R.r800Nal,   R.r800Vis)
+                     + s.obmen800 * dealRate(R.r800Obmen, R.r800Vis)
+                     + sv800      * dealRate(rVykup,      R.r800Vis)
+                     + s.kom800   * dealRate(R.r800Kom,   R.r800Vis)
+                     + s.zadatok * R.rZadatok;
+      kotelEarn1000 += p10*R.r1000Vis
+                     + s.kred1000  * dealRate(R.r1000Kred, R.r1000Vis)
+                     + s.nal1000   * dealRate(R.r1000Nal,  R.r1000Vis)
+                     + sv1000      * dealRate(rVykup,      R.r1000Vis)
+                     + s.kom1000   * dealRate(R.r1000Kom,  R.r1000Vis);
     }
   });
   const kotelTotal = kotelEarn800 + kotelEarn1000;
@@ -7769,8 +7791,23 @@ function calcSalary(nameLow) {
   const crmPureVis  = Math.max(0, crm.vis  - crm.kred - crm.nal - crm.obmen - crm.vykup - crm.kom);
   const warmPureVis = Math.max(0, warm.vis - warm.kred - warm.nal - warm.obmen - warm.vykup - warm.kom);
 
-  const crmEarn  = crmPureVis*rCrmVis + crm.kred*rCrmKred + crm.nal*rCrmNal + crm.obmen*rCrmObmen + crm.vykup*rCrmVykup + crm.kom*rCrmKom + crm.zadatok*rZadatok;
-  const warmEarn = warmPureVis*rWarmVis + warm.kred*rWarmKred + warm.nal*rWarmNal + warm.obmen*rWarmObmen + warm.vykup*rWarmVykup + warm.kom*rWarmKom;
+  // Если у типа сделки нет собственной ставки (0/пусто/прочерк) — сделка
+  // оплачивается как обычный визит соответствующего КАТа. Если ставка > 0 —
+  // платится по ней (вместо ставки визита).
+  const dealRate = (rDeal, rVisitFallback) => (rDeal > 0 ? rDeal : rVisitFallback);
+  const crmEarn  = crmPureVis*rCrmVis
+                 + crm.kred  * dealRate(rCrmKred,  rCrmVis)
+                 + crm.nal   * dealRate(rCrmNal,   rCrmVis)
+                 + crm.obmen * dealRate(rCrmObmen, rCrmVis)
+                 + crm.vykup * dealRate(rCrmVykup, rCrmVis)
+                 + crm.kom   * dealRate(rCrmKom,   rCrmVis)
+                 + crm.zadatok * rZadatok;
+  const warmEarn = warmPureVis*rWarmVis
+                 + warm.kred  * dealRate(rWarmKred,  rWarmVis)
+                 + warm.nal   * dealRate(rWarmNal,   rWarmVis)
+                 + warm.obmen * dealRate(rWarmObmen, rWarmVis)
+                 + warm.vykup * dealRate(rWarmVykup, rWarmVis)
+                 + warm.kom   * dealRate(rWarmKom,   rWarmVis);
 
   // Котёл — суммируем визиты тех кто не в листе ПЛАН
   const planMap  = getPlanMap(S.data.plan || []);
@@ -7796,8 +7833,19 @@ function calcSalary(nameLow) {
   const kotelCrmPureVis  = Math.max(0, kotelCrm.vis  - kotelCrm.kred  - kotelCrm.nal  - kotelCrm.obmen  - kotelCrm.vykup  - kotelCrm.kom);
   const kotelWarmPureVis = Math.max(0, kotelWarm.vis - kotelWarm.kred - kotelWarm.nal - kotelWarm.obmen - kotelWarm.vykup - kotelWarm.kom);
 
-  const kotelTotal = kotelCrmPureVis*rCrmVis + kotelCrm.kred*rCrmKred + kotelCrm.nal*rCrmNal + kotelCrm.obmen*rCrmObmen + kotelCrm.vykup*rCrmVykup + kotelCrm.kom*rCrmKom + kotelCrm.zadatok*rZadatok
-                   + kotelWarmPureVis*rWarmVis + kotelWarm.kred*rWarmKred + kotelWarm.nal*rWarmNal + kotelWarm.obmen*rWarmObmen + kotelWarm.vykup*rWarmVykup + kotelWarm.kom*rWarmKom;
+  const kotelTotal = kotelCrmPureVis*rCrmVis
+                   + kotelCrm.kred  * dealRate(rCrmKred,  rCrmVis)
+                   + kotelCrm.nal   * dealRate(rCrmNal,   rCrmVis)
+                   + kotelCrm.obmen * dealRate(rCrmObmen, rCrmVis)
+                   + kotelCrm.vykup * dealRate(rCrmVykup, rCrmVis)
+                   + kotelCrm.kom   * dealRate(rCrmKom,   rCrmVis)
+                   + kotelCrm.zadatok * rZadatok
+                   + kotelWarmPureVis*rWarmVis
+                   + kotelWarm.kred  * dealRate(rWarmKred,  rWarmVis)
+                   + kotelWarm.nal   * dealRate(rWarmNal,   rWarmVis)
+                   + kotelWarm.obmen * dealRate(rWarmObmen, rWarmVis)
+                   + kotelWarm.vykup * dealRate(rWarmVykup, rWarmVis)
+                   + kotelWarm.kom   * dealRate(rWarmKom,   rWarmVis);
   const fundCount = getFundCount('crm');
   const kotelShare = (inFund !== false && fundCount > 0) ? kotelTotal / fundCount : 0;
 
@@ -7818,21 +7866,21 @@ function calcSalary(nameLow) {
 
   const detailCrm = {
     vis:    crmPureVis  * rCrmVis,
-    kred:   crm.kred   * rCrmKred,
-    nal:    crm.nal    * rCrmNal,
-    obmen:  crm.obmen  * rCrmObmen,
-    vykup:  crm.vykup  * rCrmVykup,
-    kom:    crm.kom    * rCrmKom,
+    kred:   crm.kred   * dealRate(rCrmKred,  rCrmVis),
+    nal:    crm.nal    * dealRate(rCrmNal,   rCrmVis),
+    obmen:  crm.obmen  * dealRate(rCrmObmen, rCrmVis),
+    vykup:  crm.vykup  * dealRate(rCrmVykup, rCrmVis),
+    kom:    crm.kom    * dealRate(rCrmKom,   rCrmVis),
     zadatok:crm.zadatok* rZadatok,
     cnt: { vis: crmPureVis, kred: crm.kred, nal: crm.nal, obmen: crm.obmen, vykup: crm.vykup, kom: crm.kom, zadatok: crm.zadatok },
   };
   const detailWarm = {
     vis:  warmPureVis * rWarmVis,
-    kred: warm.kred * rWarmKred,
-    nal:  warm.nal  * rWarmNal,
-    obmen:warm.obmen* rWarmObmen,
-    vykup:warm.vykup* rWarmVykup,
-    kom:  warm.kom  * rWarmKom,
+    kred: warm.kred * dealRate(rWarmKred,  rWarmVis),
+    nal:  warm.nal  * dealRate(rWarmNal,   rWarmVis),
+    obmen:warm.obmen* dealRate(rWarmObmen, rWarmVis),
+    vykup:warm.vykup* dealRate(rWarmVykup, rWarmVis),
+    kom:  warm.kom  * dealRate(rWarmKom,   rWarmVis),
     cnt: { vis: warmPureVis, kred: warm.kred, nal: warm.nal, obmen: warm.obmen, vykup: warm.vykup, kom: warm.kom },
   };
 
@@ -7994,8 +8042,20 @@ function openDozhimIncomeModal(btn) {
   const p8   = Math.max(0, n(ch8.vis)  - n(ch8.kred)  - n(ch8.nal)  - n(ch8.obmen) - v8  - n(ch8.kom));
   const p10  = Math.max(0, n(ch10.vis) - n(ch10.kred) - n(ch10.nal) - v10 - n(ch10.kom));
 
-  const earn8  = n(d.earn800)  || (p8*R.r800Vis   + n(ch8.kred)*R.r800Kred  + n(ch8.nal)*R.r800Nal  + n(ch8.obmen)*R.r800Obmen  + v8*rVykup  + n(ch8.kom)*R.r800Kom  + n(ch8.zadatok)*R.rZadatok);
-  const earn10 = n(d.earn1000) || (p10*R.r1000Vis + n(ch10.kred)*R.r1000Kred + n(ch10.nal)*R.r1000Nal + v10*rVykup + n(ch10.kom)*R.r1000Kom);
+  // Если у типа сделки нет своей ставки — оплачивается как визит КАТ.
+  const dealRate = (rDeal, rVisitFallback) => ((rDeal || 0) > 0 ? rDeal : (rVisitFallback || 0));
+  const earn8  = n(d.earn800)  || (p8*R.r800Vis
+                                + n(ch8.kred)  * dealRate(R.r800Kred,  R.r800Vis)
+                                + n(ch8.nal)   * dealRate(R.r800Nal,   R.r800Vis)
+                                + n(ch8.obmen) * dealRate(R.r800Obmen, R.r800Vis)
+                                + v8           * dealRate(rVykup,      R.r800Vis)
+                                + n(ch8.kom)   * dealRate(R.r800Kom,   R.r800Vis)
+                                + n(ch8.zadatok)*R.rZadatok);
+  const earn10 = n(d.earn1000) || (p10*R.r1000Vis
+                                + n(ch10.kred) * dealRate(R.r1000Kred, R.r1000Vis)
+                                + n(ch10.nal)  * dealRate(R.r1000Nal,  R.r1000Vis)
+                                + v10          * dealRate(rVykup,      R.r1000Vis)
+                                + n(ch10.kom)  * dealRate(R.r1000Kom,  R.r1000Vis));
 
   const okladLbl = d.workedR != null ? `Оклад (${d.workedR}/${d.totalR} дн.)` : 'Оклад';
 
@@ -8017,21 +8077,20 @@ function openDozhimIncomeModal(btn) {
     <div class="income-sec-title">КАТ 800</div>
     <div class="dz-badges">
       ${dzBadge('Визиты',   p8,              Math.round(p8*R.r800Vis))}
-      ${dzBadge('Кредит',   n(ch8.kred),     Math.round(n(ch8.kred)*R.r800Kred))}
-      ${dzBadge('Наличка',  n(ch8.nal),      Math.round(n(ch8.nal)*R.r800Nal))}
-      ${dzBadge('Обмен',    n(ch8.obmen),    Math.round(n(ch8.obmen)*R.r800Obmen))}
-      ${dzBadge('Комиссия', n(ch8.kom),      Math.round(n(ch8.kom)*R.r800Kom))}
+      ${dzBadge('Кредит',   n(ch8.kred),     Math.round(n(ch8.kred) * dealRate(R.r800Kred,  R.r800Vis)))}
+      ${dzBadge('Нал+Обмен',n(ch8.nal)+n(ch8.obmen), Math.round(n(ch8.nal)*dealRate(R.r800Nal,R.r800Vis) + n(ch8.obmen)*dealRate(R.r800Obmen,R.r800Vis)))}
+      ${dzBadge('Комиссия', n(ch8.kom),      Math.round(n(ch8.kom) * dealRate(R.r800Kom, R.r800Vis)))}
+      ${v8 > 0 ? dzBadge('Выкуп', v8, Math.round(v8 * dealRate(rVykup, R.r800Vis))) : ''}
       ${dzBadge('Задаток',  n(ch8.zadatok),  Math.round(n(ch8.zadatok)*R.rZadatok))}
-      ${v8 > 0 ? dzBadge('Выкуп', v8, Math.round(v8*rVykup)) : ''}
     </div>
     ${subtotal('Итого КАТ 800', Math.round(earn8))}
     <div class="income-sec-title">КАТ 1000</div>
     <div class="dz-badges">
       ${dzBadge('Визиты',   p10,             Math.round(p10*R.r1000Vis))}
-      ${dzBadge('Кредит',   n(ch10.kred),    Math.round(n(ch10.kred)*R.r1000Kred))}
-      ${dzBadge('Наличка',  n(ch10.nal),     Math.round(n(ch10.nal)*R.r1000Nal))}
-      ${dzBadge('Комиссия', n(ch10.kom),     Math.round(n(ch10.kom)*R.r1000Kom))}
-      ${v10 > 0 ? dzBadge('Выкуп', v10, Math.round(v10*rVykup)) : ''}
+      ${dzBadge('Кредит',   n(ch10.kred),    Math.round(n(ch10.kred) * dealRate(R.r1000Kred, R.r1000Vis)))}
+      ${dzBadge('Наличка',  n(ch10.nal),     Math.round(n(ch10.nal) * dealRate(R.r1000Nal, R.r1000Vis)))}
+      ${dzBadge('Комиссия', n(ch10.kom),     Math.round(n(ch10.kom) * dealRate(R.r1000Kom, R.r1000Vis)))}
+      ${v10 > 0 ? dzBadge('Выкуп', v10, Math.round(v10 * dealRate(rVykup, R.r1000Vis))) : ''}
     </div>
     ${subtotal('Итого КАТ 1000', Math.round(earn10))}
     ${kotelRow}
@@ -8810,39 +8869,41 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
 
   Object.entries(dayStats).forEach(([day, stat]) => {
     let earn = 0;
+    // Сделка без своей ставки → платится как визит соответствующего КАТа.
+    const dr = (rDeal, rVisitFallback) => ((rDeal || 0) > 0 ? rDeal : (rVisitFallback || 0));
     if (!isDozhim) {
       const crmPure  = Math.max(0, stat.crm.vis  - stat.crm.kred  - stat.crm.nal  - stat.crm.obmen  - (stat.crm.vykup||0)  - stat.crm.kom);
       const warmPure = Math.max(0, stat.warm.vis - stat.warm.kred - stat.warm.nal - stat.warm.obmen - (stat.warm.vykup||0) - stat.warm.kom);
       earn =
         crmPure * (R.rCrmVis || 0) +
-        stat.crm.kred * (R.rCrmKred || 0) +
-        stat.crm.nal * (R.rCrmNal || 0) +
-        stat.crm.obmen * (R.rCrmObmen || 0) +
-        (stat.crm.vykup || 0) * (R.rCrmVykup || 0) +
-        stat.crm.kom * (R.rCrmKom || 0) +
+        stat.crm.kred  * dr(R.rCrmKred,  R.rCrmVis) +
+        stat.crm.nal   * dr(R.rCrmNal,   R.rCrmVis) +
+        stat.crm.obmen * dr(R.rCrmObmen, R.rCrmVis) +
+        (stat.crm.vykup || 0) * dr(R.rCrmVykup, R.rCrmVis) +
+        stat.crm.kom * dr(R.rCrmKom, R.rCrmVis) +
         stat.crm.zadatok * (R.rZadatok || 0) +
         warmPure * (R.rWarmVis || 0) +
-        stat.warm.kred * (R.rWarmKred || 0) +
-        stat.warm.nal * (R.rWarmNal || 0) +
-        stat.warm.obmen * (R.rWarmObmen || 0) +
-        (stat.warm.vykup || 0) * (R.rWarmVykup || 0) +
-        stat.warm.kom * (R.rWarmKom || 0);
+        stat.warm.kred  * dr(R.rWarmKred,  R.rWarmVis) +
+        stat.warm.nal   * dr(R.rWarmNal,   R.rWarmVis) +
+        stat.warm.obmen * dr(R.rWarmObmen, R.rWarmVis) +
+        (stat.warm.vykup || 0) * dr(R.rWarmVykup, R.rWarmVis) +
+        stat.warm.kom * dr(R.rWarmKom, R.rWarmVis);
     } else {
       const pure800  = Math.max(0, stat.ch800.vis  - stat.ch800.kred  - stat.ch800.nal  - stat.ch800.obmen  - (stat.ch800.vykup||0)  - stat.ch800.kom);
       const pure1000 = Math.max(0, stat.ch1000.vis - stat.ch1000.kred - stat.ch1000.nal - stat.ch1000.obmen - (stat.ch1000.vykup||0) - stat.ch1000.kom);
       earn =
         pure800 * (R.r800Vis || 0) +
-        stat.ch800.kred * (R.r800Kred || 0) +
-        stat.ch800.nal * (R.r800Nal || 0) +
-        stat.ch800.obmen * (R.r800Obmen || 0) +
-        (stat.ch800.vykup || 0) * (R.r800Vykup || 0) +
-        stat.ch800.kom * (R.r800Kom || 0) +
+        stat.ch800.kred  * dr(R.r800Kred,  R.r800Vis) +
+        stat.ch800.nal   * dr(R.r800Nal,   R.r800Vis) +
+        stat.ch800.obmen * dr(R.r800Obmen, R.r800Vis) +
+        (stat.ch800.vykup || 0) * dr(R.r800Vykup, R.r800Vis) +
+        stat.ch800.kom * dr(R.r800Kom, R.r800Vis) +
         stat.ch800.zadatok * (R.rZadatok || 0) +
         pure1000 * (R.r1000Vis || 0) +
-        stat.ch1000.kred * (R.r1000Kred || 0) +
-        stat.ch1000.nal * (R.r1000Nal || 0) +
-        (stat.ch1000.vykup || 0) * (R.r1000Vykup || 0) +
-        stat.ch1000.kom * (R.r1000Kom || 0);
+        stat.ch1000.kred  * dr(R.r1000Kred, R.r1000Vis) +
+        stat.ch1000.nal   * dr(R.r1000Nal,  R.r1000Vis) +
+        (stat.ch1000.vykup || 0) * dr(R.r1000Vykup, R.r1000Vis) +
+        stat.ch1000.kom * dr(R.r1000Kom, R.r1000Vis);
     }
     if (earn > 0) dayMap[day] = earn;
   });

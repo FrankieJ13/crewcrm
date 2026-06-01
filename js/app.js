@@ -658,15 +658,16 @@ function azUpdateAggregates() {
 }
 function azCityFieldsHTML(name) {
   const c = azData[azState.period][name];
+  const safeName = escapeHtml(name);
   return `<div class="az-fields">${Object.keys(AZ_FIELD_RANGES).map(k => {
     const r = AZ_FIELD_RANGES[k]; const v = c[k]||0;
     const dynMax = Math.max(r.max, v*2 || r.max);
     return `<div class="az-field">
       <div class="az-field-head">
         <div class="az-field-lbl">${r.lbl}</div>
-        <div class="az-field-val"><input type="number" inputmode="numeric" class="az-field-input" data-city="${name}" data-key="${k}" value="${v}"><span class="az-field-unit">${r.unit}</span></div>
+        <div class="az-field-val"><input type="number" inputmode="numeric" class="az-field-input" data-city="${safeName}" data-key="${k}" value="${v}"><span class="az-field-unit">${r.unit}</span></div>
       </div>
-      <input type="range" class="az-field-slider" data-city="${name}" data-key="${k}" min="${r.min}" max="${dynMax}" step="${r.step}" value="${v}">
+      <input type="range" class="az-field-slider" data-city="${safeName}" data-key="${k}" min="${r.min}" max="${dynMax}" step="${r.step}" value="${v}">
     </div>`;
   }).join('')}</div>`;
 }
@@ -690,10 +691,12 @@ function azRenderCities() {
   list.innerHTML = AZ_CITIES.map(name => {
     const c = azCompute(azData[azState.period][name]);
     const roiCls = c.roi>0?'up':c.roi<0?'dn':'nu';
-    return `<div class="az-city" data-city="${name}">
-      <div class="az-city-hdr" onclick="azToggleCity('${name}')">
+    const safeName = escapeHtml(name);
+    const safeJsName = escapeHtml(JSON.stringify(name)); // безопасный JS-литерал внутри HTML-атрибута
+    return `<div class="az-city" data-city="${safeName}">
+      <div class="az-city-hdr" onclick="azToggleCity(${safeJsName})">
         <span class="az-city-toggle">▸</span>
-        <span class="az-city-name">${name}</span>
+        <span class="az-city-name">${safeName}</span>
         <span class="az-city-budget">${azFmtRub2(c.budget)}</span>
         <span class="az-city-roi ${roiCls}">${azFmtPct(c.roi)}</span>
       </div>
@@ -710,10 +713,11 @@ function azRenderSingle() {
   const name = azState.activeCity;
   const c = azCompute(azData[azState.period][name]);
   const roiCls = c.roi>0?'up':c.roi<0?'dn':'nu';
-  document.getElementById('az-cities').innerHTML = `<div class="az-city expanded" data-city="${name}">
+  const safeName = escapeHtml(name);
+  document.getElementById('az-cities').innerHTML = `<div class="az-city expanded" data-city="${safeName}">
     <div class="az-city-hdr">
       <span class="az-city-toggle">▾</span>
-      <span class="az-city-name">${name}</span>
+      <span class="az-city-name">${safeName}</span>
       <span class="az-city-budget">${azFmtRub2(c.budget)}</span>
       <span class="az-city-roi ${roiCls}">${azFmtPct(c.roi)}</span>
     </div>

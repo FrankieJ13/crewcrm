@@ -9474,7 +9474,10 @@ function _openCeoCrmModal(name) {
   const v800 = s.vis800 || 0, v1200 = s.vis1200 || 0;
   const allV = v800 + v1200;
   const ost = Math.max(0, plan - allV);
-  const sfx = String(new Date().getMonth()+1).padStart(2,'0') + String(new Date().getFullYear()).slice(-2);
+  // currentSuffix — выбранный пользователем месяц, не «сейчас». Иначе при
+  // просмотре прошлого месяца прогноз экстраполируется по сегодняшней дате
+  // (например, day=1 на 1 июня → формула ×30/1 → космические %).
+  const sfx = currentSuffix;
   const progNum = computeProgPct(allV, plan, sfx);
   const factNum = computeFactPct(allV, plan);
   const daily = computeDailyPlan(plan, allV, progNum, sfx, name);
@@ -9508,7 +9511,7 @@ function _openCeoDozhimModal(name) {
   const allVis = (s.vis800||0) + (s.vis1000||0);
   const plan = planM[nl] || 1;
   const ost = Math.max(0, plan - allVis);
-  const sfx = String(new Date().getMonth()+1).padStart(2,'0') + String(new Date().getFullYear()).slice(-2);
+  const sfx = currentSuffix;
   const progNum = computeProgPct(allVis, plan, sfx);
   const factNum = computeFactPct(allVis, plan);
   const daily = computeDailyPlan(plan, allVis, progNum, sfx, name);
@@ -9554,8 +9557,9 @@ function _ceoComputeLeaders() {
   const crmStats = buildCrmStats(vizData);
   const dozhimStats = (typeof buildDozhimStats === 'function') ? buildDozhimStats(dvData) : {};
   const allPlanNames = (planData || []).slice(1).filter(r => r && r[0]).map(r => String(r[0]).trim());
-  const today = new Date();
-  const sfx = String(today.getMonth()+1).padStart(2,'0') + String(today.getFullYear()).slice(-2);
+  // Используем выбранный месяц, а не «сегодня» — иначе при просмотре прошлого
+  // прогноз экстраполируется по дню текущего месяца и даёт абсурдные %.
+  const sfx = currentSuffix;
   function buildMgr(name, stats) {
     const nl = name.toLowerCase();
     const s = stats[nl] || {};
@@ -9663,8 +9667,9 @@ function renderCeoDashboard() {
     return { name, firstName: name.split(' ').slice(-1)[0] || name, vis, plan, factPct, progPct, vsalone, isDozhim, _stats: s };
   }
 
-  // Текущий месяц для suffix (MMYY)
-  const sfx = String(today.getMonth()+1).padStart(2,'0') + String(today.getFullYear()).slice(-2);
+  // Выбранный месяц для suffix (MMYY) — НЕ «сегодня». При просмотре прошлого
+  // месяца «today» отличается от выбранного → прогноз экстраполируется неверно.
+  const sfx = currentSuffix;
 
   const crmMgrs = crmNames.map(n => buildMgr(n, crmStats, sfx, false));
   const dozhimMgrs = dozhimNames.map(n => buildMgr(n, dozhimStats, sfx, true));

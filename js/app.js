@@ -7562,13 +7562,19 @@ function renderPersonal(matched) {
         <div class="ceo-forecast-info">
           <div class="ceo-forecast-sub"><span class="mv">${factN}</span> из <span>${plan||'—'}</span> визитов</div>
           <div class="ceo-mini-badges">
+            ${_isCurMonth ? `
             <div class="ceo-mini-badge">
               <div class="ceo-mini-lbl">Динамика за сегодня</div>
               <div class="ceo-mini-val">
                 <span style="color:${_dynamicsColor}">${_dynamicsArrow}</span> <span class="mv">${Math.abs(_dynamicsPct)}</span>%
               </div>
               <div class="ceo-mini-sub">к вчера</div>
-            </div>
+            </div>` : `
+            <div class="ceo-mini-badge">
+              <div class="ceo-mini-lbl">Факт месяца</div>
+              <div class="ceo-mini-val"><span class="mv">${factN}</span></div>
+              <div class="ceo-mini-sub">визитов</div>
+            </div>`}
             ${_isCurMonth ? `
             <div class="ceo-mini-badge ceo-mini-badge-eod">
               <div class="ceo-mini-lbl">Прогноз выполнения</div>
@@ -10288,20 +10294,34 @@ function renderCeoDashboard() {
           <div class="ceo-forecast-info">
             <div class="ceo-forecast-sub"><span class="mv">${_fact}</span> из <span>${_plan||'—'}</span> визитов</div>
             <div class="ceo-mini-badges">
+              ${isCurMonthCeo ? `
               <div class="ceo-mini-badge">
                 <div class="ceo-mini-lbl">Динамика за сегодня</div>
                 <div class="ceo-mini-val">
                   <span style="color:${dynamicsColor}">${dynamicsArrow}</span> <span class="mv">${Math.abs(dynamicsPct)}</span>%
                 </div>
                 <div class="ceo-mini-sub">к вчера</div>
-              </div>
+              </div>` : `
+              <div class="ceo-mini-badge">
+                <div class="ceo-mini-lbl">Факт месяца</div>
+                <div class="ceo-mini-val"><span class="mv">${totalFact}</span></div>
+                <div class="ceo-mini-sub">визитов</div>
+              </div>`}
+              ${isCurMonthCeo ? `
               <div class="ceo-mini-badge ceo-mini-badge-eod">
                 <div class="ceo-mini-lbl">Прогноз выполнения</div>
                 <div class="ceo-mini-val">
                   <span class="mv" style="color:${eodColor} !important">${eodProg}</span><span style="color:${eodColor}">%</span>
                 </div>
                 <div class="ceo-mini-sub">к концу дня</div>
-              </div>
+              </div>` : `
+              <div class="ceo-mini-badge ceo-mini-badge-eod">
+                <div class="ceo-mini-lbl">Итог месяца</div>
+                <div class="ceo-mini-val">
+                  <span class="mv" style="color:${pctClr(companyProg)} !important">${companyProg}</span><span style="color:${pctClr(companyProg)}">%</span>
+                </div>
+                <div class="ceo-mini-sub">месяц закрыт</div>
+              </div>`}
             </div>
           </div>
         </div>

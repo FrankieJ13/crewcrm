@@ -13271,6 +13271,17 @@ function exp_getCrmManagers() {
   }
   return out;
 }
+function exp_getDozhimManagers() {
+  const out = [];
+  const users = S.usersData || [];
+  for (let i = 1; i < users.length; i++) {
+    const u = users[i];
+    if (!u || !u[1]) continue;
+    const role = String(u[2]||'').toLowerCase().trim();
+    if (role === 'dozhim') out.push(String(u[1]).trim());
+  }
+  return out;
+}
 
 // Базовая ячейка статистики
 function exp_emptyMgr(name) {
@@ -13295,10 +13306,13 @@ const EXP_STATUS = {
 const EXP_CAT_CRM = 'кат 800';
 const EXP_CAT_TL  = 'кат 1200';
 
-// Применяет инкременты статуса к объекту stat
-function exp_applyRow(stat, cat, st) {
-  if (cat === EXP_CAT_CRM) stat.visCrm++;
-  if (cat === EXP_CAT_TL)  stat.visTl++;
+// Применяет инкременты статуса к объекту stat. catA/catB задаются
+// при вызове (для CRM: 800/1200; для Дожим: 800/1000).
+function exp_applyRow(stat, cat, st, catA, catB) {
+  catA = catA || EXP_CAT_CRM;
+  catB = catB || EXP_CAT_TL;
+  if (cat === catA) stat.visCrm++;
+  if (cat === catB) stat.visTl++;
   stat.visTotal++;
   if (st === EXP_STATUS.KREDIT) stat.kredit++;
   else if (st === EXP_STATUS.NAL)   stat.nal++;
@@ -13310,9 +13324,12 @@ function exp_applyRow(stat, cat, st) {
   else if (st === EXP_STATUS.ODOB)  stat.odobNeKupil++;
 }
 
-// Главная: возвращает { managers, total, byCity, daily, dailyByMgr }
+// Главная: возвращает { managers, total, byCity, daily, dailyByMgr, catLabels }
 // dailyByMgr: Map(nameLow → Array<31>) — визиты по дням для каждого менеджера
-function exp_aggregate(vizData, crmNamesList) {
+// opts.catA/catB — категории листа (CRM по умолчанию 800/1200; для Дожим — 800/1000)
+function exp_aggregate(vizData, crmNamesList, opts = {}) {
+  const catA = opts.catA || EXP_CAT_CRM;
+  const catB = opts.catB || EXP_CAT_TL;
   const allowed = new Set(crmNamesList.map(n => n.toLowerCase()));
   const managers = {};
   const byCity   = {}; // city → { _total: stat, mgrs: { nameLow: stat } }
@@ -13341,12 +13358,12 @@ function exp_aggregate(vizData, crmNamesList) {
     const st   = String(row[4]||'').trim().toLowerCase();
     const city = String(row[3]||'').trim() || '—';
 
-    exp_applyRow(managers[mgrL], cat, st);
+    exp_applyRow(managers[mgrL], cat, st, catA, catB);
 
     if (!byCity[city]) byCity[city] = { _total: exp_emptyMgr('Город: ' + city), mgrs: {} };
     if (!byCity[city].mgrs[mgrL]) byCity[city].mgrs[mgrL] = exp_emptyMgr(mgr);
-    exp_applyRow(byCity[city].mgrs[mgrL], cat, st);
-    exp_applyRow(byCity[city]._total, cat, st);
+    exp_applyRow(byCity[city].mgrs[mgrL], cat, st, catA, catB);
+    exp_applyRow(byCity[city]._total, cat, st, catA, catB);
 
     const d = exp_parseDate(row[0]);
     if (d) {
@@ -13387,7 +13404,7 @@ function exp_aggregate(vizData, crmNamesList) {
     dailyByMgrArr[nl] = { name: m.name, perDay: arr, total: m.visTotal };
   }
 
-  return { managers: mgrsArr, total, byCity, daily: dailyArr, dailyByMgr: dailyByMgrArr };
+  return { managers: mgrsArr, total, byCity, daily: dailyArr, dailyByMgr: dailyByMgrArr, catA, catB };
 }
 
 // Рисуем chart: столбики по 31 дню → возвращает base64 PNG
@@ -13631,7 +13648,7 @@ function exp_pct(num, den) {
 
 // Главная: формирует workbook
 async function exp_buildWorkbook(opts) {
-  const { suffix, monthLabel, agg, plans, sections } = opts;
+  const { suffix, monthLabel, agg, aggDozhim, plans, sections } = opts;
   const wb = new ExcelJS.Workbook();
   wb.creator = 'CRM Crew Dashboard';
   wb.created = new Date();
@@ -13678,55 +13695,55 @@ async function exp_buildWorkbook(opts) {
     cols.push({ key: 'pKredit', label: '% кредит', width: 10, pct: true });
   }
 
-  // Section header row (3)
-  ws.mergeCells(3, 1, 3, cols.length);
-  const secCell = ws.getCell(3, 1);
-  secCell.value = 'СВОДНАЯ ПО МЕНЕДЖЕРАМ';
-  secCell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
-  secCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1A1A' } };
-  secCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
-  ws.getRow(3).height = 22;
-
-  // Header row (4)
-  cols.forEach((c, i) => {
-    const cell = ws.getCell(4, i + 1);
-    cell.value = c.label;
-    exp_styleHeader(cell);
-    ws.getColumn(i + 1).width = c.width;
-  });
-  ws.getRow(4).height = 36;
-
-  // Data rows
-  const allRows = agg.managers.slice();
-  let r = 5;
-  for (const m of allRows) {
-    const planVal = plans[m.name.toLowerCase()] || 0;
-    const pctFact = exp_pct(m.visTotal, planVal);
-    const pOtkaz  = exp_pct(m.otkaz, m.visTotal);
-    const pFssp   = exp_pct(m.fssp,  m.visTotal);
-    const pKredit = exp_pct(m.kredit, m.visTotal);
-    cols.forEach((c, i) => {
-      const cell = ws.getCell(r, i + 1);
-      let v;
-      if      (c.key === 'plan')    v = planVal || '';
-      else if (c.key === 'pctFact') v = planVal ? pctFact : '';
-      else if (c.key === 'pOtkaz')  v = pOtkaz;
-      else if (c.key === 'pFssp')   v = pFssp;
-      else if (c.key === 'pKredit') v = pKredit;
-      else                          v = m[c.key];
-      cell.value = (typeof v === 'number' && v === 0 && c.key !== 'pOtkaz' && c.key !== 'pFssp' && c.key !== 'pKredit' && c.key !== 'pctFact') ? 0 : v;
-      exp_styleData(cell, { left: c.left, bg: (r % 2 === 1) ? 'FFF7F9FC' : 'FFFFFFFF' });
-      if (c.pct) cell.numFmt = '0.0%';
+  // Хелпер: рисует блок «секция + шапка + данные + итого» начиная с указанной строки.
+  // Возвращает следующий свободный номер строки.
+  function renderSummaryBlock(startRow, title, sectionAgg, colsLocal) {
+    // Section header
+    ws.mergeCells(startRow, 1, startRow, colsLocal.length);
+    const sCell = ws.getCell(startRow, 1);
+    sCell.value = title;
+    sCell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+    sCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1A1A' } };
+    sCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+    ws.getRow(startRow).height = 22;
+    // Header row
+    const headRow = startRow + 1;
+    colsLocal.forEach((c, i) => {
+      const cell = ws.getCell(headRow, i + 1);
+      cell.value = c.label;
+      exp_styleHeader(cell);
+      ws.getColumn(i + 1).width = c.width;
     });
-    r++;
-  }
-
-  // Итого
-  {
-    const t = agg.total;
-    const planSum = Object.values(plans).reduce((s, v) => s + (v||0), 0);
-    cols.forEach((c, i) => {
-      const cell = ws.getCell(r, i + 1);
+    ws.getRow(headRow).height = 36;
+    // Data rows
+    let rr = headRow + 1;
+    for (const m of (sectionAgg.managers || [])) {
+      const planVal = plans[m.name.toLowerCase()] || 0;
+      const pctFact = exp_pct(m.visTotal, planVal);
+      const pOtkaz  = exp_pct(m.otkaz, m.visTotal);
+      const pFssp   = exp_pct(m.fssp,  m.visTotal);
+      const pKredit = exp_pct(m.kredit, m.visTotal);
+      colsLocal.forEach((c, i) => {
+        const cell = ws.getCell(rr, i + 1);
+        let v;
+        if      (c.key === 'plan')    v = planVal || '';
+        else if (c.key === 'pctFact') v = planVal ? pctFact : '';
+        else if (c.key === 'pOtkaz')  v = pOtkaz;
+        else if (c.key === 'pFssp')   v = pFssp;
+        else if (c.key === 'pKredit') v = pKredit;
+        else                          v = m[c.key];
+        cell.value = (typeof v === 'number' && v === 0 && c.key !== 'pOtkaz' && c.key !== 'pFssp' && c.key !== 'pKredit' && c.key !== 'pctFact') ? 0 : v;
+        exp_styleData(cell, { left: c.left, bg: (rr % 2 === 1) ? 'FFF7F9FC' : 'FFFFFFFF' });
+        if (c.pct) cell.numFmt = '0.0%';
+      });
+      rr++;
+    }
+    // Итого
+    const t = sectionAgg.total;
+    const ownNames = (sectionAgg.managers || []).map(m => m.name.toLowerCase());
+    const planSum  = ownNames.reduce((s, nl) => s + (plans[nl] || 0), 0);
+    colsLocal.forEach((c, i) => {
+      const cell = ws.getCell(rr, i + 1);
       let v = '';
       if      (c.key === 'name')    v = 'ИТОГО';
       else if (c.key === 'plan')    v = planSum || '';
@@ -13739,7 +13756,22 @@ async function exp_buildWorkbook(opts) {
       exp_styleTotal(cell);
       if (c.pct) cell.numFmt = '0.0%';
     });
-    r++;
+    rr++;
+    return rr;
+  }
+
+  // CRM-блок (строки 3+)
+  let r = renderSummaryBlock(3, 'СВОДНАЯ ПО МЕНЕДЖЕРАМ — CRM', agg, cols);
+
+  // Дожим-блок — отдельно ниже, с собственными подписями категорий
+  if (aggDozhim && aggDozhim.managers && aggDozhim.managers.length) {
+    r++; // пустая строка-разделитель
+    const dCols = cols.map(c => {
+      if (c.key === 'visCrm') return { ...c, label: 'КАТ 800' };
+      if (c.key === 'visTl')  return { ...c, label: 'КАТ 1000' };
+      return c;
+    });
+    r = renderSummaryBlock(r, 'СВОДНАЯ ПО МЕНЕДЖЕРАМ — ДОЖИМ', aggDozhim, dCols);
   }
 
   /* === ЛИСТ 2: ПО ГОРОДАМ === */
@@ -13777,37 +13809,47 @@ async function exp_buildWorkbook(opts) {
     });
     wsC.getRow(3).height = 28;
 
+    // Helper: один блок «город → менеджеры → итого по городу → общий итог»
     let cr = 4;
-    const cityNames = Object.keys(agg.byCity).sort((a, b) => a.localeCompare(b, 'ru'));
-    for (const cityName of cityNames) {
-      const cityBlock = agg.byCity[cityName];
-      const mgrsLow = Object.keys(cityBlock.mgrs).sort((a,b) =>
-        cityBlock.mgrs[b].visTotal - cityBlock.mgrs[a].visTotal
-      );
-      for (const mLow of mgrsLow) {
-        const m = cityBlock.mgrs[mLow];
-        const row = [cityName, m.name, m.visTotal, m.kredit, m.nal, m.obmen, m.vykup, m.kom, m.otkaz, m.fssp, m.odobNeKupil];
-        row.forEach((v, i) => {
+    function renderCityBlock(deptLabel, deptAgg) {
+      // Заголовок раздела (CRM / ДОЖИМ) занимает всю ширину
+      wsC.mergeCells(cr, 1, cr, cityCols.length);
+      const sCell = wsC.getCell(cr, 1);
+      sCell.value = 'ПО ГОРОДАМ — ' + deptLabel;
+      sCell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+      sCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1A1A' } };
+      sCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+      wsC.getRow(cr).height = 22;
+      cr++;
+      const cityNames = Object.keys(deptAgg.byCity).sort((a, b) => a.localeCompare(b, 'ru'));
+      for (const cityName of cityNames) {
+        const cityBlock = deptAgg.byCity[cityName];
+        const mgrsLow = Object.keys(cityBlock.mgrs).sort((a,b) =>
+          cityBlock.mgrs[b].visTotal - cityBlock.mgrs[a].visTotal
+        );
+        for (const mLow of mgrsLow) {
+          const m = cityBlock.mgrs[mLow];
+          const row = [cityName, m.name, m.visTotal, m.kredit, m.nal, m.obmen, m.vykup, m.kom, m.otkaz, m.fssp, m.odobNeKupil];
+          row.forEach((v, i) => {
+            const cell = wsC.getCell(cr, i + 1);
+            cell.value = v;
+            exp_styleData(cell, { left: i < 2, bg: (cr % 2 === 0) ? 'FFF7F9FC' : 'FFFFFFFF' });
+          });
+          cr++;
+        }
+        // Итого по городу
+        const ct = cityBlock._total;
+        const totalRow = [cityName, 'ИТОГО по городу', ct.visTotal, ct.kredit, ct.nal, ct.obmen, ct.vykup, ct.kom, ct.otkaz, ct.fssp, ct.odobNeKupil];
+        totalRow.forEach((v, i) => {
           const cell = wsC.getCell(cr, i + 1);
           cell.value = v;
-          exp_styleData(cell, { left: i < 2, bg: (cr % 2 === 0) ? 'FFF7F9FC' : 'FFFFFFFF' });
+          exp_styleTotal(cell);
         });
         cr++;
       }
-      // Итого по городу
-      const ct = cityBlock._total;
-      const totalRow = [cityName, 'ИТОГО по городу', ct.visTotal, ct.kredit, ct.nal, ct.obmen, ct.vykup, ct.kom, ct.otkaz, ct.fssp, ct.odobNeKupil];
-      totalRow.forEach((v, i) => {
-        const cell = wsC.getCell(cr, i + 1);
-        cell.value = v;
-        exp_styleTotal(cell);
-      });
-      cr++;
-    }
-    // Общий итог
-    {
-      const t2 = agg.total;
-      const totalRow = ['ВСЕ ГОРОДА', 'ОБЩИЙ ИТОГ', t2.visTotal, t2.kredit, t2.nal, t2.obmen, t2.vykup, t2.kom, t2.otkaz, t2.fssp, t2.odobNeKupil];
+      // Общий итог по отделу
+      const t2 = deptAgg.total;
+      const totalRow = ['ВСЕ ГОРОДА', 'ОБЩИЙ ИТОГ — ' + deptLabel, t2.visTotal, t2.kredit, t2.nal, t2.obmen, t2.vykup, t2.kom, t2.otkaz, t2.fssp, t2.odobNeKupil];
       totalRow.forEach((v, i) => {
         const cell = wsC.getCell(cr, i + 1);
         cell.value = v;
@@ -13815,6 +13857,12 @@ async function exp_buildWorkbook(opts) {
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1A1A' } };
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
       });
+      cr++;
+    }
+    renderCityBlock('CRM', agg);
+    if (aggDozhim && aggDozhim.managers && aggDozhim.managers.length) {
+      cr++; // разделитель
+      renderCityBlock('ДОЖИМ', aggDozhim);
     }
   }
 
@@ -13825,7 +13873,7 @@ async function exp_buildWorkbook(opts) {
     });
     wsT.mergeCells('A1:F1');
     const t = wsT.getCell('A1');
-    t.value = 'ХРОНОЛОГИЯ ВИЗИТОВ — ' + monthLabel.toUpperCase();
+    t.value = 'ХРОНОЛОГИЯ ВИЗИТОВ — CRM — ' + monthLabel.toUpperCase();
     t.font = { bold: true, size: 14 };
     t.alignment = { vertical: 'middle', horizontal: 'center' };
     wsT.getRow(1).height = 26;
@@ -13925,6 +13973,97 @@ async function exp_buildWorkbook(opts) {
       wsT.getCell(totalRowIdx, 2).value = totalCount;
       exp_styleTotal(wsT.getCell(totalRowIdx, 2));
     }
+
+    // === Хронология — ДОЖИМ (под CRM-таблицей) ===
+    if (aggDozhim && aggDozhim.managers && aggDozhim.managers.length) {
+      const dozhimStart = totalRowIdx + 3;
+      // Заголовок
+      wsT.mergeCells(dozhimStart, 1, dozhimStart, 6);
+      const dT = wsT.getCell(dozhimStart, 1);
+      dT.value = 'ХРОНОЛОГИЯ ВИЗИТОВ — ДОЖИМ — ' + monthLabel.toUpperCase();
+      dT.font = { bold: true, size: 14 };
+      dT.alignment = { vertical: 'middle', horizontal: 'center' };
+      wsT.getRow(dozhimStart).height = 26;
+      // Чарт общий
+      const dozhimPng = exp_drawTimelineChart(aggDozhim.daily, monthLabel + ' (ДОЖИМ)');
+      const dozhimImgId = wb.addImage({ base64: dozhimPng.replace(/^data:image\/png;base64,/, ''), extension: 'png' });
+      wsT.addImage(dozhimImgId, { tl: { col: 0, row: dozhimStart + 1 }, ext: { width: 980, height: 360 } });
+      // Чарт по менеджерам
+      let dozhimNextAnchor = dozhimStart + 1 + 20 + 2;
+      const dozhimMgrChartUrl = exp_drawTimelineByMgrChart(aggDozhim.dailyByMgr, monthLabel + ' (ДОЖИМ)');
+      if (dozhimMgrChartUrl) {
+        const dozhimMgrChartH = 420 + Math.ceil(
+          Object.values(aggDozhim.dailyByMgr).filter(m => m.total > 0).length / 3
+        ) * 20 + 10;
+        const dozhimMgrImgId = wb.addImage({ base64: dozhimMgrChartUrl.replace(/^data:image\/png;base64,/, ''), extension: 'png' });
+        wsT.addImage(dozhimMgrImgId, { tl: { col: 0, row: dozhimNextAnchor }, ext: { width: 980, height: dozhimMgrChartH } });
+        dozhimNextAnchor = dozhimNextAnchor + Math.ceil(dozhimMgrChartH / 20) + 2;
+      }
+      // Таблица день × менеджер
+      const dMgrsWithData = Object.values(aggDozhim.dailyByMgr).filter(m => m.total > 0);
+      const dHasTable = dMgrsWithData.length > 0;
+      const dTableStart = dozhimNextAnchor;
+      wsT.getCell(dTableStart, 1).value = 'День';
+      exp_styleHeader(wsT.getCell(dTableStart, 1));
+      if (dHasTable) {
+        dMgrsWithData.forEach((m, idx) => {
+          const col = 2 + idx;
+          const cell = wsT.getCell(dTableStart, col);
+          cell.value = m.name;
+          exp_styleHeader(cell);
+          wsT.getColumn(col).width = Math.max(11, Math.min(22, m.name.length + 2));
+        });
+        const totalCol = 2 + dMgrsWithData.length;
+        wsT.getCell(dTableStart, totalCol).value = 'Отдел';
+        exp_styleHeader(wsT.getCell(dTableStart, totalCol));
+      } else {
+        wsT.getCell(dTableStart, 2).value = 'Визитов';
+        exp_styleHeader(wsT.getCell(dTableStart, 2));
+      }
+      wsT.getRow(dTableStart).height = 32;
+      aggDozhim.daily.forEach((d, di) => {
+        const rowIdx = dTableStart + 1 + di;
+        const bg = (di % 2 === 0) ? 'FFF7F9FC' : 'FFFFFFFF';
+        const dayCell = wsT.getCell(rowIdx, 1);
+        dayCell.value = d.day;
+        exp_styleData(dayCell, { bg });
+        if (dHasTable) {
+          dMgrsWithData.forEach((m, mi) => {
+            const cell = wsT.getCell(rowIdx, 2 + mi);
+            const v = m.perDay[di] || 0;
+            cell.value = v;
+            exp_styleData(cell, { bg });
+            if (v === 0) cell.font = { size: 10, color: { argb: 'FFCCCCCC' } };
+          });
+          const totCell = wsT.getCell(rowIdx, 2 + dMgrsWithData.length);
+          totCell.value = d.count;
+          exp_styleData(totCell, { bg });
+          totCell.font = { size: 10, bold: true };
+        } else {
+          const cell = wsT.getCell(rowIdx, 2);
+          cell.value = d.count;
+          exp_styleData(cell, { bg });
+        }
+      });
+      let dozhimTotalCount = 0;
+      aggDozhim.daily.forEach(d => dozhimTotalCount += d.count);
+      const dTotalRowIdx = dTableStart + 1 + aggDozhim.daily.length;
+      wsT.getCell(dTotalRowIdx, 1).value = 'Итого';
+      exp_styleTotal(wsT.getCell(dTotalRowIdx, 1));
+      if (dHasTable) {
+        dMgrsWithData.forEach((m, mi) => {
+          const cell = wsT.getCell(dTotalRowIdx, 2 + mi);
+          cell.value = m.total;
+          exp_styleTotal(cell);
+        });
+        const totCell = wsT.getCell(dTotalRowIdx, 2 + dMgrsWithData.length);
+        totCell.value = dozhimTotalCount;
+        exp_styleTotal(totCell);
+      } else {
+        wsT.getCell(dTotalRowIdx, 2).value = dozhimTotalCount;
+        exp_styleTotal(wsT.getCell(dTotalRowIdx, 2));
+      }
+    }
   }
 
   return wb;
@@ -13962,13 +14101,15 @@ async function exp_run() {
     }
 
     exp_setStatus('Получаем данные за ' + monthLabel + '…');
-    const vizName  = 'ВИЗИТЫ' + suffix;
-    const planName = 'ПЛАН'   + suffix;
-    let vizData, planData;
+    const vizName   = 'ВИЗИТЫ'   + suffix;
+    const dVizName  = 'Д_ВИЗИТЫ' + suffix;
+    const planName  = 'ПЛАН'     + suffix;
+    let vizData, dVizData, planData;
     try {
-      [vizData, planData] = await Promise.all([
-        api(vizName,  'A:N'),
-        api(planName, 'A:B').catch(() => []),
+      [vizData, dVizData, planData] = await Promise.all([
+        api(vizName,   'A:N'),
+        api(dVizName,  'A:N').catch(() => []),
+        api(planName,  'A:B').catch(() => []),
       ]);
     } catch (e) {
       exp_setStatus('Нет данных за выбранный месяц', 'err');
@@ -13977,13 +14118,17 @@ async function exp_run() {
     }
 
     exp_setStatus('Считаем статистику…');
-    const crmMgrs = exp_getCrmManagers();
-    const agg     = exp_aggregate(vizData, crmMgrs);
-    const plans   = exp_getPlanMap(planData);
+    const crmMgrs    = exp_getCrmManagers();
+    const dozhimMgrs = exp_getDozhimManagers();
+    const agg        = exp_aggregate(vizData, crmMgrs);
+    const aggDozhim  = (dVizData && dVizData.length && dozhimMgrs.length)
+      ? exp_aggregate(dVizData, dozhimMgrs, { catA: 'кат 800', catB: 'кат 1000' })
+      : null;
+    const plans      = exp_getPlanMap(planData);
 
     if (fmt === 'pdf') {
       exp_setStatus('Открываем окно отчёта…');
-      exp_runPdf({ suffix, monthLabel, agg, plans, sections });
+      exp_runPdf({ suffix, monthLabel, agg, aggDozhim, plans, sections });
       exp_setStatus('✓ Готово — нажмите «Печать / PDF» в окне', 'ok');
       toast('Отчёт открыт в новом окне', 's');
       setTimeout(() => exp_closeModal(), 1200);
@@ -13991,7 +14136,7 @@ async function exp_run() {
     }
 
     exp_setStatus('Формируем файл…');
-    const wb = await exp_buildWorkbook({ suffix, monthLabel, agg, plans, sections });
+    const wb = await exp_buildWorkbook({ suffix, monthLabel, agg, aggDozhim, plans, sections });
 
     const buf = await wb.xlsx.writeBuffer();
     const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });

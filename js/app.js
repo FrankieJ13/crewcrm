@@ -4077,7 +4077,9 @@ function renderDozhimCards() {
 }
 
 function openDozhimModal(dataStr) {
-  const d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"'));
+  let d;
+  try { d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"')); }
+  catch (e) { console.warn('openDozhimModal: битый dataStr', e); toast('Не удалось открыть карточку', 'e'); return; }
   const p = num(d.prc);
   const rs = d.rs;
   document.getElementById('mop-modal-title').innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>`;
@@ -5750,7 +5752,9 @@ function burstConfetti(el, idx) {
 }
 
 function openMopModal(dataStr) {
-  const d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"'));
+  let d;
+  try { d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"')); }
+  catch (e) { console.warn('openMopModal: битый dataStr', e); toast('Не удалось открыть карточку', 'e'); return; }
   const rs = d.rs;
   const progPct = parseFloat(String(d.prog||'0').replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
   const progVis = (d.rplan && progPct) ? Math.round(num(d.rplan) * progPct / 100) : '—';
@@ -8084,7 +8088,9 @@ function calcSalaryDozhim(nameLow) {
 
 // ==================== DOZHIM INCOME MODAL ====================
 function openDozhimIncomeModal(btn) {
-  const d = JSON.parse(btn.dataset.income.replace(/&#39;/g,"'"));
+  let d;
+  try { d = JSON.parse(btn.dataset.income.replace(/&#39;/g,"'")); }
+  catch (e) { console.warn('openDozhimIncomeModal: битый dataset.income', e); toast('Не удалось открыть детализацию', 'e'); return; }
   function n(v) { return parseFloat(String(v||'0').replace(/[^\d.,-]/g,'').replace(',','.')) || 0; }
   function subtotal(lbl, sum) {
     return `<div class="income-subtotal"><span class="ist-lbl">${lbl}</span><span class="ist-val">${fmtRub(sum)}</span></div>`;
@@ -8174,7 +8180,9 @@ function openDozhimIncomeModal(btn) {
 // ==================== INCOME DETAIL MODAL ====================
 function openIncomeDetail(btn) {
   const raw = btn.dataset.income.replace(/&#39;/g,"'");
-  const d = JSON.parse(raw);
+  let d;
+  try { d = JSON.parse(raw); }
+  catch (e) { console.warn('openIncomeDetail: битый dataset.income', e); toast('Не удалось открыть детализацию', 'e'); return; }
   function n(v) { return parseFloat(String(v||'0').replace(/[^\d.,-]/g,'').replace(',','.')) || 0; }
   function badge(lbl, val, cnt) {
     const cntHtml = (cnt != null && cnt > 0) ? `<div class="ib-cnt">${cnt} шт</div>` : '';

@@ -7593,11 +7593,16 @@ function calcSalary(nameLow) {
   const rCrmNal      = parseRate(stavki[10]?.[1]);
   const rCrmObmen    = parseRate(stavki[11]?.[1]);
   const rCrmKom      = parseRate(stavki[12]?.[1]);
+  // row 14 (index 13) — «Выкуп CRM». Если ставка > 0 в этом месяце — платится,
+  // иначе формула вернёт 0×N = 0 (нет мотивации). Это работает на «адаптивную»
+  // схему: меняешь ставку в листе — пересчёт автоматический.
+  const rCrmVykup    = parseRate(stavki[13]?.[1]);
   const rWarmVis     = parseRate(stavki[14]?.[1]);
   const rWarmKred    = parseRate(stavki[15]?.[1]);
   const rWarmNal     = parseRate(stavki[16]?.[1]);
   const rWarmObmen   = parseRate(stavki[17]?.[1]);
   const rWarmKom     = parseRate(stavki[18]?.[1]);
+  const rWarmVykup   = parseRate(stavki[19]?.[1]);
   const rZadatok     = parseRate(stavki[20]?.[1]);
 
   // Агрегируем данные менеджера из ВИЗИТЫ
@@ -7612,6 +7617,7 @@ function calcSalary(nameLow) {
     kred:   mgrStat.kred800,
     nal:    mgrStat.nal800,
     obmen:  mgrStat.obmen800,
+    vykup:  mgrStat.vykup800 || 0,
     kom:    mgrStat.kom800,
     zadatok:mgrStat.zadatok,
   };
@@ -7620,39 +7626,42 @@ function calcSalary(nameLow) {
     kred:  mgrStat.kred1200,
     nal:   mgrStat.nal1200,
     obmen: mgrStat.obmen1200,
+    vykup: mgrStat.vykup1200 || 0,
     kom:   mgrStat.kom1200,
   };
 
-  const crmPureVis  = Math.max(0, crm.vis  - crm.kred - crm.nal - crm.obmen - crm.kom);
-  const warmPureVis = Math.max(0, warm.vis - warm.kred - warm.nal - warm.obmen - warm.kom);
+  const crmPureVis  = Math.max(0, crm.vis  - crm.kred - crm.nal - crm.obmen - crm.vykup - crm.kom);
+  const warmPureVis = Math.max(0, warm.vis - warm.kred - warm.nal - warm.obmen - warm.vykup - warm.kom);
 
-  const crmEarn  = crmPureVis*rCrmVis + crm.kred*rCrmKred + crm.nal*rCrmNal + crm.obmen*rCrmObmen + crm.kom*rCrmKom + crm.zadatok*rZadatok;
-  const warmEarn = warmPureVis*rWarmVis + warm.kred*rWarmKred + warm.nal*rWarmNal + warm.obmen*rWarmObmen + warm.kom*rWarmKom;
+  const crmEarn  = crmPureVis*rCrmVis + crm.kred*rCrmKred + crm.nal*rCrmNal + crm.obmen*rCrmObmen + crm.vykup*rCrmVykup + crm.kom*rCrmKom + crm.zadatok*rZadatok;
+  const warmEarn = warmPureVis*rWarmVis + warm.kred*rWarmKred + warm.nal*rWarmNal + warm.obmen*rWarmObmen + warm.vykup*rWarmVykup + warm.kom*rWarmKom;
 
   // Котёл — суммируем визиты тех кто не в листе ПЛАН
   const planMap  = getPlanMap(S.data.plan || []);
   const planNamesLow2 = new Set(Object.keys(planMap));
   // Агрегируем все stats для котла
   const allStats2 = allStats; // уже computed выше
-  let kotelCrmAgg  = { vis:0, kred:0, nal:0, obmen:0, kom:0, zadatok:0 };
-  let kotelWarmAgg = { vis:0, kred:0, nal:0, obmen:0, kom:0 };
+  let kotelCrmAgg  = { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0, zadatok:0 };
+  let kotelWarmAgg = { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0 };
   Object.values(allStats2).forEach(s => {
     if (!planNamesLow2.has(s.name.toLowerCase())) {
       kotelCrmAgg.vis    += s.vis800;  kotelCrmAgg.kred  += s.kred800;
       kotelCrmAgg.nal    += s.nal800;  kotelCrmAgg.obmen += s.obmen800;
+      kotelCrmAgg.vykup  += s.vykup800 || 0;
       kotelCrmAgg.kom    += s.kom800;  kotelCrmAgg.zadatok += s.zadatok;
       kotelWarmAgg.vis   += s.vis1200; kotelWarmAgg.kred += s.kred1200;
       kotelWarmAgg.nal   += s.nal1200; kotelWarmAgg.obmen+= s.obmen1200;
+      kotelWarmAgg.vykup += s.vykup1200 || 0;
       kotelWarmAgg.kom   += s.kom1200;
     }
   });
   const kotelCrm  = kotelCrmAgg;
   const kotelWarm = kotelWarmAgg;
-  const kotelCrmPureVis  = Math.max(0, kotelCrm.vis  - kotelCrm.kred  - kotelCrm.nal  - kotelCrm.obmen  - kotelCrm.kom);
-  const kotelWarmPureVis = Math.max(0, kotelWarm.vis - kotelWarm.kred - kotelWarm.nal - kotelWarm.obmen - kotelWarm.kom);
+  const kotelCrmPureVis  = Math.max(0, kotelCrm.vis  - kotelCrm.kred  - kotelCrm.nal  - kotelCrm.obmen  - kotelCrm.vykup  - kotelCrm.kom);
+  const kotelWarmPureVis = Math.max(0, kotelWarm.vis - kotelWarm.kred - kotelWarm.nal - kotelWarm.obmen - kotelWarm.vykup - kotelWarm.kom);
 
-  const kotelTotal = kotelCrmPureVis*rCrmVis + kotelCrm.kred*rCrmKred + kotelCrm.nal*rCrmNal + kotelCrm.obmen*rCrmObmen + kotelCrm.kom*rCrmKom + kotelCrm.zadatok*rZadatok
-                   + kotelWarmPureVis*rWarmVis + kotelWarm.kred*rWarmKred + kotelWarm.nal*rWarmNal + kotelWarm.obmen*rWarmObmen + kotelWarm.kom*rWarmKom;
+  const kotelTotal = kotelCrmPureVis*rCrmVis + kotelCrm.kred*rCrmKred + kotelCrm.nal*rCrmNal + kotelCrm.obmen*rCrmObmen + kotelCrm.vykup*rCrmVykup + kotelCrm.kom*rCrmKom + kotelCrm.zadatok*rZadatok
+                   + kotelWarmPureVis*rWarmVis + kotelWarm.kred*rWarmKred + kotelWarm.nal*rWarmNal + kotelWarm.obmen*rWarmObmen + kotelWarm.vykup*rWarmVykup + kotelWarm.kom*rWarmKom;
   const fundCount = getFundCount('crm');
   const kotelShare = (inFund !== false && fundCount > 0) ? kotelTotal / fundCount : 0;
 
@@ -7676,17 +7685,19 @@ function calcSalary(nameLow) {
     kred:   crm.kred   * rCrmKred,
     nal:    crm.nal    * rCrmNal,
     obmen:  crm.obmen  * rCrmObmen,
+    vykup:  crm.vykup  * rCrmVykup,
     kom:    crm.kom    * rCrmKom,
     zadatok:crm.zadatok* rZadatok,
-    cnt: { vis: crmPureVis, kred: crm.kred, nal: crm.nal, obmen: crm.obmen, kom: crm.kom, zadatok: crm.zadatok },
+    cnt: { vis: crmPureVis, kred: crm.kred, nal: crm.nal, obmen: crm.obmen, vykup: crm.vykup, kom: crm.kom, zadatok: crm.zadatok },
   };
   const detailWarm = {
     vis:  warmPureVis * rWarmVis,
     kred: warm.kred * rWarmKred,
     nal:  warm.nal  * rWarmNal,
     obmen:warm.obmen* rWarmObmen,
+    vykup:warm.vykup* rWarmVykup,
     kom:  warm.kom  * rWarmKom,
-    cnt: { vis: warmPureVis, kred: warm.kred, nal: warm.nal, obmen: warm.obmen, kom: warm.kom },
+    cnt: { vis: warmPureVis, kred: warm.kred, nal: warm.nal, obmen: warm.obmen, vykup: warm.vykup, kom: warm.kom },
   };
 
   return {
@@ -7903,8 +7914,8 @@ function openIncomeDetail(btn) {
   function subtotal(lbl, sum) {
     return `<div class="income-subtotal"><span class="ist-lbl">${lbl}</span><span class="ist-val">${fmtRub(sum)}</span></div>`;
   }
-  const crmSum  = n(d.crm.vis)+n(d.crm.kred)+n(d.crm.nal)+n(d.crm.obmen)+n(d.crm.kom)+n(d.crm.zadatok);
-  const warmSum = n(d.warm.vis)+n(d.warm.kred)+n(d.warm.nal)+n(d.warm.obmen)+n(d.warm.kom);
+  const crmSum  = n(d.crm.vis)+n(d.crm.kred)+n(d.crm.nal)+n(d.crm.obmen)+n(d.crm.vykup||0)+n(d.crm.kom)+n(d.crm.zadatok);
+  const warmSum = n(d.warm.vis)+n(d.warm.kred)+n(d.warm.nal)+n(d.warm.obmen)+n(d.warm.vykup||0)+n(d.warm.kom);
   const oklad      = n(d.oklad);
   const baseOklad  = n(d.baseOklad) || oklad;
   const kotel      = n(d.kotel);
@@ -7975,6 +7986,7 @@ function openIncomeDetail(btn) {
       ${badge('Комиссия', d.crm.kom,     d.crm.cnt?.kom)}
       ${badge('Задаток',  d.crm.zadatok, d.crm.cnt?.zadatok)}
     </div>
+    ${n(d.crm.vykup) > 0 ? `<div class="income-badges" style="grid-template-columns:repeat(1,1fr)">${badge('Выкуп', d.crm.vykup, d.crm.cnt?.vykup)}</div>` : ''}
     ${subtotal('Итого CRM', crmSum)}
     <div class="income-sec-title">Тёплые лиды</div>
     <div class="income-badges">
@@ -7986,6 +7998,7 @@ function openIncomeDetail(btn) {
       ${badge('Обмен',    d.warm.obmen, d.warm.cnt?.obmen)}
       ${badge('Комиссия', d.warm.kom,   d.warm.cnt?.kom)}
     </div>
+    ${n(d.warm.vykup) > 0 ? `<div class="income-badges" style="grid-template-columns:repeat(1,1fr)">${badge('Выкуп', d.warm.vykup, d.warm.cnt?.vykup)}</div>` : ''}
     ${subtotal('Итого Тёплые лиды', warmSum)}
     ${kotelRow}
     ${noKoefRow}
@@ -7995,11 +8008,13 @@ function openIncomeDetail(btn) {
       rCrmNal:   parseRate((S.data.stavki||[])[10]?.[1]),
       rCrmObmen: parseRate((S.data.stavki||[])[11]?.[1]),
       rCrmKom:   parseRate((S.data.stavki||[])[12]?.[1]),
+      rCrmVykup: parseRate((S.data.stavki||[])[13]?.[1]),
       rWarmVis:  parseRate((S.data.stavki||[])[14]?.[1]),
       rWarmKred: parseRate((S.data.stavki||[])[15]?.[1]),
       rWarmNal:  parseRate((S.data.stavki||[])[16]?.[1]),
       rWarmObmen:parseRate((S.data.stavki||[])[17]?.[1]),
       rWarmKom:  parseRate((S.data.stavki||[])[18]?.[1]),
+      rWarmVykup:parseRate((S.data.stavki||[])[19]?.[1]),
       rZadatok:  parseRate((S.data.stavki||[])[20]?.[1]),
     }, false)}
   `;
@@ -8573,18 +8588,19 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
   const BUY_KREDIT = 'покупка (кредит)';
   const BUY_NAL    = 'покупка (наличные)';
   const BUY_OBMEN  = 'обмен';
+  const BUY_VYKUP  = 'выкуп';
   const BUY_KOM    = 'комиссия';
 
   function ensureDayStats(day) {
     if (!dayStats[day]) {
       dayStats[day] = isDozhim
         ? {
-            ch800:  { vis:0, kred:0, nal:0, obmen:0, kom:0, zadatok:0 },
-            ch1000: { vis:0, kred:0, nal:0, obmen:0, kom:0 },
+            ch800:  { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0, zadatok:0 },
+            ch1000: { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0 },
           }
         : {
-            crm:  { vis:0, kred:0, nal:0, obmen:0, kom:0, zadatok:0 },
-            warm: { vis:0, kred:0, nal:0, obmen:0, kom:0 },
+            crm:  { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0, zadatok:0 },
+            warm: { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0 },
           };
     }
     return dayStats[day];
@@ -8594,6 +8610,7 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
     if (status === BUY_KREDIT) bucket.kred++;
     if (status === BUY_NAL)    bucket.nal++;
     if (status === BUY_OBMEN && Object.prototype.hasOwnProperty.call(bucket, 'obmen')) bucket.obmen++;
+    if (status === BUY_VYKUP && Object.prototype.hasOwnProperty.call(bucket, 'vykup')) bucket.vykup++;
     if (status === BUY_KOM)    bucket.kom++;
   }
 
@@ -8647,19 +8664,21 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
   Object.entries(dayStats).forEach(([day, stat]) => {
     let earn = 0;
     if (!isDozhim) {
-      const crmPure  = Math.max(0, stat.crm.vis  - stat.crm.kred  - stat.crm.nal  - stat.crm.obmen  - stat.crm.kom);
-      const warmPure = Math.max(0, stat.warm.vis - stat.warm.kred - stat.warm.nal - stat.warm.obmen - stat.warm.kom);
+      const crmPure  = Math.max(0, stat.crm.vis  - stat.crm.kred  - stat.crm.nal  - stat.crm.obmen  - (stat.crm.vykup||0)  - stat.crm.kom);
+      const warmPure = Math.max(0, stat.warm.vis - stat.warm.kred - stat.warm.nal - stat.warm.obmen - (stat.warm.vykup||0) - stat.warm.kom);
       earn =
         crmPure * (R.rCrmVis || 0) +
         stat.crm.kred * (R.rCrmKred || 0) +
         stat.crm.nal * (R.rCrmNal || 0) +
         stat.crm.obmen * (R.rCrmObmen || 0) +
+        (stat.crm.vykup || 0) * (R.rCrmVykup || 0) +
         stat.crm.kom * (R.rCrmKom || 0) +
         stat.crm.zadatok * (R.rZadatok || 0) +
         warmPure * (R.rWarmVis || 0) +
         stat.warm.kred * (R.rWarmKred || 0) +
         stat.warm.nal * (R.rWarmNal || 0) +
         stat.warm.obmen * (R.rWarmObmen || 0) +
+        (stat.warm.vykup || 0) * (R.rWarmVykup || 0) +
         stat.warm.kom * (R.rWarmKom || 0);
     } else {
       const pure800  = Math.max(0, stat.ch800.vis  - stat.ch800.kred  - stat.ch800.nal  - stat.ch800.obmen  - stat.ch800.kom);
@@ -10882,12 +10901,25 @@ function renderVizity() {
   const nowWeek = currentWeekNum();
   const isCurrentMonth = (new Date().getFullYear()===yr && new Date().getMonth()+1===mo);
 
-  // Group rows by week, preserve sheet order
+  // Group rows by week, then sort within week by date asc (затем _sheetRow).
+  // Это нужно чтобы при смене даты в существующем визите (например 29 → 25)
+  // строка визуально попадала в «стопку» соответствующего дня, а не оставалась
+  // в конце недели по физическому порядку в листе.
   const groups = [[],[],[],[]];
   S.vizRows.forEach(row => {
     const d = parseVizDate(row.data[0]);
     groups[d ? vizWeekOf(d)-1 : 3].push(row);
   });
+  groups.forEach(g => g.sort((a, b) => {
+    const da = parseVizDate(a.data[0]);
+    const db = parseVizDate(b.data[0]);
+    if (!da && !db) return a._sheetRow - b._sheetRow;
+    if (!da) return 1;
+    if (!db) return -1;
+    const tA = da.getTime(), tB = db.getTime();
+    if (tA !== tB) return tA - tB;
+    return a._sheetRow - b._sheetRow;
+  }));
 
   const moName = new Date(yr,mo-1,1).toLocaleString('ru',{month:'long'});
 

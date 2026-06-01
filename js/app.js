@@ -1954,6 +1954,12 @@ function onLogin() {
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
   autoRefreshTimer = setInterval(() => {
     if (!S.token) return;
+    // Вкладка/PWA в фоне — пропускаем тик. iOS/macOS держат таймер живым
+    // даже когда окно свёрнуто, и без этого чека мы каждые 3 мин дёргаем
+    // 5 листов Sheets «в пустоту». Когда юзер вернётся — следующий тик
+    // подтянет данные за ≤3 мин (а #6 на visibilitychange сделает это
+    // мгновенно, когда будет готов).
+    if (document.hidden) return;
     // Не обновляем пока открыт журнал визитов — пользователь может вводить данные
     if (document.getElementById('scr-vizity')?.classList.contains('on')) return;
     // Не обновляем пока открыт фуллскрин-Автоподбор — нет смысла дёргать API

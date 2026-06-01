@@ -2179,9 +2179,14 @@ async function setCurrentMonth(newSuffix) {
   S.data = { otchet:null, dohod:null, grafik:null, grafikFmt:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null, vizityFmt:null, d_vizityFmt:null };
   apiCacheInvalidate(); // сбрасываем кеш при смене месяца
   _schedWeek = null;
-  // Если выбран будущий месяц — сначала создаём недостающие листы (фон), ПОТОМ грузим вкладку
-  try { await ensureFutureMonthSheets(newSuffix); }
-  catch (e) { console.warn('ensureFutureMonthSheets:', e); }
+  // Если выбран будущий месяц — сначала создаём недостающие листы, ПОТОМ грузим вкладку
+  // (иначе loadTab уйдёт за несуществующим листом и поймает 400).
+  // Для прошлых/текущего месяца этот шаг не нужен: пропускаем без await,
+  // экономя 1 async-тик при каждой смене месяца (audit#7).
+  if (_isFutureSuffix(newSuffix)) {
+    try { await ensureFutureMonthSheets(newSuffix); }
+    catch (e) { console.warn('ensureFutureMonthSheets:', e); }
+  }
   // Определяем активный экран и перезагружаем его данные
   const isActive = id => document.getElementById('scr-'+id)?.classList.contains('on');
   if (isActive('profile'))      { if (typeof renderProfile === 'function') renderProfile(); return; }
@@ -2211,6 +2216,16 @@ const FUTURE_SHEET_PREFIXES = [
 // остаётся как есть — там либо справочные значения, либо формулы.
 const FUTURE_SHEET_CLEAR_DATA = new Set(['ВИЗИТЫ', 'Д_ВИЗИТЫ']);
 let _ensureFutureRunning = false;
+// Лёгкий синхронный чек: ММГГ строго > текущего календарного ММГГ.
+// Используется в setCurrentMonth, чтобы не входить в ensureFutureMonthSheets
+// (и не платить async-тик) для прошлых/текущего месяцев.
+function _isFutureSuffix(suffix) {
+  if (!/^\d{4}$/.test(suffix)) return false;
+  const now = new Date();
+  const curSfx = String(now.getMonth() + 1).padStart(2, '0') + String(now.getFullYear()).slice(-2);
+  const yKey = s => 2000 + parseInt(s.slice(2, 4)) + parseInt(s.slice(0, 2)) / 100;
+  return yKey(suffix) > yKey(curSfx);
+}
 async function ensureFutureMonthSheets(newSuffix) {
   if (!/^\d{4}$/.test(newSuffix)) return;
   // Только для CEO/ROP

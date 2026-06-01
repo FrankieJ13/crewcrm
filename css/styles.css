@@ -6486,6 +6486,9 @@ body:not(.light):not(.neo-light):not(.tiffany):not(.fluent) .personal-metric-otk
 .ceo-alert-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
 .ceo-alert-red { background: #ff453a; border-color: #ff453a; }
 .ceo-alert-yellow { background: #ffd60a; border-color: #ffd60a; }
+.ceo-alert-muted { background: var(--bg2); border-color: var(--line); }
+.ceo-alert-muted .ceo-alert-title { color: var(--txt); }
+.ceo-alert-muted .ceo-alert-sub { color: var(--txt2); }
 .ceo-alert-title { font-weight: 800; color: #1c1c1e; margin-bottom: 2px; font-size: 12px; }
 .ceo-alert-sub { color: rgba(28,28,30,0.75); font-size: 11px; line-height: 1.4; }
 .ceo-alert-ok {

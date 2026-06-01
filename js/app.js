@@ -7429,6 +7429,11 @@ function renderPersonal(matched) {
   const _today = new Date();
   const _dayNum = _today.getDate();
   const _daysInMonth = new Date(_today.getFullYear(), _today.getMonth() + 1, 0).getDate();
+  // Является ли currentSuffix текущим календарным месяцем — нужно чтобы
+  // не выводить «Прогноз к концу дня» для закрытого месяца (он уже зафиксирован).
+  const _curMo = parseInt(currentSuffix.slice(0,2));
+  const _curYr = 2000 + parseInt(currentSuffix.slice(2,4));
+  const _isCurMonth = (_today.getFullYear() === _curYr && _today.getMonth()+1 === _curMo);
   const _daysLeft = Math.max(0, _daysInMonth - _dayNum);
   const _dateShort = `${String(_dayNum).padStart(2,'0')}.${String(_today.getMonth()+1).padStart(2,'0')}`;
   const _ddTodayStr = String(_dayNum).padStart(2,'0');
@@ -7564,13 +7569,21 @@ function renderPersonal(matched) {
               </div>
               <div class="ceo-mini-sub">к вчера</div>
             </div>
+            ${_isCurMonth ? `
             <div class="ceo-mini-badge ceo-mini-badge-eod">
               <div class="ceo-mini-lbl">Прогноз выполнения</div>
               <div class="ceo-mini-val">
                 <span class="mv" style="color:${pctClr(_eodProg)} !important">${_eodProg}</span><span style="color:${pctClr(_eodProg)}">%</span>
               </div>
               <div class="ceo-mini-sub">к концу дня</div>
-            </div>
+            </div>` : `
+            <div class="ceo-mini-badge ceo-mini-badge-eod">
+              <div class="ceo-mini-lbl">Итог месяца</div>
+              <div class="ceo-mini-val">
+                <span class="mv" style="color:${pctClr(progNum)} !important">${progNum}</span><span style="color:${pctClr(progNum)}">%</span>
+              </div>
+              <div class="ceo-mini-sub">месяц закрыт</div>
+            </div>`}
           </div>
         </div>
       </div>
@@ -9820,6 +9833,12 @@ function renderCeoDashboard() {
   const dd = String(dayNum).padStart(2, '0');
   const mm = String(today.getMonth() + 1).padStart(2, '0');
   const dateShort = `${dd}.${mm}`;
+  // Текущий ли календарный месяц выбран — нужно для алёртов «без визитов
+  // сегодня» / «на грани плана» / «прогноз ниже 50%», которые имеют смысл
+  // только для текущего месяца. В закрытом месяце выводим заглушку.
+  const _curMoSfx = parseInt(currentSuffix.slice(0,2));
+  const _curYrSfx = 2000 + parseInt(currentSuffix.slice(2,4));
+  const isCurMonthCeo = (today.getFullYear() === _curYrSfx && today.getMonth()+1 === _curMoSfx);
 
   const GREETINGS = {
     1:'сегодня будет хороший день!', 2:'ты уже отлично справляешься!',
@@ -10376,9 +10395,11 @@ function renderCeoDashboard() {
       <!-- АЛЕРТЫ -->
       <div class="sec-title" style="margin-top:18px">Внимание</div>
       <div class="ceo-alerts">
-        ${noVisitsToday.length ? `<div class="ceo-alert ceo-alert-red"><span class="ceo-alert-icon">🔴</span><div><div class="ceo-alert-title">Без визитов сегодня</div><div class="ceo-alert-sub">${noVisitsToday.join(' ')}</div></div></div>` : ''}
+        ${!isCurMonthCeo
+          ? `<div class="ceo-alert ceo-alert-muted"><span class="ceo-alert-icon">🔒</span><div><div class="ceo-alert-title">Месяц закрыт</div><div class="ceo-alert-sub">Алёрты «сегодня» / «прогноз» не релевантны для прошедшего периода.</div></div></div>`
+          : `${noVisitsToday.length ? `<div class="ceo-alert ceo-alert-red"><span class="ceo-alert-icon">🔴</span><div><div class="ceo-alert-title">Без визитов сегодня</div><div class="ceo-alert-sub">${noVisitsToday.join(' ')}</div></div></div>` : ''}
         ${lowProg.length ? `<div class="ceo-alert ceo-alert-red"><span class="ceo-alert-icon">⚠️</span><div><div class="ceo-alert-title">Прогноз ниже 50%</div><div class="ceo-alert-sub">${lowProg.join(' ')}</div></div></div>` : ''}
-        ${onEdge.length ? `<div class="ceo-alert ceo-alert-yellow"><span class="ceo-alert-icon">📊</span><div><div class="ceo-alert-title">На грани плана (85–99%)</div><div class="ceo-alert-sub">${onEdge.join(' ')}</div></div></div>` : ''}
+        ${onEdge.length ? `<div class="ceo-alert ceo-alert-yellow"><span class="ceo-alert-icon">📊</span><div><div class="ceo-alert-title">На грани плана (85–99%)</div><div class="ceo-alert-sub">${onEdge.join(' ')}</div></div></div>` : ''}`}
         ${!noVisitsToday.length && !lowProg.length && !onEdgeList.length ? `<div class="ceo-alert-ok">✅ Всё в порядке</div>` : ''}
       </div>
 

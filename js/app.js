@@ -4755,10 +4755,9 @@ function renderDohodCrm(el) {
        </button>`
     : '';
 
-  // Тумблер CRM↔ДОЖИМ для CEO/ROP — над zp-banner справа
-  const _me = findUserInSheet();
-  const _isCeoView = _me && isCeoLike(_me.role);
-  const deptToggleHdr = _isCeoView
+  // Тумблер CRM↔ДОЖИМ для CEO/ROP — над zp-banner справа.
+  // Используем _isCeo и _me, уже объявленные выше для copyBtn.
+  const deptToggleHdr = _isCeo
     ? `<div class="dohod-dept-hdr">${_deptTogglePillHtml('crm', 'switchDohodDept')}</div>`
     : '';
   setLiveHTML(el, `${deptToggleHdr}<div class="rating-slide-wrap"><div class="rating-slide-inner" id="dohod-slide-inner"><div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">${copyBtn}<div class="zl">Прогноз фонда отдела</div><div class="zv">${fmtRub(totalFund)}</div><button class="income-modal-info-btn" onclick="openSalInfo('crm')" title="Как считается зарплата" style="position:absolute;top:10px;right:10px">i</button></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div></div></div>`);

@@ -1367,33 +1367,21 @@ body.neo-light .gooey-text {
 .hmb-chevron { margin-left: auto; flex-shrink: 0; transition: transform .15s; }
 .hmb-theme-trigger.expanded .hmb-chevron { transform: rotate(90deg); }
 .hmb-theme-sub { display: none; flex-direction: column; background: var(--bg3); }
-.hmb-sub-item { padding-left: 28px; font-size: 12px; }
-/* Скроллируемый суб-список (месяцы / темы) — видно МИНИМУМ 4 пункта.
-   Высота пункта ~38px (padding 11×2 + font 13 + gap), так что 4×40 = 160px
-   гарантирует что 4 полностью влезают. Если пунктов 5+ — пользователь
-   видит подвисший снизу overflow-tail и пролистывает скроллом.
-   Раньше был sticky ::after со стрелкой-намёком, но на iOS PWA он:
-   - накладывался на последний пункт (нельзя было кликнуть)
-   - ломал pointer-events внутри overflow-scroll
-   - визуально сжимал список до ~3 пунктов
-   Убрал — заменил тонким box-shadow inset как индикатор скролла. */
+.hmb-sub-item {
+  padding-left: 28px;
+  font-size: 12px;
+  min-height: 36px;       /* гарантия видимой высоты пункта */
+  flex-shrink: 0;         /* не сжимать в overflow-контейнере */
+  box-sizing: border-box;
+}
+/* Скроллируемый суб-список (месяцы / темы).
+   Высота: 4 пункта × 36px = 144px минимум. Если пунктов >4 — скролл.
+   .hmb-sub-item имеет min-height: 36px (выше), не сжимается во flex. */
 #hmb-month-sub, .hmb-theme-sub {
-  max-height: 160px;       /* минимум 4 пункта × ~40px */
+  max-height: 180px;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: var(--acc) transparent;
   position: relative;
 }
-/* iOS Safari / Chrome — тонкий скроллбар, чтобы было ясно что скроллится */
-#hmb-month-sub::-webkit-scrollbar,
-.hmb-theme-sub::-webkit-scrollbar { width: 6px; }
-#hmb-month-sub::-webkit-scrollbar-thumb,
-.hmb-theme-sub::-webkit-scrollbar-thumb {
-  background: var(--acc); border-radius: 3px; opacity: .4;
-}
-#hmb-month-sub::-webkit-scrollbar-track,
-.hmb-theme-sub::-webkit-scrollbar-track { background: transparent; }
 .hmb-sub-item.theme-active::after {
   content: '✓';
   margin-left: auto;

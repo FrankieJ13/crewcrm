@@ -1893,6 +1893,56 @@ async function signInFirebaseAnonymously() {
   }
 }
 
+/* ════════════════════ KEEP-ALIVE PING ════════════════════
+ * Каждые 25 секунд пока вкладка видима — тихий запрос USERS!A1:A1
+ * (1 ячейка, ~50 байт). Цель:
+ *  - не дать idle-timeout (HTTP/2 connection ~30с) закрыть соединение
+ *  - держать Sheets-кеш USERS «прогретым» (Google сбрасывает его за ~30с)
+ * Так первый запрос после возврата пользователя из таба будет быстрым,
+ * а не cold-start 20-30 секунд.
+ * При document.hidden пинги остановлены. На visible — мгновенный ping
+ * + перезапуск интервала.
+ */
+let _keepAliveTimer = null;
+let _keepAliveInflight = false;
+async function _keepAlivePing() {
+  if (_keepAliveInflight) return;
+  if (!S.token || !S.authReady) return;
+  if (document.hidden) return;
+  _keepAliveInflight = true;
+  try {
+    // Используем _apiFetch напрямую через api() — пройдёт через кеш TTL=45с,
+    // так что фактически сетевой запрос будет ~раз в 45с. Но fetch к Sheets
+    // всё равно случится регулярно благодаря авторефрешу, а это просто
+    // подстраховка для idle-окон.
+    await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/USERS!A1:A1`,
+      { headers: await authHeaders() }
+    );
+  } catch (e) {
+    // тихо — это просто пинг, его задача — поддержать соединение
+  } finally {
+    _keepAliveInflight = false;
+  }
+}
+function startKeepAlive() {
+  if (_keepAliveTimer) clearInterval(_keepAliveTimer);
+  _keepAliveTimer = setInterval(_keepAlivePing, 25_000);
+}
+function stopKeepAlive() {
+  if (_keepAliveTimer) { clearInterval(_keepAliveTimer); _keepAliveTimer = null; }
+}
+// При возврате во вкладку — сразу ping + перезапуск интервала.
+// (НЕ запрашиваем token-refresh — иначе попадём в баг audit#6 каскада.)
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopKeepAlive();
+  } else if (S.token && S.authReady) {
+    _keepAlivePing();
+    startKeepAlive();
+  }
+});
+
 function scheduleTokenRefresh(expiresIn) {
   if (refreshTimer) clearTimeout(refreshTimer);
   const delay = Math.max((expiresIn - 300) * 1000, 0);
@@ -2339,6 +2389,7 @@ function onLogout() {
   if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
   S.authReady = false;
   if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
+  stopKeepAlive();
   cleanupTokenRequest();
   markFirebaseOffline(true);
   if (S.token) google.accounts.oauth2.revoke(S.token, ()=>{});
@@ -7169,6 +7220,7 @@ function findUserInSheet() {
 function showAccessDenied(reason = 'Почта не найдена в USERS') {
   const email = normalizeEmail(S.user?.email) || 'email не получен';
   S.authReady = false;
+  stopKeepAlive();
   closeAllDockPopups?.();
   closePresenceModal?.();
   if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
@@ -7356,6 +7408,9 @@ function _runPostUsersFlow() {
       goPersonal();
     }
     setTimeout(() => backgroundPrefetch(matched), 3000);
+    // Keep-alive ping каждые 25с — держит Sheets-кеш USERS прогретым
+    // и HTTP/2 connection живым, чтобы избежать cold-start через idle.
+    startKeepAlive();
   } else {
     showAccessDenied();
     toast('Почта не найдена в USERS', 'e');

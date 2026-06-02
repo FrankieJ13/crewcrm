@@ -2345,7 +2345,7 @@ function onLogout() {
   tokenExpiresAt = 0;
   S.token=null; S.user=null; S.usersData=null;
   S.data = { otchet:null, dohod:null, grafik:null, grafikFmt:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null, vizityFmt:null, d_vizityFmt:null };
-  ['crm_tok','crm_exp','crm_user'].forEach(k => localStorage.removeItem(k));
+  ['crm_tok','crm_exp','crm_user','crm_users_cache'].forEach(k => localStorage.removeItem(k));
   document.getElementById('user-wrap').style.display = 'none';
   const _bo2 = document.getElementById('btn-out');
   if (_bo2) _bo2.style.display = 'none';
@@ -7179,7 +7179,7 @@ function showAccessDenied(reason = 'Почта не найдена в USERS') {
   S.user = null;
   S.usersData = null;
   S.data = { otchet:null, dohod:null, grafik:null, grafikFmt:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null, vizityFmt:null, d_vizityFmt:null };
-  ['crm_tok','crm_exp','crm_user'].forEach(k => localStorage.removeItem(k));
+  ['crm_tok','crm_exp','crm_user','crm_users_cache'].forEach(k => localStorage.removeItem(k));
   document.getElementById('main-nav').style.display = 'none';
   document.getElementById('main-dock').style.display = 'none';
   document.getElementById('user-wrap').style.display = 'none';
@@ -7203,11 +7203,96 @@ function showAccessDenied(reason = 'Почта не найдена в USERS') {
   toast(`${reason}: ${email}`, 'e');
 }
 
+// USERS — диапазон A1:P200. Раньше было A1:P500: лист на 8000 ячеек,
+// Sheets API парсил весь диапазон (включая ~470 пустых строк) при каждом
+// первом обращении. Для команды до ~150 человек 200 строк хватит с запасом.
+const USERS_RANGE = 'A1:P200';
+const USERS_LS_KEY = 'crm_users_cache';
+const USERS_LS_TTL = 24 * 60 * 60 * 1000; // 24 часа
+
+function _saveUsersCache(data) {
+  try {
+    localStorage.setItem(USERS_LS_KEY, JSON.stringify({ t: Date.now(), d: data }));
+  } catch(e) { /* quota / private mode */ }
+}
+function _loadUsersCache() {
+  try {
+    const raw = localStorage.getItem(USERS_LS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.d)) return null;
+    if (Date.now() - parsed.t > USERS_LS_TTL) return null;
+    return parsed.d;
+  } catch(e) { return null; }
+}
+
 async function loadUsersAndStart() {
+  // CACHE-FIRST стратегия. Главная цель — убрать 20-30 секунд cold-start
+  // Sheets API при первом обращении к USERS. С кешем UI стартует мгновенно,
+  // свежие данные подтягиваются в фоне; если в них что-то изменилось
+  // (роль, новый юзер, удалённый юзер) — перезапускаем flow аккуратно.
+  const cached = _loadUsersCache();
+  const hasCachedMatch = !!(cached && cached.length > 1 && (() => {
+    if (!S.user) return false;
+    S.usersData = cached;
+    const m = findUserInSheet();
+    S.usersData = null;
+    return !!(m && m.name);
+  })());
+
+  // Если кеш есть И в нём нашёлся текущий пользователь — стартуем СРАЗУ
+  // с кеша, не дожидаясь сети. Фоновый refresh подтянется позже.
+  if (hasCachedMatch) {
+    S.usersData = cached;
+    _runPostUsersFlow();
+    // фоновый refresh (не блокируем UI)
+    (async () => {
+      try {
+        apiCacheInvalidate('USERS');
+        const fresh = await api('USERS', USERS_RANGE);
+        const cacheRow = (cached.find(r => r && String(r[0]||'').toLowerCase().includes(normalizeEmail(S.user?.email||'')))||[]).join('|');
+        const freshRow = (fresh.find(r => r && String(r[0]||'').toLowerCase().includes(normalizeEmail(S.user?.email||'')))||[]).join('|');
+        S.usersData = fresh;
+        _saveUsersCache(fresh);
+        // Если данные текущего пользователя изменились (роль, флаги) —
+        // перерисуем экран. Иначе молча обновили кеш для следующего раза.
+        if (cacheRow !== freshRow) {
+          console.info('USERS: данные изменились, перерендер');
+          const matched = findUserInSheet();
+          if (matched && !isCeoLike(matched.role)) goPersonal();
+          else if (matched && isCeoLike(matched.role)) loadCeoDashboard?.();
+        }
+      } catch(e) {
+        console.warn('USERS background refresh failed', e);
+      }
+    })();
+    return;
+  }
+
+  // Кеша нет или в нём нет текущего юзера — ждём свежие данные.
   try {
     apiCacheInvalidate('USERS');
-    S.usersData = await api('USERS', 'A1:P500');
-  } catch(e) { S.usersData = []; showAccessDenied('Нет доступа к таблице'); return; }
+    const fresh = await api('USERS', USERS_RANGE);
+    S.usersData = fresh;
+    _saveUsersCache(fresh);
+  } catch(e) {
+    if (cached && cached.length > 1) {
+      // Фоллбэк на устаревший кеш если он есть
+      S.usersData = cached;
+      try { toast('Данные USERS из кеша (нет связи)', 'i'); } catch(_){}
+    } else {
+      S.usersData = [];
+      showAccessDenied('Нет доступа к таблице');
+      return;
+    }
+  }
+  _runPostUsersFlow();
+}
+
+// Всё что идёт ПОСЛЕ того как S.usersData загружен. Вынесено из
+// loadUsersAndStart чтобы вызывать как из cache-first ветки (мгновенно),
+// так и из обычной (после await api).
+function _runPostUsersFlow() {
   const matched = findUserInSheet();
   refreshFirebaseProfile();
   // Перерисуем имя/аватар в гамбургере, когда USERS уже загружен
@@ -7215,8 +7300,12 @@ async function loadUsersAndStart() {
   if (matched && matched.name) {
     const parts = matched.name.trim().split(/\s+/);
     const firstName = parts.length >= 2 ? parts[1] : parts[0];
-    toast('Приветствую, ' + firstName + '!', 's');
-    // Показываем приветствие (aurora на hdr-title уже постоянная)
+    // Приветственный тост — только при первом запуске сессии,
+    // не на каждом cache-first re-run.
+    if (!window._greetingShown) {
+      window._greetingShown = true;
+      toast('Приветствую, ' + firstName + '!', 's');
+    }
     const hdrGreeting = document.getElementById('hdr-greeting');
     if (hdrGreeting) {
       hdrGreeting.textContent = 'Привет, ' + firstName + '!';
@@ -7227,11 +7316,9 @@ async function loadUsersAndStart() {
     startNotificationListener();
     initSverkaToggle();
     if (typeof startRemindersLoop === 'function') startRemindersLoop();
-    // Проверяем режим технического обслуживания (не для CEO)
     if (!isCeoLike(matched.role) && S.svcMode) {
       showMaintenancePage();
     }
-    // Иконки автора в "О проекте" — показываем после авторизации
     const authorLinks = document.getElementById('about-author-links');
     if (authorLinks) {
       const authorHtml = getMgrMessengerHtml('Бочаров Юлиан') || getMgrMessengerHtml('Юлиан Бочаров') || '';
@@ -7240,7 +7327,6 @@ async function loadUsersAndStart() {
         authorLinks.style.display = 'flex';
       }
     }
-    // Аватар автора
     const authorAvatar = document.getElementById('about-author-avatar');
     if (authorAvatar) {
       const id = getMgrCrmId('Бочаров Юлиан') || getMgrCrmId('Юлиан Бочаров');
@@ -7269,7 +7355,6 @@ async function loadUsersAndStart() {
       S.authReady = true;
       goPersonal();
     }
-    // Фоновая предзагрузка остальных данных через 8 сек (не перегружаем API при старте)
     setTimeout(() => backgroundPrefetch(matched), 3000);
   } else {
     showAccessDenied();

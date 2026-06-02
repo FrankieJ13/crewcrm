@@ -8893,8 +8893,11 @@ function openCeoKsoModal() {
       const row = rows[i];
       if (!row || !row[8]) continue;
       if (!isSverkaRow(row)) continue;
-      const status = String(row[4] || '').trim().toLowerCase();
-      if (!ksoStatuses.includes(status)) continue;
+      // Унифицированно с buildCrmStats/buildDozhimStats — черновики не считаем,
+      // combo-комменты разбираем через parseVizStatuses.
+      if (!isCompleteVizRow(row)) continue;
+      const statuses = parseVizStatuses(row[4]);
+      if (!statuses.some(s => ksoStatuses.includes(s))) continue;
       collected.push({
         date: String(row[0] || '').trim(),
         manager: String(row[8] || '').trim(),
@@ -8952,8 +8955,10 @@ function openCeoSalonModal() {
       const row = rows[i];
       if (!row || !row[8]) continue;
       if (!isSverkaRow(row)) continue;
-      const status = String(row[4] || '').trim().toLowerCase();
-      if (status !== 'в салоне') continue;
+      // Унифицированно с buildCrmStats/buildDozhimStats — черновики не считаем,
+      // combo-комменты разбираем через parseVizStatuses (например «В салоне + …»).
+      if (!isCompleteVizRow(row)) continue;
+      if (!parseVizStatuses(row[4]).includes('в салоне')) continue;
       collected.push({
         date: String(row[0] || '').trim(),
         manager: String(row[8] || '').trim(),

@@ -1368,30 +1368,32 @@ body.neo-light .gooey-text {
 .hmb-theme-trigger.expanded .hmb-chevron { transform: rotate(90deg); }
 .hmb-theme-sub { display: none; flex-direction: column; background: var(--bg3); }
 .hmb-sub-item { padding-left: 28px; font-size: 12px; }
-/* Скроллируемый суб-список (месяцы / темы) — видно 4 пункта, остальные за скроллом.
-   Анимированная стрелка-намёк снизу подсказывает что можно скроллить. */
+/* Скроллируемый суб-список (месяцы / темы) — видно МИНИМУМ 4 пункта.
+   Высота пункта ~38px (padding 11×2 + font 13 + gap), так что 4×40 = 160px
+   гарантирует что 4 полностью влезают. Если пунктов 5+ — пользователь
+   видит подвисший снизу overflow-tail и пролистывает скроллом.
+   Раньше был sticky ::after со стрелкой-намёком, но на iOS PWA он:
+   - накладывался на последний пункт (нельзя было кликнуть)
+   - ломал pointer-events внутри overflow-scroll
+   - визуально сжимал список до ~3 пунктов
+   Убрал — заменил тонким box-shadow inset как индикатор скролла. */
 #hmb-month-sub, .hmb-theme-sub {
-  max-height: calc(4 * 36px); /* ~4 пункта по 36px */
+  max-height: 160px;       /* минимум 4 пункта × ~40px */
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
+  scrollbar-color: var(--acc) transparent;
   position: relative;
 }
-#hmb-month-sub::after, .hmb-theme-sub::after {
-  /* Намёк-стрелка вниз; скрывается когда контейнер скроллнут до конца */
-  content: '⌄';
-  position: sticky; bottom: 0; left: 0; right: 0;
-  display: block; text-align: center;
-  font-size: 14px; line-height: 14px;
-  color: var(--acc);
-  padding: 2px 0 4px;
-  background: linear-gradient(to top, var(--bg3) 60%, transparent 100%);
-  pointer-events: none;
-  animation: hmbScrollHint 1.4s ease-in-out infinite;
+/* iOS Safari / Chrome — тонкий скроллбар, чтобы было ясно что скроллится */
+#hmb-month-sub::-webkit-scrollbar,
+.hmb-theme-sub::-webkit-scrollbar { width: 6px; }
+#hmb-month-sub::-webkit-scrollbar-thumb,
+.hmb-theme-sub::-webkit-scrollbar-thumb {
+  background: var(--acc); border-radius: 3px; opacity: .4;
 }
-@keyframes hmbScrollHint {
-  0%, 100% { transform: translateY(0); opacity: .9; }
-  50%      { transform: translateY(3px); opacity: .55; }
-}
+#hmb-month-sub::-webkit-scrollbar-track,
+.hmb-theme-sub::-webkit-scrollbar-track { background: transparent; }
 .hmb-sub-item.theme-active::after {
   content: '✓';
   margin-left: auto;

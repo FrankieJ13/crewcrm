@@ -2490,19 +2490,21 @@ const _apiInflight = {};   // key → Promise (дедупликация одно
 const _apiCache    = {};   // key → {ts, data} (TTL-кеш: не перезапрашиваем в течение TTL)
 const API_TTL_MS   = 45_000; // 45 сек — минимальный интервал повторной загрузки одного листа
 
-async function api(sheet, range) {
-  const key = sheet + '!' + range;
+async function api(sheet, range, opts = {}) {
+  // opts.params: дополнительные query-параметры к Sheets values endpoint.
+  //   Пример: { params: 'valueRenderOption=UNFORMATTED_VALUE' } — пропускает
+  //   форматирование (даты, hyperlinks, currency), отдаёт сырые значения.
+  //   Сильно ускоряет sheets с тяжёлым форматированием (USERS у нас).
+  const paramStr = opts.params || '';
+  const key = sheet + '!' + range + (paramStr ? '?' + paramStr : '');
 
-  // TTL-кеш: если данные свежие — отдаём из кеша без сетевого запроса
   const cached = _apiCache[key];
   if (cached && (Date.now() - cached.ts) < API_TTL_MS) {
     return cached.data;
   }
-
-  // Дедупликация: если уже идёт запрос с тем же ключом — возвращаем тот же Promise
   if (_apiInflight[key]) return _apiInflight[key];
 
-  _apiInflight[key] = _apiFetch(sheet, range, key);
+  _apiInflight[key] = _apiFetch(sheet, range, key, 0, paramStr);
   try {
     const result = await _apiInflight[key];
     return result;
@@ -2511,9 +2513,10 @@ async function api(sheet, range) {
   }
 }
 
-async function _apiFetch(sheet, range, key, retryCount = 0) {
+async function _apiFetch(sheet, range, key, retryCount = 0, params = '') {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/`
-            + encodeURIComponent(sheet + '!' + range);
+            + encodeURIComponent(sheet + '!' + range)
+            + (params ? '?' + params : '');
 
   // Таймаут 30с — на медленных мобильных сетях большие unbounded ranges
   // (ВИЗИТЫ!A:N, etc) легко берут 7-15+ сек. Старый 12с был слишком жёсткий:
@@ -2534,7 +2537,7 @@ async function _apiFetch(sheet, range, key, retryCount = 0) {
       const jitter = Math.round(Math.random() * 800);
       const wait   = Math.min((retryCount + 1) * 3000 + jitter, 10000);
       await new Promise(res => setTimeout(res, wait));
-      return _apiFetch(sheet, range, key, retryCount + 1);
+      return _apiFetch(sheet, range, key, retryCount + 1, params);
     }
     toast('Не удалось получить данные Google. Проверьте сеть и обновите экран', 'e');
     throw err;
@@ -2547,7 +2550,7 @@ async function _apiFetch(sheet, range, key, retryCount = 0) {
       const wait = (retryCount + 1) * 8000; // 8s, 16s, 24s
       if (retryCount === 1) toast('Лимит запросов — повтор через ' + (wait/1000) + 'с…', 'i');
       await new Promise(res => setTimeout(res, wait));
-      return _apiFetch(sheet, range, key, retryCount + 1);
+      return _apiFetch(sheet, range, key, retryCount + 1, params);
     }
     toast('Превышен лимит Sheets API — подождите минуту', 'e');
     throw new Error('QUOTA_EXCEEDED');
@@ -2568,7 +2571,7 @@ async function _apiFetch(sheet, range, key, retryCount = 0) {
         } catch (e) { /* iOS PWA private mode иногда блокирует */ }
         try {
           await ensureToken();
-          return _apiFetch(sheet, range, key, retryCount + 1);
+          return _apiFetch(sheet, range, key, retryCount + 1, params);
         } catch(authErr) {
           toast('Сессия требует повторного входа', 'e');
         }
@@ -6726,7 +6729,16 @@ function toGenitive(firstName) {
 
 // Парсим ДР: "дд.мм" или "дд.мм.гг" → { day, month }
 function parseDOB(dob) {
-  if (!dob) return null;
+  if (dob == null || dob === '') return null;
+  // С USERS теперь читаем с valueRenderOption=UNFORMATTED_VALUE для скорости.
+  // Даты приходят как Excel serial number (дней с 1899-12-30), а не строкой
+  // "DD.MM.YYYY". Поддерживаем оба формата.
+  if (typeof dob === 'number') {
+    const ms = (dob - 25569) * 86400000; // 25569 = дней от 1899-12-30 до 1970-01-01
+    const d = new Date(ms);
+    if (isNaN(d.getTime())) return null;
+    return { day: d.getUTCDate(), month: d.getUTCMonth() + 1 };
+  }
   const parts = String(dob).trim().split('.');
   if (parts.length < 2) return null;
   const day = parseInt(parts[0]);
@@ -7301,7 +7313,7 @@ async function loadUsersAndStart() {
     (async () => {
       try {
         apiCacheInvalidate('USERS');
-        const fresh = await api('USERS', USERS_RANGE);
+        const fresh = await api('USERS', USERS_RANGE, { params: 'valueRenderOption=UNFORMATTED_VALUE' });
         const cacheRow = (cached.find(r => r && String(r[0]||'').toLowerCase().includes(normalizeEmail(S.user?.email||'')))||[]).join('|');
         const freshRow = (fresh.find(r => r && String(r[0]||'').toLowerCase().includes(normalizeEmail(S.user?.email||'')))||[]).join('|');
         S.usersData = fresh;
@@ -7324,7 +7336,8 @@ async function loadUsersAndStart() {
   // Кеша нет или в нём нет текущего юзера — ждём свежие данные.
   try {
     apiCacheInvalidate('USERS');
-    const fresh = await api('USERS', USERS_RANGE);
+    // UNFORMATTED_VALUE — см. комментарий в cache-first ветке выше.
+    const fresh = await api('USERS', USERS_RANGE, { params: 'valueRenderOption=UNFORMATTED_VALUE' });
     S.usersData = fresh;
     _saveUsersCache(fresh);
   } catch(e) {

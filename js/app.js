@@ -83,6 +83,163 @@ const CFG = {
     appId: '1:1062620277496:web:c59852f529351fbc1b290d',
   },
 };
+/* ════════════════════ DIAG LOG ════════════════════
+ * Локальный диагностический лог: ring buffer на 500 записей в памяти +
+ * персист последних 200 в localStorage('crm_diag_log'). Снимается:
+ * - console.log/info/warn/error (исходные методы вызываются как есть)
+ * - window 'error' (необработанные исключения, в т.ч. из inline-onclick)
+ * - window 'unhandledrejection' (промисы без .catch)
+ * - fetch wrapper: пишем все ответы !ok + сетевые ошибки + аборты;
+ *   2xx тоже фиксируем для критичных endpoint'ов (Sheets/Firebase/Google).
+ * Чистится через clearAllCacheAndLogout (там localStorage.clear()) или
+ * кнопку «Очистить логи» внутри модалки логов.
+ */
+const DIAG = (() => {
+  const LS_KEY = 'crm_diag_log';
+  const MEM_LIMIT = 500;
+  const LS_LIMIT  = 200;
+  const ring = [];
+  let _persistTimer = null;
+
+  function _shortenUrl(u) {
+    if (!u) return '';
+    try {
+      const url = new URL(u, location.href);
+      if (url.hostname === 'sheets.googleapis.com') return 'sheets:' + decodeURIComponent(url.pathname.split('/values/')[1] || url.pathname);
+      if (url.hostname === 'identitytoolkit.googleapis.com') return 'firebase-auth';
+      if (url.hostname === 'firebasedatabase.app' || url.hostname.endsWith('firebaseio.com') || url.hostname.endsWith('firebasedatabase.app')) return 'firebase-db';
+      if (url.hostname === 'oauth2.googleapis.com' || url.hostname === 'accounts.google.com') return 'google-oauth';
+      if (url.hostname === 'www.googleapis.com' && url.pathname.includes('userinfo')) return 'google-userinfo';
+      if (url.hostname === location.hostname) return url.pathname + (url.search || '');
+      return url.hostname + url.pathname;
+    } catch(e) { return String(u).slice(0, 120); }
+  }
+
+  function _safeArg(a) {
+    if (a == null) return String(a);
+    if (typeof a === 'string') return a;
+    if (a instanceof Error) return (a.name || 'Error') + ': ' + (a.message || '') + (a.code ? ' [' + a.code + ']' : '');
+    if (typeof a === 'object') {
+      try { return JSON.stringify(a, (_k, v) => typeof v === 'function' ? '[fn]' : v, 0).slice(0, 500); }
+      catch(e) { return Object.prototype.toString.call(a); }
+    }
+    return String(a);
+  }
+
+  function _schedulePersist() {
+    if (_persistTimer) return;
+    _persistTimer = setTimeout(() => {
+      _persistTimer = null;
+      try {
+        const tail = ring.slice(-LS_LIMIT);
+        localStorage.setItem(LS_KEY, JSON.stringify(tail));
+      } catch(e) { /* quota / private mode */ }
+    }, 1500);
+  }
+
+  function push(level, scope, args) {
+    const entry = {
+      t: Date.now(),
+      l: level,
+      s: scope || '',
+      m: (Array.isArray(args) ? args : [args]).map(_safeArg).join(' '),
+    };
+    ring.push(entry);
+    if (ring.length > MEM_LIMIT) ring.splice(0, ring.length - MEM_LIMIT);
+    _schedulePersist();
+    return entry;
+  }
+
+  function getAll() {
+    return ring.slice();
+  }
+
+  function clear() {
+    ring.length = 0;
+    try { localStorage.removeItem(LS_KEY); } catch(e) {}
+  }
+
+  function _restoreFromLS() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return;
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        ring.push(...arr);
+        push('info', 'diag', ['Восстановлено ' + arr.length + ' записей лога из прошлой сессии']);
+      }
+    } catch(e) {}
+  }
+
+  // ── Hook console.* (originals сохраняем; ничего не подавляем) ──
+  ['log', 'info', 'warn', 'error', 'debug'].forEach(level => {
+    const orig = console[level] ? console[level].bind(console) : console.log.bind(console);
+    console[level] = function(...args) {
+      try { push(level, 'console', args); } catch(e) {}
+      try { orig(...args); } catch(e) {}
+    };
+  });
+
+  // ── Глобальные ошибки ──
+  window.addEventListener('error', (ev) => {
+    try {
+      push('error', 'window', [
+        ev.message || 'Unknown error',
+        ev.filename ? '@' + ev.filename + ':' + (ev.lineno || '?') + ':' + (ev.colno || '?') : '',
+        ev.error ? (ev.error.stack || ev.error.toString()) : '',
+      ].filter(Boolean));
+    } catch(e) {}
+  });
+  window.addEventListener('unhandledrejection', (ev) => {
+    try {
+      const r = ev.reason;
+      push('error', 'unhandled', [
+        r instanceof Error ? r : (typeof r === 'string' ? r : _safeArg(r)),
+        r && r.stack ? r.stack : '',
+      ].filter(Boolean));
+    } catch(e) {}
+  });
+
+  // ── Глобальный fetch wrapper ──
+  const _origFetch = window.fetch.bind(window);
+  window.fetch = async function(input, init) {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    const short = _shortenUrl(url);
+    const tStart = performance.now();
+    try {
+      const resp = await _origFetch(input, init);
+      const dt = Math.round(performance.now() - tStart);
+      // Логируем все Google/Firebase ответы + любые !ok
+      const isInteresting = /sheets\.googleapis|identitytoolkit|oauth2\.googleapis|googleapis\.com|firebase/i.test(url);
+      if (!resp.ok || isInteresting) {
+        push(resp.ok ? 'info' : 'warn', 'fetch', [
+          resp.status + ' ' + (resp.statusText || ''),
+          short,
+          dt + 'ms',
+        ]);
+      }
+      return resp;
+    } catch (err) {
+      const dt = Math.round(performance.now() - tStart);
+      const aborted = err && err.name === 'AbortError';
+      push(aborted ? 'warn' : 'error', 'fetch', [
+        aborted ? 'ABORTED' : 'NETWORK_FAIL',
+        short,
+        dt + 'ms',
+        err && err.message ? err.message : '',
+      ].filter(Boolean));
+      throw err;
+    }
+  };
+
+  // ── Восстановление + старт ──
+  _restoreFromLS();
+  push('info', 'diag', ['Сессия началась', navigator.userAgent.slice(0, 120)]);
+
+  return { push, getAll, clear };
+})();
+window.DIAG = DIAG;
+
 const ASSET_BASE = new URL('./logos/', document.baseURI).href;
 const DEFAULT_ICON_BASE = ASSET_BASE + 'default/';
 const COSMIC_ICON_BASE = ASSET_BASE + 'cosmic/';
@@ -1968,6 +2125,7 @@ function onLogin() {
   const hmbl = document.getElementById('hmb-logout'); if (hmbl) hmbl.style.display = '';
   const hmbsl = document.getElementById('hmb-sep-logout'); if (hmbsl) hmbsl.style.display = '';
   const hmbcc = document.getElementById('hmb-clearcache'); if (hmbcc) hmbcc.style.display = '';
+  const hmblg = document.getElementById('hmb-logs'); if (hmblg) hmblg.style.display = '';
   const hmbm = document.getElementById('hmb-month-trigger'); if (hmbm) hmbm.style.display = '';
   const hmbms = document.getElementById('hmb-sep-month'); if (hmbms) hmbms.style.display = '';
   // Трофеи и «О проекте» показываем только после авторизации
@@ -2072,6 +2230,111 @@ async function clearAllCacheAndLogout() {
 }
 window.clearAllCacheAndLogout = clearAllCacheAndLogout;
 
+/* ════════════════════ DIAG LOG VIEWER ════════════════════ */
+function _diagFmtTime(ts) {
+  const d = new Date(ts);
+  const p = n => String(n).padStart(2, '0');
+  return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()) + '.' + String(d.getMilliseconds()).padStart(3, '0');
+}
+function _diagFmtDate(ts) {
+  const d = new Date(ts);
+  const p = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+}
+function _diagAsPlainText() {
+  return DIAG.getAll().map(e =>
+    `[${_diagFmtDate(e.t)}] [${e.l.toUpperCase()}] [${e.s}] ${e.m}`
+  ).join('\n');
+}
+function openLogsModal() {
+  closeLogsModal();
+  const wrap = document.createElement('div');
+  wrap.id = 'diag-modal';
+  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100000;display:flex;align-items:stretch;justify-content:center;';
+  wrap.innerHTML = `
+    <div style="background:var(--bg2,#1a1a1a);color:var(--fg,#fff);width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;border-radius:12px;overflow:hidden;font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;">
+      <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <strong style="font-size:14px;flex:0 0 auto">Диагностические логи</strong>
+        <span id="diag-count" style="opacity:.6;font-size:11px"></span>
+        <span style="flex:1"></span>
+        <select id="diag-filter" style="background:rgba(255,255,255,.08);color:inherit;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:4px 6px;font-size:12px;">
+          <option value="">Все уровни</option>
+          <option value="error">Только error</option>
+          <option value="warn">warn + error</option>
+          <option value="info">info+</option>
+        </select>
+        <button id="diag-copy" style="background:#246;color:#fff;border:0;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer">Скопировать</button>
+        <button id="diag-clear" style="background:#642;color:#fff;border:0;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer">Очистить</button>
+        <button id="diag-close" style="background:rgba(255,255,255,.08);color:inherit;border:0;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer">Закрыть</button>
+      </div>
+      <div id="diag-list" style="flex:1;overflow-y:auto;padding:8px 12px;font:11px/1.45 ui-monospace,Menlo,Consolas,monospace;"></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  document.body.style.overflow = 'hidden';
+
+  const listEl  = wrap.querySelector('#diag-list');
+  const countEl = wrap.querySelector('#diag-count');
+  const filterEl = wrap.querySelector('#diag-filter');
+
+  const levelOrder = { error: 0, warn: 1, info: 2, log: 2, debug: 3 };
+  function render() {
+    const filterVal = filterEl.value;
+    const all = DIAG.getAll();
+    let shown = all;
+    if (filterVal) {
+      const maxLevel = levelOrder[filterVal] ?? 9;
+      shown = all.filter(e => (levelOrder[e.l] ?? 9) <= maxLevel);
+    }
+    countEl.textContent = `${shown.length} / ${all.length} записей`;
+    if (!shown.length) {
+      listEl.innerHTML = '<div style="opacity:.5;text-align:center;padding:20px">Логов нет</div>';
+      return;
+    }
+    const colorMap = { error:'#f55', warn:'#fb3', info:'#4af', log:'#aaa', debug:'#888' };
+    listEl.innerHTML = shown.slice().reverse().map(e => {
+      const c = colorMap[e.l] || '#aaa';
+      const msg = (e.m || '').replace(/[<>&]/g, ch => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[ch]));
+      return `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);">
+        <span style="color:#888">${_diagFmtTime(e.t)}</span>
+        <span style="color:${c};font-weight:600">[${e.l.toUpperCase()}]</span>
+        <span style="color:#888">[${e.s}]</span>
+        <span style="white-space:pre-wrap;word-break:break-word">${msg}</span>
+      </div>`;
+    }).join('');
+  }
+  render();
+
+  filterEl.addEventListener('change', render);
+  wrap.querySelector('#diag-close').onclick = closeLogsModal;
+  wrap.addEventListener('click', e => { if (e.target === wrap) closeLogsModal(); });
+  wrap.querySelector('#diag-copy').onclick = async () => {
+    const text = _diagAsPlainText();
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('Логи скопированы в буфер обмена', 's');
+    } catch(e) {
+      // fallback
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); toast('Логи скопированы', 's'); }
+      catch(_) { toast('Не удалось скопировать', 'e'); }
+      ta.remove();
+    }
+  };
+  wrap.querySelector('#diag-clear').onclick = () => {
+    if (!confirm('Очистить все диагностические логи?')) return;
+    DIAG.clear();
+    render();
+  };
+}
+function closeLogsModal() {
+  const w = document.getElementById('diag-modal');
+  if (w) w.remove();
+  document.body.style.overflow = '';
+}
+window.openLogsModal = openLogsModal;
+window.closeLogsModal = closeLogsModal;
+
 function onLogout() {
   if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
   S.authReady = false;
@@ -2091,6 +2354,7 @@ function onLogout() {
   const hmbl2 = document.getElementById('hmb-logout'); if (hmbl2) hmbl2.style.display = 'none';
   const hmbsl2 = document.getElementById('hmb-sep-logout'); if (hmbsl2) hmbsl2.style.display = 'none';
   const hmbcc2 = document.getElementById('hmb-clearcache'); if (hmbcc2) hmbcc2.style.display = 'none';
+  const hmblg2 = document.getElementById('hmb-logs'); if (hmblg2) hmblg2.style.display = 'none';
   const hmbAcc2 = document.getElementById('hmb-account-btn'); if (hmbAcc2) hmbAcc2.style.display = 'none';
   const hmbAccSep2 = document.getElementById('hmb-sep-account'); if (hmbAccSep2) hmbAccSep2.style.display = 'none';
   // Скрываем Трофеи и «О проекте» при выходе — экран авторизации без них
@@ -6919,6 +7183,7 @@ function showAccessDenied(reason = 'Почта не найдена в USERS') {
   const hmbl = document.getElementById('hmb-logout'); if (hmbl) hmbl.style.display = 'none';
   const hmbsl = document.getElementById('hmb-sep-logout'); if (hmbsl) hmbsl.style.display = 'none';
   const hmbcc = document.getElementById('hmb-clearcache'); if (hmbcc) hmbcc.style.display = 'none';
+  const hmblg = document.getElementById('hmb-logs'); if (hmblg) hmblg.style.display = 'none';
   const hmbAcc = document.getElementById('hmb-account-btn'); if (hmbAcc) hmbAcc.style.display = 'none';
   const hmbAccSep = document.getElementById('hmb-sep-account'); if (hmbAccSep) hmbAccSep.style.display = 'none';
   const hmbT = document.getElementById('hmb-trophies'); if (hmbT) hmbT.style.display = 'none';

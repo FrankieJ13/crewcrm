@@ -1852,10 +1852,26 @@ function initAuth() {
       tokenExpiresAt = Date.now() + Math.max((resp.expires_in || 3600) - 60, 60) * 1000;
       localStorage.setItem('crm_tok', resp.access_token);
       localStorage.setItem('crm_exp', tokenExpiresAt);
-      loadUser();
-      syncFirebaseAuth(resp.access_token);
-      onLogin();
       scheduleTokenRefresh(resp.expires_in);
+
+      // КРИТИЧНО: различаем «первичный логин» и «silent refresh».
+      // Раньше callback ВСЕГДА запускал loadUser+syncFirebaseAuth+onLogin —
+      // даже когда токен просто продлевался автоматически. Это вызывало:
+      //   - race: loadUser (userinfo) vs loadUsersAndStart (USERS), при медленном
+      //     userinfo → findUserInSheet видит null S.user → showAccessDenied
+      //   - полный ресет UI (autoRefreshTimer, экраны) при каждом 401-retry
+      //   - «бесконечная загрузка / почта не найдена / нет доступа» как симптом
+      // Теперь: full re-login делаем только если pending.mode === 'login'
+      // ИЛИ если данных ещё нет (первый запуск без cached сессии).
+      const isFreshLogin = (pending?.mode === 'login') || !S.usersData;
+      if (isFreshLogin) {
+        loadUser();
+        syncFirebaseAuth(resp.access_token);
+        onLogin();
+      }
+      // На silent refresh: токен обновлён, Firebase-сессия уже активна,
+      // UI/таймеры/loadUsersAndStart не трогаем — продолжаем как ни в чём.
+
       cleanupTokenRequest();
       if (pending) pending.resolve(resp);
     },

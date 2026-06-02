@@ -1634,6 +1634,17 @@ body.tiffany .gate-card {
   background: linear-gradient(to right, var(--acc) 0%, transparent 100%);
   opacity: 0.4;
 }
+/* Sec-title с встроенным тумблером отдела (Менеджеры CRM/Дожим в KPI).
+   Порядок: [текст] [линия] [pill]. Поскольку pill вставлен в DOM до ::after,
+   используем flex order чтобы поставить его после линии. */
+.otchet-sec-title { gap: 10px; }
+.otchet-sec-title::after { order: 1; }
+.otchet-sec-title .rating-toggle-pill {
+  order: 2;
+  font-size: 9px;
+  padding: 4px 10px;
+  border-width: 1.5px;
+}
 .loader {
   display:flex; flex-direction:column; align-items:center;
   justify-content:center; gap:12px; padding:60px 20px;
@@ -2319,6 +2330,10 @@ body.light .inner-base-path { stroke:rgba(0,0,0,0.08); }
   backdrop-filter:blur(8px);
   background: var(--acc-bg) !important;
   border:1px solid var(--acc-bdr);
+}
+.dohod-dept-hdr {
+  display: flex; justify-content: flex-end;
+  margin: 8px 0 4px;
 }
 .zp-banner .zl { font-size:10px; color:var(--txt2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px }
 .zp-banner .zv {

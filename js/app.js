@@ -4354,10 +4354,25 @@ function renderOtchet() {
   const subtabs = ``; // верхние вкладки убраны — управление через Dock
   if (floating) floating.innerHTML = '';
 
+  // Тумблер CRM↔ДОЖИМ для CEO/ROP в sec-title (только в mgr/dozhim views,
+  // где показываются менеджерские карточки одного отдела).
+  const _me = findUserInSheet();
+  const _isCeoView = _me && isCeoLike(_me.role);
+  const _toggleCrm    = _isCeoView ? _deptTogglePillHtml('crm', 'switchOtchetDept') : '';
+  const _toggleDozhim = _isCeoView ? _deptTogglePillHtml('dozhim', 'switchOtchetDept') : '';
+
   let content = '';
   if (S.reportTab === 'dept') content = deptCard + dozhimDeptCard + speedoCard;
-  else if (S.reportTab === 'mgr') content = `<div class="sec-title">Менеджеры CRM</div><div class="mops">${mops_html}</div>`;
-  else if (S.reportTab === 'dozhim') content = renderDozhimCards();
+  else if (S.reportTab === 'mgr') content =
+    `<div class="rating-slide-wrap"><div class="rating-slide-inner" id="otchet-slide-inner">
+       <div class="sec-title otchet-sec-title">Менеджеры CRM ${_toggleCrm}</div>
+       <div class="mops">${mops_html}</div>
+     </div></div>`;
+  else if (S.reportTab === 'dozhim') content =
+    `<div class="rating-slide-wrap"><div class="rating-slide-inner" id="otchet-slide-inner">
+       <div class="sec-title otchet-sec-title">Менеджеры дожима ${_toggleDozhim}</div>
+       <div class="mops">${renderDozhimCardsBody()}</div>
+     </div></div>`;
 
   setLiveHTML(el, content);
 
@@ -4385,7 +4400,8 @@ function renderOtchet() {
   }
 }
 
-function renderDozhimCards() {
+function renderDozhimCardsBody() { return renderDozhimCards({ bodyOnly: true }); }
+function renderDozhimCards(opts = {}) {
   if (!S.data.d_vizity || !S.data.plan) return '<div class="empty">Загрузка данных дожима…</div>';
   const planData  = S.data.plan || [];
   const planM     = getPlanMap(planData);
@@ -4439,6 +4455,7 @@ function renderDozhimCards() {
     </div>`;
   }).join('');
 
+  if (opts && opts.bodyOnly) return cards;
   return `<div class="sec-title">Менеджеры дожима</div><div class="mops">${cards}</div>`;
 }
 
@@ -4454,6 +4471,32 @@ function openDozhimModal(dataStr) {
   document.getElementById('mop-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
+
+// Тумблер CRM↔ДОЖИМ для KPI/Отчёт (Менеджеры). 'crm' → reportTab='mgr',
+// 'dozhim' → reportTab='dozhim'. Слайд-анимация. Только CEO/ROP.
+async function switchOtchetDept(dept) {
+  // Сейчас reportTab=='mgr' = CRM, 'dozhim' = ДОЖИМ
+  const currentIsCrm = (S.reportTab === 'mgr');
+  if (dept === 'crm' && currentIsCrm) return;
+  if (dept === 'dozhim' && !currentIsCrm) return;
+  const prevDept = currentIsCrm ? 'crm' : 'dozhim';
+  await _deptSlideTransition('otchet-slide-inner', prevDept, async () => {
+    if (dept === 'dozhim' && !S.data.d_vizity) {
+      try {
+        const [dv, pd] = await Promise.all([
+          api(SHEETS.d_vizity, 'A:N').catch(() => []),
+          S.data.plan ? Promise.resolve(S.data.plan) : api(SHEETS.plan, 'A:D').catch(() => []),
+        ]);
+        S.data.d_vizity = dv;
+        S.data.plan = pd;
+      } catch(_){}
+    }
+    S.reportTab = (dept === 'crm') ? 'mgr' : 'dozhim';
+    try { updateFirebasePage?.(); } catch(_){}
+    renderOtchet();
+  });
+}
+window.switchOtchetDept = switchOtchetDept;
 
 function setReportTab(tab) {
   S.reportTab = tab;
@@ -4712,7 +4755,13 @@ function renderDohodCrm(el) {
        </button>`
     : '';
 
-  setLiveHTML(el, `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">${copyBtn}<div class="zl">Прогноз фонда отдела</div><div class="zv">${fmtRub(totalFund)}</div><button class="income-modal-info-btn" onclick="openSalInfo('crm')" title="Как считается зарплата" style="position:absolute;top:10px;right:10px">i</button></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`);
+  // Тумблер CRM↔ДОЖИМ для CEO/ROP — над zp-banner справа
+  const _me = findUserInSheet();
+  const _isCeoView = _me && isCeoLike(_me.role);
+  const deptToggleHdr = _isCeoView
+    ? `<div class="dohod-dept-hdr">${_deptTogglePillHtml('crm', 'switchDohodDept')}</div>`
+    : '';
+  setLiveHTML(el, `${deptToggleHdr}<div class="rating-slide-wrap"><div class="rating-slide-inner" id="dohod-slide-inner"><div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">${copyBtn}<div class="zl">Прогноз фонда отдела</div><div class="zv">${fmtRub(totalFund)}</div><button class="income-modal-info-btn" onclick="openSalInfo('crm')" title="Как считается зарплата" style="position:absolute;top:10px;right:10px">i</button></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div></div></div>`);
 }
 
 // Копирует список ФИО → ЗП по факту за выбранный месяц в буфер обмена.
@@ -4841,7 +4890,13 @@ function renderDohodDozhim(el) {
     return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span>${getMgrMessengerHtml(item.name)}</div>${incomeCols}</div>`;
   }).join('');
 
-  setLiveHTML(el, `<div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15);position:relative"><div class="zl">Фонд дожима (факт)</div><div class="zv">${fmtRub(totalFund)}</div><button class="income-modal-info-btn" onclick="openSalInfo('dozhim')" title="Как считается зарплата" style="position:absolute;top:10px;right:10px">i</button></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div>`);
+  // Тумблер CRM↔ДОЖИМ для CEO/ROP — над zp-banner справа
+  const _me = findUserInSheet();
+  const _isCeoView = _me && isCeoLike(_me.role);
+  const deptToggleHdr = _isCeoView
+    ? `<div class="dohod-dept-hdr">${_deptTogglePillHtml('dozhim', 'switchDohodDept')}</div>`
+    : '';
+  setLiveHTML(el, `${deptToggleHdr}<div class="rating-slide-wrap"><div class="rating-slide-inner" id="dohod-slide-inner"><div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15);position:relative"><div class="zl">Фонд дожима (факт)</div><div class="zv">${fmtRub(totalFund)}</div><button class="income-modal-info-btn" onclick="openSalInfo('dozhim')" title="Как считается зарплата" style="position:absolute;top:10px;right:10px">i</button></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div></div></div>`);
 }
 
 function setDohodTab(tab) {
@@ -4864,6 +4919,28 @@ function setDohodTab(tab) {
   }
   renderDohod();
 }
+
+// Тумблер CRM↔ДОЖИМ для страницы Доход (только CEO/ROP).
+async function switchDohodDept(dept) {
+  if (S.dohodTab === dept) return;
+  const prevDept = S.dohodTab || 'crm';
+  await _deptSlideTransition('dohod-slide-inner', prevDept, async () => {
+    S.dohodTab = dept;
+    try { updateFirebasePage?.(); } catch(_){}
+    if (dept === 'dozhim' && (!S.data.d_vizity || !S.data.plan)) {
+      try {
+        const [dvizity, plan, grafik] = await Promise.all([
+          S.data.d_vizity ? Promise.resolve(S.data.d_vizity) : api(SHEETS.d_vizity, 'A:N').catch(() => []),
+          S.data.plan     ? Promise.resolve(S.data.plan)     : api(SHEETS.plan,     'A:D').catch(() => []),
+          S.data.grafik   ? Promise.resolve(S.data.grafik)   : api(SHEETS.grafik,   'A1:AI25').catch(() => []),
+        ]);
+        S.data.d_vizity = dvizity; S.data.plan = plan; S.data.grafik = grafik;
+      } catch(e) {}
+    }
+    renderDohod();
+  });
+}
+window.switchDohodDept = switchDohodDept;
 
 // ==================== GRAFIK ====================
 const DOW = ['вс','пн','вт','ср','чт','пт','сб'];
@@ -11409,6 +11486,38 @@ function switchRatingDept(dept) {
   }
 }
 
+// Универсальный билдер тумблера CRM↔ДОЖИМ. switchFn — имя глобальной функции.
+function _deptTogglePillHtml(currentDept, switchFn) {
+  const nextDept = currentDept === 'crm' ? 'dozhim' : 'crm';
+  if (currentDept === 'crm') {
+    return `<button class="rating-toggle-pill" onclick="${switchFn}('${nextDept}')">CRM <span class="rating-toggle-arrow right"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>`;
+  }
+  return `<button class="rating-toggle-pill" onclick="${switchFn}('${nextDept}')"><span class="rating-toggle-arrow left"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11 7H3M6.5 3.5L3 7l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span> ДОЖИМ</button>`;
+}
+// Универсальная слайд-анимация дептов. innerId — id .rating-slide-inner внутри
+// который анимируется. applyChange — фн что меняет state и перерисовывает DOM.
+// Возвращает Promise; вызывающий может await ждать завершения slide-in.
+function _deptSlideTransition(innerId, prevDept, applyChange) {
+  return new Promise(resolve => {
+    const slideOutClass = (prevDept === 'crm') ? 'slide-out-left' : 'slide-out-right';
+    const slideInClass  = (prevDept === 'crm') ? 'slide-in-left'  : 'slide-in-right';
+    const inner = document.getElementById(innerId);
+    if (inner) inner.classList.add(slideOutClass);
+    setTimeout(async () => {
+      try { await applyChange(); } catch(e) { console.warn('dept switch failed', e); }
+      requestAnimationFrame(() => {
+        const newInner = document.getElementById(innerId);
+        if (!newInner) { resolve(); return; }
+        newInner.classList.add(slideInClass);
+        requestAnimationFrame(() => {
+          newInner.classList.remove(slideInClass);
+          resolve();
+        });
+      });
+    }, 220);
+  });
+}
+
 function _finishRatingSlide(slideInClass) {
   requestAnimationFrame(() => {
     const inner = document.getElementById('rating-slide-inner');
@@ -11844,13 +11953,8 @@ function renderVizity() {
   // Остальные роли видят простой badge с названием своего отдела.
   const _meRow = findUserInSheet();
   const _isCeoView = _meRow && isCeoLike(_meRow.role);
-  const _nextDept = dept === 'crm' ? 'dozhim' : 'crm';
   const deptToggle = _isCeoView
-    ? `<button class="rating-toggle-pill" onclick="switchVizityDept('${_nextDept}')">
-         ${dept === 'crm'
-           ? `CRM <span class="rating-toggle-arrow right"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`
-           : `<span class="rating-toggle-arrow left"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11 7H3M6.5 3.5L3 7l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span> ДОЖИМ`}
-       </button>`
+    ? _deptTogglePillHtml(dept, 'switchVizityDept')
     : `<span class="vt-dept-badge">${dept==='dozhim'?'ДОЖИМ':'CRM'}</span>`;
   // vt-toolbar держим ВНЕ .rating-slide-wrap (overflow:hidden ломает sticky).
   // Анимация слайда применяется только к телу списка, тулбар прибит к шапке.
@@ -11866,27 +11970,16 @@ function renderVizity() {
     </div>`;
 }
 
-// Тумблер CRM↔ДОЖИМ для журнала визитов (только CEO/ROP). Повторяет
-// поведение switchRatingDept: slide-out → смена dept + перезагрузка
-// данных → slide-in.
+// Тумблер CRM↔ДОЖИМ для журнала визитов (только CEO/ROP). Та же логика
+// что у switchRatingDept, но для S.vizDept + loadVizity.
 async function switchVizityDept(dept) {
   if (S.vizDept === dept) return;
   const prevDept = S.vizDept || 'crm';
-  const slideOutClass = (prevDept === 'crm') ? 'slide-out-left' : 'slide-out-right';
-  const slideInClass  = (prevDept === 'crm') ? 'slide-in-left'  : 'slide-in-right';
-  const inner = document.getElementById('vizity-slide-inner');
-  if (inner) inner.classList.add(slideOutClass);
-  setTimeout(async () => {
+  await _deptSlideTransition('vizity-slide-inner', prevDept, async () => {
     S.vizDept = dept;
     try { updateFirebasePage?.(); } catch(_){}
     await loadVizity();
-    requestAnimationFrame(() => {
-      const newInner = document.getElementById('vizity-slide-inner');
-      if (!newInner) return;
-      newInner.classList.add(slideInClass);
-      requestAnimationFrame(() => newInner.classList.remove(slideInClass));
-    });
-  }, 220);
+  });
 }
 window.switchVizityDept = switchVizityDept;
 

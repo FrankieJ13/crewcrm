@@ -1368,19 +1368,31 @@ body.neo-light .gooey-text {
 .hmb-theme-trigger.expanded .hmb-chevron { transform: rotate(90deg); }
 .hmb-theme-sub { display: none; flex-direction: column; background: var(--bg3); }
 .hmb-sub-item {
-  padding-left: 28px;
-  font-size: 12px;
-  min-height: 36px;       /* гарантия видимой высоты пункта */
-  flex-shrink: 0;         /* не сжимать в overflow-контейнере */
-  box-sizing: border-box;
+  padding-left: 28px !important;
+  font-size: 12px !important;
+  min-height: 40px !important;
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 /* Скроллируемый суб-список (месяцы / темы).
-   Высота: 4 пункта × 36px = 144px минимум. Если пунктов >4 — скролл.
-   .hmb-sub-item имеет min-height: 36px (выше), не сжимается во flex. */
+   Высота: 4 пункта × 40px = 160px минимум. Если пунктов >4 — скролл.
+   .hmb-sub-item имеет min-height: 40px !important. */
 #hmb-month-sub, .hmb-theme-sub {
-  max-height: 180px;
-  overflow-y: auto;
-  position: relative;
+  min-height: 80px !important;     /* минимум видимая высота — 2 пункта,
+                                       чтобы юзер видел что хоть что-то рендерится */
+  max-height: 200px !important;
+  overflow-y: auto !important;
+  position: relative !important;
+}
+/* hmb-month-sub раскрывается через inline display:flex, добавим страховку */
+#hmb-month-sub[style*="display: flex"],
+.hmb-theme-sub.open,
+.hmb-theme-sub[style*="display: flex"] {
+  display: flex !important;
+  flex-direction: column !important;
 }
 .hmb-sub-item.theme-active::after {
   content: '✓';

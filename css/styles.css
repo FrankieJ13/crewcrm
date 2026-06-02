@@ -5894,12 +5894,22 @@ body.fluent .vt-status-chip.vt-chip-purple {
 }
 body.fluent .vt-week-sum { color: #0078d4 !important; }
 body.fluent .vt-save-status.saved { color: #107c10 !important; }
-/* Sverka mark icons — show native SVG colors, no mask tinting */
+/* Sverka mark icons — show native SVG colors, no mask tinting.
+   В Fluent SVG-иконки без тонировки выглядят мельче чем в других темах,
+   поэтому контейнер и сам пиктоптограмма крупнее на ~25%. */
 body.fluent .vt-sverka-mark {
   background: transparent !important;
   border: none !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px !important;
+  line-height: 18px !important;
+  flex: 0 0 18px !important;
 }
 body.fluent .vt-sverka-mark i {
+  width: 13px !important;
+  height: 13px !important;
   mask: none !important;
   -webkit-mask: none !important;
   background-image: var(--sverka-icon) !important;

@@ -1378,21 +1378,45 @@ body.neo-light .gooey-text {
   box-sizing: border-box !important;
 }
 /* Скроллируемый суб-список (месяцы / темы).
-   Высота: 4 пункта × 40px = 160px минимум. Если пунктов >4 — скролл.
-   .hmb-sub-item имеет min-height: 40px !important. */
+   Высота: 4 пункта × 40px = 160px. >4 пунктов — скролл. */
 #hmb-month-sub, .hmb-theme-sub {
-  min-height: 80px !important;     /* минимум видимая высота — 2 пункта,
-                                       чтобы юзер видел что хоть что-то рендерится */
+  min-height: 80px !important;
   max-height: 200px !important;
   overflow-y: auto !important;
   position: relative !important;
+  padding-bottom: 16px;  /* резерв под стрелку-намёк, не съедает пункты */
 }
-/* hmb-month-sub раскрывается через inline display:flex, добавим страховку */
 #hmb-month-sub[style*="display: flex"],
 .hmb-theme-sub.open,
 .hmb-theme-sub[style*="display: flex"] {
   display: flex !important;
   flex-direction: column !important;
+}
+/* Стрелка-намёк ⌄ внизу. position:sticky + pointer-events:none — иконка
+   плавает над последним пунктом, не перехватывая клики. Анимация bounce. */
+#hmb-month-sub::after,
+.hmb-theme-sub::after {
+  content: '⌄';
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: block;
+  text-align: center;
+  font-size: 14px;
+  line-height: 14px;
+  color: var(--acc);
+  margin-top: -16px;  /* поднять в зону padding-bottom родителя */
+  padding: 1px 0 2px;
+  background: linear-gradient(to top, var(--bg3) 65%, transparent 100%);
+  pointer-events: none;
+  touch-action: none;
+  z-index: 1;
+  animation: hmbScrollHint 1.4s ease-in-out infinite;
+}
+@keyframes hmbScrollHint {
+  0%, 100% { transform: translateY(0); opacity: .85; }
+  50%      { transform: translateY(3px); opacity: .5; }
 }
 .hmb-sub-item.theme-active::after {
   content: '✓';

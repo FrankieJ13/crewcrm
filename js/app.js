@@ -1055,44 +1055,9 @@ function rankStyles(pos, total) {
   const badgeBg = `rgba(${r},${g},${b},.25)`;
   return { color, border, badgeBg, r, g, b };
 }
-// Прогрессирующие фразы. После вставки .loader в DOM, через определённые
-// интервалы фразы плавно сменяются (fade-out → fade-in). Без цикла —
-// последняя фраза остаётся до перезагрузки.
-const LOADER_PHRASES = [
-  { at: 3000,  text: 'Подождите ещё чуть-чуть…' },
-  { at: 6000,  text: 'Данных много, загружаем…' },
-  { at: 10000, text: 'Хмм, удивительно, насколько сильно разрослась BD…' },
-  { at: 18000, text: 'Что-то наебнулось, обнови ручками…' },
-];
-let _loaderIdSeq = 0;
-function _attachLoaderProgression(loaderEl) {
-  if (!loaderEl || loaderEl.dataset.lpAttached === '1') return;
-  loaderEl.dataset.lpAttached = '1';
-  const span = loaderEl.querySelector('.loader-text');
-  if (!span) return;
-  LOADER_PHRASES.forEach(p => {
-    setTimeout(() => {
-      if (!loaderEl.isConnected) return;
-      span.classList.add('loader-text-fade');
-      setTimeout(() => {
-        if (!loaderEl.isConnected) return;
-        span.textContent = p.text;
-        span.classList.remove('loader-text-fade');
-      }, 320);
-    }, p.at);
-  });
-}
 function loader(text='Синхронизация…') {
-  const id = 'ldr-' + (++_loaderIdSeq);
-  // После вставки HTML — через rAF находим .loader по id и навешиваем прогрессию.
-  // Это заменяет глобальный MutationObserver, который слушал ВСЕ DOM-мутации
-  // и был дорогой на дашборде с частыми перерисовками.
-  requestAnimationFrame(() => {
-    const el = document.getElementById(id);
-    if (el) _attachLoaderProgression(el);
-  });
   const parts = Array(13).fill('<i></i>').join('');
-  return `<div class="loader" id="${id}"><div class="ldv2">${parts}</div><span class="loader-text">${text}</span></div>`;
+  return `<div class="loader"><div class="ldv2">${parts}</div><span class="loader-text">${text}</span></div>`;
 }
 
 function medalBtn(idx) {

@@ -1854,23 +1854,34 @@ function initAuth() {
       localStorage.setItem('crm_exp', tokenExpiresAt);
       scheduleTokenRefresh(resp.expires_in);
 
-      // КРИТИЧНО: различаем «первичный логин» и «silent refresh».
-      // Раньше callback ВСЕГДА запускал loadUser+syncFirebaseAuth+onLogin —
-      // даже когда токен просто продлевался автоматически. Это вызывало:
-      //   - race: loadUser (userinfo) vs loadUsersAndStart (USERS), при медленном
-      //     userinfo → findUserInSheet видит null S.user → showAccessDenied
-      //   - полный ресет UI (autoRefreshTimer, экраны) при каждом 401-retry
-      //   - «бесконечная загрузка / почта не найдена / нет доступа» как симптом
-      // Теперь: full re-login делаем только если pending.mode === 'login'
-      // ИЛИ если данных ещё нет (первый запуск без cached сессии).
-      const isFreshLogin = (pending?.mode === 'login') || !S.usersData;
-      if (isFreshLogin) {
-        loadUser();
-        syncFirebaseAuth(resp.access_token);
-        onLogin();
+      // Различаем «логин» и «silent refresh» ТОЛЬКО по pending.mode.
+      // - mode='login'  → пользователь жмёт «Войти» из showLoginScreen
+      //                  ИЛИ trySilentRefresh (восстановление по cached user)
+      // - mode='ensure' → ensureToken продлевает токен под капотом (401-retry)
+      // - pending=null  → scheduleTokenRefresh (фоновый таймер за 5 мин до)
+      //
+      // Полный onLogin-flow запускаем только при 'login'. Это закрывает:
+      //   1) race loadUser vs loadUsersAndStart на silent refresh — больше
+      //      не дёргаем loadUsersAndStart, токен просто обновлён
+      //   2) бесконечный каскад при 401 на cold-start: раньше
+      //      условие !S.usersData делало каждый retry похожим на login
+      //      → onLogin → loadUsersAndStart → 401 → ... вечно.
+      //   3) внутри 'login' блока — await loadUser ПЕРЕД onLogin, чтобы
+      //      S.user был доступен к моменту findUserInSheet.
+      if (pending?.mode === 'login') {
+        try {
+          syncFirebaseAuth(resp.access_token);
+          await loadUser();      // дождаться S.user
+          onLogin();
+        } catch (e) {
+          console.warn('login flow error', e);
+          onLogin();             // даже если userinfo упал — пробуем стартовать
+        }
       }
-      // На silent refresh: токен обновлён, Firebase-сессия уже активна,
-      // UI/таймеры/loadUsersAndStart не трогаем — продолжаем как ни в чём.
+      // silent refresh / scheduled refresh: токен обновлён в S.token
+      // и localStorage, scheduleTokenRefresh переустановлен.
+      // UI/таймеры/loadUsersAndStart не трогаем. _apiFetch продолжит
+      // retry с новым токеном.
 
       cleanupTokenRequest();
       if (pending) pending.resolve(resp);
@@ -2142,7 +2153,10 @@ function trySilentRefresh() {
   loader.innerHTML = '<div class="spin"></div><div>Восстановление сессии…</div>';
   document.querySelector('main').prepend(loader);
 
-  tokenClient.requestAccessToken({ prompt: '' });
+  // Идём через requestGoogleToken с mode='login', чтобы callback opens
+  // full login flow (loadUser + onLogin). Раньше был bare tokenClient
+  // requestAccessToken — pending=null → callback теперь это пропустит.
+  requestGoogleToken({ prompt: '', mode: 'login' }).catch(() => {});
 
   const fallback = setTimeout(() => {
     const l = document.getElementById('silent-loader');

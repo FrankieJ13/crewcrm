@@ -2335,6 +2335,13 @@ body.light .inner-base-path { stroke:rgba(0,0,0,0.08); }
   display: flex; justify-content: flex-end;
   margin: 8px 0 4px;
 }
+/* Компактный размер pill в Доход и Визитах — как в KPI/Отчёт */
+.dohod-dept-hdr .rating-toggle-pill,
+.vt-toolbar .rating-toggle-pill {
+  font-size: 9px;
+  padding: 4px 10px;
+  border-width: 1.5px;
+}
 .zp-banner .zl { font-size:10px; color:var(--txt2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px }
 .zp-banner .zv {
   font-family:'Unbounded',sans-serif;

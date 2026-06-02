@@ -2267,22 +2267,22 @@ function openLogsModal() {
   wrap.id = 'diag-modal';
   wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100000;display:flex;align-items:stretch;justify-content:center;';
   wrap.innerHTML = `
-    <div style="background:var(--bg2,#1a1a1a);color:var(--fg,#fff);width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;border-radius:12px;overflow:hidden;font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;">
-      <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <strong style="font-size:14px;flex:0 0 auto">Диагностические логи</strong>
-        <span id="diag-count" style="opacity:.6;font-size:11px"></span>
+    <div style="background:#15171c;color:#e8eaed;width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;border-radius:12px;overflow:hidden;font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;box-shadow:0 8px 40px rgba(0,0,0,.6);">
+      <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#1a1d23;">
+        <strong style="font-size:14px;flex:0 0 auto;color:#fff">Диагностические логи</strong>
+        <span id="diag-count" style="opacity:.6;font-size:11px;color:#aab"></span>
         <span style="flex:1"></span>
-        <select id="diag-filter" style="background:rgba(255,255,255,.08);color:inherit;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:4px 6px;font-size:12px;">
+        <select id="diag-filter" style="background:#2a2f38;color:#e8eaed;border:1px solid rgba(255,255,255,.14);border-radius:6px;padding:4px 6px;font-size:12px;">
           <option value="">Все уровни</option>
           <option value="error">Только error</option>
           <option value="warn">warn + error</option>
           <option value="info">info+</option>
         </select>
-        <button id="diag-copy" style="background:#246;color:#fff;border:0;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer">Скопировать</button>
-        <button id="diag-clear" style="background:#642;color:#fff;border:0;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer">Очистить</button>
-        <button id="diag-close" style="background:rgba(255,255,255,.08);color:inherit;border:0;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer">Закрыть</button>
+        <button id="diag-copy" style="background:#2563eb;color:#fff;border:0;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;font-weight:500">Скопировать</button>
+        <button id="diag-clear" style="background:#a3441a;color:#fff;border:0;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;font-weight:500">Очистить</button>
+        <button id="diag-close" style="background:#3a3f48;color:#e8eaed;border:0;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer">Закрыть</button>
       </div>
-      <div id="diag-list" style="flex:1;overflow-y:auto;padding:8px 12px;font:11px/1.45 ui-monospace,Menlo,Consolas,monospace;"></div>
+      <div id="diag-list" style="flex:1;overflow-y:auto;padding:8px 12px;font:11px/1.45 ui-monospace,Menlo,Consolas,monospace;background:#15171c;color:#d4d6db;"></div>
     </div>`;
   document.body.appendChild(wrap);
   document.body.style.overflow = 'hidden';
@@ -2305,14 +2305,14 @@ function openLogsModal() {
       listEl.innerHTML = '<div style="opacity:.5;text-align:center;padding:20px">Логов нет</div>';
       return;
     }
-    const colorMap = { error:'#f55', warn:'#fb3', info:'#4af', log:'#aaa', debug:'#888' };
+    const colorMap = { error:'#ff6b6b', warn:'#ffc043', info:'#5fa8ff', log:'#b8bcc4', debug:'#9098a3' };
     listEl.innerHTML = shown.slice().reverse().map(e => {
-      const c = colorMap[e.l] || '#aaa';
+      const c = colorMap[e.l] || '#b8bcc4';
       const msg = (e.m || '').replace(/[<>&]/g, ch => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[ch]));
-      return `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);">
-        <span style="color:#888">${_diagFmtTime(e.t)}</span>
-        <span style="color:${c};font-weight:600">[${e.l.toUpperCase()}]</span>
-        <span style="color:#888">[${e.s}]</span>
+      return `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);color:#d4d6db">
+        <span style="color:#9098a3">${_diagFmtTime(e.t)}</span>
+        <span style="color:${c};font-weight:700">[${e.l.toUpperCase()}]</span>
+        <span style="color:#9098a3">[${e.s}]</span>
         <span style="white-space:pre-wrap;word-break:break-word">${msg}</span>
       </div>`;
     }).join('');
@@ -7803,7 +7803,9 @@ function renderPersonal(matched) {
     kom  = (num(mgrRow[11]) + num(mgrRow[15])) || '—';
     komSub = `${mgrRow[11]||'0'} / ${mgrRow[15]||'0'}`;
     zadatok = num(mgrRow[16]) || '—';
-    vsaloneN  = num(mgrRow[19]) || 0;
+    // vsalone берём из CRM + Dozhim — карточка должна совпадать с модалкой
+    // openMgrSalonModal которая агрегирует оба листа.
+    vsaloneN = (num(mgrRow[19]) + num((buildDozhimStats(S.data.d_vizity || [])[nameLow] || {}).vsalone)) || 0;
     const genRow = getCnvrsRowGlobal(name, 'general');
     convVis   = genRow[6]||'—';
     convKred  = genRow[7]||'—';
@@ -8060,13 +8062,16 @@ function renderPersonal(matched) {
     return `<svg class="ceo-sparkline" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><path d="${path}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/></svg>`;
   }
 
-  // Сделки + штрафы из crmStats
+  // Сделки + штрафы из crmStats + dozhimStats (если менеджер ведёт визиты
+  // в обоих отделах, на карточке должен быть СУММАРНЫЙ счётчик, как в
+  // модалке openMgrSalonModal/openMgrKsoModal, которая агрегирует оба листа).
   const _vs = (buildCrmStats(S.data.vizity || []))[nameLow] || {};
+  const _vsD = (buildDozhimStats(S.data.d_vizity || []))[nameLow] || {};
   const _kred = (num(_vs.kred800) + num(_vs.kred1200)) || 0;
   const _nalObm = (num(_vs.nal800) + num(_vs.obmen800) + num(_vs.nal1200) + num(_vs.obmen1200)) || 0;
   const _kom = (num(_vs.kom800) + num(_vs.kom1200)) || 0;
-  const _vkso = num(_vs.vkso) || 0;
-  const _otkazFssp = (num(_vs.otkaz) + num(_vs.vfssп)) || 0;
+  const _vkso = (num(_vs.vkso) + num(_vsD.vkso)) || 0;
+  const _otkazFssp = (num(_vs.otkaz) + num(_vs.vfssп) + num(_vsD.otkaz) + num(_vsD.vfssп)) || 0;
   const _accColor = pctClr(progNum);
 
   const _cachedWeather = S._ceoWeatherCache || '';
@@ -11839,7 +11844,7 @@ function renderVizRow(row, dept, locked, isFirstOfDate) {
   const meRow = findUserInSheet();
   const isCeoView = meRow && isCeoLike(meRow.role);
   const sverkaWrap = isCeoView
-    ? `<span class="vt-sverka-clickable" onclick="event.stopPropagation();openSverkaPopup(event, '${dept}', ${row._sheetRow}, ${JSON.stringify(String(d[13]||'')).replace(/"/g,'&quot;')})">${sverkaIcon}</span>`
+    ? `<span class="vt-sverka-clickable" data-sheet-row="${row._sheetRow}" data-dept="${dept}" onclick="event.stopPropagation();openSverkaPopup(event, '${dept}', ${row._sheetRow}, ${JSON.stringify(String(d[13]||'')).replace(/"/g,'&quot;')})">${sverkaIcon}</span>`
     : sverkaIcon;
   return `
     <div class="vt-row" id="vt-row-${row._sheetRow}">
@@ -11921,9 +11926,25 @@ async function saveSverkaValue(sheetName, sheetRow, value) {
     const arr = isDozhim ? (S.data.d_vizity||[]) : (S.data.vizity||[]);
     if (arr[sheetRow-1]) arr[sheetRow-1][13] = value;
     try { toast('Сверка обновлена', 's'); } catch(_) {}
+    // Инстант-обновление DOM: находим ВСЕ кликабельные обёртки сверки с этим
+    // sheetRow и подменяем иконку и currentVal в onclick. Так пользователь
+    // сразу видит результат на любом экране (personal/ceo/visit-list/modal),
+    // без ожидания полного перерендера.
+    const dept = isDozhim ? 'dozhim' : 'crm';
+    try {
+      const newMark = getVizSverkaMark(value);
+      const escapedVal = JSON.stringify(String(value || '')).replace(/"/g, '&quot;');
+      document.querySelectorAll(`.vt-sverka-clickable[data-sheet-row="${sheetRow}"][data-dept="${dept}"]`).forEach(el => {
+        el.innerHTML = newMark;
+        el.setAttribute('onclick',
+          `event.stopPropagation();openSverkaPopup(event, '${dept}', ${sheetRow}, ${escapedVal})`);
+      });
+    } catch(_) {}
+    // Полный перерендер всё-таки нужен в спец. экранах (журнал визитов),
+    // где счётчики и сводки тоже зависят от сверки.
     if (typeof renderVizityScreen === 'function' && document.getElementById('scr-vizity')?.classList.contains('on')) {
       renderVizityScreen();
-    } else if (typeof renderVizity === 'function') {
+    } else if (document.getElementById('scr-vizity')?.classList.contains('on') && typeof renderVizity === 'function') {
       try { renderVizity(); } catch(_){}
     }
   } catch (err) {

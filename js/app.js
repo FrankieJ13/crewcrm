@@ -2464,9 +2464,12 @@ async function _apiFetch(sheet, range, key, retryCount = 0) {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/`
             + encodeURIComponent(sheet + '!' + range);
 
-  // Таймаут 12 секунд — fetch не будет висеть бесконечно
+  // Таймаут 30с — на медленных мобильных сетях большие unbounded ranges
+  // (ВИЗИТЫ!A:N, etc) легко берут 7-15+ сек. Старый 12с был слишком жёсткий:
+  // диагноз 02.06 показал серии ABORT 12001ms при том что Sheets отвечает,
+  // просто медленно. См. также SHEET_FETCH_CONCURRENCY ниже.
   const ctrl = new AbortController();
-  const tid  = setTimeout(() => ctrl.abort(), 12000);
+  const tid  = setTimeout(() => ctrl.abort(), 30000);
 
   let r;
   try {
@@ -7275,25 +7278,50 @@ async function loadUsersAndStart() {
 }
 
 // Фоновая предзагрузка данных всех вкладок после старта
+// Простой concurrency-лимит: выполняет таски пулом размера `limit`.
+// Возвращает Promise который резолвится когда все таски завершились.
+// Используется в backgroundPrefetch — раньше там было Promise.all из 7
+// параллельных запросов, на медленной мобильной сети все 7 валились в
+// ABORT по нашему 30с таймауту, потому что Sheets API под нагрузкой
+// замедлялся ещё сильнее.
+async function _runWithConcurrency(tasks, limit = 2) {
+  const results = [];
+  let i = 0;
+  async function worker() {
+    while (i < tasks.length) {
+      const idx = i++;
+      try { results[idx] = await tasks[idx](); }
+      catch (e) { results[idx] = undefined; }
+    }
+  }
+  const workers = Array.from({ length: Math.min(limit, tasks.length) }, () => worker());
+  await Promise.all(workers);
+  return results;
+}
+
 async function backgroundPrefetch(matched) {
   const role     = matched?.role || 'crm';
   const isCeo    = isCeoLike(role);
   const isDozhim = role === 'dozhim';
 
-  const fetches = [];
-  if (!S.data.vizity)      fetches.push(api(SHEETS.vizity,      'A:N').then(d => S.data.vizity      = d).catch(()=>{}));
-  if (!S.data.plan)        fetches.push(api(SHEETS.plan,        'A:D').then(d => S.data.plan        = d).catch(()=>{}));
-  if (!S.data.grafik)      fetches.push(api(SHEETS.grafik,      'A1:AI25').then(d => S.data.grafik  = d).catch(()=>{}));
-  if (!S.data.cnvrs)       fetches.push(api(SHEETS.cnvrs,       'A1:N40').then(d => S.data.cnvrs    = d).catch(()=>{}));
-  if (!S.data.stavki)      fetches.push(api(SHEETS.stavki,      'A1:B25').then(d => S.data.stavki   = d).catch(()=>{}));
-  if (!S.data.d_vizity)    fetches.push(api(SHEETS.d_vizity,    'A:N').then(d => S.data.d_vizity    = d).catch(()=>{}));
-  if (!S.data.instruktsii) fetches.push(api(SHEETS.instruktsii, 'A1:C200').then(d => S.data.instruktsii = d).catch(()=>{}));
+  // Список ТАСОК (не запущенных промисов!). Каждая таска — функция,
+  // которая стартует fetch только когда worker её взял. Это и даёт
+  // настоящий concurrency-лимит — иначе все 7 уже летят параллельно
+  // ещё до первого await.
+  const tasks = [];
+  if (!S.data.vizity)      tasks.push(() => api(SHEETS.vizity,      'A:N').then(d => S.data.vizity      = d).catch(()=>{}));
+  if (!S.data.plan)        tasks.push(() => api(SHEETS.plan,        'A:D').then(d => S.data.plan        = d).catch(()=>{}));
+  if (!S.data.grafik)      tasks.push(() => api(SHEETS.grafik,      'A1:AI25').then(d => S.data.grafik  = d).catch(()=>{}));
+  if (!S.data.cnvrs)       tasks.push(() => api(SHEETS.cnvrs,       'A1:N40').then(d => S.data.cnvrs    = d).catch(()=>{}));
+  if (!S.data.stavki)      tasks.push(() => api(SHEETS.stavki,      'A1:B25').then(d => S.data.stavki   = d).catch(()=>{}));
+  if (!S.data.d_vizity)    tasks.push(() => api(SHEETS.d_vizity,    'A:N').then(d => S.data.d_vizity    = d).catch(()=>{}));
+  if (!S.data.instruktsii) tasks.push(() => api(SHEETS.instruktsii, 'A1:C200').then(d => S.data.instruktsii = d).catch(()=>{}));
 
-  if (!fetches.length) return;
+  if (!tasks.length) return;
 
   S.silentRefresh = true;
   try {
-    await Promise.all(fetches);
+    await _runWithConcurrency(tasks, 2);
     if (document.getElementById('scr-vizity')?.classList.contains('on')) return;
     const activeTab = document.querySelector('.tab.on')?.dataset.tab;
     if (activeTab) renderTab(activeTab);

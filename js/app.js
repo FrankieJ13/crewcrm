@@ -10497,11 +10497,28 @@ function renderCeoDashboard() {
   const crmProg    = computeProgPct(crmFact,    crmPlanSum,    sfx);
   const dozhimProg = computeProgPct(dozhimFact, dozhimPlanSum, sfx);
 
-  // Всего в салоне (CRM + Дожим)
-  const totalVsalone = [...crmMgrs, ...dozhimMgrs].reduce((s,m) => s + m.vsalone, 0);
-  // В КСО (подает заявку + в работе КСО + на рассмотрении банка)
-  const totalVkso = Object.values(crmStats).reduce((s,x) => s + (x.vkso||0), 0)
-                  + Object.values(dozhimStats).reduce((s,x) => s + (x.vkso||0), 0);
+  // Считаем строго так же как openCeoSalonModal/openCeoKsoModal — напрямую
+  // по vizity/d_vizity с теми же фильтрами (isSverkaRow + isCompleteVizRow +
+  // parseVizStatuses). Раньше использовали ...crmMgrs/...dozhimMgrs которые
+  // строятся из allPlanNames → менеджеры вне ПЛАН не попадали в счётчик,
+  // хотя их визиты выводились в модалке. Это и приводило к расхождению
+  // (карточка 3, модалка 6). Теперь — 1:1.
+  const _countByStatus = (rows, statuses) => {
+    if (!Array.isArray(rows)) return 0;
+    let n = 0;
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r || !r[8]) continue;
+      if (!isSverkaRow(r)) continue;
+      if (!isCompleteVizRow(r)) continue;
+      const sts = parseVizStatuses(r[4]);
+      if (sts.some(s => statuses.includes(s))) n++;
+    }
+    return n;
+  };
+  const KSO_STATUSES = ['подает заявку', 'в работе ксо', 'на рассмотрении банка'];
+  const totalVsalone = _countByStatus(vizData, ['в салоне']) + _countByStatus(dvData, ['в салоне']);
+  const totalVkso    = _countByStatus(vizData, KSO_STATUSES) + _countByStatus(dvData, KSO_STATUSES);
 
   // Суммарно сделки (CRM + Дожим)
   function sumStat(field) {

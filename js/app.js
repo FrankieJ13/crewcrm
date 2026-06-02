@@ -7232,10 +7232,10 @@ function showAccessDenied(reason = 'Почта не найдена в USERS') {
   toast(`${reason}: ${email}`, 'e');
 }
 
-// USERS — диапазон A1:P200. Раньше было A1:P500: лист на 8000 ячеек,
-// Sheets API парсил весь диапазон (включая ~470 пустых строк) при каждом
-// первом обращении. Для команды до ~150 человек 200 строк хватит с запасом.
-const USERS_RANGE = 'A1:P200';
+// USERS — диапазон A1:P50. Команда ~15 человек, P50 хватит с запасом.
+// История: A1:P500 → A1:P200 → A1:P50. Меньше ячеек → меньше нагрузка на
+// Sheets API per-cell серилизацию.
+const USERS_RANGE = 'A1:P50';
 const USERS_LS_KEY = 'crm_users_cache';
 const USERS_LS_TTL = 24 * 60 * 60 * 1000; // 24 часа
 

@@ -1380,11 +1380,13 @@ body.neo-light .gooey-text {
 /* Скроллируемый суб-список (месяцы / темы).
    Высота: 4 пункта × 40px = 160px. >4 пунктов — скролл. */
 #hmb-month-sub, .hmb-theme-sub {
-  min-height: 80px !important;
-  max-height: 200px !important;
+  /* min/max выставлены так, чтобы 4 пункта по 40px + 16px padding-bottom
+     под стрелку-намёк = 176px поместились гарантированно. */
+  min-height: 176px !important;
+  max-height: 240px !important;
   overflow-y: auto !important;
   position: relative !important;
-  padding-bottom: 16px;  /* резерв под стрелку-намёк, не съедает пункты */
+  padding-bottom: 16px;
 }
 #hmb-month-sub[style*="display: flex"],
 .hmb-theme-sub.open,

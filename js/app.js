@@ -11852,13 +11852,15 @@ function renderVizity() {
            : `<span class="rating-toggle-arrow left"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11 7H3M6.5 3.5L3 7l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span> ДОЖИМ`}
        </button>`
     : `<span class="vt-dept-badge">${dept==='dozhim'?'ДОЖИМ':'CRM'}</span>`;
+  // vt-toolbar держим ВНЕ .rating-slide-wrap (overflow:hidden ломает sticky).
+  // Анимация слайда применяется только к телу списка, тулбар прибит к шапке.
   el.innerHTML = `
+    <div class="vt-toolbar">
+      ${deptToggle}
+      ${lockedBadge}${addBtnTop}
+    </div>
     <div class="rating-slide-wrap">
       <div class="rating-slide-inner" id="vizity-slide-inner">
-        <div class="vt-toolbar">
-          ${deptToggle}
-          ${lockedBadge}${addBtnTop}
-        </div>
         <div class="vt-body">${weekHTML}</div>
       </div>
     </div>`;

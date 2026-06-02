@@ -2140,7 +2140,12 @@ function onLogin() {
   const hmbl = document.getElementById('hmb-logout'); if (hmbl) hmbl.style.display = '';
   const hmbsl = document.getElementById('hmb-sep-logout'); if (hmbsl) hmbsl.style.display = '';
   const hmbcc = document.getElementById('hmb-clearcache'); if (hmbcc) hmbcc.style.display = '';
-  const hmblg = document.getElementById('hmb-logs'); if (hmblg) hmblg.style.display = '';
+  // Логи — только CEO (для саппорта, рядовым менеджерам не показываем)
+  const hmblg = document.getElementById('hmb-logs');
+  if (hmblg) {
+    const _meRow = findUserInSheet();
+    hmblg.style.display = (_meRow && String(_meRow.role || '').toLowerCase() === 'ceo') ? '' : 'none';
+  }
   const hmbm = document.getElementById('hmb-month-trigger'); if (hmbm) hmbm.style.display = '';
   const hmbms = document.getElementById('hmb-sep-month'); if (hmbms) hmbms.style.display = '';
   // Трофеи и «О проекте» показываем только после авторизации
@@ -7403,6 +7408,14 @@ function _runPostUsersFlow() {
   refreshFirebaseProfile();
   // Перерисуем имя/аватар в гамбургере, когда USERS уже загружен
   try { if (typeof renderUser === 'function') renderUser(); } catch(_) {}
+  // Показываем «Логи» в гамбургере только CEO. До этого момента
+  // USERS-листа не было, и findUserInSheet возвращал null — пункт оставался
+  // скрытым (что выставлено в onLogin как safe-default).
+  const hmblg = document.getElementById('hmb-logs');
+  if (hmblg) {
+    const isCeo = matched && String(matched.role || '').toLowerCase() === 'ceo';
+    hmblg.style.display = isCeo ? '' : 'none';
+  }
   if (matched && matched.name) {
     const parts = matched.name.trim().split(/\s+/);
     const firstName = parts.length >= 2 ? parts[1] : parts[0];

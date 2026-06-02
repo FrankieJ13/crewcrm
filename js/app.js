@@ -11840,13 +11840,53 @@ function renderVizity() {
          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Добавить визит
        </button>` : '';
 
+  // Для CEO/ROP — тумблер CRM↔ДОЖИМ как на странице Лидеры, со слайд-анимацией.
+  // Остальные роли видят простой badge с названием своего отдела.
+  const _meRow = findUserInSheet();
+  const _isCeoView = _meRow && isCeoLike(_meRow.role);
+  const _nextDept = dept === 'crm' ? 'dozhim' : 'crm';
+  const deptToggle = _isCeoView
+    ? `<button class="rating-toggle-pill" onclick="switchVizityDept('${_nextDept}')">
+         ${dept === 'crm'
+           ? `CRM <span class="rating-toggle-arrow right"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`
+           : `<span class="rating-toggle-arrow left"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11 7H3M6.5 3.5L3 7l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span> ДОЖИМ`}
+       </button>`
+    : `<span class="vt-dept-badge">${dept==='dozhim'?'ДОЖИМ':'CRM'}</span>`;
   el.innerHTML = `
-    <div class="vt-toolbar">
-      <span class="vt-dept-badge">${dept==='dozhim'?'ДОЖИМ':'CRM'}</span>
-      ${lockedBadge}${addBtnTop}
-    </div>
-    <div class="vt-body">${weekHTML}</div>`;
+    <div class="rating-slide-wrap">
+      <div class="rating-slide-inner" id="vizity-slide-inner">
+        <div class="vt-toolbar">
+          ${deptToggle}
+          ${lockedBadge}${addBtnTop}
+        </div>
+        <div class="vt-body">${weekHTML}</div>
+      </div>
+    </div>`;
 }
+
+// Тумблер CRM↔ДОЖИМ для журнала визитов (только CEO/ROP). Повторяет
+// поведение switchRatingDept: slide-out → смена dept + перезагрузка
+// данных → slide-in.
+async function switchVizityDept(dept) {
+  if (S.vizDept === dept) return;
+  const prevDept = S.vizDept || 'crm';
+  const slideOutClass = (prevDept === 'crm') ? 'slide-out-left' : 'slide-out-right';
+  const slideInClass  = (prevDept === 'crm') ? 'slide-in-left'  : 'slide-in-right';
+  const inner = document.getElementById('vizity-slide-inner');
+  if (inner) inner.classList.add(slideOutClass);
+  setTimeout(async () => {
+    S.vizDept = dept;
+    try { updateFirebasePage?.(); } catch(_){}
+    await loadVizity();
+    requestAnimationFrame(() => {
+      const newInner = document.getElementById('vizity-slide-inner');
+      if (!newInner) return;
+      newInner.classList.add(slideInClass);
+      requestAnimationFrame(() => newInner.classList.remove(slideInClass));
+    });
+  }, 220);
+}
+window.switchVizityDept = switchVizityDept;
 
 function renderVizRow(row, dept, locked, isFirstOfDate) {
   const d = row.data;

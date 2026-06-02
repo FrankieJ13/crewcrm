@@ -11926,15 +11926,22 @@ async function saveSverkaValue(sheetName, sheetRow, value) {
       body: JSON.stringify({ values: [[value]] }),
     });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    // Обновляем локальный кеш и перерисовываем
+    // Обновляем ВСЕ зеркала данных. КРИТИЧНО: S.vizRows — это не reference,
+    // а копия с фиксированной длиной 14 колонок (см. построение через
+    // raw.slice(1).map). renderVizity() читает из неё. Без обновления
+    // S.vizRows[i].data[13] полный перерендер ниже всё затирает старым
+    // значением, и UI визуально не меняется до полного refresh страницы.
     const isDozhim = sheetName.startsWith('Д_');
     const arr = isDozhim ? (S.data.d_vizity||[]) : (S.data.vizity||[]);
     if (arr[sheetRow-1]) arr[sheetRow-1][13] = value;
+    if (Array.isArray(S.vizRows)) {
+      const target = S.vizRows.find(r => r && r._sheetRow === sheetRow);
+      if (target && target.data) target.data[13] = value;
+    }
     try { toast('Сверка обновлена', 's'); } catch(_) {}
     // Инстант-обновление DOM: находим ВСЕ кликабельные обёртки сверки с этим
-    // sheetRow и подменяем иконку и currentVal в onclick. Так пользователь
-    // сразу видит результат на любом экране (personal/ceo/visit-list/modal),
-    // без ожидания полного перерендера.
+    // sheetRow и подменяем иконку и currentVal в onclick. Это работает в
+    // том числе на экранах где renderVizity не дёргается (модалки и т.п.).
     const dept = isDozhim ? 'dozhim' : 'crm';
     try {
       const newMark = getVizSverkaMark(value);
@@ -11945,11 +11952,10 @@ async function saveSverkaValue(sheetName, sheetRow, value) {
           `event.stopPropagation();openSverkaPopup(event, '${dept}', ${sheetRow}, ${escapedVal})`);
       });
     } catch(_) {}
-    // Полный перерендер всё-таки нужен в спец. экранах (журнал визитов),
-    // где счётчики и сводки тоже зависят от сверки.
-    if (typeof renderVizityScreen === 'function' && document.getElementById('scr-vizity')?.classList.contains('on')) {
-      renderVizityScreen();
-    } else if (document.getElementById('scr-vizity')?.classList.contains('on') && typeof renderVizity === 'function') {
+    // На journal-screen — полный перерендер для обновления и счётчиков
+    // (Сверено/нет, итоги недели). Использует S.vizRows который мы только
+    // что обновили выше.
+    if (document.getElementById('scr-vizity')?.classList.contains('on') && typeof renderVizity === 'function') {
       try { renderVizity(); } catch(_){}
     }
   } catch (err) {

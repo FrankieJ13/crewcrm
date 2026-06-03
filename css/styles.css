@@ -5314,6 +5314,13 @@ body.cosmic #main-dock .app-icon {
 .dock-popup-btn:focus { outline: none; }
 .dock-popup-btn:active { background: var(--bg3); }
 .dock-popup-btn:hover { background: var(--bg3); color: var(--acc); }
+/* Подсветка активного пункта (текущий выбранный отдел / таб FAQ).
+   Светлее обычного фона + цвет акцента темы. */
+.dock-popup-btn.active {
+  background: color-mix(in srgb, var(--bg3) 50%, var(--acc) 25%);
+  color: var(--acc);
+  font-weight: 700;
+}
 .dock-popup-btn + .dock-popup-btn { border-top: 1px solid var(--line); }
 .dock-popup-dot {
   width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;

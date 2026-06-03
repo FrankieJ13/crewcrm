@@ -10375,7 +10375,32 @@ function openDockPopup(id) {
   const isAlreadyOpen = document.getElementById(id)?.classList.contains('open');
   closeAllDockPopups();
   if (isAlreadyOpen) return; // toggle: повторный клик закрывает
-  document.getElementById(id)?.classList.add('open');
+  const popup = document.getElementById(id);
+  if (!popup) return;
+  popup.classList.add('open');
+  // Подсветка активного пункта в попапе.
+  // Каждому попапу — свой ключ, по которому определяется текущий выбор.
+  _highlightActiveDockPopupItem(id);
+}
+
+function _highlightActiveDockPopupItem(popupId) {
+  const popup = document.getElementById(popupId);
+  if (!popup) return;
+  popup.querySelectorAll('.dock-popup-btn').forEach(b => b.classList.remove('active'));
+  // Извлекаем аргумент из onclick="dockXxx('value')" для каждого пункта,
+  // сравниваем с текущим state. Match → подсветка.
+  const stateMap = {
+    'dock-kpi-popup':    S.reportTab === 'mgr' ? 'crm' : (S.reportTab || ''),
+    'dock-dohod-popup':  S.dohodTab || '',
+    'dock-faq-popup':    S.faqTab   || '',
+    'dock-vizity-popup': S.vizDept  || '',
+  };
+  const cur = stateMap[popupId];
+  if (!cur) return;
+  popup.querySelectorAll('.dock-popup-btn').forEach(btn => {
+    const m = (btn.getAttribute('onclick') || '').match(/\(['"]([^'"]+)['"]\)/);
+    if (m && m[1] === cur) btn.classList.add('active');
+  });
 }
 
 // HOME = Отдел (для менеджеров — персональный экран)

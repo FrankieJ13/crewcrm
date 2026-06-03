@@ -3630,13 +3630,51 @@ function buildDozhimStats(dVizData, opts = {}) {
 }
 
 // ==================== DOZHIM SALARY FROM Д_ВИЗИТЫ ====================
-// Фиксированные ставки (не зависят от листа Д_СТАВКИ)
-const DOZHIM_RATES = {
+// Fallback-ставки если в Д_СТАВКИ ячейка пустая/0. Раньше всё было
+// захардкожено в DOZHIM_RATES; теперь читаем из листа с этими fallback'ами.
+// Структура Д_СТАВКИ (1-based row → 0-based index в массиве):
+//   row 1  (0)  Заголовок «КАТ 800» — не значение
+//   row 2  (1)  КАТ 800: визит
+//   row 3  (2)  КАТ 800: кредит
+//   row 4  (3)  КАТ 800: наличные
+//   row 5  (4)  КАТ 800: обмен
+//   row 6  (5)  КАТ 800: комиссия
+//   row 7  (6)  Задаток
+//   row 8  (7)  Заголовок «КАТ 1000» — не значение
+//   row 9  (8)  КАТ 1000: визит
+//   row 10 (9)  КАТ 1000: кредит
+//   row 11 (10) КАТ 1000: наличные
+//   row 12 (11) КАТ 1000: комиссия (без обмена)
+//   row 13 (12) Оклад базовый
+//   row 14 (13) Выкуп (общий для 800 и 1000)
+const DOZHIM_RATES_FALLBACK = {
   baseOklad: 15000,
   r800Vis: 800, r800Kred: 3000, r800Nal: 2000, r800Obmen: 2000, r800Kom: 2000,
   r1000Vis: 1000, r1000Kred: 7000, r1000Nal: 7000, r1000Kom: 3000,
   rZadatok: 1000,
 };
+function getDozhimRates() {
+  const s = S.data.d_stavki || [];
+  const FB = DOZHIM_RATES_FALLBACK;
+  const cell = i => parseRate(s[i]?.[1]);
+  // 0 в ячейке = fallback. Чтобы отключить ставку — оставь пустым в листе
+  // и измени fallback на 0 в коде (или используй другую логику).
+  // Исключение: rVykup — 0 здесь намеренно отключает выкуп.
+  return {
+    r800Vis:   cell(1)  || FB.r800Vis,
+    r800Kred:  cell(2)  || FB.r800Kred,
+    r800Nal:   cell(3)  || FB.r800Nal,
+    r800Obmen: cell(4)  || FB.r800Obmen,
+    r800Kom:   cell(5)  || FB.r800Kom,
+    rZadatok:  cell(6)  || FB.rZadatok,
+    r1000Vis:  cell(8)  || FB.r1000Vis,
+    r1000Kred: cell(9)  || FB.r1000Kred,
+    r1000Nal:  cell(10) || FB.r1000Nal,
+    r1000Kom:  cell(11) || FB.r1000Kom,
+    baseOklad: cell(12) || FB.baseOklad,
+    rVykup:    cell(13),     // 0/пусто = выкуп не платится (намеренно)
+  };
+}
 
 function calcSalaryDozhimFromVizity(nameLow) {
   const dVizData = S.data.d_vizity || [];
@@ -3644,11 +3682,8 @@ function calcSalaryDozhimFromVizity(nameLow) {
   const mgrStat  = allStats[nameLow];
   if (!mgrStat) return null;
 
-  const R = DOZHIM_RATES;
-  // Выкуп — динамическая ставка из Д_СТАВКИ row 14 (index 13). Если пусто/0 —
-  // мотивация по выкупу выключена. Одна ставка применяется к обоим каналам.
-  const dstavki = S.data.d_stavki || [];
-  const rVykup  = parseRate(dstavki[13]?.[1]);
+  const R = getDozhimRates();
+  const rVykup = R.rVykup;
   const schedInfo = getWorkedAndTotalR(nameLow);
   const oklad = (schedInfo && schedInfo.totalR > 0)
     ? Math.round(R.baseOklad / schedInfo.totalR * schedInfo.workedR)
@@ -8695,7 +8730,7 @@ function openDozhimIncomeModal(btn) {
     return `<div class="dz-badge"><div class="dzb-lbl">${lbl}</div><div class="dzb-count">${count}</div><div class="dzb-earn">${fmtRub(earn)}</div></div>`;
   }
 
-  const R = DOZHIM_RATES;
+  const R = getDozhimRates();
   const oklad      = n(d.oklad);
   const kotel      = n(d.kotel);
   const kotelTotal = n(d.kotelTotal);
@@ -8765,7 +8800,7 @@ function openDozhimIncomeModal(btn) {
     ${kotelRow}
     <div class="income-sec-title">Итого</div>
     ${subtotal('Фактический доход', Math.round(n(d.fact?.total)))}
-    ${buildDayCalendar(d.nameLow||'', S.data.d_vizity||[], { ...DOZHIM_RATES, r800Vykup: rVykup, r1000Vykup: rVykup }, true)}
+    ${buildDayCalendar(d.nameLow||'', S.data.d_vizity||[], { ...R, r800Vykup: rVykup, r1000Vykup: rVykup }, true)}
   `;
   document.getElementById('income-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -9627,7 +9662,7 @@ function openSalInfo(roleHint) {
   }
   const isDozhim = effectiveRole === 'dozhim';
 
-  const R = DOZHIM_RATES;
+  const R = getDozhimRates();
   const rub = v => fmtRub(v);
 
   let bodyHtml = '';

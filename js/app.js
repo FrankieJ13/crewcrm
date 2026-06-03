@@ -10387,19 +10387,34 @@ function _highlightActiveDockPopupItem(popupId) {
   const popup = document.getElementById(popupId);
   if (!popup) return;
   popup.querySelectorAll('.dock-popup-btn').forEach(b => b.classList.remove('active'));
-  // Извлекаем аргумент из onclick="dockXxx('value')" для каждого пункта,
-  // сравниваем с текущим state. Match → подсветка.
-  const stateMap = {
-    'dock-kpi-popup':    S.reportTab === 'mgr' ? 'crm' : (S.reportTab || ''),
-    'dock-dohod-popup':  S.dohodTab || '',
-    'dock-faq-popup':    S.faqTab   || '',
-    'dock-vizity-popup': S.vizDept  || '',
+  // matcher(btn) → true если кнопка соответствует текущему state.
+  // У каждого попапа своя логика, т.к. handlers с разными сигнатурами:
+  // dockKpi('crm'/'dozhim') + dockKpiItogi() и т.п.
+  const matchers = {
+    'dock-kpi-popup': (btn) => {
+      const onc = btn.getAttribute('onclick') || '';
+      if (S.reportTab === 'mgr')    return /dockKpi\(['"]crm['"]\)/.test(onc);
+      if (S.reportTab === 'dozhim') return /dockKpi\(['"]dozhim['"]\)/.test(onc);
+      if (S.reportTab === 'dept')   return /dockKpiItogi/.test(onc);
+      return false;
+    },
+    'dock-dohod-popup': (btn) => {
+      const m = (btn.getAttribute('onclick') || '').match(/dockDohod\(['"]([^'"]+)['"]\)/);
+      return m && m[1] === (S.dohodTab || '');
+    },
+    'dock-faq-popup': (btn) => {
+      const m = (btn.getAttribute('onclick') || '').match(/dockFaq\(['"]([^'"]+)['"]\)/);
+      return m && m[1] === (S.faqTab || '');
+    },
+    'dock-vizity-popup': (btn) => {
+      const m = (btn.getAttribute('onclick') || '').match(/dockVizity\(['"]([^'"]+)['"]\)/);
+      return m && m[1] === (S.vizDept || '');
+    },
   };
-  const cur = stateMap[popupId];
-  if (!cur) return;
+  const fn = matchers[popupId];
+  if (!fn) return;
   popup.querySelectorAll('.dock-popup-btn').forEach(btn => {
-    const m = (btn.getAttribute('onclick') || '').match(/\(['"]([^'"]+)['"]\)/);
-    if (m && m[1] === cur) btn.classList.add('active');
+    if (fn(btn)) btn.classList.add('active');
   });
 }
 

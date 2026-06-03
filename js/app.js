@@ -3474,6 +3474,7 @@ function buildCrmStats(vizData, opts = {}) {
   const ST_FSSП     = 'фссп не подаем';
   const ST_OTKAZ    = 'отказ';
   const ST_ODOB_NK  = 'одобрено банком, но не купил';
+  const CAT400      = 'кат 400';
   const CAT800      = 'кат 800';
   const CAT1200     = 'кат 1200';
 
@@ -3500,7 +3501,8 @@ function buildCrmStats(vizData, opts = {}) {
       mgrs[mgrL] = {
         name: mgr,
         vis:0,             // общее число всех строк менеджера — соответствует хронологии
-        vis800:0, vis1200:0,
+        vis400:0, vis800:0, vis1200:0,
+        kred400:0, nal400:0, obmen400:0, vykup400:0, kom400:0,
         kred800:0, nal800:0, obmen800:0, vykup800:0, kom800:0,
         kred1200:0, nal1200:0, obmen1200:0, vykup1200:0, kom1200:0,
         zadatok:0,
@@ -3517,19 +3519,28 @@ function buildCrmStats(vizData, opts = {}) {
     const zadSum = parseFloat(String(row[9]||'0').replace(/[^\d.]/g,'')) || 0; // col J
 
     // КРИТИЧНО: m.vis считаем только для строк с валидной CRM-категорией.
-    // Иначе m.vis > vis800+vis1200 (если в листе попалась «кат 1000» или
-    // другая), и разные экраны (personal vs rating vs доход) показывают
-    // разные числа визитов. Теперь m.vis ≡ vis800 + vis1200.
+    // Иначе m.vis > vis400+vis800+vis1200 (если в листе попалась «кат 1000»),
+    // и разные экраны показывают разные числа.
+    // m.vis ≡ vis400 + vis800 + vis1200.
+    // КАТ 400 — историческая категория (август 2025 — март 2026), потом убрана.
+    if (cat === CAT400)  { m.vis++; m.vis400++; }
     if (cat === CAT800)  { m.vis++; m.vis800++; }
     if (cat === CAT1200) { m.vis++; m.vis1200++; }
 
-    if (!m.byCity[city] && (cat === CAT800 || cat === CAT1200)) {
+    if (!m.byCity[city] && (cat === CAT400 || cat === CAT800 || cat === CAT1200)) {
       m.byCity[city] = emptyCity(city);
     }
     const cityBucket = m.byCity[city];
     if (cityBucket) cityBucket.vis++;
 
     statuses.forEach(st => {
+      if (cat === CAT400) {
+        if (st === BUY_KREDIT) m.kred400++;
+        if (st === BUY_NAL)    m.nal400++;
+        if (st === BUY_OBMEN)  m.obmen400++;
+        if (st === BUY_VYKUP)  m.vykup400++;
+        if (st === BUY_KOM)    m.kom400++;
+      }
       if (cat === CAT800) {
         if (st === BUY_KREDIT) m.kred800++;
         if (st === BUY_NAL)    m.nal800++;
@@ -3653,6 +3664,8 @@ const DOZHIM_RATES_FALLBACK = {
 };
 const CRM_RATES_FALLBACK = {
   baseOklad: 15000, rZadatok: 1000,
+  // КАТ 400 — историческая категория (август 2025 — март 2026)
+  rCat400Vis: 400, rCat400Kred: 2500, rCat400Nal: 1500, rCat400Obmen: 1500, rCat400Kom: 2000, rCat400Vykup: 0,
   rCrmVis: 800, rCrmKred: 3000, rCrmNal: 2000, rCrmObmen: 2000, rCrmKom: 2000, rCrmVykup: 0,
   rWarmVis: 1000, rWarmKred: 3000, rWarmNal: 2000, rWarmObmen: 2000, rWarmKom: 2000, rWarmVykup: 0,
 };
@@ -3712,11 +3725,20 @@ function getCrmRates(suffix = currentSuffix) {
   const m = getRatesForMonth(suffix);
   if (!m || !m.crm) return FB;
   const c   = m.crm;
+  const c4  = c.cat400  || null;
   const c8  = c.cat800  || {};
   const c12 = c.cat1200 || {};
+  // cat400 был в истории август 2025 — март 2026. После — отсутствует в JSON.
+  // Если блока нет — ставки кат 400 = 0 (не платится в этом месяце).
   return {
     baseOklad: c.oklad   || FB.baseOklad,
     rZadatok:  c.zadatok || FB.rZadatok,
+    rCat400Vis:   c4 ? (c4.vis   || 0) : 0,
+    rCat400Kred:  c4 ? (c4.kred  || 0) : 0,
+    rCat400Nal:   c4 ? (c4.nal   || 0) : 0,
+    rCat400Obmen: c4 ? (c4.obmen || 0) : 0,
+    rCat400Kom:   c4 ? (c4.kom   || 0) : 0,
+    rCat400Vykup: c4 ? (c4.vykup || 0) : 0,
     rCrmVis:   c8.vis    || FB.rCrmVis,
     rCrmKred:  c8.kred   || FB.rCrmKred,
     rCrmNal:   c8.nal    || FB.rCrmNal,
@@ -4707,6 +4729,8 @@ function renderDohod() {
     function subtotal(lbl, sum) {
       return `<div class="income-subtotal"><span class="ist-lbl">${lbl}</span><span class="ist-val">${fmtRub(sum)}</span></div>`;
     }
+    const cat400 = d.detail.cat400 || null;
+    const cat400Sum = cat400 ? (n(cat400.vis)+n(cat400.kred)+n(cat400.nal)+n(cat400.obmen)+n(cat400.vykup||0)+n(cat400.kom)) : 0;
     const crmSum  = n(d.detail.crm.vis)+n(d.detail.crm.kred)+n(d.detail.crm.nal)+n(d.detail.crm.obmen)+n(d.detail.crm.vykup||0)+n(d.detail.crm.kom)+n(d.detail.crm.zadatok);
     const warmSum = n(d.detail.warm.vis)+n(d.detail.warm.kred)+n(d.detail.warm.nal)+n(d.detail.warm.obmen)+n(d.detail.warm.vykup||0)+n(d.detail.warm.kom);
     const oklad      = n(d.detail.oklad);
@@ -4722,7 +4746,7 @@ function renderDohod() {
       : `${fmtRub(oklad)} + (${fmtRub(Math.round(premium))} × ${factKoef.toFixed(1)}) = ${fmtRub(Math.round(d.fact.total))}`;
     const okladRow   = oklad > 0 ? `<div class="income-sec-title">Оклад</div>${subtotal(okladLbl, oklad)}` : '';
     const kotelRow   = (d.detail.inFund && kotel > 0) ? `<div class="income-sec-title">Котёл</div><div class="kpi-bare-text" style="font-size:10px;margin-bottom:6px">Участников котла: ${fundCount}</div>${subtotal('Доля котла', kotel)}` : '';
-    const noKoefTotal = Math.round(baseOklad + crmSum + warmSum + kotel);
+    const noKoefTotal = Math.round(baseOklad + cat400Sum + crmSum + warmSum + kotel);
     const noKoefRow = `<div class="income-sec-title">Без коэффициентов</div>${subtotal('Оклад 100% + Премия + Котёл', noKoefTotal)}`;
 
     setLiveHTML(el, `
@@ -4748,6 +4772,15 @@ function renderDohod() {
             Оклад + (Премия × К) = Итог<br>${okladFormula}
           </div>
           ${okladRow}
+          ${cat400 ? `
+          <div class="income-sec-title">КАТ 400</div>
+          <div class="income-badges">
+            ${badge('Визиты', cat400.vis, cat400.cnt?.vis)}${badge('Кредит', cat400.kred, cat400.cnt?.kred)}${badge('Нал+Обмен', n(cat400.nal)+n(cat400.obmen), (cat400.cnt?.nal||0)+(cat400.cnt?.obmen||0))}
+          </div>
+          <div class="income-badges" style="grid-template-columns:repeat(2,1fr)">
+            ${badge('Комиссия', cat400.kom, cat400.cnt?.kom)}${badge('Выкуп', cat400.vykup||0, cat400.cnt?.vykup||0)}
+          </div>
+          ${subtotal('Итого КАТ 400', cat400Sum)}` : ''}
           <div class="income-sec-title">CRM</div>
           <div class="income-badges">
             ${badge('Визиты', d.detail.crm.vis, d.detail.crm.cnt?.vis)}${badge('Кредит', d.detail.crm.kred, d.detail.crm.cnt?.kred)}${badge('Нал+Обмен', n(d.detail.crm.nal)+n(d.detail.crm.obmen), (d.detail.crm.cnt?.nal||0)+(d.detail.crm.cnt?.obmen||0))}
@@ -4819,6 +4852,7 @@ function renderDohodCrm(el) {
     if (item.sal) {
       const det = {
         nameLow:  item.nameLow,
+        cat400:   item.sal.detail.cat400 || null,
         crm:      item.sal.detail.crm,
         warm:     item.sal.detail.warm,
         oklad:    item.sal.detail.oklad,
@@ -8100,6 +8134,7 @@ function renderPersonal(matched) {
     }
   } else if (salObj) {
     const incomeDetail = {
+      cat400:   salObj.detail.cat400 || null,
       crm:      salObj.detail.crm,
       warm:     salObj.detail.warm,
       oklad:    salObj.detail.oklad,
@@ -8514,6 +8549,13 @@ function calcSalary(nameLow) {
   const oklad       = (schedInfo && schedInfo.totalR > 0)
     ? Math.round(baseOklad / schedInfo.totalR * schedInfo.workedR)
     : baseOklad;
+  // КАТ 400 — историческая категория CRM (август 2025 — март 2026). После — 0.
+  const rCat400Vis   = CR.rCat400Vis;
+  const rCat400Kred  = CR.rCat400Kred;
+  const rCat400Nal   = CR.rCat400Nal;
+  const rCat400Obmen = CR.rCat400Obmen;
+  const rCat400Kom   = CR.rCat400Kom;
+  const rCat400Vykup = CR.rCat400Vykup;
   const rCrmVis      = CR.rCrmVis;
   const rCrmKred     = CR.rCrmKred;
   const rCrmNal      = CR.rCrmNal;
@@ -8535,6 +8577,14 @@ function calcSalary(nameLow) {
 
   const inFund = isInFund(nameLow, 'crm');
 
+  const cat400 = {
+    vis:   mgrStat.vis400   || 0,
+    kred:  mgrStat.kred400  || 0,
+    nal:   mgrStat.nal400   || 0,
+    obmen: mgrStat.obmen400 || 0,
+    vykup: mgrStat.vykup400 || 0,
+    kom:   mgrStat.kom400   || 0,
+  };
   const crm = {
     vis:    mgrStat.vis800,
     kred:   mgrStat.kred800,
@@ -8553,6 +8603,7 @@ function calcSalary(nameLow) {
     kom:   mgrStat.kom1200,
   };
 
+  const cat400PureVis = Math.max(0, cat400.vis - cat400.kred - cat400.nal - cat400.obmen - cat400.vykup - cat400.kom);
   const crmPureVis  = Math.max(0, crm.vis  - crm.kred - crm.nal - crm.obmen - crm.vykup - crm.kom);
   const warmPureVis = Math.max(0, warm.vis - warm.kred - warm.nal - warm.obmen - warm.vykup - warm.kom);
 
@@ -8560,6 +8611,16 @@ function calcSalary(nameLow) {
   // оплачивается как обычный визит соответствующего КАТа. Если ставка > 0 —
   // платится по ней (вместо ставки визита).
   const dealRate = (rDeal, rVisitFallback) => (rDeal > 0 ? rDeal : rVisitFallback);
+  // КАТ 400 — историческая категория. В месяцах где её нет в rates.json
+  // (с 0426 и далее) rCat400Vis = 0, и формула вернёт 0. Если в данных
+  // визитов всё же есть 'кат 400' за такой месяц — он не учтётся,
+  // что соответствует реальности (платить не за что).
+  const cat400Earn = cat400PureVis*rCat400Vis
+                   + cat400.kred  * dealRate(rCat400Kred,  rCat400Vis)
+                   + cat400.nal   * dealRate(rCat400Nal,   rCat400Vis)
+                   + cat400.obmen * dealRate(rCat400Obmen, rCat400Vis)
+                   + cat400.vykup * dealRate(rCat400Vykup, rCat400Vis)
+                   + cat400.kom   * dealRate(rCat400Kom,   rCat400Vis);
   const crmEarn  = crmPureVis*rCrmVis
                  + crm.kred  * dealRate(rCrmKred,  rCrmVis)
                  + crm.nal   * dealRate(rCrmNal,   rCrmVis)
@@ -8577,12 +8638,18 @@ function calcSalary(nameLow) {
   // Котёл — суммируем визиты тех кто не в листе ПЛАН
   const planMap  = getPlanMap(S.data.plan || []);
   const planNamesLow2 = new Set(Object.keys(planMap));
-  // Агрегируем все stats для котла
-  const allStats2 = allStats; // уже computed выше
-  let kotelCrmAgg  = { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0, zadatok:0 };
-  let kotelWarmAgg = { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0 };
+  const allStats2 = allStats;
+  let kotelCat400Agg = { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0 };
+  let kotelCrmAgg    = { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0, zadatok:0 };
+  let kotelWarmAgg   = { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0 };
   Object.values(allStats2).forEach(s => {
     if (!planNamesLow2.has(s.name.toLowerCase())) {
+      kotelCat400Agg.vis   += s.vis400 || 0;
+      kotelCat400Agg.kred  += s.kred400 || 0;
+      kotelCat400Agg.nal   += s.nal400 || 0;
+      kotelCat400Agg.obmen += s.obmen400 || 0;
+      kotelCat400Agg.vykup += s.vykup400 || 0;
+      kotelCat400Agg.kom   += s.kom400 || 0;
       kotelCrmAgg.vis    += s.vis800;  kotelCrmAgg.kred  += s.kred800;
       kotelCrmAgg.nal    += s.nal800;  kotelCrmAgg.obmen += s.obmen800;
       kotelCrmAgg.vykup  += s.vykup800 || 0;
@@ -8593,12 +8660,20 @@ function calcSalary(nameLow) {
       kotelWarmAgg.kom   += s.kom1200;
     }
   });
-  const kotelCrm  = kotelCrmAgg;
-  const kotelWarm = kotelWarmAgg;
-  const kotelCrmPureVis  = Math.max(0, kotelCrm.vis  - kotelCrm.kred  - kotelCrm.nal  - kotelCrm.obmen  - kotelCrm.vykup  - kotelCrm.kom);
-  const kotelWarmPureVis = Math.max(0, kotelWarm.vis - kotelWarm.kred - kotelWarm.nal - kotelWarm.obmen - kotelWarm.vykup - kotelWarm.kom);
+  const kotelCat400 = kotelCat400Agg;
+  const kotelCrm    = kotelCrmAgg;
+  const kotelWarm   = kotelWarmAgg;
+  const kotelCat400PureVis = Math.max(0, kotelCat400.vis - kotelCat400.kred - kotelCat400.nal - kotelCat400.obmen - kotelCat400.vykup - kotelCat400.kom);
+  const kotelCrmPureVis    = Math.max(0, kotelCrm.vis  - kotelCrm.kred  - kotelCrm.nal  - kotelCrm.obmen  - kotelCrm.vykup  - kotelCrm.kom);
+  const kotelWarmPureVis   = Math.max(0, kotelWarm.vis - kotelWarm.kred - kotelWarm.nal - kotelWarm.obmen - kotelWarm.vykup - kotelWarm.kom);
 
-  const kotelTotal = kotelCrmPureVis*rCrmVis
+  const kotelTotal = kotelCat400PureVis*rCat400Vis
+                   + kotelCat400.kred  * dealRate(rCat400Kred,  rCat400Vis)
+                   + kotelCat400.nal   * dealRate(rCat400Nal,   rCat400Vis)
+                   + kotelCat400.obmen * dealRate(rCat400Obmen, rCat400Vis)
+                   + kotelCat400.vykup * dealRate(rCat400Vykup, rCat400Vis)
+                   + kotelCat400.kom   * dealRate(rCat400Kom,   rCat400Vis)
+                   + kotelCrmPureVis*rCrmVis
                    + kotelCrm.kred  * dealRate(rCrmKred,  rCrmVis)
                    + kotelCrm.nal   * dealRate(rCrmNal,   rCrmVis)
                    + kotelCrm.obmen * dealRate(rCrmObmen, rCrmVis)
@@ -8614,8 +8689,8 @@ function calcSalary(nameLow) {
   const fundCount = getFundCount('crm');
   const kotelShare = (inFund !== false && fundCount > 0) ? kotelTotal / fundCount : 0;
 
-  const premium = crmEarn + warmEarn + kotelShare;
-  const mgrAllVis = crm.vis + warm.vis;
+  const premium = cat400Earn + crmEarn + warmEarn + kotelShare;
+  const mgrAllVis = cat400.vis + crm.vis + warm.vis;
   const mgrPlan   = planMap[nameLow] || 0;
   const pctFact  = computeFactPct(mgrAllVis, mgrPlan || 1);
   const pctProg  = computeProgPct(mgrAllVis, mgrPlan || 1, currentSuffix);
@@ -8648,6 +8723,18 @@ function calcSalary(nameLow) {
     kom:  warm.kom  * dealRate(rWarmKom,   rWarmVis),
     cnt: { vis: warmPureVis, kred: warm.kred, nal: warm.nal, obmen: warm.obmen, vykup: warm.vykup, kom: warm.kom },
   };
+  const detailCat400 = {
+    vis:   cat400PureVis * rCat400Vis,
+    kred:  cat400.kred   * dealRate(rCat400Kred,  rCat400Vis),
+    nal:   cat400.nal    * dealRate(rCat400Nal,   rCat400Vis),
+    obmen: cat400.obmen  * dealRate(rCat400Obmen, rCat400Vis),
+    vykup: cat400.vykup  * dealRate(rCat400Vykup, rCat400Vis),
+    kom:   cat400.kom    * dealRate(rCat400Kom,   rCat400Vis),
+    cnt: { vis: cat400PureVis, kred: cat400.kred, nal: cat400.nal, obmen: cat400.obmen, vykup: cat400.vykup, kom: cat400.kom },
+  };
+  // Показываем cat400-секцию только если в этом месяце есть визиты КАТ 400
+  // (или > 0 ставка визита). Иначе она не нужна в деталях.
+  const hasCat400 = cat400.vis > 0 || rCat400Vis > 0;
 
   return {
     fact:   { total: totalFact, koef: koefFact, pct: pctFact, premium },
@@ -8659,6 +8746,7 @@ function calcSalary(nameLow) {
       totalR:   schedInfo ? schedInfo.totalR  : null,
       inFund,
       premium,
+      cat400:   hasCat400 ? detailCat400 : null,
       crm:      detailCrm,
       warm:     detailWarm,
       kotel:    kotelShare,
@@ -8886,17 +8974,19 @@ function openIncomeDetail(btn) {
   function subtotal(lbl, sum) {
     return `<div class="income-subtotal"><span class="ist-lbl">${lbl}</span><span class="ist-val">${fmtRub(sum)}</span></div>`;
   }
+  const cat400 = d.cat400 || null;
+  const cat400Sum = cat400 ? (n(cat400.vis)+n(cat400.kred)+n(cat400.nal)+n(cat400.obmen)+n(cat400.vykup||0)+n(cat400.kom)) : 0;
   const crmSum  = n(d.crm.vis)+n(d.crm.kred)+n(d.crm.nal)+n(d.crm.obmen)+n(d.crm.vykup||0)+n(d.crm.kom)+n(d.crm.zadatok);
   const warmSum = n(d.warm.vis)+n(d.warm.kred)+n(d.warm.nal)+n(d.warm.obmen)+n(d.warm.vykup||0)+n(d.warm.kom);
   const oklad      = n(d.oklad);
   const baseOklad  = n(d.baseOklad) || oklad;
   const kotel      = n(d.kotel);
-  const premium    = n(d.premium) || (crmSum + warmSum + kotel);
+  const premium    = n(d.premium) || (cat400Sum + crmSum + warmSum + kotel);
   const fundCount  = d.fundCount || '—';
 
   const okladRow = oklad > 0 ? `<div class="income-sec-title">Оклад</div>${subtotal(d.workedR != null ? `Оклад (${d.workedR}/${d.totalR} дн.)` : 'Оклад', oklad)}` : '';
   const kotelRow = (d.inFund && kotel > 0) ? `<div class="income-sec-title">Котёл</div><div style="font-size:10px;color:var(--txt2);margin-bottom:6px">Участников котла: ${fundCount}</div>${subtotal('Доля котла', kotel)}` : '';
-  const noKoefTotal = Math.round(baseOklad + crmSum + warmSum + kotel);
+  const noKoefTotal = Math.round(baseOklad + cat400Sum + crmSum + warmSum + kotel);
   const factKoef = d.fact ? d.fact.koef : null;
   const progKoef = d.prognoz ? d.prognoz.koef : null;
   // Дельта от коэффициента: premium × (koef − 1). Показываем сумму потерь
@@ -8947,6 +9037,18 @@ function openIncomeDetail(btn) {
   mc.innerHTML = `
     ${koefRow}
     ${okladRow}
+    ${cat400 ? `
+    <div class="income-sec-title">КАТ 400</div>
+    <div class="income-badges">
+      ${badge('Визиты',    cat400.vis,                          cat400.cnt?.vis)}
+      ${badge('Кредит',    cat400.kred,                         cat400.cnt?.kred)}
+      ${badge('Нал+Обмен', n(cat400.nal) + n(cat400.obmen),     (cat400.cnt?.nal || 0) + (cat400.cnt?.obmen || 0))}
+    </div>
+    <div class="income-badges" style="grid-template-columns:repeat(2,1fr)">
+      ${badge('Комиссия',  cat400.kom,                          cat400.cnt?.kom)}
+      ${badge('Выкуп',     cat400.vykup || 0,                   cat400.cnt?.vykup || 0)}
+    </div>
+    ${subtotal('Итого КАТ 400', cat400Sum)}` : ''}
     <div class="income-sec-title">CRM</div>
     <div class="income-badges">
       ${badge('Визиты',     d.crm.vis,                          d.crm.cnt?.vis)}
@@ -9563,8 +9665,9 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
             ch1000: { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0 },
           }
         : {
-            crm:  { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0, zadatok:0 },
-            warm: { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0 },
+            cat400: { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0 },
+            crm:    { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0, zadatok:0 },
+            warm:   { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0 },
           };
     }
     return dayStats[day];
@@ -9601,11 +9704,15 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
       const zadSum = parseFloat(String(row[9]||'0').replace(/[^\d.]/g,'')) || 0;
 
       if (!isDozhim) {
+        const is400  = cat === 'кат 400';
         const is800  = cat === 'кат 800';
         const is1200 = cat === 'кат 1200';
         const stat = ensureDayStats(day);
-        if (is800) {
-          stat.crm.vis++; // один визит на строку
+        if (is400) {
+          stat.cat400.vis++;
+          addDealCounters(stat.cat400, deals);
+        } else if (is800) {
+          stat.crm.vis++;
           addDealCounters(stat.crm, deals);
           if (zadSum > 1000) stat.crm.zadatok++;
         } else if (is1200) {
@@ -9634,9 +9741,17 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
     // Сделка без своей ставки → платится как визит соответствующего КАТа.
     const dr = (rDeal, rVisitFallback) => ((rDeal || 0) > 0 ? rDeal : (rVisitFallback || 0));
     if (!isDozhim) {
+      const c4 = stat.cat400 || { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0 };
+      const cat400Pure = Math.max(0, c4.vis - c4.kred - c4.nal - c4.obmen - (c4.vykup||0) - c4.kom);
       const crmPure  = Math.max(0, stat.crm.vis  - stat.crm.kred  - stat.crm.nal  - stat.crm.obmen  - (stat.crm.vykup||0)  - stat.crm.kom);
       const warmPure = Math.max(0, stat.warm.vis - stat.warm.kred - stat.warm.nal - stat.warm.obmen - (stat.warm.vykup||0) - stat.warm.kom);
       earn =
+        cat400Pure * (R.rCat400Vis || 0) +
+        c4.kred  * dr(R.rCat400Kred,  R.rCat400Vis) +
+        c4.nal   * dr(R.rCat400Nal,   R.rCat400Vis) +
+        c4.obmen * dr(R.rCat400Obmen, R.rCat400Vis) +
+        (c4.vykup || 0) * dr(R.rCat400Vykup, R.rCat400Vis) +
+        c4.kom * dr(R.rCat400Kom, R.rCat400Vis) +
         crmPure * (R.rCrmVis || 0) +
         stat.crm.kred  * dr(R.rCrmKred,  R.rCrmVis) +
         stat.crm.nal   * dr(R.rCrmNal,   R.rCrmVis) +
@@ -9767,11 +9882,21 @@ function openDayIncomeDetail(cellEl) {
     if (rows800)  sectionsHtml += `<div class="day-det-sec">КАТ 800</div>${rows800}`;
     if (rows1000) sectionsHtml += `<div class="day-det-sec">КАТ 1000</div>${rows1000}`;
   } else {
-    const sc = stat.crm  || {};
-    const sw = stat.warm || {};
+    const c4 = stat.cat400 || {};
+    const sc = stat.crm    || {};
+    const sw = stat.warm   || {};
+    const pur4 = Math.max(0, (c4.vis||0) - (c4.kred||0) - (c4.nal||0) - (c4.obmen||0) - (c4.vykup||0) - (c4.kom||0));
     const purC = Math.max(0, (sc.vis||0) - (sc.kred||0) - (sc.nal||0) - (sc.obmen||0) - (sc.vykup||0) - (sc.kom||0));
     const purW = Math.max(0, (sw.vis||0) - (sw.kred||0) - (sw.nal||0) - (sw.obmen||0) - (sw.vykup||0) - (sw.kom||0));
 
+    const rowsCat400 = [
+      row('Чистые визиты', pur4,     R.rCat400Vis,   R.rCat400Vis),
+      row('Кредит',        c4.kred,  R.rCat400Kred,  R.rCat400Vis),
+      row('Наличка',       c4.nal,   R.rCat400Nal,   R.rCat400Vis),
+      row('Обмен',         c4.obmen, R.rCat400Obmen, R.rCat400Vis),
+      row('Выкуп',         c4.vykup, R.rCat400Vykup, R.rCat400Vis),
+      row('Комиссия',      c4.kom,   R.rCat400Kom,   R.rCat400Vis),
+    ].filter(Boolean).join('');
     const rowsCrm = [
       row('Чистые визиты', purC,     R.rCrmVis,   R.rCrmVis),
       row('Кредит',        sc.kred,  R.rCrmKred,  R.rCrmVis),
@@ -9790,8 +9915,9 @@ function openDayIncomeDetail(cellEl) {
       row('Комиссия',      sw.kom,   R.rWarmKom,   R.rWarmVis),
     ].filter(Boolean).join('');
 
-    if (rowsCrm)  sectionsHtml += `<div class="day-det-sec">CRM</div>${rowsCrm}`;
-    if (rowsWarm) sectionsHtml += `<div class="day-det-sec">Тёплые лиды</div>${rowsWarm}`;
+    if (rowsCat400) sectionsHtml += `<div class="day-det-sec">КАТ 400</div>${rowsCat400}`;
+    if (rowsCrm)    sectionsHtml += `<div class="day-det-sec">CRM</div>${rowsCrm}`;
+    if (rowsWarm)   sectionsHtml += `<div class="day-det-sec">Тёплые лиды</div>${rowsWarm}`;
   }
 
   // День + месяц для заголовка
@@ -9914,6 +10040,17 @@ async function openSalInfo(roleHint) {
     const tlKom    = CR.rWarmKom;
     const tlVykup  = CR.rWarmVykup;
     const hasRates = !!_ratesJson;
+    // КАТ 400 — историческая категория (август 2025 — март 2026). Показываем
+    // секцию только если в этом месяце хоть одна ставка КАТ 400 > 0.
+    const cat400HasRates = (CR.rCat400Vis + CR.rCat400Kred + CR.rCat400Nal + CR.rCat400Obmen + CR.rCat400Kom + CR.rCat400Vykup) > 0;
+    const cat400Rows = cat400HasRates ? [
+      siRow('Визит',    CR.rCat400Vis),
+      siRow('Кредит',   CR.rCat400Kred),
+      siRow('Наличка',  CR.rCat400Nal),
+      siRow('Обмен',    CR.rCat400Obmen),
+      siRow('Комиссия', CR.rCat400Kom),
+      siRow('Выкуп',    CR.rCat400Vykup),
+    ].filter(Boolean).join('') : '';
 
     const crmRows = [
       siRow('Визит',    crmVis),
@@ -9943,6 +10080,8 @@ async function openSalInfo(roleHint) {
       <div class="si-row"><span class="si-key">Расчёт</span><span class="si-val">Оклад ÷ раб.дней × отработано</span></div>
 
       ${hasRates ? `
+      ${cat400HasRates ? `<div class="si-sec">Премия КАТ 400</div>${cat400Rows}` : ''}
+
       <div class="si-sec">Премия CRM</div>
       ${crmRows}
 

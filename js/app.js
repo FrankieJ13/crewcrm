@@ -9648,7 +9648,7 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
   </div>`;
 }
 
-function openSalInfo(roleHint) {
+async function openSalInfo(roleHint) {
   const matched = findUserInSheet();
   const role = matched?.role || 'crm';
   let effectiveRole;
@@ -9661,6 +9661,19 @@ function openSalInfo(roleHint) {
     effectiveRole = role;
   }
   const isDozhim = effectiveRole === 'dozhim';
+
+  // Гарантируем что ставки нужного отдела за ТЕКУЩИЙ месяц загружены.
+  // Когда CEO на CRM-вкладке Дохода — d_stavki может быть пустым;
+  // и наоборот, на дожим-вкладке — пустым может быть stavki.
+  // Без этого модалка показала бы fallback-значения вместо реальных
+  // месячных ставок при первом открытии после смены месяца.
+  try {
+    if (isDozhim && (!S.data.d_stavki || S.data.d_stavki.length === 0)) {
+      S.data.d_stavki = await api(SHEETS.d_stavki, 'A1:B25').catch(() => []);
+    } else if (!isDozhim && (!S.data.stavki || S.data.stavki.length === 0)) {
+      S.data.stavki = await api(SHEETS.stavki, 'A1:B25').catch(() => []);
+    }
+  } catch(_) {}
 
   const R = getDozhimRates();
   const rub = v => fmtRub(v);

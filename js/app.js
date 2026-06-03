@@ -2798,10 +2798,8 @@ async function loadTab(tab) {
           return;
         }
       }
-      if (!S.data.stavki) {
-        try { S.data.stavki = await api(SHEETS.stavki, 'A1:B25'); }
-        catch(e) { S.data.stavki = []; }
-      }
+      // Ставки больше не из листа СТАВКИ — теперь rates.json
+      if (!_ratesJson) { try { await loadRatesJson(); } catch(_){} }
       if (!S.data.grafik) {
         try { S.data.grafik = await api(SHEETS.grafik, 'A1:AI25'); }
         catch(e) { S.data.grafik = []; }
@@ -2839,6 +2837,9 @@ async function loadTab(tab) {
 }
 
 function reloadCurrent() {
+  // При ручном обновлении сбрасываем кеш rates.json — на случай если
+  // CEO только что обновил ставки и закоммитил.
+  _ratesJson = null; _ratesJsonPromise = null;
   // Страница Трофеев — сбрасываем кеш каталога и фактов выдачи
   if (document.getElementById('scr-trophies')?.classList.contains('on')) {
     apiCacheInvalidate('TrophyAwards');
@@ -3232,18 +3233,18 @@ async function refreshVisibleDataLive() {
     apiCacheInvalidate();
     S.silentRefresh = true;
     try {
-      const [vd, dv, pd, cv, sd] = await Promise.all([
+      const [vd, dv, pd, cv] = await Promise.all([
         api(SHEETS.vizity,   'A:N').catch(() => []),
         api(SHEETS.d_vizity, 'A:N').catch(() => []),
         api(SHEETS.plan,     'A:D').catch(() => []),
         api(SHEETS.cnvrs,    'A1:N40').catch(() => []),
-        api(SHEETS.stavki,   'A1:B25').catch(() => []),
       ]);
       if (vd?.length)  S.data.vizity   = vd;
       if (dv?.length)  S.data.d_vizity = dv;
       if (pd?.length)  S.data.plan     = pd;
       if (cv?.length)  S.data.cnvrs    = cv;
-      if (sd?.length)  S.data.stavki   = sd;
+      // Ставки — rates.json (фоновая подгрузка если ещё не было)
+      if (!_ratesJson) { try { await loadRatesJson(); } catch(_){} }
       renderCeoDashboard();
     } finally { S.silentRefresh = false; }
     return;
@@ -3267,15 +3268,16 @@ async function refreshVisibleDataLive() {
         ]);
         S.data.d_vizity = dv; S.data.plan = pd; S.data.grafik = gr;
       } else {
-        const [vd, pd, st, cn, gr] = await Promise.all([
+        const [vd, pd, cn, gr] = await Promise.all([
           api(SHEETS.vizity, 'A:N').catch(() => []),
           api(SHEETS.plan, 'A:D').catch(() => []),
-          api(SHEETS.stavki, 'A1:B25').catch(() => []),
           api(SHEETS.cnvrs, 'A1:N40').catch(() => []),
           api(SHEETS.grafik, 'A1:AI25').catch(() => []),
         ]);
-        S.data.vizity = vd; S.data.plan = pd; S.data.stavki = st; S.data.cnvrs = cn; S.data.grafik = gr;
+        S.data.vizity = vd; S.data.plan = pd; S.data.cnvrs = cn; S.data.grafik = gr;
       }
+      // Ставки — из rates.json (раньше из листа СТАВКИ)
+      if (!_ratesJson) { try { await loadRatesJson(); } catch(_){} }
       renderPersonal(matched);
       return;
     }
@@ -3302,25 +3304,27 @@ async function refreshVisibleDataLive() {
         ]);
         S.data.d_vizity = dv; S.data.plan = pd; S.data.grafik = gr;
       } else {
-        const [vd, pd, st, gr] = await Promise.all([
+        const [vd, pd, gr] = await Promise.all([
           api(SHEETS.vizity, 'A:N').catch(() => []),
           api(SHEETS.plan, 'A:D').catch(() => []),
-          api(SHEETS.stavki, 'A1:B25').catch(() => []),
           api(SHEETS.grafik, 'A1:AI25').catch(() => []),
         ]);
-        S.data.vizity = vd; S.data.plan = pd; S.data.stavki = st; S.data.grafik = gr;
+        S.data.vizity = vd; S.data.plan = pd; S.data.grafik = gr;
       }
+      // Ставки — rates.json
+      if (!_ratesJson) { try { await loadRatesJson(); } catch(_){} }
       renderDohod();
     } else if (activeTab === 'rating') {
       const isDozhimRating = S.ratingDept === 'dozhim';
-      const [pd, vd, st] = await Promise.all([
+      const [pd, vd] = await Promise.all([
         api(SHEETS.plan, 'A:D').catch(() => []),
         api(isDozhimRating ? SHEETS.d_vizity : SHEETS.vizity, 'A:N').catch(() => []),
-        isDozhimRating ? api(SHEETS.d_stavki, 'A1:B25').catch(() => []) : Promise.resolve(S.data.stavki || []),
       ]);
       S.data.plan = pd;
-      if (isDozhimRating) { S.data.d_vizity = vd; S.data.d_stavki = st; }
+      if (isDozhimRating) S.data.d_vizity = vd;
       else S.data.vizity = vd;
+      // Ставки — rates.json (для rating тоже нужны через calcSalary*)
+      if (!_ratesJson) { try { await loadRatesJson(); } catch(_){} }
       renderRating();
     } else if (activeTab === 'grafik') {
       S.data.grafik = await api(SHEETS.grafik, 'A1:AI25').catch(() => []);
@@ -3630,49 +3634,101 @@ function buildDozhimStats(dVizData, opts = {}) {
 }
 
 // ==================== DOZHIM SALARY FROM Д_ВИЗИТЫ ====================
-// Fallback-ставки если в Д_СТАВКИ ячейка пустая/0. Раньше всё было
-// захардкожено в DOZHIM_RATES; теперь читаем из листа с этими fallback'ами.
-// Структура Д_СТАВКИ (1-based row → 0-based index в массиве):
-//   row 1  (0)  Заголовок «КАТ 800» — не значение
-//   row 2  (1)  КАТ 800: визит
-//   row 3  (2)  КАТ 800: кредит
-//   row 4  (3)  КАТ 800: наличные
-//   row 5  (4)  КАТ 800: обмен
-//   row 6  (5)  КАТ 800: комиссия
-//   row 7  (6)  Задаток
-//   row 8  (7)  Заголовок «КАТ 1000» — не значение
-//   row 9  (8)  КАТ 1000: визит
-//   row 10 (9)  КАТ 1000: кредит
-//   row 11 (10) КАТ 1000: наличные
-//   row 12 (11) КАТ 1000: комиссия (без обмена)
-//   row 13 (12) Оклад базовый
-//   row 14 (13) Выкуп (общий для 800 и 1000)
+// ════════════════════ СТАВКИ ИЗ data/rates.json ════════════════════
+// Ставки CRM и Дожим больше НЕ читаются из листов Sheets (СТАВКИ/Д_СТАВКИ).
+// Они хранятся в data/rates.json в репо. CDN GitHub Pages отдаёт за 50-200ms,
+// нет cold-load Sheets API, не блокируется Apps Script'ами.
+//
+// Структура rates.json:
+//   { version, updatedAt, months: { "MMYY": { crm: {...}, dozhim: {...} } } }
+// Каждый отдел: { oklad, zadatok, cat800: {...}, cat1200/cat1000: {...} }
+// Где cat: { vis, kred, nal, obmen, kom, vykup } (0 = не платится отдельно)
+//
+// Fallback на случай если rates.json не загрузился (network/404):
 const DOZHIM_RATES_FALLBACK = {
   baseOklad: 15000,
   r800Vis: 800, r800Kred: 3000, r800Nal: 2000, r800Obmen: 2000, r800Kom: 2000,
   r1000Vis: 1000, r1000Kred: 7000, r1000Nal: 7000, r1000Kom: 3000,
   rZadatok: 1000,
 };
-function getDozhimRates() {
-  const s = S.data.d_stavki || [];
+const CRM_RATES_FALLBACK = {
+  baseOklad: 15000, rZadatok: 1000,
+  rCrmVis: 800, rCrmKred: 3000, rCrmNal: 2000, rCrmObmen: 2000, rCrmKom: 2000, rCrmVykup: 0,
+  rWarmVis: 1000, rWarmKred: 3000, rWarmNal: 2000, rWarmObmen: 2000, rWarmKom: 2000, rWarmVykup: 0,
+};
+
+let _ratesJson = null;
+let _ratesJsonPromise = null;
+async function loadRatesJson(force = false) {
+  if (_ratesJson && !force) return _ratesJson;
+  if (_ratesJsonPromise && !force) return _ratesJsonPromise;
+  _ratesJsonPromise = fetch('./data/rates.json?v=' + Date.now())
+    .then(r => { if (!r.ok) throw new Error('rates.json: ' + r.status); return r.json(); })
+    .then(j => { _ratesJson = j; return j; })
+    .catch(e => { console.warn('rates.json load failed', e); _ratesJsonPromise = null; return null; });
+  return _ratesJsonPromise;
+}
+// Вернёт блок ставок для suffix, либо для ближайшего прошлого месяца,
+// либо null если rates.json не загружен.
+function getRatesForMonth(suffix) {
+  if (!_ratesJson?.months) return null;
+  if (_ratesJson.months[suffix]) return _ratesJson.months[suffix];
+  // Fallback: ближайший прошлый месяц по хронологии
+  const ord = s => parseInt(s.slice(2, 4)) * 100 + parseInt(s.slice(0, 2));
+  const target = ord(suffix);
+  const past = Object.keys(_ratesJson.months)
+    .filter(k => /^\d{4}$/.test(k) && ord(k) < target)
+    .sort((a, b) => ord(b) - ord(a));
+  return past[0] ? _ratesJson.months[past[0]] : null;
+}
+
+function getDozhimRates(suffix = currentSuffix) {
   const FB = DOZHIM_RATES_FALLBACK;
-  const cell = i => parseRate(s[i]?.[1]);
-  // 0 в ячейке = fallback. Чтобы отключить ставку — оставь пустым в листе
-  // и измени fallback на 0 в коде (или используй другую логику).
-  // Исключение: rVykup — 0 здесь намеренно отключает выкуп.
+  const m = getRatesForMonth(suffix);
+  if (!m || !m.dozhim) return FB;
+  const d  = m.dozhim;
+  const c8 = d.cat800  || {};
+  const c10= d.cat1000 || {};
+  // Vykup общий для обоих катов — берём из 800 (если есть), иначе из 1000
+  const sharedVykup = c8.vykup || c10.vykup || 0;
+  // 0/пусто в ячейке = fallback (кроме vykup — там 0 намеренно отключает)
   return {
-    r800Vis:   cell(1)  || FB.r800Vis,
-    r800Kred:  cell(2)  || FB.r800Kred,
-    r800Nal:   cell(3)  || FB.r800Nal,
-    r800Obmen: cell(4)  || FB.r800Obmen,
-    r800Kom:   cell(5)  || FB.r800Kom,
-    rZadatok:  cell(6)  || FB.rZadatok,
-    r1000Vis:  cell(8)  || FB.r1000Vis,
-    r1000Kred: cell(9)  || FB.r1000Kred,
-    r1000Nal:  cell(10) || FB.r1000Nal,
-    r1000Kom:  cell(11) || FB.r1000Kom,
-    baseOklad: cell(12) || FB.baseOklad,
-    rVykup:    cell(13),     // 0/пусто = выкуп не платится (намеренно)
+    r800Vis:   c8.vis   || FB.r800Vis,
+    r800Kred:  c8.kred  || FB.r800Kred,
+    r800Nal:   c8.nal   || FB.r800Nal,
+    r800Obmen: c8.obmen || FB.r800Obmen,
+    r800Kom:   c8.kom   || FB.r800Kom,
+    rZadatok:  d.zadatok || FB.rZadatok,
+    r1000Vis:  c10.vis   || FB.r1000Vis,
+    r1000Kred: c10.kred  || FB.r1000Kred,
+    r1000Nal:  c10.nal   || FB.r1000Nal,
+    r1000Kom:  c10.kom   || FB.r1000Kom,
+    baseOklad: d.oklad   || FB.baseOklad,
+    rVykup:    sharedVykup,
+  };
+}
+function getCrmRates(suffix = currentSuffix) {
+  const FB = CRM_RATES_FALLBACK;
+  const m = getRatesForMonth(suffix);
+  if (!m || !m.crm) return FB;
+  const c   = m.crm;
+  const c8  = c.cat800  || {};
+  const c12 = c.cat1200 || {};
+  return {
+    baseOklad: c.oklad   || FB.baseOklad,
+    rZadatok:  c.zadatok || FB.rZadatok,
+    rCrmVis:   c8.vis    || FB.rCrmVis,
+    rCrmKred:  c8.kred   || FB.rCrmKred,
+    rCrmNal:   c8.nal    || FB.rCrmNal,
+    rCrmObmen: c8.obmen  || FB.rCrmObmen,
+    rCrmKom:   c8.kom    || FB.rCrmKom,
+    rCrmVykup: c8.vykup  || 0, // 0 = выкуп не платится (намеренно)
+    rWarmVis:  c12.vis   || FB.rWarmVis,
+    rWarmKred: c12.kred  || FB.rWarmKred,
+    rWarmNal:  c12.nal   || FB.rWarmNal,
+    rWarmObmen:c12.obmen || FB.rWarmObmen,
+    rWarmKom:  c12.kom   || FB.rWarmKom,
+    rWarmVykup:c12.vykup || 0,
   };
 }
 
@@ -4603,15 +4659,13 @@ function renderDohod() {
   const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
 
   if (isDozhim) {
-    // d_stavki критичен: без него calcSalaryDozhimFromVizity использует
+    // rates.json критичен — без него calcSalaryDozhimFromVizity использует
     // fallback-ставки → earn800/1000 кешируется в dataset.income с неверными
     // значениями. Когда модалка детализации откроется, badges подтянут
     // свежие ставки, а итого останется старым → нестыковка.
-    if (!S.data.d_vizity || !S.data.plan || !S.data.d_stavki) {
+    if (!S.data.d_vizity || !S.data.plan || !_ratesJson) {
       if (!S.silentRefresh) el.innerHTML = loader();
-      if (!S.data.d_stavki) {
-        api(SHEETS.d_stavki, 'A1:B25').then(d => { S.data.d_stavki = d; renderDohod(); }).catch(()=>{});
-      }
+      if (!_ratesJson) loadRatesJson().then(() => renderDohod()).catch(()=>{});
       return;
     }
     const sal = calcSalaryDozhimFromVizity(nameLow);
@@ -4636,7 +4690,11 @@ function renderDohod() {
         </div>
       </div>`);
   } else {
-    if (!S.data.vizity || !S.data.stavki) { if (!S.silentRefresh) el.innerHTML = loader(); return; }
+    if (!S.data.vizity || !_ratesJson) {
+      if (!S.silentRefresh) el.innerHTML = loader();
+      if (!_ratesJson) loadRatesJson().then(() => renderDohod()).catch(()=>{});
+      return;
+    }
     const sal = calcSalary(nameLow);
     if (!sal) { el.innerHTML = '<div class="empty">Нет данных по вашему доходу</div>'; return; }
 
@@ -4708,19 +4766,7 @@ function renderDohod() {
           ${subtotal('Итого Тёплые лиды', warmSum)}
           ${kotelRow}
           ${noKoefRow}
-          ${buildDayCalendar(nameLow, S.data.vizity||[], {
-            rCrmVis:   parseRate((S.data.stavki||[])[8]?.[1]),
-            rCrmKred:  parseRate((S.data.stavki||[])[9]?.[1]),
-            rCrmNal:   parseRate((S.data.stavki||[])[10]?.[1]),
-            rCrmObmen: parseRate((S.data.stavki||[])[11]?.[1]),
-            rCrmKom:   parseRate((S.data.stavki||[])[12]?.[1]),
-            rWarmVis:  parseRate((S.data.stavki||[])[14]?.[1]),
-            rWarmKred: parseRate((S.data.stavki||[])[15]?.[1]),
-            rWarmNal:  parseRate((S.data.stavki||[])[16]?.[1]),
-            rWarmObmen:parseRate((S.data.stavki||[])[17]?.[1]),
-            rWarmKom:  parseRate((S.data.stavki||[])[18]?.[1]),
-            rZadatok:  parseRate((S.data.stavki||[])[20]?.[1]),
-          }, false)}
+          ${buildDayCalendar(nameLow, S.data.vizity||[], getCrmRates(currentSuffix), false)}
         </div>
       </div>`);
   }
@@ -4729,7 +4775,11 @@ function renderDohod() {
 function renderDohodCrm(el) {
   try { window.DIAG?.push('info', 'render', ['renderDohodCrm']); } catch(_){}
   if (!S.data.vizity || !S.data.plan) { if (!S.silentRefresh) el.innerHTML = loader(); return; }
-  if (!S.data.stavki) { if (!S.silentRefresh) el.innerHTML = loader(); return; }
+  if (!_ratesJson) {
+    if (!S.silentRefresh) el.innerHTML = loader();
+    loadRatesJson().then(() => renderDohodCrm(el)).catch(()=>{});
+    return;
+  }
 
   const planData = S.data.plan || [];
   const planNames = planData.slice(1)
@@ -4835,10 +4885,9 @@ async function copyAllSalariesToClipboard() {
   try {
     const tasks = [];
     if (!S.data.d_vizity)  tasks.push(api(SHEETS.d_vizity, 'A:N').then(d => S.data.d_vizity = d).catch(() => S.data.d_vizity = S.data.d_vizity || []));
-    if (!S.data.d_stavki)  tasks.push(api(SHEETS.d_stavki, 'A1:B25').then(d => S.data.d_stavki = d).catch(() => S.data.d_stavki = S.data.d_stavki || []));
     if (!S.data.vizity)    tasks.push(api(SHEETS.vizity, 'A:N').then(d => S.data.vizity = d).catch(() => S.data.vizity = S.data.vizity || []));
-    if (!S.data.stavki)    tasks.push(api(SHEETS.stavki, 'A1:B25').then(d => S.data.stavki = d).catch(() => S.data.stavki = S.data.stavki || []));
     if (!S.data.grafik)    tasks.push(api(SHEETS.grafik, 'A1:AI25').then(d => S.data.grafik = d).catch(() => S.data.grafik = S.data.grafik || []));
+    if (!_ratesJson)       tasks.push(loadRatesJson());
     if (tasks.length) {
       try { toast('Собираю данные…', 'i'); } catch(_){}
       await Promise.all(tasks);
@@ -4891,13 +4940,11 @@ window.copyAllSalariesToClipboard = copyAllSalariesToClipboard;
 
 function renderDohodDozhim(el) {
   try { window.DIAG?.push('info', 'render', ['renderDohodDozhim']); } catch(_){}
-  if (!S.data.d_vizity || !S.data.plan || !S.data.d_stavki) {
+  if (!S.data.d_vizity || !S.data.plan || !_ratesJson) {
     if (!S.silentRefresh) el.innerHTML = loader();
-    // d_stavki критичен — без него calcSalaryDozhimFromVizity использует
+    // rates.json критичен — без него calcSalaryDozhimFromVizity использует
     // fallback-ставки и кеширует неверный earn1000 в dataset.income.
-    if (!S.data.d_stavki) {
-      api(SHEETS.d_stavki, 'A1:B25').then(d => { S.data.d_stavki = d; renderDohodDozhim(el); }).catch(()=>{});
-    }
+    if (!_ratesJson) loadRatesJson().then(() => renderDohodDozhim(el)).catch(()=>{});
     return;
   }
 
@@ -7581,8 +7628,8 @@ async function backgroundPrefetch(matched) {
   if (!S.data.plan)        tasks.push(() => api(SHEETS.plan,        'A:D').then(d => S.data.plan        = d).catch(()=>{}));
   if (!S.data.grafik)      tasks.push(() => api(SHEETS.grafik,      'A1:AI25').then(d => S.data.grafik  = d).catch(()=>{}));
   if (!S.data.cnvrs)       tasks.push(() => api(SHEETS.cnvrs,       'A1:N40').then(d => S.data.cnvrs    = d).catch(()=>{}));
-  if (!S.data.stavki)      tasks.push(() => api(SHEETS.stavki,      'A1:B25').then(d => S.data.stavki   = d).catch(()=>{}));
-  if (!S.data.d_stavki)    tasks.push(() => api(SHEETS.d_stavki,    'A1:B25').then(d => S.data.d_stavki = d).catch(()=>{}));
+  // Ставки CRM и Дожим теперь в data/rates.json, а не в листах
+  if (!_ratesJson)         tasks.push(() => loadRatesJson());
   if (!S.data.d_vizity)    tasks.push(() => api(SHEETS.d_vizity,    'A:N').then(d => S.data.d_vizity    = d).catch(()=>{}));
   if (!S.data.instruktsii) tasks.push(() => api(SHEETS.instruktsii, 'A1:C200').then(d => S.data.instruktsii = d).catch(()=>{}));
 
@@ -7842,23 +7889,23 @@ async function loadPersonal(matched) {
   const isDozhim = matched.role === 'dozhim';
   try {
     if (isDozhim) {
-      const [dv, pd, gr, sd] = await Promise.all([
+      const [dv, pd, gr] = await Promise.all([
         S.data.d_vizity ? Promise.resolve(S.data.d_vizity) : api(SHEETS.d_vizity, 'A:N').catch(() => []),
         S.data.plan     ? Promise.resolve(S.data.plan)     : api(SHEETS.plan,     'A:D').catch(() => []),
         S.data.grafik   ? Promise.resolve(S.data.grafik)   : api(SHEETS.grafik,   'A1:AI25').catch(() => []),
-        S.data.stavki   ? Promise.resolve(S.data.stavki)   : api(SHEETS.stavki,   'A1:B25').catch(() => []),
       ]);
-      S.data.d_vizity = dv; S.data.plan = pd; S.data.grafik = gr; S.data.stavki = sd;
+      S.data.d_vizity = dv; S.data.plan = pd; S.data.grafik = gr;
     } else {
-      const [vd, pd, sd, cv, gr] = await Promise.all([
+      const [vd, pd, cv, gr] = await Promise.all([
         S.data.vizity  ? Promise.resolve(S.data.vizity)  : api(SHEETS.vizity,  'A:N').catch(() => []),
         S.data.plan    ? Promise.resolve(S.data.plan)    : api(SHEETS.plan,    'A:D').catch(() => []),
-        S.data.stavki  ? Promise.resolve(S.data.stavki)  : api(SHEETS.stavki,  'A1:B25').catch(() => []),
         S.data.cnvrs   ? Promise.resolve(S.data.cnvrs)   : api(SHEETS.cnvrs,   'A1:N40').catch(() => []),
         S.data.grafik  ? Promise.resolve(S.data.grafik)  : api(SHEETS.grafik,  'A1:AI25').catch(() => []),
       ]);
-      S.data.vizity = vd; S.data.plan = pd; S.data.stavki = sd; S.data.cnvrs = cv; S.data.grafik = gr;
+      S.data.vizity = vd; S.data.plan = pd; S.data.cnvrs = cv; S.data.grafik = gr;
     }
+    // Ставки — rates.json
+    if (!_ratesJson) { try { await loadRatesJson(); } catch(_){} }
   } catch(e) {
     if (e.message !== 'auth') el.innerHTML = `<div class="err">Ошибка загрузки данных: ${e.message}</div>`;
     return;
@@ -8460,29 +8507,26 @@ function getWorkedAndTotalR(nameLow) {
 
 function calcSalary(nameLow) {
   const vizData = S.data.vizity || [];
-  const stavki  = S.data.stavki || [];
-
-  const baseOklad   = parseRate(stavki[0]?.[1]);
+  // Ставки CRM теперь читаются из data/rates.json (раньше — лист СТАВКИ{сфкс})
+  const CR = getCrmRates(currentSuffix);
+  const baseOklad   = CR.baseOklad;
   const schedInfo   = getWorkedAndTotalR(nameLow);
   const oklad       = (schedInfo && schedInfo.totalR > 0)
     ? Math.round(baseOklad / schedInfo.totalR * schedInfo.workedR)
     : baseOklad;
-  const rCrmVis      = parseRate(stavki[8]?.[1]);
-  const rCrmKred     = parseRate(stavki[9]?.[1]);
-  const rCrmNal      = parseRate(stavki[10]?.[1]);
-  const rCrmObmen    = parseRate(stavki[11]?.[1]);
-  const rCrmKom      = parseRate(stavki[12]?.[1]);
-  // row 14 (index 13) — «Выкуп CRM». Если ставка > 0 в этом месяце — платится,
-  // иначе формула вернёт 0×N = 0 (нет мотивации). Это работает на «адаптивную»
-  // схему: меняешь ставку в листе — пересчёт автоматический.
-  const rCrmVykup    = parseRate(stavki[13]?.[1]);
-  const rWarmVis     = parseRate(stavki[14]?.[1]);
-  const rWarmKred    = parseRate(stavki[15]?.[1]);
-  const rWarmNal     = parseRate(stavki[16]?.[1]);
-  const rWarmObmen   = parseRate(stavki[17]?.[1]);
-  const rWarmKom     = parseRate(stavki[18]?.[1]);
-  const rWarmVykup   = parseRate(stavki[19]?.[1]);
-  const rZadatok     = parseRate(stavki[20]?.[1]);
+  const rCrmVis      = CR.rCrmVis;
+  const rCrmKred     = CR.rCrmKred;
+  const rCrmNal      = CR.rCrmNal;
+  const rCrmObmen    = CR.rCrmObmen;
+  const rCrmKom      = CR.rCrmKom;
+  const rCrmVykup    = CR.rCrmVykup;
+  const rWarmVis     = CR.rWarmVis;
+  const rWarmKred    = CR.rWarmKred;
+  const rWarmNal     = CR.rWarmNal;
+  const rWarmObmen   = CR.rWarmObmen;
+  const rWarmKom     = CR.rWarmKom;
+  const rWarmVykup   = CR.rWarmVykup;
+  const rZadatok     = CR.rZadatok;
 
   // Агрегируем данные менеджера из ВИЗИТЫ
   const allStats = buildCrmStats(vizData, { sverkaOnly: true });
@@ -8626,28 +8670,29 @@ function calcSalary(nameLow) {
 // ==================== SALARY CALC: ДОЖИМ ====================
 function calcSalaryDozhim(nameLow) {
   const otchet = S.data.d_otchet || [];
-  const stavki = S.data.d_stavki || [];
-  if (!otchet.length || !stavki.length) return null;
+  if (!otchet.length) return null;
 
-  const baseOklad  = parseRate(stavki[12]?.[1]);
+  // Ставки теперь из rates.json (раньше — лист Д_СТАВКИ)
+  const DR = getDozhimRates(currentSuffix);
+  const baseOklad  = DR.baseOklad;
   const schedInfo  = getWorkedAndTotalR(nameLow);
   const oklad      = (schedInfo && schedInfo.totalR > 0)
     ? Math.round(baseOklad / schedInfo.totalR * schedInfo.workedR)
     : baseOklad;
 
   // Ставки канала 800
-  const r800Vis   = parseRate(stavki[1]?.[1]);
-  const r800Kred  = parseRate(stavki[2]?.[1]);
-  const r800Nal   = parseRate(stavki[3]?.[1]);
-  const r800Obmen = parseRate(stavki[4]?.[1]);
-  const r800Kom   = parseRate(stavki[5]?.[1]);
-  const rZadatok  = parseRate(stavki[6]?.[1]);
+  const r800Vis   = DR.r800Vis;
+  const r800Kred  = DR.r800Kred;
+  const r800Nal   = DR.r800Nal;
+  const r800Obmen = DR.r800Obmen;
+  const r800Kom   = DR.r800Kom;
+  const rZadatok  = DR.rZadatok;
   // Ставки канала 1000
-  const r1000Vis   = parseRate(stavki[8]?.[1]);
-  const r1000Kred  = parseRate(stavki[9]?.[1]);
-  const r1000Nal   = parseRate(stavki[10]?.[1]);
+  const r1000Vis   = DR.r1000Vis;
+  const r1000Kred  = DR.r1000Kred;
+  const r1000Nal   = DR.r1000Nal;
   const r1000Obmen = 0; // нет обмена в канале 1000
-  const r1000Kom   = parseRate(stavki[11]?.[1]);
+  const r1000Kom   = DR.r1000Kom;
 
   const KOTEL_NAMES = ['котел','котёл','kotel'];
   const allRows = otchet.slice(3, 20).filter(r => r[0] && r[0].trim());
@@ -8755,8 +8800,9 @@ function openDozhimIncomeModal(btn) {
   const kotelTotal = n(d.kotelTotal);
   const fundCount  = d.fundCount || '—';
 
-  // Выкуп для дожима — ставка из Д_СТАВКИ row 14 (index 13). Если 0 — не платится.
-  const rVykup = parseRate((S.data.d_stavki||[])[13]?.[1]);
+  // Выкуп для дожима — общая ставка из rates.json (раньше Д_СТАВКИ row 14).
+  // 0 = выкуп не платится.
+  const rVykup = getDozhimRates(currentSuffix).rVykup;
   // Пересчитываем премию из ch800/ch1000
   const ch8  = d.ch800  || {};
   const ch10 = d.ch1000 || {};
@@ -8926,21 +8972,7 @@ function openIncomeDetail(btn) {
     ${subtotal('Итого Тёплые лиды', warmSum)}
     ${kotelRow}
     ${noKoefRow}
-    ${buildDayCalendar(d.nameLow||'', S.data.vizity||[], {
-      rCrmVis:   parseRate((S.data.stavki||[])[8]?.[1]),
-      rCrmKred:  parseRate((S.data.stavki||[])[9]?.[1]),
-      rCrmNal:   parseRate((S.data.stavki||[])[10]?.[1]),
-      rCrmObmen: parseRate((S.data.stavki||[])[11]?.[1]),
-      rCrmKom:   parseRate((S.data.stavki||[])[12]?.[1]),
-      rCrmVykup: parseRate((S.data.stavki||[])[13]?.[1]),
-      rWarmVis:  parseRate((S.data.stavki||[])[14]?.[1]),
-      rWarmKred: parseRate((S.data.stavki||[])[15]?.[1]),
-      rWarmNal:  parseRate((S.data.stavki||[])[16]?.[1]),
-      rWarmObmen:parseRate((S.data.stavki||[])[17]?.[1]),
-      rWarmKom:  parseRate((S.data.stavki||[])[18]?.[1]),
-      rWarmVykup:parseRate((S.data.stavki||[])[19]?.[1]),
-      rZadatok:  parseRate((S.data.stavki||[])[20]?.[1]),
-    }, false)}
+    ${buildDayCalendar(d.nameLow||'', S.data.vizity||[], getCrmRates(currentSuffix), false)}
   `;
   document.getElementById('income-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -9805,18 +9837,9 @@ async function openSalInfo(roleHint) {
   }
   const isDozhim = effectiveRole === 'dozhim';
 
-  // Гарантируем что ставки нужного отдела за ТЕКУЩИЙ месяц загружены.
-  // Когда CEO на CRM-вкладке Дохода — d_stavki может быть пустым;
-  // и наоборот, на дожим-вкладке — пустым может быть stavki.
-  // Без этого модалка показала бы fallback-значения вместо реальных
-  // месячных ставок при первом открытии после смены месяца.
-  try {
-    if (isDozhim && (!S.data.d_stavki || S.data.d_stavki.length === 0)) {
-      S.data.d_stavki = await api(SHEETS.d_stavki, 'A1:B25').catch(() => []);
-    } else if (!isDozhim && (!S.data.stavki || S.data.stavki.length === 0)) {
-      S.data.stavki = await api(SHEETS.stavki, 'A1:B25').catch(() => []);
-    }
-  } catch(_) {}
+  // Ставки теперь из rates.json — гарантируем загрузку (одно сетевое
+  // обращение для всех месяцев и обоих отделов).
+  if (!_ratesJson) { try { await loadRatesJson(); } catch(_) {} }
 
   const R = getDozhimRates();
   const rub = v => fmtRub(v);
@@ -9875,22 +9898,22 @@ async function openSalInfo(roleHint) {
       <div class="si-formula">Оклад + Премия КАТ800 + Премия КАТ1000 + Доля котла</div>
     `;
   } else {
-    const st = S.data.stavki || [];
-    const parseR = v => parseFloat(String(v||'0').replace(/[^0-9.,-]/g,'').replace(',','.')) || 0;
-    const crmVis   = parseR(st[8]?.[1]);
-    const crmKred  = parseR(st[9]?.[1]);
-    const crmNal   = parseR(st[10]?.[1]);
-    const crmObmen = parseR(st[11]?.[1]);
-    const crmKom   = parseR(st[12]?.[1]);
-    const crmVykup = parseR(st[13]?.[1]);
-    const crmZad   = parseR(st[20]?.[1]);
-    const tlVis    = parseR(st[14]?.[1]);
-    const tlKred   = parseR(st[15]?.[1]);
-    const tlNal    = parseR(st[16]?.[1]);
-    const tlObmen  = parseR(st[17]?.[1]);
-    const tlKom    = parseR(st[18]?.[1]);
-    const tlVykup  = parseR(st[19]?.[1]);
-    const hasRates = st.length > 0;
+    // Ставки CRM из rates.json (раньше — лист СТАВКИ)
+    const CR = getCrmRates(currentSuffix);
+    const crmVis   = CR.rCrmVis;
+    const crmKred  = CR.rCrmKred;
+    const crmNal   = CR.rCrmNal;
+    const crmObmen = CR.rCrmObmen;
+    const crmKom   = CR.rCrmKom;
+    const crmVykup = CR.rCrmVykup;
+    const crmZad   = CR.rZadatok;
+    const tlVis    = CR.rWarmVis;
+    const tlKred   = CR.rWarmKred;
+    const tlNal    = CR.rWarmNal;
+    const tlObmen  = CR.rWarmObmen;
+    const tlKom    = CR.rWarmKom;
+    const tlVykup  = CR.rWarmVykup;
+    const hasRates = !!_ratesJson;
 
     const crmRows = [
       siRow('Визит',    crmVis),
@@ -10508,22 +10531,21 @@ async function loadCeoDashboard() {
     const needDVizity = !S.data.d_vizity;
     const needPlan    = !S.data.plan;
     const needCnvrs   = !S.data.cnvrs;
-    const needStavki  = !S.data.stavki;
     const needGrafik  = !S.data.grafik;
-    if (needVizity || needDVizity || needPlan || needCnvrs || needStavki || needGrafik) {
-      const [vd, dv, pd, cv, sd, gr] = await Promise.all([
+    const needRates   = !_ratesJson;
+    if (needVizity || needDVizity || needPlan || needCnvrs || needGrafik || needRates) {
+      const [vd, dv, pd, cv, gr] = await Promise.all([
         needVizity  ? api(SHEETS.vizity,   'A:N').catch(() => [])      : Promise.resolve(S.data.vizity),
         needDVizity ? api(SHEETS.d_vizity, 'A:N').catch(() => [])      : Promise.resolve(S.data.d_vizity),
         needPlan    ? api(SHEETS.plan,     'A:D').catch(() => [])      : Promise.resolve(S.data.plan),
         needCnvrs   ? api(SHEETS.cnvrs,    'A1:N40').catch(() => [])   : Promise.resolve(S.data.cnvrs),
-        needStavki  ? api(SHEETS.stavki,   'A1:B25').catch(() => [])   : Promise.resolve(S.data.stavki),
         needGrafik  ? api(SHEETS.grafik,   'A1:AI25').catch(() => [])  : Promise.resolve(S.data.grafik),
+        needRates   ? loadRatesJson()                                  : Promise.resolve(null),
       ]);
       if (vd?.length)  S.data.vizity   = vd;
       if (dv?.length)  S.data.d_vizity = dv;
       if (pd?.length)  S.data.plan     = pd;
       if (cv?.length)  S.data.cnvrs    = cv;
-      if (sd?.length)  S.data.stavki   = sd;
       if (gr?.length)  S.data.grafik   = gr;
     }
   } catch(e) {
@@ -11477,31 +11499,24 @@ async function loadRating() {
   if (!S.data.vizity || !S.data.plan) {
     el.innerHTML = loader();
     try {
-      const [vd, pd, sd] = await Promise.all([
+      const [vd, pd] = await Promise.all([
         S.data.vizity  ? Promise.resolve(S.data.vizity)  : api(SHEETS.vizity,  'A:N'),
         S.data.plan    ? Promise.resolve(S.data.plan)    : api(SHEETS.plan,    'A:D'),
-        S.data.stavki  ? Promise.resolve(S.data.stavki)  : api(SHEETS.stavki,  'A1:B25').catch(()=>[]),
       ]);
-      S.data.vizity = vd; S.data.plan = pd; S.data.stavki = sd;
+      S.data.vizity = vd; S.data.plan = pd;
     } catch(e) {
       if (e.message !== 'auth') el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
       return;
     }
-  } else if (!S.data.stavki) {
-    try { S.data.stavki = await api(SHEETS.stavki, 'A1:B25'); } catch(e) { S.data.stavki = []; }
   }
   if (S.ratingDept === 'dozhim' && !S.data.d_vizity) {
     el.innerHTML = loader();
     try {
-      const [dv, ds] = await Promise.all([
-        api(SHEETS.d_vizity, 'A:N'),
-        S.data.d_stavki ? Promise.resolve(S.data.d_stavki) : api(SHEETS.d_stavki, 'A1:B25').catch(()=>[]),
-      ]);
-      S.data.d_vizity = dv; S.data.d_stavki = ds;
+      S.data.d_vizity = await api(SHEETS.d_vizity, 'A:N');
     } catch(e) { S.data.d_vizity = []; }
-  } else if (S.ratingDept === 'dozhim' && !S.data.d_stavki) {
-    try { S.data.d_stavki = await api(SHEETS.d_stavki, 'A1:B25'); } catch(e) { S.data.d_stavki = []; }
   }
+  // Ставки — rates.json (нужны для calcSalary* в rating)
+  if (!_ratesJson) { try { await loadRatesJson(); } catch(_){} }
   renderRating();
 }
 

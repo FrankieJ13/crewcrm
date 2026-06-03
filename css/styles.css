@@ -5315,11 +5315,20 @@ body.cosmic #main-dock .app-icon {
 .dock-popup-btn:active { background: var(--bg3); }
 .dock-popup-btn:hover { background: var(--bg3); color: var(--acc); }
 /* Подсветка активного пункта (текущий выбранный отдел / таб FAQ).
-   Светлее обычного фона + цвет акцента темы. */
+   Заметный фон акцентного цвета + жирный шрифт. !important чтобы
+   пробивать темовые overrides (cosmic/fluent ставят !important
+   на .dock-popup-btn). */
 .dock-popup-btn.active {
-  background: color-mix(in srgb, var(--bg3) 50%, var(--acc) 25%);
-  color: var(--acc);
-  font-weight: 700;
+  background: rgba(var(--acc-r,30), var(--acc-g,144), var(--acc-b,255), .25) !important;
+  color: var(--acc) !important;
+  font-weight: 800 !important;
+  box-shadow: inset 3px 0 0 var(--acc);
+}
+/* В тёмных темах фон делаем светлее, чтобы был заметен на тёмном popup */
+body.cosmic .dock-popup-btn.active,
+body.fluent .dock-popup-btn.active {
+  background: rgba(255,255,255,.15) !important;
+  color: var(--acc) !important;
 }
 .dock-popup-btn + .dock-popup-btn { border-top: 1px solid var(--line); }
 .dock-popup-dot {

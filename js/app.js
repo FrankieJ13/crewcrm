@@ -662,6 +662,7 @@ function openAnaliz() {
 }
 
 function renderAnaliz() {
+  try { window.DIAG?.push('info', 'render', ['renderAnaliz']); } catch(_){}
   const el = document.getElementById('c-analiz');
   if (!el) return;
   el.innerHTML = `
@@ -2084,6 +2085,7 @@ async function loadUser() {
 }
 
 function renderUser() {
+  try { window.DIAG?.push('info', 'render', ['renderUser']); } catch(_){}
   if (!S.user) return;
   const av = document.getElementById('user-avatar');
   if (S.user.picture) {
@@ -3224,6 +3226,7 @@ function setLiveHTML(el, html) {
 }
 
 async function refreshVisibleDataLive() {
+  try { window.DIAG?.push('info', 'refresh', ['refreshVisibleDataLive']); } catch(_){}
   if (document.getElementById('scr-vizity')?.classList.contains('on')) return;
   if (document.getElementById('scr-ceo')?.classList.contains('on')) {
     apiCacheInvalidate();
@@ -3915,6 +3918,7 @@ function getMgrMessengerHtml(name) {
 }
 
 function renderOtchet() {
+  try { window.DIAG?.push('info', 'render', ['renderOtchet']); } catch(_){}
   const floating = document.getElementById('floating-subtabs');
   const el  = document.getElementById('c-otchet');
 
@@ -4535,6 +4539,7 @@ function goHome() {
 
 // ==================== RENDER DOHOD ====================
 function renderDohod() {
+  try { window.DIAG?.push('info', 'render', ['renderDohod']); } catch(_){}
   const el = document.getElementById('c-dohod');
   const floating = document.getElementById('floating-dohod-subtabs');
   const matched = findUserInSheet();
@@ -4677,6 +4682,7 @@ function renderDohod() {
 }
 
 function renderDohodCrm(el) {
+  try { window.DIAG?.push('info', 'render', ['renderDohodCrm']); } catch(_){}
   if (!S.data.vizity || !S.data.plan) { if (!S.silentRefresh) el.innerHTML = loader(); return; }
   if (!S.data.stavki) { if (!S.silentRefresh) el.innerHTML = loader(); return; }
 
@@ -4839,6 +4845,7 @@ async function copyAllSalariesToClipboard() {
 window.copyAllSalariesToClipboard = copyAllSalariesToClipboard;
 
 function renderDohodDozhim(el) {
+  try { window.DIAG?.push('info', 'render', ['renderDohodDozhim']); } catch(_){}
   if (!S.data.d_vizity || !S.data.plan) { if (!S.silentRefresh) el.innerHTML = loader(); return; }
 
   const planData = S.data.plan || [];
@@ -5196,6 +5203,7 @@ function resolveSchedVal(textVal, sheetRow, colIdx) {
 }
 
 function renderGrafik() {
+  try { window.DIAG?.push('info', 'render', ['renderGrafik']); } catch(_){}
   const el  = document.getElementById('c-grafik');
   const raw = S.data.grafik;
   if (!raw || raw.length < 3) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
@@ -7805,6 +7813,7 @@ async function loadPersonal(matched) {
 }
 
 function renderPersonal(matched) {
+  try { window.DIAG?.push('info', 'render', ['renderPersonal']); } catch(_){}
   const el = document.getElementById('c-personal');
   if (!el) return;
   const isDozhim = matched.role === 'dozhim';
@@ -10475,6 +10484,7 @@ function _ceoComputeLeaders() {
 }
 
 function renderCeoDashboard() {
+  try { window.DIAG?.push('info', 'render', ['renderCeoDashboard']); } catch(_){}
   const el = document.getElementById('c-ceo');
   if (!el) return;
 
@@ -11208,6 +11218,7 @@ async function loadRating() {
 }
 
 function renderRating() {
+  try { window.DIAG?.push('info', 'render', ['renderRating']); } catch(_){}
   const el = document.getElementById('c-rating');
   if (!el) return;
   const matched = findUserInSheet();
@@ -11850,6 +11861,7 @@ async function getVizSheetId(sheetName) {
 }
 
 function renderVizity() {
+  try { window.DIAG?.push('info', 'render', ['renderVizity']); } catch(_){}
   const el = document.getElementById('c-vizity');
   if (!el) return;
   const dept = S.vizDept || 'crm';
@@ -13092,6 +13104,7 @@ function _trophyTypeBadge(type) {
 }
 
 async function renderTrophiesPage() {
+  try { window.DIAG?.push('info', 'render', ['renderTrophiesPage']); } catch(_){}
   const el = document.getElementById('c-trophies');
   if (!el) return;
   el.innerHTML = loader();

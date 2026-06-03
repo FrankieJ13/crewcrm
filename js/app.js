@@ -9939,7 +9939,7 @@ async function openSalInfo(roleHint) {
       <div class="si-note">Оклад начисляется пропорционально отработанным рабочим дням.<br>Премия = CRM + Тёплые лиды + Доля котла.</div>
 
       <div class="si-sec">Оклад</div>
-      <div class="si-row"><span class="si-key">База</span><span class="si-val">Фиксированный оклад по ставке</span></div>
+      <div class="si-row"><span class="si-key">База</span><span class="si-val">${fmtRub(CR.baseOklad)}</span></div>
       <div class="si-row"><span class="si-key">Расчёт</span><span class="si-val">Оклад ÷ раб.дней × отработано</span></div>
 
       ${hasRates ? `

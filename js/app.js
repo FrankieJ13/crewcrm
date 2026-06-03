@@ -10401,11 +10401,13 @@ function _highlightActiveDockPopupItem(popupId) {
   const popup = document.getElementById(popupId);
   if (!popup) return;
   popup.querySelectorAll('.dock-popup-btn').forEach(b => b.classList.remove('active'));
-  // matcher(btn) → true если кнопка соответствует текущему state.
-  // У каждого попапа своя логика, т.к. handlers с разными сигнатурами:
-  // dockKpi('crm'/'dozhim') + dockKpiItogi() и т.п.
+  // Подсветка ТОЛЬКО когда юзер реально находится в соответствующем разделе.
+  // Иначе значения по умолчанию (S.faqTab='instr', S.dohodTab='crm' и т.п.)
+  // создают ложную подсветку для пунктов куда юзер ещё не переходил.
+  const screenOn = id => document.getElementById('scr-'+id)?.classList.contains('on');
   const matchers = {
     'dock-kpi-popup': (btn) => {
+      if (!screenOn('otchet')) return false;
       const onc = btn.getAttribute('onclick') || '';
       if (S.reportTab === 'mgr')    return /dockKpi\(['"]crm['"]\)/.test(onc);
       if (S.reportTab === 'dozhim') return /dockKpi\(['"]dozhim['"]\)/.test(onc);
@@ -10413,14 +10415,23 @@ function _highlightActiveDockPopupItem(popupId) {
       return false;
     },
     'dock-dohod-popup': (btn) => {
+      if (!screenOn('dohod')) return false;
       const m = (btn.getAttribute('onclick') || '').match(/dockDohod\(['"]([^'"]+)['"]\)/);
       return m && m[1] === (S.dohodTab || '');
     },
     'dock-faq-popup': (btn) => {
+      // FAQ — это вкладки внутри scr-instruktsii (включая отдельный
+      // scr-autopodbor для Автоподбора).
+      const onAutopodbor = document.getElementById('autopodbor-fullscreen')?.classList.contains('open');
+      if (!screenOn('instruktsii') && !onAutopodbor) return false;
       const m = (btn.getAttribute('onclick') || '').match(/dockFaq\(['"]([^'"]+)['"]\)/);
-      return m && m[1] === (S.faqTab || '');
+      if (!m) return false;
+      // Автоподбор открывается отдельной модалкой — особый кейс
+      if (m[1] === 'autopodbor') return !!onAutopodbor;
+      return screenOn('instruktsii') && m[1] === (S.faqTab || '');
     },
     'dock-vizity-popup': (btn) => {
+      if (!screenOn('vizity')) return false;
       const m = (btn.getAttribute('onclick') || '').match(/dockVizity\(['"]([^'"]+)['"]\)/);
       return m && m[1] === (S.vizDept || '');
     },

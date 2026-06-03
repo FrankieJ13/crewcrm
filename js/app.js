@@ -9650,10 +9650,23 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
   for (let d = 1; d <= daysInMonth; d++) {
     const sum = dayMap[d];
     const hasIncome = sum && sum > 0;
-    cells += `<div class="inc-day-cell${hasIncome?' has-income':''}">
-      <div class="inc-day-num">${d}</div>
-      ${hasIncome ? `<div class="inc-day-sum">${fmtShort(sum)}₽</div>` : ''}
-    </div>`;
+    if (hasIncome) {
+      // Сохраняем в data-attr минимальный набор для рендера детальной модалки:
+      // день, итог, флаг отдела, статистика по сделкам, и рейты для расчёта.
+      const detail = {
+        d, earn: Math.round(sum), is_d: !!isDozhim,
+        stat: dayStats[d], r: R,
+      };
+      const json = JSON.stringify(detail).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      cells += `<div class="inc-day-cell has-income" onclick="openDayIncomeDetail(this)" data-day-info='${json}'>
+        <div class="inc-day-num">${d}</div>
+        <div class="inc-day-sum">${fmtShort(sum)}₽</div>
+      </div>`;
+    } else {
+      cells += `<div class="inc-day-cell">
+        <div class="inc-day-num">${d}</div>
+      </div>`;
+    }
   }
 
   return `<div class="inc-day-panel">
@@ -9666,6 +9679,117 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
     </details>
   </div>`;
 }
+
+// Модалка детализации одного дня — открывается по клику на бейдж дня
+// в календаре «Детализация по дням». Показывает откуда складывается
+// итоговая сумма за день: визиты, типы сделок, их количество и сумма.
+function openDayIncomeDetail(cellEl) {
+  let info;
+  try {
+    const raw = cellEl.dataset.dayInfo.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    info = JSON.parse(raw);
+  } catch (e) { console.warn('openDayIncomeDetail: битый dataset', e); return; }
+
+  const { d, earn, is_d: isDozhim, stat, r: R } = info;
+  const rub = v => fmtRub(Math.round(v || 0));
+  const dr = (rDeal, rVisitFallback) => ((rDeal || 0) > 0 ? rDeal : (rVisitFallback || 0));
+
+  // Помощник: ряд по типу сделки. Если count > 0 — показываем количество
+  // и сумму с пометкой ставки (или «как визит» если ставки нет).
+  function row(label, count, ratePaid, visitFallback) {
+    if (!count) return '';
+    const effective = (ratePaid || 0) > 0 ? ratePaid : (visitFallback || 0);
+    const sum = count * effective;
+    const note = (ratePaid || 0) > 0 ? '' : ' <span style="color:var(--txt3);font-size:9px">(как визит)</span>';
+    return `<div class="day-det-row">
+      <span class="day-det-lbl">${label}${note}</span>
+      <span class="day-det-cnt">${count} × ${rub(effective)}</span>
+      <span class="day-det-sum">${rub(sum)}</span>
+    </div>`;
+  }
+
+  let sectionsHtml = '';
+  if (isDozhim) {
+    const s8 = stat.ch800 || {};
+    const s10 = stat.ch1000 || {};
+    const pure800 = Math.max(0, (s8.vis||0) - (s8.kred||0) - (s8.nal||0) - (s8.obmen||0) - (s8.vykup||0) - (s8.kom||0));
+    const pure1000 = Math.max(0, (s10.vis||0) - (s10.kred||0) - (s10.nal||0) - (s10.obmen||0) - (s10.vykup||0) - (s10.kom||0));
+
+    const rows800 = [
+      row('Чистые визиты', pure800,    R.r800Vis,   R.r800Vis),
+      row('Кредит',        s8.kred,    R.r800Kred,  R.r800Vis),
+      row('Наличка',       s8.nal,     R.r800Nal,   R.r800Vis),
+      row('Обмен',         s8.obmen,   R.r800Obmen, R.r800Vis),
+      row('Выкуп',         s8.vykup,   R.rVykup,    R.r800Vis),
+      row('Комиссия',      s8.kom,     R.r800Kom,   R.r800Vis),
+      row('Задаток',       s8.zadatok, R.rZadatok,  0),
+    ].filter(Boolean).join('');
+    const rows1000 = [
+      row('Чистые визиты', pure1000,   R.r1000Vis,  R.r1000Vis),
+      row('Кредит',        s10.kred,   R.r1000Kred, R.r1000Vis),
+      row('Наличка',       s10.nal,    R.r1000Nal,  R.r1000Vis),
+      row('Выкуп',         s10.vykup,  R.rVykup,    R.r1000Vis),
+      row('Комиссия',      s10.kom,    R.r1000Kom,  R.r1000Vis),
+    ].filter(Boolean).join('');
+
+    if (rows800)  sectionsHtml += `<div class="day-det-sec">КАТ 800</div>${rows800}`;
+    if (rows1000) sectionsHtml += `<div class="day-det-sec">КАТ 1000</div>${rows1000}`;
+  } else {
+    const sc = stat.crm  || {};
+    const sw = stat.warm || {};
+    const purC = Math.max(0, (sc.vis||0) - (sc.kred||0) - (sc.nal||0) - (sc.obmen||0) - (sc.vykup||0) - (sc.kom||0));
+    const purW = Math.max(0, (sw.vis||0) - (sw.kred||0) - (sw.nal||0) - (sw.obmen||0) - (sw.vykup||0) - (sw.kom||0));
+
+    const rowsCrm = [
+      row('Чистые визиты', purC,     R.rCrmVis,   R.rCrmVis),
+      row('Кредит',        sc.kred,  R.rCrmKred,  R.rCrmVis),
+      row('Наличка',       sc.nal,   R.rCrmNal,   R.rCrmVis),
+      row('Обмен',         sc.obmen, R.rCrmObmen, R.rCrmVis),
+      row('Выкуп',         sc.vykup, R.rCrmVykup, R.rCrmVis),
+      row('Комиссия',      sc.kom,   R.rCrmKom,   R.rCrmVis),
+      row('Задаток',       sc.zadatok, R.rZadatok, 0),
+    ].filter(Boolean).join('');
+    const rowsWarm = [
+      row('Чистые визиты', purW,     R.rWarmVis,   R.rWarmVis),
+      row('Кредит',        sw.kred,  R.rWarmKred,  R.rWarmVis),
+      row('Наличка',       sw.nal,   R.rWarmNal,   R.rWarmVis),
+      row('Обмен',         sw.obmen, R.rWarmObmen, R.rWarmVis),
+      row('Выкуп',         sw.vykup, R.rWarmVykup, R.rWarmVis),
+      row('Комиссия',      sw.kom,   R.rWarmKom,   R.rWarmVis),
+    ].filter(Boolean).join('');
+
+    if (rowsCrm)  sectionsHtml += `<div class="day-det-sec">CRM</div>${rowsCrm}`;
+    if (rowsWarm) sectionsHtml += `<div class="day-det-sec">Тёплые лиды</div>${rowsWarm}`;
+  }
+
+  // День + месяц для заголовка
+  const mo = parseInt(currentSuffix.slice(0,2));
+  const moName = new Date(2000, mo-1, 1).toLocaleString('ru', { month: 'long' });
+
+  // Удаляем предыдущую модалку если открыта
+  closeDayIncomeDetail();
+  const wrap = document.createElement('div');
+  wrap.id = 'day-detail-overlay';
+  wrap.className = 'day-detail-overlay';
+  wrap.innerHTML = `
+    <div class="day-detail-modal" onclick="event.stopPropagation()">
+      <div class="day-detail-hdr">
+        <div class="day-detail-title">
+          <div class="day-detail-day">${d} ${moName}</div>
+          <div class="day-detail-total">${rub(earn)}</div>
+        </div>
+        <button class="day-detail-close" onclick="closeDayIncomeDetail()" aria-label="Закрыть">✕</button>
+      </div>
+      <div class="day-detail-body">${sectionsHtml}</div>
+    </div>`;
+  wrap.addEventListener('click', closeDayIncomeDetail);
+  document.body.appendChild(wrap);
+}
+function closeDayIncomeDetail() {
+  document.getElementById('day-detail-overlay')?.remove();
+}
+window.openDayIncomeDetail = openDayIncomeDetail;
+window.closeDayIncomeDetail = closeDayIncomeDetail;
 
 async function openSalInfo(roleHint) {
   const matched = findUserInSheet();

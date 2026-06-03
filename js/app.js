@@ -4603,7 +4603,17 @@ function renderDohod() {
   const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
 
   if (isDozhim) {
-    if (!S.data.d_vizity || !S.data.plan) { if (!S.silentRefresh) el.innerHTML = loader(); return; }
+    // d_stavki критичен: без него calcSalaryDozhimFromVizity использует
+    // fallback-ставки → earn800/1000 кешируется в dataset.income с неверными
+    // значениями. Когда модалка детализации откроется, badges подтянут
+    // свежие ставки, а итого останется старым → нестыковка.
+    if (!S.data.d_vizity || !S.data.plan || !S.data.d_stavki) {
+      if (!S.silentRefresh) el.innerHTML = loader();
+      if (!S.data.d_stavki) {
+        api(SHEETS.d_stavki, 'A1:B25').then(d => { S.data.d_stavki = d; renderDohod(); }).catch(()=>{});
+      }
+      return;
+    }
     const sal = calcSalaryDozhimFromVizity(nameLow);
     if (!sal) { el.innerHTML = '<div class="empty">Нет данных по вашему доходу</div>'; return; }
     const det = {
@@ -4881,7 +4891,15 @@ window.copyAllSalariesToClipboard = copyAllSalariesToClipboard;
 
 function renderDohodDozhim(el) {
   try { window.DIAG?.push('info', 'render', ['renderDohodDozhim']); } catch(_){}
-  if (!S.data.d_vizity || !S.data.plan) { if (!S.silentRefresh) el.innerHTML = loader(); return; }
+  if (!S.data.d_vizity || !S.data.plan || !S.data.d_stavki) {
+    if (!S.silentRefresh) el.innerHTML = loader();
+    // d_stavki критичен — без него calcSalaryDozhimFromVizity использует
+    // fallback-ставки и кеширует неверный earn1000 в dataset.income.
+    if (!S.data.d_stavki) {
+      api(SHEETS.d_stavki, 'A1:B25').then(d => { S.data.d_stavki = d; renderDohodDozhim(el); }).catch(()=>{});
+    }
+    return;
+  }
 
   const planData = S.data.plan || [];
   const planM    = getPlanMap(planData);
@@ -7564,6 +7582,7 @@ async function backgroundPrefetch(matched) {
   if (!S.data.grafik)      tasks.push(() => api(SHEETS.grafik,      'A1:AI25').then(d => S.data.grafik  = d).catch(()=>{}));
   if (!S.data.cnvrs)       tasks.push(() => api(SHEETS.cnvrs,       'A1:N40').then(d => S.data.cnvrs    = d).catch(()=>{}));
   if (!S.data.stavki)      tasks.push(() => api(SHEETS.stavki,      'A1:B25').then(d => S.data.stavki   = d).catch(()=>{}));
+  if (!S.data.d_stavki)    tasks.push(() => api(SHEETS.d_stavki,    'A1:B25').then(d => S.data.d_stavki = d).catch(()=>{}));
   if (!S.data.d_vizity)    tasks.push(() => api(SHEETS.d_vizity,    'A:N').then(d => S.data.d_vizity    = d).catch(()=>{}));
   if (!S.data.instruktsii) tasks.push(() => api(SHEETS.instruktsii, 'A1:C200').then(d => S.data.instruktsii = d).catch(()=>{}));
 

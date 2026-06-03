@@ -9696,10 +9696,36 @@ async function openSalInfo(roleHint) {
 
   const R = getDozhimRates();
   const rub = v => fmtRub(v);
+  // Хелпер: строка показывается только если ставка > 0. Нулевая/пустая
+  // ставка означает «оплачивается как обычный визит» — такие типы скрываем,
+  // чтобы юзер видел только реальную мотивацию текущего месяца.
+  const siRow = (label, rate) => (rate > 0)
+    ? `<div class="si-row"><span class="si-key">${label}</span><span class="si-val">${rub(rate)}</span></div>`
+    : '';
+  const fallbackNote = `<div class="si-note">Типы сделок без своей ставки оплачиваются как обычный визит соответствующего канала.</div>`;
 
   let bodyHtml = '';
 
   if (isDozhim) {
+    // Выкуп — общая ставка для КАТ 800 и КАТ 1000 (один rVykup из row 14).
+    // Показываем под каждым каналом, если задана.
+    const cat800Rows = [
+      siRow('Визит',    R.r800Vis),
+      siRow('Кредит',   R.r800Kred),
+      siRow('Наличка',  R.r800Nal),
+      siRow('Обмен',    R.r800Obmen),
+      siRow('Комиссия', R.r800Kom),
+      siRow('Выкуп',    R.rVykup),
+      siRow('Задаток',  R.rZadatok),
+    ].filter(Boolean).join('');
+    const cat1000Rows = [
+      siRow('Визит',    R.r1000Vis),
+      siRow('Кредит',   R.r1000Kred),
+      siRow('Наличка',  R.r1000Nal),
+      siRow('Комиссия', R.r1000Kom),
+      siRow('Выкуп',    R.rVykup),
+    ].filter(Boolean).join('');
+
     bodyHtml = `
       <div class="si-sec">Формула</div>
       <div class="si-formula">Зарплата = Оклад + Премия + Доля котла</div>
@@ -9710,18 +9736,12 @@ async function openSalInfo(roleHint) {
       <div class="si-row"><span class="si-key">Расчёт</span><span class="si-val">Оклад ÷ раб.дней × отработано</span></div>
 
       <div class="si-sec">Ставки — КАТ 800</div>
-      <div class="si-row"><span class="si-key">Визит</span><span class="si-val">${rub(R.r800Vis)}</span></div>
-      <div class="si-row"><span class="si-key">Кредит</span><span class="si-val">${rub(R.r800Kred)}</span></div>
-      <div class="si-row"><span class="si-key">Наличка</span><span class="si-val">${rub(R.r800Nal)}</span></div>
-      <div class="si-row"><span class="si-key">Обмен</span><span class="si-val">${rub(R.r800Obmen)}</span></div>
-      <div class="si-row"><span class="si-key">Комиссия</span><span class="si-val">${rub(R.r800Kom)}</span></div>
-      <div class="si-row"><span class="si-key">Задаток</span><span class="si-val">${rub(R.rZadatok)}</span></div>
+      ${cat800Rows}
 
       <div class="si-sec">Ставки — КАТ 1000</div>
-      <div class="si-row"><span class="si-key">Визит</span><span class="si-val">${rub(R.r1000Vis)}</span></div>
-      <div class="si-row"><span class="si-key">Кредит</span><span class="si-val">${rub(R.r1000Kred)}</span></div>
-      <div class="si-row"><span class="si-key">Наличка</span><span class="si-val">${rub(R.r1000Nal)}</span></div>
-      <div class="si-row"><span class="si-key">Комиссия</span><span class="si-val">${rub(R.r1000Kom)}</span></div>
+      ${cat1000Rows}
+
+      ${fallbackNote}
 
       <div class="si-sec">Котёл</div>
       <div class="si-row"><span class="si-key">Что это</span><span class="si-val">Общий фонд отдела дожима, делится поровну</span></div>
@@ -9733,19 +9753,38 @@ async function openSalInfo(roleHint) {
   } else {
     const st = S.data.stavki || [];
     const parseR = v => parseFloat(String(v||'0').replace(/[^0-9.,-]/g,'').replace(',','.')) || 0;
-    const rubSt = v => v ? fmtRub(v) : '—';
-    const crmVis   = rubSt(parseR(st[8]?.[1]));
-    const crmKred  = rubSt(parseR(st[9]?.[1]));
-    const crmNal   = rubSt(parseR(st[10]?.[1]));
-    const crmObmen = rubSt(parseR(st[11]?.[1]));
-    const crmKom   = rubSt(parseR(st[12]?.[1]));
-    const crmZad   = rubSt(parseR(st[20]?.[1]));
-    const tlVis    = rubSt(parseR(st[14]?.[1]));
-    const tlKred   = rubSt(parseR(st[15]?.[1]));
-    const tlNal    = rubSt(parseR(st[16]?.[1]));
-    const tlObmen  = rubSt(parseR(st[17]?.[1]));
-    const tlKom    = rubSt(parseR(st[18]?.[1]));
+    const crmVis   = parseR(st[8]?.[1]);
+    const crmKred  = parseR(st[9]?.[1]);
+    const crmNal   = parseR(st[10]?.[1]);
+    const crmObmen = parseR(st[11]?.[1]);
+    const crmKom   = parseR(st[12]?.[1]);
+    const crmVykup = parseR(st[13]?.[1]);
+    const crmZad   = parseR(st[20]?.[1]);
+    const tlVis    = parseR(st[14]?.[1]);
+    const tlKred   = parseR(st[15]?.[1]);
+    const tlNal    = parseR(st[16]?.[1]);
+    const tlObmen  = parseR(st[17]?.[1]);
+    const tlKom    = parseR(st[18]?.[1]);
+    const tlVykup  = parseR(st[19]?.[1]);
     const hasRates = st.length > 0;
+
+    const crmRows = [
+      siRow('Визит',    crmVis),
+      siRow('Кредит',   crmKred),
+      siRow('Наличка',  crmNal),
+      siRow('Обмен',    crmObmen),
+      siRow('Комиссия', crmKom),
+      siRow('Выкуп',    crmVykup),
+      siRow('Задаток',  crmZad),
+    ].filter(Boolean).join('');
+    const tlRows = [
+      siRow('Визит',    tlVis),
+      siRow('Кредит',   tlKred),
+      siRow('Наличка',  tlNal),
+      siRow('Обмен',    tlObmen),
+      siRow('Комиссия', tlKom),
+      siRow('Выкуп',    tlVykup),
+    ].filter(Boolean).join('');
 
     bodyHtml = `
       <div class="si-sec">Формула</div>
@@ -9758,19 +9797,12 @@ async function openSalInfo(roleHint) {
 
       ${hasRates ? `
       <div class="si-sec">Премия CRM</div>
-      <div class="si-row"><span class="si-key">Визит</span><span class="si-val">${crmVis}</span></div>
-      <div class="si-row"><span class="si-key">Кредит</span><span class="si-val">${crmKred}</span></div>
-      <div class="si-row"><span class="si-key">Наличка</span><span class="si-val">${crmNal}</span></div>
-      <div class="si-row"><span class="si-key">Обмен</span><span class="si-val">${crmObmen}</span></div>
-      <div class="si-row"><span class="si-key">Комиссия</span><span class="si-val">${crmKom}</span></div>
-      <div class="si-row"><span class="si-key">Задаток</span><span class="si-val">${crmZad}</span></div>
+      ${crmRows}
 
       <div class="si-sec">Премия Тёплые лиды</div>
-      <div class="si-row"><span class="si-key">Визит</span><span class="si-val">${tlVis}</span></div>
-      <div class="si-row"><span class="si-key">Кредит</span><span class="si-val">${tlKred}</span></div>
-      <div class="si-row"><span class="si-key">Наличка</span><span class="si-val">${tlNal}</span></div>
-      <div class="si-row"><span class="si-key">Обмен</span><span class="si-val">${tlObmen}</span></div>
-      <div class="si-row"><span class="si-key">Комиссия</span><span class="si-val">${tlKom}</span></div>` : ''}
+      ${tlRows}
+
+      ${fallbackNote}` : ''}
 
       <div class="si-sec">Котёл</div>
       <div class="si-row"><span class="si-key">Что это</span><span class="si-val">Общий фонд отдела, делится поровну</span></div>

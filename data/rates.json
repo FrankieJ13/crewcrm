@@ -1,0 +1,553 @@
+{
+  "version": 1,
+  "updatedAt": "2026-06-03",
+  "notes": "Оклад разделён по отделам на будущее, сейчас у обоих отделов 15000. В 0626 vykup = 2000.",
+  "months": {
+    "0625": {
+      "crm": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1200": {
+          "vis": 1000,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        }
+      },
+      "dozhim": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1000": {
+          "vis": 1000,
+          "kred": 7000,
+          "nal": 7000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        }
+      }
+    },
+    "0725": {
+      "crm": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1200": {
+          "vis": 1000,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        }
+      },
+      "dozhim": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1000": {
+          "vis": 1000,
+          "kred": 7000,
+          "nal": 7000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        }
+      }
+    },
+    "0825": {
+      "crm": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1200": {
+          "vis": 1000,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        }
+      },
+      "dozhim": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1000": {
+          "vis": 1000,
+          "kred": 7000,
+          "nal": 7000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        }
+      }
+    },
+    "0925": {
+      "crm": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1200": {
+          "vis": 1000,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        }
+      },
+      "dozhim": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1000": {
+          "vis": 1000,
+          "kred": 7000,
+          "nal": 7000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        }
+      }
+    },
+    "1025": {
+      "crm": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1200": {
+          "vis": 1000,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        }
+      },
+      "dozhim": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1000": {
+          "vis": 1000,
+          "kred": 7000,
+          "nal": 7000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        }
+      }
+    },
+    "1125": {
+      "crm": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1200": {
+          "vis": 1000,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        }
+      },
+      "dozhim": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1000": {
+          "vis": 1000,
+          "kred": 7000,
+          "nal": 7000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        }
+      }
+    },
+    "1225": {
+      "crm": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1200": {
+          "vis": 1000,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        }
+      },
+      "dozhim": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1000": {
+          "vis": 1000,
+          "kred": 7000,
+          "nal": 7000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        }
+      }
+    },
+    "0126": {
+      "crm": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1200": {
+          "vis": 1000,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        }
+      },
+      "dozhim": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1000": {
+          "vis": 1000,
+          "kred": 7000,
+          "nal": 7000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        }
+      }
+    },
+    "0226": {
+      "crm": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1200": {
+          "vis": 1000,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        }
+      },
+      "dozhim": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1000": {
+          "vis": 1000,
+          "kred": 7000,
+          "nal": 7000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        }
+      }
+    },
+    "0326": {
+      "crm": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1200": {
+          "vis": 1000,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        }
+      },
+      "dozhim": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1000": {
+          "vis": 1000,
+          "kred": 7000,
+          "nal": 7000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        }
+      }
+    },
+    "0426": {
+      "crm": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1200": {
+          "vis": 1000,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        }
+      },
+      "dozhim": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1000": {
+          "vis": 1000,
+          "kred": 7000,
+          "nal": 7000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        }
+      }
+    },
+    "0526": {
+      "crm": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1200": {
+          "vis": 1000,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 0
+        }
+      },
+      "dozhim": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        },
+        "cat1000": {
+          "vis": 1000,
+          "kred": 7000,
+          "nal": 7000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 0
+        }
+      }
+    },
+    "0626": {
+      "crm": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 2000
+        },
+        "cat1200": {
+          "vis": 1000,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 2000,
+          "kom": 2000,
+          "vykup": 2000
+        }
+      },
+      "dozhim": {
+        "oklad": 15000,
+        "zadatok": 1000,
+        "cat800": {
+          "vis": 800,
+          "kred": 3000,
+          "nal": 2000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 2000
+        },
+        "cat1000": {
+          "vis": 1000,
+          "kred": 7000,
+          "nal": 7000,
+          "obmen": 0,
+          "kom": 2000,
+          "vykup": 2000
+        }
+      }
+    }
+  }
+}

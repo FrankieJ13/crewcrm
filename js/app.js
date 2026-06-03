@@ -10383,6 +10383,20 @@ function openDockPopup(id) {
   _highlightActiveDockPopupItem(id);
 }
 
+// На десктопе попапы дока открываются по hover (CSS .dock-item:hover),
+// мимо openDockPopup() — поэтому подсветка не успевает примениться.
+// Делегированный mouseenter на dock-item, чтобы вызывать highlight при
+// любом способе открытия попапа.
+if (!window._dockHoverBound) {
+  window._dockHoverBound = true;
+  document.addEventListener('mouseenter', (e) => {
+    const wrap = e.target?.closest?.('.dock-item');
+    if (!wrap) return;
+    const popup = wrap.querySelector('.dock-popup');
+    if (popup?.id) _highlightActiveDockPopupItem(popup.id);
+  }, true); // capture, потому что mouseenter не bubbles
+}
+
 function _highlightActiveDockPopupItem(popupId) {
   const popup = document.getElementById(popupId);
   if (!popup) return;

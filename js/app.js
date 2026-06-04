@@ -1001,7 +1001,10 @@ function showScr(id) {
 function num(v) { return parseInt(v)||0 }
 function fmtRub(v) {
   const n = parseFloat(String(v||'').replace(/[^\d.,-]/g,'').replace(',','.'));
-  return isNaN(n) ? (v||'—') : n.toLocaleString('ru') + ' ₽';
+  // Округляем до целых рублей — для UI деньги всегда показываем целыми.
+  // Раньше при долях котла (kotelTotal/fundCount = 1200/9 = 133.33…)
+  // toLocaleString отображал «133,333» — некрасиво и нестандартно.
+  return isNaN(n) ? (v||'—') : Math.round(n).toLocaleString('ru') + ' ₽';
 }
 function pctClr(p) {
   const n = (typeof p === 'number') ? p : (parseFloat(String(p||0).replace(/[^\d.,-]/g,'').replace(',','.')) || 0);

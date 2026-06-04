@@ -8409,11 +8409,31 @@ function renderPersonal(matched) {
     <div class="ceo-metrics-grid personal-metrics-vis">
       <div class="ceo-metric-card ceo-clickable personal-vis-row" onclick="openVisitsDayModal(${visitsModalName},false)">
         <div class="pv-lbl pv-lbl-main">Визиты</div>
-        <div class="pv-lbl pv-lbl-split">${num(mgrRow[28]) > 0 ? 'К400 / CRM / ТЛ' : 'CRM / ТЛ'}</div>
-        <div class="pv-chart">${_sparkline(_trend, _accColor, 'p')}</div>
-        <div class="pv-right-top">${_deltaBadge(_deltaToday, 'Визиты')}</div>
-        <div class="pv-val pv-val-main"><span class="mv">${factN}</span><span class="pv-plan">/ ${plan||'—'}</span></div>
-        <div class="pv-val pv-val-split">${num(mgrRow[28]) > 0 ? `${mgrRow[28]||'0'} / ${mgrRow[1]||'0'} / ${mgrRow[2]||'0'}` : `${mgrRow[1]||'0'} / ${mgrRow[2]||'0'}`}</div>
+        ${(() => {
+          // Сборка split-разбивки. factN — chronology count (всё что юзер видит
+          // в модалке-хронологии). m.vis400/800/1200 — строгий счёт (только
+          // isCompleteVizRow + валидная категория). Если есть разница —
+          // показываем колонку «?» (черновики / нераспознанные категории),
+          // чтобы итог 400+800+1200+? = factN.
+          const v400 = num(mgrRow[28]);
+          const v800 = num(mgrRow[1]);
+          const v1200 = num(mgrRow[2]);
+          const orphan = Math.max(0, num(factN) - v400 - v800 - v1200);
+          const parts = [];
+          if (v400 > 0)   parts.push({ lbl: 'К400', val: v400 });
+          parts.push({ lbl: 'CRM', val: v800 });
+          parts.push({ lbl: 'ТЛ',  val: v1200 });
+          if (orphan > 0) parts.push({ lbl: '?',   val: orphan });
+          const labels = parts.map(p => p.lbl).join(' / ');
+          const values = parts.map(p => p.val).join(' / ');
+          return `
+            <div class="pv-lbl pv-lbl-split">${labels}</div>
+            <div class="pv-chart">${_sparkline(_trend, _accColor, 'p')}</div>
+            <div class="pv-right-top">${_deltaBadge(_deltaToday, 'Визиты')}</div>
+            <div class="pv-val pv-val-main"><span class="mv">${factN}</span><span class="pv-plan">/ ${plan||'—'}</span></div>
+            <div class="pv-val pv-val-split">${values}</div>
+          `;
+        })()}
         <div class="pv-right-bot" style="color:${_accColor}">${progNum}%</div>
       </div>
     </div>

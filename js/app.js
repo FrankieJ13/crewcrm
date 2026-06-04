@@ -8001,6 +8001,7 @@ function renderPersonal(matched) {
     synRow[0] = name; synRow[1] = s.vis800||0; synRow[2] = s.vis1200||0;
     synRow[3] = planVal; synRow[4] = Math.max(0, planVal - allVis);
     synRow[7] = allVis;
+    synRow[28] = s.vis400||0; // КАТ 400 — историческая категория для subtext-разбивки
     synRow[8] = s.kred800||0; synRow[9] = s.nal800||0;
     synRow[10]= s.obmen800||0; synRow[11]= s.kom800||0;
     synRow[12]= s.kred1200||0; synRow[13]= s.nal1200||0;
@@ -8408,11 +8409,11 @@ function renderPersonal(matched) {
     <div class="ceo-metrics-grid personal-metrics-vis">
       <div class="ceo-metric-card ceo-clickable personal-vis-row" onclick="openVisitsDayModal(${visitsModalName},false)">
         <div class="pv-lbl pv-lbl-main">Визиты</div>
-        <div class="pv-lbl pv-lbl-split">CRM / ТЛ</div>
+        <div class="pv-lbl pv-lbl-split">${num(mgrRow[28]) > 0 ? 'К400 / CRM / ТЛ' : 'CRM / ТЛ'}</div>
         <div class="pv-chart">${_sparkline(_trend, _accColor, 'p')}</div>
         <div class="pv-right-top">${_deltaBadge(_deltaToday, 'Визиты')}</div>
         <div class="pv-val pv-val-main"><span class="mv">${factN}</span><span class="pv-plan">/ ${plan||'—'}</span></div>
-        <div class="pv-val pv-val-split">${mgrRow[1]||'0'} / ${mgrRow[2]||'0'}</div>
+        <div class="pv-val pv-val-split">${num(mgrRow[28]) > 0 ? `${mgrRow[28]||'0'} / ${mgrRow[1]||'0'} / ${mgrRow[2]||'0'}` : `${mgrRow[1]||'0'} / ${mgrRow[2]||'0'}`}</div>
         <div class="pv-right-bot" style="color:${_accColor}">${progNum}%</div>
       </div>
     </div>
@@ -11717,11 +11718,17 @@ function renderRating() {
         const name = String(r[0]).trim();
         const nl   = name.toLowerCase();
         const s    = crmStats[nl] || {};
-        const vis  = (s.vis800||0) + (s.vis1200||0);
+        // Визиты считаем через chronology (getVisitsByDay) чтобы число
+        // совпадало с карточкой персональной страницы и модалкой-историей.
+        // m.vis из buildCrmStats — строгий счёт (isCompleteVizRow), может
+        // быть меньше из-за черновых строк.
+        const vis  = (typeof getVisitsByDay === 'function')
+          ? getVisitsByDay(nl, false).reduce((a, b) => a + b, 0)
+          : ((s.vis400||0) + (s.vis800||0) + (s.vis1200||0));
         const plan = planM[nl] || 0;
-        const kred = (s.kred800||0) + (s.kred1200||0);
-        const nal  = (s.nal800||0)  + (s.nal1200||0);
-        const kom  = (s.kom800||0)  + (s.kom1200||0);
+        const kred = (s.kred400||0) + (s.kred800||0) + (s.kred1200||0);
+        const nal  = (s.nal400||0)  + (s.nal800||0)  + (s.nal1200||0);
+        const kom  = (s.kom400||0)  + (s.kom800||0)  + (s.kom1200||0);
         return { name, vis, plan, kred, nal, kom,
           progNum: computeProgPct(vis, plan||1, currentSuffix),
           factNum: computeFactPct(vis, plan||1) };

@@ -1938,7 +1938,7 @@ function showLoginScreen() {
   if (window._loginLiquidInit) window._loginLiquidInit();
 }
 
-function requestGoogleToken({ prompt = '', mode = 'ensure', force = false } = {}) {
+function requestGoogleToken({ prompt = '', mode = 'ensure', force = false, silent = false } = {}) {
   if (!tokenClient) return Promise.reject(new Error('oauth_not_ready'));
   if (force && tokenRequest) cleanupTokenRequest();
   if (tokenRequest) return tokenRequest.promise;
@@ -1951,6 +1951,10 @@ function requestGoogleToken({ prompt = '', mode = 'ensure', force = false } = {}
 
   tokenRequest = {
     mode,
+    silent,            // если true — при ошибке не показывать «Окно авторизации
+                       // не завершилось». Используется в trySilentRefresh,
+                       // потому что юзер не нажимал «Войти» и не должен
+                       // видеть агрессивный popup-error toast.
     promise,
     resolve: resolveRequest,
     reject: rejectRequest,
@@ -2003,9 +2007,16 @@ function initAuth() {
       const pending = tokenRequest;
       cleanupTokenRequest();
       if (pending) pending.reject(new Error(err?.type || 'oauth_popup_error'));
+      // Тост-ошибку показываем только при ЯВНОМ клике юзером «Войти».
+      // Silent restore (после долгого фона/свёртки) — типичная неудача
+      // когда GIS не может открыть popup в неактивном окне; юзер не нажимал
+      // ничего, агрессивный «Попробуйте войти еще раз» только вводит в
+      // заблуждение. Просто показываем login-screen без тоста.
       if (pending?.mode === 'login') {
         showLoginScreen();
-        toast('Окно авторизации не завершилось. Попробуйте войти еще раз', 'e');
+        if (!pending.silent) {
+          toast('Окно авторизации не завершилось. Попробуйте войти еще раз', 'e');
+        }
       }
     },
     callback: async (resp) => {
@@ -2441,9 +2452,10 @@ function trySilentRefresh() {
   document.querySelector('main').prepend(loader);
 
   // Идём через requestGoogleToken с mode='login', чтобы callback opens
-  // full login flow (loadUser + onLogin). Раньше был bare tokenClient
-  // requestAccessToken — pending=null → callback теперь это пропустит.
-  requestGoogleToken({ prompt: '', mode: 'login' }).catch(() => {});
+  // full login flow (loadUser + onLogin). silent: true — это автоматический
+  // restore после долгого фона/свёртки; при popup-блоке не показываем
+  // тост «Окно авторизации не завершилось», просто кидаем на login-screen.
+  requestGoogleToken({ prompt: '', mode: 'login', silent: true }).catch(() => {});
 
   const fallback = setTimeout(() => {
     const l = document.getElementById('silent-loader');
@@ -8008,7 +8020,14 @@ function renderPersonal(matched) {
   if (!mgrRow) { goTab('otchet'); return; }
 
   const planNum  = num(mgrRow[3]);
-  const factN    = num(mgrRow[7]);
+  // Визиты считаем как в модалке-хронологии (getVisitsByDay):
+  // все строки с менеджером + sverka + валидной датой. Это совпадает с тем,
+  // что юзер видит при клике на карточку «Визиты». Раньше factN брался из
+  // buildCrmStats который фильтрует ещё isCompleteVizRow + валидную категорию
+  // (КАТ 400/800/1200), и расхождения с модалкой смущали.
+  const factN    = (typeof getVisitsByDay === 'function')
+    ? getVisitsByDay(nameLow, isDozhim).reduce((a, b) => a + b, 0)
+    : num(mgrRow[7]);
   const plan     = mgrRow[3]||'—';
   const ost      = mgrRow[4]||'—';
   const progNum  = computeProgPct(factN, planNum || 1, currentSuffix);

@@ -1310,11 +1310,23 @@ window.cm66Init = function () {
 
     const carLink = event.target.closest(".result-card-image-link[data-car-url]");
     if (!carLink) return;
+    const url = carLink.dataset.carUrl || carLink.href;
     recordSearchLog({
       type: "click",
       clicked_title: carLink.dataset.carTitle || "",
-      clicked_url: carLink.dataset.carUrl || carLink.href
+      clicked_url: url
     });
+    // В PWA / standalone (mac CrystalCRM, iOS PWA) target="_blank" по
+    // умолчанию открывается во встроенном «мини-браузере» приложения.
+    // Принудительно открываем во внешнем дефолтном браузере через
+    // window.open с noopener — это сигнализирует системе что ссылка
+    // должна обрабатываться внешним приложением.
+    event.preventDefault();
+    const win = window.open(url, "_blank", "noopener,noreferrer");
+    if (!win) {
+      // popup-блок (редко) — fallback на обычный переход
+      try { window.location.href = url; } catch (_) {}
+    }
   });
 
   loadSettings();

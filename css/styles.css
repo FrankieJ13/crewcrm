@@ -6405,12 +6405,14 @@ body.fluent .ceo-mini-badge-eod {
   transform: translate(-50%, -50%);
   font-family: 'Unbounded', sans-serif;
   font-size: 13px; font-weight: 900;
-  color: #1c1c1e !important;
+  color: var(--speedo-clr, var(--txt)) !important;
   line-height: 1;
 }
-body.dark .ceo-speedo-value,
-body.neo-dark .ceo-speedo-value,
-body.cinematic .ceo-speedo-value { color: var(--txt) !important; }
+body.light .ceo-speedo-value,
+body.tiffany .ceo-speedo-value,
+body.fluent .ceo-speedo-value,
+body.cosmic .ceo-speedo-value,
+body.neo-light .ceo-speedo-value { color: var(--speedo-clr, #1c1c1e) !important; }
 
 .ceo-metrics-grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;

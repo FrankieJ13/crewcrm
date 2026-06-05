@@ -977,6 +977,8 @@ async function azImportSheet() {
 }
 
 function showScr(id) {
+  // Если уходим с инструкций — возвращаем узел Автоподбора в body (чтоб не уносился со scr-instruktsii)
+  if (id !== 'instruktsii' && typeof _apReturnToBody === 'function') _apReturnToBody();
   ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const el = document.getElementById('scr-'+t);
     if (el) el.classList.remove('on');
@@ -6245,7 +6247,7 @@ function renderInstruktsii() {
   if (S.faqTab === 'reglament') { el.innerHTML = renderReglamentTab(); return; }
   if (S.faqTab === 'mango') { el.innerHTML = renderMangoTab(); return; }
   if (S.faqTab === 'links') { el.innerHTML = renderLinksTab(); initLinksTab(); return; }
-  if (S.faqTab === 'autopodbor') { el.innerHTML = renderAutopodborTab(); return; }
+  if (S.faqTab === 'autopodbor') { el.innerHTML = renderAutopodborTab(); initAutopodborTab(); return; }
   if (S.faqTab === 'dozhim-search') { el.innerHTML = renderDozhimSearchTab(); initDozhimSearchTab(); return; }
   const raw = S.data.instruktsii;
   if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
@@ -6278,17 +6280,41 @@ function renderReglamentTab() {
 }
 
 function renderAutopodborTab() {
-  return `
-    <div class="sec-title">Автоподбор</div>
-    <div class="autopodbor-stub">
-      <div class="autopodbor-stub-title">В разработке</div>
-      <div class="autopodbor-stub-text">
-        Ассистент в быстрой навигации и поиску авто на официальном сайте по простому запросу.
-        Например: <span class="autopodbor-stub-ex">«фольц тигуан в перми автомат»</span>
-        или <span class="autopodbor-stub-ex">«лада веста до 900»</span>.
+  // Off-режим — стаб «В разработке»
+  if (S.autoSMode === false) {
+    return `
+      <div class="sec-title">Автоподбор</div>
+      <div class="autopodbor-stub">
+        <div class="autopodbor-stub-title">В разработке</div>
+        <div class="autopodbor-stub-text">
+          Ассистент в быстрой навигации и поиску авто на официальном сайте по простому запросу.
+          Например: <span class="autopodbor-stub-ex">«фольц тигуан в перми автомат»</span>
+          или <span class="autopodbor-stub-ex">«лада веста до 900»</span>.
+        </div>
       </div>
-    </div>
-  `;
+    `;
+  }
+  // Хост для embedded чата (узел #autopodbor-fullscreen перенесётся сюда в initAutopodborTab)
+  return `<div class="sec-title">Автоподбор</div><div id="autopodbor-tab-host" class="autopodbor-tab-host"></div>`;
+}
+
+function initAutopodborTab() {
+  if (S.autoSMode === false) return;
+  const fs = document.getElementById('autopodbor-fullscreen');
+  const host = document.getElementById('autopodbor-tab-host');
+  if (!fs || !host) return;
+  if (fs.parentNode !== host) host.appendChild(fs);
+  fs.classList.add('open', 'embedded');
+  fs.setAttribute('aria-hidden', 'false');
+  try { if (typeof window.cm66Init === 'function') window.cm66Init(); } catch(e) { console.warn('cm66Init failed', e); }
+}
+
+function _apReturnToBody() {
+  const fs = document.getElementById('autopodbor-fullscreen');
+  if (!fs) return;
+  if (fs.parentNode !== document.body) document.body.appendChild(fs);
+  fs.classList.remove('open', 'embedded');
+  fs.setAttribute('aria-hidden', 'true');
 }
 
 function toggleInstr(id) {
@@ -8374,7 +8400,7 @@ function renderPersonal(matched) {
             <path class="base-path" d="M 40 160 A 85 85 0 1 1 160 160"/>
             <path id="ceo-speed-progress" class="ceo-speed-progress" stroke="url(#ceoSpeedGradientGlobal)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="${Math.max(0, 1 - Math.min(progNum/100, 1))}" d="M 40 160 A 85 85 0 1 1 160 160"/>
           </svg>
-          <div class="ceo-speedo-value mv" style="color:${pctClr(progNum)} !important">${progNum}%</div>
+          <div class="ceo-speedo-value mv">${progNum}%</div>
         </div>
         <div class="ceo-forecast-info">
           <div class="ceo-forecast-sub"><span class="mv">${factN}</span> из <span>${plan||'—'}</span> визитов</div>
@@ -12065,14 +12091,14 @@ function dockFaqToggle(e) {
 }
 function dockFaq(tab) {
   closeAllDockPopups();
-  // АВТОПОДБОР — открывается отдельной фуллскрин-модалкой, не как таб
-  if (tab === 'autopodbor') { openAutopodbor(); return; }
   S.faqTab = tab;
   // Покидаем «Дожим поиск» — сбрасываем введённый номер и результаты
   if (tab !== 'dozhim-search') {
     _dozhimSearchQuery = '';
     _dozhimSearchResults = null;
   }
+  // Покидаем «Автоподбор» — возвращаем DOM-узел чата обратно в body
+  if (tab !== 'autopodbor') _apReturnToBody();
   updateFirebasePage();
   goTab('instruktsii');
   dockSetActive('instruktsii');
@@ -12372,41 +12398,17 @@ function _apBindViewport() {
 }
 
 function openAutopodbor() {
-  // Гейт: режим Off — открываем заглушку «В разработке» вместо чата
-  if (S.autoSMode === false) {
-    showScr('instruktsii');
-    S.faqTab = 'autopodbor';
-    if (typeof renderInstruktsii === 'function') renderInstruktsii();
-    if (typeof dockSetActive === 'function') dockSetActive('instruktsii');
-    return;
-  }
-  const fs = document.getElementById('autopodbor-fullscreen');
-  if (!fs) return;
-  fs.classList.add('open');
-  fs.setAttribute('aria-hidden', 'false');
-  document.body.classList.add('autopodbor-open');
-  _apBindViewport();
-  _apSyncViewport();
-  // Lazy init CM66 BDCARS на первом открытии
-  try { if (typeof window.cm66Init === 'function') window.cm66Init(); } catch(e) { console.warn('cm66Init failed', e); }
-  // Фокус на инпут (после layout). На мобильных не автофокусим — клава
-  // выскакивала бы сразу при открытии чата.
-  if (!matchMedia('(max-width: 720px)').matches) {
-    requestAnimationFrame(() => document.getElementById('chatInput')?.focus());
-  }
-  // Обновляем presence — текущая страница теперь «Автоподбор»
-  if (typeof updateFirebasePage === 'function') updateFirebasePage();
+  // Теперь Автоподбор — это FAQ-таб (как Дожим поиск), а не фуллскрин-модалка
+  if (typeof dockFaq === 'function') { dockFaq('autopodbor'); return; }
+  S.faqTab = 'autopodbor';
+  showScr('instruktsii');
+  if (typeof renderInstruktsii === 'function') renderInstruktsii();
 }
 function closeAutopodbor() {
-  const fs = document.getElementById('autopodbor-fullscreen');
-  if (!fs) return;
-  fs.classList.remove('open');
-  fs.setAttribute('aria-hidden', 'true');
-  document.body.classList.remove('autopodbor-open');
-  // Сбрасываем CSS-переменные, чтобы они не влияли на остальной UI
-  document.documentElement.style.removeProperty('--ap-vh');
-  document.documentElement.style.removeProperty('--ap-top');
-  if (typeof updateFirebasePage === 'function') updateFirebasePage();
+  // Backward-compat: возвращаем узел в body и переключаемся на дефолтный таб FAQ
+  _apReturnToBody();
+  S.faqTab = 'mango';
+  if (typeof renderInstruktsii === 'function') renderInstruktsii();
 }
 window.openAutopodbor = openAutopodbor;
 window.closeAutopodbor = closeAutopodbor;

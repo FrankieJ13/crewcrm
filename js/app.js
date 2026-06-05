@@ -1332,7 +1332,7 @@ function getPresencePageLabel() {
   }
   if (document.getElementById('scr-vizity')?.classList.contains('on')) return `Визиты ${deptLabel(S.vizDept || roleDept)}`;
   if (document.getElementById('scr-instruktsii')?.classList.contains('on')) {
-    const faq = S.faqTab === 'mango' ? 'MANGO' : S.faqTab === 'links' ? 'Ссылки' : S.faqTab === 'reglament' ? 'Регламент' : S.faqTab === 'autopodbor' ? 'Автоподбор' : 'Инструкции';
+    const faq = S.faqTab === 'mango' ? 'MANGO' : S.faqTab === 'links' ? 'Ссылки' : S.faqTab === 'reglament' ? 'Регламент' : S.faqTab === 'autopodbor' ? 'Автоподбор' : S.faqTab === 'dozhim-search' ? 'Дожим поиск' : 'Инструкции';
     return `FAQ ${faq}`;
   }
   if (document.getElementById('scr-otchet')?.classList.contains('on')) {
@@ -6246,6 +6246,7 @@ function renderInstruktsii() {
   if (S.faqTab === 'mango') { el.innerHTML = renderMangoTab(); return; }
   if (S.faqTab === 'links') { el.innerHTML = renderLinksTab(); initLinksTab(); return; }
   if (S.faqTab === 'autopodbor') { el.innerHTML = renderAutopodborTab(); return; }
+  if (S.faqTab === 'dozhim-search') { el.innerHTML = renderDozhimSearchTab(); initDozhimSearchTab(); return; }
   const raw = S.data.instruktsii;
   if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
   function buildStatusTable(rows) {
@@ -12066,9 +12067,12 @@ function dockFaq(tab) {
   closeAllDockPopups();
   // АВТОПОДБОР — открывается отдельной фуллскрин-модалкой, не как таб
   if (tab === 'autopodbor') { openAutopodbor(); return; }
-  // ДОЖИМ ПОИСК — тоже отдельная фуллскрин-модалка
-  if (tab === 'dozhim-search') { openDozhimSearch(); return; }
   S.faqTab = tab;
+  // Покидаем «Дожим поиск» — сбрасываем введённый номер и результаты
+  if (tab !== 'dozhim-search') {
+    _dozhimSearchQuery = '';
+    _dozhimSearchResults = null;
+  }
   updateFirebasePage();
   goTab('instruktsii');
   dockSetActive('instruktsii');
@@ -12192,53 +12196,29 @@ function _renderDozhimStats(container, log) {
   container.innerHTML = `<div class="ds-chips">${chips}</div>${upd}`;
 }
 
-async function openDozhimSearch() {
-  const el = document.getElementById('dozhim-search-fullscreen');
-  if (!el) return;
-  el.classList.add('open');
-  el.setAttribute('aria-hidden', 'false');
-  document.body.style.overflow = 'hidden';
-  const input = document.getElementById('ds-input');
-  if (input) setTimeout(() => input.focus(), 150);
-  const statsEl = document.getElementById('ds-stats');
-  if (statsEl) statsEl.innerHTML = '<div class="ds-stats-loading">Загружаю статистику…</div>';
-  // Параллельно: статистика по логам + сами данные клиентов
-  loadDozhimLogStats().then(log => _renderDozhimStats(statsEl, log)).catch(e => {
-    if (statsEl) statsEl.innerHTML = `<div class="ds-stats-err">Не удалось загрузить статистику: ${escapeHtml(e.message || 'ошибка')}</div>`;
+// Состояние таба «Дожим поиск» (как Mango — рендерится по S.faqTab).
+// Сбрасывается в dockFaq когда юзер уходит с таба.
+let _dozhimSearchQuery   = '';
+let _dozhimSearchResults = null;   // null = пусто, [] = искали но не нашли
+
+function renderDozhimSearchTab() {
+  // Загружаем статистику и базу в фоне; UI рендерится сразу.
+  loadDozhimLogStats().then(() => {
+    const sEl = document.getElementById('ds-stats');
+    if (sEl) _renderDozhimStats(sEl, _dozhimLogCache);
+  }).catch(e => {
+    const sEl = document.getElementById('ds-stats');
+    if (sEl) sEl.innerHTML = `<div class="ds-stats-err">Не удалось загрузить статистику: ${escapeHtml(e.message || 'ошибка')}</div>`;
   });
-  loadDozhimSearchData().catch(e => {
-    const st = document.getElementById('ds-status');
-    if (st) st.innerHTML = `<div class="ds-status-err">Не удалось загрузить базу: ${escapeHtml(e.message || 'ошибка')}</div>`;
-  });
-}
-function closeDozhimSearch() {
-  const el = document.getElementById('dozhim-search-fullscreen');
-  if (!el) return;
-  el.classList.remove('open');
-  el.setAttribute('aria-hidden', 'true');
-  document.body.style.overflow = '';
-}
-async function doDozhimSearch() {
-  const input  = document.getElementById('ds-input');
-  const status = document.getElementById('ds-status');
-  const results = document.getElementById('ds-results');
-  if (!input || !status || !results) return;
-  const query = _normalizePhone(input.value);
-  results.innerHTML = '';
-  if (!query) {
-    status.innerHTML = '<div class="ds-status-err">Введите корректный номер (от 10 цифр)</div>';
-    return;
-  }
-  status.innerHTML = '<div class="ds-status-loading">Ищу…</div>';
-  try {
-    const data = await loadDozhimSearchData();
-    const found = data.filter(r => _normalizePhone(r.phone) === query);
-    if (!found.length) {
-      status.innerHTML = '<div class="ds-status-empty">Ничего не найдено</div>';
-      return;
+  // Данные клиентов прогреваем (поиск пройдёт мгновенно по кешу)
+  loadDozhimSearchData().catch(() => {});
+
+  const resultsHtml = (() => {
+    if (_dozhimSearchResults === null) return '';
+    if (!_dozhimSearchResults.length) {
+      return '<div class="ds-status-empty">Ничего не найдено</div>';
     }
-    status.innerHTML = `<div class="ds-status-ok">Найдено: <b>${found.length}</b></div>`;
-    results.innerHTML = found.map((r, i) => `
+    const cards = _dozhimSearchResults.map((r, i) => `
       <div class="ds-card">
         <div class="ds-card-hdr">#${i + 1} · ${escapeHtml(r.city || '—')}</div>
         <div class="ds-card-row"><span class="ds-k">Телефон</span><span class="ds-v">${escapeHtml(r.phone)}</span></div>
@@ -12246,13 +12226,61 @@ async function doDozhimSearch() {
         <div class="ds-card-row"><span class="ds-k">Комментарий</span><span class="ds-v">${escapeHtml(r.comment || '—')}</span></div>
       </div>
     `).join('');
-  } catch (e) {
-    status.innerHTML = `<div class="ds-status-err">Ошибка: ${escapeHtml(e.message || String(e))}</div>`;
-  }
+    return `<div class="ds-status-ok">Найдено: <b>${_dozhimSearchResults.length}</b></div><div class="ds-results">${cards}</div>`;
+  })();
+
+  return `
+    <div class="sec-title">Поиск клиентов в базе дожима</div>
+    <div id="ds-stats" class="ds-stats"><div class="ds-stats-loading">Загружаю статистику…</div></div>
+    <div class="sec-title">Введи номер клиента</div>
+    <div class="pl-wrap">
+      <div class="pl-inp-row">
+        <input class="pl-input" id="ds-inp" type="text" placeholder="+7 (___) ___-__-__" autocomplete="off" value="${escapeAttr(_dozhimSearchQuery)}"/>
+        <button class="pl-btn" id="ds-btn">Найти</button>
+      </div>
+    </div>
+    <div id="ds-result-wrap">${resultsHtml}</div>
+  `;
 }
-window.openDozhimSearch  = openDozhimSearch;
-window.closeDozhimSearch = closeDozhimSearch;
-window.doDozhimSearch    = doDozhimSearch;
+
+function initDozhimSearchTab() {
+  const inp = document.getElementById('ds-inp');
+  const btn = document.getElementById('ds-btn');
+  if (!inp || !btn) return;
+  // Маска телефона как у Mango (если есть applyPhoneMask)
+  if (typeof applyPhoneMask === 'function') {
+    try { applyPhoneMask(inp); } catch(_){}
+  }
+  const submit = async () => {
+    const raw = inp.value;
+    _dozhimSearchQuery = raw;
+    const query = _normalizePhone(raw);
+    const wrap  = document.getElementById('ds-result-wrap');
+    if (!query) {
+      _dozhimSearchResults = null;
+      if (wrap) wrap.innerHTML = '<div class="ds-status-err">Введите корректный номер (от 10 цифр)</div>';
+      return;
+    }
+    if (wrap) wrap.innerHTML = '<div class="ds-status-loading">Ищу…</div>';
+    try {
+      const data = await loadDozhimSearchData();
+      const found = data.filter(r => _normalizePhone(r.phone) === query);
+      _dozhimSearchResults = found;
+      // Точечный перерендер блока результатов (не всего таба, чтобы инпут
+      // не моргал и фокус сохранялся).
+      const inpVal = inp.value;
+      const el = document.getElementById('c-instruktsii');
+      if (el) el.innerHTML = renderDozhimSearchTab();
+      initDozhimSearchTab();
+      const inp2 = document.getElementById('ds-inp');
+      if (inp2) { inp2.value = inpVal; inp2.focus(); }
+    } catch (e) {
+      if (wrap) wrap.innerHTML = `<div class="ds-status-err">Ошибка: ${escapeHtml(e.message || String(e))}</div>`;
+    }
+  };
+  btn.onclick = (e) => { e.preventDefault(); submit(); };
+  inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } };
+}
 
 // Подстраиваем высоту/смещение оверлея под visualViewport — нужно
 // чтобы на iOS PWA при появлении клавиатуры шелл сжимался, composer

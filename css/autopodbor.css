@@ -801,11 +801,16 @@ body.autopodbor-open { overflow: hidden !important; }
 /* ════════════════════════════════════════════════════════════════
    EMBEDDED-режим — Автоподбор как FAQ-таб (а не фуллскрин-модалка).
    Узел перенесён в #autopodbor-tab-host внутри scr-instruktsii.
+   Хост распирается на всю высоту между хедером и доком, без рамок —
+   страница ведёт себя как обычный таб FAQ, но с полным заполнением.
    ════════════════════════════════════════════════════════════════ */
 .autopodbor-tab-host {
   display: block;
   width: 100%;
-  margin-top: 8px;
+  /* Высота = вьюпорт − хедер (≈54) − dock (≈84) − sec-title (≈40) */
+  height: calc(100dvh - 180px);
+  min-height: 360px;
+  margin: 6px 0 0;
 }
 
 #autopodbor-fullscreen.embedded {
@@ -813,20 +818,23 @@ body.autopodbor-open { overflow: hidden !important; }
   top: auto !important;
   left: auto !important;
   right: auto !important;
-  height: auto !important;
+  width: 100% !important;
+  height: 100% !important;
   z-index: auto !important;
   background: transparent !important;
-  overflow: visible !important;
+  overflow: hidden !important;
   display: block !important;
 }
 
 #autopodbor-fullscreen.embedded .autopodbor-close { display: none !important; }
 
 #autopodbor-fullscreen.embedded .chat-shell {
-  height: auto !important;
-  min-height: calc(100dvh - 240px);
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
   width: 100% !important;
   max-width: none !important;
+  height: 100% !important;
+  min-height: 0 !important;
   border: 1px solid var(--line);
   border-radius: 14px;
   overflow: hidden;
@@ -836,11 +844,15 @@ body.autopodbor-open { overflow: hidden !important; }
 #autopodbor-fullscreen.embedded .chat-window {
   background: var(--bg) !important;
   color: var(--txt);
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
 }
 
 #autopodbor-fullscreen.embedded .message.assistant {
   background: var(--bg2) !important;
   color: var(--txt);
+  border-color: var(--line);
 }
 
 #autopodbor-fullscreen.embedded .chat-header {
@@ -851,6 +863,25 @@ body.autopodbor-open { overflow: hidden !important; }
 #autopodbor-fullscreen.embedded .chat-header h1 { color: var(--txt); }
 #autopodbor-fullscreen.embedded .chat-header span { color: var(--txt2); }
 
-#autopodbor-fullscreen.embedded .result-card-image {
-  background: var(--bg3);
+#autopodbor-fullscreen.embedded .result-card {
+  background: var(--bg3) !important;
+  border-color: var(--line) !important;
+  color: var(--txt);
 }
+#autopodbor-fullscreen.embedded .result-card h2 { color: var(--txt); }
+#autopodbor-fullscreen.embedded .result-card-image { background: var(--bg2); }
+
+/* Composer — поле ввода и фон под текущую тему */
+#autopodbor-fullscreen.embedded .composer {
+  background: var(--bg2) !important;
+  border-top: 1px solid var(--line);
+}
+#autopodbor-fullscreen.embedded .composer input {
+  background: var(--bg) !important;
+  color: var(--txt) !important;
+  border-color: var(--line) !important;
+}
+#autopodbor-fullscreen.embedded .composer input::placeholder { color: var(--txt3); }
+
+/* Sec-title «Автоподбор» компактнее в этом табе */
+#scr-instruktsii .autopodbor-tab-host + .sec-title { display: none; }

@@ -808,9 +808,11 @@ body.autopodbor-open { overflow: hidden !important; }
 .ap-tab-layout {
   display: flex; flex-direction: column;
   /* var(--ap-vh) — реальная высота visualViewport (минус клавиатура на iOS),
-     ставится JS-ом в _apSyncEmbeddedViewport. Фоллбэк 100dvh. */
-  height: calc(var(--ap-vh, 100dvh) - 150px);
-  max-height: calc(var(--ap-vh, 100dvh) - 150px);
+     ставится JS-ом в _apSyncEmbeddedViewport. Фоллбэк 100dvh.
+     var(--ap-bottom-gap) — резерв снизу: 92px когда клавы нет (под dock),
+     ~4px когда клава открыта (composer прижимается к ней). */
+  height: calc(var(--ap-vh, 100dvh) - 56px - var(--ap-bottom-gap, 92px));
+  max-height: calc(var(--ap-vh, 100dvh) - 56px - var(--ap-bottom-gap, 92px));
   position: relative;
 }
 .ap-tab-fixed {

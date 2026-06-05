@@ -6379,6 +6379,11 @@ function _apSyncEmbeddedViewport() {
   const vv = window.visualViewport;
   if (!vv) return;
   document.documentElement.style.setProperty('--ap-vh', vv.height + 'px');
+  // Когда клавиатура открыта (vv.height сильно меньше layout) — composer
+  // прижимаем вплотную к ней (--ap-bottom-gap ≈ 0). Когда закрыта — резервируем
+  // место под dock (~88px). Это даёт «адаптивное прижатие».
+  const keyboardOpen = (window.innerHeight - vv.height) > 100;
+  document.documentElement.style.setProperty('--ap-bottom-gap', keyboardOpen ? '4px' : '92px');
 }
 function _apBindEmbeddedViewport() {
   if (!window.visualViewport || window._apEmbBound) return;

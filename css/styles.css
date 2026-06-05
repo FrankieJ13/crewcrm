@@ -8560,29 +8560,29 @@ body.fluent .vac-cell        { color: #111; }
 /* Дожим Поиск — статистика по базе (яркие чипы с градиентом) */
 .ds-stats { margin-bottom: 16px; }
 .ds-chips {
-  display: flex; flex-wrap: wrap; gap: 10px;
+  display: flex; flex-wrap: wrap; gap: 8px;
 }
 .ds-chip {
-  display: inline-flex; align-items: center; gap: 10px;
-  padding: 9px 16px;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px;
   border-radius: 999px;
-  font-family: 'Unbounded', sans-serif;
+  font-family: 'Golos Text', sans-serif;
   color: #1a1a1a;
   border: 0;
   white-space: nowrap;
   line-height: 1.1;
-  box-shadow: 0 2px 8px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.25);
+  box-shadow: 0 1px 4px rgba(0,0,0,.10), inset 0 1px 0 rgba(255,255,255,.22);
 }
 .ds-chip-lbl {
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .02em;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 .ds-chip-val {
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Golos Text', sans-serif;
   font-weight: 700;
-  font-size: 14px;
-  letter-spacing: .04em;
+  font-size: 12px;
+  letter-spacing: 0;
 }
 /* ВСЕГО — фирменный нейтральный градиент (не сравнивается с городами) */
 .ds-chip-total {

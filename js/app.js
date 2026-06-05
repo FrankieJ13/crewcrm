@@ -12104,6 +12104,9 @@ async function loadDozhimSearchData(force = false) {
     const range = encodeURIComponent(`${DOZHIM_SEARCH.SHEET_NAME}!${DOZHIM_SEARCH.RANGE}`);
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${DOZHIM_SEARCH.SHEET_ID}/values/${range}?valueRenderOption=FORMATTED_VALUE`;
     const r = await fetch(url, { headers: await authHeaders() });
+    if (r.status === 403 || r.status === 404) {
+      throw new Error('Запросите доступ к базе данных');
+    }
     if (!r.ok) throw new Error('dozhim-search load: HTTP ' + r.status);
     const data = await r.json();
     const rows = (data.values || []).slice(1).map(row => ({
@@ -12143,6 +12146,9 @@ async function loadDozhimLogStats(force = false) {
     const range = encodeURIComponent(`${DOZHIM_SEARCH.LOG_SHEET_NAME}!${DOZHIM_SEARCH.LOG_RANGE}`);
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${DOZHIM_SEARCH.SHEET_ID}/values/${range}?valueRenderOption=FORMATTED_VALUE`;
     const r = await fetch(url, { headers: await authHeaders() });
+    if (r.status === 403 || r.status === 404) {
+      throw new Error('Запросите доступ к базе данных');
+    }
     if (!r.ok) throw new Error('logs: HTTP ' + r.status);
     const data = await r.json();
     const all = data.values || [];
@@ -12223,7 +12229,13 @@ function renderDozhimSearchTab() {
     if (sEl) _renderDozhimStats(sEl, _dozhimLogCache);
   }).catch(e => {
     const sEl = document.getElementById('ds-stats');
-    if (sEl) sEl.innerHTML = `<div class="ds-stats-err">Не удалось загрузить статистику: ${escapeHtml(e.message || 'ошибка')}</div>`;
+    if (!sEl) return;
+    const msg = String(e.message || 'ошибка');
+    // Если это access-error — показываем чистое сообщение без префикса.
+    const isAccess = /доступ/i.test(msg);
+    sEl.innerHTML = isAccess
+      ? `<div class="ds-stats-err">${escapeHtml(msg)}</div>`
+      : `<div class="ds-stats-err">Не удалось загрузить статистику: ${escapeHtml(msg)}</div>`;
   });
   // Данные клиентов прогреваем (поиск пройдёт мгновенно по кешу)
   loadDozhimSearchData().catch(() => {});

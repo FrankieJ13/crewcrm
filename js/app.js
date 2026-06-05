@@ -4152,9 +4152,13 @@ function renderOtchet() {
 
   const vis800sum  = mgrRows.reduce((s,r) => s + num(r[1]), 0) + num(kot[1]);
   const vis1200sum = mgrRows.reduce((s,r) => s + num(r[2]), 0) + num(kot[2]);
-  // Total visits = сумма m.vis по всем менеджерам отдела (включая Котёл).
-  // row[7] хранит s.vis (без фильтра по категориям) — корректно соответствует хронологии.
-  const allVis     = mgrRows.reduce((s,r) => s + num(r[7]), 0) + (kotelStats.vis || 0);
+  // Total visits — chronology total (включая котёл, не-плановых менеджеров
+  // и draft-строки). Это совпадает с тем, что показывает CEO dashboard и
+  // персональная страница; раньше суммировалось через m.vis от buildCrmStats
+  // (строгий фильтр) и получалось меньше.
+  const allVis = (typeof getVisitsByDayAll === 'function')
+    ? getVisitsByDayAll(false).reduce((a, b) => a + b, 0)
+    : mgrRows.reduce((s,r) => s + num(r[7]), 0) + (kotelStats.vis || 0);
   const planTotal  = mgrRows.reduce((s,r) => s + num(r[3]), 0);
 
   const mo  = parseInt(currentSuffix.slice(0,2));
@@ -4281,7 +4285,12 @@ function renderOtchet() {
       });
     // Если dNames пустой — берём всех у кого есть визиты в d_vizity
     const dNamesEff = dNames.length > 0 ? dNames : Object.keys(dStats).map(nl => dStats[nl].name);
-    const dAllVis   = dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.vis800||0)+(st.vis1000||0);},0);
+    // Итог визитов — chronology (включая котёл и не-плановых). Раньше
+    // суммировали vis800+vis1000 только по dNamesEff (PLAN-менеджерам),
+    // и число не совпадало с CEO dashboard где chronology total.
+    const dAllVis = (typeof getVisitsByDayAll === 'function')
+      ? getVisitsByDayAll(true).reduce((a, b) => a + b, 0)
+      : dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.vis800||0)+(st.vis1000||0);},0);
     const dPlan     = dNamesEff.reduce((s,n)=>{const v=dPlanM[n.toLowerCase()]||0; return s+v;},0);
     const dSalesPl  = dNamesEff.reduce((s,n)=>{const v=dSalesM2[n.toLowerCase()]||0; return s+v;},0);
     const dSalesFact= dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.kred800||0)+(st.nal800||0)+(st.obmen800||0)+(st.kred1000||0)+(st.nal1000||0);},0);
@@ -11763,7 +11772,12 @@ function renderRating() {
   managers = managers.filter(m => m.vis > 0 || m.plan > 0);
   if (!managers.length) managers = allManagers;
   const total    = managers.length;
-  const totalVis  = managers.reduce((s, m) => s + m.vis, 0);
+  // Итоговое число визитов считаем chronology'ем — включает котёл и
+  // менеджеров вне ПЛАН. Раньше суммировалось по managers из ПЛАН,
+  // и итог в Лидерах был меньше чем на CEO dashboard / личной странице.
+  const totalVis = (typeof getVisitsByDayAll === 'function')
+    ? getVisitsByDayAll(dept === 'dozhim').reduce((a, b) => a + b, 0)
+    : managers.reduce((s, m) => s + m.vis, 0);
   const totalPlan = managers.reduce((s, m) => s + m.plan, 0);
   const avgProg   = total > 0 ? Math.round(managers.reduce((s,m) => s+m.progNum,0)/total) : 0;
   const maxProg   = total > 0 ? Math.max(...managers.map(m => m.progNum)) : 1;

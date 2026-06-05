@@ -6294,8 +6294,9 @@ function renderAutopodborTab() {
       </div>
     `;
   }
-  // Хост для embedded чата (узел #autopodbor-fullscreen перенесётся сюда в initAutopodborTab)
-  return `<div class="sec-title">Автоподбор</div><div id="autopodbor-tab-host" class="autopodbor-tab-host"></div>`;
+  // Хост для embedded чата (узел #autopodbor-fullscreen рендерится position:fixed
+  // между хедером и dock, sec-title не показываем — у чата своя шапка)
+  return `<div id="autopodbor-tab-host" class="autopodbor-tab-host"></div>`;
 }
 
 function initAutopodborTab() {

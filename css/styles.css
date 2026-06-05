@@ -1639,12 +1639,7 @@ body.tiffany .gate-card {
    используем flex order чтобы поставить его после линии. */
 .otchet-sec-title { gap: 10px; }
 .otchet-sec-title::after { order: 1; }
-.otchet-sec-title .rating-toggle-pill {
-  order: 2;
-  font-size: 9px;
-  padding: 4px 10px;
-  border-width: 1.5px;
-}
+.otchet-sec-title .rating-toggle-pill { order: 2; }
 .loader {
   display:flex; flex-direction:column; align-items:center;
   justify-content:center; gap:12px; padding:60px 20px;
@@ -2335,13 +2330,8 @@ body.light .inner-base-path { stroke:rgba(0,0,0,0.08); }
   display: flex; justify-content: flex-end;
   margin: 8px 0 4px;
 }
-/* Компактный размер pill в Доход и Визитах — как в KPI/Отчёт */
-.dohod-dept-hdr .rating-toggle-pill,
-.vt-toolbar .rating-toggle-pill {
-  font-size: 9px;
-  padding: 4px 10px;
-  border-width: 1.5px;
-}
+/* Размер pill везде единый — как на странице Лидеры (default rating-toggle-pill).
+   Раньше в Доход/Визиты/KPI были compact-overrides (9px / 4×10), убрали. */
 .zp-banner .zl { font-size:10px; color:var(--txt2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px }
 .zp-banner .zv {
   font-family:'Unbounded',sans-serif;

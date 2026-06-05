@@ -27,8 +27,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&family=Exo+2:wght@200;300;700&family=JetBrains+Mono:wght@300;400&family=Oswald:wght@400;700&display=swap" rel="stylesheet"/>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<link rel="stylesheet" href="./css/styles.css?v=199"/>
-<link rel="stylesheet" href="./css/autopodbor.css?v=199"/>
+<link rel="stylesheet" href="./css/styles.css?v=200"/>
+<link rel="stylesheet" href="./css/autopodbor.css?v=200"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -747,6 +747,7 @@
         <div class="ds-title">Дожим — поиск клиента</div>
       </div>
       <div class="ds-body">
+        <div id="ds-stats" class="ds-stats" aria-label="Статистика по базе"></div>
         <form class="ds-form" onsubmit="event.preventDefault(); doDozhimSearch();">
           <input id="ds-input" type="tel" inputmode="tel" placeholder="Введите номер в любом формате" autocomplete="off"/>
           <button class="ds-search-btn" type="submit">Найти</button>
@@ -973,7 +974,7 @@
   </div>
 </div>
 
-<script src="./js/app.js?v=199"></script>
+<script src="./js/app.js?v=200"></script>
 <!-- Затемнение фона при открытом popup напоминаний -->
 <div class="rem-backdrop" id="rem-backdrop" onclick="closeRemPanel()"></div>
 
@@ -1004,9 +1005,9 @@
     </form>
   </div>
 </div>
-<script src="./js/autopodbor-config.js?v=199"></script>
-<script src="./js/autopodbor-dictionary.js?v=199"></script>
-<script src="./js/autopodbor-chat.js?v=199"></script>
+<script src="./js/autopodbor-config.js?v=200"></script>
+<script src="./js/autopodbor-dictionary.js?v=200"></script>
+<script src="./js/autopodbor-chat.js?v=200"></script>
 
 <!-- Модалка профиля менеджера (открывается с рейтинга) -->
 <div id="profile-modal-overlay" class="profile-modal-overlay" onclick="if(event.target===this)closeProfileModal()">

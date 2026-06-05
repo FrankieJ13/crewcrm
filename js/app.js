@@ -12081,11 +12081,15 @@ function dockFaq(tab) {
 const DOZHIM_SEARCH = {
   SHEET_ID: '1V5NLYtpknpyuR-LkBQSmcMDbuogxhEub-zfHyAIw_8w',
   SHEET_NAME: 'ДОЖИМ КЛИЕНТЫ',
+  LOG_SHEET_NAME: 'Логи',
   RANGE: 'A:D', // Phone, Date, City, Comment
+  LOG_RANGE: 'A:M', // Date, Total, 11 городов
 };
 let _dozhimSearchCache = null;     // массив строк {phone,date,city,comment}
 let _dozhimSearchPromise = null;
 let _dozhimSearchLoadedAt = 0;
+let _dozhimLogCache = null;        // { updatedAt, total, cities: [{name,count}] }
+let _dozhimLogPromise = null;
 const DOZHIM_SEARCH_TTL_MS = 5 * 60 * 1000; // 5 минут
 
 async function loadDozhimSearchData(force = false) {
@@ -12126,6 +12130,68 @@ function _normalizePhone(value) {
   return '+' + digits;
 }
 
+// Грузит последнюю строку листа «Логи» — самое свежее состояние базы.
+// Структура: A=Дата обновления, B=Всего строк, C..M=города (11 шт).
+async function loadDozhimLogStats(force = false) {
+  if (_dozhimLogCache && !force) return _dozhimLogCache;
+  if (_dozhimLogPromise && !force) return _dozhimLogPromise;
+  _dozhimLogPromise = (async () => {
+    const range = encodeURIComponent(`${DOZHIM_SEARCH.LOG_SHEET_NAME}!${DOZHIM_SEARCH.LOG_RANGE}`);
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${DOZHIM_SEARCH.SHEET_ID}/values/${range}?valueRenderOption=FORMATTED_VALUE`;
+    const r = await fetch(url, { headers: await authHeaders() });
+    if (!r.ok) throw new Error('logs: HTTP ' + r.status);
+    const data = await r.json();
+    const all = data.values || [];
+    if (all.length < 2) return null;
+    const header = all[0];               // ['Дата...', 'Всего строк', 'Тюмень', ...]
+    const last   = all[all.length - 1];  // последняя запись
+    const parseNum = v => parseInt(String(v||'0').replace(/[^\d]/g,'')) || 0;
+    const cityNames = header.slice(2);   // имена городов
+    const cityValues = last.slice(2);    // значения городов
+    const cities = cityNames.map((name, i) => ({
+      name: String(name || '').trim(),
+      count: parseNum(cityValues[i]),
+    })).filter(c => c.name);
+    _dozhimLogCache = {
+      updatedAt: String(last[0] || '').trim(),
+      total: parseNum(last[1]),
+      cities,
+    };
+    _dozhimLogPromise = null;
+    return _dozhimLogCache;
+  })().catch(e => { _dozhimLogPromise = null; throw e; });
+  return _dozhimLogPromise;
+}
+
+// HSL-градиент от light-red (min) к light-green (max) для chip-фонов.
+// Возвращает CSS color string. ВСЕГО рендерим серым отдельно.
+function _dozhimChipColor(value, min, max) {
+  if (max <= min) return 'hsl(60, 70%, 85%)';
+  const t = (value - min) / (max - min); // 0..1
+  const hue = Math.round(t * 120);        // 0=red → 120=green
+  return `hsl(${hue}, 70%, 82%)`;
+}
+
+function _renderDozhimStats(container, log) {
+  if (!container) return;
+  if (!log) { container.innerHTML = ''; return; }
+  const counts = log.cities.map(c => c.count);
+  const min = Math.min(...counts);
+  const max = Math.max(...counts);
+  const chips = [
+    `<span class="ds-chip ds-chip-total" title="Всего записей в базе">
+       <b class="ds-chip-lbl">ВСЕГО</b><b class="ds-chip-val">${log.total.toLocaleString('ru')}</b>
+     </span>`,
+    ...log.cities.map(c => `
+      <span class="ds-chip" style="background:${_dozhimChipColor(c.count, min, max)}" title="${escapeHtml(c.name)}: ${c.count}">
+        <b class="ds-chip-lbl">${escapeHtml(c.name)}</b><b class="ds-chip-val">${c.count.toLocaleString('ru')}</b>
+      </span>
+    `),
+  ].join('');
+  const upd = log.updatedAt ? `<div class="ds-stats-meta">обновлено: ${escapeHtml(log.updatedAt)}</div>` : '';
+  container.innerHTML = `<div class="ds-chips">${chips}</div>${upd}`;
+}
+
 async function openDozhimSearch() {
   const el = document.getElementById('dozhim-search-fullscreen');
   if (!el) return;
@@ -12134,7 +12200,12 @@ async function openDozhimSearch() {
   document.body.style.overflow = 'hidden';
   const input = document.getElementById('ds-input');
   if (input) setTimeout(() => input.focus(), 150);
-  // Прогреваем данные в фоне (если ещё не загружены)
+  const statsEl = document.getElementById('ds-stats');
+  if (statsEl) statsEl.innerHTML = '<div class="ds-stats-loading">Загружаю статистику…</div>';
+  // Параллельно: статистика по логам + сами данные клиентов
+  loadDozhimLogStats().then(log => _renderDozhimStats(statsEl, log)).catch(e => {
+    if (statsEl) statsEl.innerHTML = `<div class="ds-stats-err">Не удалось загрузить статистику: ${escapeHtml(e.message || 'ошибка')}</div>`;
+  });
   loadDozhimSearchData().catch(e => {
     const st = document.getElementById('ds-status');
     if (st) st.innerHTML = `<div class="ds-status-err">Не удалось загрузить базу: ${escapeHtml(e.message || 'ошибка')}</div>`;

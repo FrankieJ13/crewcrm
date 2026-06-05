@@ -8556,3 +8556,41 @@ body.fluent .vac-cell        { color: #111; }
 .ds-card-row:first-of-type { border-top: 0; }
 .ds-k { color: var(--txt2); }
 .ds-v { color: var(--txt); word-break: break-word; }
+
+/* Дожим Поиск — статистика по базе (мини-чипы) */
+.ds-stats { margin-bottom: 12px; }
+.ds-chips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.ds-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-family: 'Golos Text', sans-serif;
+  color: #1a1a1a;
+  border: 1px solid rgba(0,0,0,.08);
+  white-space: nowrap;
+  line-height: 1.2;
+}
+.ds-chip-lbl { font-weight: 600; opacity: .85; }
+.ds-chip-val { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 12px; }
+.ds-chip-total {
+  background: rgba(160, 160, 160, .35);
+  color: var(--txt);
+  border-color: var(--line);
+}
+.ds-stats-meta {
+  font-size: 10px; color: var(--txt3);
+  margin-top: 6px; padding-left: 2px;
+}
+.ds-stats-loading { font-size: 11px; color: var(--txt3); }
+.ds-stats-err     { font-size: 11px; color: var(--red); font-weight: 600; }
+/* В тёмных темах чипы всё равно остаются с тёмным текстом (фон-пастель) */
+body.dark .ds-chip-total,
+body.cosmic .ds-chip-total,
+body.fluent .ds-chip-total {
+  background: rgba(255,255,255,.12);
+  color: var(--txt);
+  border-color: rgba(255,255,255,.14);
+}

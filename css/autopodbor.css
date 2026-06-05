@@ -849,7 +849,7 @@ body.autopodbor-open { overflow: hidden !important; }
 
 #autopodbor-fullscreen.embedded .chat-shell {
   display: grid !important;
-  grid-template-rows: auto minmax(0, 1fr) auto !important;
+  grid-template-rows: minmax(0, 1fr) auto !important;
   width: 100% !important;
   max-width: none !important;
   height: 100% !important;
@@ -875,27 +875,9 @@ body.autopodbor-open { overflow: hidden !important; }
   border-color: var(--line);
 }
 
-#autopodbor-fullscreen.embedded .chat-header {
-  position: static !important;
-  background: var(--bg3) !important;
-  color: var(--txt) !important;
-  flex-shrink: 0;
-}
 #autopodbor-fullscreen.embedded .composer {
   position: static !important;
   flex-shrink: 0;
-}
-
-#autopodbor-fullscreen.embedded .chat-header h1 { color: var(--txt); }
-#autopodbor-fullscreen.embedded .chat-header { align-items: center !important; }
-/* Логотип Crystal Motors — через mask-image, цвет = акцент темы */
-.cm-logo {
-  display: block;
-  width: 130px; height: 40px;
-  background-color: var(--acc);
-  -webkit-mask: url('../logos/crystal-motors.svg') no-repeat left center / contain;
-          mask: url('../logos/crystal-motors.svg') no-repeat left center / contain;
-  margin-bottom: 4px;
 }
 
 /* Чип "Всего авто" в шапке таба — белый текст всегда */

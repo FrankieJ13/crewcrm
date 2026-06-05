@@ -6308,6 +6308,25 @@ function initAutopodborTab() {
   fs.classList.add('open', 'embedded');
   fs.setAttribute('aria-hidden', 'false');
   try { if (typeof window.cm66Init === 'function') window.cm66Init(); } catch(e) { console.warn('cm66Init failed', e); }
+  // iOS PWA: при focus в input iOS сдвигает весь viewport вверх (с фикс-
+  // хедером в т.ч.). Перебиваем scroll обратно в 0 через таймауты — iOS
+  // делает свой авто-скролл с задержкой при появлении клавиатуры.
+  const inp = document.getElementById('chatInput');
+  if (inp && !inp._apFocusBound) {
+    inp._apFocusBound = true;
+    inp.addEventListener('focus', () => {
+      const mainEl = document.querySelector('main');
+      const reset = () => {
+        try {
+          window.scrollTo(0, 0);
+          document.documentElement.scrollTop = 0;
+          document.body.scrollTop = 0;
+          if (mainEl) mainEl.scrollTop = 0;
+        } catch(_) {}
+      };
+      [60, 200, 400, 700].forEach(d => setTimeout(reset, d));
+    });
+  }
 }
 
 function _apReturnToBody() {

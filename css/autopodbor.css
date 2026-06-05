@@ -859,8 +859,14 @@ body.autopodbor-open { overflow: hidden !important; }
 }
 
 #autopodbor-fullscreen.embedded .chat-header {
+  position: static !important;
   background: var(--bg3) !important;
   color: var(--txt) !important;
+  flex-shrink: 0;
+}
+#autopodbor-fullscreen.embedded .composer {
+  position: static !important;
+  flex-shrink: 0;
 }
 
 #autopodbor-fullscreen.embedded .chat-header h1 { color: var(--txt); }

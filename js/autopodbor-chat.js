@@ -903,7 +903,7 @@ window.cm66Init = function () {
           <div class="meta">${escapeHtml(summary || "детали не указаны")}</div>
           ${renderSpecs(specs)}
         </div>
-        ${image ? `<a class="result-card-image-link" href="${escapeHtml(url)}" target="_blank" rel="noopener" aria-label="Открыть ${escapeHtml(displayTitle)}" data-car-title="${escapeHtml(displayTitle)}" data-car-url="${escapeHtml(url)}"><img class="result-card-image" src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy"></a>` : ""}
+        ${image ? `<a class="result-card-image-link" href="javascript:void(0)" role="button" aria-label="Открыть ${escapeHtml(displayTitle)}" data-car-title="${escapeHtml(displayTitle)}" data-car-url="${escapeHtml(url)}"><img class="result-card-image" src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy"></a>` : ""}
       </article>
     `;
   }
@@ -1310,23 +1310,28 @@ window.cm66Init = function () {
 
     const carLink = event.target.closest(".result-card-image-link[data-car-url]");
     if (!carLink) return;
-    const url = carLink.dataset.carUrl || carLink.href;
+    const url = carLink.dataset.carUrl;
+    if (!url) return;
+    event.preventDefault();
+    event.stopPropagation();
     recordSearchLog({
       type: "click",
       clicked_title: carLink.dataset.carTitle || "",
       clicked_url: url
     });
-    // В PWA / standalone (mac CrystalCRM, iOS PWA) target="_blank" по
-    // умолчанию открывается во встроенном «мини-браузере» приложения.
-    // Принудительно открываем во внешнем дефолтном браузере через
-    // window.open с noopener — это сигнализирует системе что ссылка
-    // должна обрабатываться внешним приложением.
-    event.preventDefault();
-    const win = window.open(url, "_blank", "noopener,noreferrer");
-    if (!win) {
-      // popup-блок (редко) — fallback на обычный переход
-      try { window.location.href = url; } catch (_) {}
-    }
+    // PWA / standalone (mac, WPF) — встроенный webview перехватывает <a>
+    // и target="_blank", открывая ссылку ВНУТРИ приложения поверх UI.
+    // Используем единственный канал — программный <a target="_blank">,
+    // созданный во время клика (handle through synthetic anchor click).
+    // Без href в исходной разметке (javascript:void(0)) дабл-навигации нет.
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 100);
   });
 
   loadSettings();

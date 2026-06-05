@@ -4637,14 +4637,19 @@ body.light .rating-card-bar-track { background: rgba(0,0,0,.06); }
 }
 .rating-card-stat {
   background: var(--bg3); border: 1px solid var(--line);
-  border-radius: 6px; padding: 3px 8px;
+  border-radius: 6px; padding: 3px 12px;
   font-size: 10px; color: var(--txt2);
   display: inline-flex; align-items: center; gap: 4px;
-  flex: 0 0 auto;          /* размер строго под контент */
+  flex: 0 0 auto;
   white-space: nowrap;
+  transform: skewX(-12deg);            /* скошенная форма как у dozhim-чипов */
 }
-.rating-card-stat b { white-space: nowrap; }
-.rating-card-stat b { color: var(--txt); font-weight: 700; }
+.rating-card-stat > span,
+.rating-card-stat > b {
+  display: inline-block;
+  transform: skewX(12deg);             /* контр-скос → текст прямой */
+}
+.rating-card-stat b { white-space: nowrap; color: var(--txt); font-weight: 700; }
 .rating-card-stat.highlight b { color: var(--acc); }
 /* ===== END RATING SCREEN ===== */
 

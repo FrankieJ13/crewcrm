@@ -6294,9 +6294,24 @@ function renderAutopodborTab() {
       </div>
     `;
   }
-  // Хост для embedded чата (узел #autopodbor-fullscreen рендерится position:fixed
-  // между хедером и dock, sec-title не показываем — у чата своя шапка)
-  return `<div id="autopodbor-tab-host" class="autopodbor-tab-host"></div>`;
+  // Шапка-плашка с label «АВТОПОДБОР» + чип «ВСЕГО АВТО N» (как в Дожим Поиск),
+  // ниже — host куда встраивается chat-shell
+  return `
+    <div class="ap-tab-layout">
+      <div class="ap-tab-fixed">
+        <div class="ap-header-row">
+          <div class="sec-title" style="margin:0">Автоподбор</div>
+          <div class="ds-chip" id="ap-total-chip" style="background:linear-gradient(135deg,#3b3b3b,#1c1c1c);">
+            <span class="ds-chip-inner">
+              <span class="ds-chip-lbl">Всего авто</span>
+              <span class="ds-chip-val" id="ap-total-val">…</span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div id="autopodbor-tab-host" class="autopodbor-tab-host"></div>
+    </div>
+  `;
 }
 
 function initAutopodborTab() {
@@ -6308,6 +6323,25 @@ function initAutopodborTab() {
   fs.classList.add('open', 'embedded');
   fs.setAttribute('aria-hidden', 'false');
   try { if (typeof window.cm66Init === 'function') window.cm66Init(); } catch(e) { console.warn('cm66Init failed', e); }
+  // Подтягиваем число авто из cm66 — извлекаем из #catalogStatus (формат
+  // "44 240 авто · 05.06" или подобное). Поллим 8 раз до 6 сек после init.
+  const chipVal = document.getElementById('ap-total-val');
+  if (chipVal) {
+    let tries = 0;
+    const upd = () => {
+      const txt = document.getElementById('catalogStatus')?.textContent || '';
+      const m = txt.match(/[\d\s]+\d/);
+      if (m) {
+        chipVal.textContent = m[0].trim();
+        return true;
+      }
+      return false;
+    };
+    const tick = setInterval(() => {
+      if (upd() || ++tries > 8) clearInterval(tick);
+    }, 750);
+    upd();
+  }
   // iOS PWA: при focus в input iOS сдвигает весь viewport вверх (с фикс-
   // хедером в т.ч.). Перебиваем scroll обратно в 0 через таймауты — iOS
   // делает свой авто-скролл с задержкой при появлении клавиатуры.

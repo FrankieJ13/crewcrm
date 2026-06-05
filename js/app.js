@@ -2857,6 +2857,11 @@ function reloadCurrent() {
   // При ручном обновлении сбрасываем кеш rates.json — на случай если
   // CEO только что обновил ставки и закоммитил.
   _ratesJson = null; _ratesJsonPromise = null;
+  // Если открыт таб Автоподбор — перезагружаем каталог CM66
+  if (S.faqTab === 'autopodbor' && typeof window.cm66Reload === 'function') {
+    try { window.cm66Reload(); toast('Каталог авто обновляется…','s'); } catch(_){}
+    return;
+  }
   // Страница Трофеев — сбрасываем кеш каталога и фактов выдачи
   if (document.getElementById('scr-trophies')?.classList.contains('on')) {
     apiCacheInvalidate('TrophyAwards');

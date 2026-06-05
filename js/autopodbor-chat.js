@@ -1,6 +1,14 @@
 // CM66 BDCARS — встроено в дашборд. IIFE → lazy init, window.cm66Init()
-window.cm66Init = function () {
-  if (window._cm66Inited) return;
+window.cm66Init = function (force) {
+  if (window._cm66Inited && !force) {
+    // Каталог не загрузился прошлый раз? — пробуем перезагрузить, не пересоздавая обвязку
+    try {
+      if (typeof window.cm66Reload === 'function' && window.cm66HasCars && !window.cm66HasCars()) {
+        window.cm66Reload();
+      }
+    } catch (e) { console.warn('cm66 retry failed', e); }
+    return;
+  }
   window._cm66Inited = true;
   const config = window.AUTO_ASSISTANT_CONFIG || {};
   const dictionary = window.AUTO_ASSISTANT_DICTIONARY || {};
@@ -1462,4 +1470,8 @@ window.cm66Init = function () {
   loadSettings();
   restoreHistory();
   loadCars();
+
+  // Экспонируем helpers для внешнего ретрая, если каталог не загрузился
+  window.cm66Reload = () => { try { loadCars(); } catch (e) { console.warn('cm66Reload', e); } };
+  window.cm66HasCars = () => state.cars.length > 0;
 };

@@ -4434,6 +4434,11 @@ body.neo-dark .income-col .ic-lbl {
   white-space: nowrap;
 }
 .rating-toggle-pill:active { opacity: .7; }
+/* Контекстный размер пилюли в плотных тулбарах/хедерах */
+#scr-dohod { padding: 0; }
+.vt-toolbar .rating-toggle-pill,
+.dohod-dept-hdr .rating-toggle-pill,
+.sec-title.otchet-sec-title .rating-toggle-pill { padding: 3px 10px; }
 /* Стрелка в тумблере */
 .rating-toggle-arrow {
   display: inline-flex; align-items: center;

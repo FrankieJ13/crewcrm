@@ -6345,9 +6345,12 @@ function initAutopodborTab() {
   };
   const tick = setInterval(() => { if (upd() || ++tries > 12) clearInterval(tick); }, 500);
   upd();
-  // iOS PWA: при focus в input iOS сдвигает весь viewport вверх (с фикс-
-  // хедером в т.ч.). Перебиваем scroll обратно в 0 через таймауты — iOS
-  // делает свой авто-скролл с задержкой при появлении клавиатуры.
+  // iOS PWA keyboard fix: вместо борьбы с iOS auto-scroll — синхронизируем
+  // высоту таба с visualViewport (которая сжимается под клавиатуру). Хедер
+  // остаётся фиксированным сверху, чат сжимается, composer над клавой.
+  _apBindEmbeddedViewport();
+  _apSyncEmbeddedViewport();
+  // Доп. подстраховка — перебиваем iOS-скролл в (0,0) при focus
   const inp = document.getElementById('chatInput');
   if (inp && !inp._apFocusBound) {
     inp._apFocusBound = true;
@@ -6359,11 +6362,29 @@ function initAutopodborTab() {
           document.documentElement.scrollTop = 0;
           document.body.scrollTop = 0;
           if (mainEl) mainEl.scrollTop = 0;
+          _apSyncEmbeddedViewport();
         } catch(_) {}
       };
-      [60, 200, 400, 700].forEach(d => setTimeout(reset, d));
+      [50, 120, 250, 450, 700, 1000].forEach(d => setTimeout(reset, d));
+    });
+    inp.addEventListener('blur', () => {
+      [50, 200, 500].forEach(d => setTimeout(_apSyncEmbeddedViewport, d));
     });
   }
+}
+
+function _apSyncEmbeddedViewport() {
+  const fs = document.getElementById('autopodbor-fullscreen');
+  if (!fs || !fs.classList.contains('embedded')) return;
+  const vv = window.visualViewport;
+  if (!vv) return;
+  document.documentElement.style.setProperty('--ap-vh', vv.height + 'px');
+}
+function _apBindEmbeddedViewport() {
+  if (!window.visualViewport || window._apEmbBound) return;
+  window._apEmbBound = true;
+  window.visualViewport.addEventListener('resize', _apSyncEmbeddedViewport);
+  window.visualViewport.addEventListener('scroll', _apSyncEmbeddedViewport);
 }
 
 function _apReturnToBody() {
@@ -6372,6 +6393,8 @@ function _apReturnToBody() {
   if (fs.parentNode !== document.body) document.body.appendChild(fs);
   fs.classList.remove('open', 'embedded');
   fs.setAttribute('aria-hidden', 'true');
+  // Сбрасываем --ap-vh, чтобы не влиял на остальной UI
+  document.documentElement.style.removeProperty('--ap-vh');
 }
 
 function toggleInstr(id) {

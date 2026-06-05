@@ -12155,16 +12155,21 @@ async function loadDozhimLogStats(force = false) {
     if (all.length < 2) return null;
     const header = all[0];               // ['Дата...', 'Всего строк', 'Тюмень', ...]
     const last   = all[all.length - 1];  // последняя запись
+    const prev   = all.length > 2 ? all[all.length - 2] : null;
     const parseNum = v => parseInt(String(v||'0').replace(/[^\d]/g,'')) || 0;
-    const cityNames = header.slice(2);   // имена городов
-    const cityValues = last.slice(2);    // значения городов
+    const cityNames = header.slice(2);
+    const cityValues = last.slice(2);
     const cities = cityNames.map((name, i) => ({
       name: String(name || '').trim(),
       count: parseNum(cityValues[i]),
     })).filter(c => c.name);
+    const total = parseNum(last[1]);
+    const prevTotal = prev ? parseNum(prev[1]) : null;
+    const diff = (prevTotal != null) ? (total - prevTotal) : null;
     _dozhimLogCache = {
       updatedAt: String(last[0] || '').trim(),
-      total: parseNum(last[1]),
+      total,
+      diff,
       cities,
     };
     _dozhimLogPromise = null;
@@ -12197,6 +12202,16 @@ function _dozhimChipGradient(value, min, max) {
   return `linear-gradient(135deg, rgb(${r1},${g1},${b1}), rgb(${r2},${g2},${b2}))`;
 }
 
+// Склонение «контакт/контакта/контактов»
+function _pluralContacts(n) {
+  const v = Math.abs(n) % 100;
+  const v1 = v % 10;
+  if (v > 10 && v < 20) return 'контактов';
+  if (v1 > 1 && v1 < 5) return 'контакта';
+  if (v1 === 1) return 'контакт';
+  return 'контактов';
+}
+
 function _renderDozhimStats(container, log) {
   if (!container) return;
   if (!log) { container.innerHTML = ''; return; }
@@ -12205,16 +12220,25 @@ function _renderDozhimStats(container, log) {
   const max = Math.max(...counts);
   const chips = [
     `<span class="ds-chip ds-chip-total" title="Всего записей в базе">
-       <span class="ds-chip-lbl">ВСЕГО</span><span class="ds-chip-val">${log.total.toLocaleString('ru')}</span>
+       <span class="ds-chip-inner"><span class="ds-chip-lbl">ВСЕГО</span><span class="ds-chip-val">${log.total.toLocaleString('ru')}</span></span>
      </span>`,
     ...log.cities.map(c => `
       <span class="ds-chip" style="background:${_dozhimChipGradient(c.count, min, max)}" title="${escapeHtml(c.name)}: ${c.count}">
-        <span class="ds-chip-lbl">${escapeHtml(c.name)}</span><span class="ds-chip-val">${c.count.toLocaleString('ru')}</span>
+        <span class="ds-chip-inner"><span class="ds-chip-lbl">${escapeHtml(c.name)}</span><span class="ds-chip-val">${c.count.toLocaleString('ru')}</span></span>
       </span>
     `),
   ].join('');
-  const upd = log.updatedAt ? `<div class="ds-stats-meta">обновлено: ${escapeHtml(log.updatedAt)}</div>` : '';
-  container.innerHTML = `<div class="ds-chips">${chips}</div>${upd}`;
+  let updHtml = '';
+  if (log.updatedAt) {
+    let diffStr = '';
+    if (log.diff != null && log.diff !== 0) {
+      const sign = log.diff > 0 ? '+' : '−';
+      const abs = Math.abs(log.diff);
+      diffStr = ` <span class="ds-stats-diff ${log.diff > 0 ? 'ds-stats-diff-pos' : 'ds-stats-diff-neg'}">(${sign} ${abs.toLocaleString('ru')} ${log.diff > 0 ? 'новых ' : ''}${_pluralContacts(abs)})</span>`;
+    }
+    updHtml = `<div class="ds-stats-meta">обновлено: ${escapeHtml(log.updatedAt)}${diffStr}</div>`;
+  }
+  container.innerHTML = `<div class="ds-chips">${chips}</div>${updHtml}`;
 }
 
 // Состояние таба «Дожим поиск» (как Mango — рендерится по S.faqTab).
@@ -12257,16 +12281,20 @@ function renderDozhimSearchTab() {
   })();
 
   return `
-    <div class="sec-title">Поиск клиентов в базе дожима</div>
-    <div id="ds-stats" class="ds-stats"><div class="ds-stats-loading">Загружаю статистику…</div></div>
-    <div class="sec-title">Введи номер клиента</div>
-    <div class="pl-wrap">
-      <div class="pl-inp-row">
-        <input class="pl-input" id="ds-inp" type="text" placeholder="+7 (___) ___-__-__" autocomplete="off" value="${escapeAttr(_dozhimSearchQuery)}"/>
-        <button class="pl-btn" id="ds-btn">Найти</button>
+    <div class="ds-tab-layout">
+      <div class="ds-tab-fixed">
+        <div class="sec-title">Поиск клиентов в базе дожима</div>
+        <div id="ds-stats" class="ds-stats"><div class="ds-stats-loading">Загружаю статистику…</div></div>
+        <div class="sec-title">Введите телефон клиента</div>
+        <div class="pl-wrap">
+          <div class="pl-inp-row">
+            <input class="pl-input" id="ds-inp" type="text" placeholder="+7 (___) ___-__-__" autocomplete="off" value="${escapeAttr(_dozhimSearchQuery)}"/>
+            <button class="pl-btn" id="ds-btn">Найти</button>
+          </div>
+        </div>
       </div>
+      <div id="ds-result-wrap" class="ds-tab-scroll">${resultsHtml}</div>
     </div>
-    <div id="ds-result-wrap">${resultsHtml}</div>
   `;
 }
 

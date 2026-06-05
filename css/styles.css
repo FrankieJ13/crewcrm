@@ -8557,32 +8557,57 @@ body.fluent .vac-cell        { color: #111; }
 .ds-k { color: var(--txt2); }
 .ds-v { color: var(--txt); word-break: break-word; }
 
-/* Дожим Поиск — статистика по базе (яркие чипы с градиентом) */
-.ds-stats { margin-bottom: 16px; }
+/* Дожим Поиск — фикс-шапка с поиском, скролл только в результатах */
+.ds-tab-layout {
+  display: flex; flex-direction: column;
+  /* Растягиваемся в высоту main-контейнера */
+  min-height: calc(100vh - 130px);
+  position: relative;
+}
+.ds-tab-fixed {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  background: var(--bg);
+  padding-bottom: 8px;
+  /* Лёгкая тень снизу когда есть скролл */
+  box-shadow: 0 4px 8px -8px rgba(0,0,0,.18);
+}
+.ds-tab-scroll {
+  flex: 1;
+}
+
+/* Чипы статистики — скошенные параллелограммы как в reference */
+.ds-stats { margin-bottom: 14px; }
 .ds-chips {
   display: flex; flex-wrap: wrap; gap: 8px;
 }
 .ds-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 11px;
-  border-radius: 999px;
-  font-family: 'Golos Text', sans-serif;
-  color: #1a1a1a;
+  display: inline-flex; align-items: center;
+  padding: 0;
+  border-radius: 6px;
   border: 0;
   white-space: nowrap;
   line-height: 1.1;
-  box-shadow: 0 1px 4px rgba(0,0,0,.10), inset 0 1px 0 rgba(255,255,255,.22);
+  box-shadow: 0 1px 4px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.22);
+  transform: skewX(-12deg);   /* скос → параллелограмм */
+  overflow: hidden;
+}
+.ds-chip .ds-chip-inner {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 13px;
+  transform: skewX(12deg);     /* контр-скос → текст прямой */
+  font-family: 'Golos Text', sans-serif;
+  color: #1a1a1a;
 }
 .ds-chip-lbl {
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0;
 }
 .ds-chip-val {
   font-family: 'Golos Text', sans-serif;
   font-weight: 700;
   font-size: 12px;
-  letter-spacing: 0;
 }
 /* ВСЕГО — фирменный нейтральный градиент (не сравнивается с городами) */
 .ds-chip-total {
@@ -8591,10 +8616,13 @@ body.fluent .vac-cell        { color: #111; }
   text-shadow: 0 1px 1px rgba(0,0,0,.2);
 }
 .ds-stats-meta {
-  font-size: 10px; color: var(--txt3);
-  margin-top: 10px; padding-left: 4px;
+  font-size: 11px; color: var(--txt2);
+  margin-top: 10px; padding-left: 2px;
   font-family: 'Golos Text', sans-serif;
 }
+.ds-stats-diff       { font-weight: 600; }
+.ds-stats-diff-pos   { color: var(--grn); }
+.ds-stats-diff-neg   { color: var(--red); }
 .ds-stats-loading { font-size: 12px; color: var(--txt3); padding: 4px 0; }
 .ds-stats-err     { font-size: 12px; color: var(--red); font-weight: 600; }
 /* Зазор между «Найдено: N» и карточками результатов */

@@ -6329,23 +6329,27 @@ function initAutopodborTab() {
   try { if (typeof window.cm66Init === 'function') window.cm66Init(); } catch(e) { console.warn('cm66Init failed', e); }
   // catalogStatus формат "DD.MM HH:MM · N авто" (или "N авто"). Извлекаем
   // дату и число → в чип формата "DD.MM HH:MM · N". catalogStatus скрыт.
+  // Используем MutationObserver — чип обновляется при каждом reload.
   const chipVal = document.getElementById('ap-total-val');
   const statusEl = document.getElementById('catalogStatus');
-  let tries = 0, done = false;
   const upd = () => {
-    if (done || !statusEl || !chipVal) return done;
+    if (!statusEl || !chipVal) return;
     const txt = statusEl.textContent || '';
     const numMatch = txt.match(/(\d[\d\s]*)\s*авто/);
     const dateMatch = txt.match(/\d{2}\.\d{2}\s+\d{2}:\d{2}/);
     if (numMatch) {
       const num = numMatch[1].trim();
       chipVal.textContent = dateMatch ? `${dateMatch[0]} · ${num}` : num;
-      done = true;
-      return true;
+    } else if (/Загрузка/.test(txt)) {
+      chipVal.textContent = '…';
+    } else if (/не загружен|ошибка/i.test(txt)) {
+      chipVal.textContent = 'ошибка';
     }
-    return false;
   };
-  const tick = setInterval(() => { if (upd() || ++tries > 12) clearInterval(tick); }, 500);
+  if (statusEl && !statusEl._apObs) {
+    statusEl._apObs = new MutationObserver(upd);
+    statusEl._apObs.observe(statusEl, { childList: true, characterData: true, subtree: true });
+  }
   upd();
   // iOS PWA keyboard fix: вместо борьбы с iOS auto-scroll — синхронизируем
   // высоту таба с visualViewport (которая сжимается под клавиатуру). Хедер

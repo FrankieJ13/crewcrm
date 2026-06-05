@@ -1472,6 +1472,20 @@ window.cm66Init = function (force) {
   loadCars();
 
   // Экспонируем helpers для внешнего ретрая, если каталог не загрузился
-  window.cm66Reload = () => { try { loadCars(); } catch (e) { console.warn('cm66Reload', e); } };
+  window.cm66Reload = async () => {
+    try {
+      // Чистим прежние сообщения об ошибке загрузки
+      if (els.window) {
+        const errors = els.window.querySelectorAll('.message.assistant');
+        errors.forEach(m => {
+          if (/CSV не загружен|не удалось загрузить|пока не загружена/i.test(m.textContent || '')) m.remove();
+        });
+      }
+      await loadCars();
+      if (state.cars.length) {
+        addMessage('assistant', '<p>Каталог обновлён. Готов к поиску.</p>');
+      }
+    } catch (e) { console.warn('cm66Reload', e); }
+  };
   window.cm66HasCars = () => state.cars.length > 0;
 };

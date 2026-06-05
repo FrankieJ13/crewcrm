@@ -820,6 +820,9 @@ body.autopodbor-open { overflow: hidden !important; }
   background: var(--bg);
   padding-bottom: 8px;
   box-shadow: 0 4px 8px -8px rgba(0,0,0,.18);
+  /* Тянем фон от края до края (компенсируем padding .w = 10px) */
+  margin: 0 -10px;
+  padding-left: 10px; padding-right: 10px;
 }
 .ap-header-row {
   display: flex; align-items: center; justify-content: space-between;

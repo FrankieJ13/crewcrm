@@ -12306,6 +12306,22 @@ function initDozhimSearchTab() {
   if (typeof applyPhoneMask === 'function') {
     try { applyPhoneMask(inp); } catch(_){}
   }
+  // iOS PWA: при focus в input iOS сдвигает весь viewport вверх (с фикс-
+  // хедером в т.ч.), чтобы инпут был над клавиатурой. С нашим sticky-
+  // layout это смотрится сломанно — шапка уезжает. Форсируем body+main
+  // scroll обратно в 0 через несколько таймаутов, чтобы перебить iOS.
+  inp.addEventListener('focus', () => {
+    const mainEl = document.querySelector('main');
+    const reset = () => {
+      try {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        if (mainEl) mainEl.scrollTop = 0;
+      } catch(_) {}
+    };
+    [60, 200, 400, 700].forEach(d => setTimeout(reset, d));
+  });
   const submit = async () => {
     const raw = inp.value;
     _dozhimSearchQuery = raw;

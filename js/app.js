@@ -6301,7 +6301,7 @@ function renderAutopodborTab() {
       <div class="ap-tab-fixed">
         <div class="ap-header-row">
           <div class="sec-title" style="margin:0">Автоподбор</div>
-          <div class="ds-chip" id="ap-total-chip" style="background:linear-gradient(135deg,#3b3b3b,#1c1c1c);">
+          <div class="ds-chip ap-chip" id="ap-total-chip">
             <span class="ds-chip-inner">
               <span class="ds-chip-lbl">Всего авто</span>
               <span class="ds-chip-val" id="ap-total-val">…</span>
@@ -6323,25 +6323,28 @@ function initAutopodborTab() {
   fs.classList.add('open', 'embedded');
   fs.setAttribute('aria-hidden', 'false');
   try { if (typeof window.cm66Init === 'function') window.cm66Init(); } catch(e) { console.warn('cm66Init failed', e); }
-  // Подтягиваем число авто из cm66 — извлекаем из #catalogStatus (формат
-  // "44 240 авто · 05.06" или подобное). Поллим 8 раз до 6 сек после init.
+  // catalogStatus формат "DD.MM HH:MM · N авто" (или просто "N авто").
+  // Извлекаем число → в чип «Всего авто», дату → в catalogStatus как
+  // «UPDATE · DD.MM HH:MM». Поллим до загрузки (≈6 сек).
   const chipVal = document.getElementById('ap-total-val');
-  if (chipVal) {
-    let tries = 0;
-    const upd = () => {
-      const txt = document.getElementById('catalogStatus')?.textContent || '';
-      const m = txt.match(/[\d\s]+\d/);
-      if (m) {
-        chipVal.textContent = m[0].trim();
-        return true;
-      }
-      return false;
-    };
-    const tick = setInterval(() => {
-      if (upd() || ++tries > 8) clearInterval(tick);
-    }, 750);
-    upd();
-  }
+  const statusEl = document.getElementById('catalogStatus');
+  let tries = 0, done = false;
+  const upd = () => {
+    if (done || !statusEl) return done;
+    const txt = statusEl.textContent || '';
+    if (/UPDATE/.test(txt)) return true; // уже наш формат
+    const numMatch = txt.match(/(\d[\d\s]*)\s*авто/);
+    const dateMatch = txt.match(/\d{2}\.\d{2}\s+\d{2}:\d{2}/);
+    if (numMatch) {
+      if (chipVal) chipVal.textContent = numMatch[1].trim();
+      statusEl.textContent = dateMatch ? `UPDATE · ${dateMatch[0]}` : `UPDATE · — `;
+      done = true;
+      return true;
+    }
+    return false;
+  };
+  const tick = setInterval(() => { if (upd() || ++tries > 12) clearInterval(tick); }, 500);
+  upd();
   // iOS PWA: при focus в input iOS сдвигает весь viewport вверх (с фикс-
   // хедером в т.ч.). Перебиваем scroll обратно в 0 через таймауты — iOS
   // делает свой авто-скролл с задержкой при появлении клавиатуры.

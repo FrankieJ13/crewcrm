@@ -887,25 +887,15 @@ body.autopodbor-open { overflow: hidden !important; }
 }
 
 #autopodbor-fullscreen.embedded .chat-header h1 { color: var(--txt); }
-/* «CRYSTAL MOTORS» подпись — синий бренд */
-#autopodbor-fullscreen.embedded .chat-header p { color: #3376cd !important; }
-/* Шапка чата — выравниваем чип UPDATE к правому краю */
-#autopodbor-fullscreen.embedded .chat-header {
-  justify-content: space-between !important;
-  align-items: center !important;
-}
-/* catalogStatus делаем как мини-чип "UPDATE · 05.06 12:36" */
-#autopodbor-fullscreen.embedded .chat-header span#catalogStatus {
-  display: inline-flex; align-items: center;
-  margin-left: auto;
-  padding: 5px 11px;
-  border-radius: 7px;
-  background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
-  border: 1px solid var(--line);
-  color: var(--txt);
-  font-size: 11px; font-weight: 700;
-  letter-spacing: .04em;
-  white-space: nowrap;
+#autopodbor-fullscreen.embedded .chat-header { align-items: center !important; }
+/* Логотип Crystal Motors — через mask-image, цвет = акцент темы */
+.cm-logo {
+  display: block;
+  width: 130px; height: 40px;
+  background-color: var(--acc);
+  -webkit-mask: url('../logos/crystal-motors.svg') no-repeat left center / contain;
+          mask: url('../logos/crystal-motors.svg') no-repeat left center / contain;
+  margin-bottom: 4px;
 }
 
 /* Чип "Всего авто" в шапке таба — белый текст всегда */

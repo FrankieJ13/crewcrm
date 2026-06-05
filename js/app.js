@@ -6303,7 +6303,6 @@ function renderAutopodborTab() {
           <div class="sec-title" style="margin:0">Автоподбор</div>
           <div class="ds-chip ap-chip" id="ap-total-chip">
             <span class="ds-chip-inner">
-              <span class="ds-chip-lbl">Всего авто</span>
               <span class="ds-chip-val" id="ap-total-val">…</span>
             </span>
           </div>
@@ -6323,21 +6322,19 @@ function initAutopodborTab() {
   fs.classList.add('open', 'embedded');
   fs.setAttribute('aria-hidden', 'false');
   try { if (typeof window.cm66Init === 'function') window.cm66Init(); } catch(e) { console.warn('cm66Init failed', e); }
-  // catalogStatus формат "DD.MM HH:MM · N авто" (или просто "N авто").
-  // Извлекаем число → в чип «Всего авто», дату → в catalogStatus как
-  // «UPDATE · DD.MM HH:MM». Поллим до загрузки (≈6 сек).
+  // catalogStatus формат "DD.MM HH:MM · N авто" (или "N авто"). Извлекаем
+  // дату и число → в чип формата "DD.MM HH:MM · N". catalogStatus скрыт.
   const chipVal = document.getElementById('ap-total-val');
   const statusEl = document.getElementById('catalogStatus');
   let tries = 0, done = false;
   const upd = () => {
-    if (done || !statusEl) return done;
+    if (done || !statusEl || !chipVal) return done;
     const txt = statusEl.textContent || '';
-    if (/UPDATE/.test(txt)) return true; // уже наш формат
     const numMatch = txt.match(/(\d[\d\s]*)\s*авто/);
     const dateMatch = txt.match(/\d{2}\.\d{2}\s+\d{2}:\d{2}/);
     if (numMatch) {
-      if (chipVal) chipVal.textContent = numMatch[1].trim();
-      statusEl.textContent = dateMatch ? `UPDATE · ${dateMatch[0]}` : `UPDATE · — `;
+      const num = numMatch[1].trim();
+      chipVal.textContent = dateMatch ? `${dateMatch[0]} · ${num}` : num;
       done = true;
       return true;
     }

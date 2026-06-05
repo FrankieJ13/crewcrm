@@ -12167,13 +12167,28 @@ async function loadDozhimLogStats(force = false) {
   return _dozhimLogPromise;
 }
 
-// HSL-градиент от light-red (min) к light-green (max) для chip-фонов.
-// Возвращает CSS color string. ВСЕГО рендерим серым отдельно.
-function _dozhimChipColor(value, min, max) {
-  if (max <= min) return 'hsl(60, 70%, 85%)';
-  const t = (value - min) / (max - min); // 0..1
-  const hue = Math.round(t * 120);        // 0=red → 120=green
-  return `hsl(${hue}, 70%, 82%)`;
+// Яркий линейный градиент по t (0..1): pink → orange → lime → green.
+// Возвращает CSS background для chip.
+function _dozhimChipGradient(value, min, max) {
+  if (max <= min) return 'linear-gradient(135deg, #f9b4d6, #f1c4e4)';
+  const t = (value - min) / (max - min);
+  // Опорные цвета через равные интервалы
+  const stops = [
+    { t: 0.00, c1: [255,  77, 107], c2: [255, 122, 142] }, // ярко-розовый
+    { t: 0.33, c1: [255, 154,  61], c2: [255, 194, 102] }, // оранжевый
+    { t: 0.66, c1: [168, 196,  55], c2: [197, 224,  99] }, // лайм
+    { t: 1.00, c1: [ 58, 205, 146], c2: [ 95, 217, 168] }, // зелёный
+  ];
+  let seg = stops.length - 1;
+  for (let i = 1; i < stops.length; i++) {
+    if (t <= stops[i].t) { seg = i; break; }
+  }
+  const a = stops[seg - 1], b = stops[seg];
+  const k = (t - a.t) / (b.t - a.t);
+  const lerp = (p, q) => p.map((v, i) => Math.round(v + (q[i] - v) * k));
+  const [r1, g1, b1] = lerp(a.c1, b.c1);
+  const [r2, g2, b2] = lerp(a.c2, b.c2);
+  return `linear-gradient(135deg, rgb(${r1},${g1},${b1}), rgb(${r2},${g2},${b2}))`;
 }
 
 function _renderDozhimStats(container, log) {
@@ -12184,11 +12199,11 @@ function _renderDozhimStats(container, log) {
   const max = Math.max(...counts);
   const chips = [
     `<span class="ds-chip ds-chip-total" title="Всего записей в базе">
-       <b class="ds-chip-lbl">ВСЕГО</b><b class="ds-chip-val">${log.total.toLocaleString('ru')}</b>
+       <span class="ds-chip-lbl">ВСЕГО</span><span class="ds-chip-val">${log.total.toLocaleString('ru')}</span>
      </span>`,
     ...log.cities.map(c => `
-      <span class="ds-chip" style="background:${_dozhimChipColor(c.count, min, max)}" title="${escapeHtml(c.name)}: ${c.count}">
-        <b class="ds-chip-lbl">${escapeHtml(c.name)}</b><b class="ds-chip-val">${c.count.toLocaleString('ru')}</b>
+      <span class="ds-chip" style="background:${_dozhimChipGradient(c.count, min, max)}" title="${escapeHtml(c.name)}: ${c.count}">
+        <span class="ds-chip-lbl">${escapeHtml(c.name)}</span><span class="ds-chip-val">${c.count.toLocaleString('ru')}</span>
       </span>
     `),
   ].join('');

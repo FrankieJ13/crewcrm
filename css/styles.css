@@ -8557,40 +8557,50 @@ body.fluent .vac-cell        { color: #111; }
 .ds-k { color: var(--txt2); }
 .ds-v { color: var(--txt); word-break: break-word; }
 
-/* Дожим Поиск — статистика по базе (мини-чипы) */
-.ds-stats { margin-bottom: 12px; }
+/* Дожим Поиск — статистика по базе (яркие чипы с градиентом) */
+.ds-stats { margin-bottom: 16px; }
 .ds-chips {
-  display: flex; flex-wrap: wrap; gap: 6px;
+  display: flex; flex-wrap: wrap; gap: 10px;
 }
 .ds-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 10px;
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 9px 16px;
   border-radius: 999px;
-  font-size: 11px;
-  font-family: 'Golos Text', sans-serif;
+  font-family: 'Unbounded', sans-serif;
   color: #1a1a1a;
-  border: 1px solid rgba(0,0,0,.08);
+  border: 0;
   white-space: nowrap;
-  line-height: 1.2;
+  line-height: 1.1;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.25);
 }
-.ds-chip-lbl { font-weight: 600; opacity: .85; }
-.ds-chip-val { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 12px; }
+.ds-chip-lbl {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+.ds-chip-val {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: .04em;
+}
+/* ВСЕГО — фирменный нейтральный градиент (не сравнивается с городами) */
 .ds-chip-total {
-  background: rgba(160, 160, 160, .35);
-  color: var(--txt);
-  border-color: var(--line);
+  background: linear-gradient(135deg, #6b7280, #9ca3af);
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0,0,0,.2);
 }
 .ds-stats-meta {
   font-size: 10px; color: var(--txt3);
-  margin-top: 6px; padding-left: 2px;
+  margin-top: 10px; padding-left: 4px;
+  font-family: 'Golos Text', sans-serif;
 }
-.ds-stats-loading { font-size: 11px; color: var(--txt3); }
-.ds-stats-err     { font-size: 11px; color: var(--red); font-weight: 600; }
-/* В тёмных темах чипы всё равно остаются с тёмным текстом (фон-пастель) */
-body.dark .ds-chip-total,
-body.cosmic .ds-chip-total,
-body.fluent .ds-chip-total {
-  background: rgba(255,255,255,.12);
-  color: var(--txt);
-  border-color: rgba(255,255,255,.14);
-}
+.ds-stats-loading { font-size: 12px; color: var(--txt3); padding: 4px 0; }
+.ds-stats-err     { font-size: 12px; color: var(--red); font-weight: 600; }
+/* Зазор между «Найдено: N» и карточками результатов */
+#ds-result-wrap { margin-top: 18px; }
+#ds-result-wrap .ds-results { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+#ds-result-wrap .ds-status-ok      { color: var(--grn); font-weight: 600; font-size: 13px; padding: 4px 0; }
+#ds-result-wrap .ds-status-empty   { color: var(--org); font-weight: 600; font-size: 13px; padding: 4px 0; }
+#ds-result-wrap .ds-status-err     { color: var(--red); font-weight: 600; font-size: 13px; padding: 4px 0; }
+#ds-result-wrap .ds-status-loading { color: var(--txt3); font-size: 12px; padding: 4px 0; }

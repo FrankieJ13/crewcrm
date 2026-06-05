@@ -27,8 +27,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&family=Exo+2:wght@200;300;700&family=JetBrains+Mono:wght@300;400&family=Oswald:wght@400;700&display=swap" rel="stylesheet"/>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<link rel="stylesheet" href="./css/styles.css?v=198"/>
-<link rel="stylesheet" href="./css/autopodbor.css?v=198"/>
+<link rel="stylesheet" href="./css/styles.css?v=199"/>
+<link rel="stylesheet" href="./css/autopodbor.css?v=199"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -734,6 +734,25 @@
         <button class="dock-popup-btn" onclick="dockFaq('autopodbor')">
           <span class="dock-popup-dot" style="background:#a855f7"></span>АВТОПОДБОР
         </button>
+        <button class="dock-popup-btn" onclick="dockFaq('dozhim-search')">
+          <span class="dock-popup-dot" style="background:#ec4899"></span>ДОЖИМ ПОИСК
+        </button>
+      </div>
+    </div>
+
+    <!-- Дожим Поиск — фуллскрин-модалка с поиском клиентов по телефону -->
+    <div id="dozhim-search-fullscreen" class="dozhim-search-fullscreen" aria-hidden="true">
+      <div class="ds-header">
+        <button class="ds-close-btn" onclick="closeDozhimSearch()" aria-label="Закрыть">✕</button>
+        <div class="ds-title">Дожим — поиск клиента</div>
+      </div>
+      <div class="ds-body">
+        <form class="ds-form" onsubmit="event.preventDefault(); doDozhimSearch();">
+          <input id="ds-input" type="tel" inputmode="tel" placeholder="Введите номер в любом формате" autocomplete="off"/>
+          <button class="ds-search-btn" type="submit">Найти</button>
+        </form>
+        <div id="ds-status" class="ds-status"></div>
+        <div id="ds-results" class="ds-results"></div>
       </div>
     </div>
 
@@ -954,7 +973,7 @@
   </div>
 </div>
 
-<script src="./js/app.js?v=198"></script>
+<script src="./js/app.js?v=199"></script>
 <!-- Затемнение фона при открытом popup напоминаний -->
 <div class="rem-backdrop" id="rem-backdrop" onclick="closeRemPanel()"></div>
 
@@ -985,9 +1004,9 @@
     </form>
   </div>
 </div>
-<script src="./js/autopodbor-config.js?v=198"></script>
-<script src="./js/autopodbor-dictionary.js?v=198"></script>
-<script src="./js/autopodbor-chat.js?v=198"></script>
+<script src="./js/autopodbor-config.js?v=199"></script>
+<script src="./js/autopodbor-dictionary.js?v=199"></script>
+<script src="./js/autopodbor-chat.js?v=199"></script>
 
 <!-- Модалка профиля менеджера (открывается с рейтинга) -->
 <div id="profile-modal-overlay" class="profile-modal-overlay" onclick="if(event.target===this)closeProfileModal()">

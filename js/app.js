@@ -12066,11 +12066,122 @@ function dockFaq(tab) {
   closeAllDockPopups();
   // АВТОПОДБОР — открывается отдельной фуллскрин-модалкой, не как таб
   if (tab === 'autopodbor') { openAutopodbor(); return; }
+  // ДОЖИМ ПОИСК — тоже отдельная фуллскрин-модалка
+  if (tab === 'dozhim-search') { openDozhimSearch(); return; }
   S.faqTab = tab;
   updateFirebasePage();
   goTab('instruktsii');
   dockSetActive('instruktsii');
 }
+
+/* ════════════════════ ДОЖИМ ПОИСК ════════════════════
+ * Поиск клиента по телефону в листе «ДОЖИМ КЛИЕНТЫ» внешней таблицы
+ * (агрегат из GAS-скрипта). Lazy-load + клиентский поиск с нормализацией.
+ */
+const DOZHIM_SEARCH = {
+  SHEET_ID: '1V5NLYtpknpyuR-LkBQSmcMDbuogxhEub-zfHyAIw_8w',
+  SHEET_NAME: 'ДОЖИМ КЛИЕНТЫ',
+  RANGE: 'A:D', // Phone, Date, City, Comment
+};
+let _dozhimSearchCache = null;     // массив строк {phone,date,city,comment}
+let _dozhimSearchPromise = null;
+let _dozhimSearchLoadedAt = 0;
+const DOZHIM_SEARCH_TTL_MS = 5 * 60 * 1000; // 5 минут
+
+async function loadDozhimSearchData(force = false) {
+  const fresh = _dozhimSearchCache && (Date.now() - _dozhimSearchLoadedAt) < DOZHIM_SEARCH_TTL_MS;
+  if (fresh && !force) return _dozhimSearchCache;
+  if (_dozhimSearchPromise && !force) return _dozhimSearchPromise;
+  _dozhimSearchPromise = (async () => {
+    const range = encodeURIComponent(`${DOZHIM_SEARCH.SHEET_NAME}!${DOZHIM_SEARCH.RANGE}`);
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${DOZHIM_SEARCH.SHEET_ID}/values/${range}?valueRenderOption=FORMATTED_VALUE`;
+    const r = await fetch(url, { headers: await authHeaders() });
+    if (!r.ok) throw new Error('dozhim-search load: HTTP ' + r.status);
+    const data = await r.json();
+    const rows = (data.values || []).slice(1).map(row => ({
+      phone:   String(row[0] || '').trim(),
+      date:    String(row[1] || '').trim(),
+      city:    String(row[2] || '').trim(),
+      comment: String(row[3] || '').trim(),
+    })).filter(r => r.phone);
+    _dozhimSearchCache = rows;
+    _dozhimSearchLoadedAt = Date.now();
+    _dozhimSearchPromise = null;
+    return rows;
+  })().catch(e => {
+    _dozhimSearchPromise = null;
+    throw e;
+  });
+  return _dozhimSearchPromise;
+}
+
+// Нормализация телефона — как в GAS-скрипте: digits only, 10 → +7XXX,
+// 11 начинающихся с 8 → +7XXX, остальные с правильной длиной → +XXX.
+function _normalizePhone(value) {
+  let digits = String(value || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.length === 10) digits = '7' + digits;
+  else if (digits.length === 11 && digits.startsWith('8')) digits = '7' + digits.slice(1);
+  if (digits.length < 10 || digits.length > 15) return '';
+  return '+' + digits;
+}
+
+async function openDozhimSearch() {
+  const el = document.getElementById('dozhim-search-fullscreen');
+  if (!el) return;
+  el.classList.add('open');
+  el.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  const input = document.getElementById('ds-input');
+  if (input) setTimeout(() => input.focus(), 150);
+  // Прогреваем данные в фоне (если ещё не загружены)
+  loadDozhimSearchData().catch(e => {
+    const st = document.getElementById('ds-status');
+    if (st) st.innerHTML = `<div class="ds-status-err">Не удалось загрузить базу: ${escapeHtml(e.message || 'ошибка')}</div>`;
+  });
+}
+function closeDozhimSearch() {
+  const el = document.getElementById('dozhim-search-fullscreen');
+  if (!el) return;
+  el.classList.remove('open');
+  el.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+async function doDozhimSearch() {
+  const input  = document.getElementById('ds-input');
+  const status = document.getElementById('ds-status');
+  const results = document.getElementById('ds-results');
+  if (!input || !status || !results) return;
+  const query = _normalizePhone(input.value);
+  results.innerHTML = '';
+  if (!query) {
+    status.innerHTML = '<div class="ds-status-err">Введите корректный номер (от 10 цифр)</div>';
+    return;
+  }
+  status.innerHTML = '<div class="ds-status-loading">Ищу…</div>';
+  try {
+    const data = await loadDozhimSearchData();
+    const found = data.filter(r => _normalizePhone(r.phone) === query);
+    if (!found.length) {
+      status.innerHTML = '<div class="ds-status-empty">Ничего не найдено</div>';
+      return;
+    }
+    status.innerHTML = `<div class="ds-status-ok">Найдено: <b>${found.length}</b></div>`;
+    results.innerHTML = found.map((r, i) => `
+      <div class="ds-card">
+        <div class="ds-card-hdr">#${i + 1} · ${escapeHtml(r.city || '—')}</div>
+        <div class="ds-card-row"><span class="ds-k">Телефон</span><span class="ds-v">${escapeHtml(r.phone)}</span></div>
+        <div class="ds-card-row"><span class="ds-k">Дата</span><span class="ds-v">${escapeHtml(r.date || '—')}</span></div>
+        <div class="ds-card-row"><span class="ds-k">Комментарий</span><span class="ds-v">${escapeHtml(r.comment || '—')}</span></div>
+      </div>
+    `).join('');
+  } catch (e) {
+    status.innerHTML = `<div class="ds-status-err">Ошибка: ${escapeHtml(e.message || String(e))}</div>`;
+  }
+}
+window.openDozhimSearch  = openDozhimSearch;
+window.closeDozhimSearch = closeDozhimSearch;
+window.doDozhimSearch    = doDozhimSearch;
 
 // Подстраиваем высоту/смещение оверлея под visualViewport — нужно
 // чтобы на iOS PWA при появлении клавиатуры шелл сжимался, composer

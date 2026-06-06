@@ -11932,12 +11932,9 @@ function renderRating() {
       }
     </button>` : `<div style="font-family:'Unbounded',sans-serif;font-size:9px;font-weight:800;letter-spacing:.1em;color:var(--txt3)">${dept === 'dozhim' ? 'ДОЖИМ' : 'CRM'}</div>`;
 
-  // Топ-3 для подиума: те же что в текущей логике (прогноз ≥ 100%, первые 3 по прогнозу).
-  // Если менее 3 проходят — добиваем оставшимися лидерами (без подсветки top).
+  // Топ-3 для подиума — ТОЛЬКО с прогноз ≥ 100% (та же логика что у медалей-карточек).
+  // Если меньше 3 проходят — оставшиеся места пустые (не заполняем).
   const topManagers = managers.filter(m => m.progNum >= 100).slice(0, 3);
-  while (topManagers.length < 3 && topManagers.length < managers.length) {
-    topManagers.push(managers[topManagers.length]);
-  }
   function _podiumAvatar(name, progNum) {
     const id = (typeof getMgrCrmId === 'function') ? getMgrCrmId(name) : null;
     if (!id) {

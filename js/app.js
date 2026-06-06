@@ -13645,10 +13645,28 @@ function _profileMessengerBtns(tg, max) {
     : `<div class="profile-msg-empty">мессенджеры не указаны</div>`;
 }
 
+function _formatDOB(raw) {
+  if (raw == null || raw === '') return '';
+  // Если число — Excel serial (дни от 1899-12-30). Конвертируем в DD.MM.YYYY.
+  if (typeof raw === 'number' || /^\d{4,}$/.test(String(raw).trim())) {
+    const n = typeof raw === 'number' ? raw : parseFloat(raw);
+    if (Number.isFinite(n) && n > 1000) {
+      const ms = (n - 25569) * 86400000;
+      const d  = new Date(ms);
+      if (!isNaN(d.getTime())) {
+        const dd = String(d.getUTCDate()).padStart(2, '0');
+        const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const yyyy = d.getUTCFullYear();
+        return `${dd}.${mm}.${yyyy}`;
+      }
+    }
+  }
+  return String(raw).trim();
+}
 function _profileBuildSectionsHtml(matched, opts = {}) {
   const statsPanelId = opts.statsPanelId || 'profile-stats-panel';
   const row = _profileGetUserRow(matched.name) || [];
-  const dob   = (row[5] || '').toString().trim();
+  const dob   = _formatDOB(row[5]);
   const id    = (row[6] || '').toString().trim();
   const tg    = (row[7] || '').toString().trim();
   const max   = (row[8] || '').toString().trim();

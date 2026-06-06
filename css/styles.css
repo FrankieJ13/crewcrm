@@ -7298,14 +7298,50 @@ body.cosmic .profile-avatar-wrap::before { border-color: rgba(190,190,190,0.55);
   color: var(--txt3);
   font-style: italic;
 }
+.ps-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
 .ps-hdr-note {
   font-size: 9px;
   color: var(--txt3);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 700;
-  margin-bottom: 8px;
 }
+/* Сегмент кнопок 3 / 6 / 12 */
+.ps-period-pills {
+  display: inline-flex;
+  background: color-mix(in srgb, var(--acc) 10%, var(--bg3));
+  border: 1px solid color-mix(in srgb, var(--acc) 20%, var(--line));
+  border-radius: 999px;
+  padding: 2px;
+  gap: 2px;
+}
+.ps-period-pill {
+  border: 0; background: transparent;
+  font-family: 'Unbounded', sans-serif;
+  font-size: 10px; font-weight: 800;
+  color: var(--txt2);
+  letter-spacing: .02em;
+  min-width: 26px; padding: 4px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .18s, color .18s, transform .12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.ps-period-pill:active { transform: scale(.94); }
+.ps-period-pill:hover { color: var(--txt); }
+.ps-period-pill.active {
+  background: var(--acc);
+  color: color-mix(in srgb, var(--acc) 80%, black);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--acc) 50%, transparent);
+}
+/* Cosmic/light темы — на тёмном фоне акцента должен быть тёмный текст */
+body.cinematic .ps-period-pill.active,
+body.neo-dark  .ps-period-pill.active,
+body.dark      .ps-period-pill.active { color: #0f0f10; }
 .ps-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

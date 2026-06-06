@@ -13804,11 +13804,12 @@ function _profileTriggerIconHtml(name) {
 }
 
 /* ──── PROFILE STATS (последние 6 месяцев) ──── */
-function _profileSuffixes() {
+function _profileSuffixes(n) {
+  const count = Math.max(1, Math.min(24, n || 6));
   const list = [];
   const now = new Date();
   const MONTH_ABBR = ['ЯНВ','ФЕВ','МАР','АПР','МАЙ','ИЮН','ИЮЛ','АВГ','СЕН','ОКТ','НОЯ','ДЕК'];
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < count; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const yy = String(d.getFullYear()).slice(-2);
@@ -13817,6 +13818,14 @@ function _profileSuffixes() {
   }
   return list.reverse(); // от старого к новому
 }
+// Текущий выбранный период статистики по панелям (panelId → period)
+const _profilePeriodByPanel = new Map();
+function profileSetStatsPeriod(panelId, period, nameAttr) {
+  _profilePeriodByPanel.set(panelId, period);
+  const name = (nameAttr || '').replace(/&#39;/g, "'");
+  _profileLoadAndRenderStats(name, panelId, period);
+}
+window.profileSetStatsPeriod = profileSetStatsPeriod;
 
 function _profileAggMonth(rows, nameLow) {
   const r = { vis:0, kred:0, nal:0, kom:0, otkaz:0, fssp:0 };
@@ -13844,11 +13853,14 @@ function _profileAggMonth(rows, nameLow) {
   return r;
 }
 
-async function _profileLoadAndRenderStats(name, panelId) {
-  const panel = document.getElementById(panelId || 'profile-stats-panel');
+async function _profileLoadAndRenderStats(name, panelId, periodParam) {
+  const pid = panelId || 'profile-stats-panel';
+  const panel = document.getElementById(pid);
   if (!panel) return;
   const nameLow = String(name||'').toLowerCase().trim();
-  const months = _profileSuffixes();
+  const period  = periodParam || _profilePeriodByPanel.get(pid) || 6;
+  _profilePeriodByPanel.set(pid, period);
+  const months = _profileSuffixes(period);
 
   // Параллельно тянем по два листа на каждый месяц, ошибки → пустой массив
   const monthly = await Promise.all(months.map(async m => {
@@ -13923,8 +13935,17 @@ async function _profileLoadAndRenderStats(name, panelId) {
       </div>`;
   }).join('');
 
+  // Сколько месяцев реально нашлось (с данными)
+  const actualMonths = monthly.filter(m => m.hasData).length;
+  const nameAttr = String(name||'').replace(/'/g,"&#39;");
+  const periodPills = [3, 6, 12].map(p => `
+    <button class="ps-period-pill${p === period ? ' active' : ''}" onclick="profileSetStatsPeriod('${pid}', ${p}, '${nameAttr}')">${p}</button>
+  `).join('');
   panel.innerHTML = `
-    <div class="ps-hdr-note">${failedCount ? `Загружено ${6-failedCount} из 6 месяцев` : 'Данные за последние 6 месяцев'}</div>
+    <div class="ps-hdr">
+      <div class="ps-hdr-note">Данные за последние ${actualMonths} ${actualMonths === 1 ? 'месяц' : (actualMonths >= 2 && actualMonths <= 4) ? 'месяца' : 'месяцев'}</div>
+      <div class="ps-period-pills">${periodPills}</div>
+    </div>
     <div class="ps-grid">${cardHtml}</div>
   `;
 }

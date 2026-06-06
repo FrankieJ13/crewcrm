@@ -8837,13 +8837,14 @@ body.fluent .vac-cell        { color: #111; }
    RATING PODIUM — топ-3 на пьедестале
    ════════════════════════════════════════════════════════════════ */
 .rating-podium {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 6px;
+  display: flex;
+  justify-content: center;
   align-items: end;
+  gap: 8px;
   padding: 10px 2px 4px;
   margin-bottom: 8px;
 }
+.rating-podium .podium-card { width: 96px; flex-shrink: 0; }
 .podium-card {
   background: var(--bg2);
   border: 1px solid var(--line);

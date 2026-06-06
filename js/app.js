@@ -8485,6 +8485,7 @@ function renderPersonal(matched) {
     <!-- ТЕКУЩИЙ KPI (без аватара в этой панели) -->
     <div class="sec-title">Текущий KPI</div>
     <div class="kpi-income-panel ceo-forecast-panel" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">
+      ${!isDozhim ? `<button class="forecast-bell" onclick="openForecastModal('${(nameLow||'').replace(/'/g,"&#39;")}', ${plan||0})" aria-label="Прогноз"><span class="forecast-bell-pulse"></span><span class="forecast-bell-ring"></span><span class="forecast-bell-mark">!</span></button>` : ''}
       <div class="ceo-forecast-body">
         <div class="ceo-speedo">
           <svg viewBox="-10 -10 220 220">
@@ -16975,3 +16976,308 @@ window.runRepeatSearchReport  = runRepeatSearchReport;
 window.repeatSearchExportXlsx = repeatSearchExportXlsx;
 window._rsSelectMonths        = _rsSelectMonths;
 window._rsBackToConfig        = _rsBackToConfig;
+
+/* ════════════════════════════════════════════════════════════════
+   FORECAST MODAL — прогноз визитов на конец месяца
+   Сценарий: аннотация → график (lightning-style drawing) → статы
+   Данные: текущий месяц + 3 прошлых месяца, агрегат по дням
+   ════════════════════════════════════════════════════════════════ */
+
+const _fcPastCache = new Map(); // sfx → vizity rows
+let _fcAnimToken = 0;
+
+function _fcSfxOffset(sfx, monthsBack) {
+  // sfx = 'MMYY'. Возвращаем suffix месяца monthsBack назад.
+  const mm = parseInt(sfx.slice(0,2));
+  const yy = 2000 + parseInt(sfx.slice(2,4));
+  const d  = new Date(yy, mm - 1 - monthsBack, 1);
+  return String(d.getMonth()+1).padStart(2,'0') + String(d.getFullYear()).slice(-2);
+}
+
+function _fcDayKey(dateStr) {
+  // Принимает "DD.MM" или "DD.MM.YYYY", возвращает число дня (1..31)
+  const m = String(dateStr||'').trim().match(/^(\d{1,2})\./);
+  return m ? parseInt(m[1]) : 0;
+}
+
+function _fcDaysInMonth(sfx) {
+  const mm = parseInt(sfx.slice(0,2));
+  const yy = 2000 + parseInt(sfx.slice(2,4));
+  return new Date(yy, mm, 0).getDate();
+}
+
+async function _fcLoadMonth(sfx) {
+  if (_fcPastCache.has(sfx)) return _fcPastCache.get(sfx);
+  try {
+    const data = await api('ВИЗИТЫ' + sfx, 'A:N');
+    _fcPastCache.set(sfx, data || []);
+    return data || [];
+  } catch(_) { _fcPastCache.set(sfx, []); return []; }
+}
+
+function _fcCumulativeByDay(vizityRows, nameLow, daysInMonth) {
+  // Возвращает массив длиной daysInMonth+1, где [i] = накопленный счёт визитов до дня i (включительно)
+  const perDay = new Array(daysInMonth + 1).fill(0);
+  if (!vizityRows || vizityRows.length < 2) return perDay;
+  const target = String(nameLow || '').toLowerCase().trim();
+  for (let i = 1; i < vizityRows.length; i++) {
+    const row = vizityRows[i];
+    if (!row || !row[8]) continue;
+    if (String(row[8]).toLowerCase().trim() !== target) continue;
+    if (typeof isCompleteVizRow === 'function' && !isCompleteVizRow(row)) continue;
+    const d = _fcDayKey(row[0]);
+    if (d < 1 || d > daysInMonth) continue;
+    perDay[d]++;
+  }
+  // Накапливаем
+  const cum = new Array(daysInMonth + 1).fill(0);
+  let acc = 0;
+  for (let i = 1; i <= daysInMonth; i++) { acc += perDay[i]; cum[i] = acc; }
+  return cum;
+}
+
+async function openForecastModal(nameLow, plan) {
+  const overlay = document.getElementById('forecast-overlay');
+  if (!overlay) return;
+  // Сброс предыдущего состояния
+  _fcAnimToken++;
+  const myToken = _fcAnimToken;
+  const annot   = document.getElementById('fc-annotation');
+  const chart   = document.getElementById('fc-chart-wrap');
+  const summary = document.getElementById('fc-summary');
+  const svg     = document.getElementById('fc-svg');
+  const stats   = document.getElementById('fc-stats');
+  const legend  = document.getElementById('fc-legend');
+  if (!annot || !chart || !svg || !stats || !legend) return;
+
+  annot.className = 'fc-stage fc-stage-annotation';
+  annot.innerHTML = '<span style="opacity:.65">Считаю прогноз…</span>';
+  chart.className = 'fc-stage fc-stage-chart';
+  svg.innerHTML = '';
+  stats.innerHTML = '';
+  stats.classList.remove('fc-show');
+  legend.innerHTML = '';
+  summary.textContent = '';
+
+  overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+
+  // Имя менеджера для отображения
+  const displayName = (typeof _mgrDisplayName === 'function') ? _mgrDisplayName(nameLow) : nameLow;
+
+  // Грузим прошлые 3 месяца параллельно с текущим
+  const sfx = currentSuffix;
+  const pastSfxs = [_fcSfxOffset(sfx, 1), _fcSfxOffset(sfx, 2), _fcSfxOffset(sfx, 3)];
+  const daysCur = _fcDaysInMonth(sfx);
+  const curRows = S.data.vizity || [];
+  const curCum  = _fcCumulativeByDay(curRows, nameLow, daysCur);
+
+  const pastData = await Promise.all(pastSfxs.map(s => _fcLoadMonth(s)));
+  if (myToken !== _fcAnimToken) return;
+  const pastCums = pastSfxs.map((s, i) => _fcCumulativeByDay(pastData[i], nameLow, _fcDaysInMonth(s)));
+
+  // Сегодняшний день (1..31) в текущем месяце
+  const now = new Date();
+  const isCurMonth = (String(now.getMonth()+1).padStart(2,'0') + String(now.getFullYear()).slice(-2)) === sfx;
+  const today = isCurMonth ? now.getDate() : daysCur;
+  const factToToday = curCum[Math.min(today, daysCur)];
+
+  // Средний темп по прошлым месяцам — нормализуем на 30 дней, чтобы корректно сравнивать
+  const normalize = (cum, days) => {
+    const out = new Array(31).fill(0);
+    for (let i = 1; i <= 30; i++) {
+      // линейная интерполяция от cum
+      const x = i / 30 * days;
+      const x0 = Math.floor(x), x1 = Math.min(days, x0 + 1);
+      const t = x - x0;
+      out[i] = cum[x0] * (1 - t) + cum[x1] * t;
+    }
+    return out;
+  };
+  const pastNorms = pastCums.map((c, i) => normalize(c, _fcDaysInMonth(pastSfxs[i])));
+  const avgNorm = new Array(31).fill(0);
+  const validPasts = pastNorms.filter(p => p[30] > 0);
+  if (validPasts.length) {
+    for (let i = 1; i <= 30; i++) {
+      let s = 0;
+      validPasts.forEach(p => s += p[i]);
+      avgNorm[i] = s / validPasts.length;
+    }
+  }
+
+  // Прогноз: линейная экстраполяция текущего темпа
+  let forecast = 0;
+  if (today > 0 && factToToday > 0) {
+    forecast = Math.round(factToToday * daysCur / today);
+  } else if (avgNorm[30] > 0) {
+    forecast = Math.round(avgNorm[30]);
+  }
+
+  // Среднее по прошлым (на конец месяца, нормализованное)
+  const avgEnd = avgNorm[30];
+  const deviationPct = avgEnd > 0 ? Math.round((forecast - avgEnd) / avgEnd * 100) : 0;
+  const planN = parseFloat(plan) || 0;
+  const planDelta = planN > 0 ? Math.round((forecast - planN) / planN * 100) : null;
+
+  // Риск:
+  let risk = 'низкий', riskCls = 'fc-grn';
+  if (planN > 0) {
+    if (forecast < planN * 0.85)      { risk = 'высокий'; riskCls = 'fc-red'; }
+    else if (forecast < planN * 0.95) { risk = 'средний'; riskCls = 'fc-org'; }
+  } else if (avgEnd > 0 && forecast < avgEnd * 0.9) { risk = 'средний'; riskCls = 'fc-org'; }
+
+  if (myToken !== _fcAnimToken) return;
+
+  // Аннотация
+  const tempo = deviationPct >= 0 ? `выше среднего на <span class="fc-annot-accent">${deviationPct}%</span>` : `ниже среднего на <span class="fc-annot-accent">${Math.abs(deviationPct)}%</span>`;
+  const fallback = !validPasts.length;
+  annot.innerHTML = fallback
+    ? `Прогноз визитов по менеджеру <span class="fc-annot-accent">${displayName}</span>: считаем на основе текущего темпа.`
+    : `Прогноз визитов по менеджеру <span class="fc-annot-accent">${displayName}</span>: текущий темп ${tempo}.`;
+  annot.classList.add('fc-show');
+
+  // Через 2с → фиксируем аннотацию вверху, разворачиваем график
+  await _fcSleep(2200);
+  if (myToken !== _fcAnimToken) return;
+  annot.classList.add('fc-fix');
+  await _fcSleep(700);
+  if (myToken !== _fcAnimToken) return;
+
+  // Рендер графика
+  chart.classList.add('fc-show');
+  summary.textContent = `${getMonthName(sfx)} · 1–${daysCur} число`;
+
+  // Координаты SVG: 400×220, padding 10/14/30/30 (top/right/bottom/left)
+  const W = 400, H = 220, padL = 32, padR = 12, padT = 12, padB = 26;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const maxY = Math.max(planN, forecast, avgEnd, ...curCum, 1) * 1.08;
+  const xAt = day => padL + (day - 1) / 29 * innerW;
+  const yAt = val => padT + innerH - (val / maxY) * innerH;
+  const pathFromCum = (cum, dStart, dEnd) => {
+    let p = '';
+    for (let d = dStart; d <= dEnd; d++) {
+      const x = xAt(d), y = yAt(cum[d] || 0);
+      p += (p ? ' L ' : 'M ') + x.toFixed(1) + ' ' + y.toFixed(1);
+    }
+    return p;
+  };
+
+  // Сетка
+  let svgInner = '';
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + i / 4 * innerH;
+    svgInner += `<line class="fc-grid" x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}"/>`;
+    const val = Math.round(maxY * (1 - i / 4));
+    svgInner += `<text class="fc-axis-label" x="${padL - 6}" y="${y + 3}" text-anchor="end">${val}</text>`;
+  }
+  // Оси X (только первое и последнее число)
+  svgInner += `<text class="fc-axis-label" x="${padL}" y="${H - padB + 14}" text-anchor="start">1</text>`;
+  svgInner += `<text class="fc-axis-label" x="${W - padR}" y="${H - padB + 14}" text-anchor="end">${daysCur}</text>`;
+  if (isCurMonth) {
+    const tx = xAt(today);
+    svgInner += `<line class="fc-today-line" x1="${tx}" y1="${padT}" x2="${tx}" y2="${padT + innerH}"/>`;
+    svgInner += `<text class="fc-axis-label" x="${tx}" y="${padT - 3}" text-anchor="middle">сегодня</text>`;
+  }
+
+  // Прошлые месяцы (фоном)
+  validPasts.forEach((_, idx) => {
+    const cum = pastNorms[idx];
+    if (!cum || cum[30] <= 0) return;
+    // ремап: индексы 1..30 → дни 1..daysCur
+    const remapped = new Array(daysCur + 1).fill(0);
+    for (let d = 1; d <= daysCur; d++) {
+      const x = d / daysCur * 30;
+      const x0 = Math.floor(x), x1 = Math.min(30, x0 + 1);
+      const t = x - x0;
+      remapped[d] = cum[x0] * (1 - t) + cum[x1] * t;
+    }
+    const p = pathFromCum(remapped, 1, daysCur);
+    svgInner += `<path class="fc-past" d="${p}"/>`;
+  });
+
+  svg.innerHTML = svgInner;
+
+  // Lightning-style анимация: ФАКТ
+  const factEnd = isCurMonth ? today : daysCur;
+  const factPath = pathFromCum(curCum, 1, Math.max(1, factEnd));
+  const factEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  factEl.setAttribute('class', 'fc-fact');
+  factEl.setAttribute('d', factPath);
+  svg.appendChild(factEl);
+  await _fcLightningDraw(factEl, 800, myToken);
+  if (myToken !== _fcAnimToken) return;
+
+  // Прогноз — продолжение линии от today до daysCur (линейная экстраполяция)
+  if (isCurMonth && today < daysCur && factToToday > 0) {
+    const forecastCum = curCum.slice();
+    for (let d = today + 1; d <= daysCur; d++) {
+      forecastCum[d] = Math.round(factToToday / today * d);
+    }
+    const fPath = pathFromCum(forecastCum, today, daysCur);
+    const fEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    fEl.setAttribute('class', 'fc-forecast');
+    fEl.setAttribute('d', fPath);
+    svg.appendChild(fEl);
+    await _fcLightningDraw(fEl, 700, myToken);
+    if (myToken !== _fcAnimToken) return;
+  }
+
+  // Легенда
+  legend.innerHTML = `
+    <span class="fc-legend-item"><span class="fc-legend-swatch" style="background:var(--acc)"></span>Факт</span>
+    ${isCurMonth && today < daysCur ? `<span class="fc-legend-item"><span class="fc-legend-swatch" style="background:var(--org)"></span>Прогноз</span>` : ''}
+    ${validPasts.length ? `<span class="fc-legend-item"><span class="fc-legend-swatch" style="background:var(--txt3);opacity:.6"></span>Прошлые мес.</span>` : ''}
+  `;
+
+  // Статы
+  const fmtPct = (v) => (v >= 0 ? '+' : '') + v + '%';
+  const devCls = deviationPct >= 0 ? 'fc-grn' : 'fc-red';
+  stats.innerHTML = `
+    <div class="fc-stat"><div class="fc-stat-lbl">Факт</div><div class="fc-stat-val">${factToToday}</div></div>
+    <div class="fc-stat"><div class="fc-stat-lbl">Прогноз</div><div class="fc-stat-val">${forecast}</div></div>
+    <div class="fc-stat"><div class="fc-stat-lbl">Отклонение от среднего</div><div class="fc-stat-val ${devCls}">${avgEnd > 0 ? fmtPct(deviationPct) : '—'}</div></div>
+    <div class="fc-stat"><div class="fc-stat-lbl">Риск${planN > 0 ? ' срыва плана' : ''}</div><div class="fc-stat-val ${riskCls}">${risk}</div></div>
+  `;
+  await _fcSleep(200);
+  if (myToken !== _fcAnimToken) return;
+  stats.classList.add('fc-show');
+}
+
+function _fcSleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function _fcLightningDraw(pathEl, totalMs, token) {
+  // Lightning-style: рисуем не плавно, а скачками — 5–7 этапов с rest-паузами
+  const len = pathEl.getTotalLength();
+  pathEl.style.strokeDasharray = String(len);
+  pathEl.style.strokeDashoffset = String(len);
+  // Триггерим reflow
+  pathEl.getBoundingClientRect();
+  const steps = [0.18, 0.34, 0.45, 0.62, 0.78, 0.89, 1.0];
+  const baseDelay = totalMs / steps.length;
+  for (let i = 0; i < steps.length; i++) {
+    if (token !== _fcAnimToken) return;
+    pathEl.style.transition = 'stroke-dashoffset 90ms cubic-bezier(.7,.0,.3,1)';
+    pathEl.style.strokeDashoffset = String(len * (1 - steps[i]));
+    await _fcSleep(baseDelay);
+  }
+  pathEl.style.transition = '';
+}
+
+function closeForecastModal() {
+  _fcAnimToken++;
+  const overlay = document.getElementById('forecast-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('open');
+  overlay.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+window.openForecastModal  = openForecastModal;
+window.closeForecastModal = closeForecastModal;
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('forecast-overlay')?.classList.contains('open')) {
+    closeForecastModal();
+  }
+});

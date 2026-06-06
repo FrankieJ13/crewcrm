@@ -8635,3 +8635,188 @@ body.fluent .vac-cell        { color: #111; }
 #ds-result-wrap .ds-status-empty   { color: var(--org); font-weight: 600; font-size: 13px; padding: 4px 0; }
 #ds-result-wrap .ds-status-err     { color: var(--red); font-weight: 600; font-size: 13px; padding: 4px 0; }
 #ds-result-wrap .ds-status-loading { color: var(--txt3); font-size: 12px; padding: 4px 0; }
+
+/* ════════════════════════════════════════════════════════════════
+   FORECAST MODAL — сценарная модалка прогноза визитов
+   ════════════════════════════════════════════════════════════════ */
+
+/* Кнопка-колокольчик "!" в углу панели */
+.forecast-bell {
+  position: absolute; top: 10px; right: 10px; z-index: 5;
+  width: 32px; height: 32px;
+  border: none; padding: 0; cursor: pointer;
+  background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.forecast-bell-mark {
+  position: relative; z-index: 3;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  background: var(--red);
+  color: #fff;
+  border-radius: 50%;
+  font-family: 'Unbounded', sans-serif;
+  font-size: 14px; font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(255,71,87,.5);
+}
+.forecast-bell-pulse, .forecast-bell-ring {
+  position: absolute; top: 50%; left: 50%; z-index: 1;
+  width: 28px; height: 28px;
+  margin: -14px 0 0 -14px;
+  border-radius: 50%;
+  background: var(--red);
+  opacity: .55;
+  animation: fcBellPulse 1.6s cubic-bezier(.2,0,.2,1) infinite;
+}
+.forecast-bell-ring {
+  animation-delay: .8s;
+  opacity: .35;
+}
+@keyframes fcBellPulse {
+  0%   { transform: scale(.6); opacity: .55; }
+  70%  { transform: scale(2.0); opacity: 0; }
+  100% { transform: scale(2.0); opacity: 0; }
+}
+.forecast-bell:active .forecast-bell-mark { transform: scale(.92); }
+
+/* Overlay + modal */
+.fc-overlay {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: none;
+  align-items: center; justify-content: center;
+  padding: 16px;
+}
+.fc-overlay.open { display: flex; animation: fcFadeIn .25s ease; }
+@keyframes fcFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.fc-modal {
+  position: relative;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  width: 100%; max-width: 540px;
+  max-height: 88dvh;
+  padding: 22px 18px 18px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  display: flex; flex-direction: column;
+}
+.fc-close {
+  position: absolute; top: 10px; right: 10px; z-index: 5;
+  width: 34px; height: 34px;
+  border: 1px solid var(--line); background: var(--bg3);
+  color: var(--txt); border-radius: 10px;
+  font-size: 22px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Stage 1 — аннотация (центрированный текст) */
+.fc-stage-annotation {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 19px; font-weight: 700;
+  line-height: 1.3;
+  color: var(--txt);
+  text-align: center;
+  padding: 30px 18px;
+  transform-origin: center top;
+  transition: transform .9s cubic-bezier(.7,.0,.3,1),
+              font-size .9s cubic-bezier(.7,.0,.3,1),
+              padding .9s cubic-bezier(.7,.0,.3,1),
+              opacity .4s ease;
+  opacity: 0;
+}
+.fc-stage-annotation.fc-show { opacity: 1; animation: fcAnnotIn .6s cubic-bezier(.2,0,.2,1) both; }
+.fc-stage-annotation.fc-fix {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  color: var(--txt2);
+}
+@keyframes fcAnnotIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fc-annot-accent { color: var(--acc); }
+
+/* Stage 2 — график + статы */
+.fc-stage-chart {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.fc-stage-chart.fc-show { display: flex; animation: fcChartIn .5s ease both; }
+@keyframes fcChartIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.fc-summary {
+  font-size: 11px; color: var(--txt3);
+  text-align: center; padding: 4px 8px 8px;
+}
+.fc-svg {
+  width: 100%;
+  height: 220px;
+  display: block;
+  margin: 0 auto;
+  flex-shrink: 0;
+}
+.fc-svg .fc-grid { stroke: var(--line); stroke-width: 1; opacity: .35; }
+.fc-svg .fc-axis-label { fill: var(--txt3); font-size: 9px; font-family: 'Golos Text', sans-serif; }
+.fc-svg .fc-past {
+  fill: none; stroke: var(--txt3); stroke-width: 1.4;
+  opacity: .35; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 4 3;
+}
+.fc-svg .fc-fact {
+  fill: none; stroke: var(--acc); stroke-width: 2.4;
+  stroke-linecap: round; stroke-linejoin: round;
+  filter: drop-shadow(0 0 4px var(--acc));
+}
+.fc-svg .fc-forecast {
+  fill: none; stroke: var(--org); stroke-width: 2.2;
+  stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 6 4;
+}
+.fc-svg .fc-point {
+  fill: var(--bg2); stroke: var(--acc); stroke-width: 1.5;
+}
+.fc-svg .fc-today-line {
+  stroke: var(--red); stroke-width: 1; stroke-dasharray: 2 3; opacity: .6;
+}
+
+.fc-legend {
+  display: flex; justify-content: center; gap: 14px;
+  margin: 6px 0 10px; font-size: 10px; color: var(--txt2);
+  flex-wrap: wrap;
+}
+.fc-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.fc-legend-swatch { width: 16px; height: 2.5px; border-radius: 2px; }
+
+/* Статы */
+.fc-stats {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+  opacity: 0; transform: translateY(8px);
+  transition: opacity .4s ease, transform .4s ease;
+}
+.fc-stats.fc-show { opacity: 1; transform: translateY(0); }
+.fc-stat {
+  background: var(--bg3); border: 1px solid var(--line);
+  border-radius: 10px; padding: 8px 10px;
+}
+.fc-stat-lbl {
+  font-size: 9px; font-weight: 700; letter-spacing: .06em;
+  color: var(--txt3); text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.fc-stat-val {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 18px; font-weight: 800;
+  color: var(--txt);
+}
+.fc-stat-val.fc-grn { color: var(--grn); }
+.fc-stat-val.fc-org { color: var(--org); }
+.fc-stat-val.fc-red { color: var(--red); }

@@ -11960,12 +11960,8 @@ function renderRating() {
         const rank = i + 1;
         const sal = getMgrSalary(m.name.toLowerCase());
         const salTxt = sal !== null ? (Math.round(sal)).toLocaleString('ru-RU') : '—';
-        const crownPalette = rank === 1
-          ? { fill:'#ffb84a', stroke:'#c77a14', dot:'#fff5cf' }
-          : rank === 2
-          ? { fill:'#b9bcc1', stroke:'#7d7f83', dot:'#f1f2f4' }
-          : { fill:'#cd7f32', stroke:'#7a4515', dot:'#f4d2a2' };
-        const crownHtml = `<span class="podium-crown" aria-hidden="true"><svg viewBox="0 0 24 14" fill="none"><path d="M2 13 L4 3 L8 8 L12 1 L16 8 L20 3 L22 13 Z" fill="${crownPalette.fill}" stroke="${crownPalette.stroke}" stroke-width=".8" stroke-linejoin="round"/><circle cx="4" cy="3" r="1.3" fill="${crownPalette.dot}"/><circle cx="12" cy="1" r="1.3" fill="${crownPalette.dot}"/><circle cx="20" cy="3" r="1.3" fill="${crownPalette.dot}"/></svg></span>`;
+        const crownColor = rank === 1 ? '#f29220' : rank === 2 ? '#9aa0a6' : '#cd7f32';
+        const crownHtml = `<span class="podium-crown" aria-hidden="true"><svg viewBox="0 0 24 24" fill="${crownColor}" stroke="${crownColor}" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"><path d="M3 16 L5 7 L9 12 L12 3 L15 12 L19 7 L21 16 Z"/><line x1="4.5" y1="20" x2="19.5" y2="20" stroke-width="2.4"/></svg></span>`;
         return `
         <div class="podium-col podium-col-${rank}">
           <div class="podium-head">

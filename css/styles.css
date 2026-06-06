@@ -8864,9 +8864,9 @@ body.fluent .vac-cell        { color: #111; }
   display: inline-flex; align-items: center; justify-content: center;
   box-shadow: 0 1px 3px rgba(0,0,0,.35);
 }
-.podium-crown svg { width: 14px; height: 9px; display: block; }
+.podium-crown svg { width: 15px; height: 15px; display: block; }
 .podium-col-1 .podium-crown { width: 26px; height: 26px; right: -3px; bottom: -3px; }
-.podium-col-1 .podium-crown svg { width: 16px; height: 10px; }
+.podium-col-1 .podium-crown svg { width: 18px; height: 18px; }
 .podium-col-2 .podium-crown svg path,
 .podium-col-3 .podium-crown svg path { /* инлайн-цвет в SVG, иное здесь только для opacity */ }
 .podium-col-2 .podium-crown,

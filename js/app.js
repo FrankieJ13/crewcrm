@@ -11932,21 +11932,52 @@ function renderRating() {
       }
     </button>` : `<div style="font-family:'Unbounded',sans-serif;font-size:9px;font-weight:800;letter-spacing:.1em;color:var(--txt3)">${dept === 'dozhim' ? 'ДОЖИМ' : 'CRM'}</div>`;
 
-  const summaryHTML = `
-    <div class="rating-summary">
-      <div class="rating-sum-cell">
-        <div class="rating-sum-lbl">План</div>
-        <div class="rating-sum-val">${totalPlan || '—'}</div>
-      </div>
-      <div class="rating-sum-cell rating-sum-visits">
-        <div class="rating-sum-lbl">Визиты</div>
-        <div class="rating-sum-val accent">${totalVis || '—'}</div>
-      </div>
-      <div class="rating-sum-cell">
-        <div class="rating-sum-lbl">Прогноз</div>
-        <div class="rating-sum-val" style="color:${pctClr(avgProg)}">${avgProg}%</div>
-      </div>
-    </div>`;
+  // Топ-3 для подиума: те же что в текущей логике (прогноз ≥ 100%, первые 3 по прогнозу).
+  // Если менее 3 проходят — добиваем оставшимися лидерами (без подсветки top).
+  const topManagers = managers.filter(m => m.progNum >= 100).slice(0, 3);
+  while (topManagers.length < 3 && topManagers.length < managers.length) {
+    topManagers.push(managers[topManagers.length]);
+  }
+  function _podiumAvatar(name, progNum) {
+    const id = (typeof getMgrCrmId === 'function') ? getMgrCrmId(name) : null;
+    if (!id) {
+      const initials = String(name||'?').trim().split(/\s+/).slice(0,2).map(s => s[0]||'').join('').toUpperCase();
+      return `<div class="podium-avatar podium-avatar-fallback">${initials || '?'}</div>`;
+    }
+    const emo = getMgrAvatarEmotion(progNum);
+    const src = `logos/avatar/${id}-${emo}.png`;
+    const fallback = `logos/avatar/${id}-default.png`;
+    return `<img class="podium-avatar" src="${src}" alt="" onerror="this.onerror=null;this.src='${fallback}';this.classList.add('podium-avatar-default')">`;
+  }
+  function _podiumShort(name) {
+    const parts = String(name||'').trim().split(/\s+/);
+    if (!parts.length) return '—';
+    if (parts.length === 1) return parts[0];
+    return parts[0] + ' ' + (parts[1][0]||'').toUpperCase() + '.';
+  }
+  // Раскладка: 2-е место слева, 1-е центр, 3-е справа
+  const podiumOrder = [1, 0, 2]; // индекс в topManagers
+  const podiumHTML = topManagers.length ? `
+    <div class="rating-podium">
+      ${podiumOrder.map(i => {
+        const m = topManagers[i];
+        if (!m) return '<div class="podium-col"></div>';
+        const rank = i + 1;
+        const sal = getMgrSalary(m.name.toLowerCase());
+        const salTxt = sal !== null ? (Math.round(sal)).toLocaleString('ru-RU') : '—';
+        const crownHtml = `<span class="podium-crown" aria-hidden="true"><svg width="22" height="14" viewBox="0 0 24 14" fill="none"><path d="M2 13 L4 3 L8 8 L12 1 L16 8 L20 3 L22 13 Z" fill="#ffb84a" stroke="#c77a14" stroke-width=".8" stroke-linejoin="round"/><circle cx="4" cy="3" r="1.3" fill="#fff5cf"/><circle cx="12" cy="1" r="1.3" fill="#fff5cf"/><circle cx="20" cy="3" r="1.3" fill="#fff5cf"/></svg></span>`;
+        return `
+        <div class="podium-col podium-col-${rank}">
+          <div class="podium-head">
+            ${crownHtml}
+            ${_podiumAvatar(m.name, m.progNum)}
+          </div>
+          <div class="podium-name">${_podiumShort(m.name)}</div>
+          <div class="podium-score">${salTxt}</div>
+          <div class="podium-block podium-block-${rank}"><span>${rank}</span></div>
+        </div>`;
+      }).join('')}
+    </div>` : '';
 
   function getMgrLinks(nameLow) {
     if (!S.usersData) return { tg: null, max: null };
@@ -12080,7 +12111,7 @@ function renderRating() {
       <div class="sec-title" style="margin:0">РЕЙТИНГ</div>
       ${deptToggle}
     </div>
-    <div class="rating-slide-wrap"><div class="rating-slide-inner" id="rating-slide-inner">${summaryHTML}<div class="rating-chart">${cardsHTML || '<div class="empty">Нет данных</div>'}</div></div></div>
+    <div class="rating-slide-wrap"><div class="rating-slide-inner" id="rating-slide-inner">${podiumHTML}<div class="rating-chart">${cardsHTML || '<div class="empty">Нет данных</div>'}</div></div></div>
   `);
 
   // Анимируем бары

@@ -8832,3 +8832,105 @@ body.fluent .vac-cell        { color: #111; }
 .fc-stat-val.fc-grn { color: var(--grn); }
 .fc-stat-val.fc-org { color: var(--org); }
 .fc-stat-val.fc-red { color: var(--red); }
+
+/* ════════════════════════════════════════════════════════════════
+   RATING PODIUM — топ-3 на пьедестале
+   ════════════════════════════════════════════════════════════════ */
+.rating-podium {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  align-items: end;
+  padding: 14px 4px 6px;
+  margin-bottom: 12px;
+}
+.podium-col {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  min-width: 0;
+}
+.podium-head {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-bottom: 6px;
+}
+.podium-crown {
+  position: absolute; top: -14px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.35));
+}
+.podium-col-1 .podium-crown { top: -16px; }
+.podium-col-2 .podium-crown,
+.podium-col-3 .podium-crown { opacity: .85; }
+
+.podium-avatar {
+  width: 76px; height: 76px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg3);
+  border: 2px solid var(--line);
+  box-shadow: 0 4px 14px rgba(0,0,0,.25);
+}
+.podium-col-1 .podium-avatar { width: 92px; height: 92px; border-color: #ffb84a; }
+.podium-col-2 .podium-avatar { border-color: #c0c0c0; }
+.podium-col-3 .podium-avatar { border-color: #cd7f32; }
+.podium-avatar-fallback {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: 'Unbounded', sans-serif; font-weight: 800;
+  font-size: 26px; color: var(--txt2);
+}
+
+.podium-name {
+  font-family: 'Golos Text', sans-serif;
+  font-size: 13px; font-weight: 700;
+  color: var(--txt);
+  margin-top: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100%;
+}
+.podium-col-1 .podium-name { font-size: 14px; }
+.podium-score {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 13px; font-weight: 700;
+  color: var(--txt2);
+  margin-bottom: 8px;
+}
+.podium-col-1 .podium-score { color: var(--txt); }
+
+.podium-block {
+  position: relative;
+  width: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 900;
+  border-radius: 12px 12px 0 0;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 6px 18px rgba(0,0,0,.18);
+}
+.podium-block span {
+  font-size: 28px;
+  color: rgba(0,0,0,.55);
+  filter: drop-shadow(0 1px 0 rgba(255,255,255,.4));
+}
+.podium-block-1 {
+  height: 110px;
+  background: linear-gradient(180deg, #ffd277 0%, #f0a93a 100%);
+}
+.podium-block-2 {
+  height: 78px;
+  background: linear-gradient(180deg, #e1e3e6 0%, #b9bcc1 100%);
+}
+.podium-block-3 {
+  height: 56px;
+  background: linear-gradient(180deg, #e0a874 0%, #b27d4a 100%);
+}
+.podium-block-1 span { font-size: 32px; color: rgba(70,40,0,.7); }
+.podium-block-3 span { color: rgba(60,30,0,.6); }
+
+/* Тёмные темы — чуть менее насыщенные подиумы */
+body.cinematic .podium-block-1,
+body.neo-dark .podium-block-1 { background: linear-gradient(180deg, #d9a83a 0%, #b8861f 100%); }
+body.cinematic .podium-block-2,
+body.neo-dark .podium-block-2 { background: linear-gradient(180deg, #a7a9ad 0%, #8b8d92 100%); }
+body.cinematic .podium-block-3,
+body.neo-dark .podium-block-3 { background: linear-gradient(180deg, #b88554 0%, #8a5f37 100%); }

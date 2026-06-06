@@ -8937,31 +8937,32 @@ body.fluent .vac-cell        { color: #111; }
 }
 .podium-wave {
   position: absolute;
-  top: 0; left: 50%;
-  width: 320%;
-  aspect-ratio: 1;
+  width: 200px; height: 200px;
+  top: 50%; left: 50%;
+  margin-left: -100px;
+  margin-top: -170px;          /* большая часть выше базы, нижние «бугры» свеп-ят видимую область */
   pointer-events: none;
   z-index: 0;
-  transform: translate(-50%, -75%) rotate(0deg);
+  will-change: transform;
 }
 .podium-wave:nth-of-type(1) {
   border-radius: 45%;
-  background: rgba(255,255,255,.22);
+  background: rgba(255,255,255,.26);
   animation: podiumWave 10s linear infinite;
 }
 .podium-wave:nth-of-type(2) {
   border-radius: 40%;
-  background: rgba(255,255,255,.14);
+  background: rgba(255,255,255,.16);
   animation: podiumWave 20s linear infinite;
 }
 .podium-wave:nth-of-type(3) {
   border-radius: 42.5%;
-  background: rgba(0,0,0,.12);
+  background: rgba(0,0,0,.14);
   animation: podiumWave 30s linear infinite;
 }
 @keyframes podiumWave {
-  0%   { transform: translate(-50%, -75%) rotate(0deg); }
-  100% { transform: translate(-50%, -75%) rotate(360deg); }
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 .podium-rank-num {
   font-size: 15px;

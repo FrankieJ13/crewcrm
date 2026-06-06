@@ -11960,7 +11960,12 @@ function renderRating() {
         const rank = i + 1;
         const sal = getMgrSalary(m.name.toLowerCase());
         const salTxt = sal !== null ? (Math.round(sal)).toLocaleString('ru-RU') : '—';
-        const crownHtml = `<span class="podium-crown" aria-hidden="true"><svg width="22" height="14" viewBox="0 0 24 14" fill="none"><path d="M2 13 L4 3 L8 8 L12 1 L16 8 L20 3 L22 13 Z" fill="#ffb84a" stroke="#c77a14" stroke-width=".8" stroke-linejoin="round"/><circle cx="4" cy="3" r="1.3" fill="#fff5cf"/><circle cx="12" cy="1" r="1.3" fill="#fff5cf"/><circle cx="20" cy="3" r="1.3" fill="#fff5cf"/></svg></span>`;
+        const crownPalette = rank === 1
+          ? { fill:'#ffb84a', stroke:'#c77a14', dot:'#fff5cf' }
+          : rank === 2
+          ? { fill:'#b9bcc1', stroke:'#7d7f83', dot:'#f1f2f4' }
+          : { fill:'#cd7f32', stroke:'#7a4515', dot:'#f4d2a2' };
+        const crownHtml = `<span class="podium-crown" aria-hidden="true"><svg viewBox="0 0 24 14" fill="none"><path d="M2 13 L4 3 L8 8 L12 1 L16 8 L20 3 L22 13 Z" fill="${crownPalette.fill}" stroke="${crownPalette.stroke}" stroke-width=".8" stroke-linejoin="round"/><circle cx="4" cy="3" r="1.3" fill="${crownPalette.dot}"/><circle cx="12" cy="1" r="1.3" fill="${crownPalette.dot}"/><circle cx="20" cy="3" r="1.3" fill="${crownPalette.dot}"/></svg></span>`;
         return `
         <div class="podium-col podium-col-${rank}">
           <div class="podium-head">

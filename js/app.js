@@ -12273,8 +12273,14 @@ async function loadDozhimLogStats(force = false) {
     if (all.length < 2) return null;
     const header = all[0];               // ['Дата...', 'Всего строк', 'Тюмень', ...]
     const last   = all[all.length - 1];  // последняя запись
-    const prev   = all.length > 2 ? all[all.length - 2] : null;
     const parseNum = v => parseInt(String(v||'0').replace(/[^\d]/g,'')) || 0;
+    // Парсер строки "DD.MM.YYYY HH:MM[:SS]" → Date
+    const parseLogDate = s => {
+      const m = String(s||'').trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
+      if (!m) return null;
+      const yr = m[3].length === 2 ? 2000 + parseInt(m[3]) : parseInt(m[3]);
+      return new Date(yr, parseInt(m[2])-1, parseInt(m[1]), parseInt(m[4]), parseInt(m[5]), parseInt(m[6]||'0'));
+    };
     const cityNames = header.slice(2);
     const cityValues = last.slice(2);
     const cities = cityNames.map((name, i) => ({
@@ -12282,8 +12288,20 @@ async function loadDozhimLogStats(force = false) {
       count: parseNum(cityValues[i]),
     })).filter(c => c.name);
     const total = parseNum(last[1]);
-    const prevTotal = prev ? parseNum(prev[1]) : null;
-    const diff = (prevTotal != null) ? (total - prevTotal) : null;
+    // Дельта = total - total_сутки_назад. Ищем строку с datetime ≤ (last - 24ч),
+    // максимально близкую к этой границе. Если такой нет — null.
+    const lastDate = parseLogDate(last[0]);
+    let diff = null;
+    if (lastDate) {
+      const cutoff = lastDate.getTime() - 24 * 60 * 60 * 1000;
+      let baselineTotal = null;
+      // Идём с конца назад: первая строка с date ≤ cutoff даёт baseline
+      for (let i = all.length - 2; i >= 1; i--) {
+        const d = parseLogDate(all[i][0]);
+        if (d && d.getTime() <= cutoff) { baselineTotal = parseNum(all[i][1]); break; }
+      }
+      if (baselineTotal != null) diff = total - baselineTotal;
+    }
     _dozhimLogCache = {
       updatedAt: String(last[0] || '').trim(),
       total,

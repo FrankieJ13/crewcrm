@@ -11978,9 +11978,9 @@ function renderRating() {
             <span class="podium-wave"></span>
             <span class="podium-wave"></span>
             <span class="podium-base-content">
-              ${_laurelSvg('l')}
+              <span class="podium-laurel-stack podium-laurel-stack-l">${Array.from({length: rank === 1 ? 3 : rank === 2 ? 2 : 1}, () => _laurelSvg('l')).join('')}</span>
               <span class="podium-rank-num">${rank}</span>
-              ${_laurelSvg('r')}
+              <span class="podium-laurel-stack podium-laurel-stack-r">${Array.from({length: rank === 1 ? 3 : rank === 2 ? 2 : 1}, () => _laurelSvg('r')).join('')}</span>
             </span>
           </div>
         </div>`;

@@ -7514,49 +7514,47 @@ body.cosmic .profile-modal-content {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding: 14px 14px 16px;
-  /* Резервируем место под скроллбар всегда → его появление/скрытие
-     не двигает контент. Сам трек невидим, видим только thumb во
-     время скролла. */
-  scrollbar-gutter: stable;
+  /* Скроллбар полностью скрыт. Контент центрирован симметрично без
+     резерва под gutter. */
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* IE/Edge legacy */
 }
-/* Firefox: тонкий, без видимого трека */
-.profile-modal-body { scrollbar-width: thin; scrollbar-color: transparent transparent; }
-.profile-modal-body.scrolling { scrollbar-color: var(--line2, var(--line)) transparent; }
-/* WebKit: width фиксированный, thumb прозрачный по умолчанию */
-.profile-modal-body::-webkit-scrollbar { width: 6px; height: 6px; }
-.profile-modal-body::-webkit-scrollbar-track { background: transparent; }
-.profile-modal-body::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; transition: background .2s; }
-.profile-modal-body.scrolling::-webkit-scrollbar-thumb { background: var(--line2, var(--line)); }
+/* WebKit/Blink: скрываем полностью */
+.profile-modal-body::-webkit-scrollbar { width: 0; height: 0; display: none; }
 .profile-modal-body .profile-section:first-child { margin-top: 6px; }
+/* Кнопка закрытия — чистый SVG-«крестик», без квадратной подложки */
 .profile-modal-close {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 8px;
+  right: 8px;
   display: flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px;
-  border-radius: 10px;
-  background: var(--bg3);
-  border: 1px solid var(--line);
-  color: var(--txt);
-  font-size: 18px;
+  width: 26px; height: 26px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--txt2);
+  font-size: 0;
   line-height: 1;
   cursor: pointer;
   z-index: 5;
-  transition: background .15s, transform .1s;
+  transition: color .15s, transform .1s;
 }
-.profile-modal-close:active { transform: scale(0.94); }
-.profile-modal-close:hover { background: var(--line); }
-/* Fluent / Cosmic — иконка X в стиле темы */
+.profile-modal-close::before {
+  content: '';
+  width: 16px; height: 16px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' d='M6 6 L18 18 M18 6 L6 18'/></svg>") no-repeat center / contain;
+          mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' d='M6 6 L18 18 M18 6 L6 18'/></svg>") no-repeat center / contain;
+}
+.profile-modal-close:hover  { color: var(--txt); }
+.profile-modal-close:active { transform: scale(.9); }
+/* Fluent — оставляем SVG-иконку темы, но без фоновой подложки */
 body.fluent .profile-modal-close {
-  background: var(--bg3) url('../logos/Fluent/FluentColor-Close.svg') center/16px no-repeat !important;
+  background: url('../logos/Fluent/FluentColor-Close.svg') center/18px no-repeat !important;
   color: transparent !important;
-  font-size: 0 !important;
 }
-body.cosmic .profile-modal-close {
-  background: rgba(255,255,255,0.08);
-  border-color: rgba(255,255,255,0.15);
-  color: #e8e8ea;
-}
+body.fluent .profile-modal-close::before { display: none; }
+body.cosmic .profile-modal-close { color: #e8e8ea; }
 /* ════════════ END PROFILE PAGE ════════════ */
 
 /* ════════════════════ ТРОФЕИ ════════════════════ */

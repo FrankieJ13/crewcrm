@@ -11974,9 +11974,14 @@ function renderRating() {
             <div class="podium-score">${scoreTxt}</div>
           </div>
           <div class="podium-base podium-base-${rank}">
-            ${_laurelSvg('l')}
-            <span class="podium-rank-num">${rank}</span>
-            ${_laurelSvg('r')}
+            <span class="podium-wave"></span>
+            <span class="podium-wave"></span>
+            <span class="podium-wave"></span>
+            <span class="podium-base-content">
+              ${_laurelSvg('l')}
+              <span class="podium-rank-num">${rank}</span>
+              ${_laurelSvg('r')}
+            </span>
           </div>
         </div>`;
       }).join('')}

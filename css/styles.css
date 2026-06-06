@@ -8919,14 +8919,49 @@ body.fluent .vac-cell        { color: #111; }
 .podium-score .podium-dot { color: var(--txt3); margin: 0 1px; }
 .podium-rank-1 .podium-score { font-size: 10px; }
 
-/* Цветная база с рангом и лаврами */
+/* Цветная база с рангом и лаврами + анимированные «волны» внутри */
 .podium-base {
-  display: flex; align-items: center; justify-content: center;
-  gap: 4px;
-  padding: 5px 3px 6px;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   color: #fff;
   font-family: 'Unbounded', sans-serif;
   font-weight: 900;
+  padding: 5px 3px 6px;
+}
+.podium-base-content {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  gap: 4px;
+  width: 100%;
+}
+.podium-wave {
+  position: absolute;
+  top: 0; left: 50%;
+  width: 320%;
+  aspect-ratio: 1;
+  pointer-events: none;
+  z-index: 0;
+  transform: translate(-50%, -75%) rotate(0deg);
+}
+.podium-wave:nth-of-type(1) {
+  border-radius: 45%;
+  background: rgba(255,255,255,.22);
+  animation: podiumWave 10s linear infinite;
+}
+.podium-wave:nth-of-type(2) {
+  border-radius: 40%;
+  background: rgba(255,255,255,.14);
+  animation: podiumWave 20s linear infinite;
+}
+.podium-wave:nth-of-type(3) {
+  border-radius: 42.5%;
+  background: rgba(0,0,0,.12);
+  animation: podiumWave 30s linear infinite;
+}
+@keyframes podiumWave {
+  0%   { transform: translate(-50%, -75%) rotate(0deg); }
+  100% { transform: translate(-50%, -75%) rotate(360deg); }
 }
 .podium-rank-num {
   font-size: 15px;

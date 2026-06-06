@@ -7299,152 +7299,141 @@ body.cosmic .profile-avatar-wrap::before { border-color: rgba(190,190,190,0.55);
   font-style: italic;
 }
 .ps-hdr-note {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--txt3);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: 600;
-  margin-bottom: 10px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  margin-bottom: 8px;
 }
 .ps-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 6px;
 }
 .ps-card {
-  background: var(--bg3);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 8px 10px;
-  display: flex; flex-direction: column;
-  gap: 2px;
   position: relative;
+  background: linear-gradient(155deg,
+    color-mix(in srgb, var(--ps-accent, var(--acc)) 7%, transparent),
+    color-mix(in srgb, var(--ps-accent, var(--acc)) 1%, transparent) 60%);
+  border: 1px solid color-mix(in srgb, var(--ps-accent, var(--acc)) 18%, var(--line));
+  border-radius: 12px;
+  padding: 8px 10px 8px;
+  display: flex; flex-direction: column;
   overflow: hidden;
-  transition: transform .12s, box-shadow .15s;
-}
-.ps-card::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background: var(--ps-accent, var(--acc));
-  opacity: 0.55;
+  transition: transform .15s ease, box-shadow .15s ease;
 }
 .ps-card:hover { transform: translateY(-1px); }
 .ps-card-top {
-  display: flex; align-items: flex-start;
+  display: flex; align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 2px;
 }
 .ps-card-hdr {
-  display: flex; align-items: center; gap: 6px;
+  display: flex; align-items: center; gap: 5px;
   min-width: 0;
-  padding-top: 2px;
 }
 .ps-card-ico {
-  width: 16px; height: 16px;
+  width: 14px; height: 14px;
   color: var(--ps-accent, var(--acc));
   flex-shrink: 0;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--ps-accent, var(--acc)) 50%, transparent));
 }
 .ps-card-ico svg { width: 100%; height: 100%; display: block; }
 .ps-card-lbl {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--txt2);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis;
 }
 .ps-card-right {
-  display: flex; flex-direction: column;
-  align-items: flex-end;
-  text-align: right;
+  display: flex; align-items: baseline; gap: 4px;
   flex-shrink: 0;
 }
 .ps-card-val {
   font-family: 'Unbounded', sans-serif;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   color: var(--txt);
   line-height: 1;
+  letter-spacing: -.01em;
 }
-.ps-card-sub {
-  font-size: 9px;
-  color: var(--txt3);
-  margin-top: 1px;
-}
+.ps-card-sub { display: none; }
+
+/* Бары — тонкие пилюли с градиентом и свечением */
 .ps-bars {
   display: flex;
-  gap: 4px;
-  align-items: stretch;
-  height: 42px;
-  margin-top: 6px;
-  padding-top: 2px;
-  border-top: 1px dashed var(--line);
+  gap: 3px;
+  align-items: end;
+  height: 28px;
+  margin-top: 4px;
+  padding-top: 0;
+  border-top: none;
 }
 .ps-bar-col {
   flex: 1;
-  display: flex; flex-direction: column;
-  align-items: center;
-  gap: 2px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
   min-width: 0;
   height: 100%;
+  position: relative;
 }
 .ps-bar-wrap {
   width: 100%;
-  flex: 1;
+  height: 100%;
   display: flex; align-items: flex-end;
   justify-content: center;
   position: relative;
 }
-.ps-bar-wrap::before {
-  content: '';
-  position: absolute;
-  inset: auto 0 0 0;
-  height: 1px;
-  background: var(--line);
-  opacity: 0.6;
-}
 .ps-bar {
   width: 100%;
-  min-height: 2px;
-  border-radius: 3px 3px 1px 1px;
-  background: var(--ps-accent, var(--acc));
-  opacity: 0.85;
-  transition: height .35s cubic-bezier(.2,.7,.2,1);
-  position: relative;
+  min-height: 3px;
+  border-radius: 4px;
+  background: linear-gradient(180deg,
+    var(--ps-accent, var(--acc)),
+    color-mix(in srgb, var(--ps-accent, var(--acc)) 60%, transparent));
+  box-shadow: 0 0 6px color-mix(in srgb, var(--ps-accent, var(--acc)) 35%, transparent);
+  transition: height .5s cubic-bezier(.2,.7,.2,1);
 }
 .ps-bar-missing {
   background: var(--line) !important;
+  box-shadow: none !important;
   opacity: 0.35;
-  background-image: repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 5px) !important;
-  min-height: 2px;
-  height: 100% !important;
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 3px) !important;
+  min-height: 3px;
 }
-.ps-bar-lbl {
-  font-size: 8px;
-  color: var(--txt3);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 700;
-  line-height: 1;
-}
+/* Лейблы месяцев скрываем для топа компактности — только title в hover */
+.ps-bar-lbl { display: none; }
 
 /* Адаптация под темы */
 body.light .ps-card,
 body.neo-light .ps-card,
 body.fluent .ps-card,
-body.tiffany .ps-card { background: rgba(0,0,0,0.025); }
+body.tiffany .ps-card {
+  background: linear-gradient(155deg,
+    color-mix(in srgb, var(--ps-accent, var(--acc)) 12%, white),
+    color-mix(in srgb, var(--ps-accent, var(--acc)) 2%, white) 70%);
+}
 body.dark .ps-card,
 body.neo-dark .ps-card,
 body.cinematic .ps-card,
-body.cosmic .ps-card { background: rgba(255,255,255,0.03); }
+body.cosmic .ps-card {
+  background: linear-gradient(155deg,
+    color-mix(in srgb, var(--ps-accent, var(--acc)) 10%, transparent),
+    color-mix(in srgb, var(--ps-accent, var(--acc)) 1%, transparent) 65%);
+}
 
 @media (max-width: 360px) {
-  .ps-card-val { font-size: 20px; }
-  .ps-bars { height: 36px; }
+  .ps-card-val { font-size: 16px; }
+  .ps-bars { height: 24px; }
+}
+@media (min-width: 560px) {
+  .ps-grid { grid-template-columns: repeat(3, 1fr); }
 }
 /* ──── Profile-modal trigger icon (рейтинг) ──── */
 body.fluent .pmt-ico-fluent  { display: inline-block !important; }

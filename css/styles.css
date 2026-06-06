@@ -9025,7 +9025,10 @@ body.fluent .vac-cell        { color: #111; }
 }
 .podium-rank-1 .podium-laurel { width: 18px; height: 25px; }
 
-/* Стэк из нескольких лавров с перекрытием — top1=3, top2=2, top3=1 */
+/* Стэк из нескольких лавров с перекрытием — top1=3, top2=2, top3=1.
+   Ближайший к числу слой (последний в DOM при normal-flow, первый в
+   row-reverse) — без прозрачности и полного размера. Дальние слои
+   меньше на 15% каждый и слабее по opacity. */
 .podium-laurel-stack {
   display: inline-flex;
   flex-shrink: 0;
@@ -9034,9 +9037,13 @@ body.fluent .vac-cell        { color: #111; }
 .podium-laurel-stack .podium-laurel + .podium-laurel { margin-left: -10px; }
 .podium-laurel-stack-r { flex-direction: row-reverse; }
 .podium-laurel-stack-r .podium-laurel + .podium-laurel { margin-left: 0; margin-right: -10px; }
-/* Дальние слои чуть прозрачнее для глубины */
-.podium-laurel-stack .podium-laurel:nth-child(2) { opacity: .8; }
-.podium-laurel-stack .podium-laurel:nth-child(3) { opacity: .6; }
+/* Ближайший к числу = last child (в row-reverse last всё равно ближе к нему).
+   Anchor: лавр уменьшается «наружу» от числа. */
+.podium-laurel-stack-l .podium-laurel { transform-origin: right center; }
+.podium-laurel-stack-r .podium-laurel { transform-origin: left  center; }
+.podium-laurel-stack .podium-laurel:nth-last-child(1) { opacity: 1;   transform: scale(1);    }
+.podium-laurel-stack .podium-laurel:nth-last-child(2) { opacity: .75; transform: scale(.85);  }
+.podium-laurel-stack .podium-laurel:nth-last-child(3) { opacity: .55; transform: scale(.7225);}
 
 .podium-base-1 { background: linear-gradient(180deg,#ffaf3a 0%,#f29220 100%); }
 .podium-base-2 { background: linear-gradient(180deg,#c8ccd1 0%,#a8acb2 100%); }

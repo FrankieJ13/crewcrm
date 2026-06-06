@@ -17055,9 +17055,10 @@ async function openForecastModal(nameLow, plan) {
   chart.className = 'fc-stage fc-stage-chart';
   svg.innerHTML = '';
   stats.innerHTML = '';
-  stats.classList.remove('fc-show');
   legend.innerHTML = '';
+  legend.classList.remove('fc-show');
   summary.textContent = '';
+  summary.classList.remove('fc-show');
 
   overlay.classList.add('open');
   overlay.setAttribute('aria-hidden', 'false');
@@ -17129,7 +17130,9 @@ async function openForecastModal(nameLow, plan) {
 
   if (myToken !== _fcAnimToken) return;
 
-  // Аннотация
+  // ── Сценарий: блоки появляются по очереди в своих финальных местах ──
+
+  // 1. Аннотация (сверху, плавный fade-in)
   const tempo = deviationPct >= 0 ? `выше среднего на <span class="fc-annot-accent">${deviationPct}%</span>` : `ниже среднего на <span class="fc-annot-accent">${Math.abs(deviationPct)}%</span>`;
   const fallback = !validPasts.length;
   annot.innerHTML = fallback
@@ -17137,16 +17140,16 @@ async function openForecastModal(nameLow, plan) {
     : `Прогноз визитов по менеджеру <span class="fc-annot-accent">${displayName}</span>: текущий темп ${tempo}.`;
   annot.classList.add('fc-show');
 
-  // Через 2с → фиксируем аннотацию вверху, разворачиваем график
-  await _fcSleep(2200);
-  if (myToken !== _fcAnimToken) return;
-  annot.classList.add('fc-fix');
+  // 2. Подождать, потом проявить summary (саб-заголовок графика)
   await _fcSleep(700);
   if (myToken !== _fcAnimToken) return;
-
-  // Рендер графика
-  chart.classList.add('fc-show');
   summary.textContent = `${getMonthName(sfx)} · 1–${daysCur} число`;
+  summary.classList.add('fc-show');
+
+  // 3. Появляется контейнер графика (сетка + оси внутри сразу, линии — после)
+  await _fcSleep(400);
+  if (myToken !== _fcAnimToken) return;
+  chart.classList.add('fc-show');
 
   // Координаты SVG: 400×220, padding 10/14/30/30 (top/right/bottom/left)
   const W = 400, H = 220, padL = 32, padR = 12, padT = 12, padB = 26;
@@ -17230,8 +17233,9 @@ async function openForecastModal(nameLow, plan) {
     ${isCurMonth && today < daysCur ? `<span class="fc-legend-item"><span class="fc-legend-swatch" style="background:var(--org)"></span>Прогноз</span>` : ''}
     ${validPasts.length ? `<span class="fc-legend-item"><span class="fc-legend-swatch" style="background:var(--txt3);opacity:.6"></span>Прошлые мес.</span>` : ''}
   `;
+  legend.classList.add('fc-show');
 
-  // Статы
+  // Статы — рендерим скрытыми, потом проявляем по очереди
   const fmtPct = (v) => (v >= 0 ? '+' : '') + v + '%';
   const devCls = deviationPct >= 0 ? 'fc-grn' : 'fc-red';
   stats.innerHTML = `
@@ -17240,9 +17244,14 @@ async function openForecastModal(nameLow, plan) {
     <div class="fc-stat"><div class="fc-stat-lbl">Отклонение от среднего</div><div class="fc-stat-val ${devCls}">${avgEnd > 0 ? fmtPct(deviationPct) : '—'}</div></div>
     <div class="fc-stat"><div class="fc-stat-lbl">Риск${planN > 0 ? ' срыва плана' : ''}</div><div class="fc-stat-val ${riskCls}">${risk}</div></div>
   `;
-  await _fcSleep(200);
+  await _fcSleep(150);
   if (myToken !== _fcAnimToken) return;
-  stats.classList.add('fc-show');
+  const statEls = stats.querySelectorAll('.fc-stat');
+  for (const el of statEls) {
+    if (myToken !== _fcAnimToken) return;
+    el.classList.add('fc-show');
+    await _fcSleep(180);
+  }
 }
 
 function _fcSleep(ms) { return new Promise(r => setTimeout(r, ms)); }

@@ -8934,12 +8934,24 @@ body.fluent .vac-cell        { color: #111; }
 }
 .podium-rank-1 .podium-rank-num { font-size: 17px; }
 .podium-laurel {
-  width: 15px; height: 15px;
-  color: rgba(255,255,255,.85);
+  display: inline-block;
+  width: 16px; height: 22px;
+  background-color: rgba(255,255,255,.95);
   flex-shrink: 0;
+  -webkit-mask: url('../logos/laurel.svg') no-repeat;
+          mask: url('../logos/laurel.svg') no-repeat;
+  -webkit-mask-size: 200% 100%;
+          mask-size: 200% 100%;
 }
-.podium-laurel-r { transform: scaleX(-1); }
-.podium-rank-1 .podium-laurel { width: 16px; height: 16px; }
+.podium-laurel-l {
+  -webkit-mask-position: left center;
+          mask-position: left center;
+}
+.podium-laurel-r {
+  -webkit-mask-position: right center;
+          mask-position: right center;
+}
+.podium-rank-1 .podium-laurel { width: 18px; height: 25px; }
 
 .podium-base-1 { background: linear-gradient(180deg,#ffaf3a 0%,#f29220 100%); }
 .podium-base-2 { background: linear-gradient(180deg,#c8ccd1 0%,#a8acb2 100%); }

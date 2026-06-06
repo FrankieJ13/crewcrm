@@ -11952,14 +11952,8 @@ function renderRating() {
   }
   // Раскладка: 2-е место слева, 1-е центр, 3-е справа. Каждое место — отдельная карточка.
   const podiumOrder = [1, 0, 2]; // индекс в topManagers
-  const _laurelSvg = (side) => `<svg class="podium-laurel podium-laurel-${side}" viewBox="0 0 40 40" fill="currentColor" aria-hidden="true">
-    <path d="M5 35 Q15 30 20 18 Q22 12 22 5" stroke="currentColor" fill="none" stroke-width="1.8" stroke-linecap="round" opacity="0.75"/>
-    <ellipse cx="8" cy="33" rx="3.5" ry="1.5" transform="rotate(-30 8 33)"/>
-    <ellipse cx="13" cy="28" rx="3.5" ry="1.5" transform="rotate(-15 13 28)"/>
-    <ellipse cx="17" cy="22" rx="3.5" ry="1.5" transform="rotate(-5 17 22)"/>
-    <ellipse cx="20" cy="15" rx="3.5" ry="1.5" transform="rotate(15 20 15)"/>
-    <ellipse cx="22" cy="9" rx="3" ry="1.3" transform="rotate(35 22 9)"/>
-  </svg>`;
+  // Лавр — половина SVG-венка через mask-image (logos/laurel.svg). Цвет = currentColor.
+  const _laurelSvg = (side) => `<span class="podium-laurel podium-laurel-${side}" aria-hidden="true"></span>`;
   const podiumHTML = topManagers.length ? `
     <div class="rating-podium">
       ${podiumOrder.map(i => {

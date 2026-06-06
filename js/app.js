@@ -11958,8 +11958,7 @@ function renderRating() {
         const m = topManagers[i];
         if (!m) return '<div class="podium-col"></div>';
         const rank = i + 1;
-        const sal = getMgrSalary(m.name.toLowerCase());
-        const salTxt = sal !== null ? (Math.round(sal)).toLocaleString('ru-RU') : '—';
+        const scoreTxt = `${m.vis || 0} · <span style="color:${pctClr(m.progNum)}">${m.progNum}%</span>`;
         const crownColor = rank === 1 ? '#f29220' : rank === 2 ? '#9aa0a6' : '#cd7f32';
         const crownHtml = `<span class="podium-crown" aria-hidden="true"><svg viewBox="0 0 24 24" fill="${crownColor}" stroke="${crownColor}" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"><path d="M3 16 L5 7 L9 12 L12 3 L15 12 L19 7 L21 16 Z"/><line x1="4.5" y1="20" x2="19.5" y2="20" stroke-width="2.4"/></svg></span>`;
         return `
@@ -11969,7 +11968,7 @@ function renderRating() {
             ${_podiumAvatar(m.name, m.progNum)}
           </div>
           <div class="podium-name">${_podiumShort(m.name)}</div>
-          <div class="podium-score">${salTxt}</div>
+          <div class="podium-score">${scoreTxt}</div>
           <div class="podium-block podium-block-${rank}"><span>${rank}</span></div>
         </div>`;
       }).join('')}

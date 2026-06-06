@@ -1905,12 +1905,33 @@ function stopKeepAlive() {
 }
 // При возврате во вкладку — сразу ping + перезапуск интервала.
 // (НЕ запрашиваем token-refresh — иначе попадём в баг audit#6 каскада.)
+// Трекаем длительность скрытия таба — после долгого простоя кеш и
+// HTTP/2 соединение мертвы. На return запускаем обновление сразу,
+// не дожидаясь следующего тика 3-минутного autoRefresh.
+let _lastHiddenAt = 0;
+let _wakeEpoch    = 0; // момент пробуждения; первые 30с фетчи получают укороченный таймаут
+const LONG_IDLE_MS = 60_000; // если фоном >60с, считаем "долго"
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
+    _lastHiddenAt = Date.now();
     stopKeepAlive();
   } else if (S.token && S.authReady) {
+    const idle = _lastHiddenAt ? (Date.now() - _lastHiddenAt) : 0;
+    _lastHiddenAt = 0;
     _keepAlivePing();
     startKeepAlive();
+    // После длительного простоя — немедленный сильный рефреш, чтобы
+    // юзер не ждал следующий 3-минутный тик. Cache invalidate в
+    // refreshVisibleDataLive уже встроен.
+    if (idle > LONG_IDLE_MS) {
+      _wakeEpoch = Date.now();
+      try { window.DIAG?.push('info', 'refresh', ['wake-after-idle', idle]); } catch(_){}
+      // Не блокируем UI: если рефреш сам по себе долгий, юзер всё равно
+      // увидит обновление по мере прихода данных.
+      refreshVisibleDataLive().catch(err => {
+        if (err?.message !== 'auth') console.warn('wake refresh failed', err);
+      });
+    }
   }
 });
 
@@ -2508,11 +2529,14 @@ async function _apiFetch(sheet, range, key, retryCount = 0, params = '') {
             + (params ? '?' + params : '');
 
   // Таймаут 30с — на медленных мобильных сетях большие unbounded ranges
-  // (ВИЗИТЫ!A:N, etc) легко берут 7-15+ сек. Старый 12с был слишком жёсткий:
-  // диагноз 02.06 показал серии ABORT 12001ms при том что Sheets отвечает,
-  // просто медленно. См. также SHEET_FETCH_CONCURRENCY ниже.
+  // легко берут 7-15+ сек. НО первый запрос после возврата из idle часто
+  // зависает на dead-TCP до жёсткого таймаута. Поэтому при retry=0 после
+  // wake-up даём 12с — холодное соединение быстро отвалится и retry уйдёт
+  // на свежем сокете.
+  const wakeFresh = (Date.now() - _wakeEpoch) < 30_000;
+  const timeoutMs = (retryCount === 0 && wakeFresh) ? 12000 : 30000;
   const ctrl = new AbortController();
-  const tid  = setTimeout(() => ctrl.abort(), 30000);
+  const tid  = setTimeout(() => ctrl.abort(), timeoutMs);
 
   let r;
   try {

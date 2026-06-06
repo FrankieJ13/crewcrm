@@ -8760,13 +8760,26 @@ body.fluent .vac-cell        { color: #111; }
   margin: 0 auto;
   flex-shrink: 0;
 }
-.fc-svg .fc-grid { stroke: var(--line); stroke-width: 1; opacity: .35; }
-.fc-svg .fc-axis-label { fill: var(--txt3); font-size: 9px; font-family: 'Golos Text', sans-serif; }
+/* Базовая (целевая) видимость; во время сценария JS управляет inline opacity */
+.fc-svg .fc-grid {
+  stroke: var(--line); stroke-width: 1; opacity: .35;
+  transition: opacity .5s ease;
+}
+.fc-svg .fc-axis-label {
+  fill: var(--txt3); font-size: 9px; font-family: 'Golos Text', sans-serif;
+  transition: opacity .5s ease;
+}
 .fc-svg .fc-past {
   fill: none; stroke: var(--txt3); stroke-width: 1.4;
   opacity: .35; stroke-linecap: round; stroke-linejoin: round;
   stroke-dasharray: 4 3;
+  transition: opacity .45s ease;
 }
+.fc-svg .fc-today-line, .fc-svg .fc-today-label {
+  transition: opacity .5s ease;
+}
+/* Скрытое состояние перед стартом анимации (inline-style :не нужен) */
+.fc-svg .fc-anim-in { opacity: 0 !important; }
 .fc-svg .fc-fact {
   fill: none; stroke: var(--acc); stroke-width: 2.4;
   stroke-linecap: round; stroke-linejoin: round;

@@ -17167,28 +17167,36 @@ async function openForecastModal(nameLow, plan) {
     return p;
   };
 
-  // Сетка
-  let svgInner = '';
+  // ── SVG рендер поэтапно. Сначала grid + axis-labels (скрытые) ──
+  let gridInner = '';
   for (let i = 0; i <= 4; i++) {
     const y = padT + i / 4 * innerH;
-    svgInner += `<line class="fc-grid" x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}"/>`;
+    gridInner += `<line class="fc-grid fc-anim-in" x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}"/>`;
     const val = Math.round(maxY * (1 - i / 4));
-    svgInner += `<text class="fc-axis-label" x="${padL - 6}" y="${y + 3}" text-anchor="end">${val}</text>`;
+    gridInner += `<text class="fc-axis-label fc-anim-in" x="${padL - 6}" y="${y + 3}" text-anchor="end">${val}</text>`;
   }
-  // Оси X (только первое и последнее число)
-  svgInner += `<text class="fc-axis-label" x="${padL}" y="${H - padB + 14}" text-anchor="start">1</text>`;
-  svgInner += `<text class="fc-axis-label" x="${W - padR}" y="${H - padB + 14}" text-anchor="end">${daysCur}</text>`;
+  gridInner += `<text class="fc-axis-label fc-anim-in" x="${padL}" y="${H - padB + 14}" text-anchor="start">1</text>`;
+  gridInner += `<text class="fc-axis-label fc-anim-in" x="${W - padR}" y="${H - padB + 14}" text-anchor="end">${daysCur}</text>`;
   if (isCurMonth) {
     const tx = xAt(today);
-    svgInner += `<line class="fc-today-line" x1="${tx}" y1="${padT}" x2="${tx}" y2="${padT + innerH}"/>`;
-    svgInner += `<text class="fc-axis-label" x="${tx}" y="${padT - 3}" text-anchor="middle">сегодня</text>`;
+    gridInner += `<line class="fc-today-line fc-anim-in" x1="${tx}" y1="${padT}" x2="${tx}" y2="${padT + innerH}"/>`;
+    gridInner += `<text class="fc-axis-label fc-anim-in" x="${tx}" y="${padT - 3}" text-anchor="middle">сегодня</text>`;
   }
+  svg.innerHTML = gridInner;
 
-  // Прошлые месяцы (фоном)
-  validPasts.forEach((_, idx) => {
+  // Триггерим reflow перед снятием fc-anim-in, чтобы сработал CSS transition
+  await _fcSleep(50);
+  if (myToken !== _fcAnimToken) return;
+  svg.querySelectorAll('.fc-anim-in').forEach(el => el.classList.remove('fc-anim-in'));
+  await _fcSleep(550); // ждём завершения fade-in grid
+
+  if (myToken !== _fcAnimToken) return;
+
+  // ── Прошлые месяцы — добавляем по одному с fade-in ──
+  for (let idx = 0; idx < validPasts.length; idx++) {
+    if (myToken !== _fcAnimToken) return;
     const cum = pastNorms[idx];
-    if (!cum || cum[30] <= 0) return;
-    // ремап: индексы 1..30 → дни 1..daysCur
+    if (!cum || cum[30] <= 0) continue;
     const remapped = new Array(daysCur + 1).fill(0);
     for (let d = 1; d <= daysCur; d++) {
       const x = d / daysCur * 30;
@@ -17197,10 +17205,18 @@ async function openForecastModal(nameLow, plan) {
       remapped[d] = cum[x0] * (1 - t) + cum[x1] * t;
     }
     const p = pathFromCum(remapped, 1, daysCur);
-    svgInner += `<path class="fc-past" d="${p}"/>`;
-  });
+    const pastEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    pastEl.setAttribute('class', 'fc-past fc-anim-in');
+    pastEl.setAttribute('d', p);
+    svg.appendChild(pastEl);
+    // Reflow + снимаем класс
+    pastEl.getBoundingClientRect();
+    pastEl.classList.remove('fc-anim-in');
+    await _fcSleep(280);
+  }
 
-  svg.innerHTML = svgInner;
+  if (myToken !== _fcAnimToken) return;
+  await _fcSleep(150);
 
   // Lightning-style анимация: ФАКТ
   const factEnd = isCurMonth ? today : daysCur;

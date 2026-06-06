@@ -9479,8 +9479,9 @@ function openCeoDealsModal(kind) {
       const row = rows[i];
       if (!row || !row[8]) continue;
       if (!isSverkaRow(row)) continue;
-      const status = String(row[4] || '').trim().toLowerCase();
-      if (!cfg.match(status)) continue;
+      // Комбо «покупка (кредит) + комиссия» — учитываем каждую часть отдельно
+      const statuses = parseVizStatuses(row[4]);
+      if (!statuses.some(cfg.match)) continue;
       collected.push({
         date: String(row[0] || '').trim(),
         manager: String(row[8] || '').trim(),

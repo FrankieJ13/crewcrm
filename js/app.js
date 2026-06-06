@@ -13935,8 +13935,13 @@ async function _profileLoadAndRenderStats(name, panelId, periodParam) {
       </div>`;
   }).join('');
 
-  // Сколько месяцев реально нашлось (с данными)
-  const actualMonths = monthly.filter(m => m.hasData).length;
+  // Сколько месяцев менеджер реально активен (где есть хотя бы один визит
+  // или закрытая сделка). Месяцы где hasData=true, но вообще нулевые
+  // показатели по этому менеджеру (новичок не работал, или ушёл в отпуск)
+  // не считаются.
+  const actualMonths = monthly.filter(m =>
+    (m.vis||0) + (m.kred||0) + (m.nal||0) + (m.kom||0) + (m.otkaz||0) + (m.fssp||0) > 0
+  ).length;
   const nameAttr = String(name||'').replace(/'/g,"&#39;");
   const periodPills = [3, 6, 12].map(p => `
     <button class="ps-period-pill${p === period ? ' active' : ''}" onclick="profileSetStatsPeriod('${pid}', ${p}, '${nameAttr}')">${p}</button>

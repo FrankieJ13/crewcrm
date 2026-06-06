@@ -11944,10 +11944,8 @@ function renderRating() {
       const initials = String(name||'?').trim().split(/\s+/).slice(0,2).map(s => s[0]||'').join('').toUpperCase();
       return `<div class="podium-avatar podium-avatar-fallback">${initials || '?'}</div>`;
     }
-    const emo = getMgrAvatarEmotion(progNum);
-    const src = `logos/avatar/${id}-${emo}.png`;
-    const fallback = `logos/avatar/${id}-default.png`;
-    return `<img class="podium-avatar" src="${src}" alt="" onerror="this.onerror=null;this.src='${fallback}';this.classList.add('podium-avatar-default')">`;
+    const src = `logos/avatar/${id}-default.png`;
+    return `<img class="podium-avatar" src="${src}" alt="" onerror="this.parentElement.innerHTML='<div class=\\'podium-avatar podium-avatar-fallback\\'>?</div>'">`;
   }
   function _podiumShort(name) {
     const parts = String(name||'').trim().split(/\s+/);

@@ -4438,7 +4438,8 @@ body.neo-dark .income-col .ic-lbl {
 #scr-dohod { padding: 0; }
 .vt-toolbar .rating-toggle-pill,
 .dohod-dept-hdr .rating-toggle-pill,
-.sec-title.otchet-sec-title .rating-toggle-pill { padding: 3px 10px; }
+.sec-title.otchet-sec-title .rating-toggle-pill,
+.rating-header .rating-toggle-pill { padding: 3px 10px; }
 /* Стрелка в тумблере */
 .rating-toggle-arrow {
   display: inline-flex; align-items: center;

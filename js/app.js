@@ -17146,16 +17146,65 @@ async function openForecastModal(nameLow, plan) {
     }
   }
 
-  // Прогноз: линейная экстраполяция текущего темпа
+  // ── УМНЫЙ ПРОГНОЗ ─────────────────────────────────────────────
+  // 1) Считаем pace ratio за тот же «день месяца» в прошлых месяцах:
+  //    paceRatio_i = past_at_day_today / past_at_month_end
+  //    Это показывает, какую долю месячного результата менеджер обычно
+  //    закрывает к этому дню. Среднее = avgPace.
+  // 2) Прогноз smartForecast = factToToday / avgPace
+  //    Если менеджер обычно делает 55% к 15 числу, и сейчас он на 50,
+  //    прогноз = 50 / 0.55 = 91 (а не 50 × 30/15 = 100).
+  // 3) Линейный темп — для сравнения, как fallback.
+  // 4) Итоговый forecast — среднее smartForecast и lineForecast с весом
+  //    в сторону smart, если данные есть.
+  const dayRatio = today / daysCur; // позиция в месяце 0..1
+  const dayIndex30 = Math.max(1, Math.min(30, Math.round(dayRatio * 30)));
+  const paceRatios = [];
+  const pastEnds = [];
+  validPasts.forEach(p => {
+    if (p[30] > 0) {
+      paceRatios.push(p[dayIndex30] / p[30]);
+      pastEnds.push(p[30]);
+    }
+  });
+  const avgPace = paceRatios.length ? (paceRatios.reduce((a,b)=>a+b,0) / paceRatios.length) : null;
+  const avgEnd  = pastEnds.length   ? (pastEnds.reduce((a,b)=>a+b,0)   / pastEnds.length)   : 0;
+  const stdPaceCalc = (() => {
+    if (paceRatios.length < 2) return 0;
+    const m = avgPace;
+    const s = paceRatios.reduce((acc, v) => acc + (v - m) ** 2, 0) / paceRatios.length;
+    return Math.sqrt(s);
+  })();
+
+  const lineForecast = (today > 0 && factToToday > 0) ? (factToToday * daysCur / today) : 0;
+  const smartForecast = (avgPace && avgPace > 0.05 && factToToday > 0)
+    ? (factToToday / avgPace)
+    : 0;
+
+  // Смешиваем: если есть прошлые месяца — берём smartForecast с весом 0.7,
+  // линейный с весом 0.3 (учитывает аномалии вроде «отпуска в начале»).
   let forecast = 0;
-  if (today > 0 && factToToday > 0) {
-    forecast = Math.round(factToToday * daysCur / today);
-  } else if (avgNorm[30] > 0) {
-    forecast = Math.round(avgNorm[30]);
+  if (smartForecast > 0 && lineForecast > 0) {
+    forecast = Math.round(smartForecast * 0.7 + lineForecast * 0.3);
+  } else if (smartForecast > 0) {
+    forecast = Math.round(smartForecast);
+  } else if (lineForecast > 0) {
+    forecast = Math.round(lineForecast);
+  } else if (avgEnd > 0) {
+    forecast = Math.round(avgEnd);
   }
 
-  // Среднее по прошлым (на конец месяца, нормализованное)
-  const avgEnd = avgNorm[30];
+  // Доверительный интервал (min/max на основе разброса прошлых)
+  let forecastLow = forecast, forecastHigh = forecast;
+  if (paceRatios.length >= 2 && factToToday > 0 && avgPace > 0.05) {
+    forecastLow  = Math.round(factToToday / Math.min(...paceRatios));
+    forecastHigh = Math.round(factToToday / Math.max(...paceRatios.filter(r => r > 0.05)));
+  }
+
+  // Темп vs историческое среднее
+  const expectedToToday = avgPace ? avgPace * avgEnd : 0;
+  const tempoVsAvg = expectedToToday > 0 ? Math.round((factToToday - expectedToToday) / expectedToToday * 100) : 0;
+
   const deviationPct = avgEnd > 0 ? Math.round((forecast - avgEnd) / avgEnd * 100) : 0;
   const planN = parseFloat(plan) || 0;
   const planDelta = planN > 0 ? Math.round((forecast - planN) / planN * 100) : null;
@@ -17171,12 +17220,21 @@ async function openForecastModal(nameLow, plan) {
 
   // ── Сценарий: блоки появляются по очереди в своих финальных местах ──
 
-  // 1. Аннотация (сверху, плавный fade-in)
-  const tempo = deviationPct >= 0 ? `выше среднего на <span class="fc-annot-accent">${deviationPct}%</span>` : `ниже среднего на <span class="fc-annot-accent">${Math.abs(deviationPct)}%</span>`;
+  // 1. Аннотация — умная: говорим о темпе vs историческое среднее за тот же день
   const fallback = !validPasts.length;
+  let tempoTxt;
+  if (fallback) {
+    tempoTxt = 'История прошлых месяцев недоступна — прогноз только по текущему темпу.';
+  } else if (tempoVsAvg > 4) {
+    tempoTxt = `темп опережает обычный для ${today}-го числа на <span class="fc-annot-accent">${tempoVsAvg}%</span>.`;
+  } else if (tempoVsAvg < -4) {
+    tempoTxt = `темп отстаёт от обычного для ${today}-го числа на <span class="fc-annot-accent">${Math.abs(tempoVsAvg)}%</span>.`;
+  } else {
+    tempoTxt = `темп ровно на уровне обычного для ${today}-го числа.`;
+  }
   annot.innerHTML = fallback
-    ? `Прогноз визитов по менеджеру <span class="fc-annot-accent">${displayName}</span>: считаем на основе текущего темпа.`
-    : `Прогноз визитов по менеджеру <span class="fc-annot-accent">${displayName}</span>: текущий темп ${tempo}.`;
+    ? `<div>Прогноз визитов по менеджеру <span class="fc-annot-accent">${displayName}</span></div><div style="font-weight:400;color:var(--txt3);margin-top:2px">${tempoTxt}</div>`
+    : `<div>По менеджеру <span class="fc-annot-accent">${displayName}</span>: ${tempoTxt}</div><div style="font-weight:400;color:var(--txt3);font-size:11px;margin-top:3px">Учтены последние ${validPasts.length} мес. — pace-ratio + линейная экстраполяция.</div>`;
   annot.classList.add('fc-show');
 
   // 2. Подождать, потом проявить summary (саб-заголовок графика)
@@ -17267,11 +17325,20 @@ async function openForecastModal(nameLow, plan) {
   await _fcLightningDraw(factEl, 800, myToken);
   if (myToken !== _fcAnimToken) return;
 
-  // Прогноз — продолжение линии от today до daysCur (линейная экстраполяция)
-  if (isCurMonth && today < daysCur && factToToday > 0) {
+  // Прогноз — кривая от (today, factToToday) до (daysCur, forecast),
+  // форма повторяет историческую среднюю траекторию для остатка месяца.
+  if (isCurMonth && today < daysCur && forecast > 0) {
     const forecastCum = curCum.slice();
+    const remaining = forecast - factToToday;
+    const baseTodayIdx = dayIndex30; // позиция today в нормализованном 30-дневном
+    const baseEnd = avgNorm[30];
+    const baseDayCount = baseEnd - avgNorm[baseTodayIdx]; // прирост avg от today до конца
     for (let d = today + 1; d <= daysCur; d++) {
-      forecastCum[d] = Math.round(factToToday / today * d);
+      // Какой % остатка обычно набирается к этому дню?
+      const dRatio30 = Math.max(baseTodayIdx, Math.min(30, Math.round(d / daysCur * 30)));
+      const avgInc  = avgNorm[dRatio30] - avgNorm[baseTodayIdx];
+      const shapeT = (baseDayCount > 0) ? (avgInc / baseDayCount) : ((d - today) / (daysCur - today));
+      forecastCum[d] = Math.round(factToToday + remaining * shapeT);
     }
     const fPath = pathFromCum(forecastCum, today, daysCur);
     const fEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -17293,10 +17360,16 @@ async function openForecastModal(nameLow, plan) {
   // Статы — рендерим скрытыми, потом проявляем по очереди
   const fmtPct = (v) => (v >= 0 ? '+' : '') + v + '%';
   const devCls = deviationPct >= 0 ? 'fc-grn' : 'fc-red';
+  const tempoCls = tempoVsAvg >= 0 ? 'fc-grn' : 'fc-red';
+  // Диапазон прогноза (min..max) — только если есть разброс
+  const showRange = forecastLow !== forecastHigh && forecastHigh > 0;
+  const forecastVal = showRange
+    ? `<span style="font-size:14px;color:var(--txt3);font-weight:600">${forecastLow}–</span>${forecast}<span style="font-size:14px;color:var(--txt3);font-weight:600">–${forecastHigh}</span>`
+    : `${forecast}`;
   stats.innerHTML = `
     <div class="fc-stat"><div class="fc-stat-lbl">Факт</div><div class="fc-stat-val">${factToToday}</div></div>
-    <div class="fc-stat"><div class="fc-stat-lbl">Прогноз</div><div class="fc-stat-val">${forecast}</div></div>
-    <div class="fc-stat"><div class="fc-stat-lbl">Отклонение от среднего</div><div class="fc-stat-val ${devCls}">${avgEnd > 0 ? fmtPct(deviationPct) : '—'}</div></div>
+    <div class="fc-stat"><div class="fc-stat-lbl">Прогноз${showRange ? ' (min–avg–max)' : ''}</div><div class="fc-stat-val">${forecastVal}</div></div>
+    <div class="fc-stat"><div class="fc-stat-lbl">Темп vs обычный</div><div class="fc-stat-val ${tempoCls}">${avgPace ? fmtPct(tempoVsAvg) : '—'}</div></div>
     <div class="fc-stat"><div class="fc-stat-lbl">Риск${planN > 0 ? ' срыва плана' : ''}</div><div class="fc-stat-val ${riskCls}">${risk}</div></div>
   `;
   await _fcSleep(150);

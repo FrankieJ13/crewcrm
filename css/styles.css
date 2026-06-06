@@ -1856,9 +1856,11 @@ body.light .mop {
 }
 .mop-head-left { display:flex; align-items:center; gap:7px }
 .mop-head-right { display:flex; align-items:center; gap:8px; flex-shrink:0 }
-/* В mop-карточке forecast-bell позиционирован inline, не absolute */
+/* В mop-карточке forecast-bell встроен inline, но остаётся position:relative,
+   чтобы pulse/ring оставались привязаны к кнопке, а не к ближайшему позиц. предку */
 .forecast-bell.forecast-bell-mop {
-  position: static;
+  position: relative;
+  top: auto; right: auto;
   width: 16px; height: 16px;
 }
 .mop-name {

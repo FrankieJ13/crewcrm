@@ -1864,46 +1864,13 @@ async function signInFirebaseAnonymously() {
   }
 }
 
-/* ════════════════════ KEEP-ALIVE PING ════════════════════
- * Каждые 25 секунд пока вкладка видима — тихий запрос USERS!A1:A1
- * (1 ячейка, ~50 байт). Цель:
- *  - не дать idle-timeout (HTTP/2 connection ~30с) закрыть соединение
- *  - держать Sheets-кеш USERS «прогретым» (Google сбрасывает его за ~30с)
- * Так первый запрос после возврата пользователя из таба будет быстрым,
- * а не cold-start 20-30 секунд.
- * При document.hidden пинги остановлены. На visible — мгновенный ping
- * + перезапуск интервала.
+/* ════════════════════ WAKE REFRESH ════════════════════
+ * Раньше здесь был регулярный keep-alive запрос в одну ячейку USERS.
+ * Он давал лишнюю нагрузку на Sheets и засорял диагностику, поэтому оставляем
+ * только целевой refresh после долгого простоя вкладки.
  */
-let _keepAliveTimer = null;
-let _keepAliveInflight = false;
-async function _keepAlivePing() {
-  if (_keepAliveInflight) return;
-  if (!S.token || !S.authReady) return;
-  if (document.hidden) return;
-  _keepAliveInflight = true;
-  try {
-    // Используем _apiFetch напрямую через api() — пройдёт через кеш TTL=45с,
-    // так что фактически сетевой запрос будет ~раз в 45с. Но fetch к Sheets
-    // всё равно случится регулярно благодаря авторефрешу, а это просто
-    // подстраховка для idle-окон.
-    await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/USERS!A1:A1`,
-      { headers: await authHeaders() }
-    );
-  } catch (e) {
-    // тихо — это просто пинг, его задача — поддержать соединение
-  } finally {
-    _keepAliveInflight = false;
-  }
-}
-function startKeepAlive() {
-  if (_keepAliveTimer) clearInterval(_keepAliveTimer);
-  _keepAliveTimer = setInterval(_keepAlivePing, 25_000);
-}
-function stopKeepAlive() {
-  if (_keepAliveTimer) { clearInterval(_keepAliveTimer); _keepAliveTimer = null; }
-}
-// При возврате во вкладку — сразу ping + перезапуск интервала.
+function stopKeepAlive() {}
+// При возврате во вкладку после долгого простоя — сразу обновляем активный экран.
 // (НЕ запрашиваем token-refresh — иначе попадём в баг audit#6 каскада.)
 // Трекаем длительность скрытия таба — после долгого простоя кеш и
 // HTTP/2 соединение мертвы. На return запускаем обновление сразу,
@@ -1918,8 +1885,6 @@ document.addEventListener('visibilitychange', () => {
   } else if (S.token && S.authReady) {
     const idle = _lastHiddenAt ? (Date.now() - _lastHiddenAt) : 0;
     _lastHiddenAt = 0;
-    _keepAlivePing();
-    startKeepAlive();
     // После длительного простоя — немедленный сильный рефреш, чтобы
     // юзер не ждал следующий 3-минутный тик. Cache invalidate в
     // refreshVisibleDataLive уже встроен.
@@ -7783,9 +7748,6 @@ function _runPostUsersFlow() {
       goPersonal();
     }
     setTimeout(() => backgroundPrefetch(matched), 3000);
-    // Keep-alive ping каждые 25с — держит Sheets-кеш USERS прогретым
-    // и HTTP/2 connection живым, чтобы избежать cold-start через idle.
-    startKeepAlive();
   } else {
     showAccessDenied();
     toast('Почта не найдена в USERS', 'e');

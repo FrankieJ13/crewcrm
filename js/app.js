@@ -4474,7 +4474,7 @@ function renderOtchet() {
 
     return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
       <div class="mop-strip" style="width:100%;background:${pctClr(progNum)}"></div>
-      <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${getMgrMessengerHtml(name)}</div><button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
+      <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name}</span>${getMgrMessengerHtml(name)}</div><div class="mop-head-right"><button class="forecast-bell forecast-bell-mop" onclick="event.stopPropagation();openForecastModal('${String(r[0]||'').toLowerCase().trim().replace(/'/g,"&#39;")}', ${rplan||0})" aria-label="Прогноз"><span class="forecast-bell-pulse"></span><span class="forecast-bell-ring"></span><span class="forecast-bell-mark">!</span></button><button class="mop-info-btn" onclick="openMopModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div></div>
       <div class="mop-mini">
         <div class="mm kpi-visits-drill" onclick="openVisitsDayModal(${JSON.stringify(String(r[0]||'').toLowerCase().trim()).replace(/"/g, '&quot;')}, false)" title="Хронология визитов по дням"><div class="ml">Визиты</div><div class="mv">${allV}</div></div>
         <div class="mm"><div class="ml">План</div><div class="mv">${rplan}</div></div>
@@ -4598,7 +4598,7 @@ function renderDozhimCards(opts = {}) {
     }).replace(/'/g,"&#39;");
     return `<div class="mop" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">
       <div class="mop-strip" style="width:100%;background:${pctClr(progNum)}"></div>
-      <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name.toUpperCase()}</span>${getMgrMessengerHtml(name)}</div><button class="mop-info-btn" onclick="openDozhimModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div>
+      <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="mop-name">${name.toUpperCase()}</span>${getMgrMessengerHtml(name)}</div><div class="mop-head-right"><button class="forecast-bell forecast-bell-mop" onclick="event.stopPropagation();openForecastModal('${nl.replace(/'/g,"&#39;")}', ${plan||0}, {isDozhim:true})" aria-label="Прогноз"><span class="forecast-bell-pulse"></span><span class="forecast-bell-ring"></span><span class="forecast-bell-mark">!</span></button><button class="mop-info-btn" onclick="openDozhimModal('${modalData.replace(/"/g,"&quot;")}')">i</button></div></div>
       <div class="mop-mini">
         <div class="mm kpi-visits-drill" onclick="openVisitsDayModal(${JSON.stringify(nl).replace(/"/g, '&quot;')}, true)" title="Хронология визитов по дням"><div class="ml">Визиты</div><div class="mv">${allVis}</div></div>
         <div class="mm"><div class="ml">План</div><div class="mv">${plan}</div></div>
@@ -17045,13 +17045,15 @@ function _fcDaysInMonth(sfx) {
   return new Date(yy, mm, 0).getDate();
 }
 
-async function _fcLoadMonth(sfx) {
-  if (_fcPastCache.has(sfx)) return _fcPastCache.get(sfx);
+async function _fcLoadMonth(sfx, isDozhim) {
+  const key = (isDozhim ? 'D:' : 'C:') + sfx;
+  if (_fcPastCache.has(key)) return _fcPastCache.get(key);
   try {
-    const data = await api('ВИЗИТЫ' + sfx, 'A:N');
-    _fcPastCache.set(sfx, data || []);
+    const sheet = (isDozhim ? 'Д_ВИЗИТЫ' : 'ВИЗИТЫ') + sfx;
+    const data = await api(sheet, 'A:N');
+    _fcPastCache.set(key, data || []);
     return data || [];
-  } catch(_) { _fcPastCache.set(sfx, []); return []; }
+  } catch(_) { _fcPastCache.set(key, []); return []; }
 }
 
 function _fcCumulativeByDay(vizityRows, nameLow, daysInMonth) {
@@ -17075,7 +17077,8 @@ function _fcCumulativeByDay(vizityRows, nameLow, daysInMonth) {
   return cum;
 }
 
-async function openForecastModal(nameLow, plan) {
+async function openForecastModal(nameLow, plan, opts) {
+  const isDozhim = !!(opts && opts.isDozhim);
   const overlay = document.getElementById('forecast-overlay');
   if (!overlay) return;
   // Сброс предыдущего состояния
@@ -17110,10 +17113,10 @@ async function openForecastModal(nameLow, plan) {
   const sfx = currentSuffix;
   const pastSfxs = [_fcSfxOffset(sfx, 1), _fcSfxOffset(sfx, 2), _fcSfxOffset(sfx, 3)];
   const daysCur = _fcDaysInMonth(sfx);
-  const curRows = S.data.vizity || [];
+  const curRows = (isDozhim ? S.data.d_vizity : S.data.vizity) || [];
   const curCum  = _fcCumulativeByDay(curRows, nameLow, daysCur);
 
-  const pastData = await Promise.all(pastSfxs.map(s => _fcLoadMonth(s)));
+  const pastData = await Promise.all(pastSfxs.map(s => _fcLoadMonth(s, isDozhim)));
   if (myToken !== _fcAnimToken) return;
   const pastCums = pastSfxs.map((s, i) => _fcCumulativeByDay(pastData[i], nameLow, _fcDaysInMonth(s)));
 

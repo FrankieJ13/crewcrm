@@ -1855,6 +1855,12 @@ body.light .mop {
   justify-content:space-between; margin-bottom:12px;
 }
 .mop-head-left { display:flex; align-items:center; gap:7px }
+.mop-head-right { display:flex; align-items:center; gap:8px; flex-shrink:0 }
+/* В mop-карточке forecast-bell позиционирован inline, не absolute */
+.forecast-bell.forecast-bell-mop {
+  position: static;
+  width: 16px; height: 16px;
+}
 .mop-name {
   font-family:'Unbounded',sans-serif;
   font-weight:700; font-size:14px; text-transform:uppercase;

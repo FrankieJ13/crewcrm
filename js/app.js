@@ -11950,26 +11950,40 @@ function renderRating() {
     if (parts.length === 1) return parts[0];
     return parts[0] + ' ' + (parts[1][0]||'').toUpperCase() + '.';
   }
-  // Раскладка: 2-е место слева, 1-е центр, 3-е справа
+  // Раскладка: 2-е место слева, 1-е центр, 3-е справа. Каждое место — отдельная карточка.
   const podiumOrder = [1, 0, 2]; // индекс в topManagers
+  const _laurelSvg = (side) => `<svg class="podium-laurel podium-laurel-${side}" viewBox="0 0 40 40" fill="currentColor" aria-hidden="true">
+    <path d="M5 35 Q15 30 20 18 Q22 12 22 5" stroke="currentColor" fill="none" stroke-width="1.8" stroke-linecap="round" opacity="0.75"/>
+    <ellipse cx="8" cy="33" rx="3.5" ry="1.5" transform="rotate(-30 8 33)"/>
+    <ellipse cx="13" cy="28" rx="3.5" ry="1.5" transform="rotate(-15 13 28)"/>
+    <ellipse cx="17" cy="22" rx="3.5" ry="1.5" transform="rotate(-5 17 22)"/>
+    <ellipse cx="20" cy="15" rx="3.5" ry="1.5" transform="rotate(15 20 15)"/>
+    <ellipse cx="22" cy="9" rx="3" ry="1.3" transform="rotate(35 22 9)"/>
+  </svg>`;
   const podiumHTML = topManagers.length ? `
     <div class="rating-podium">
       ${podiumOrder.map(i => {
         const m = topManagers[i];
-        if (!m) return '<div class="podium-col"></div>';
+        if (!m) return '<div class="podium-card podium-card-empty"></div>';
         const rank = i + 1;
-        const scoreTxt = `${m.vis || 0} · <span style="color:${pctClr(m.progNum)}">${m.progNum}%</span>`;
+        const scoreTxt = `${m.vis || 0} <span class="podium-dot">·</span> <span style="color:${pctClr(m.progNum)}">${m.progNum}%</span>`;
         const crownColor = rank === 1 ? '#f29220' : rank === 2 ? '#9aa0a6' : '#cd7f32';
-        const crownHtml = `<span class="podium-crown" aria-hidden="true"><svg viewBox="0 0 24 24" fill="${crownColor}" stroke="${crownColor}" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"><path d="M3 16 L5 7 L9 12 L12 3 L15 12 L19 7 L21 16 Z"/><line x1="4.5" y1="20" x2="19.5" y2="20" stroke-width="2.4"/></svg></span>`;
+        const crownHtml = `<span class="podium-crown" aria-hidden="true" style="color:${crownColor}"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"><path d="M3 16 L5 7 L9 12 L12 3 L15 12 L19 7 L21 16 Z"/><line x1="4.5" y1="20" x2="19.5" y2="20" stroke-width="2.4"/></svg></span>`;
         return `
-        <div class="podium-col podium-col-${rank}">
-          <div class="podium-head">
-            ${crownHtml}
-            ${_podiumAvatar(m.name, m.progNum)}
+        <div class="podium-card podium-rank-${rank}">
+          <div class="podium-card-body">
+            <div class="podium-head">
+              ${_podiumAvatar(m.name, m.progNum)}
+              ${crownHtml}
+            </div>
+            <div class="podium-name">${_podiumShort(m.name)}</div>
+            <div class="podium-score">${scoreTxt}</div>
           </div>
-          <div class="podium-name">${_podiumShort(m.name)}</div>
-          <div class="podium-score">${scoreTxt}</div>
-          <div class="podium-block podium-block-${rank}"><span>${rank}</span></div>
+          <div class="podium-base podium-base-${rank}">
+            ${_laurelSvg('l')}
+            <span class="podium-rank-num">${rank}</span>
+            ${_laurelSvg('r')}
+          </div>
         </div>`;
       }).join('')}
     </div>` : '';

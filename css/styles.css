@@ -8938,13 +8938,16 @@ body.fluent .vac-cell        { color: #111; }
 /* Каждая волна — длинный «блик», сдвигающийся слева направо по базе.
    Размер кратно ширине базы; разные смещения и скорости (×2 медленнее
    оригинала) дают эффект жидкого блеска. */
+/* Каждая волна — длинный «блик», полностью невидимый по краям анимации
+   (background-position за пределами видимой зоны), поэтому петля
+   ощущается бесшовно — без рывка при сбросе на старт. */
 .podium-wave {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 0;
   background-repeat: no-repeat;
-  background-size: 50% 200%;
+  background-size: 60% 200%;
   will-change: background-position;
 }
 .podium-wave:nth-of-type(1) {
@@ -8953,17 +8956,17 @@ body.fluent .vac-cell        { color: #111; }
 }
 .podium-wave:nth-of-type(2) {
   background-image: radial-gradient(ellipse at 50% 50%, rgba(255,255,255,.32) 0%, rgba(255,255,255,0) 65%);
-  animation: podiumWave 20s linear infinite reverse;
-  animation-delay: -3s;
+  animation: podiumWave 20s linear infinite;
+  animation-delay: -6s;
 }
 .podium-wave:nth-of-type(3) {
   background-image: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,.28) 0%, rgba(0,0,0,0) 65%);
   animation: podiumWave 30s linear infinite;
-  animation-delay: -7s;
+  animation-delay: -12s;
 }
 @keyframes podiumWave {
-  0%   { background-position: -60% 50%; }
-  100% { background-position: 160% 50%; }
+  0%   { background-position: -150% 50%; }
+  100% { background-position: 200% 50%; }
 }
 .podium-rank-num {
   font-size: 15px;

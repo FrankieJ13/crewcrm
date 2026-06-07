@@ -75,7 +75,7 @@ function _preloadThemeIcons() {
 const CFG = {
   CLIENT_ID: '364532815329-0j1lkobb1v9vcserj6artf64nd95a0la.apps.googleusercontent.com',
   SHEET_ID:  '1DeUsHB_O1SbIMR4p5yd64o_R0yllWvtnyNhjxjhipn8',
-  AUDIT_WEBAPP_URL: '',
+  AUDIT_WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbz3PL0QdR8giSx9ye6mycGQYNHU8Iejb3smqBXgtWopB7S98_LY1S3wSlXKvNp7lJ-eFA/exec',
   AUDIT_DIRECT_FALLBACK: false,
   FIREBASE: {
     apiKey: 'AIzaSyAmXoyZdIuxmbWyFHTKfdYRbYLcKxgVbWE',

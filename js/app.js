@@ -2846,8 +2846,11 @@ function reloadCurrent() {
   // При ручном обновлении сбрасываем кеш rates.json — на случай если
   // CEO только что обновил ставки и закоммитил.
   _ratesJson = null; _ratesJsonPromise = null;
-  // Если открыт таб Автоподбор — перезагружаем каталог CM66
-  if (S.faqTab === 'autopodbor' && typeof window.cm66Reload === 'function') {
+  // Если реально открыт FAQ → Автоподбор — перезагружаем каталог CM66.
+  // S.faqTab хранит последнюю выбранную вкладку FAQ, поэтому без проверки
+  // активного экрана кнопка обновления на KPI/рейтинге/главной уходила в каталог.
+  const faqOn = document.getElementById('scr-instruktsii')?.classList.contains('on');
+  if (faqOn && S.faqTab === 'autopodbor' && typeof window.cm66Reload === 'function') {
     try { window.cm66Reload(); toast('Каталог авто обновляется…','s'); } catch(_){}
     return;
   }

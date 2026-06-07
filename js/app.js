@@ -981,6 +981,7 @@ async function azImportSheet() {
 }
 
 function showScr(id) {
+  hideStartupLoader();
   // Если уходим с инструкций — возвращаем узел Автоподбора в body (чтоб не уносился со scr-instruktsii)
   if (id !== 'instruktsii' && typeof _apReturnToBody === 'function') _apReturnToBody();
   ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo','analiz','trophies','profile'].forEach(t => {
@@ -1002,6 +1003,25 @@ function showScr(id) {
     dockSetActive(dockId);
   }
   updateFirebasePage();
+}
+
+function showStartupLoader(text = 'Синхронизация профиля…') {
+  hideStartupLoader();
+  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo','analiz','trophies','profile'].forEach(t => {
+    const el = document.getElementById('scr-'+t);
+    if (el) el.classList.remove('on');
+  });
+  const main = document.querySelector('main');
+  if (!main) return;
+  const node = document.createElement('div');
+  node.id = 'startup-loader';
+  node.className = 'loader';
+  node.innerHTML = `<div class="spin"></div><div>${text}</div>`;
+  main.prepend(node);
+}
+
+function hideStartupLoader() {
+  document.getElementById('startup-loader')?.remove();
 }
 
 function num(v) { return parseInt(v)||0 }
@@ -1924,6 +1944,7 @@ function cleanupTokenRequest() {
 }
 
 function showLoginScreen() {
+  hideStartupLoader();
   const l = document.getElementById('silent-loader');
   if (l) l.remove();
   const login = document.getElementById('scr-login');
@@ -2165,10 +2186,8 @@ function onLogin() {
   const ls = document.getElementById('scr-login');
   ls.classList.remove('on'); ls.style.display = 'none'; document.body.classList.remove('login-active');
   if (window._loginLiquidCleanup) window._loginLiquidCleanup();
-  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab==='otchet'));
-  showScr('otchet');
-  const firstScreen = document.getElementById('c-otchet');
-  if (firstScreen) firstScreen.innerHTML = loader();
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+  showStartupLoader('Синхронизация профиля…');
   loadUsersAndStart();
   // Автообновление каждые 3 минуты — полный сброс кеша
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
@@ -7978,6 +7997,7 @@ function findUserInSheet() {
 }
 
 function showAccessDenied(reason = 'Почта не найдена в USERS') {
+  hideStartupLoader();
   const email = normalizeEmail(S.user?.email) || 'email не получен';
   S.authReady = false;
   stopKeepAlive();

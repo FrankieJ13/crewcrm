@@ -1482,6 +1482,12 @@ function updateFirebasePage() {
   if (p.connectionRef) p.connectionRef.update({ page }).catch(() => {});
 }
 
+function scheduleFirebasePageUpdate() {
+  requestAnimationFrame(() => {
+    try { updateFirebasePage(); } catch (_) {}
+  });
+}
+
 function refreshFirebaseProfile() {
   const p = firebasePresence;
   if (!p.userRef || !p.uid || !window.firebase?.database) return;
@@ -2350,6 +2356,7 @@ function openLogsModal() {
     </div>`;
   document.body.appendChild(wrap);
   document.body.style.overflow = 'hidden';
+  scheduleFirebasePageUpdate();
 
   const listEl  = wrap.querySelector('#diag-list');
   const countEl = wrap.querySelector('#diag-count');
@@ -2446,11 +2453,13 @@ function openLogsModal() {
   if (sysBtn) sysBtn.onclick = () => {
     activeTab = 'systems';
     localStorage.setItem(CRM_LOG_TAB_KEY, activeTab);
+    scheduleFirebasePageUpdate();
     render();
   };
   if (crmBtn) crmBtn.onclick = () => {
     activeTab = 'crm';
     localStorage.setItem(CRM_LOG_TAB_KEY, activeTab);
+    scheduleFirebasePageUpdate();
     render();
   };
   wrap.querySelector('#diag-close').onclick = closeLogsModal;
@@ -2481,6 +2490,7 @@ function closeLogsModal() {
   const w = document.getElementById('diag-modal');
   if (w) w.remove();
   document.body.style.overflow = '';
+  scheduleFirebasePageUpdate();
 }
 window.openLogsModal = openLogsModal;
 window.closeLogsModal = closeLogsModal;
@@ -7389,6 +7399,7 @@ function openPlanEditor() {
     body.innerHTML = '<div class="empty">Лист ПЛАН не загружен. Обновите страницу.</div>';
     document.getElementById('plan-editor-overlay').style.display = 'flex';
     document.getElementById('plan-editor-overlay').classList.add('open');
+    scheduleFirebasePageUpdate();
     return;
   }
 
@@ -7429,6 +7440,7 @@ function openPlanEditor() {
   if (status) status.textContent = '';
   document.getElementById('plan-editor-overlay').style.display = 'flex';
   document.getElementById('plan-editor-overlay').classList.add('open');
+  scheduleFirebasePageUpdate();
 }
 
 function closePlanEditor() {
@@ -7436,6 +7448,7 @@ function closePlanEditor() {
   overlay.classList.remove('open');
   overlay.style.display = 'none';
   document.body.style.overflow = '';
+  scheduleFirebasePageUpdate();
 }
 
 async function savePlan() {
@@ -11199,6 +11212,7 @@ function closePlanEditorFull() {
   const overlay = document.getElementById('plan-editor-overlay');
   if (overlay) { overlay.classList.remove('open'); overlay.style.display = 'none'; }
   document.body.style.overflow = '';
+  scheduleFirebasePageUpdate();
 }
 function dockSetActive(id) {
   ['home','kpi','rating','dohod','grafik','instruktsii','vizity'].forEach(k => {
@@ -14560,6 +14574,7 @@ async function _profileLoadAndRenderStats(name, panelId, periodParam) {
 function openAbout() {
   const overlay = document.getElementById('about-overlay');
   if (overlay) { overlay.style.display = 'flex'; }
+  scheduleFirebasePageUpdate();
   // НЕ трогаем body.overflow — это ломает position:fixed на iOS
 }
 function openTrophies() {
@@ -15129,6 +15144,7 @@ window._profileLoadAndRenderTrophies = _profileLoadAndRenderTrophies;
 function closeAbout() {
   const overlay = document.getElementById('about-overlay');
   if (overlay) { overlay.style.display = 'none'; }
+  scheduleFirebasePageUpdate();
 }
 
 // ==================== HAMBURGER MENU ====================
@@ -15642,11 +15658,13 @@ function exp_openModal() {
   const btn = document.getElementById('exp-go-btn');
   if (btn) btn.disabled = false;
   ov.style.display = 'flex';
+  scheduleFirebasePageUpdate();
 }
 
 function exp_closeModal() {
   const ov = document.getElementById('export-modal-overlay');
   if (ov) ov.style.display = 'none';
+  scheduleFirebasePageUpdate();
 }
 
 function exp_setStatus(text, kind) {
@@ -17350,6 +17368,7 @@ function openRepeatSearchModal() {
   ov.classList.add('open');
   document.body.style.overflow = 'hidden';
   body.innerHTML = _rsRenderConfigHtml();
+  scheduleFirebasePageUpdate();
 }
 
 function closeRepeatSearchModal() {
@@ -17361,6 +17380,7 @@ function closeRepeatSearchModal() {
   if (hdr) hdr.classList.remove('scrolled');
   if (_rsToolbarObserver) { _rsToolbarObserver.disconnect(); _rsToolbarObserver = null; }
   if (_rsStuckObserver)   { _rsStuckObserver.disconnect();   _rsStuckObserver = null; }
+  scheduleFirebasePageUpdate();
 }
 
 function _rsRenderConfigHtml() {

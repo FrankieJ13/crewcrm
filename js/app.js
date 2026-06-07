@@ -1333,12 +1333,24 @@ function _presenceShortName(full) {
 
 function getPresencePageLabel() {
   const deptLabel = dept => dept === 'dozhim' ? 'Дожим' : 'CRM';
+  const isVisible = id => {
+    const el = document.getElementById(id);
+    if (!el) return false;
+    return el.classList.contains('open') || getComputedStyle(el).display !== 'none';
+  };
   const matched = findUserInSheet();
   const role = matched?.role || 'crm';
   const isCeo = isCeoLike(role);
   const roleDept = role === 'dozhim' ? 'dozhim' : 'crm';
   const effectiveRatingDept = isCeo ? S.ratingDept : roleDept;
   const effectiveDohodDept = isCeo ? S.dohodTab : roleDept;
+  if (isVisible('export-modal-overlay')) return 'Экспорт отчёта';
+  if (isVisible('repeats-overlay')) return 'Поиск повторов';
+  if (isVisible('about-overlay')) return 'О проекте';
+  if (isVisible('diag-modal')) {
+    return localStorage.getItem(CRM_LOG_TAB_KEY) === 'crm' ? 'Логи CRM' : 'Логи Sys';
+  }
+  if (isVisible('plan-editor-overlay')) return 'Настройки';
   // Автоподбор — фуллскрин-оверлей, не scr-* — проверяем по классу .open
   if (document.getElementById('autopodbor-fullscreen')?.classList.contains('open')) return 'Автоподбор';
   if (document.getElementById('profile-modal-overlay')?.classList.contains('open')) {

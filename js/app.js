@@ -2545,7 +2545,41 @@ function trySilentRefresh() {
 // ==================== API LAYER ====================
 const _apiInflight = {};   // key → Promise (дедупликация одновременных запросов)
 const _apiCache    = {};   // key → {ts, data} (TTL-кеш: не перезапрашиваем в течение TTL)
+const _apiStaleCache = {}; // key → последняя успешная копия, даже после invalidate
 const API_TTL_MS   = 45_000; // 45 сек — минимальный интервал повторной загрузки одного листа
+const API_STALE_TTL_MS = 10 * 60_000; // до 10 минут можно показать старое при сетевом сбое
+const API_MAX_CONCURRENT = 3;
+let _apiQueueActive = 0;
+let _apiQueueSeq = 0;
+const _apiQueue = [];
+
+function apiQueueRun(task, opts = {}) {
+  return new Promise((resolve, reject) => {
+    _apiQueue.push({
+      task,
+      resolve,
+      reject,
+      priority: opts.priority || 0,
+      seq: _apiQueueSeq++,
+    });
+    apiQueuePump();
+  });
+}
+
+function apiQueuePump() {
+  while (_apiQueueActive < API_MAX_CONCURRENT && _apiQueue.length) {
+    _apiQueue.sort((a, b) => (b.priority - a.priority) || (a.seq - b.seq));
+    const item = _apiQueue.shift();
+    _apiQueueActive++;
+    Promise.resolve()
+      .then(item.task)
+      .then(item.resolve, item.reject)
+      .finally(() => {
+        _apiQueueActive--;
+        apiQueuePump();
+      });
+  }
+}
 
 async function api(sheet, range, opts = {}) {
   // opts.params: дополнительные query-параметры к Sheets values endpoint.
@@ -2556,18 +2590,40 @@ async function api(sheet, range, opts = {}) {
   const key = sheet + '!' + range + (paramStr ? '?' + paramStr : '');
 
   const cached = _apiCache[key];
-  if (cached && (Date.now() - cached.ts) < API_TTL_MS) {
+  if (!opts.force && cached && (Date.now() - cached.ts) < API_TTL_MS) {
     return cached.data;
   }
   if (_apiInflight[key]) return _apiInflight[key];
 
-  _apiInflight[key] = _apiFetch(sheet, range, key, 0, paramStr);
+  _apiInflight[key] = apiQueueRun(
+    () => _apiFetch(sheet, range, key, 0, paramStr),
+    { priority: opts.priority || 0 }
+  );
   try {
     const result = await _apiInflight[key];
     return result;
+  } catch (err) {
+    const stale = _apiStaleCache[key];
+    const canUseStale = stale && (Date.now() - stale.ts) < API_STALE_TTL_MS && opts.stale !== false;
+    if (canUseStale && err && err.message !== 'auth' && err.message !== 'NOT_FOUND') {
+      try { console.warn('Sheets stale cache used', key, err); } catch (_) {}
+      return stale.data;
+    }
+    throw err;
   } finally {
     delete _apiInflight[key];
   }
+}
+
+function apiFresh(sheet, range, opts = {}) {
+  return api(sheet, range, { ...opts, force: true, priority: opts.priority ?? 10 });
+}
+
+function apiFreshOrNull(sheet, range, opts = {}) {
+  return apiFresh(sheet, range, opts).catch(err => {
+    try { console.warn('Sheets live refresh skipped', sheet + '!' + range, err); } catch (_) {}
+    return null;
+  });
 }
 
 async function _apiFetch(sheet, range, key, retryCount = 0, params = '') {
@@ -2595,7 +2651,8 @@ async function _apiFetch(sheet, range, key, retryCount = 0, params = '') {
       // Тихий первый retry; сообщаем только начиная со второй неудачи
       if (retryCount === 1) toast('Связь с Google нестабильна — повторяю…', 'i');
       const jitter = Math.round(Math.random() * 800);
-      const wait   = Math.min((retryCount + 1) * 3000 + jitter, 10000);
+      const waits = [700, 1500, 3000];
+      const wait = (waits[retryCount] || 3000) + jitter;
       await new Promise(res => setTimeout(res, wait));
       return _apiFetch(sheet, range, key, retryCount + 1, params);
     }
@@ -2607,7 +2664,7 @@ async function _apiFetch(sheet, range, key, retryCount = 0, params = '') {
   if (r.status === 429) {
     // Quota exceeded — ждём и повторяем (до 3 раз)
     if (retryCount < 3) {
-      const wait = (retryCount + 1) * 8000; // 8s, 16s, 24s
+      const wait = (retryCount + 1) * 4000; // 4s, 8s, 12s
       if (retryCount === 1) toast('Лимит запросов — повтор через ' + (wait/1000) + 'с…', 'i');
       await new Promise(res => setTimeout(res, wait));
       return _apiFetch(sheet, range, key, retryCount + 1, params);
@@ -2647,6 +2704,7 @@ async function _apiFetch(sheet, range, key, retryCount = 0, params = '') {
 
   const data = (await r.json()).values || [];
   _apiCache[key] = { ts: Date.now(), data };
+  _apiStaleCache[key] = { ts: Date.now(), data };
   return data;
 }
 
@@ -3596,14 +3654,13 @@ async function refreshVisibleDataLive() {
   try { window.DIAG?.push('info', 'refresh', ['refreshVisibleDataLive']); } catch(_){}
   if (document.getElementById('scr-vizity')?.classList.contains('on')) return;
   if (document.getElementById('scr-ceo')?.classList.contains('on')) {
-    apiCacheInvalidate();
     S.silentRefresh = true;
     try {
       const [vd, dv, pd, cv] = await Promise.all([
-        api(SHEETS.vizity,   'A:N').catch(() => []),
-        api(SHEETS.d_vizity, 'A:N').catch(() => []),
-        api(SHEETS.plan,     'A:D').catch(() => []),
-        api(SHEETS.cnvrs,    'A1:N40').catch(() => []),
+        apiFreshOrNull(SHEETS.vizity,   'A:N'),
+        apiFreshOrNull(SHEETS.d_vizity, 'A:N'),
+        apiFreshOrNull(SHEETS.plan,     'A:D'),
+        apiFreshOrNull(SHEETS.cnvrs,    'A1:N40'),
       ]);
       if (vd?.length)  S.data.vizity   = vd;
       if (dv?.length)  S.data.d_vizity = dv;
@@ -3621,26 +3678,30 @@ async function refreshVisibleDataLive() {
   const matched = findUserInSheet();
   const role = matched?.role || '';
 
-  apiCacheInvalidate();
   S.silentRefresh = true;
   try {
     if (personalOn) {
       if (!matched) return;
       if (role === 'dozhim') {
         const [dv, pd, gr] = await Promise.all([
-          api(SHEETS.d_vizity, 'A:N').catch(() => []),
-          api(SHEETS.plan, 'A:D').catch(() => []),
-          api(SHEETS.grafik, 'A1:AI25').catch(() => []),
+          apiFreshOrNull(SHEETS.d_vizity, 'A:N'),
+          apiFreshOrNull(SHEETS.plan, 'A:D'),
+          apiFreshOrNull(SHEETS.grafik, 'A1:AI25'),
         ]);
-        S.data.d_vizity = dv; S.data.plan = pd; S.data.grafik = gr;
+        if (dv) S.data.d_vizity = dv;
+        if (pd) S.data.plan = pd;
+        if (gr) S.data.grafik = gr;
       } else {
         const [vd, pd, cn, gr] = await Promise.all([
-          api(SHEETS.vizity, 'A:N').catch(() => []),
-          api(SHEETS.plan, 'A:D').catch(() => []),
-          api(SHEETS.cnvrs, 'A1:N40').catch(() => []),
-          api(SHEETS.grafik, 'A1:AI25').catch(() => []),
+          apiFreshOrNull(SHEETS.vizity, 'A:N'),
+          apiFreshOrNull(SHEETS.plan, 'A:D'),
+          apiFreshOrNull(SHEETS.cnvrs, 'A1:N40'),
+          apiFreshOrNull(SHEETS.grafik, 'A1:AI25'),
         ]);
-        S.data.vizity = vd; S.data.plan = pd; S.data.cnvrs = cn; S.data.grafik = gr;
+        if (vd) S.data.vizity = vd;
+        if (pd) S.data.plan = pd;
+        if (cn) S.data.cnvrs = cn;
+        if (gr) S.data.grafik = gr;
       }
       // Ставки — из rates.json (раньше из листа СТАВКИ)
       if (!_ratesJson) { try { await loadRatesJson(); } catch(_){} }
@@ -3650,13 +3711,15 @@ async function refreshVisibleDataLive() {
 
     if (activeTab === 'otchet') {
       const tasks = [
-        api(SHEETS.vizity, 'A:N').catch(() => []),
-        api(SHEETS.plan, 'A:D').catch(() => []),
-        api(SHEETS.cnvrs, 'A1:N40').catch(() => []),
+        apiFreshOrNull(SHEETS.vizity, 'A:N'),
+        apiFreshOrNull(SHEETS.plan, 'A:D'),
+        apiFreshOrNull(SHEETS.cnvrs, 'A1:N40'),
       ];
-      if (S.reportTab === 'dozhim' || S.reportTab === 'dept') tasks.push(api(SHEETS.d_vizity, 'A:N').catch(() => []));
+      if (S.reportTab === 'dozhim' || S.reportTab === 'dept') tasks.push(apiFreshOrNull(SHEETS.d_vizity, 'A:N'));
       const [vd, pd, cn, dv] = await Promise.all(tasks);
-      S.data.vizity = vd; S.data.plan = pd; S.data.cnvrs = cn;
+      if (vd) S.data.vizity = vd;
+      if (pd) S.data.plan = pd;
+      if (cn) S.data.cnvrs = cn;
       if (dv) S.data.d_vizity = dv;
       renderOtchet();
     } else if (activeTab === 'dohod') {
@@ -3664,18 +3727,22 @@ async function refreshVisibleDataLive() {
       const isDozhim = role === 'dozhim' || (isCeo && S.dohodTab === 'dozhim');
       if (isDozhim) {
         const [dv, pd, gr] = await Promise.all([
-          api(SHEETS.d_vizity, 'A:N').catch(() => []),
-          api(SHEETS.plan, 'A:D').catch(() => []),
-          api(SHEETS.grafik, 'A1:AI25').catch(() => []),
+          apiFreshOrNull(SHEETS.d_vizity, 'A:N'),
+          apiFreshOrNull(SHEETS.plan, 'A:D'),
+          apiFreshOrNull(SHEETS.grafik, 'A1:AI25'),
         ]);
-        S.data.d_vizity = dv; S.data.plan = pd; S.data.grafik = gr;
+        if (dv) S.data.d_vizity = dv;
+        if (pd) S.data.plan = pd;
+        if (gr) S.data.grafik = gr;
       } else {
         const [vd, pd, gr] = await Promise.all([
-          api(SHEETS.vizity, 'A:N').catch(() => []),
-          api(SHEETS.plan, 'A:D').catch(() => []),
-          api(SHEETS.grafik, 'A1:AI25').catch(() => []),
+          apiFreshOrNull(SHEETS.vizity, 'A:N'),
+          apiFreshOrNull(SHEETS.plan, 'A:D'),
+          apiFreshOrNull(SHEETS.grafik, 'A1:AI25'),
         ]);
-        S.data.vizity = vd; S.data.plan = pd; S.data.grafik = gr;
+        if (vd) S.data.vizity = vd;
+        if (pd) S.data.plan = pd;
+        if (gr) S.data.grafik = gr;
       }
       // Ставки — rates.json
       if (!_ratesJson) { try { await loadRatesJson(); } catch(_){} }
@@ -3683,17 +3750,18 @@ async function refreshVisibleDataLive() {
     } else if (activeTab === 'rating') {
       const isDozhimRating = S.ratingDept === 'dozhim';
       const [pd, vd] = await Promise.all([
-        api(SHEETS.plan, 'A:D').catch(() => []),
-        api(isDozhimRating ? SHEETS.d_vizity : SHEETS.vizity, 'A:N').catch(() => []),
+        apiFreshOrNull(SHEETS.plan, 'A:D'),
+        apiFreshOrNull(isDozhimRating ? SHEETS.d_vizity : SHEETS.vizity, 'A:N'),
       ]);
-      S.data.plan = pd;
-      if (isDozhimRating) S.data.d_vizity = vd;
-      else S.data.vizity = vd;
+      if (pd) S.data.plan = pd;
+      if (isDozhimRating && vd) S.data.d_vizity = vd;
+      else if (vd) S.data.vizity = vd;
       // Ставки — rates.json (для rating тоже нужны через calcSalary*)
       if (!_ratesJson) { try { await loadRatesJson(); } catch(_){} }
       renderRating();
     } else if (activeTab === 'grafik') {
-      S.data.grafik = await api(SHEETS.grafik, 'A1:AI25').catch(() => []);
+      const gr = await apiFreshOrNull(SHEETS.grafik, 'A1:AI25');
+      if (gr) S.data.grafik = gr;
       renderGrafik();
     }
   } finally {

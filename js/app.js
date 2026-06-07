@@ -366,6 +366,8 @@ const S = {
   silentRefresh: false,
   authReady: false,
   sverkaMode: false,
+  crmLogs: null,
+  crmLogsReady: false,
   trophies: null,         // справочник из /data/trophies.json
   trophyAwards: null,     // факты выдачи из листа TrophyAwards
   trophiesView: 'self',   // 'self' или имя менеджера (для CEO/ROP)
@@ -2272,13 +2274,20 @@ function _diagAsPlainText() {
 }
 function openLogsModal() {
   closeLogsModal();
+  const canSeeCrmLogs = isStrictCeo();
+  let activeTab = localStorage.getItem(CRM_LOG_TAB_KEY) || 'systems';
+  if (activeTab === 'crm' && !canSeeCrmLogs) activeTab = 'systems';
   const wrap = document.createElement('div');
   wrap.id = 'diag-modal';
   wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100000;display:flex;align-items:stretch;justify-content:center;';
   wrap.innerHTML = `
     <div style="background:#15171c;color:#e8eaed;width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;border-radius:12px;overflow:hidden;font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;box-shadow:0 8px 40px rgba(0,0,0,.6);">
       <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#1a1d23;">
-        <strong style="font-size:14px;flex:0 0 auto;color:#fff">Диагностические логи</strong>
+        <strong style="font-size:14px;flex:0 0 auto;color:#fff">Логи</strong>
+        <div style="display:flex;gap:5px;background:#111318;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:3px">
+          <button id="logs-tab-systems" style="background:#2a2f38;color:#e8eaed;border:0;border-radius:6px;padding:5px 9px;font-size:12px;cursor:pointer;font-weight:700">Systems</button>
+          ${canSeeCrmLogs ? `<button id="logs-tab-crm" style="background:transparent;color:#aab;border:0;border-radius:6px;padding:5px 9px;font-size:12px;cursor:pointer;font-weight:700">CRM Logs</button>` : ''}
+        </div>
         <span id="diag-count" style="opacity:.6;font-size:11px;color:#aab"></span>
         <span style="flex:1"></span>
         <select id="diag-filter" style="background:#2a2f38;color:#e8eaed;border:1px solid rgba(255,255,255,.14);border-radius:6px;padding:4px 6px;font-size:12px;">
@@ -2299,9 +2308,25 @@ function openLogsModal() {
   const listEl  = wrap.querySelector('#diag-list');
   const countEl = wrap.querySelector('#diag-count');
   const filterEl = wrap.querySelector('#diag-filter');
+  const copyBtn = wrap.querySelector('#diag-copy');
+  const clearBtn = wrap.querySelector('#diag-clear');
+  const sysBtn = wrap.querySelector('#logs-tab-systems');
+  const crmBtn = wrap.querySelector('#logs-tab-crm');
 
   const levelOrder = { error: 0, warn: 1, info: 2, log: 2, debug: 3 };
-  function render() {
+  function setTabBtnState() {
+    if (sysBtn) {
+      sysBtn.style.background = activeTab === 'systems' ? '#2a2f38' : 'transparent';
+      sysBtn.style.color = activeTab === 'systems' ? '#e8eaed' : '#aab';
+    }
+    if (crmBtn) {
+      crmBtn.style.background = activeTab === 'crm' ? '#2563eb' : 'transparent';
+      crmBtn.style.color = activeTab === 'crm' ? '#fff' : '#aab';
+    }
+    filterEl.style.display = activeTab === 'systems' ? '' : 'none';
+    clearBtn.style.display = activeTab === 'systems' ? '' : 'none';
+  }
+  function renderSystems() {
     const filterVal = filterEl.value;
     const all = DIAG.getAll();
     let shown = all;
@@ -2326,13 +2351,68 @@ function openLogsModal() {
       </div>`;
     }).join('');
   }
+  function renderCrmRows(rows) {
+    const body = (rows || []).slice(1).filter(r => r && r.some(Boolean)).reverse();
+    countEl.textContent = `${body.length} записей`;
+    if (!body.length) {
+      listEl.innerHTML = '<div style="opacity:.5;text-align:center;padding:20px">CRM-логов пока нет</div>';
+      return;
+    }
+    listEl.innerHTML = body.map(r => {
+      const [ts, email, name, role, mod, action, sheet, row, col, entityId, label, before, after, month] = r;
+      const safe = v => String(v || '').replace(/[<>&]/g, ch => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[ch]));
+      return `<div style="padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);color:#d4d6db">
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <span style="color:#9098a3">${safe(ts)}</span>
+          <span style="color:#5fa8ff;font-weight:800">[${safe(mod)}]</span>
+          <span style="color:#ffc043;font-weight:800">${safe(action)}</span>
+          <span style="color:#9098a3">${safe(sheet)}${row ? ':' + safe(row) : ''}${col ? ' · ' + safe(col) : ''}</span>
+        </div>
+        <div style="margin-top:3px;color:#e8eaed;white-space:pre-wrap;word-break:break-word">${safe(label || entityId)}</div>
+        <div style="margin-top:3px;color:#aab;white-space:pre-wrap;word-break:break-word"><b>${safe(before)}</b> → <b style="color:#fff">${safe(after)}</b></div>
+        <div style="margin-top:3px;color:#707786">${safe(name)} · ${safe(email)} · ${safe(role)} · ${safe(month)}</div>
+      </div>`;
+    }).join('');
+  }
+  async function renderCrm(force = false) {
+    if (!canSeeCrmLogs) {
+      listEl.innerHTML = '<div style="opacity:.65;text-align:center;padding:20px">CRM Logs доступны только CEO</div>';
+      countEl.textContent = '';
+      return;
+    }
+    listEl.innerHTML = '<div style="opacity:.6;text-align:center;padding:20px">Загружаю CRM Logs…</div>';
+    countEl.textContent = '';
+    try {
+      const rows = await loadCrmLogs(force);
+      renderCrmRows(rows);
+    } catch (e) {
+      listEl.innerHTML = `<div style="color:#ff6b6b;text-align:center;padding:20px">Не удалось загрузить CRM Logs: ${String(e.message || e)}</div>`;
+    }
+  }
+  function render() {
+    setTabBtnState();
+    if (activeTab === 'crm') renderCrm(false);
+    else renderSystems();
+  }
   render();
 
   filterEl.addEventListener('change', render);
+  if (sysBtn) sysBtn.onclick = () => {
+    activeTab = 'systems';
+    localStorage.setItem(CRM_LOG_TAB_KEY, activeTab);
+    render();
+  };
+  if (crmBtn) crmBtn.onclick = () => {
+    activeTab = 'crm';
+    localStorage.setItem(CRM_LOG_TAB_KEY, activeTab);
+    render();
+  };
   wrap.querySelector('#diag-close').onclick = closeLogsModal;
   wrap.addEventListener('click', e => { if (e.target === wrap) closeLogsModal(); });
-  wrap.querySelector('#diag-copy').onclick = async () => {
-    const text = _diagAsPlainText();
+  copyBtn.onclick = async () => {
+    const text = activeTab === 'crm'
+      ? (S.crmLogs || []).map(r => (r || []).join('\t')).join('\n')
+      : _diagAsPlainText();
     try {
       await navigator.clipboard.writeText(text);
       toast('Логи скопированы в буфер обмена', 's');
@@ -2345,7 +2425,7 @@ function openLogsModal() {
       ta.remove();
     }
   };
-  wrap.querySelector('#diag-clear').onclick = () => {
+  clearBtn.onclick = () => {
     if (!confirm('Очистить все диагностические логи?')) return;
     DIAG.clear();
     render();
@@ -2575,6 +2655,239 @@ function apiCacheInvalidate(sheetName) {
   } else {
     Object.keys(_apiCache).forEach(k => delete _apiCache[k]);
   }
+}
+
+// ==================== CRM AUDIT LOG ====================
+const CRM_LOG_SHEET = 'CRM Logs';
+const CRM_LOG_HEADERS = [
+  'timestamp', 'user_email', 'user_name', 'role',
+  'module', 'action', 'sheet', 'row', 'column',
+  'entity_id', 'entity_label', 'before', 'after',
+  'month', 'source', 'session_id'
+];
+const CRM_LOG_TAB_KEY = 'crm_logs_active_tab';
+const CRM_LOG_SESSION_ID = (() => {
+  try {
+    const key = 'crm_log_session_id';
+    const existing = sessionStorage.getItem(key);
+    if (existing) return existing;
+    const fresh = 's_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+    sessionStorage.setItem(key, fresh);
+    return fresh;
+  } catch (_) {
+    return 's_' + Date.now().toString(36);
+  }
+})();
+let _crmLogEnsurePromise = null;
+let _crmLogWriteQueue = [];
+let _crmLogFlushTimer = null;
+
+function isStrictCeo() {
+  const me = typeof findUserInSheet === 'function' ? findUserInSheet() : null;
+  return String(me?.role || '').trim().toLowerCase() === 'ceo';
+}
+
+function crmLogUser() {
+  const me = typeof findUserInSheet === 'function' ? findUserInSheet() : null;
+  return {
+    email: S.user?.email || '',
+    name: me?.name || S.user?.name || '',
+    role: me?.role || '',
+  };
+}
+
+function crmLogCell(v) {
+  if (v == null) return '';
+  if (Array.isArray(v)) return v.map(x => crmLogCell(x)).join(' | ');
+  if (typeof v === 'object') {
+    try { return JSON.stringify(v); } catch (_) { return String(v); }
+  }
+  return String(v);
+}
+
+function crmLogEntityFromVisit(rowData, sheetName, sheetRow) {
+  const d = rowData || [];
+  const date = d[0] || '';
+  const client = d[1] || '';
+  const manager = d[8] || '';
+  const cat = d[6] || '';
+  return {
+    id: `visit:${sheetName}:${sheetRow}`,
+    label: [date, manager, client, cat].filter(Boolean).join(' · '),
+  };
+}
+
+async function ensureCrmLogSheet() {
+  if (_crmLogEnsurePromise) return _crmLogEnsurePromise;
+  _crmLogEnsurePromise = (async () => {
+    const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}?fields=sheets.properties(sheetId,title)`;
+    const metaResp = await fetch(metaUrl, { headers: await authHeaders() });
+    if (!metaResp.ok) throw new Error('CRM logs meta failed');
+    const meta = await metaResp.json();
+    const sheets = meta.sheets || [];
+    const props = sheets.map(s => s.properties || {});
+    let sheetId = props.find(p => p.title === CRM_LOG_SHEET)?.sheetId;
+    if (sheetId == null) {
+      const addResp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`, {
+        method: 'POST',
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ requests: [{ addSheet: { properties: { title: CRM_LOG_SHEET } } }] }),
+      });
+      if (!addResp.ok) throw new Error('CRM logs sheet create failed');
+      const addBody = await addResp.json().catch(() => ({}));
+      sheetId = addBody.replies?.[0]?.addSheet?.properties?.sheetId;
+      S._sheetIdCache = S._sheetIdCache || {};
+      S._sheetIdCache[CRM_LOG_SHEET] = sheetId;
+    }
+    const headerRange = encodeURIComponent(`${CRM_LOG_SHEET}!A1:P1`);
+    const putResp = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${headerRange}?valueInputOption=RAW`,
+      {
+        method: 'PUT',
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ values: [CRM_LOG_HEADERS] }),
+      }
+    );
+    if (!putResp.ok) throw new Error('CRM logs headers failed');
+    S.crmLogsReady = true;
+    return true;
+  })().catch(err => {
+    _crmLogEnsurePromise = null;
+    try { console.warn('CRM logs init failed', err); } catch (_) {}
+    throw err;
+  });
+  return _crmLogEnsurePromise;
+}
+
+function auditLog(entry) {
+  const user = crmLogUser();
+  const row = [
+    _diagFmtDate(Date.now()),
+    user.email,
+    user.name,
+    user.role,
+    entry.module || '',
+    entry.action || '',
+    entry.sheet || '',
+    entry.row || '',
+    entry.column || '',
+    entry.entityId || '',
+    entry.entityLabel || '',
+    crmLogCell(entry.before),
+    crmLogCell(entry.after),
+    entry.month || currentSuffix || '',
+    entry.source || 'app',
+    CRM_LOG_SESSION_ID,
+  ];
+  _crmLogWriteQueue.push(row);
+  if (_crmLogFlushTimer) clearTimeout(_crmLogFlushTimer);
+  _crmLogFlushTimer = setTimeout(flushCrmAuditLogs, 1200);
+}
+
+function auditConfigChange(label, sheet, cell, beforeVal, afterVal) {
+  if (String(beforeVal ?? '') === String(afterVal ?? '')) return;
+  auditLog({
+    module: 'config',
+    action: 'toggle',
+    sheet,
+    row: cell.replace(/^[A-Z]+/, ''),
+    column: cell.replace(/\d+$/, ''),
+    entityId: `config:${cell}`,
+    entityLabel: label,
+    before: beforeVal,
+    after: afterVal,
+  });
+}
+
+function auditPlanChanges(oldValues, newValues, sheetName) {
+  const oldMap = {};
+  (oldValues || []).slice(1).forEach(r => {
+    const name = String(r?.[0] || '').trim();
+    if (name) oldMap[name] = { plan: r?.[1] ?? '', sales: r?.[3] ?? '' };
+  });
+  (newValues || []).slice(1).forEach((r, idx) => {
+    const name = String(r?.[0] || '').trim();
+    if (!name) return;
+    const old = oldMap[name] || { plan: '', sales: '' };
+    const plan = r?.[1] ?? '';
+    const sales = r?.[3] ?? '';
+    if (String(old.plan) !== String(plan)) {
+      auditLog({
+        module: 'plan',
+        action: 'update',
+        sheet: sheetName,
+        row: idx + 2,
+        column: 'План',
+        entityId: `plan:${sheetName}:${name}:visits`,
+        entityLabel: name,
+        before: old.plan,
+        after: plan,
+      });
+    }
+    if (String(old.sales) !== String(sales)) {
+      auditLog({
+        module: 'plan',
+        action: 'update',
+        sheet: sheetName,
+        row: idx + 2,
+        column: 'План продажи',
+        entityId: `plan:${sheetName}:${name}:sales`,
+        entityLabel: name,
+        before: old.sales,
+        after: sales,
+      });
+    }
+  });
+}
+
+function auditScheduleChange(sheetName, sheetRow, colIdx, beforeVal, afterVal) {
+  if (String(beforeVal ?? '') === String(afterVal ?? '')) return;
+  const name = S.data.grafik?.[sheetRow - 1]?.[0] || '';
+  const day = Math.max(1, colIdx - 2);
+  auditLog({
+    module: 'schedule',
+    action: 'update',
+    sheet: sheetName,
+    row: sheetRow,
+    column: sheetColName(colIdx),
+    entityId: `schedule:${sheetName}:${sheetRow}:${colIdx}`,
+    entityLabel: `${name} · ${day}.${currentSuffix.slice(0, 2)}.${currentSuffix.slice(2)}`,
+    before: beforeVal,
+    after: afterVal,
+  });
+}
+
+async function flushCrmAuditLogs() {
+  if (_crmLogFlushTimer) { clearTimeout(_crmLogFlushTimer); _crmLogFlushTimer = null; }
+  if (!_crmLogWriteQueue.length || !S.token) return;
+  const rows = _crmLogWriteQueue.splice(0, _crmLogWriteQueue.length);
+  try {
+    await ensureCrmLogSheet();
+    const range = encodeURIComponent(`${CRM_LOG_SHEET}!A:P`);
+    const resp = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+      {
+        method: 'POST',
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ values: rows }),
+      }
+    );
+    if (!resp.ok) throw new Error('CRM logs append failed');
+    S.crmLogs = null;
+    apiCacheInvalidate(CRM_LOG_SHEET);
+  } catch (err) {
+    _crmLogWriteQueue.unshift(...rows);
+    try { console.warn('CRM audit log failed', err); } catch (_) {}
+  }
+}
+
+async function loadCrmLogs(force = false) {
+  if (!isStrictCeo()) throw new Error('CEO only');
+  if (S.crmLogs && !force) return S.crmLogs;
+  await ensureCrmLogSheet();
+  const rows = await api(CRM_LOG_SHEET, 'A:P');
+  S.crmLogs = rows || [];
+  return S.crmLogs;
 }
 
 async function setCurrentMonth(newSuffix) {
@@ -5194,6 +5507,7 @@ async function putScheduleCell(sheetRow, colIdx, value) {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
   // В таблицу пишем без звёздочки (Р*/В* → Р/В), цвет форматируем отдельно
   const sheetValue = normalizeSchedVal(value) || '';
+  const beforeValue = rawSchedVal(S.data.grafik?.[sheetRow - 1]?.[colIdx]);
   const resp = await fetch(url, {
     method: 'PUT',
     headers: await authHeaders({ 'Content-Type':'application/json' }),
@@ -5206,6 +5520,7 @@ async function putScheduleCell(sheetRow, colIdx, value) {
   await formatScheduleCell(sheet, sheetRow, colIdx, value); // value с звёздочкой — для цвета
   apiCacheInvalidate(SHEETS.grafik);
   S.data.grafikFmt = null; // сбрасываем кеш цветов — перечитаем при следующем рендере
+  auditScheduleChange(sheet, sheetRow, colIdx, beforeValue, sheetValue);
 }
 
 async function getSpreadsheetSheetId(sheetName) {
@@ -6964,6 +7279,7 @@ async function savePlan() {
     const sheetName = SHEETS.plan;
     const range = `'${sheetName}'!A1:D${values.length}`;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+    const oldPlanValues = (S.data.plan || []).map(r => Array.isArray(r) ? r.slice() : r);
 
     const resp = await fetch(url, {
       method: 'PUT',
@@ -6977,6 +7293,7 @@ async function savePlan() {
     }
 
     // Обновляем локальный кэш
+    auditPlanChanges(oldPlanValues, values, sheetName);
     S.data.plan = values;
     if (status) { status.style.color = 'var(--grn)'; status.textContent = '✓ Сохранено'; }
     btn.disabled = false;
@@ -10468,6 +10785,7 @@ function getSvcMode() {
 async function savePlanAndSverka() {
   const cb = document.getElementById('sverka-toggle-cb');
   if (cb && cb.checked !== S.sverkaMode) {
+    const oldMode = S.sverkaMode ? 'On' : 'Off';
     S.sverkaMode = cb.checked;
     const newMode = S.sverkaMode ? 'On' : 'Off';
     localStorage.setItem('crm_sverka', S.sverkaMode ? '1' : '0');
@@ -10481,6 +10799,7 @@ async function savePlanAndSverka() {
       });
       if (resp.ok) {
         if (S.usersData && S.usersData[1]) S.usersData[1][10] = newMode;
+        auditConfigChange('Режим сверки', 'USERS', 'K2', oldMode, newMode);
         if (document.getElementById('scr-dohod')?.classList.contains('on')) renderDohod();
         if (document.getElementById('scr-personal')?.classList.contains('on')) {
           const matched = findUserInSheet();
@@ -10501,6 +10820,7 @@ async function savePlanAndSverka() {
   // Режим вставки визитов
   const cb2 = document.getElementById('viz-paste-toggle-cb');
   if (cb2 && cb2.checked !== S.vizPasteMode) {
+    const oldMode2 = S.vizPasteMode ? 'On' : 'Off';
     S.vizPasteMode = cb2.checked;
     const newMode2 = S.vizPasteMode ? 'On' : 'Off';
     localStorage.setItem('crm_viz_paste', S.vizPasteMode ? '1' : '0');
@@ -10514,6 +10834,7 @@ async function savePlanAndSverka() {
       });
       if (resp2.ok) {
         if (S.usersData && S.usersData[1]) S.usersData[1][11] = newMode2;
+        auditConfigChange('Режим вставки визитов', 'USERS', 'L2', oldMode2, newMode2);
         toast('Режим вставки визитов: ' + (S.vizPasteMode ? 'Вкл' : 'Выкл'), 's');
         if (document.getElementById('scr-vizity')?.classList.contains('on')) renderVizity();
       } else {
@@ -10540,6 +10861,7 @@ async function savePlanAndSverka() {
       });
       if (resp3.ok) {
         if (S.usersData && S.usersData[1]) S.usersData[1][12] = newMode3;
+        auditConfigChange('Техническое обслуживание', 'USERS', 'M2', wasOn ? 'On' : 'Off', newMode3);
         toast('Техническое обслуживание: ' + (S.svcMode ? 'Вкл' : 'Выкл'), 's');
       } else {
         toast('Ошибка сохранения режима обслуживания', 'e');
@@ -10567,6 +10889,7 @@ async function savePlanAndSverka() {
       });
       if (resp4.ok) {
         if (S.usersData && S.usersData[1]) S.usersData[1][13] = newMode4;
+        auditConfigChange('Уведомления', 'USERS', 'N2', wasOn ? 'On' : 'Off', newMode4);
         toast('Уведомления: ' + (S.remMode ? 'Вкл' : 'Выкл'), 's');
         if (typeof remApplyVisibility === 'function') remApplyVisibility();
       } else {
@@ -10595,6 +10918,7 @@ async function savePlanAndSverka() {
       });
       if (resp5.ok) {
         if (S.usersData && S.usersData[1]) S.usersData[1][14] = newMode5;
+        auditConfigChange('Автоподбор-чат', 'USERS', 'O2', wasOn5 ? 'On' : 'Off', newMode5);
         toast('Автоподбор-чат: ' + (S.autoSMode ? 'Вкл' : 'Выкл'), 's');
       } else {
         toast('Ошибка сохранения режима автоподбора', 'e');
@@ -10622,6 +10946,7 @@ async function savePlanAndSverka() {
       });
       if (resp6.ok) {
         if (S.usersData && S.usersData[1]) S.usersData[1][15] = newMode6;
+        auditConfigChange('Трофеи', 'USERS', 'P2', wasOn6 ? 'On' : 'Off', newMode6);
         toast('Трофеи: ' + (S.trophiesMode ? 'Вкл' : 'Выкл'), 's');
       } else {
         toast('Ошибка сохранения режима трофеев', 'e');
@@ -10649,12 +10974,14 @@ async function savePlanAndSverka() {
       const sheetName = SHEETS.plan;
       const range = `'${sheetName}'!A1:D${values.length}`;
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+      const oldPlanValues = (S.data.plan || []).map(r => Array.isArray(r) ? r.slice() : r);
       const resp = await fetch(url, {
         method: 'PUT',
         headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ range, majorDimension: 'ROWS', values })
       });
       if (resp.ok) {
+        auditPlanChanges(oldPlanValues, values, sheetName);
         S.data.plan = values;
         if (status) { status.style.color = 'var(--grn)'; status.textContent = '✓ Сохранено'; }
       }
@@ -13021,6 +13348,10 @@ function _sverkaOutsideHandler(ev) {
 async function saveSverkaValue(sheetName, sheetRow, value) {
   closeSverkaPopup();
   try {
+    const isDozhim = sheetName.startsWith('Д_');
+    const arr = isDozhim ? (S.data.d_vizity||[]) : (S.data.vizity||[]);
+    const targetRow = Array.isArray(S.vizRows) ? S.vizRows.find(r => r && r._sheetRow === sheetRow) : null;
+    const beforeValue = targetRow?.data?.[13] ?? arr?.[sheetRow - 1]?.[13] ?? '';
     const range = encodeURIComponent(`'${sheetName}'!N${sheetRow}`);
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
     const resp = await fetch(url, {
@@ -13034,13 +13365,23 @@ async function saveSverkaValue(sheetName, sheetRow, value) {
     // raw.slice(1).map). renderVizity() читает из неё. Без обновления
     // S.vizRows[i].data[13] полный перерендер ниже всё затирает старым
     // значением, и UI визуально не меняется до полного refresh страницы.
-    const isDozhim = sheetName.startsWith('Д_');
-    const arr = isDozhim ? (S.data.d_vizity||[]) : (S.data.vizity||[]);
     if (arr[sheetRow-1]) arr[sheetRow-1][13] = value;
     if (Array.isArray(S.vizRows)) {
       const target = S.vizRows.find(r => r && r._sheetRow === sheetRow);
       if (target && target.data) target.data[13] = value;
     }
+    const ent = crmLogEntityFromVisit(targetRow?.data || arr?.[sheetRow - 1], sheetName, sheetRow);
+    auditLog({
+      module: 'visits',
+      action: 'sverka',
+      sheet: sheetName,
+      row: sheetRow,
+      column: 'Сверка',
+      entityId: ent.id,
+      entityLabel: ent.label,
+      before: beforeValue,
+      after: value,
+    });
     try { toast('Сверка обновлена', 's'); } catch(_) {}
     // Инстант-обновление DOM: находим ВСЕ кликабельные обёртки сверки с этим
     // sheetRow и подменяем иконку и currentVal в onclick. Это работает в
@@ -13216,11 +13557,14 @@ function vizToggleExpand(sheetRow) {
 function vizFormatPhone(el) {
   const formatted = formatPhone(el.value);
   if (formatted !== el.value) {
+    const before = el.value;
     el.value = formatted;
     const sheetRow = +el.dataset.row;
     const col = +el.dataset.col;
     const row = S.vizRows.find(r => r._sheetRow === sheetRow);
     if (row) {
+      row._beforeCols = row._beforeCols || {};
+      if (!(col in row._beforeCols)) row._beforeCols[col] = before;
       row.data[col] = formatted;
       const statusEl = document.getElementById('vt-status-'+sheetRow);
       if (statusEl) { statusEl.className='vt-save-status saving'; statusEl.textContent='Сохранение…'; }
@@ -13281,6 +13625,8 @@ function vizOnChange(el) {
   }
   const row = S.vizRows.find(r => r._sheetRow === sheetRow);
   if (row) {
+    row._beforeCols = row._beforeCols || {};
+    if (!(col in row._beforeCols)) row._beforeCols[col] = row.data[col] || '';
     row.data[col] = val;
     if (col === 0) row._dateChanged = true;
     if (!row._changedCols) row._changedCols = new Set();
@@ -13289,6 +13635,7 @@ function vizOnChange(el) {
     // Авто-категория при выборе источника (col=5)
     if (col === 5) {
       const autoKat = val === 'теплый лид' ? 'кат 1200' : 'кат 800';
+      if (!(6 in row._beforeCols)) row._beforeCols[6] = row.data[6] || '';
       row.data[6] = autoKat;
       row._changedCols.add(6);
       // Обновляем select категории в DOM
@@ -13308,7 +13655,9 @@ async function vizSaveRow(sheetRow, statusEl) {
   const row = S.vizRows.find(r => r._sheetRow === sheetRow);
   if (!row) return;
   const changedCols = row._changedCols ? [...row._changedCols] : null;
+  const beforeCols = row._beforeCols || {};
   row._changedCols = new Set();
+  row._beforeCols = {};
   const dateChanged = row._dateChanged;
   row._dateChanged = false;
   try {
@@ -13329,6 +13678,23 @@ async function vizSaveRow(sheetRow, statusEl) {
       await vizUpdateRow(sheet, sheetRow, row.data);
     }
     if (statusEl) { statusEl.className='vt-save-status saved'; statusEl.textContent='✓ Сохранено'; }
+    const ent = crmLogEntityFromVisit(row.data, sheet, sheetRow);
+    (changedCols || []).forEach(c => {
+      const before = beforeCols[c] ?? '';
+      const after = row.data[c] ?? '';
+      if (String(before) === String(after)) return;
+      auditLog({
+        module: 'visits',
+        action: 'update',
+        sheet,
+        row: sheetRow,
+        column: VIZ_COLS[c]?.lbl || String(c + 1),
+        entityId: ent.id,
+        entityLabel: ent.label,
+        before,
+        after,
+      });
+    });
     setTimeout(() => { if(statusEl) { statusEl.className='vt-save-status'; statusEl.textContent=''; } }, 2500);
     if (dateChanged) {
       const expanded = new Set([...document.querySelectorAll('.vt-row-card.vt-expanded')].map(el=>+el.id.replace('vt-card-','')));
@@ -13367,6 +13733,9 @@ async function vizAddRow() {
 
   try {
     const newSheetRow = await vizWriteNewRow(insertAfter, newData);
+    const sheet = vizSheetName();
+    const ent = crmLogEntityFromVisit(newData, sheet, newSheetRow);
+    auditLog({ module:'visits', action:'add', sheet, row:newSheetRow, entityId:ent.id, entityLabel:ent.label, before:'', after:newData });
     S.vizRows.sort((a,b) => a._sheetRow - b._sheetRow);
     renderVizity();
     setTimeout(() => {
@@ -13387,6 +13756,9 @@ async function vizManualInsert(afterSheetRow) {
   newData[8] = matched?.name || '';
   try {
     const newSheetRow = await vizWriteNewRow(afterSheetRow, newData);
+    const sheet = vizSheetName();
+    const ent = crmLogEntityFromVisit(newData, sheet, newSheetRow);
+    auditLog({ module:'visits', action:'insert', sheet, row:newSheetRow, entityId:ent.id, entityLabel:ent.label, before:'', after:newData });
     S.vizRows.sort((a,b) => a._sheetRow - b._sheetRow);
     renderVizity();
     setTimeout(() => {
@@ -13447,7 +13819,7 @@ async function vizDeleteRow(sheetRow) {
     sec--; const tEl = document.getElementById('vt-undo-timer'); if (tEl) tEl.textContent = sec;
     if (sec <= 0) { clearInterval(tick); commitVizDelete(sheetRow); }
   }, 1000);
-  window._vizUndoPending = { sheetRow, tick, rowEl };
+  window._vizUndoPending = { sheetRow, tick, rowEl, rowData: row.data.slice() };
 }
 
 async function vizUndoDelete() {
@@ -13467,6 +13839,8 @@ async function vizConfirmDelete(sheetRow) {
 }
 
 async function commitVizDelete(sheetRow) {
+  const pending = window._vizUndoPending;
+  const deletedData = pending?.rowData || S.vizRows.find(r => r._sheetRow === sheetRow)?.data?.slice() || [];
   document.getElementById('vt-undo-toast')?.remove();
   window._vizUndoPending = null;
   S.vizRows = S.vizRows.filter(r => r._sheetRow !== sheetRow);
@@ -13479,6 +13853,8 @@ async function commitVizDelete(sheetRow) {
         body: JSON.stringify({ requests:[{ deleteDimension:{ range:{ sheetId, dimension:'ROWS', startIndex:sheetRow-1, endIndex:sheetRow }}}] })
       });
       S.vizRows.forEach(r => { if (r._sheetRow > sheetRow) r._sheetRow--; });
+      const ent = crmLogEntityFromVisit(deletedData, sheet, sheetRow);
+      auditLog({ module:'visits', action:'delete', sheet, row:sheetRow, entityId:ent.id, entityLabel:ent.label, before:deletedData, after:'' });
     } catch(e) { toast('Ошибка удаления', 'e'); }
   }
   renderVizity();

@@ -11292,19 +11292,7 @@ function dockNav(id) {
 
   if (id === 'rating') {
     dockSetActive('rating');
-    ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo','analiz','trophies','profile'].forEach(t => {
-      const s = document.getElementById('scr-'+t);
-      if (s) s.classList.remove('on');
-    });
-    document.getElementById('scr-rating').classList.add('on');
-    // hide floating subtabs
-    const fs = document.getElementById('floating-subtabs');
-    if (fs) fs.style.display = 'none';
-    const fds = document.getElementById('floating-dohod-subtabs');
-    if (fds) fds.style.display = 'none';
-    const gs = document.getElementById('grafik-sticky');
-    if (gs) gs.style.display = 'none';
-    updateFirebasePage();
+    showScr('rating');
     loadRating();
     return;
   }
@@ -11330,6 +11318,7 @@ function dockKpiItogi() {
 // ==================== CEO DASHBOARD ====================
 let _ceoDashboardPromise = null;
 let _ceoDashboardToken = 0;
+let _ceoFmtRenderTimer = null;
 
 async function loadCeoDashboard() {
   const token = screenToken();
@@ -11384,7 +11373,12 @@ async function _loadCeoDashboard(token) {
   // (заливка #fee1c8) из счётчика «Без визитов сегодня».
   if (!S.data.vizityFmt || !S.data.d_vizityFmt) {
     fetchVizityFmts().then(() => {
-      if (isScreenTokenActive('ceo', token)) renderCeoDashboard();
+      if (!isScreenTokenActive('ceo', token)) return;
+      if (_ceoFmtRenderTimer) clearTimeout(_ceoFmtRenderTimer);
+      _ceoFmtRenderTimer = setTimeout(() => {
+        _ceoFmtRenderTimer = null;
+        if (isScreenTokenActive('ceo', token)) renderCeoDashboard();
+      }, 80);
     });
   }
 }
@@ -17210,7 +17204,6 @@ function startRemindersLoop() {
   _remCheckTimer = setInterval(_remTick, 2 * 60 * 1000);
   // Сразу один тик
   _remTick();
-  _remEnsureHeader();
   // Подгрузим график (если ещё не загружен), чтобы _remIsInShiftToday работал
   if (_remIsManagerRole() && (!S.data.grafik || (S.data.grafik || []).length < 3)) {
     try {

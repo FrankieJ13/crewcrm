@@ -1881,6 +1881,7 @@ function stopKeepAlive() {}
 // не дожидаясь следующего тика 3-минутного autoRefresh.
 let _lastHiddenAt = 0;
 let _wakeEpoch    = 0; // момент пробуждения; первые 30с фетчи получают укороченный таймаут
+let _lastFullDataSyncAt = 0;
 const LONG_IDLE_MS = 60_000; // если фоном >60с, считаем "долго"
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
@@ -1893,6 +1894,7 @@ document.addEventListener('visibilitychange', () => {
     // юзер не ждал следующий 3-минутный тик. Cache invalidate в
     // refreshVisibleDataLive уже встроен.
     if (idle > LONG_IDLE_MS) {
+      if (Date.now() - _lastFullDataSyncAt < 30_000) return;
       _wakeEpoch = Date.now();
       try { window.DIAG?.push('info', 'refresh', ['wake-after-idle', idle]); } catch(_){}
       // Не блокируем UI: если рефреш сам по себе долгий, юзер всё равно
@@ -8231,10 +8233,7 @@ async function backgroundPrefetch(matched) {
   try {
     await _runWithConcurrency(tasks, 2);
     if (document.getElementById('scr-vizity')?.classList.contains('on')) return;
-    if (document.getElementById('scr-ceo')?.classList.contains('on')) {
-      renderCeoDashboard();
-      return;
-    }
+    if (document.getElementById('scr-ceo')?.classList.contains('on')) return;
     const activeTab = document.querySelector('.tab.on')?.dataset.tab;
     if (activeTab) renderTab(activeTab);
     const personalOn = document.getElementById('scr-personal')?.classList.contains('on');
@@ -11309,6 +11308,7 @@ async function _loadCeoDashboard() {
     return;
   }
   renderCeoDashboard();
+  _lastFullDataSyncAt = Date.now();
   loadCeoWeather();
   // Подгружаем цвета заливки колонки A у ВИЗИТЫ/Д_ВИЗИТЫ — нужны
   // чтобы исключить «запланированные но не приехавшие» визиты

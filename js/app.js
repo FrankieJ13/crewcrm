@@ -990,6 +990,8 @@ function showScr(id) {
   });
   const scrEl = document.getElementById('scr-'+id);
   scrEl?.classList.add('on');
+  S._screenId = id;
+  S._screenSeq = (S._screenSeq || 0) + 1;
   if (scrEl) requestAnimationFrame(() => flushPendingAnimations(scrEl));
   const gs = document.getElementById('grafik-sticky');
   if (gs) gs.style.display = id === 'grafik' ? '' : 'none';
@@ -1003,6 +1005,14 @@ function showScr(id) {
     dockSetActive(dockId);
   }
   updateFirebasePage();
+}
+
+function screenToken() {
+  return S._screenSeq || 0;
+}
+
+function isScreenTokenActive(id, token) {
+  return (S._screenSeq || 0) === token && document.getElementById('scr-' + id)?.classList.contains('on');
 }
 
 function showStartupLoader(text = 'Синхронизация профиля…') {
@@ -1917,6 +1927,7 @@ document.addEventListener('visibilitychange', () => {
       if (Date.now() - _lastFullDataSyncAt < 30_000) return;
       _wakeEpoch = Date.now();
       try { window.DIAG?.push('info', 'refresh', ['wake-after-idle', idle]); } catch(_){}
+      apiCancelPending('wake_after_idle');
       // Не блокируем UI: если рефреш сам по себе долгий, юзер всё равно
       // увидит обновление по мере прихода данных.
       refreshVisibleDataLive().catch(err => {
@@ -2573,6 +2584,20 @@ const API_MAX_CONCURRENT = 3;
 let _apiQueueActive = 0;
 let _apiQueueSeq = 0;
 const _apiQueue = [];
+const _apiControllers = new Set();
+
+function apiCancelPending(reason = 'stale_request') {
+  const err = new Error(reason);
+  _apiQueue.splice(0).forEach(item => {
+    try { item.reject(err); } catch (_) {}
+  });
+  _apiControllers.forEach(ctrl => {
+    try {
+      ctrl._cancelReason = reason;
+      ctrl.abort();
+    } catch (_) {}
+  });
+}
 
 function apiQueueRun(task, opts = {}) {
   return new Promise((resolve, reject) => {
@@ -2660,6 +2685,7 @@ async function _apiFetch(sheet, range, key, retryCount = 0, params = '') {
   const wakeFresh = (Date.now() - _wakeEpoch) < 30_000;
   const timeoutMs = (retryCount === 0 && wakeFresh) ? 12000 : 30000;
   const ctrl = new AbortController();
+  _apiControllers.add(ctrl);
   const tid  = setTimeout(() => ctrl.abort(), timeoutMs);
 
   let r;
@@ -2667,6 +2693,8 @@ async function _apiFetch(sheet, range, key, retryCount = 0, params = '') {
     r = await fetch(url, { headers: await authHeaders(), signal: ctrl.signal });
   } catch (err) {
     clearTimeout(tid);
+    _apiControllers.delete(ctrl);
+    if (ctrl._cancelReason) throw new Error(ctrl._cancelReason);
     if (err.isAuthError) { showLoginScreen(); throw new Error('auth'); }
     if (retryCount < 3) {
       // Тихий первый retry; сообщаем только начиная со второй неудачи
@@ -2681,6 +2709,7 @@ async function _apiFetch(sheet, range, key, retryCount = 0, params = '') {
     throw err;
   }
   clearTimeout(tid);
+  _apiControllers.delete(ctrl);
 
   if (r.status === 429) {
     // Quota exceeded — ждём и повторяем (до 3 раз)
@@ -3175,6 +3204,8 @@ function goTab(tab) {
 }
 
 async function loadTab(tab) {
+  const token = screenToken();
+  const stillHere = () => isScreenTokenActive(tab, token);
   const showArchiveMsg = (container, isArchive=true) => {
     if (container) container.innerHTML = `<div class="empty">${isArchive ? 'Информация отсутствует. Данные ушли в архив.' : 'Нет данных'}</div>`;
   };
@@ -3197,6 +3228,7 @@ async function loadTab(tab) {
         if (dv !== undefined) S.data.d_vizity = dv || [];
         if (cv?.length) S.data.cnvrs = cv;
       } catch(e) {
+        if (!stillHere()) return;
         if (e.message === 'auth') return;
         if (!S.data.plan) {
           try { S.data.plan = await api(SHEETS.plan, 'A:D'); }
@@ -3206,6 +3238,7 @@ async function loadTab(tab) {
       }
     }
 
+    if (!stillHere()) return;
     renderOtchet();
     return;
   }
@@ -3228,6 +3261,7 @@ async function loadTab(tab) {
           ]);
           S.data.vizity = vd; S.data.plan = pd;
         } catch(e) {
+          if (!stillHere()) return;
           if (e.message!=='auth') {
             if (e.message === 'NOT_FOUND') showArchiveMsg(el);
             else if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
@@ -3255,17 +3289,20 @@ async function loadTab(tab) {
       }
     }
 
+    if (!stillHere()) return;
     renderTab('dohod');
     return;
   }
-  if (S.data[tab]) { renderTab(tab); return; }
+  if (S.data[tab]) { if (stillHere()) renderTab(tab); return; }
   const el = document.getElementById('c-'+tab);
   if (el) el.innerHTML = loader();
   try {
     if      (tab==='grafik')      S.data.grafik       = await api(SHEETS.grafik,      'A1:AI25');
     else if (tab==='instruktsii') S.data.instruktsii  = await api(SHEETS.instruktsii, 'A1:C200');
+    if (!stillHere()) return;
     renderTab(tab);
   } catch(e) {
+    if (!stillHere()) return;
     if (e.message!=='auth') {
       if (e.message === 'NOT_FOUND') showArchiveMsg(el);
       else if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
@@ -3673,6 +3710,7 @@ function setLiveHTML(el, html) {
 
 async function refreshVisibleDataLive() {
   try { window.DIAG?.push('info', 'refresh', ['refreshVisibleDataLive']); } catch(_){}
+  const token = screenToken();
   if (document.getElementById('scr-vizity')?.classList.contains('on')) return;
   if (document.getElementById('scr-ceo')?.classList.contains('on')) {
     S.silentRefresh = true;
@@ -3689,6 +3727,7 @@ async function refreshVisibleDataLive() {
       if (cv?.length)  S.data.cnvrs    = cv;
       // Ставки — rates.json (фоновая подгрузка если ещё не было)
       if (!_ratesJson) { try { await loadRatesJson(); } catch(_){} }
+      if (!isScreenTokenActive('ceo', token)) return;
       renderCeoDashboard();
     } finally { S.silentRefresh = false; }
     return;
@@ -3726,6 +3765,7 @@ async function refreshVisibleDataLive() {
       }
       // Ставки — из rates.json (раньше из листа СТАВКИ)
       if (!_ratesJson) { try { await loadRatesJson(); } catch(_){} }
+      if (!isScreenTokenActive('personal', token)) return;
       renderPersonal(matched);
       return;
     }
@@ -3742,6 +3782,7 @@ async function refreshVisibleDataLive() {
       if (pd) S.data.plan = pd;
       if (cn) S.data.cnvrs = cn;
       if (dv) S.data.d_vizity = dv;
+      if (!isScreenTokenActive('otchet', token)) return;
       renderOtchet();
     } else if (activeTab === 'dohod') {
       const isCeo = isCeoLike(role);
@@ -3767,6 +3808,7 @@ async function refreshVisibleDataLive() {
       }
       // Ставки — rates.json
       if (!_ratesJson) { try { await loadRatesJson(); } catch(_){} }
+      if (!isScreenTokenActive('dohod', token)) return;
       renderDohod();
     } else if (activeTab === 'rating') {
       const isDozhimRating = S.ratingDept === 'dozhim';
@@ -3779,10 +3821,12 @@ async function refreshVisibleDataLive() {
       else if (vd) S.data.vizity = vd;
       // Ставки — rates.json (для rating тоже нужны через calcSalary*)
       if (!_ratesJson) { try { await loadRatesJson(); } catch(_){} }
+      if (!isScreenTokenActive('rating', token)) return;
       renderRating();
     } else if (activeTab === 'grafik') {
       const gr = await apiFreshOrNull(SHEETS.grafik, 'A1:AI25');
       if (gr) S.data.grafik = gr;
+      if (!isScreenTokenActive('grafik', token)) return;
       renderGrafik();
     }
   } finally {
@@ -11285,18 +11329,21 @@ function dockKpiItogi() {
 
 // ==================== CEO DASHBOARD ====================
 let _ceoDashboardPromise = null;
+let _ceoDashboardToken = 0;
 
 async function loadCeoDashboard() {
-  if (_ceoDashboardPromise) return _ceoDashboardPromise;
-  _ceoDashboardPromise = _loadCeoDashboard();
+  const token = screenToken();
+  if (_ceoDashboardPromise && _ceoDashboardToken === token) return _ceoDashboardPromise;
+  _ceoDashboardToken = token;
+  _ceoDashboardPromise = _loadCeoDashboard(token);
   try {
     return await _ceoDashboardPromise;
   } finally {
-    _ceoDashboardPromise = null;
+    if (_ceoDashboardToken === token) _ceoDashboardPromise = null;
   }
 }
 
-async function _loadCeoDashboard() {
+async function _loadCeoDashboard(token) {
   const el = document.getElementById('c-ceo');
   if (!el) return;
   el.innerHTML = loader();
@@ -11323,10 +11370,12 @@ async function _loadCeoDashboard() {
       if (gr?.length)  S.data.grafik   = gr;
     }
   } catch(e) {
+    if (!isScreenTokenActive('ceo', token)) return;
     if (e.message === 'auth') return;
     if (el) el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
     return;
   }
+  if (!isScreenTokenActive('ceo', token)) return;
   renderCeoDashboard();
   _lastFullDataSyncAt = Date.now();
   loadCeoWeather();
@@ -11335,7 +11384,7 @@ async function _loadCeoDashboard() {
   // (заливка #fee1c8) из счётчика «Без визитов сегодня».
   if (!S.data.vizityFmt || !S.data.d_vizityFmt) {
     fetchVizityFmts().then(() => {
-      if (document.getElementById('scr-ceo')?.classList.contains('on')) renderCeoDashboard();
+      if (isScreenTokenActive('ceo', token)) renderCeoDashboard();
     });
   }
 }
@@ -12255,6 +12304,8 @@ document.addEventListener('click', (e) => {
 
 // ==================== RATING SCREEN ====================
 async function loadRating() {
+  const token = screenToken();
+  const stillHere = () => isScreenTokenActive('rating', token);
   const el = document.getElementById('c-rating');
   if (!el) return;
 
@@ -12278,8 +12329,10 @@ async function loadRating() {
         S.data.vizity  ? Promise.resolve(S.data.vizity)  : api(SHEETS.vizity,  'A:N'),
         S.data.plan    ? Promise.resolve(S.data.plan)    : api(SHEETS.plan,    'A:D'),
       ]);
+      if (!stillHere()) return;
       S.data.vizity = vd; S.data.plan = pd;
     } catch(e) {
+      if (!stillHere()) return;
       if (e.message !== 'auth') el.innerHTML = `<div class="err">Ошибка: ${e.message}</div>`;
       return;
     }
@@ -12288,10 +12341,15 @@ async function loadRating() {
     el.innerHTML = loader();
     try {
       S.data.d_vizity = await api(SHEETS.d_vizity, 'A:N');
-    } catch(e) { S.data.d_vizity = []; }
+      if (!stillHere()) return;
+    } catch(e) {
+      if (!stillHere()) return;
+      S.data.d_vizity = [];
+    }
   }
   // Ставки — rates.json (нужны для calcSalary* в rating)
   if (!_ratesJson) { try { await loadRatesJson(); } catch(_){} }
+  if (!stillHere()) return;
   renderRating();
 }
 
@@ -13187,6 +13245,8 @@ function currentWeekNum() {
 }
 
 async function loadVizity() {
+  const token = screenToken();
+  const stillHere = () => isScreenTokenActive('vizity', token);
   const el = document.getElementById('c-vizity');
   if (!el) return;
   const sheet = vizSheetName();
@@ -13198,9 +13258,11 @@ async function loadVizity() {
       new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000)),
     ]);
   } catch(e) { /* идём дальше — api сам проверит существование листа */ }
+  if (!stillHere()) return;
   let raw = [];
   try { raw = await api(sheet, 'A:N'); }
   catch(e) {
+    if (!stillHere()) return;
     if (e.message === 'auth') {
       el.innerHTML = `<div class="err">Сессия истекла — войдите заново</div>`;
     } else if (e.message === 'NOT_FOUND') {
@@ -13210,6 +13272,7 @@ async function loadVizity() {
     }
     return;
   }
+  if (!stillHere()) return;
   S.vizRows = raw.slice(1).map((row, i) => ({
     idx: i, _sheetRow: i + 2,
     data: Array.from({length:14}, (_,c) => row[c] || '')
@@ -13217,6 +13280,7 @@ async function loadVizity() {
   try {
     renderVizity();
   } catch(e) {
+    if (!stillHere()) return;
     el.innerHTML = `<div class="err">Ошибка рендера визитов: ${e.message}</div>`;
     console.error('renderVizity failed:', e);
     return;

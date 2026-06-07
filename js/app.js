@@ -75,6 +75,8 @@ function _preloadThemeIcons() {
 const CFG = {
   CLIENT_ID: '364532815329-0j1lkobb1v9vcserj6artf64nd95a0la.apps.googleusercontent.com',
   SHEET_ID:  '1DeUsHB_O1SbIMR4p5yd64o_R0yllWvtnyNhjxjhipn8',
+  AUDIT_WEBAPP_URL: '',
+  AUDIT_DIRECT_FALLBACK: false,
   FIREBASE: {
     apiKey: 'AIzaSyAmXoyZdIuxmbWyFHTKfdYRbYLcKxgVbWE',
     authDomain: 'crm-crew.firebaseapp.com',
@@ -2681,6 +2683,7 @@ const CRM_LOG_SESSION_ID = (() => {
 let _crmLogEnsurePromise = null;
 let _crmLogWriteQueue = [];
 let _crmLogFlushTimer = null;
+let _crmLogConfigWarned = false;
 
 function isStrictCeo() {
   const me = typeof findUserInSheet === 'function' ? findUserInSheet() : null;
@@ -2862,6 +2865,32 @@ async function flushCrmAuditLogs() {
   if (!_crmLogWriteQueue.length || !S.token) return;
   const rows = _crmLogWriteQueue.splice(0, _crmLogWriteQueue.length);
   try {
+    if (CFG.AUDIT_WEBAPP_URL) {
+      const resp = await fetch(CFG.AUDIT_WEBAPP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          type: 'crm_audit_logs',
+          token: S.token,
+          session_id: CRM_LOG_SESSION_ID,
+          headers: CRM_LOG_HEADERS,
+          rows,
+        }),
+      });
+      if (!resp.ok) throw new Error('CRM logs webapp failed: ' + resp.status);
+      S.crmLogs = null;
+      apiCacheInvalidate(CRM_LOG_SHEET);
+      return;
+    }
+    if (!CFG.AUDIT_DIRECT_FALLBACK) {
+      _crmLogWriteQueue.unshift(...rows);
+      if (_crmLogWriteQueue.length > 200) _crmLogWriteQueue.splice(0, _crmLogWriteQueue.length - 200);
+      if (!_crmLogConfigWarned) {
+        _crmLogConfigWarned = true;
+        console.warn('CRM audit logs: AUDIT_WEBAPP_URL is not configured');
+      }
+      return;
+    }
     await ensureCrmLogSheet();
     const range = encodeURIComponent(`${CRM_LOG_SHEET}!A:P`);
     const resp = await fetch(
@@ -2884,8 +2913,15 @@ async function flushCrmAuditLogs() {
 async function loadCrmLogs(force = false) {
   if (!isStrictCeo()) throw new Error('CEO only');
   if (S.crmLogs && !force) return S.crmLogs;
-  await ensureCrmLogSheet();
-  const rows = await api(CRM_LOG_SHEET, 'A:P');
+  let rows;
+  try {
+    rows = await api(CRM_LOG_SHEET, 'A:P');
+  } catch (e) {
+    if (e?.message === 'NOT_FOUND') {
+      throw new Error('Запусти setupCrmAuditLogs в Apps Script и вставь Web App URL');
+    }
+    throw e;
+  }
   S.crmLogs = rows || [];
   return S.crmLogs;
 }

@@ -4,6 +4,41 @@
 `TrophyAwards` в основной таблице дашборда. Фронт уже умеет читать
 этот лист и показывать карточки в разделе «Трофеи».
 
+## CRM Audit Logs Web App
+
+Файл `crm-audit-logs.gs` принимает audit-события из фронта и пишет их
+в скрытый защищенный лист `CRM Logs` от имени владельца Apps Script.
+Так менеджерам не нужен доступ на редактирование самого листа логов.
+
+### Установка audit endpoint
+
+1. В той же Apps Script привязке к основной таблице создай файл
+   `crm-audit-logs.gs`.
+2. Вставь содержимое из репо.
+3. Проверь `CRM_AUDIT_SHEET_ID` — должен быть ID основной таблицы.
+4. Запусти вручную функцию `setupCrmAuditLogs`.
+5. Выдай разрешения Apps Script.
+6. Deploy → New deployment → Web app:
+   - Execute as: **Me**
+   - Who has access: **Anyone**
+7. Скопируй Web app URL `/exec`.
+8. В `js/app.js` вставь URL в:
+   ```js
+   AUDIT_WEBAPP_URL: 'https://script.google.com/macros/s/.../exec',
+   ```
+
+Скрипт проверяет присланный Google OAuth token через `userinfo` и сверяет
+email с листом `USERS`, поэтому один только URL не дает права писать логи.
+
+### Что пишет audit
+
+Лист `CRM Logs` создается с колонками:
+
+`timestamp, user_email, user_name, role, module, action, sheet, row, column,
+entity_id, entity_label, before, after, month, source, session_id`
+
+Логируются изменения визитов, сверки, графика, плана и режимов конфигурации.
+
 ## Что делает скрипт
 
 Три точки входа:

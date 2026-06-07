@@ -31,6 +31,27 @@ const CRM_AUDIT_HEADERS = [
   'source',
   'session_id',
 ];
+const CRM_AUDIT_MAX_ROWS_PER_REQUEST = 50;
+const CRM_AUDIT_RATE_WINDOW_SEC = 60;
+const CRM_AUDIT_MAX_ROWS_PER_WINDOW = 150;
+const CRM_AUDIT_ALLOWED = {
+  visits: {
+    update: true,
+    add: true,
+    insert: true,
+    delete: true,
+    sverka: true,
+  },
+  schedule: {
+    update: true,
+  },
+  plan: {
+    update: true,
+  },
+  config: {
+    toggle: true,
+  },
+};
 
 function doGet() {
   return crmAuditJson_({
@@ -55,7 +76,8 @@ function doPost(e) {
 
     const rows = Array.isArray(payload.rows) ? payload.rows : [];
     if (!rows.length) return crmAuditJson_({ ok: true, written: 0 });
-    if (rows.length > 100) throw new Error('too_many_rows');
+    if (rows.length > CRM_AUDIT_MAX_ROWS_PER_REQUEST) throw new Error('too_many_rows');
+    crmAuditCheckRateLimit_(profile.email, rows.length);
 
     const ss = SpreadsheetApp.openById(CRM_AUDIT_SHEET_ID);
     const sheet = crmAuditEnsureSheet_(ss);
@@ -176,10 +198,17 @@ function crmAuditNormalizeRow_(row, timestamp, verifiedEmail, user) {
   const src = Array.isArray(row) ? row : [];
   const out = new Array(CRM_AUDIT_HEADERS.length).fill('');
   for (let i = 0; i < out.length; i++) out[i] = crmAuditCell_(src[i]);
+  const module = crmAuditSafeToken_(out[4]);
+  const action = crmAuditSafeToken_(out[5]);
+  if (!CRM_AUDIT_ALLOWED[module] || !CRM_AUDIT_ALLOWED[module][action]) {
+    throw new Error('action_not_allowed');
+  }
   out[0] = timestamp;
   out[1] = verifiedEmail;
   out[2] = user.name || out[2] || '';
   out[3] = user.role || out[3] || '';
+  out[4] = module;
+  out[5] = action;
   out[14] = out[14] || 'app';
   return out;
 }
@@ -193,6 +222,21 @@ function crmAuditCell_(value) {
 
 function crmAuditNormEmail_(value) {
   return String(value || '').trim().toLowerCase();
+}
+
+function crmAuditSafeToken_(value) {
+  return String(value || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 40);
+}
+
+function crmAuditCheckRateLimit_(email, rowsCount) {
+  const cache = CacheService.getScriptCache();
+  const key = 'crm_audit_rate_' + Utilities.base64EncodeWebSafe(email).slice(0, 80);
+  const current = parseInt(cache.get(key) || '0', 10) || 0;
+  const next = current + rowsCount;
+  if (next > CRM_AUDIT_MAX_ROWS_PER_WINDOW) {
+    throw new Error('rate_limited');
+  }
+  cache.put(key, String(next), CRM_AUDIT_RATE_WINDOW_SEC);
 }
 
 function crmAuditNow_() {

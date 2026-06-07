@@ -8060,8 +8060,11 @@ async function loadUsersAndStart() {
       try {
         apiCacheInvalidate('USERS');
         const fresh = await api('USERS', USERS_RANGE, { params: 'valueRenderOption=UNFORMATTED_VALUE' });
-        const cacheRow = (cached.find(r => r && String(r[0]||'').toLowerCase().includes(normalizeEmail(S.user?.email||'')))||[]).join('|');
-        const freshRow = (fresh.find(r => r && String(r[0]||'').toLowerCase().includes(normalizeEmail(S.user?.email||'')))||[]).join('|');
+        const email = normalizeEmail(S.user?.email || '');
+        const rowMatchesEmail = r => splitEmails(r?.[0]).includes(email);
+        const userSnapshot = r => [r?.[0] || '', r?.[1] || '', r?.[2] || '', r?.[3] || '', r?.[4] || ''].join('|');
+        const cacheRow = userSnapshot(cached.find(rowMatchesEmail) || []);
+        const freshRow = userSnapshot(fresh.find(rowMatchesEmail) || []);
         S.usersData = fresh;
         _saveUsersCache(fresh);
         // Если данные текущего пользователя изменились (роль, флаги) —
@@ -8228,10 +8231,17 @@ async function backgroundPrefetch(matched) {
   try {
     await _runWithConcurrency(tasks, 2);
     if (document.getElementById('scr-vizity')?.classList.contains('on')) return;
+    if (document.getElementById('scr-ceo')?.classList.contains('on')) {
+      renderCeoDashboard();
+      return;
+    }
     const activeTab = document.querySelector('.tab.on')?.dataset.tab;
     if (activeTab) renderTab(activeTab);
     const personalOn = document.getElementById('scr-personal')?.classList.contains('on');
-    if (personalOn) { const m = findUserInSheet(); if (m) renderPersonal(m); }
+    if (personalOn) {
+      const m = findUserInSheet();
+      if (m) renderPersonal(m);
+    }
   } finally {
     S.silentRefresh = false;
   }
@@ -11255,8 +11265,19 @@ function dockKpiItogi() {
 }
 
 // ==================== CEO DASHBOARD ====================
+let _ceoDashboardPromise = null;
 
 async function loadCeoDashboard() {
+  if (_ceoDashboardPromise) return _ceoDashboardPromise;
+  _ceoDashboardPromise = _loadCeoDashboard();
+  try {
+    return await _ceoDashboardPromise;
+  } finally {
+    _ceoDashboardPromise = null;
+  }
+}
+
+async function _loadCeoDashboard() {
   const el = document.getElementById('c-ceo');
   if (!el) return;
   el.innerHTML = loader();

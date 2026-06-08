@@ -283,23 +283,34 @@
 
 /* Topbar в embedded: поиск + фильтр, sticky сразу под sub-tabs (top:48).
    БЕЗ контейнера-плашки, БЕЗ фона. */
-/* Topbar склеивается с subtabs-row выше: top подобран чтобы они были
-   слиплены без видимого зазора. Один и тот же фон страницы. */
+/* Topbar: position:fixed под subtabs-row, склеена визуально (top=52+46) */
 #autoru-fullscreen.embedded .topbar {
   display: grid !important;
   grid-template-columns: 1fr auto !important;
   gap: 6px !important;
-  padding: 0 0 8px !important;
+  padding: 0 10px 8px !important;
   background: var(--bg) !important;
   border-bottom: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  position: -webkit-sticky !important;
-  position: sticky !important;
-  top: 42px !important;          /* высота subtabs-row (36px кнопка + 6 padding-top) */
-  z-index: 20;
+  position: fixed !important;
+  top: 98px !important;          /* header 52 + subtabs-row 46 */
+  left: 0 !important;
+  right: 0 !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+  max-width: 720px !important;
+  z-index: 99 !important;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
   will-change: transform;
 }
+
+/* Когда autoru-таб активен, контент scr-instruktsii нужно сдвинуть
+   вниз чтобы не подлезал под фикс-панель. В режиме чата хватает только
+   subtabs-row (46px). В режиме каталога — обе панели (46 + 50 = 96). */
+#scr-instruktsii:has(.autoru-subtabs-row) #c-instruktsii { padding-top: 50px; }
+#scr-instruktsii:has(#autoru-fullscreen.embedded.mode-catalog) #c-instruktsii { padding-top: 100px; }
 #autoru-fullscreen.embedded .topbar__search {
   width: 100% !important;
   background: var(--bg2) !important;
@@ -435,17 +446,25 @@
   #autoru-fullscreen.embedded .tile__icon svg { width: 12px !important; height: 12px !important; }
 }
 
-/* Sub-tabs row: ЧАТ | КАТАЛОГ + Refresh-кнопка. Sticky сверху, без
-   нижнего отступа — визуально склеивается с topbar поиска/фильтра. */
+/* Sub-tabs row: ЧАТ | КАТАЛОГ + Refresh-кнопка. position:fixed
+   под основным хедером (top:52), как фикс-хедер — работает на iOS PWA
+   гарантированно. Ширина центрируется как .w (max 720px). */
 .autoru-subtabs-row {
   display: flex; align-items: stretch; gap: 8px;
-  position: -webkit-sticky;
-  position: sticky;
-  top: 0;
-  z-index: 30;
+  position: fixed !important;
+  top: 52px;
+  left: 0; right: 0;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 720px;
+  padding: 6px 10px 4px;
+  z-index: 100;
   background: var(--bg);
-  padding: 6px 0 4px;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
   will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 .autoru-subtabs {
   display: inline-flex;

@@ -7094,6 +7094,101 @@ async function _autoruEnsureCatalogLoaded() {
   }
   return [];
 }
+// ─────────────────────────────────────────────────────────────
+// Смарт-поиск с многоступенчатым fallback
+// 1. Прямой парсер (cm66 + AutoSearch). Если найдено → готово.
+// 2. Если 0 — разбиваем по «и/или», «или», «,», «;», «/», «+» и каждый отдельно.
+// 3. Если всё ещё 0 — пробуем разбить по плоскому «и» (между моделями).
+// 4. Если 0 — токеновый fuzzy: ищем в brand/model/title подстроки.
+// ─────────────────────────────────────────────────────────────
+function _autoruHybridOne(v, cars) {
+  let part = cars;
+  let cm = null;
+  if (typeof window.cm66SearchOverCars === 'function') {
+    cm = window.cm66SearchOverCars(v, cars);
+    part = cm.cars;
+  }
+  if (window.AutoSearch && window.AutoSearch.parse) {
+    const ar = window.AutoSearch.parse(v);
+    const arClean = Object.assign({}, ar, { free: '' });
+    part = part.filter(c => window.AutoSearch.match(c, arClean));
+  }
+  return { part, cm };
+}
+function _autoruDedup(arr) {
+  const seen = new Set();
+  const out = [];
+  for (const c of arr) {
+    const k = c.url || (c.brand + '|' + c.model + '|' + c.price + '|' + c.mileage + '|' + c.city);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(c);
+  }
+  return out;
+}
+function _autoruSmartSearch(q, cars) {
+  const dbg = [];
+  // === STEP 1: explicit splits (или, /, ;, +, |, и/или) ===
+  const explicitSplits = q.split(/\s*(?:и\s*\/\s*или|и\/или|;|\/|\bили\b|\s\+\s|\s\|\s|,)\s*/i)
+    .map(s => s.trim()).filter(Boolean);
+  if (explicitSplits.length > 1) {
+    const merged = [];
+    for (const v of explicitSplits) {
+      const r = _autoruHybridOne(v, cars);
+      merged.push(...r.part);
+      dbg.push({ q: v, n: r.part.length });
+    }
+    const m = _autoruDedup(merged);
+    if (m.length) return { matched: m, mode: 'explicit-split', dbg, note: `Разобрал ${explicitSplits.length} варианта: ${explicitSplits.map(v=>'«'+v+'»').join(' / ')}` };
+  }
+  // === STEP 2: full direct query ===
+  const r0 = _autoruHybridOne(q, cars);
+  dbg.push({ q, n: r0.part.length, mode: 'direct' });
+  if (r0.part.length) return { matched: r0.part, mode: 'direct', dbg };
+  // === STEP 3: попытка split по плоскому « и » ===
+  // (например «солярис и рио» — два бренда/модели через «и»).
+  const andSplits = q.split(/\s+и\s+/i).map(s => s.trim()).filter(Boolean);
+  if (andSplits.length >= 2) {
+    const merged = [];
+    let validPartsCount = 0;
+    for (const v of andSplits) {
+      const r = _autoruHybridOne(v, cars);
+      if (r.part.length) {
+        validPartsCount++;
+        merged.push(...r.part);
+      }
+      dbg.push({ q: v, n: r.part.length, mode: 'и-split' });
+    }
+    if (validPartsCount >= 1) {
+      const m = _autoruDedup(merged);
+      if (m.length) return { matched: m, mode: 'и-split', dbg, note: `Разобрал по «и»: ${andSplits.map(v=>'«'+v+'»').join(' + ')}` };
+    }
+  }
+  // === STEP 4: токеновый fuzzy-fallback ===
+  // Бьём запрос на слова ≥3 символов, нормализуем (ё→е). Для каждой машины
+  // проверяем — содержится ли ХОТЯ БЫ один токен в brand/model/title.
+  const tokens = q.toLowerCase().replace(/ё/g,'е').split(/[\s,;]+/).filter(t => t.length >= 3);
+  if (tokens.length) {
+    const found = [];
+    for (const c of cars) {
+      const hay = ((c.brand||'') + ' ' + (c.model||'') + ' ' + (c.title||'')).toLowerCase().replace(/ё/g,'е');
+      for (const t of tokens) {
+        if (hay.includes(t)) { found.push(c); break; }
+      }
+    }
+    if (found.length) {
+      dbg.push({ q: '«'+tokens.join('»+«')+'»', n: found.length, mode: 'fuzzy' });
+      return {
+        matched: found,
+        mode: 'fuzzy',
+        dbg,
+        note: `Не нашёл точное совпадение — показываю по словам: ${tokens.map(t=>'«'+t+'»').join(' + ')}`
+      };
+    }
+  }
+  return { matched: [], mode: 'none', dbg };
+}
+
 function _autoruInitChat() {
   const win  = document.getElementById('autoru-chat-window');
   const form = document.getElementById('autoru-chat-form');
@@ -7155,48 +7250,18 @@ function _autoruInitChat() {
       scrollToMsg(userMsg);
       return;
     }
-    // ── МУЛЬТИ-ЗАПРОС: пользователь может написать несколько вариантов
-    // через "и/или", "или", "/", ";", "+". Каждый — отдельный поиск,
-    // результаты дедуплицируются по URL.
-    const variants = q
-      .split(/\s*(?:и\s*\/\s*или|и\/или|;|\/|\bили\b|\s\+\s|\s\|\s)\s*/i)
-      .map(s => s.trim()).filter(Boolean);
-    try { window.DIAG?.push('info','autoru-chat', ['variants', variants.length, JSON.stringify(variants)]); } catch(_){}
-    const seenUrl = new Set();
-    const allMatched = [];
-    const parsedDbg = [];
-    for (const v of variants) {
-      // ── ГИБРИДНЫЙ парсинг для каждого варианта: cm66 + AutoSearch
-      let part = cars;
-      let cm = null;
-      if (typeof window.cm66SearchOverCars === 'function') {
-        cm = window.cm66SearchOverCars(v, cars);
-        part = cm.cars;
-      }
-      if (window.AutoSearch && window.AutoSearch.parse) {
-        const ar = window.AutoSearch.parse(v);
-        const arClean = Object.assign({}, ar, { free: '' });
-        part = part.filter(c => window.AutoSearch.match(c, arClean));
-      }
-      parsedDbg.push({ q: v, n: part.length, cheap: cm?.parsed?.cheapIntent, expensive: cm?.parsed?.expensiveIntent });
-      for (const c of part) {
-        const key = c.url || (c.brand + '|' + c.model + '|' + c.price + '|' + c.mileage + '|' + c.city);
-        if (seenUrl.has(key)) continue;
-        seenUrl.add(key);
-        allMatched.push(c);
-      }
-    }
-    const matched = allMatched;
-    try { window.DIAG?.push('info','autoru-chat', ['matched total', matched.length, 'variants:', JSON.stringify(parsedDbg)]); } catch(_){}
+    // ── СМАРТ-ПОИСК с многоступенчатым fallback
+    const sr = _autoruSmartSearch(q, cars);
+    const matched = sr.matched;
+    const parsedDbg = sr.dbg;
+    try { window.DIAG?.push('info','autoru-chat', ['matched', matched.length, 'mode:', sr.mode, JSON.stringify(parsedDbg)]); } catch(_){}
     if (!matched.length) {
       loadingMsg.innerHTML = '<p>Ничего не найдено по запросу.</p>';
       scrollToMsg(userMsg);
       return;
     }
-    const variantsLine = variants.length > 1
-      ? `<p style="font-size:12px;color:var(--txt2);margin-top:4px">Разобрал ${variants.length} вариант${variants.length>1?(variants.length<5?'а':'ов'):''}: ${variants.map(v => '«'+escapeHtml(v)+'»').join(' / ')}</p>`
-      : '';
-    loadingMsg.innerHTML = `<p>Нашёл <strong>${matched.length}</strong> авто.${matched.length > PAGE ? ` Показал первые ${PAGE}.` : ''}</p>${variantsLine}`;
+    const modeNote = sr.note ? `<p style="font-size:12px;color:var(--txt2);margin-top:4px">${escapeHtml(sr.note)}</p>` : '';
+    loadingMsg.innerHTML = `<p>Нашёл <strong>${matched.length}</strong> авто.${matched.length > PAGE ? ` Показал первые ${PAGE}.` : ''}</p>${modeNote}`;
     showMore(loadingMsg, matched, 0);
     // Скроллим к bot-сообщению, а НЕ в самый низ — пользователь видит первую карточку
     scrollToMsg(loadingMsg);

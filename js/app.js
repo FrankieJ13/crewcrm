@@ -1383,12 +1383,12 @@ function getPresencePageLabel() {
   }
   if (document.getElementById('scr-vizity')?.classList.contains('on')) return `Визиты ${deptLabel(S.vizDept || roleDept)}`;
   if (document.getElementById('scr-instruktsii')?.classList.contains('on')) {
-    const sub = S.autoruSubTab === 'chat' ? 'Чат-бот Auto.ru' : 'Каталог Auto.ru';
-    const faq = S.faqTab === 'mango' ? 'MANGO'
-              : S.faqTab === 'links' ? 'Ссылки'
+    const sub = S.autoruSubTab === 'chat' ? 'Чат Auto.ru' : 'Каталог Auto.ru';
+    const faq = S.faqTab === 'mango' ? 'Mango'
+              : S.faqTab === 'links' ? 'Сайты CM'
               : S.faqTab === 'reglament' ? 'Регламент'
-              : S.faqTab === 'autopodbor' ? 'Автоподбор'
-              : S.faqTab === 'dozhim-search' ? 'Дожим поиск'
+              : S.faqTab === 'autopodbor' ? 'Чат CM.ru'
+              : S.faqTab === 'dozhim-search' ? 'Трафик поиск'
               : S.faqTab === 'autoru' ? sub
               : 'Инструкции';
     return faq;

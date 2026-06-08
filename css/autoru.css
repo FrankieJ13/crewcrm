@@ -488,6 +488,27 @@
 /* Карточка ВСЕГДА side-by-side (фото слева + плитки справа), просто
    пропорционально уменьшается за счёт container queries.
    Сдвигаем правую колонку плиток для большего пространства слева. */
+/* Логотип марки в шапке карточки — слева от названия */
+#autoru-fullscreen .card__head-left {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+#autoru-fullscreen .card__head-names { min-width: 0; flex: 1; }
+#autoru-fullscreen .card__brand-logo {
+  width: 36px; height: 36px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+@container (max-width: 540px) {
+  #autoru-fullscreen .card__brand-logo { width: 30px; height: 30px; }
+}
+@container (max-width: 360px) {
+  #autoru-fullscreen .card__brand-logo { width: 26px; height: 26px; }
+}
+
 /* Фоллбэк placeholder когда фото не загрузилось */
 .card__media--noimg,
 .card__media-placeholder {

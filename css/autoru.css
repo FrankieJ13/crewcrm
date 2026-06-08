@@ -760,6 +760,31 @@
   padding: 8px 0 0;
   position: relative;
 }
+html.autoru-chat-keyboard .autoru-chat-panel {
+  height: calc(var(--ap-vh, 100dvh) - 56px - 60px);
+  min-height: 0;
+  padding-bottom: 72px;
+}
+html.autoru-chat-keyboard .autoru-chat-window {
+  padding-bottom: 78px;
+  justify-content: flex-start !important;
+}
+html.autoru-chat-keyboard .autoru-chat-composer {
+  position: fixed;
+  left: max(14px, calc((100vw - 720px) / 2 + 10px));
+  right: max(14px, calc((100vw - 720px) / 2 + 10px));
+  bottom: calc(var(--ap-keyboard, 0px) + 8px);
+  z-index: 220;
+  padding: 8px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 -8px 24px rgba(0,0,0,.12);
+}
+html.autoru-chat-keyboard .autoru-chat-cmdmenu {
+  bottom: calc(100% + 8px);
+}
 /* Меню слеш-команд — flex только когда видимое (иначе [hidden] перебивается) */
 .autoru-chat-cmdmenu[hidden] { display: none !important; }
 .autoru-chat-cmdmenu {

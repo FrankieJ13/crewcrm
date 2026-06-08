@@ -6971,14 +6971,21 @@ function _apSyncEmbeddedViewport() {
   const arFs = document.getElementById('autoru-fullscreen');
   const apActive = !!(apFs && apFs.classList.contains('embedded'));
   const arActive = !!(arFs && arFs.classList.contains('embedded') && arFs.classList.contains('mode-chat'));
-  if (!apActive && !arActive) return;
+  if (!apActive && !arActive) {
+    document.documentElement.classList.remove('autoru-chat-keyboard');
+    return;
+  }
   const vv = window.visualViewport;
   if (!vv) return;
   document.documentElement.style.setProperty('--ap-vh', vv.height + 'px');
+  const keyboardPx = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+  document.documentElement.style.setProperty('--ap-keyboard', keyboardPx + 'px');
   // Клава открыта (vv.height сильно меньше layout) → composer прижат к клаве (4px).
   // Закрыта → резерв под dock (92px).
-  const keyboardOpen = (window.innerHeight - vv.height) > 100;
+  const keyboardOpen = keyboardPx > 100;
   document.documentElement.style.setProperty('--ap-bottom-gap', keyboardOpen ? '4px' : '92px');
+  const autoruInputFocused = arActive && document.activeElement?.id === 'autoru-chat-input';
+  document.documentElement.classList.toggle('autoru-chat-keyboard', !!(keyboardOpen && autoruInputFocused));
 }
 function _apBindEmbeddedViewport() {
   if (!window.visualViewport || window._apEmbBound) return;
@@ -7057,6 +7064,23 @@ function initAutoruTab() {
   // iOS PWA: visualViewport-синхронизация для адаптивного прижатия composer
   _apBindEmbeddedViewport();
   _apSyncEmbeddedViewport();
+  const chatInput = document.getElementById('autoru-chat-input');
+  if (chatInput && !chatInput._arViewportBound) {
+    chatInput._arViewportBound = true;
+    chatInput.addEventListener('focus', () => {
+      const sync = () => {
+        _apSyncEmbeddedViewport();
+        try { chatInput.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch(_) {}
+      };
+      [30, 100, 220, 420, 700].forEach(d => setTimeout(sync, d));
+    });
+    chatInput.addEventListener('blur', () => {
+      [30, 160, 360].forEach(d => setTimeout(() => {
+        _apSyncEmbeddedViewport();
+        document.documentElement.classList.remove('autoru-chat-keyboard');
+      }, d));
+    });
+  }
 }
 
 function _arReturnToBody() {
@@ -7078,7 +7102,9 @@ function _arReturnToBody() {
   if (!apFs || !apFs.classList.contains('embedded')) {
     document.documentElement.style.removeProperty('--ap-vh');
     document.documentElement.style.removeProperty('--ap-bottom-gap');
+    document.documentElement.style.removeProperty('--ap-keyboard');
   }
+  document.documentElement.classList.remove('autoru-chat-keyboard');
 }
 
 function switchAutoruSub(sub) {

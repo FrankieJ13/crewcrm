@@ -261,28 +261,134 @@
 .autoru-tab-host {
   display: block;
   width: 100%;
-  height: calc(var(--ap-vh, 100dvh) - 56px - var(--ap-bottom-gap, 92px));
-  max-height: calc(var(--ap-vh, 100dvh) - 56px - var(--ap-bottom-gap, 92px));
-  position: relative;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  /* Никакого фикс-height + overflow — пусть страница скроллится естественно;
+     внутри #autoru-fullscreen свой sticky topbar и контент. */
   margin-top: 6px;
 }
 #autoru-fullscreen.embedded {
   position: static !important;
-  height: 100% !important;
+  height: auto !important;
   min-height: 0 !important;
-  background: var(--bg);
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  background: transparent !important;
+  display: block !important;
+  padding: 0;
 }
 #autoru-fullscreen.embedded::-webkit-scrollbar { display: none; }
-/* Sub-tabs ЧАТ | КАТАЛОГ — переключатель сверху */
+
+/* В embedded режиме скрываем брендовую плашку Crystal Motors — у нас уже
+   есть свой sec-title в FAQ-табе, а место на экране ценное. */
+#autoru-fullscreen.embedded .topbar__brand,
+#autoru-fullscreen.embedded .topbar__meta-mobile { display: none !important; }
+
+/* Topbar в embedded: одна строка, поиск во всю ширину + иконка-кнопка фильтра справа */
+#autoru-fullscreen.embedded .topbar {
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  gap: 8px !important;
+  padding: 8px 0 10px !important;
+  background: transparent !important;
+  border-bottom: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 20;
+}
+#autoru-fullscreen.embedded .topbar__search {
+  width: 100% !important;
+  background: var(--bg2) !important;
+  color: var(--txt) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 10px;
+}
+#autoru-fullscreen.embedded .topbar__search::placeholder { color: var(--txt3); }
+#autoru-fullscreen.embedded .topbar__right { gap: 6px; }
+#autoru-fullscreen.embedded #status,
+#autoru-fullscreen.embedded #counter { display: none !important; }
+/* Кнопка фильтра — только иконка */
+#autoru-fullscreen.embedded .btn-filters {
+  width: 38px; height: 38px;
+  padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  color: var(--txt);
+  font-size: 0;
+  position: relative;
+  border-radius: 10px;
+}
+#autoru-fullscreen.embedded .btn-filters svg { width: 18px; height: 18px; }
+#autoru-fullscreen.embedded .btn-filters__badge {
+  position: absolute; top: -4px; right: -4px;
+  background: var(--acc);
+  color: #0f0f10;
+  font-size: 9px; padding: 2px 5px;
+  border-radius: 999px;
+  font-size: 0 !important;
+}
+/* Filter popup — один столбец, скролл, прижат к правому краю кнопки */
+#autoru-fullscreen.embedded .filters-popup {
+  min-width: min(320px, calc(100vw - 24px)) !important;
+  max-height: 70vh !important;
+  background: var(--bg2) !important;
+  border-color: var(--line) !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,.4) !important;
+  color: var(--txt);
+}
+#autoru-fullscreen.embedded .filters-popup__row {
+  grid-template-columns: 1fr !important;
+  gap: 6px !important;
+}
+#autoru-fullscreen.embedded .filters-popup select,
+#autoru-fullscreen.embedded .filters-popup input,
+#autoru-fullscreen.embedded .filters-popup button {
+  background: var(--bg3) !important;
+  color: var(--txt) !important;
+  border-color: var(--line) !important;
+}
+/* Кнопка Применить — выделенная */
+#autoru-fullscreen.embedded .filters-popup .filters-apply {
+  background: var(--acc) !important;
+  color: #0f0f10 !important;
+  font-weight: 700;
+  border-color: var(--acc) !important;
+}
+
+/* Чипы */
+#autoru-fullscreen.embedded .chips { padding: 8px 0 0 !important; }
+#autoru-fullscreen.embedded .chip {
+  background: var(--bg2) !important;
+  border-color: var(--line) !important;
+  color: var(--txt2) !important;
+}
+
+/* Грид — на узких контейнерах 1 колонка, на широких автозаполнение */
+#autoru-fullscreen.embedded .grid {
+  padding: 10px 0 16px !important;
+  grid-template-columns: 1fr !important;
+  gap: 10px !important;
+}
+@media (min-width: 720px) {
+  #autoru-fullscreen.embedded .grid {
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)) !important;
+  }
+}
+
+/* Карточка адаптируется — на узких 1 колонка с фото сверху */
+@media (max-width: 480px) {
+  #autoru-fullscreen.embedded .card {
+    grid-template-columns: 1fr !important;
+    padding: 10px !important;
+  }
+  #autoru-fullscreen.embedded .card__title { font-size: 16px !important; }
+  #autoru-fullscreen.embedded .card__subtitle { font-size: 14px !important; }
+}
+
+/* Sub-tabs ЧАТ | КАТАЛОГ — обычный flex наверху таба, scroll-away
+   (чтобы не конфликтовать с sticky topbar каталога ниже) */
 .autoru-subtabs {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 0 10px;
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 0 4px;
 }
 .autoru-subtab {
   flex: 1;
@@ -291,7 +397,7 @@
   color: var(--txt2);
   font-family: 'Unbounded', sans-serif;
   font-size: 11px; font-weight: 800; letter-spacing: .08em;
-  padding: 8px 14px;
+  padding: 7px 14px;
   border-radius: 999px;
   cursor: pointer;
   transition: background .15s, color .15s, transform .1s;
@@ -302,10 +408,9 @@
   border-color: var(--acc);
 }
 .autoru-subtab:active { transform: scale(.97); }
-/* ЧАТ — простая обёртка над cars (без полного автопросмотра, минимальный поиск) */
-.autoru-chat {
-  padding: 8px 12px;
-}
+
+/* ЧАТ-секция */
+.autoru-chat { padding: 8px 0; }
 .autoru-chat-input {
   width: 100%;
   padding: 10px 12px;
@@ -317,5 +422,6 @@
   margin-bottom: 10px;
 }
 .autoru-chat-input:focus { outline: none; border-color: var(--acc); }
-.autoru-chat-results { display: flex; flex-direction: column; gap: 8px; }
+.autoru-chat-results { display: flex; flex-direction: column; gap: 10px; }
+.autoru-chat-results .card { display: grid; }  /* поддержать каталог-стиль карточки */
 .autoru-chat-hint { color: var(--txt3); font-size: 12px; padding: 6px 0; }

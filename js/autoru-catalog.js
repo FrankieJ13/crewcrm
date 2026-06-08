@@ -333,8 +333,16 @@ window.autoruCatalogInit = function () {
 
   // ============ СОБЫТИЯ ============
   els.q.addEventListener('input', apply);
-  SELECT_FILTERS.concat('sort').forEach(k => els[k].addEventListener('change', apply));
-  NUMBER_FILTERS.forEach(k => els[k].addEventListener('input', apply));
+  // Фильтры (селекты + числа) больше не применяются «онлайн» — только по
+  // кнопке «Применить» в попапе. Сортировка применяется сразу, как и
+  // основная поисковая строка.
+  els.sort.addEventListener('change', apply);
+  // Кнопка применить — теперь обязательное действие для подтверждения фильтров
+  const applyBtn = document.getElementById('filtersApply');
+  if (applyBtn) applyBtn.addEventListener('click', () => {
+    apply();
+    if (els.filtersPopup) els.filtersPopup.hidden = true;
+  });
   els.reset.addEventListener('click', () => {
     els.q.value = '';
     SELECT_FILTERS.forEach(k => { els[k].value = ''; });

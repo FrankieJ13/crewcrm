@@ -983,7 +983,10 @@ async function azImportSheet() {
 function showScr(id) {
   hideStartupLoader();
   // Если уходим с инструкций — возвращаем узел Автоподбора в body (чтоб не уносился со scr-instruktsii)
-  if (id !== 'instruktsii' && typeof _apReturnToBody === 'function') _apReturnToBody();
+  if (id !== 'instruktsii') {
+    if (typeof _apReturnToBody === 'function') _apReturnToBody();
+    if (typeof _arReturnToBody === 'function') _arReturnToBody();
+  }
   ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const el = document.getElementById('scr-'+t);
     if (el) el.classList.remove('on');
@@ -1380,7 +1383,14 @@ function getPresencePageLabel() {
   }
   if (document.getElementById('scr-vizity')?.classList.contains('on')) return `Визиты ${deptLabel(S.vizDept || roleDept)}`;
   if (document.getElementById('scr-instruktsii')?.classList.contains('on')) {
-    const faq = S.faqTab === 'mango' ? 'MANGO' : S.faqTab === 'links' ? 'Ссылки' : S.faqTab === 'reglament' ? 'Регламент' : S.faqTab === 'autopodbor' ? 'Автоподбор' : S.faqTab === 'dozhim-search' ? 'Дожим поиск' : 'Инструкции';
+    const sub = S.autoruSubTab === 'chat' ? 'Чат-бот Auto.ru' : 'Каталог Auto.ru';
+    const faq = S.faqTab === 'mango' ? 'MANGO'
+              : S.faqTab === 'links' ? 'Ссылки'
+              : S.faqTab === 'reglament' ? 'Регламент'
+              : S.faqTab === 'autopodbor' ? 'Автоподбор'
+              : S.faqTab === 'dozhim-search' ? 'Дожим поиск'
+              : S.faqTab === 'autoru' ? sub
+              : 'Инструкции';
     return `FAQ ${faq}`;
   }
   if (document.getElementById('scr-otchet')?.classList.contains('on')) {
@@ -6816,6 +6826,7 @@ function renderInstruktsii() {
   if (S.faqTab === 'mango') { el.innerHTML = renderMangoTab(); return; }
   if (S.faqTab === 'links') { el.innerHTML = renderLinksTab(); initLinksTab(); return; }
   if (S.faqTab === 'autopodbor') { el.innerHTML = renderAutopodborTab(); initAutopodborTab(); return; }
+  if (S.faqTab === 'autoru')     { el.innerHTML = renderAutoruTab();     initAutoruTab();     return; }
   if (S.faqTab === 'dozhim-search') { el.innerHTML = renderDozhimSearchTab(); initDozhimSearchTab(); return; }
   const raw = S.data.instruktsii;
   if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
@@ -6969,6 +6980,100 @@ function _apReturnToBody() {
   fs.setAttribute('aria-hidden', 'true');
   // Сбрасываем --ap-vh, чтобы не влиял на остальной UI
   document.documentElement.style.removeProperty('--ap-vh');
+}
+
+/* ═══════════════════ AUTO.RU CM ═══════════════════
+ * Sub-tabs ЧАТ | КАТАЛОГ. КАТАЛОГ = интегрированный
+ * проект AUTORUCM66CARSDB, ЧАТ = простой поиск через
+ * AutoSearch.parse() с показом карточек.
+ */
+function renderAutoruTab() {
+  const sub = S.autoruSubTab || 'catalog';
+  return `
+    <div class="autoru-subtabs">
+      <button class="autoru-subtab ${sub === 'chat' ? 'active' : ''}" onclick="switchAutoruSub('chat')">ЧАТ</button>
+      <button class="autoru-subtab ${sub === 'catalog' ? 'active' : ''}" onclick="switchAutoruSub('catalog')">КАТАЛОГ</button>
+    </div>
+    ${sub === 'chat'
+      ? `<div class="autoru-chat">
+          <input id="autoru-chat-input" class="autoru-chat-input" type="search" placeholder='Запрос: "фольц тигуан 5 мест до 1.2 млн"' autocomplete="off"/>
+          <div class="autoru-chat-hint">Введи запрос — найдём подходящие авто из каталога auto.ru.</div>
+          <div id="autoru-chat-results" class="autoru-chat-results"></div>
+         </div>`
+      : `<div id="autoru-tab-host" class="autoru-tab-host"></div>`}
+  `;
+}
+
+function initAutoruTab() {
+  const sub = S.autoruSubTab || 'catalog';
+  if (sub === 'chat') return _autoruInitChat();
+  const fs = document.getElementById('autoru-fullscreen');
+  const host = document.getElementById('autoru-tab-host');
+  if (!fs || !host) return;
+  if (fs.parentNode !== host) host.appendChild(fs);
+  fs.classList.add('open', 'embedded');
+  fs.setAttribute('aria-hidden', 'false');
+  try { if (typeof window.autoruCatalogInit === 'function') window.autoruCatalogInit(); } catch(e) { console.warn('autoruCatalogInit failed', e); }
+}
+
+function _arReturnToBody() {
+  const fs = document.getElementById('autoru-fullscreen');
+  if (!fs) return;
+  if (fs.parentNode !== document.body) document.body.appendChild(fs);
+  fs.classList.remove('open', 'embedded');
+  fs.setAttribute('aria-hidden', 'true');
+}
+
+function switchAutoruSub(sub) {
+  S.autoruSubTab = sub;
+  // Если уходим с каталога, вернём узел в body чтобы он не уносился из таба
+  if (sub !== 'catalog') _arReturnToBody();
+  renderInstruktsii();
+}
+window.switchAutoruSub = switchAutoruSub;
+
+// Чат: AutoSearch.parse + match + рендер той же карточкой из каталога
+// (window.autoruRenderCard) — единый дизайн с КАТАЛОГ-режимом.
+async function _autoruEnsureCatalogLoaded() {
+  if (typeof window.autoruCatalogInit === 'function' && !window._autoruCatInited) {
+    try { window.autoruCatalogInit(); } catch(_){}
+  }
+  const deadline = Date.now() + 8000;
+  while (Date.now() < deadline) {
+    if (typeof window.autoruGetCars === 'function') {
+      const cars = window.autoruGetCars();
+      if (cars && cars.length) return cars;
+    }
+    await new Promise(r => setTimeout(r, 120));
+  }
+  return [];
+}
+function _autoruInitChat() {
+  const inp = document.getElementById('autoru-chat-input');
+  const out = document.getElementById('autoru-chat-results');
+  if (!inp || !out) return;
+  let lastQuery = '';
+  const run = async () => {
+    const q = (inp.value || '').trim();
+    if (q === lastQuery) return;
+    lastQuery = q;
+    if (!q) { out.innerHTML = ''; return; }
+    out.innerHTML = '<div class="autoru-chat-hint">Ищем…</div>';
+    const cars = await _autoruEnsureCatalogLoaded();
+    if (!cars.length) { out.innerHTML = '<div class="autoru-chat-hint">Каталог не загрузился. Попробуйте ещё раз.</div>'; return; }
+    const parsed = window.AutoSearch ? window.AutoSearch.parse(q) : null;
+    const matched = parsed ? cars.filter(c => window.AutoSearch.match(c, parsed)) : [];
+    if (!matched.length) { out.innerHTML = '<div class="autoru-chat-hint">Ничего не найдено по запросу.</div>'; return; }
+    if (typeof window.autoruRenderCard !== 'function') {
+      out.innerHTML = '<div class="autoru-chat-hint">Рендер карточек недоступен.</div>'; return;
+    }
+    out.innerHTML = '';
+    matched.slice(0, 20).forEach(c => out.appendChild(window.autoruRenderCard(c)));
+  };
+  inp.oninput = () => clearTimeout(inp._t) || (inp._t = setTimeout(run, 250));
+  inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); run(); } };
+  // Фоном грузим каталог, чтобы первый запрос был быстрым
+  _autoruEnsureCatalogLoaded();
 }
 
 function toggleInstr(id) {
@@ -12843,6 +12948,7 @@ function dockFaq(tab) {
   }
   // Покидаем «Автоподбор» — возвращаем DOM-узел чата обратно в body
   if (tab !== 'autopodbor') _apReturnToBody();
+  if (tab !== 'autoru')     _arReturnToBody();
   updateFirebasePage();
   goTab('instruktsii');
   dockSetActive('instruktsii');

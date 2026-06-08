@@ -100,6 +100,25 @@ window.autoruCatalogInit = function () {
     fillNum(els.owners, cars.map(c => c.owners));
   }
 
+  // ============ CASCADING: модель зависит от марки ============
+  function repopulateModels() {
+    if (!els.model) return;
+    const brand = els.brand.value;
+    const prev = els.model.value;
+    // Очищаем все опции кроме первой "Все модели"
+    while (els.model.options.length > 1) els.model.remove(1);
+    const subset = brand ? cars.filter(c => c.brand === brand) : cars;
+    const sorted = Array.from(new Set(subset.map(c => c.model).filter(Boolean).map(String)))
+      .sort((a, b) => a.localeCompare(b, 'ru'));
+    sorted.forEach(v => {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = v;
+      els.model.appendChild(o);
+    });
+    // Если предыдущая модель уже не доступна — сбрасываем
+    els.model.value = sorted.includes(prev) ? prev : '';
+  }
+
   // ============ ПРИМЕНЕНИЕ ============
   function apply() {
     const rawQ = (els.q.value || '').trim();
@@ -365,6 +384,10 @@ window.autoruCatalogInit = function () {
   // Фильтры применяются мгновенно по change/input (как было в оригинале)
   SELECT_FILTERS.concat('sort').forEach(k => els[k] && els[k].addEventListener('change', apply));
   NUMBER_FILTERS.forEach(k => els[k] && els[k].addEventListener('input', apply));
+  // Cascading: смена марки → пересобираем список моделей под её модели
+  if (els.brand && els.model) {
+    els.brand.addEventListener('change', () => { repopulateModels(); apply(); });
+  }
   els.reset.addEventListener('click', () => {
     els.q.value = '';
     SELECT_FILTERS.forEach(k => { els[k].value = ''; });

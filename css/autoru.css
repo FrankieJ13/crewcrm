@@ -315,9 +315,11 @@
 }
 .autoru-subtabs-row #openFilters:hover { color: var(--txt); background: var(--bg2); }
 .autoru-subtabs-row #openFilters:active { transform: scale(.94); }
-/* Текст «Фильтры» внутри кнопки скрываем — только иконка */
-.autoru-subtabs-row #openFilters > :not(svg):not(.btn-filters__badge) { display: none; }
-.autoru-subtabs-row #openFilters svg { width: 18px; height: 18px; }
+/* Текст «Фильтры» (text-node) скрываем через font-size:0 — иначе он не убирается
+   обычным display:none (text-node нельзя стилизовать). SVG и бейдж получают
+   свои собственные font-size. */
+.autoru-subtabs-row #openFilters { font-size: 0 !important; gap: 0 !important; }
+.autoru-subtabs-row #openFilters svg { width: 18px; height: 18px; flex-shrink: 0; }
 .autoru-subtabs-row #openFilters .btn-filters__badge {
   position: absolute !important;
   top: -6px !important; right: -6px !important;
@@ -351,7 +353,12 @@
   color: var(--txt);
   z-index: 120;
 }
-.autoru-subtabs-row #filtersPopup .filters-popup__row { grid-template-columns: 1fr !important; gap: 6px !important; margin-bottom: 8px; }
+.autoru-subtabs-row #filtersPopup .filters-popup__row {
+  grid-template-columns: 1fr !important;
+  gap: 8px !important;
+  margin-bottom: 8px;
+}
+.autoru-subtabs-row #filtersPopup .filters-popup__row > * { margin-bottom: 2px; }
 .autoru-subtabs-row #filtersPopup select,
 .autoru-subtabs-row #filtersPopup input,
 .autoru-subtabs-row #filtersPopup button {

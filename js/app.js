@@ -7135,20 +7135,24 @@ function _autoruInitChat() {
       scrollToMsg(userMsg);
       return;
     }
-    // Используем ПОЛНУЮ логику парсера автоподбора (window.cm66SearchOverCars).
-    // Тот же словарь, тот же scoring, та же сортировка (cheap → дешёвые сверху,
-    // expensive → дорогие сверху). Никакого «упрощённого» AutoSearch.match.
-    let matched = [];
+    // ── ГИБРИДНЫЙ парсинг: cm66 (автоподбор, intent/sort/fuzzy) + AutoSearch
+    // (auto.ru — seats, cities, bodies, colors etc, чего нет в cm66).
+    // Сначала cm66 даёт отсортированный список (cheap → ↑, expensive → ↓),
+    // потом AutoSearch добавляет фильтры по конкретным полям. free убираем,
+    // чтобы незнакомые слова не отфильтровали всё в ноль.
+    let matched = cars;
     let parsedDbg = null;
     if (typeof window.cm66SearchOverCars === 'function') {
       const cm = window.cm66SearchOverCars(q, cars);
       matched = cm.cars;
-      parsedDbg = cm.parsed ? { brands: cm.parsed.brands, models: cm.parsed.models, cities: cm.parsed.cities, cheap: cm.parsed.cheapIntent, expensive: cm.parsed.expensiveIntent } : null;
-    } else if (window.AutoSearch) {
-      // Fallback (если автоподбор-чат ещё не загружен)
-      const parsed = window.AutoSearch.parse(q);
-      matched = cars.filter(c => window.AutoSearch.match(c, parsed));
-      parsedDbg = parsed;
+      parsedDbg = cm.parsed ? { _: 'cm66', brands: cm.parsed.brands, models: (cm.parsed.termMatches||[]).map(m=>m.name||m).slice(0,3), cheap: cm.parsed.cheapIntent, expensive: cm.parsed.expensiveIntent } : null;
+    }
+    if (window.AutoSearch && window.AutoSearch.parse) {
+      const ar = window.AutoSearch.parse(q);
+      const arClean = Object.assign({}, ar, { free: '' });
+      const beforeAr = matched.length;
+      matched = matched.filter(c => window.AutoSearch.match(c, arClean));
+      try { window.DIAG?.push('info','autoru-chat', ['AutoSearch filtered', beforeAr, '→', matched.length, 'seats:', ar.seats, 'cities:', JSON.stringify(ar.cities), 'bodies:', JSON.stringify(ar.bodies)]); } catch(_){}
     }
     try { window.DIAG?.push('info','autoru-chat', ['parsed', JSON.stringify(parsedDbg)]); } catch(_){}
     try { window.DIAG?.push('info','autoru-chat', ['matched', matched.length]); } catch(_){}

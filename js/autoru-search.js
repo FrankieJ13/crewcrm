@@ -238,54 +238,40 @@ window.AutoSearch = (function () {
   }
 
   // ===== ПАРСЕР =====
-  // ===== СЛЕНГ-СЛОВАРЬ =====
-  // Разговорные слова → готовые фильтры. Применяются к остатку (rest)
-  // после основного парсинга, токены поглощаются.
-  const SLANG = {
-    // дешёвые / «помойка»
-    'ведро': { priceMax: 300000 }, 'ведра': { priceMax: 300000 }, 'тазик': { priceMax: 300000 },
-    'дешёвка': { priceMax: 400000 }, 'дешевка': { priceMax: 400000 },
-    'недорогая': { priceMax: 600000 }, 'недорого': { priceMax: 600000 },
-    'бюджетная': { priceMax: 800000 }, 'бюджетник': { priceMax: 800000 }, 'бюджет': { priceMax: 800000 },
-    // средний класс
-    'средняя': { priceMin: 800000, priceMax: 2000000 },
-    'нормальная': { priceMin: 800000, priceMax: 2500000 },
-    // премиум / дорогая
-    'премиум': { priceMin: 2500000 }, 'премиальная': { priceMin: 2500000 },
-    'дорогая': { priceMin: 3000000 }, 'дорогие': { priceMin: 3000000 },
-    'люкс': { priceMin: 4000000 },
-    // свежие / новые
-    'новая': { yearMin: new Date().getFullYear() - 2 },
-    'новые': { yearMin: new Date().getFullYear() - 2 },
-    'свежая': { yearMin: new Date().getFullYear() - 3 },
-    'свежие': { yearMin: new Date().getFullYear() - 3 },
-    // старые
-    'старая': { yearMax: 2010 }, 'старые': { yearMax: 2010 },
-    'древняя': { yearMax: 2005 },
-    // малый пробег
-    'малопробежная': { mileageMax: 80000 },
-    'малый': { mileageMax: 100000 },
-    // прочие синонимы машины — фильтр не применяют, просто игнорируем
-    'тачка': {}, 'тачку': {}, 'тачки': {},
-    'машинка': {}, 'машинку': {}, 'машинки': {},
-    'авто': {}, 'автомобиль': {}, 'автомобили': {},
-    'кар': {},
-  };
-  function applySlang(rest, out) {
-    if (!rest) return rest;
-    const toks = rest.split(' ').filter(Boolean);
-    const remaining = [];
-    toks.forEach(t => {
-      const rule = SLANG[t];
-      if (rule == null) { remaining.push(t); return; }
-      // Применяем фильтры из правила, не перезаписывая уже распарсенные
-      if (rule.priceMin && !out.priceMin) out.priceMin = rule.priceMin;
-      if (rule.priceMax && !out.priceMax) out.priceMax = rule.priceMax;
-      if (rule.yearMin  && !out.yearMin)  out.yearMin  = rule.yearMin;
-      if (rule.yearMax  && !out.yearMax)  out.yearMax  = rule.yearMax;
-      if (rule.mileageMax && !out.mileageMax) out.mileageMax = rule.mileageMax;
-    });
-    return remaining.join(' ');
+  // ===== ИНТЕНТЫ (паттерны взяты из autopodbor-chat.js для единообразия) =====
+  // CHEAP: «ведро», «корыто», «развалюха», «убитая», «дешман» и т.п. → priceMax 500k
+  const CHEAP_INTENT = /(?:ржав(?:ое|ую|ый|ые|ого|еньк(?:ое|ую|ий|ие))?|ржавая|ржавчина|корыто|корытце|тазик|таз|ведро|ведра|дрова|дровишки|груда\s+металла|кусок\s+металла|металлолом|чермет|утиль|хлам|автохлам|развалюха|старье|старьё|помойка|помоечка|убит(?:ое|ую|ый|ые)|уставш(?:ее|ую|ий|ие)|сам(?:ое|ую|ый)?\s+дешев(?:ое|ую|ый)|дешман|дешманск(?:ое|ую|ий)|бомж\s*вариант|нищеброд\s*вариант|дешёвка|дешевка|дёшево|дешево|недорог(?:о|ая|ие|ой))/gi;
+  // EXPENSIVE: «премиум», «лакшери», «топчик», «жирная», «царский вариант» → priceMin 2.5M
+  const EXPENSIVE_INTENT = /(?:дорого\s*[- ]?\s*богато|богато\s*[- ]?\s*дорого|топ\s+за\s+свои\s+деньги|топ\s+за\s+свои|лучшее\s+за\s+свои\s+деньги|лучшее\s+за\s+свои|максимум\s+за\s+свои|надо\s+брать|надо\s+забирать|бери\s+не\s+думай|можно\s+брать|топчик|сам(?:ое|ую|ый|ые)?\s+дорог(?:ое|ую|ой|ие|их)|сам(?:ое|ую|ый|ые)?\s+жирн(?:ое|ую|ый|ые|ых)|сам(?:ое|ую|ый|ые)?\s+богат(?:ое|ую|ый|ые|ых)|дорогие\s+тачки|дорогие\s+машины|дорогой\s+вариант|богатый\s+вариант|жирный\s+вариант|царский\s+вариант|лакомый\s+вариант|для\s+босса|для\s+директора|по\s+красоте|на\s+максималках|максималка|полный\s+фарш|жир(?:ный|ная|ное|ные)?|лакшери|люкс|премиум|премиальный|премиальная|богато|все\s+деньги|все\s+лучшее|самый\s+сок|сладкий\s+вариант)/gi;
+  // FRESH: «новая», «свежая», «свежак», «не битая», «топ свежак» → yearMin = current - 2
+  const FRESH_INTENT = /(?:совсем\s+нов(?:ая|ое|ые)|свежак|свеж(?:ая|ее|ие)\s+тачк|нов(?:ая|ое|ые)\s+тачк)/gi;
+  // OLD: «старая», «бабушкин вариант» → yearMax = 2010
+  const OLD_INTENT = /(?:бабушкин\s+вариант|дедушкин\s+вариант|совсем\s+стар(?:ая|ое|ый|ые)|старичок|старушка)/gi;
+  // Слова-синонимы «авто» — нужно убирать чтобы не падали в free и не ломали матч
+  const NOISE_WORDS = /(?:^|\s)(?:тачка|тачку|тачки|машинка|машинку|машинки|машин(?:а|у|ы)?|автомобил(?:ь|и|я|ей)?|транспорт|агрегат|кар)(?=\s|$)/gi;
+
+  function applyIntents(qFull, out) {
+    let q = String(qFull || '').toLowerCase().replace(/ё/g,'е');
+    if (CHEAP_INTENT.test(q)) {
+      if (!out.priceMax) out.priceMax = 500000;
+    }
+    if (EXPENSIVE_INTENT.test(q)) {
+      if (!out.priceMin) out.priceMin = 2500000;
+    }
+    if (FRESH_INTENT.test(q)) {
+      if (!out.yearMin) out.yearMin = new Date().getFullYear() - 2;
+    }
+    if (OLD_INTENT.test(q)) {
+      if (!out.yearMax) out.yearMax = 2010;
+    }
+    // Возвращаем строку без intent-токенов и шум-слов — иначе они утекут в free
+    return q
+      .replace(CHEAP_INTENT, ' ')
+      .replace(EXPENSIVE_INTENT, ' ')
+      .replace(FRESH_INTENT, ' ')
+      .replace(OLD_INTENT, ' ')
+      .replace(NOISE_WORDS, ' ')
+      .replace(/\s+/g, ' ').trim();
   }
 
   function parse(rawQuery) {
@@ -294,26 +280,30 @@ window.AutoSearch = (function () {
     const year  = extractYear(qFull);
     const mileageMax = extractMileageMax(qFull);
     const seats = extractSeats(qFull);
-    const qClean = stripPhrases(qFull);
-    const { found, rest } = findAliasMatches(qClean);
     const out = {
       raw: rawQuery,
-      free: rest,
-      brands: found.brand,
-      models: found.model,
-      cities: found.city,
-      bodies: found.body,
-      transmissions: found.transmission,
-      drives: found.drive,
-      fuels: found.fuel,
-      colors: found.color,
+      free: '',
+      brands: [], models: [], cities: [], bodies: [],
+      transmissions: [], drives: [], fuels: [], colors: [],
       priceMin: price.min, priceMax: price.max,
       yearMin: year.min,   yearMax: year.max,
       mileageMax,
       seats,
     };
-    // Доедаем сленг ИЗ free → переносим в фильтры (priceMax и т.п.)
-    out.free = applySlang(rest, out);
+    // Сначала intent-фразы и noise-слова (ведро/премиум/тачка...) — вынимают
+    // фильтры и убирают токены из запроса
+    const qAfterIntents = applyIntents(qFull, out);
+    const qClean = stripPhrases(qAfterIntents);
+    const { found, rest } = findAliasMatches(qClean);
+    out.brands = found.brand;
+    out.models = found.model;
+    out.cities = found.city;
+    out.bodies = found.body;
+    out.transmissions = found.transmission;
+    out.drives = found.drive;
+    out.fuels = found.fuel;
+    out.colors = found.color;
+    out.free = rest;
     return out;
   }
 

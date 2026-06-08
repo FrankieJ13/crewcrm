@@ -412,33 +412,25 @@
 }
 #autoru-fullscreen.embedded .card__strip svg { width: 14px !important; height: 14px !important; }
 
-/* Карточка адаптируется на узких экранах:
-   фото сверху на всю ширину, плитки в 2 колонки под ним, ничего не обрезается */
-@media (max-width: 560px) {
-  #autoru-fullscreen.embedded .card {
-    grid-template-columns: 1fr !important;
-    grid-template-rows: auto auto auto !important;
-  }
-  #autoru-fullscreen.embedded .card__media {
-    grid-column: 1 / -1 !important;
-    grid-row: 2 !important;
-    height: auto !important;
-    aspect-ratio: 16/10;
-  }
-  #autoru-fullscreen.embedded .tiles {
-    grid-column: 1 / -1 !important;
-    grid-row: 3 !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 4px 12px !important;
-  }
-  #autoru-fullscreen.embedded .card__strip {
-    grid-column: 1 / -1 !important;
-  }
-}
-/* Сдвигаем правую колонку плиток ещё на 10px чтобы влезло больше в левой */
+/* Карточка ВСЕГДА side-by-side (фото слева + плитки справа), просто
+   пропорционально уменьшается за счёт container queries.
+   Сдвигаем правую колонку плиток для большего пространства слева. */
 #autoru-fullscreen.embedded .tiles { column-gap: 20px !important; }
-@media (max-width: 560px) {
+@container (max-width: 540px) {
   #autoru-fullscreen.embedded .tiles { column-gap: 14px !important; }
+}
+@container (max-width: 420px) {
+  #autoru-fullscreen.embedded .tiles { column-gap: 10px !important; gap: 3px 10px !important; }
+  #autoru-fullscreen.embedded .tile__value { font-size: 10.5px !important; }
+}
+@container (max-width: 360px) {
+  #autoru-fullscreen.embedded .card { padding: 7px !important; column-gap: 6px !important; }
+  #autoru-fullscreen.embedded .card__title { font-size: 13px !important; }
+  #autoru-fullscreen.embedded .card__subtitle { font-size: 12px !important; }
+  #autoru-fullscreen.embedded .card__price { font-size: 13px !important; }
+  #autoru-fullscreen.embedded .tile__value { font-size: 10px !important; }
+  #autoru-fullscreen.embedded .tile__icon,
+  #autoru-fullscreen.embedded .tile__icon svg { width: 12px !important; height: 12px !important; }
 }
 
 /* Sub-tabs row: ЧАТ | КАТАЛОГ + Refresh-кнопка, sticky сверху.

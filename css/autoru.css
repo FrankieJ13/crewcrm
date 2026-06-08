@@ -1,0 +1,321 @@
+/* ════════════════════════════════════════════════════════════════
+   AUTO.RU CM — scoped под #autoru-fullscreen
+   ════════════════════════════════════════════════════════════════ */
+#autoru-fullscreen {
+  /* Локальные токены — изолированы от темы дашборда */
+  --bg: #f5f3f9;
+  --panel: #ffffff;
+  --panel-2: #f6f5fa;
+  --text: #1a1a2e;
+  --muted: #6b6b80;
+  --accent: #6c5ce7;
+  --accent-soft: #ede9ff;
+  --border: #e8e5f0;
+  --radius: 16px;
+  background:
+    radial-gradient(1100px 700px at 0% 0%,   #ffe9ef 0%, transparent 55%),
+    radial-gradient(1000px 700px at 100% 0%, #e6efff 0%, transparent 55%),
+    radial-gradient(900px 700px at 50% 100%, #f0e7ff 0%, transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  min-height: 100%;
+  display: none;
+}
+#autoru-fullscreen.open { display: block; }
+#autoru-fullscreen * { box-sizing: border-box; }
+
+/* ============ HEADER (sticky, search + filters btn) ============ */
+#autoru-fullscreen .topbar {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center;
+  padding: 12px 18px; background: rgba(255,255,255,.82); border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 20;
+  backdrop-filter: saturate(180%) blur(10px);
+  -webkit-backdrop-filter: saturate(180%) blur(10px);
+}
+.topbar__brand strong { display: block; font-size: 15px; line-height: 1.1; }
+.topbar__brand span { color: var(--muted); font-size: 11px; }
+
+#autoru-fullscreen .topbar__search {
+  background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+  border-radius: 8px; padding: 9px 12px; font: inherit; outline: none;
+  width: 100%; min-width: 0;
+}
+.topbar__search:focus { border-color: var(--accent); }
+.topbar__search::placeholder { color: var(--muted); }
+
+.topbar__right { display: flex; align-items: center; gap: 12px; position: relative; }
+.topbar__meta-mobile { display: none; }   /* виден только на мобиле */
+#status, #counter { color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+#autoru-fullscreen .btn-filters {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+  border-radius: 8px; padding: 7px 12px; font: inherit; cursor: pointer;
+  position: relative;
+}
+.btn-filters:hover { border-color: var(--accent); color: var(--accent); }
+#autoru-fullscreen .btn-filters__badge {
+  background: var(--accent); color: #000; font-size: 10px; font-weight: 700;
+  border-radius: 999px; padding: 1px 6px; min-width: 16px; text-align: center;
+}
+
+#autoru-fullscreen .filters-popup {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 30;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px; min-width: 520px; max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 80px); overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+}
+#autoru-fullscreen .filters-popup__row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;
+}
+.filters-popup__row:last-child { margin-bottom: 0; }
+.filters-popup__row--actions { grid-template-columns: 1fr; }
+#autoru-fullscreen .filters-popup select, #autoru-fullscreen .filters-popup input, #autoru-fullscreen .filters-popup button {
+  background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+  border-radius: 7px; padding: 8px 10px; font: inherit; outline: none;
+  width: 100%; min-width: 0;
+}
+.filters-popup button { cursor: pointer; }
+.filters-popup select:focus, .filters-popup input:focus { border-color: var(--accent); }
+.filters-popup button:hover { border-color: var(--accent); color: var(--accent); }
+.filters-popup input::placeholder { color: var(--muted); }
+.filters-popup input[type="number"]::-webkit-outer-spin-button,
+.filters-popup input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.filters-popup input[type="number"] { -moz-appearance: textfield; }
+
+@media (max-width: 700px) {
+  .topbar { grid-template-columns: 1fr auto; gap: 8px 10px; padding: 10px 12px; }
+  /* строка 1: бренд + статус|счётчик справа */
+  .topbar__brand { grid-column: 1; }
+  .topbar__brand strong { font-size: 14px; }
+#autoru-fullscreen .topbar__meta-mobile {
+    grid-column: 2; display: flex; flex-direction: column; align-items: flex-end;
+    color: var(--muted); font-size: 11px; line-height: 1.3; white-space: nowrap;
+  }
+  /* строка 2: поиск + кнопка фильтров */
+  .topbar__search { grid-column: 1; }
+  .topbar__right { grid-column: 2; gap: 6px; }
+  /* десктоп-статусы скрываем — те же значения дублируются в mobile-meta */
+  .topbar__right #status, .topbar__right #counter { display: none; }
+  .filters-popup { min-width: 280px; right: -8px; }
+  .filters-popup__row { grid-template-columns: 1fr 1fr; }
+}
+
+/* ============ CHIPS ============ */
+#autoru-fullscreen .chips {
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 18px 0;
+}
+.chips:empty { padding: 0; }
+#autoru-fullscreen .chip {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 999px;
+  padding: 4px 10px; font-size: 12px; color: var(--muted);
+}
+.chip strong { color: var(--accent); font-weight: 600; }
+
+/* осветлённые селекты для светлой темы */
+.topbar__search { background: #fff; border-color: #d8d4e6; }
+.topbar__search::placeholder { color: var(--muted); }
+.btn-filters { background: #fff; border-color: #d8d4e6; }
+.filters-popup { background: #fff; border-color: #d8d4e6; box-shadow: 0 12px 40px rgba(40,20,80,.18); }
+.filters-popup select, .filters-popup input, .filters-popup button { background: #fff; border-color: #d8d4e6; color: var(--text); }
+.load-more { background: #fff; border-color: #d8d4e6; }
+
+/* ============ GRID ============ */
+#autoru-fullscreen .grid {
+  display: grid; gap: 14px; padding: 14px 18px;
+  grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+}
+@media (max-width: 600px) { .grid { grid-template-columns: 1fr; padding: 12px; gap: 10px; } }
+
+/* ============ CARD ============ */
+#autoru-fullscreen .card {
+  display: grid;
+  grid-template-columns: 35% 1fr;
+  grid-template-rows: auto auto auto;       /* head | media+tiles | strip */
+  column-gap: 14px;
+  row-gap: 12px;
+  align-items: start;
+  background: linear-gradient(225deg, #d3e5fd 0%, #fefcfa 28%, #fef6ec 56%, #ffefe8 80%, #fffaea 100%);
+  border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+  padding: 14px;
+  box-shadow: 0 1px 2px rgba(28, 13, 60, .04), 0 8px 24px rgba(108, 92, 231, .06);
+  container-type: inline-size;
+  transition: border-color .12s, box-shadow .12s, transform .12s;
+}
+.card:hover { border-color: #d4cfe8; box-shadow: 0 1px 2px rgba(28, 13, 60, .05), 0 12px 32px rgba(108, 92, 231, .12); }
+
+/* ============ HEAD (на всю ширину) ============ */
+#autoru-fullscreen .card__head {
+  grid-row: 1; grid-column: 1 / -1;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  padding-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+.card__head-left { min-width: 0; flex: 1; }
+#autoru-fullscreen .card__title {
+  font-size: 19px; font-weight: 700; line-height: 1.2; color: var(--text); margin: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#autoru-fullscreen .card__subtitle {
+  font-size: 17px; font-weight: 700; color: var(--text); margin-top: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.card__head-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 0; }
+.card__price { font-size: 18px; font-weight: 700; color: var(--text); white-space: nowrap; text-align: right; }
+#autoru-fullscreen .card__addr {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; color: var(--muted); white-space: nowrap;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+}
+.card__addr svg { flex: none; width: 14px; height: 14px; }
+
+/* ============ MEDIA (row 2, col 1) — по оригинальной пропорции фото ============ */
+#autoru-fullscreen .card__media {
+  grid-row: 2; grid-column: 1;
+  border-radius: 12px; overflow: hidden;
+  display: block; text-decoration: none;
+  align-self: start;
+}
+#autoru-fullscreen .card__media img {
+  display: block;
+  width: 100%; height: auto;
+}
+
+/* ============ TILES (row 2, col 2) ============ */
+.tiles { grid-row: 2; grid-column: 2; }
+
+/* ============ STRIP (нижняя плашка с трастовыми бейджами) ============ */
+#autoru-fullscreen .card__strip {
+  grid-row: 3; grid-column: 1 / -1;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  box-shadow: 0 1px 0 rgba(0,0,0,.02);
+}
+.strip-item { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text); line-height: 1.2; }
+.strip-item svg { flex: none; width: 22px; height: 22px; }
+.strip-sep { width: 1px; align-self: stretch; background: var(--border); }
+
+/* ============ TILES ============ */
+#autoru-fullscreen .tiles {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 9px 22px;
+  flex: 1; align-content: start;
+}
+#autoru-fullscreen .tile {
+  display: flex; align-items: center; gap: 10px;
+  min-width: 0;
+}
+#autoru-fullscreen .tile__icon {
+  color: var(--accent); flex: none;
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent-soft); border-radius: 8px;
+}
+.tile__icon svg { width: 18px; height: 18px; }
+#autoru-fullscreen .tile__value {
+  color: var(--text); font-size: 13px; font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  flex: 1; min-width: 0;
+}
+
+/* ============ ADAPTIVE (container queries on card) ============ */
+@container (max-width: 420px) {
+  .card { padding: 10px; column-gap: 10px; row-gap: 8px; }
+  .card__media { border-radius: 9px; }
+  .card__title { font-size: 14px; }
+  .card__subtitle { font-size: 13px; }
+  .card__price { font-size: 14px; }
+  .tile__icon { width: 22px; height: 22px; border-radius: 6px; }
+  .tile__icon svg { width: 13px; height: 13px; }
+  .tile__value { font-size: 11px; }
+  .tiles { gap: 5px 10px; }
+  .card__head { padding-bottom: 8px; }
+  .card__strip { padding: 8px 10px; gap: 10px; font-size: 11px; }
+  .strip-item { font-size: 11px; gap: 6px; }
+  .strip-item svg { width: 16px; height: 16px; }
+  .strip-sep { display: none; }
+}
+@container (min-width: 620px) {
+  .card__title { font-size: 22px; }
+  .card__subtitle { font-size: 20px; }
+  .card__price { font-size: 22px; }
+  .tile__icon { width: 34px; height: 34px; }
+  .tile__icon svg { width: 20px; height: 20px; }
+  .tile__value { font-size: 14px; }
+  .tiles { gap: 11px 26px; }
+}
+
+/* ============ MISC ============ */
+#autoru-fullscreen .load-more {
+  display: block; margin: 0 auto 32px; padding: 10px 22px;
+  background: var(--panel); color: var(--text); border: 1px solid var(--border);
+  border-radius: 8px; cursor: pointer; font: inherit;
+}
+.load-more:hover { border-color: var(--accent); color: var(--accent); }
+
+.empty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 60px 20px; }
+
+/* ════════════ EMBEDDED-режим (как FAQ-таб) ════════════ */
+.autoru-tab-host {
+  display: block;
+  width: 100%;
+  height: calc(var(--ap-vh, 100dvh) - 56px - var(--ap-bottom-gap, 92px));
+  max-height: calc(var(--ap-vh, 100dvh) - 56px - var(--ap-bottom-gap, 92px));
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  margin-top: 6px;
+}
+#autoru-fullscreen.embedded {
+  position: static !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  background: var(--bg);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+#autoru-fullscreen.embedded::-webkit-scrollbar { display: none; }
+/* Sub-tabs ЧАТ | КАТАЛОГ — переключатель сверху */
+.autoru-subtabs {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 0 10px;
+}
+.autoru-subtab {
+  flex: 1;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  color: var(--txt2);
+  font-family: 'Unbounded', sans-serif;
+  font-size: 11px; font-weight: 800; letter-spacing: .08em;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .15s, color .15s, transform .1s;
+}
+.autoru-subtab.active {
+  background: var(--acc);
+  color: #0f0f10;
+  border-color: var(--acc);
+}
+.autoru-subtab:active { transform: scale(.97); }
+/* ЧАТ — простая обёртка над cars (без полного автопросмотра, минимальный поиск) */
+.autoru-chat {
+  padding: 8px 12px;
+}
+.autoru-chat-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg2);
+  color: var(--txt);
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+.autoru-chat-input:focus { outline: none; border-color: var(--acc); }
+.autoru-chat-results { display: flex; flex-direction: column; gap: 8px; }
+.autoru-chat-hint { color: var(--txt3); font-size: 12px; padding: 6px 0; }

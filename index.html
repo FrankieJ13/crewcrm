@@ -27,8 +27,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&family=Exo+2:wght@200;300;700&family=JetBrains+Mono:wght@300;400&family=Oswald:wght@400;700&display=swap" rel="stylesheet"/>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<link rel="stylesheet" href="./css/styles.css?v=262"/>
-<link rel="stylesheet" href="./css/autopodbor.css?v=262"/>
+<link rel="stylesheet" href="./css/styles.css?v=273"/>
+<link rel="stylesheet" href="./css/autopodbor.css?v=273"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -734,6 +734,9 @@
         <button class="dock-popup-btn" onclick="dockFaq('autopodbor')">
           <span class="dock-popup-dot" style="background:#a855f7"></span>АВТОПОДБОР
         </button>
+        <button class="dock-popup-btn" onclick="dockFaq('autoru')">
+          <span class="dock-popup-dot" style="background:#3d7cff"></span>AUTO.RU CM
+        </button>
         <button class="dock-popup-btn" onclick="dockFaq('dozhim-search')">
           <span class="dock-popup-dot" style="background:#ec4899"></span>ДОЖИМ ПОИСК
         </button>
@@ -996,9 +999,91 @@
     </form>
   </div>
 </div>
-<script src="./js/autopodbor-config.js?v=262"></script>
-<script src="./js/autopodbor-dictionary.js?v=262"></script>
-<script src="./js/autopodbor-chat.js?v=262"></script>
+<script src="./js/autopodbor-config.js?v=273"></script>
+<script src="./js/autopodbor-dictionary.js?v=273"></script>
+<script src="./js/autopodbor-chat.js?v=273"></script>
+
+<!-- AUTO.RU CM — каталог + поиск (см. https://github.com/FrankieJ13/AUTORUCM66CARSDB) -->
+<link rel="stylesheet" href="./css/autoru.css?v=273"/>
+<div id="autoru-fullscreen" aria-hidden="true">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="iconGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#3d7cff"/>
+        <stop offset="100%" stop-color="#8b5cf6"/>
+      </linearGradient>
+    </defs>
+  </svg>
+  <header class="topbar">
+    <div class="topbar__brand">
+      <strong>Crystal Motors</strong>
+      <span>Единый каталог auto.ru</span>
+    </div>
+    <div class="topbar__meta-mobile">
+      <span id="statusMobile">Загрузка…</span>
+      <span id="counterMobile"></span>
+    </div>
+    <input id="q" class="topbar__search" type="search" autocomplete="off"
+           placeholder='Запрос: "фольц тигуан 5 мест до 1.2 млн"'>
+    <div class="topbar__right">
+      <span id="status">Загрузка…</span>
+      <span id="counter"></span>
+      <button id="openFilters" class="btn-filters" type="button">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+        Фильтры
+        <span id="filtersCount" class="btn-filters__badge" hidden>0</span>
+      </button>
+      <div id="filtersPopup" class="filters-popup" hidden>
+        <div class="filters-popup__row">
+          <select id="city"><option value="">Все города</option></select>
+          <select id="brand"><option value="">Все марки</option></select>
+          <select id="body"><option value="">Все кузова</option></select>
+        </div>
+        <div class="filters-popup__row">
+          <select id="transmission"><option value="">Все КПП</option></select>
+          <select id="drive"><option value="">Все приводы</option></select>
+          <select id="wheel"><option value="">Любой руль</option></select>
+        </div>
+        <div class="filters-popup__row">
+          <input id="priceMin" type="number" inputmode="numeric" placeholder="Цена от, ₽">
+          <input id="priceMax" type="number" inputmode="numeric" placeholder="Цена до, ₽">
+          <select id="country"><option value="">Любая страна</option></select>
+        </div>
+        <div class="filters-popup__row">
+          <input id="yearMin" type="number" inputmode="numeric" placeholder="Год от">
+          <input id="yearMax" type="number" inputmode="numeric" placeholder="Год до">
+          <input id="mileageMax" type="number" inputmode="numeric" placeholder="Пробег до, км">
+        </div>
+        <div class="filters-popup__row">
+          <select id="seats"><option value="">Любое кол-во мест</option></select>
+          <select id="owners"><option value="">Любые владельцы</option></select>
+          <select id="pts"><option value="">Любой ПТС</option></select>
+        </div>
+        <div class="filters-popup__row">
+          <select id="condition"><option value="">Любое состояние</option></select>
+          <select id="color"><option value="">Любой цвет</option></select>
+          <select id="sort">
+            <option value="price_asc">Цена ↑</option>
+            <option value="price_desc">Цена ↓</option>
+            <option value="year_desc">Год: новее</option>
+            <option value="year_asc">Год: старше</option>
+            <option value="mileage_asc">Пробег ↑</option>
+            <option value="updated_desc">Свежие</option>
+          </select>
+        </div>
+        <div class="filters-popup__row filters-popup__row--actions">
+          <button id="reset" type="button">Сбросить все фильтры</button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <div class="chips" id="chips"></div>
+  <main id="grid" class="grid"></main>
+  <button id="loadMore" class="load-more" hidden>Показать ещё</button>
+</div>
+<script src="./js/autoru-config.js?v=273"></script>
+<script src="./js/autoru-search.js?v=273"></script>
+<script src="./js/autoru-catalog.js?v=273"></script>
 
 <!-- Модалка профиля менеджера (открывается с рейтинга) -->
 <div id="profile-modal-overlay" class="profile-modal-overlay" onclick="if(event.target===this)closeProfileModal()">

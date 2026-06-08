@@ -14204,23 +14204,23 @@ function getVizSverkaMark(value) {
   const isFluent = document.body.classList.contains('fluent');
   if (isFluent) {
     if (state === 'yes') {
-      return `<span class="vt-sverka-mark yes" title="Сверено" aria-label="Сверено" style="--sverka-icon:url('${FLUENT_ICON_BASE}FluentColor-Check.svg')"><i></i></span>`;
+      return `<span class="vt-sverka-mark yes native-svg" title="Сверено" aria-label="Сверено"><img class="vt-sverka-img" src="${FLUENT_ICON_BASE}FluentColor-Check.svg" alt=""></span>`;
     }
     if (state === 'no') {
-      return `<span class="vt-sverka-mark no" title="Не прошел сверку" aria-label="Не прошел сверку" style="--sverka-icon:url('${FLUENT_ICON_BASE}FluentColor-Fail.svg')"><i></i></span>`;
+      return `<span class="vt-sverka-mark no native-svg" title="Не прошел сверку" aria-label="Не прошел сверку"><img class="vt-sverka-img" src="${FLUENT_ICON_BASE}FluentColor-Fail.svg" alt=""></span>`;
     }
-    return `<span class="vt-sverka-mark empty" title="Визит проверяется..." aria-label="Визит проверяется" style="--sverka-icon:url('${FLUENT_ICON_BASE}FluentColor-Revise.svg')"><i></i></span>`;
+    return `<span class="vt-sverka-mark empty native-svg" title="Визит проверяется..." aria-label="Визит проверяется"><img class="vt-sverka-img" src="${FLUENT_ICON_BASE}FluentColor-Revise.svg" alt=""></span>`;
   }
   const iconBase = isCosmic ? COSMIC_ICON_BASE : DEFAULT_ICON_BASE;
   const iconPrefix = isCosmic ? 'cosmic-' : '';
   const cls = isCosmic ? ' cosmic-native' : '';
   if (state === 'yes') {
-    return `<span class="vt-sverka-mark yes${cls}" title="Сверено" aria-label="Сверено" style="--sverka-icon:url('${iconBase}${iconPrefix}s_verified.svg')"><i></i></span>`;
+    return `<span class="vt-sverka-mark yes${cls} native-svg" title="Сверено" aria-label="Сверено"><img class="vt-sverka-img" src="${iconBase}${iconPrefix}s_verified.svg" alt=""></span>`;
   }
   if (state === 'no') {
-    return `<span class="vt-sverka-mark no${cls}" title="Не прошел сверку" aria-label="Не прошел сверку" style="--sverka-icon:url('${iconBase}${iconPrefix}s_not-verified.svg')"><i></i></span>`;
+    return `<span class="vt-sverka-mark no${cls} native-svg" title="Не прошел сверку" aria-label="Не прошел сверку"><img class="vt-sverka-img" src="${iconBase}${iconPrefix}s_not-verified.svg" alt=""></span>`;
   }
-  return `<span class="vt-sverka-mark empty${cls}" title="Визит проверяется..." aria-label="Визит проверяется" style="--sverka-icon:url('${iconBase}${iconPrefix}s_check.svg')"><i></i></span>`;
+  return `<span class="vt-sverka-mark empty${cls} native-svg" title="Визит проверяется..." aria-label="Визит проверяется"><img class="vt-sverka-img" src="${iconBase}${iconPrefix}s_check.svg" alt=""></span>`;
 }
 
 function getVizChipTone(label, dealValue = '') {

@@ -2792,6 +2792,54 @@ function apiCacheInvalidate(sheetName) {
   }
 }
 
+const STARTUP_DATA_CACHE_KEY = 'crm_startup_data_cache_v1';
+const STARTUP_DATA_CACHE_TTL = 12 * 60 * 60_000;
+
+function loadStartupDataCache() {
+  try {
+    const raw = localStorage.getItem(STARTUP_DATA_CACHE_KEY);
+    if (!raw) return null;
+    const pack = JSON.parse(raw);
+    if (!pack || pack.suffix !== currentSuffix || Date.now() - (pack.ts || 0) > STARTUP_DATA_CACHE_TTL) return null;
+    const data = pack.data || {};
+    if (!Array.isArray(data.vizity) || !Array.isArray(data.d_vizity) || !Array.isArray(data.plan)) return null;
+    return data;
+  } catch (_) {
+    return null;
+  }
+}
+
+function saveStartupDataCache() {
+  try {
+    const data = {
+      vizity: S.data.vizity || [],
+      d_vizity: S.data.d_vizity || [],
+      plan: S.data.plan || [],
+      cnvrs: S.data.cnvrs || [],
+      grafik: S.data.grafik || [],
+    };
+    if (!data.vizity.length || !data.d_vizity.length || !data.plan.length) return;
+    localStorage.setItem(STARTUP_DATA_CACHE_KEY, JSON.stringify({
+      ts: Date.now(),
+      suffix: currentSuffix,
+      data,
+    }));
+  } catch (_) {
+    // localStorage quota/private mode: просто работаем без startup-cache.
+  }
+}
+
+function applyStartupDataCache() {
+  const data = loadStartupDataCache();
+  if (!data) return false;
+  S.data.vizity = data.vizity || S.data.vizity;
+  S.data.d_vizity = data.d_vizity || S.data.d_vizity;
+  S.data.plan = data.plan || S.data.plan;
+  S.data.cnvrs = data.cnvrs || S.data.cnvrs;
+  S.data.grafik = data.grafik || S.data.grafik;
+  return true;
+}
+
 // ==================== CRM AUDIT LOG ====================
 const CRM_LOG_SHEET = 'CRM Logs';
 const CRM_LOG_HEADERS = [
@@ -3764,6 +3812,7 @@ async function _refreshVisibleDataLive() {
       if (!_ratesJson) { try { await loadRatesJson(); } catch(_){} }
       if (!isScreenTokenActive('ceo', token)) return;
       renderCeoDashboard();
+      saveStartupDataCache();
     } finally { S.silentRefresh = false; }
     return;
   }
@@ -11374,7 +11423,14 @@ async function loadCeoDashboard() {
 async function _loadCeoDashboard(token) {
   const el = document.getElementById('c-ceo');
   if (!el) return;
-  el.innerHTML = loader();
+  const cacheRendered = (!S.data.vizity || !S.data.d_vizity || !S.data.plan) && applyStartupDataCache();
+  if (cacheRendered && isScreenTokenActive('ceo', token)) {
+    S.silentRefresh = true;
+    try { renderCeoDashboard(); }
+    finally { S.silentRefresh = false; }
+  } else {
+    el.innerHTML = loader();
+  }
   try {
     const needVizity  = !S.data.vizity;
     const needDVizity = !S.data.d_vizity;
@@ -11406,6 +11462,7 @@ async function _loadCeoDashboard(token) {
   if (!isScreenTokenActive('ceo', token)) return;
   renderCeoDashboard();
   _lastFullDataSyncAt = Date.now();
+  saveStartupDataCache();
   loadCeoWeather();
   // Подгружаем цвета заливки колонки A у ВИЗИТЫ/Д_ВИЗИТЫ — нужны
   // чтобы исключить «запланированные но не приехавшие» визиты

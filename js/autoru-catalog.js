@@ -42,8 +42,8 @@ window.autoruCatalogInit = function () {
       });
       cars.forEach(c => { if (!c.country) c.country = COUNTRY_BY_BRAND[c.brand] || ''; });
       const status = 'Каталог: ' + cars.length + ' авто';
-      els.status.textContent = status;
-      els.statusMobile.textContent = status;
+      if (els.status) els.status.textContent = status;
+      if (els.statusMobile) els.statusMobile.textContent = status;
       try { window.DIAG?.push('info','autoru-cat', ['loaded', cars.length]); } catch(_){}
       populateSelects();
       apply();
@@ -51,7 +51,7 @@ window.autoruCatalogInit = function () {
       try { if (typeof renderInstruktsii === 'function' && document.getElementById('c-instruktsii')) renderInstruktsii(); } catch(_){}
     })
     .catch(err => {
-      els.status.textContent = 'Ошибка загрузки: ' + err.message;
+      if (els.status) els.status.textContent = 'Ошибка загрузки: ' + err.message;
       try { window.DIAG?.push('error','autoru-cat', ['fetch failed', err.message]); } catch(_){}
     });
 

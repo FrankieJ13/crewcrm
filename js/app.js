@@ -12658,7 +12658,7 @@ async function loadRating() {
   if (!el) return;
 
   // Подтягиваем трофеи в фоне — нужно для бейджа кол-ва в карточках
-  try { loadTrophiesCatalog(); } catch(_) {}
+  loadTrophiesCatalog().catch(() => {});
   try { await loadTrophyAwards(); } catch(_) {}
 
   const matched = findUserInSheet();
@@ -14945,6 +14945,28 @@ function _renderTrophiesStub() {
 // Кеш справочника (грузим один раз за сессию).
 // Используем абсолютный URL через document.baseURI + retry один раз.
 let _trophiesCatalogPromise = null;
+const TROPHIES_CATALOG_CACHE_KEY = 'crm_trophies_catalog_cache_v1';
+const TROPHIES_RENDER_DEBOUNCE_MS = 120;
+let _trophiesRenderPromise = null;
+let _trophiesRenderTimer = null;
+
+function _loadTrophiesCatalogCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(TROPHIES_CATALOG_CACHE_KEY) || 'null');
+    return (cached && Array.isArray(cached.trophies)) ? cached : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function _saveTrophiesCatalogCache(catalog) {
+  try {
+    if (catalog && Array.isArray(catalog.trophies)) {
+      localStorage.setItem(TROPHIES_CATALOG_CACHE_KEY, JSON.stringify(catalog));
+    }
+  } catch (_) {}
+}
+
 function loadTrophiesCatalog() {
   if (S.trophies) return Promise.resolve(S.trophies);
   if (_trophiesCatalogPromise) return _trophiesCatalogPromise;
@@ -14953,8 +14975,17 @@ function loadTrophiesCatalog() {
     .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)));
   _trophiesCatalogPromise = fetchOnce()
     .catch(() => new Promise(res => setTimeout(res, 500)).then(fetchOnce)) // 1 retry
-    .then(j => { S.trophies = j; return j; })
-    .catch(e => { _trophiesCatalogPromise = null; throw e; });
+    .then(j => { S.trophies = j; _saveTrophiesCatalogCache(j); return j; })
+    .catch(e => {
+      const cached = _loadTrophiesCatalogCache();
+      _trophiesCatalogPromise = null;
+      if (cached) {
+        S.trophies = cached;
+        try { console.warn('Trophies catalog loaded from cache', e); } catch (_) {}
+        return cached;
+      }
+      throw e;
+    });
   return _trophiesCatalogPromise;
 }
 
@@ -15013,6 +15044,18 @@ function _trophyTypeBadge(type) {
 }
 
 async function renderTrophiesPage() {
+  if (_trophiesRenderPromise) return _trophiesRenderPromise;
+  if (_trophiesRenderTimer) clearTimeout(_trophiesRenderTimer);
+  _trophiesRenderPromise = new Promise(resolve => {
+    _trophiesRenderTimer = setTimeout(resolve, TROPHIES_RENDER_DEBOUNCE_MS);
+  }).then(_renderTrophiesPageNow).finally(() => {
+    _trophiesRenderPromise = null;
+    _trophiesRenderTimer = null;
+  });
+  return _trophiesRenderPromise;
+}
+
+async function _renderTrophiesPageNow() {
   try { window.DIAG?.push('info', 'render', ['renderTrophiesPage']); } catch(_){}
   const el = document.getElementById('c-trophies');
   if (!el) return;
@@ -15253,7 +15296,7 @@ async function renderTrophiesPage() {
 
 function trophiesSelectView(v) {
   S.trophiesView = v;
-  renderTrophiesPage();
+  renderTrophiesPage().catch(() => {});
 }
 window.trophiesSelectView = trophiesSelectView;
 
@@ -15381,7 +15424,7 @@ async function submitAwardTrophy() {
     try { toast('Трофей выдан: ' + code + ' → ' + mgr, 's'); } catch(_) {}
     setTimeout(() => {
       closeAwardTrophyModal();
-      if (document.getElementById('scr-trophies')?.classList.contains('on')) renderTrophiesPage();
+      if (document.getElementById('scr-trophies')?.classList.contains('on')) renderTrophiesPage().catch(() => {});
     }, 700);
   } catch (e) {
     if (msg) { msg.textContent = 'Ошибка: ' + e.message; msg.className = 'award-msg award-err'; }

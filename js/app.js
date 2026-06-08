@@ -7252,6 +7252,7 @@ function _autoruInitChat() {
     { id: 'fresh',     cmd: '/актуальность',label: 'Актуальность БД', desc: 'Когда последний раз обновлялись данные' },
     { id: 'count',     cmd: '/всего',       label: 'Всего авто',     desc: 'Сколько машин в каталоге' },
     { id: 'examples',  cmd: '/примеры',     label: 'Примеры запросов', desc: 'Подсказки как формулировать' },
+    { id: 'export',    cmd: '/экспорт',     label: 'Экспорт чата',   desc: 'Скачать историю чата в JSON' },
   ];
   const cmdMenu = document.getElementById('autoru-chat-cmdmenu');
   const renderCmdMenu = (filter) => {
@@ -7334,6 +7335,52 @@ function _autoruInitChat() {
         const carsArr = window.autoruGetCars?.() || [];
         const lastUpd = carsArr.length ? (carsArr[0].updated_at || carsArr[0].updatedAt || '—') : '—';
         addMsg('bot', `<p>Свежесть данных (по первой записи): <strong>${escapeHtml(String(lastUpd))}</strong></p><p>Раннер upstream обновляет cars.json регулярно — нажми /обновить чтобы перезатянуть.</p>`);
+        return;
+      }
+      if (cmd.id === 'export') {
+        // Собираем все сообщения из win в массив {ts, type, text, cars?}
+        const messages = [];
+        win.querySelectorAll('.autoru-chat-msg').forEach(m => {
+          const isUser = m.classList.contains('autoru-chat-msg-user');
+          // Собираем карточки авто если есть
+          const cars = [];
+          m.querySelectorAll('.card').forEach(c => {
+            const title = c.querySelector('.card__title')?.textContent || '';
+            const subtitle = c.querySelector('.card__subtitle')?.textContent || '';
+            const price = c.querySelector('.card__price')?.textContent || '';
+            const addr = c.querySelector('.card__addr')?.textContent || '';
+            const url = c.querySelector('.card__media')?.getAttribute('href') || '';
+            cars.push({ title: (title + ' ' + subtitle).trim(), price, addr, url });
+          });
+          // Текст без карточек — копируем только <p>
+          const text = Array.from(m.querySelectorAll(':scope > p, :scope > div > p'))
+            .map(p => p.textContent.trim()).filter(Boolean).join('\n');
+          messages.push({
+            type: isUser ? 'user' : 'bot',
+            text,
+            ...(cars.length ? { cars } : {}),
+          });
+        });
+        const payload = {
+          exported_at: new Date().toISOString(),
+          source: 'autoru-chat',
+          messages_count: messages.length,
+          messages,
+        };
+        try {
+          const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          const ts = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+          a.href = url;
+          a.download = `autoru-chat-${ts}.json`;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 200);
+          addMsg('bot', `<p>Готово. Экспортировано сообщений: <strong>${messages.length}</strong>.</p>`);
+        } catch (e) {
+          addMsg('bot', `<p>Ошибка экспорта: ${escapeHtml(e.message)}</p>`);
+        }
         return;
       }
       return;

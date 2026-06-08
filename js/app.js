@@ -1391,7 +1391,7 @@ function getPresencePageLabel() {
               : S.faqTab === 'dozhim-search' ? 'Дожим поиск'
               : S.faqTab === 'autoru' ? sub
               : 'Инструкции';
-    return `FAQ ${faq}`;
+    return faq;
   }
   if (document.getElementById('scr-otchet')?.classList.contains('on')) {
     if (!isCeo) return 'Главная';

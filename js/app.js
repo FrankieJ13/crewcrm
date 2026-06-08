@@ -7054,6 +7054,14 @@ function initAutoruTab() {
 function _arReturnToBody() {
   const fs = document.getElementById('autoru-fullscreen');
   if (!fs) return;
+  // Кнопка фильтров и попап вынесены в subtabs-row (живёт в c-instruktsii).
+  // Перед перерисовкой возвращаем их обратно в #autoru-fullscreen .topbar__right,
+  // иначе они уничтожатся вместе с innerHTML и пропадут.
+  const fBtn = document.getElementById('openFilters');
+  const fPop = document.getElementById('filtersPopup');
+  const tbRight = fs.querySelector('.topbar__right');
+  if (fBtn && tbRight && fBtn.parentElement !== tbRight) tbRight.appendChild(fBtn);
+  if (fPop && tbRight && fPop.parentElement !== tbRight) tbRight.appendChild(fPop);
   if (fs.parentNode !== document.body) document.body.appendChild(fs);
   fs.classList.remove('open', 'embedded', 'mode-chat', 'mode-catalog');
   fs.setAttribute('aria-hidden', 'true');

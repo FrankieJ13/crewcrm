@@ -4843,6 +4843,22 @@ body.neo-light .vt-row-card:nth-child(even) {
   width:16px; height:16px; background:var(--sverka-icon) center/contain no-repeat;
   -webkit-mask:none; mask:none;
 }
+.vt-row-compact > .vt-sverka-clickable,
+.vt-row-compact > .vt-sverka-mark {
+  width:20px;
+  min-width:20px;
+  max-width:20px;
+  height:20px;
+  min-height:20px;
+  max-height:20px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  align-self:center;
+  justify-self:center;
+  line-height:1;
+}
 .vt-sverka-mark.yes { color:var(--grn); background:rgba(46,213,115,.14); }
 .vt-sverka-mark.no { color:var(--red); background:rgba(255,71,87,.13); }
 .vt-sverka-mark.empty { color:var(--org); background:rgba(255,165,2,.16); }
@@ -8445,6 +8461,15 @@ body.fluent .vac-cell        { color: #111; }
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  max-width: 20px;
+  min-height: 20px;
+  max-height: 20px;
+  overflow: hidden;
+  line-height: 1;
   transition: transform .12s, filter .15s;
   border-radius: 6px;
 }

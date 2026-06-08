@@ -14039,6 +14039,7 @@ function renderVizRow(row, dept, locked, isFirstOfDate) {
   const d = row.data;
   const comment = d[4] || '';
   const deal = d[7] || '';
+  const sverkaState = getVizSverkaState(d[13]);
   const label = comment || deal;
   const isDeal = ['ПОКУПКА','КОМИССИЯ','ОБМЕН','ВЫКУП','Кредит','Наличные','Комиссия','Обмен'].some(x=>label.includes(x));
   const isSalon = label.includes('В салоне');
@@ -14058,7 +14059,7 @@ function renderVizRow(row, dept, locked, isFirstOfDate) {
     : sverkaIcon;
   return `
     <div class="vt-row" id="vt-row-${row._sheetRow}">
-      <div class="vt-row-card" id="vt-card-${row._sheetRow}">
+      <div class="vt-row-card vt-sverka-${sverkaState}" id="vt-card-${row._sheetRow}">
         <div class="vt-row-compact" onclick="vizToggleExpand(${row._sheetRow})">
           <span class="vt-row-date" style="${dateStyle}">${escapeHtml((d[0]||'—').slice(0,5))}</span>
           <div>
@@ -14169,6 +14170,11 @@ async function saveSverkaValue(sheetName, sheetRow, value) {
         el.innerHTML = newMark;
         el.setAttribute('onclick',
           `event.stopPropagation();openSverkaPopup(event, '${dept}', ${sheetRow}, ${escapedVal})`);
+        const card = el.closest('.vt-row-card');
+        if (card) {
+          card.classList.remove('vt-sverka-yes', 'vt-sverka-no', 'vt-sverka-empty');
+          card.classList.add('vt-sverka-' + getVizSverkaState(value));
+        }
       });
     } catch(_) {}
     // На journal-screen — полный перерендер для обновления и счётчиков
@@ -14185,15 +14191,22 @@ window.openSverkaPopup  = openSverkaPopup;
 window.saveSverkaValue  = saveSverkaValue;
 window.closeSverkaPopup = closeSverkaPopup;
 
-function getVizSverkaMark(value) {
+function getVizSverkaState(value) {
   const s = String(value || '').trim().toLowerCase();
+  if (s === 'да' || s === 'yes') return 'yes';
+  if (s === 'нет' || s === 'no') return 'no';
+  return 'empty';
+}
+
+function getVizSverkaMark(value) {
+  const state = getVizSverkaState(value);
   const isCosmic = document.body.classList.contains('cosmic');
   const isFluent = document.body.classList.contains('fluent');
   if (isFluent) {
-    if (s === 'да' || s === 'yes') {
+    if (state === 'yes') {
       return `<span class="vt-sverka-mark yes" title="Сверено" aria-label="Сверено" style="--sverka-icon:url('${FLUENT_ICON_BASE}FluentColor-Check.svg')"><i></i></span>`;
     }
-    if (s === 'нет' || s === 'no') {
+    if (state === 'no') {
       return `<span class="vt-sverka-mark no" title="Не прошел сверку" aria-label="Не прошел сверку" style="--sverka-icon:url('${FLUENT_ICON_BASE}FluentColor-Fail.svg')"><i></i></span>`;
     }
     return `<span class="vt-sverka-mark empty" title="Визит проверяется..." aria-label="Визит проверяется" style="--sverka-icon:url('${FLUENT_ICON_BASE}FluentColor-Revise.svg')"><i></i></span>`;
@@ -14201,10 +14214,10 @@ function getVizSverkaMark(value) {
   const iconBase = isCosmic ? COSMIC_ICON_BASE : DEFAULT_ICON_BASE;
   const iconPrefix = isCosmic ? 'cosmic-' : '';
   const cls = isCosmic ? ' cosmic-native' : '';
-  if (s === 'да' || s === 'yes') {
+  if (state === 'yes') {
     return `<span class="vt-sverka-mark yes${cls}" title="Сверено" aria-label="Сверено" style="--sverka-icon:url('${iconBase}${iconPrefix}s_verified.svg')"><i></i></span>`;
   }
-  if (s === 'нет' || s === 'no') {
+  if (state === 'no') {
     return `<span class="vt-sverka-mark no${cls}" title="Не прошел сверку" aria-label="Не прошел сверку" style="--sverka-icon:url('${iconBase}${iconPrefix}s_not-verified.svg')"><i></i></span>`;
   }
   return `<span class="vt-sverka-mark empty${cls}" title="Визит проверяется..." aria-label="Визит проверяется" style="--sverka-icon:url('${iconBase}${iconPrefix}s_check.svg')"><i></i></span>`;

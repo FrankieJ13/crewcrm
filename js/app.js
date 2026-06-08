@@ -7249,6 +7249,9 @@ function _autoruInitChat() {
     if (!q) return;
     inp.value = '';
     try { window.DIAG?.push('info','autoru-chat', ['submit', q]); } catch(_){}
+    // Скрываем приветственную аннотацию при первом сообщении
+    const intro = document.getElementById('autoru-chat-intro');
+    if (intro) intro.remove();
     const userMsg = addMsg('user', `<p>${escapeHtml(q)}</p>`);
     const loadingMsg = addMsg('bot', '<p>Ищу…</p>');
     const cars = await _autoruEnsureCatalogLoaded();

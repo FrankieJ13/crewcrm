@@ -639,6 +639,37 @@
   padding: 8px 4px;
   display: flex; flex-direction: column; gap: 10px;
   scrollbar-width: none;
+  /* Когда внутри только intro — центрируем по вертикали */
+  justify-content: flex-start;
+}
+.autoru-chat-window:has(> .autoru-chat-intro:only-child) {
+  justify-content: center;
+  align-items: center;
+}
+/* Приветственная аннотация */
+.autoru-chat-intro {
+  max-width: 560px;
+  margin: auto;
+  padding: 20px 18px;
+  text-align: center;
+  color: var(--txt2);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.autoru-chat-intro p { margin: 8px 0; }
+.autoru-chat-intro p:first-of-type { margin-top: 14px; }
+.autoru-chat-intro strong { color: var(--txt); font-weight: 700; }
+.autoru-chat-intro-title {
+  margin: 0;
+  font-family: 'Unbounded', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  background: linear-gradient(135deg, #3d7cff, #8b5cf6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 .autoru-chat-window::-webkit-scrollbar { display: none; }
 .autoru-chat-msg {

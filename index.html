@@ -27,8 +27,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&family=Exo+2:wght@200;300;700&family=JetBrains+Mono:wght@300;400&family=Oswald:wght@400;700&display=swap" rel="stylesheet"/>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<link rel="stylesheet" href="./css/styles.css?v=299"/>
-<link rel="stylesheet" href="./css/autopodbor.css?v=299"/>
+<link rel="stylesheet" href="./css/styles.css?v=300"/>
+<link rel="stylesheet" href="./css/autopodbor.css?v=300"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -960,7 +960,7 @@
   </div>
 </div>
 
-<script src="./js/app.js?v=299"></script>
+<script src="./js/app.js?v=300"></script>
 <!-- Затемнение фона при открытом popup напоминаний -->
 <div class="rem-backdrop" id="rem-backdrop" onclick="closeRemPanel()"></div>
 
@@ -999,12 +999,12 @@
     </form>
   </div>
 </div>
-<script src="./js/autopodbor-config.js?v=299"></script>
-<script src="./js/autopodbor-dictionary.js?v=299"></script>
-<script src="./js/autopodbor-chat.js?v=299"></script>
+<script src="./js/autopodbor-config.js?v=300"></script>
+<script src="./js/autopodbor-dictionary.js?v=300"></script>
+<script src="./js/autopodbor-chat.js?v=300"></script>
 
 <!-- AUTO.RU CM — каталог + поиск (см. https://github.com/FrankieJ13/AUTORUCM66CARSDB) -->
-<link rel="stylesheet" href="./css/autoru.css?v=299"/>
+<link rel="stylesheet" href="./css/autoru.css?v=300"/>
 <div id="autoru-fullscreen" aria-hidden="true">
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
@@ -1087,7 +1087,12 @@
   <!-- ЧАТ-секция (живёт ВНУТРИ #autoru-fullscreen, чтобы скоп-стили .card применялись) -->
   <div class="autoru-chat-panel" id="autoru-chat-panel">
     <div id="autoru-chat-window" class="autoru-chat-window" aria-live="polite">
-      <article class="autoru-chat-msg autoru-chat-msg-bot"><p>Напишите запрос — найдём подходящие авто из каталога auto.ru. Например: «фольц тигуан 5 мест до 1.2 млн».</p></article>
+      <div class="autoru-chat-intro" id="autoru-chat-intro">
+        <h3 class="autoru-chat-intro-title">AUTO.RU CM</h3>
+        <p>Раздел <strong>AUTO.RU CM</strong> — единая база авто Crystal Motors с auto.ru, всегда обновляется автоматически. Здесь два режима:</p>
+        <p><strong>Чат</strong> — задавай вопросы свободным текстом, как живому человеку. Бот понимает марки, модели, бюджет, год, пробег, кузов, города и даже сленг («ведро», «премиум», «свежак»). Можно искать сразу несколько вариантов через «или», «и», запятую — например: «прадо 2018 до 3 млн или qx80 чёрный до 4 млн».</p>
+        <p><strong>Каталог</strong> — классический поиск с фильтрами: марка → модель (каскадом), город, цена, год, пробег и т.д. Клик по карточке открывает объявление на auto.ru в новом окне.</p>
+      </div>
     </div>
     <form id="autoru-chat-form" class="autoru-chat-composer">
       <input id="autoru-chat-input" class="autoru-chat-input" type="text" autocomplete="off" placeholder="Что ищем?"/>
@@ -1097,9 +1102,9 @@
     </form>
   </div>
 </div>
-<script src="./js/autoru-config.js?v=299"></script>
-<script src="./js/autoru-search.js?v=299"></script>
-<script src="./js/autoru-catalog.js?v=299"></script>
+<script src="./js/autoru-config.js?v=300"></script>
+<script src="./js/autoru-search.js?v=300"></script>
+<script src="./js/autoru-catalog.js?v=300"></script>
 
 <!-- Модалка профиля менеджера (открывается с рейтинга) -->
 <div id="profile-modal-overlay" class="profile-modal-overlay" onclick="if(event.target===this)closeProfileModal()">

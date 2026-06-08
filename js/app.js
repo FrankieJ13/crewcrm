@@ -6820,6 +6820,10 @@ async function saveScheduleBulkEditor() {
 // ==================== INSTRUKTSII ====================
 function renderInstruktsii() {
   const el  = document.getElementById('c-instruktsii');
+  // Перед перезаписью innerHTML возвращаем persistent-узлы (autopodbor/autoru)
+  // в body, иначе они станут orphaned-нодами при wipe c-instruktsii.
+  if (el && el.querySelector('#autopodbor-fullscreen') && typeof _apReturnToBody === 'function') _apReturnToBody();
+  if (el && el.querySelector('#autoru-fullscreen')      && typeof _arReturnToBody === 'function') _arReturnToBody();
   const floatingFaq = document.getElementById('floating-faq-subtabs');
   if (floatingFaq) floatingFaq.style.display = 'none'; // вкладки убраны — управление через Dock
   if (S.faqTab === 'reglament') { el.innerHTML = renderReglamentTab(); return; }

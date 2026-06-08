@@ -47,8 +47,12 @@ window.autoruCatalogInit = function () {
       try { window.DIAG?.push('info','autoru-cat', ['loaded', cars.length]); } catch(_){}
       populateSelects();
       apply();
-      // Обновим бейдж кол-ва на subtab-кнопке
-      try { if (typeof renderInstruktsii === 'function' && document.getElementById('c-instruktsii')) renderInstruktsii(); } catch(_){}
+      // Обновляем бейдж кол-ва — НЕ через renderInstruktsii (он сотрёт хост!),
+      // а прямой правкой текста на кнопке КАТАЛОГ.
+      try {
+        const btn = document.querySelector('.autoru-subtab[onclick*="catalog"]');
+        if (btn) btn.textContent = 'КАТАЛОГ · ' + cars.length.toLocaleString('ru-RU');
+      } catch(_){}
     })
     .catch(err => {
       if (els.status) els.status.textContent = 'Ошибка загрузки: ' + err.message;

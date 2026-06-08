@@ -6958,14 +6958,17 @@ function initAutopodborTab() {
 }
 
 function _apSyncEmbeddedViewport() {
-  const fs = document.getElementById('autopodbor-fullscreen');
-  if (!fs || !fs.classList.contains('embedded')) return;
+  // Активен ли autopodbor ИЛИ autoru-чат в embedded — обновляем CSS-vars.
+  const apFs = document.getElementById('autopodbor-fullscreen');
+  const arFs = document.getElementById('autoru-fullscreen');
+  const apActive = !!(apFs && apFs.classList.contains('embedded'));
+  const arActive = !!(arFs && arFs.classList.contains('embedded') && arFs.classList.contains('mode-chat'));
+  if (!apActive && !arActive) return;
   const vv = window.visualViewport;
   if (!vv) return;
   document.documentElement.style.setProperty('--ap-vh', vv.height + 'px');
-  // Когда клавиатура открыта (vv.height сильно меньше layout) — composer
-  // прижимаем вплотную к ней (--ap-bottom-gap ≈ 0). Когда закрыта — резервируем
-  // место под dock (~88px). Это даёт «адаптивное прижатие».
+  // Клава открыта (vv.height сильно меньше layout) → composer прижат к клаве (4px).
+  // Закрыта → резерв под dock (92px).
   const keyboardOpen = (window.innerHeight - vv.height) > 100;
   document.documentElement.style.setProperty('--ap-bottom-gap', keyboardOpen ? '4px' : '92px');
 }
@@ -7031,18 +7034,28 @@ function initAutoruTab() {
   fs.classList.toggle('mode-catalog', sub !== 'chat');
   fs.setAttribute('aria-hidden', 'false');
   try { window.DIAG?.push('info','autoru', ['initAutoruTab', sub, 'cars:', (typeof window.autoruGetCars==='function')?(window.autoruGetCars()||[]).length:'?']); } catch(_){}
-  // Каталог инициализируем ОДИН раз, чтобы cars.json грузился сразу для обоих режимов
+  // Каталог инициализируем ОДИН раз
   try { if (typeof window.autoruCatalogInit === 'function') window.autoruCatalogInit(); } catch(e) { console.warn('autoruCatalogInit failed', e); }
-  // Чат: привязываем обработчики ОДИН раз (на персистентный DOM)
+  // Чат: привязываем обработчики ОДИН раз
   _autoruInitChat();
+  // iOS PWA: visualViewport-синхронизация для адаптивного прижатия composer
+  // к клавиатуре (как в autopodbor).
+  _apBindEmbeddedViewport();
+  _apSyncEmbeddedViewport();
 }
 
 function _arReturnToBody() {
   const fs = document.getElementById('autoru-fullscreen');
   if (!fs) return;
   if (fs.parentNode !== document.body) document.body.appendChild(fs);
-  fs.classList.remove('open', 'embedded');
+  fs.classList.remove('open', 'embedded', 'mode-chat', 'mode-catalog');
   fs.setAttribute('aria-hidden', 'true');
+  // Сбрасываем viewport-vars если автоподбор тоже не активен
+  const apFs = document.getElementById('autopodbor-fullscreen');
+  if (!apFs || !apFs.classList.contains('embedded')) {
+    document.documentElement.style.removeProperty('--ap-vh');
+    document.documentElement.style.removeProperty('--ap-bottom-gap');
+  }
 }
 
 function switchAutoruSub(sub) {
@@ -7169,6 +7182,24 @@ function _autoruInitChat() {
 
   form.addEventListener('submit', (e) => { e.preventDefault(); submit(); });
   inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+  // iOS PWA: на focus переодически сбрасываем scroll в (0,0) — иначе iOS
+  // сдвигает весь viewport вверх когда появляется клавиатура.
+  inp.addEventListener('focus', () => {
+    const mainEl = document.querySelector('main');
+    const reset = () => {
+      try {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        if (mainEl) mainEl.scrollTop = 0;
+        _apSyncEmbeddedViewport();
+      } catch(_) {}
+    };
+    [50, 120, 250, 450, 700, 1000].forEach(d => setTimeout(reset, d));
+  });
+  inp.addEventListener('blur', () => {
+    [50, 200, 500].forEach(d => setTimeout(_apSyncEmbeddedViewport, d));
+  });
 }
 function pluralAuto(n) {
   const mod10 = n % 10, mod100 = n % 100;

@@ -238,6 +238,56 @@ window.AutoSearch = (function () {
   }
 
   // ===== ПАРСЕР =====
+  // ===== СЛЕНГ-СЛОВАРЬ =====
+  // Разговорные слова → готовые фильтры. Применяются к остатку (rest)
+  // после основного парсинга, токены поглощаются.
+  const SLANG = {
+    // дешёвые / «помойка»
+    'ведро': { priceMax: 300000 }, 'ведра': { priceMax: 300000 }, 'тазик': { priceMax: 300000 },
+    'дешёвка': { priceMax: 400000 }, 'дешевка': { priceMax: 400000 },
+    'недорогая': { priceMax: 600000 }, 'недорого': { priceMax: 600000 },
+    'бюджетная': { priceMax: 800000 }, 'бюджетник': { priceMax: 800000 }, 'бюджет': { priceMax: 800000 },
+    // средний класс
+    'средняя': { priceMin: 800000, priceMax: 2000000 },
+    'нормальная': { priceMin: 800000, priceMax: 2500000 },
+    // премиум / дорогая
+    'премиум': { priceMin: 2500000 }, 'премиальная': { priceMin: 2500000 },
+    'дорогая': { priceMin: 3000000 }, 'дорогие': { priceMin: 3000000 },
+    'люкс': { priceMin: 4000000 },
+    // свежие / новые
+    'новая': { yearMin: new Date().getFullYear() - 2 },
+    'новые': { yearMin: new Date().getFullYear() - 2 },
+    'свежая': { yearMin: new Date().getFullYear() - 3 },
+    'свежие': { yearMin: new Date().getFullYear() - 3 },
+    // старые
+    'старая': { yearMax: 2010 }, 'старые': { yearMax: 2010 },
+    'древняя': { yearMax: 2005 },
+    // малый пробег
+    'малопробежная': { mileageMax: 80000 },
+    'малый': { mileageMax: 100000 },
+    // прочие синонимы машины — фильтр не применяют, просто игнорируем
+    'тачка': {}, 'тачку': {}, 'тачки': {},
+    'машинка': {}, 'машинку': {}, 'машинки': {},
+    'авто': {}, 'автомобиль': {}, 'автомобили': {},
+    'кар': {},
+  };
+  function applySlang(rest, out) {
+    if (!rest) return rest;
+    const toks = rest.split(' ').filter(Boolean);
+    const remaining = [];
+    toks.forEach(t => {
+      const rule = SLANG[t];
+      if (rule == null) { remaining.push(t); return; }
+      // Применяем фильтры из правила, не перезаписывая уже распарсенные
+      if (rule.priceMin && !out.priceMin) out.priceMin = rule.priceMin;
+      if (rule.priceMax && !out.priceMax) out.priceMax = rule.priceMax;
+      if (rule.yearMin  && !out.yearMin)  out.yearMin  = rule.yearMin;
+      if (rule.yearMax  && !out.yearMax)  out.yearMax  = rule.yearMax;
+      if (rule.mileageMax && !out.mileageMax) out.mileageMax = rule.mileageMax;
+    });
+    return remaining.join(' ');
+  }
+
   function parse(rawQuery) {
     const qFull = normalize(rawQuery);
     const price = extractPrice(qFull);
@@ -246,7 +296,7 @@ window.AutoSearch = (function () {
     const seats = extractSeats(qFull);
     const qClean = stripPhrases(qFull);
     const { found, rest } = findAliasMatches(qClean);
-    return {
+    const out = {
       raw: rawQuery,
       free: rest,
       brands: found.brand,
@@ -262,6 +312,9 @@ window.AutoSearch = (function () {
       mileageMax,
       seats,
     };
+    // Доедаем сленг ИЗ free → переносим в фильтры (priceMax и т.п.)
+    out.free = applySlang(rest, out);
+    return out;
   }
 
   // ===== ФИЛЬТР =====

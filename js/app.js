@@ -7059,6 +7059,11 @@ async function _autoruEnsureCatalogLoaded() {
   if (typeof window.autoruCatalogInit === 'function' && !window._autoruCatInited) {
     try { window.autoruCatalogInit(); } catch(_){}
   }
+  // Также инициализируем cm66 (автоподбор) — чтобы был доступен полный
+  // парсер запросов: window.cm66ParseQuery / cm66SearchOverCars.
+  if (typeof window.cm66Init === 'function' && !window._cm66Inited) {
+    try { window.cm66Init(); } catch(_){}
+  }
   const deadline = Date.now() + 8000;
   while (Date.now() < deadline) {
     if (typeof window.autoruGetCars === 'function') {
@@ -7130,9 +7135,22 @@ function _autoruInitChat() {
       scrollToMsg(userMsg);
       return;
     }
-    const parsed = window.AutoSearch ? window.AutoSearch.parse(q) : null;
-    try { window.DIAG?.push('info','autoru-chat', ['parsed', JSON.stringify(parsed ? { brands: parsed.brands, models: parsed.models, cities: parsed.cities, free: parsed.free } : null)]); } catch(_){}
-    const matched = parsed ? cars.filter(c => window.AutoSearch.match(c, parsed)) : [];
+    // Используем ПОЛНУЮ логику парсера автоподбора (window.cm66SearchOverCars).
+    // Тот же словарь, тот же scoring, та же сортировка (cheap → дешёвые сверху,
+    // expensive → дорогие сверху). Никакого «упрощённого» AutoSearch.match.
+    let matched = [];
+    let parsedDbg = null;
+    if (typeof window.cm66SearchOverCars === 'function') {
+      const cm = window.cm66SearchOverCars(q, cars);
+      matched = cm.cars;
+      parsedDbg = cm.parsed ? { brands: cm.parsed.brands, models: cm.parsed.models, cities: cm.parsed.cities, cheap: cm.parsed.cheapIntent, expensive: cm.parsed.expensiveIntent } : null;
+    } else if (window.AutoSearch) {
+      // Fallback (если автоподбор-чат ещё не загружен)
+      const parsed = window.AutoSearch.parse(q);
+      matched = cars.filter(c => window.AutoSearch.match(c, parsed));
+      parsedDbg = parsed;
+    }
+    try { window.DIAG?.push('info','autoru-chat', ['parsed', JSON.stringify(parsedDbg)]); } catch(_){}
     try { window.DIAG?.push('info','autoru-chat', ['matched', matched.length]); } catch(_){}
     if (!matched.length) {
       loadingMsg.innerHTML = '<p>Ничего не найдено по запросу.</p>';

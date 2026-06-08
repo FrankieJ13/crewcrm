@@ -1488,4 +1488,20 @@ window.cm66Init = function (force) {
     } catch (e) { console.warn('cm66Reload', e); }
   };
   window.cm66HasCars = () => state.cars.length > 0;
+  // Экспонируем парсер + scoring чтобы autoru-chat использовал ТУ ЖЕ
+  // логику и словарь — никаких параллельных «упрощённых» парсеров.
+  window.cm66ParseQuery     = parseQuery;
+  window.cm66ScoreCar       = scoreCar;
+  window.cm66SearchOverCars = function(query, cars) {
+    const parsed = parseQuery(query);
+    const scored = (cars || [])
+      .map((car) => ({ car, score: scoreCar(car, parsed) }))
+      .filter((item) => item.score >= 0)
+      .sort((a, b) => {
+        if (parsed.expensiveIntent) return (b.car.price || 0) - (a.car.price || 0) || b.score - a.score;
+        if (parsed.cheapIntent)     return (a.car.price || 0) - (b.car.price || 0) || b.score - a.score;
+        return b.score - a.score || (a.car.price || 0) - (b.car.price || 0);
+      });
+    return { parsed, cars: scored.map((s) => s.car) };
+  };
 };

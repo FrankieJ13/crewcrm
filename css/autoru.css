@@ -281,21 +281,20 @@
 #autoru-fullscreen.embedded .topbar__brand,
 #autoru-fullscreen.embedded .topbar__meta-mobile { display: none !important; }
 
-/* Topbar в embedded: одна строка БЕЗ контейнера-плашки, поиск во всю ширину
-   + иконка-кнопка фильтра справа. Sticky под sub-tabs. */
+/* Topbar в embedded: поиск + фильтр, sticky сразу под sub-tabs (top:48).
+   БЕЗ контейнера-плашки, БЕЗ фона. */
 #autoru-fullscreen.embedded .topbar {
   display: grid !important;
   grid-template-columns: 1fr auto !important;
   gap: 6px !important;
-  padding: 0 !important;
-  background: transparent !important;
+  padding: 6px 0 !important;
+  background: var(--bg) !important;
   border-bottom: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   position: sticky !important;
-  top: 50px !important;            /* под sticky-строкой sub-tabs (~48px высотой) */
+  top: 48px !important;
   z-index: 20;
-  margin-bottom: 8px;
 }
 #autoru-fullscreen.embedded .topbar__search {
   width: 100% !important;
@@ -322,12 +321,21 @@
 }
 #autoru-fullscreen.embedded .btn-filters svg { width: 18px; height: 18px; }
 #autoru-fullscreen.embedded .btn-filters__badge {
-  position: absolute; top: -4px; right: -4px;
-  background: var(--acc);
-  color: #0f0f10;
-  font-size: 9px; padding: 2px 5px;
-  border-radius: 999px;
-  font-size: 0 !important;
+  position: absolute !important;
+  top: -4px !important;
+  right: -4px !important;
+  min-width: 16px;
+  height: 16px;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  background: var(--acc) !important;
+  color: #0f0f10 !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  padding: 0 4px !important;
+  border-radius: 999px !important;
+  line-height: 1;
 }
 /* Filter popup — один столбец, скролл, прижат к правому краю кнопки */
 #autoru-fullscreen.embedded .filters-popup {
@@ -402,11 +410,33 @@
 }
 #autoru-fullscreen.embedded .card__strip svg { width: 14px !important; height: 14px !important; }
 
-/* Карточка адаптируется — на узких 1 колонка с фото сверху */
-@media (max-width: 480px) {
+/* Карточка адаптируется на узких экранах:
+   фото сверху на всю ширину, плитки в 2 колонки под ним, ничего не обрезается */
+@media (max-width: 560px) {
   #autoru-fullscreen.embedded .card {
     grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto auto !important;
   }
+  #autoru-fullscreen.embedded .card__media {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    height: auto !important;
+    aspect-ratio: 16/10;
+  }
+  #autoru-fullscreen.embedded .tiles {
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 4px 12px !important;
+  }
+  #autoru-fullscreen.embedded .card__strip {
+    grid-column: 1 / -1 !important;
+  }
+}
+/* Сдвигаем правую колонку плиток ещё на 10px чтобы влезло больше в левой */
+#autoru-fullscreen.embedded .tiles { column-gap: 20px !important; }
+@media (max-width: 560px) {
+  #autoru-fullscreen.embedded .tiles { column-gap: 14px !important; }
 }
 
 /* Sub-tabs row: ЧАТ | КАТАЛОГ + Refresh-кнопка, sticky сверху */
@@ -571,3 +601,20 @@
 }
 .autoru-chat-send:active { transform: scale(.94); }
 .autoru-chat-send:hover { opacity: .9; }
+
+/* Кнопка «Показать ещё» в боте-сообщении */
+.autoru-chat-more {
+  display: block;
+  margin: 10px auto 4px;
+  padding: 7px 18px;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  color: var(--txt);
+  border-radius: 999px;
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 700; font-size: 11px; letter-spacing: .04em;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+.autoru-chat-more:hover { background: var(--bg2); }
+.autoru-chat-more:active { transform: scale(.97); }

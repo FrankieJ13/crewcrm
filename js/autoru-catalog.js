@@ -302,7 +302,7 @@ window.autoruCatalogInit = function () {
         '</div>' +
         '<div class="card__head-right">' +
           '<div class="card__price">' + fmtPrice(c.price) + '</div>' +
-          (addrLine ? '<div class="card__addr">' + STRIP_SVG.pin + esc(addrLine) + '</div>' : '') +
+          (c.city ? '<div class="card__addr" title="' + esc(addrLine) + '">' + STRIP_SVG.pin + esc(c.city) + '</div>' : '') +
         '</div>' +
       '</div>' +
       // Фото слева, плитки справа — на уровне метрик

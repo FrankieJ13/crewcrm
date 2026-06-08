@@ -7087,17 +7087,47 @@ function _autoruInitChat() {
     return m;
   };
 
+  const PAGE = 12;
+  const showMore = (msg, all, offset) => {
+    const list = msg.querySelector('.autoru-chat-results') || (() => {
+      const d = document.createElement('div'); d.className = 'autoru-chat-results'; msg.appendChild(d); return d;
+    })();
+    const next = all.slice(offset, offset + PAGE);
+    if (typeof window.autoruRenderCard === 'function') {
+      next.forEach(c => list.appendChild(window.autoruRenderCard(c)));
+    }
+    // Кнопка «Показать ещё» (или убрать если конец)
+    const oldMore = msg.querySelector('.autoru-chat-more');
+    if (oldMore) oldMore.remove();
+    const newOffset = offset + next.length;
+    if (newOffset < all.length) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'autoru-chat-more';
+      btn.textContent = `Показать ещё (${all.length - newOffset})`;
+      btn.onclick = () => showMore(msg, all, newOffset);
+      msg.appendChild(btn);
+    }
+  };
+  const scrollToMsg = (m) => {
+    // На верх сообщения, а не на низ окна — чтобы первая карточка ответа была видна
+    requestAnimationFrame(() => {
+      try { win.scrollTo({ top: m.offsetTop - 6, behavior: 'smooth' }); } catch(_) { win.scrollTop = m.offsetTop - 6; }
+    });
+  };
+
   const submit = async () => {
     const q = (inp.value || '').trim();
     if (!q) return;
     inp.value = '';
     try { window.DIAG?.push('info','autoru-chat', ['submit', q]); } catch(_){}
-    addMsg('user', `<p>${escapeHtml(q)}</p>`);
+    const userMsg = addMsg('user', `<p>${escapeHtml(q)}</p>`);
     const loadingMsg = addMsg('bot', '<p>Ищу…</p>');
     const cars = await _autoruEnsureCatalogLoaded();
     try { window.DIAG?.push('info','autoru-chat', ['cars loaded', cars.length]); } catch(_){}
     if (!cars.length) {
       loadingMsg.innerHTML = '<p>Каталог не загрузился. Нажмите кнопку «Обновить» в шапке.</p>';
+      scrollToMsg(userMsg);
       return;
     }
     const parsed = window.AutoSearch ? window.AutoSearch.parse(q) : null;
@@ -7106,17 +7136,13 @@ function _autoruInitChat() {
     try { window.DIAG?.push('info','autoru-chat', ['matched', matched.length]); } catch(_){}
     if (!matched.length) {
       loadingMsg.innerHTML = '<p>Ничего не найдено по запросу.</p>';
+      scrollToMsg(userMsg);
       return;
     }
-    const top = matched.slice(0, 12);
-    loadingMsg.innerHTML = `<p>Нашёл <strong>${matched.length}</strong> авто${matched.length > top.length ? `. Показал первые ${top.length}` : ''}.</p>`;
-    if (typeof window.autoruRenderCard === 'function') {
-      const list = document.createElement('div');
-      list.className = 'autoru-chat-results';
-      top.forEach(c => list.appendChild(window.autoruRenderCard(c)));
-      loadingMsg.appendChild(list);
-    }
-    win.scrollTop = win.scrollHeight;
+    loadingMsg.innerHTML = `<p>Нашёл <strong>${matched.length}</strong> авто.${matched.length > PAGE ? ` Показал первые ${PAGE}.` : ''}</p>`;
+    showMore(loadingMsg, matched, 0);
+    // Скроллим к bot-сообщению, а НЕ в самый низ — пользователь видит первую карточку
+    scrollToMsg(loadingMsg);
   };
 
   form.addEventListener('submit', (e) => { e.preventDefault(); submit(); });

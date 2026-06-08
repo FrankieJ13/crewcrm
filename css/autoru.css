@@ -293,7 +293,7 @@
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   position: sticky !important;
-  top: 44px !important;            /* под высотой sub-tabs */
+  top: 50px !important;            /* под sticky-строкой sub-tabs (~48px высотой) */
   z-index: 20;
   margin-bottom: 8px;
 }
@@ -409,22 +409,38 @@
   }
 }
 
-/* Sub-tabs ЧАТ | КАТАЛОГ — единый pill с двумя секциями и разделителем,
-   sticky сверху при скролле */
+/* Sub-tabs row: ЧАТ | КАТАЛОГ + Refresh-кнопка, sticky сверху */
+.autoru-subtabs-row {
+  display: flex; align-items: stretch; gap: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--bg);
+  padding: 6px 0 8px;
+}
 .autoru-subtabs {
   display: inline-flex;
+  flex: 1;
   align-items: stretch;
   padding: 3px;
   background: var(--bg3);
   border: 1px solid var(--line);
   border-radius: 999px;
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  margin: 6px 0 8px;
-  width: 100%;
   box-shadow: 0 1px 4px rgba(0,0,0,.05);
 }
+.autoru-refresh-btn {
+  flex-shrink: 0;
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  color: var(--txt2);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: color .15s, transform .12s, background .15s;
+}
+.autoru-refresh-btn:hover { color: var(--txt); background: var(--bg2); }
+.autoru-refresh-btn:active { transform: rotate(180deg); }
 .autoru-subtabs::before {
   /* Подложка под активную вкладку (анимируемая через JS позицию или CSS-class) */
   content: '';
@@ -459,8 +475,66 @@
 .autoru-subtab + .autoru-subtab.active::before { background: transparent; }
 .autoru-subtab:active { transform: scale(.97); }
 
-/* ЧАТ-секция */
-.autoru-chat { padding: 8px 0; }
+/* ═══════ ЧАТ — layout как у автоподбора ═══════ */
+.autoru-chat {
+  display: flex; flex-direction: column;
+  height: calc(var(--ap-vh, 100dvh) - 56px - var(--ap-bottom-gap, 92px) - 60px);
+  min-height: 400px;
+}
+.autoru-chat-window {
+  flex: 1; min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px 4px;
+  display: flex; flex-direction: column; gap: 10px;
+  scrollbar-width: none;
+}
+.autoru-chat-window::-webkit-scrollbar { display: none; }
+.autoru-chat-msg {
+  width: min(720px, 100%);
+  border-radius: 12px;
+  padding: 10px 12px;
+  line-height: 1.35;
+  animation: autoruChatMsgIn .22s ease-out both;
+}
+@keyframes autoruChatMsgIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.autoru-chat-msg p { margin: 0; }
+.autoru-chat-msg-user {
+  align-self: flex-end;
+  background: var(--acc);
+  color: #0f0f10;
+  width: min(70%, 540px);
+}
+.autoru-chat-msg-bot {
+  align-self: flex-start;
+  background: var(--bg2);
+  color: var(--txt);
+  border: 1px solid var(--line);
+}
+.autoru-chat-msg-bot:has(.autoru-chat-results) {
+  width: 100%;
+  max-width: 100%;
+}
+.autoru-chat-results {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+@media (min-width: 720px) {
+  .autoru-chat-results { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
+}
+
+/* Композер — input + кнопка отправки, прижат к низу */
+.autoru-chat-composer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+  padding: 8px 0 0;
+}
 .autoru-chat-input {
   width: 100%;
   padding: 10px 12px;
@@ -469,9 +543,18 @@
   background: var(--bg2);
   color: var(--txt);
   font-size: 14px;
-  margin-bottom: 10px;
+  outline: none;
 }
-.autoru-chat-input:focus { outline: none; border-color: var(--acc); }
-.autoru-chat-results { display: flex; flex-direction: column; gap: 10px; }
-.autoru-chat-results .card { display: grid; }  /* поддержать каталог-стиль карточки */
-.autoru-chat-hint { color: var(--txt3); font-size: 12px; padding: 6px 0; }
+.autoru-chat-input:focus { border-color: var(--acc); }
+.autoru-chat-send {
+  width: 40px; height: 100%;
+  border: 0;
+  border-radius: 10px;
+  background: var(--acc);
+  color: #0f0f10;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: transform .1s, opacity .15s;
+}
+.autoru-chat-send:active { transform: scale(.94); }
+.autoru-chat-send:hover { opacity: .9; }

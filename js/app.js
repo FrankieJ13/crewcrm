@@ -6989,20 +6989,42 @@ function _apReturnToBody() {
  */
 function renderAutoruTab() {
   const sub = S.autoruSubTab || 'catalog';
+  const cnt = (typeof window.autoruGetCars === 'function') ? (window.autoruGetCars() || []).length : 0;
+  const carsBadge = cnt ? ` · ${cnt.toLocaleString('ru-RU')}` : '';
   return `
-    <div class="autoru-subtabs">
-      <button class="autoru-subtab ${sub === 'chat' ? 'active' : ''}" onclick="switchAutoruSub('chat')">ЧАТ</button>
-      <button class="autoru-subtab ${sub === 'catalog' ? 'active' : ''}" onclick="switchAutoruSub('catalog')">КАТАЛОГ</button>
+    <div class="autoru-subtabs-row">
+      <div class="autoru-subtabs">
+        <button class="autoru-subtab ${sub === 'chat' ? 'active' : ''}" onclick="switchAutoruSub('chat')">ЧАТ</button>
+        <button class="autoru-subtab ${sub === 'catalog' ? 'active' : ''}" onclick="switchAutoruSub('catalog')">КАТАЛОГ${carsBadge}</button>
+      </div>
+      <button class="autoru-refresh-btn" onclick="autoruRefreshCatalog()" aria-label="Обновить каталог" title="Обновить каталог">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
     </div>
     ${sub === 'chat'
       ? `<div class="autoru-chat">
-          <input id="autoru-chat-input" class="autoru-chat-input" type="search" placeholder='Запрос: "фольц тигуан 5 мест до 1.2 млн"' autocomplete="off"/>
-          <div class="autoru-chat-hint">Введи запрос — найдём подходящие авто из каталога auto.ru.</div>
-          <div id="autoru-chat-results" class="autoru-chat-results"></div>
+          <div id="autoru-chat-window" class="autoru-chat-window" aria-live="polite">
+            <div class="autoru-chat-msg autoru-chat-msg-bot"><p>Напишите запрос — найдём подходящие авто из каталога auto.ru. Например: «фольц тигуан 5 мест до 1.2 млн».</p></div>
+          </div>
+          <form id="autoru-chat-form" class="autoru-chat-composer">
+            <input id="autoru-chat-input" class="autoru-chat-input" type="text" autocomplete="off" placeholder="Что ищем?"/>
+            <button type="submit" class="autoru-chat-send" aria-label="Найти">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="7.5"/><path d="M21 21l-5.4-5.4"/></svg>
+            </button>
+          </form>
          </div>`
       : `<div id="autoru-tab-host" class="autoru-tab-host"></div>`}
   `;
 }
+function autoruRefreshCatalog() {
+  if (typeof window.autoruCatalogReload === 'function') {
+    if (typeof toast === 'function') toast('Каталог обновляется…', 's');
+    window.autoruCatalogReload();
+    // Перерисовываем sub-tab чтобы счётчик обновился
+    setTimeout(() => { if (typeof renderInstruktsii === 'function') renderInstruktsii(); }, 500);
+  }
+}
+window.autoruRefreshCatalog = autoruRefreshCatalog;
 
 function initAutoruTab() {
   const sub = S.autoruSubTab || 'catalog';
@@ -7049,31 +7071,58 @@ async function _autoruEnsureCatalogLoaded() {
   return [];
 }
 function _autoruInitChat() {
-  const inp = document.getElementById('autoru-chat-input');
-  const out = document.getElementById('autoru-chat-results');
-  if (!inp || !out) return;
-  let lastQuery = '';
-  const run = async () => {
+  const win  = document.getElementById('autoru-chat-window');
+  const form = document.getElementById('autoru-chat-form');
+  const inp  = document.getElementById('autoru-chat-input');
+  if (!win || !form || !inp) return;
+
+  const addMsg = (kind, html) => {
+    const m = document.createElement('article');
+    m.className = 'autoru-chat-msg autoru-chat-msg-' + kind;
+    m.innerHTML = html;
+    win.appendChild(m);
+    win.scrollTop = win.scrollHeight;
+    return m;
+  };
+
+  const submit = async () => {
     const q = (inp.value || '').trim();
-    if (q === lastQuery) return;
-    lastQuery = q;
-    if (!q) { out.innerHTML = ''; return; }
-    out.innerHTML = '<div class="autoru-chat-hint">Ищем…</div>';
+    if (!q) return;
+    inp.value = '';
+    addMsg('user', `<p>${escapeHtml(q)}</p>`);
+    const loadingMsg = addMsg('bot', '<p>Ищу…</p>');
     const cars = await _autoruEnsureCatalogLoaded();
-    if (!cars.length) { out.innerHTML = '<div class="autoru-chat-hint">Каталог не загрузился. Попробуйте ещё раз.</div>'; return; }
+    if (!cars.length) {
+      loadingMsg.innerHTML = '<p>Каталог не загрузился. Попробуйте «Обновить каталог».</p>';
+      return;
+    }
     const parsed = window.AutoSearch ? window.AutoSearch.parse(q) : null;
     const matched = parsed ? cars.filter(c => window.AutoSearch.match(c, parsed)) : [];
-    if (!matched.length) { out.innerHTML = '<div class="autoru-chat-hint">Ничего не найдено по запросу.</div>'; return; }
-    if (typeof window.autoruRenderCard !== 'function') {
-      out.innerHTML = '<div class="autoru-chat-hint">Рендер карточек недоступен.</div>'; return;
+    if (!matched.length) {
+      loadingMsg.innerHTML = '<p>Ничего не найдено по запросу.</p>';
+      return;
     }
-    out.innerHTML = '';
-    matched.slice(0, 20).forEach(c => out.appendChild(window.autoruRenderCard(c)));
+    // Шапка-резюме + список карточек
+    const top = matched.slice(0, 12);
+    loadingMsg.innerHTML = `<p>Нашёл <strong>${matched.length}</strong> ${pluralAuto(matched.length)}${matched.length > top.length ? `. Показал первые ${top.length}` : ''}.</p>`;
+    if (typeof window.autoruRenderCard === 'function') {
+      const list = document.createElement('div');
+      list.className = 'autoru-chat-results';
+      top.forEach(c => list.appendChild(window.autoruRenderCard(c)));
+      loadingMsg.appendChild(list);
+    }
+    win.scrollTop = win.scrollHeight;
   };
-  inp.oninput = () => clearTimeout(inp._t) || (inp._t = setTimeout(run, 250));
-  inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); run(); } };
-  // Фоном грузим каталог, чтобы первый запрос был быстрым
+
+  form.onsubmit = (e) => { e.preventDefault(); submit(); };
+  inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } };
+  // Прогрев каталога в фоне, чтобы первый запрос был быстрым
   _autoruEnsureCatalogLoaded();
+}
+function pluralAuto(n) {
+  const mod10 = n % 10, mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return 'авто';
+  return 'авто';
 }
 
 function toggleInstr(id) {

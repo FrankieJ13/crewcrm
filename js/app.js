@@ -6831,7 +6831,9 @@ function renderInstruktsii() {
   // Перед перезаписью innerHTML возвращаем persistent-узлы (autopodbor/autoru)
   // в body, иначе они станут orphaned-нодами при wipe c-instruktsii.
   if (el && el.querySelector('#autopodbor-fullscreen') && typeof _apReturnToBody === 'function') _apReturnToBody();
-  if (el && el.querySelector('#autoru-fullscreen')      && typeof _arReturnToBody === 'function') _arReturnToBody();
+  if ((el && el.querySelector('#autoru-fullscreen')) || document.querySelector('.autoru-subtabs-row')) {
+    if (typeof _arReturnToBody === 'function') _arReturnToBody();
+  }
   const floatingFaq = document.getElementById('floating-faq-subtabs');
   if (floatingFaq) floatingFaq.style.display = 'none'; // вкладки убраны — управление через Dock
   if (S.faqTab === 'reglament') { el.innerHTML = renderReglamentTab(); return; }
@@ -7051,12 +7053,16 @@ function initAutoruTab() {
   try { window.DIAG?.push('info','autoru', ['initAutoruTab', sub, 'cars:', (typeof window.autoruGetCars==='function')?(window.autoruGetCars()||[]).length:'?']); } catch(_){}
   // Переносим кнопку фильтра + попап в sticky-панель sub-tabs (рядом с refresh).
   // Видимость в mode-catalog контролируется классом .is-catalog.
-  const subRow = document.querySelector('.autoru-subtabs-row');
+  const subRow = document.querySelector('#c-instruktsii .autoru-subtabs-row') || document.querySelector('.autoru-subtabs-row');
   const fBtn   = document.getElementById('openFilters');
   const fPop   = document.getElementById('filtersPopup');
+  if (subRow && subRow.parentElement !== document.body) document.body.appendChild(subRow);
   if (subRow && fBtn && fBtn.parentElement !== subRow) subRow.appendChild(fBtn);
   if (subRow && fPop && fPop.parentElement !== subRow) subRow.appendChild(fPop);
-  if (subRow) subRow.classList.toggle('is-catalog', sub !== 'chat');
+  if (subRow) {
+    subRow.classList.toggle('is-catalog', sub !== 'chat');
+    document.body.classList.add('autoru-tab-active');
+  }
   // Каталог инициализируем ОДИН раз
   try { if (typeof window.autoruCatalogInit === 'function') window.autoruCatalogInit(); } catch(e) { console.warn('autoruCatalogInit failed', e); }
   // Чат: привязываем обработчики ОДИН раз
@@ -7094,6 +7100,8 @@ function _arReturnToBody() {
   const tbRight = fs.querySelector('.topbar__right');
   if (fBtn && tbRight && fBtn.parentElement !== tbRight) tbRight.appendChild(fBtn);
   if (fPop && tbRight && fPop.parentElement !== tbRight) tbRight.appendChild(fPop);
+  document.querySelectorAll('.autoru-subtabs-row').forEach(row => row.remove());
+  document.body.classList.remove('autoru-tab-active');
   if (fs.parentNode !== document.body) document.body.appendChild(fs);
   fs.classList.remove('open', 'embedded', 'mode-chat', 'mode-catalog');
   fs.setAttribute('aria-hidden', 'true');

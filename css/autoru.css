@@ -295,7 +295,7 @@
 #autoru-fullscreen.embedded .topbar { display: none !important; }
 
 /* Контент сдвигаем под фикс-панель subtabs-row без лишней пустой полосы */
-#scr-instruktsii:has(.autoru-subtabs-row) #c-instruktsii { padding-top: 24px; }
+body.autoru-tab-active #scr-instruktsii #c-instruktsii { padding-top: 24px; }
 
 /* Кнопка фильтра в subtabs-row: круглая 36×36, как refresh.
    Видима только в catalog-режиме. */

@@ -348,12 +348,51 @@
   background: var(--bg2) !important;
   border: 1px solid var(--line) !important;
   border-radius: 10px !important;
-  padding: 8px !important;
+  padding: 8px 8px 38px !important;     /* нижний отступ под sticky reset */
   overflow-y: auto;
   box-shadow: 0 8px 24px rgba(0,0,0,.4) !important;
   color: var(--txt);
   font-size: 11px;
   z-index: 120;
+}
+/* Кнопка «Сбросить все фильтры» — sticky внизу попапа */
+.autoru-subtabs-row #filtersPopup .filters-popup__row--actions {
+  position: sticky;
+  bottom: -8px;
+  left: 0; right: 0;
+  margin: 6px -8px -8px !important;
+  padding: 6px 8px 8px !important;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg2) 70%, transparent) 0%, var(--bg2) 35%);
+  z-index: 2;
+}
+.autoru-subtabs-row #filtersPopup #reset {
+  background: var(--bg3) !important;
+  border: 1px solid var(--line) !important;
+  color: var(--txt) !important;
+  font-weight: 700;
+  padding: 7px 10px !important;
+}
+.autoru-subtabs-row #filtersPopup #reset:hover { border-color: var(--acc) !important; color: var(--acc) !important; }
+
+/* Пульсирующая стрелка-подсказка «крути вниз» — над reset, исчезает когда
+   юзер докрутил донизу (через trick с дочерним sentinel'ом — но проще:
+   просто живёт и пульсирует, не мешает). */
+.autoru-subtabs-row #filtersPopup .filters-popup__row--actions::before {
+  content: '⌄';                /* стрелка вниз */
+  display: block;
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 18px; line-height: 1;
+  color: var(--acc);
+  opacity: .8;
+  pointer-events: none;
+  animation: autoruFilterArrow 1.4s ease-in-out infinite;
+}
+@keyframes autoruFilterArrow {
+  0%, 100% { transform: translate(-50%, 0); opacity: .35; }
+  50%      { transform: translate(-50%, 4px); opacity: 1; }
 }
 .autoru-subtabs-row #filtersPopup .filters-popup__row {
   grid-template-columns: 1fr !important;

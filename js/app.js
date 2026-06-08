@@ -7034,12 +7034,19 @@ function initAutoruTab() {
   fs.classList.toggle('mode-catalog', sub !== 'chat');
   fs.setAttribute('aria-hidden', 'false');
   try { window.DIAG?.push('info','autoru', ['initAutoruTab', sub, 'cars:', (typeof window.autoruGetCars==='function')?(window.autoruGetCars()||[]).length:'?']); } catch(_){}
+  // Переносим кнопку фильтра + попап в sticky-панель sub-tabs (рядом с refresh).
+  // Видимость в mode-catalog контролируется классом .is-catalog.
+  const subRow = document.querySelector('.autoru-subtabs-row');
+  const fBtn   = document.getElementById('openFilters');
+  const fPop   = document.getElementById('filtersPopup');
+  if (subRow && fBtn && fBtn.parentElement !== subRow) subRow.appendChild(fBtn);
+  if (subRow && fPop && fPop.parentElement !== subRow) subRow.appendChild(fPop);
+  if (subRow) subRow.classList.toggle('is-catalog', sub !== 'chat');
   // Каталог инициализируем ОДИН раз
   try { if (typeof window.autoruCatalogInit === 'function') window.autoruCatalogInit(); } catch(e) { console.warn('autoruCatalogInit failed', e); }
   // Чат: привязываем обработчики ОДИН раз
   _autoruInitChat();
   // iOS PWA: visualViewport-синхронизация для адаптивного прижатия composer
-  // к клавиатуре (как в autopodbor).
   _apBindEmbeddedViewport();
   _apSyncEmbeddedViewport();
 }

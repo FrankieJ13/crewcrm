@@ -290,34 +290,78 @@
 
 /* Topbar в embedded: поиск + фильтр, sticky сразу под sub-tabs (top:48).
    БЕЗ контейнера-плашки, БЕЗ фона. */
-/* Topbar: position:fixed под subtabs-row, склеена визуально (top=52+46) */
-#autoru-fullscreen.embedded .topbar {
-  display: grid !important;
-  grid-template-columns: 1fr auto !important;
-  gap: 6px !important;
-  padding: 0 10px 8px !important;
-  background: var(--bg) !important;
-  border-bottom: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  position: fixed !important;
-  top: 98px !important;          /* header 52 + subtabs-row 46 */
-  left: 0 !important;
-  right: 0 !important;
-  margin: 0 auto !important;
-  width: 100% !important;
-  max-width: 720px !important;
-  z-index: 99 !important;
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-  will-change: transform;
-}
+/* Topbar (search + filter) больше не используется — поиск убран,
+   кнопка фильтра перенесена в subtabs-row через JS. Скрываем. */
+#autoru-fullscreen.embedded .topbar { display: none !important; }
 
-/* Когда autoru-таб активен, контент scr-instruktsii нужно сдвинуть
-   вниз чтобы не подлезал под фикс-панель. В режиме чата хватает только
-   subtabs-row (46px). В режиме каталога — обе панели (46 + 50 = 96). */
+/* Контент сдвигаем под фикс-панель subtabs-row (52 + 46 = 98) */
 #scr-instruktsii:has(.autoru-subtabs-row) #c-instruktsii { padding-top: 50px; }
-#scr-instruktsii:has(#autoru-fullscreen.embedded.mode-catalog) #c-instruktsii { padding-top: 100px; }
+
+/* Кнопка фильтра в subtabs-row: круглая 36×36, как refresh.
+   Видима только в catalog-режиме. */
+.autoru-subtabs-row #openFilters {
+  flex-shrink: 0;
+  width: 36px; height: 36px;
+  padding: 0;
+  display: none;                                 /* по умолчанию (chat) */
+  align-items: center; justify-content: center;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  color: var(--txt2);
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  transition: color .15s, background .15s, transform .12s;
+}
+.autoru-subtabs-row #openFilters:hover { color: var(--txt); background: var(--bg2); }
+.autoru-subtabs-row #openFilters:active { transform: scale(.94); }
+/* Текст «Фильтры» внутри кнопки скрываем — только иконка */
+.autoru-subtabs-row #openFilters > :not(svg):not(.btn-filters__badge) { display: none; }
+.autoru-subtabs-row #openFilters svg { width: 18px; height: 18px; }
+.autoru-subtabs-row #openFilters .btn-filters__badge {
+  position: absolute !important;
+  top: -6px !important; right: -6px !important;
+  min-width: 16px; height: 16px;
+  display: inline-flex !important; align-items: center; justify-content: center;
+  background: var(--acc) !important; color: #0f0f10 !important;
+  font-size: 10px !important; font-weight: 800 !important;
+  padding: 0 4px !important; border-radius: 999px !important;
+  line-height: 1; z-index: 110 !important;
+}
+/* Показываем фильтр только в режиме каталога */
+.autoru-subtabs-row:has(+ #autoru-tab-host #autoru-fullscreen.mode-catalog) #openFilters,
+.autoru-subtabs-row:has(~ #autoru-tab-host #autoru-fullscreen.mode-catalog) #openFilters,
+#autoru-fullscreen.mode-catalog ~ * #openFilters { display: inline-flex !important; }
+/* Fallback через JS-флаг (универсальнее) */
+.autoru-subtabs-row.is-catalog #openFilters { display: inline-flex !important; }
+
+/* Попап фильтров — теперь привязан к subtabs-row */
+.autoru-subtabs-row #filtersPopup {
+  position: absolute !important;
+  top: calc(100% + 6px) !important;
+  right: 0 !important;
+  min-width: min(320px, calc(100vw - 24px)) !important;
+  max-height: 70vh !important;
+  background: var(--bg2) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  padding: 12px !important;
+  overflow-y: auto;
+  box-shadow: 0 12px 40px rgba(0,0,0,.4) !important;
+  color: var(--txt);
+  z-index: 120;
+}
+.autoru-subtabs-row #filtersPopup .filters-popup__row { grid-template-columns: 1fr !important; gap: 6px !important; margin-bottom: 8px; }
+.autoru-subtabs-row #filtersPopup select,
+.autoru-subtabs-row #filtersPopup input,
+.autoru-subtabs-row #filtersPopup button {
+  background: var(--bg3) !important;
+  color: var(--txt) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 7px;
+  padding: 8px 10px;
+  width: 100%;
+}
 #autoru-fullscreen.embedded .topbar__search {
   width: 100% !important;
   background: var(--bg2) !important;

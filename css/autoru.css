@@ -475,11 +475,24 @@
 .autoru-subtab + .autoru-subtab.active::before { background: transparent; }
 .autoru-subtab:active { transform: scale(.97); }
 
-/* ═══════ ЧАТ — layout как у автоподбора ═══════ */
-.autoru-chat {
-  display: flex; flex-direction: column;
+/* ═══════ MODE-CATALOG / MODE-CHAT — переключение секций внутри #autoru-fullscreen ═══════ */
+#autoru-fullscreen.mode-chat .topbar,
+#autoru-fullscreen.mode-chat .chips,
+#autoru-fullscreen.mode-chat .grid,
+#autoru-fullscreen.mode-chat .load-more {
+  display: none !important;
+}
+#autoru-fullscreen.mode-catalog .autoru-chat-panel {
+  display: none !important;
+}
+#autoru-fullscreen .autoru-chat-panel { display: flex; }
+
+/* ═══════ ЧАТ — layout как у автоподбора, внутри fullscreen ═══════ */
+.autoru-chat-panel {
+  flex-direction: column;
   height: calc(var(--ap-vh, 100dvh) - 56px - var(--ap-bottom-gap, 92px) - 60px);
   min-height: 400px;
+  padding: 6px 0;
 }
 .autoru-chat-window {
   flex: 1; min-height: 0;

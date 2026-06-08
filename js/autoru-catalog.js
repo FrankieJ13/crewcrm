@@ -2,6 +2,7 @@
 window.autoruCatalogInit = function () {
   if (window._autoruCatInited) return;
   window._autoruCatInited = true;
+  try { window.DIAG?.push('info','autoru-cat', ['init']); } catch(_){}
   const cfg = window.AUTORU_CONFIG || {};
   const $ = (id) => document.getElementById(id);
   const els = {
@@ -29,6 +30,7 @@ window.autoruCatalogInit = function () {
   let shown = 0;
 
   // ============ ЗАГРУЗКА ============
+  try { window.DIAG?.push('info','autoru-cat', ['fetch', cfg.dataUrl]); } catch(_){}
   fetch(cfg.dataUrl, { redirect: 'follow' })
     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(data => {
@@ -38,15 +40,20 @@ window.autoruCatalogInit = function () {
         for (let i = 0; i < h.length; i++) o[h[i]] = row[i] === undefined ? '' : row[i];
         return o;
       });
-      // дополним country из маппинга по марке (в данных пусто)
       cars.forEach(c => { if (!c.country) c.country = COUNTRY_BY_BRAND[c.brand] || ''; });
       const status = 'Каталог: ' + cars.length + ' авто';
       els.status.textContent = status;
       els.statusMobile.textContent = status;
+      try { window.DIAG?.push('info','autoru-cat', ['loaded', cars.length]); } catch(_){}
       populateSelects();
       apply();
+      // Обновим бейдж кол-ва на subtab-кнопке
+      try { if (typeof renderInstruktsii === 'function' && document.getElementById('c-instruktsii')) renderInstruktsii(); } catch(_){}
     })
-    .catch(err => { els.status.textContent = 'Ошибка загрузки: ' + err.message; });
+    .catch(err => {
+      els.status.textContent = 'Ошибка загрузки: ' + err.message;
+      try { window.DIAG?.push('error','autoru-cat', ['fetch failed', err.message]); } catch(_){}
+    });
 
   // ============ ФИЛЬТРЫ-СЕЛЕКТЫ ============
   function populateSelects() {

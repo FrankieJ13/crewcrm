@@ -6991,6 +6991,8 @@ function renderAutoruTab() {
   const sub = S.autoruSubTab || 'catalog';
   const cnt = (typeof window.autoruGetCars === 'function') ? (window.autoruGetCars() || []).length : 0;
   const carsBadge = cnt ? ` · ${cnt.toLocaleString('ru-RU')}` : '';
+  // Чат и каталог живут ВНУТРИ единого узла #autoru-fullscreen (один и тот же
+  // DOM persists), переключение — через CSS-класс mode-chat / mode-catalog
   return `
     <div class="autoru-subtabs-row">
       <div class="autoru-subtabs">
@@ -7001,19 +7003,7 @@ function renderAutoruTab() {
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       </button>
     </div>
-    ${sub === 'chat'
-      ? `<div class="autoru-chat">
-          <div id="autoru-chat-window" class="autoru-chat-window" aria-live="polite">
-            <div class="autoru-chat-msg autoru-chat-msg-bot"><p>Напишите запрос — найдём подходящие авто из каталога auto.ru. Например: «фольц тигуан 5 мест до 1.2 млн».</p></div>
-          </div>
-          <form id="autoru-chat-form" class="autoru-chat-composer">
-            <input id="autoru-chat-input" class="autoru-chat-input" type="text" autocomplete="off" placeholder="Что ищем?"/>
-            <button type="submit" class="autoru-chat-send" aria-label="Найти">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="7.5"/><path d="M21 21l-5.4-5.4"/></svg>
-            </button>
-          </form>
-         </div>`
-      : `<div id="autoru-tab-host" class="autoru-tab-host"></div>`}
+    <div id="autoru-tab-host" class="autoru-tab-host"></div>
   `;
 }
 function autoruRefreshCatalog() {
@@ -7028,14 +7018,19 @@ window.autoruRefreshCatalog = autoruRefreshCatalog;
 
 function initAutoruTab() {
   const sub = S.autoruSubTab || 'catalog';
-  if (sub === 'chat') return _autoruInitChat();
   const fs = document.getElementById('autoru-fullscreen');
   const host = document.getElementById('autoru-tab-host');
-  if (!fs || !host) return;
+  if (!fs || !host) { try { window.DIAG?.push('warn','autoru', ['init: no fs/host']); } catch(_){} return; }
   if (fs.parentNode !== host) host.appendChild(fs);
   fs.classList.add('open', 'embedded');
+  fs.classList.toggle('mode-chat', sub === 'chat');
+  fs.classList.toggle('mode-catalog', sub !== 'chat');
   fs.setAttribute('aria-hidden', 'false');
+  try { window.DIAG?.push('info','autoru', ['initAutoruTab', sub, 'cars:', (typeof window.autoruGetCars==='function')?(window.autoruGetCars()||[]).length:'?']); } catch(_){}
+  // Каталог инициализируем ОДИН раз, чтобы cars.json грузился сразу для обоих режимов
   try { if (typeof window.autoruCatalogInit === 'function') window.autoruCatalogInit(); } catch(e) { console.warn('autoruCatalogInit failed', e); }
+  // Чат: привязываем обработчики ОДИН раз (на персистентный DOM)
+  _autoruInitChat();
 }
 
 function _arReturnToBody() {
@@ -7074,7 +7069,10 @@ function _autoruInitChat() {
   const win  = document.getElementById('autoru-chat-window');
   const form = document.getElementById('autoru-chat-form');
   const inp  = document.getElementById('autoru-chat-input');
-  if (!win || !form || !inp) return;
+  if (!win || !form || !inp) { try { window.DIAG?.push('warn','autoru-chat', ['no DOM']); } catch(_){} return; }
+  if (form._autoruBound) return;          // защита от повторного bind
+  form._autoruBound = true;
+  try { window.DIAG?.push('info','autoru-chat', ['bind handlers']); } catch(_){}
 
   const addMsg = (kind, html) => {
     const m = document.createElement('article');
@@ -7089,22 +7087,25 @@ function _autoruInitChat() {
     const q = (inp.value || '').trim();
     if (!q) return;
     inp.value = '';
+    try { window.DIAG?.push('info','autoru-chat', ['submit', q]); } catch(_){}
     addMsg('user', `<p>${escapeHtml(q)}</p>`);
     const loadingMsg = addMsg('bot', '<p>Ищу…</p>');
     const cars = await _autoruEnsureCatalogLoaded();
+    try { window.DIAG?.push('info','autoru-chat', ['cars loaded', cars.length]); } catch(_){}
     if (!cars.length) {
-      loadingMsg.innerHTML = '<p>Каталог не загрузился. Попробуйте «Обновить каталог».</p>';
+      loadingMsg.innerHTML = '<p>Каталог не загрузился. Нажмите кнопку «Обновить» в шапке.</p>';
       return;
     }
     const parsed = window.AutoSearch ? window.AutoSearch.parse(q) : null;
+    try { window.DIAG?.push('info','autoru-chat', ['parsed', JSON.stringify(parsed ? { brands: parsed.brands, models: parsed.models, cities: parsed.cities, free: parsed.free } : null)]); } catch(_){}
     const matched = parsed ? cars.filter(c => window.AutoSearch.match(c, parsed)) : [];
+    try { window.DIAG?.push('info','autoru-chat', ['matched', matched.length]); } catch(_){}
     if (!matched.length) {
       loadingMsg.innerHTML = '<p>Ничего не найдено по запросу.</p>';
       return;
     }
-    // Шапка-резюме + список карточек
     const top = matched.slice(0, 12);
-    loadingMsg.innerHTML = `<p>Нашёл <strong>${matched.length}</strong> ${pluralAuto(matched.length)}${matched.length > top.length ? `. Показал первые ${top.length}` : ''}.</p>`;
+    loadingMsg.innerHTML = `<p>Нашёл <strong>${matched.length}</strong> авто${matched.length > top.length ? `. Показал первые ${top.length}` : ''}.</p>`;
     if (typeof window.autoruRenderCard === 'function') {
       const list = document.createElement('div');
       list.className = 'autoru-chat-results';
@@ -7114,10 +7115,8 @@ function _autoruInitChat() {
     win.scrollTop = win.scrollHeight;
   };
 
-  form.onsubmit = (e) => { e.preventDefault(); submit(); };
-  inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } };
-  // Прогрев каталога в фоне, чтобы первый запрос был быстрым
-  _autoruEnsureCatalogLoaded();
+  form.addEventListener('submit', (e) => { e.preventDefault(); submit(); });
+  inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
 }
 function pluralAuto(n) {
   const mod10 = n % 10, mod100 = n % 100;

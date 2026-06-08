@@ -627,7 +627,7 @@
   display: none;
 }
 .autoru-subtab {
-  flex: 1 1 0;
+  flex: .85 1 0;
   min-width: 0;
   background: transparent;
   border: 0;
@@ -639,9 +639,21 @@
   cursor: pointer;
   transition: background .18s, color .18s, transform .1s;
   position: relative;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+}
+.autoru-subtab:nth-child(2) {
+  flex-grow: 1.45;
+}
+@media (max-width: 380px) {
+  .autoru-subtab {
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: 10.5px;
+    letter-spacing: .05em;
+  }
+  .autoru-subtab:nth-child(2) {
+    flex-grow: 1.65;
+  }
 }
 .autoru-subtab + .autoru-subtab::before {
   /* Вертикальный разделитель между секциями (виден только когда оба не активны) */

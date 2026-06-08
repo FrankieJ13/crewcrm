@@ -627,7 +627,8 @@
   display: none;
 }
 .autoru-subtab {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   background: transparent;
   border: 0;
   color: var(--txt2);
@@ -638,6 +639,9 @@
   cursor: pointer;
   transition: background .18s, color .18s, transform .1s;
   position: relative;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .autoru-subtab + .autoru-subtab::before {
   /* Вертикальный разделитель между секциями (виден только когда оба не активны) */

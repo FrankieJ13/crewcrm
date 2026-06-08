@@ -14716,7 +14716,44 @@ function renderVizPicker(opts, curVal, allowFree, sheetRow, colIdx) {
     </div>
   </div>`;
   overlay.classList.add('open');
-  setTimeout(() => document.getElementById('vt-picker-search')?.focus(), 100);
+  _bindVizPickerViewport();
+  _syncVizPickerViewport();
+  setTimeout(() => {
+    const input = document.getElementById('vt-picker-search');
+    input?.focus();
+    _syncVizPickerViewport();
+  }, 100);
+}
+
+function _syncVizPickerViewport() {
+  const overlay = document.getElementById('vt-picker-overlay');
+  if (!overlay?.classList.contains('open')) return;
+  const vv = window.visualViewport;
+  if (!vv) return;
+  const keyboardPx = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+  document.documentElement.style.setProperty('--vt-vh', vv.height + 'px');
+  document.documentElement.style.setProperty('--vt-keyboard', keyboardPx + 'px');
+  const inputFocused = document.activeElement?.id === 'vt-picker-search';
+  overlay.classList.toggle('vt-picker-keyboard', keyboardPx > 100 && inputFocused);
+}
+
+function _bindVizPickerViewport() {
+  if (window._vtPickerViewportBound) return;
+  window._vtPickerViewportBound = true;
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', _syncVizPickerViewport);
+    window.visualViewport.addEventListener('scroll', _syncVizPickerViewport);
+  }
+  document.addEventListener('focusin', e => {
+    if (e.target?.id === 'vt-picker-search') {
+      [30, 120, 260, 520].forEach(d => setTimeout(_syncVizPickerViewport, d));
+    }
+  });
+  document.addEventListener('focusout', e => {
+    if (e.target?.id === 'vt-picker-search') {
+      [30, 180, 420].forEach(d => setTimeout(_syncVizPickerViewport, d));
+    }
+  });
 }
 
 function filterVizPicker(q) {
@@ -14766,7 +14803,10 @@ function selectVizPicker(val) {
 }
 
 function closeVizPicker() {
-  document.getElementById('vt-picker-overlay')?.classList.remove('open');
+  const overlay = document.getElementById('vt-picker-overlay');
+  overlay?.classList.remove('open', 'vt-picker-keyboard');
+  document.documentElement.style.removeProperty('--vt-vh');
+  document.documentElement.style.removeProperty('--vt-keyboard');
 }
 
 function vizScrollTo(dir) {

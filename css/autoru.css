@@ -760,7 +760,8 @@
   padding: 8px 0 0;
   position: relative;
 }
-/* Меню слеш-команд */
+/* Меню слеш-команд — flex только когда видимое (иначе [hidden] перебивается) */
+.autoru-chat-cmdmenu[hidden] { display: none !important; }
 .autoru-chat-cmdmenu {
   position: absolute;
   bottom: calc(100% + 6px);

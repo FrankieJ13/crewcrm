@@ -307,7 +307,7 @@ window.autoruCatalogInit = function () {
       '</div>' +
       // Фото слева, плитки справа — на уровне метрик
       '<a class="card__media" href="' + esc(c.url || '#') + '" target="_blank" rel="noopener">' +
-        (photo ? '<img loading="lazy" src="' + esc(photo) + '" alt="' + esc(brand + ' ' + modelLine) + '">' : '') +
+        (photo ? '<img loading="lazy" decoding="async" referrerpolicy="no-referrer" src="' + esc(photo) + '" alt="' + esc(brand + ' ' + modelLine) + '" onerror="if(!this.dataset.r){this.dataset.r=1;this.src=this.src;}else{this.parentElement.classList.add(\'card__media--noimg\');this.remove();}">' : '<div class="card__media-placeholder">📷</div>') +
       '</a>' +
       '<div class="tiles">' +
           tile('year',    'Год',           c.year) +

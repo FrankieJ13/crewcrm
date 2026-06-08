@@ -137,12 +137,19 @@
   column-gap: 14px;
   row-gap: 12px;
   align-items: start;
-  background: linear-gradient(225deg, #d3e5fd 0%, #fefcfa 28%, #fef6ec 56%, #ffefe8 80%, #fffaea 100%);
-  border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+  /* Двойной background: внутренний — основной градиент (225deg),
+     наружный — тот же градиент повёрнутый на 180° (45deg) играет роль
+     рамки. Реализуется через background-clip + border. */
+  background:
+    linear-gradient(225deg, #d3e5fd 0%, #fefcfa 28%, #fef6ec 56%, #ffefe8 80%, #fffaea 100%) padding-box,
+    linear-gradient(45deg,  #d3e5fd 0%, #fefcfa 28%, #fef6ec 56%, #ffefe8 80%, #fffaea 100%) border-box;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius);
+  overflow: hidden;
   padding: 14px;
   box-shadow: 0 1px 2px rgba(28, 13, 60, .04), 0 8px 24px rgba(108, 92, 231, .06);
   container-type: inline-size;
-  transition: border-color .12s, box-shadow .12s, transform .12s;
+  transition: box-shadow .12s, transform .12s;
 }
 .card:hover { border-color: #d4cfe8; box-shadow: 0 1px 2px rgba(28, 13, 60, .05), 0 12px 32px rgba(108, 92, 231, .12); }
 
@@ -337,8 +344,8 @@
 #autoru-fullscreen.embedded .btn-filters svg { width: 18px; height: 18px; }
 #autoru-fullscreen.embedded .btn-filters__badge {
   position: absolute !important;
-  top: -4px !important;
-  right: -4px !important;
+  top: -6px !important;
+  right: -6px !important;
   min-width: 16px;
   height: 16px;
   display: inline-flex !important;
@@ -351,7 +358,9 @@
   padding: 0 4px !important;
   border-radius: 999px !important;
   line-height: 1;
+  z-index: 110 !important; /* поверх sticky-панелей */
 }
+#autoru-fullscreen.embedded .btn-filters { overflow: visible !important; }
 /* Filter popup — один столбец, скролл, прижат к правому краю кнопки */
 #autoru-fullscreen.embedded .filters-popup {
   min-width: min(320px, calc(100vw - 24px)) !important;
@@ -428,6 +437,15 @@
 /* Карточка ВСЕГДА side-by-side (фото слева + плитки справа), просто
    пропорционально уменьшается за счёт container queries.
    Сдвигаем правую колонку плиток для большего пространства слева. */
+/* Фоллбэк placeholder когда фото не загрузилось */
+.card__media--noimg,
+.card__media-placeholder {
+  display: flex !important; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, rgba(108,92,231,.05), rgba(108,92,231,.12));
+  color: rgba(108,92,231,.4);
+  font-size: 26px;
+  border-radius: 9px;
+}
 #autoru-fullscreen.embedded .tiles { column-gap: 20px !important; }
 @container (max-width: 540px) {
   #autoru-fullscreen.embedded .tiles { column-gap: 14px !important; }

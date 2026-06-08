@@ -7148,33 +7148,48 @@ function _autoruInitChat() {
       scrollToMsg(userMsg);
       return;
     }
-    // ── ГИБРИДНЫЙ парсинг: cm66 (автоподбор, intent/sort/fuzzy) + AutoSearch
-    // (auto.ru — seats, cities, bodies, colors etc, чего нет в cm66).
-    // Сначала cm66 даёт отсортированный список (cheap → ↑, expensive → ↓),
-    // потом AutoSearch добавляет фильтры по конкретным полям. free убираем,
-    // чтобы незнакомые слова не отфильтровали всё в ноль.
-    let matched = cars;
-    let parsedDbg = null;
-    if (typeof window.cm66SearchOverCars === 'function') {
-      const cm = window.cm66SearchOverCars(q, cars);
-      matched = cm.cars;
-      parsedDbg = cm.parsed ? { _: 'cm66', brands: cm.parsed.brands, models: (cm.parsed.termMatches||[]).map(m=>m.name||m).slice(0,3), cheap: cm.parsed.cheapIntent, expensive: cm.parsed.expensiveIntent } : null;
+    // ── МУЛЬТИ-ЗАПРОС: пользователь может написать несколько вариантов
+    // через "и/или", "или", "/", ";", "+". Каждый — отдельный поиск,
+    // результаты дедуплицируются по URL.
+    const variants = q
+      .split(/\s*(?:и\s*\/\s*или|и\/или|;|\/|\bили\b|\s\+\s|\s\|\s)\s*/i)
+      .map(s => s.trim()).filter(Boolean);
+    try { window.DIAG?.push('info','autoru-chat', ['variants', variants.length, JSON.stringify(variants)]); } catch(_){}
+    const seenUrl = new Set();
+    const allMatched = [];
+    const parsedDbg = [];
+    for (const v of variants) {
+      // ── ГИБРИДНЫЙ парсинг для каждого варианта: cm66 + AutoSearch
+      let part = cars;
+      let cm = null;
+      if (typeof window.cm66SearchOverCars === 'function') {
+        cm = window.cm66SearchOverCars(v, cars);
+        part = cm.cars;
+      }
+      if (window.AutoSearch && window.AutoSearch.parse) {
+        const ar = window.AutoSearch.parse(v);
+        const arClean = Object.assign({}, ar, { free: '' });
+        part = part.filter(c => window.AutoSearch.match(c, arClean));
+      }
+      parsedDbg.push({ q: v, n: part.length, cheap: cm?.parsed?.cheapIntent, expensive: cm?.parsed?.expensiveIntent });
+      for (const c of part) {
+        const key = c.url || (c.brand + '|' + c.model + '|' + c.price + '|' + c.mileage + '|' + c.city);
+        if (seenUrl.has(key)) continue;
+        seenUrl.add(key);
+        allMatched.push(c);
+      }
     }
-    if (window.AutoSearch && window.AutoSearch.parse) {
-      const ar = window.AutoSearch.parse(q);
-      const arClean = Object.assign({}, ar, { free: '' });
-      const beforeAr = matched.length;
-      matched = matched.filter(c => window.AutoSearch.match(c, arClean));
-      try { window.DIAG?.push('info','autoru-chat', ['AutoSearch filtered', beforeAr, '→', matched.length, 'seats:', ar.seats, 'cities:', JSON.stringify(ar.cities), 'bodies:', JSON.stringify(ar.bodies)]); } catch(_){}
-    }
-    try { window.DIAG?.push('info','autoru-chat', ['parsed', JSON.stringify(parsedDbg)]); } catch(_){}
-    try { window.DIAG?.push('info','autoru-chat', ['matched', matched.length]); } catch(_){}
+    const matched = allMatched;
+    try { window.DIAG?.push('info','autoru-chat', ['matched total', matched.length, 'variants:', JSON.stringify(parsedDbg)]); } catch(_){}
     if (!matched.length) {
       loadingMsg.innerHTML = '<p>Ничего не найдено по запросу.</p>';
       scrollToMsg(userMsg);
       return;
     }
-    loadingMsg.innerHTML = `<p>Нашёл <strong>${matched.length}</strong> авто.${matched.length > PAGE ? ` Показал первые ${PAGE}.` : ''}</p>`;
+    const variantsLine = variants.length > 1
+      ? `<p style="font-size:12px;color:var(--txt2);margin-top:4px">Разобрал ${variants.length} вариант${variants.length>1?(variants.length<5?'а':'ов'):''}: ${variants.map(v => '«'+escapeHtml(v)+'»').join(' / ')}</p>`
+      : '';
+    loadingMsg.innerHTML = `<p>Нашёл <strong>${matched.length}</strong> авто.${matched.length > PAGE ? ` Показал первые ${PAGE}.` : ''}</p>${variantsLine}`;
     showMore(loadingMsg, matched, 0);
     // Скроллим к bot-сообщению, а НЕ в самый низ — пользователь видит первую карточку
     scrollToMsg(loadingMsg);

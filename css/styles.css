@@ -4846,6 +4846,15 @@ body.neo-light .vt-row-card:nth-child(even) {
   display:block;
   object-fit:contain;
 }
+body:not(.cosmic):not(.fluent) .vt-sverka-mark.native-svg.yes .vt-sverka-img {
+  filter: brightness(0) saturate(100%) invert(61%) sepia(91%) saturate(389%) hue-rotate(93deg) brightness(92%) contrast(90%);
+}
+body:not(.cosmic):not(.fluent) .vt-sverka-mark.native-svg.no .vt-sverka-img {
+  filter: brightness(0) saturate(100%) invert(41%) sepia(85%) saturate(2613%) hue-rotate(330deg) brightness(102%) contrast(101%);
+}
+body:not(.cosmic):not(.fluent) .vt-sverka-mark.native-svg.empty .vt-sverka-img {
+  filter: brightness(0) saturate(100%) invert(67%) sepia(100%) saturate(1374%) hue-rotate(359deg) brightness(102%) contrast(101%);
+}
 .vt-sverka-mark.cosmic-native {
   color:inherit; background:transparent; border:none;
 }

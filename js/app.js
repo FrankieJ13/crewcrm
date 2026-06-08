@@ -2033,7 +2033,7 @@ function requestGoogleToken({ prompt = '', mode = 'ensure', force = false, silen
   return promise;
 }
 
-async function ensureToken({ interactive = false } = {}) {
+async function ensureToken({ interactive = false, silent = false } = {}) {
   if (S.token && Date.now() < tokenExpiresAt - 60_000) return S.token;
   const tok = localStorage.getItem('crm_tok');
   const exp = parseInt(localStorage.getItem('crm_exp') || '0');
@@ -2042,8 +2042,13 @@ async function ensureToken({ interactive = false } = {}) {
     tokenExpiresAt = exp;
     return tok;
   }
+  if (silent && !interactive) {
+    const err = new Error('auth');
+    err.isAuthError = true;
+    throw err;
+  }
   try {
-    const resp = await requestGoogleToken({ prompt: interactive ? 'consent' : '', mode: 'ensure' });
+    const resp = await requestGoogleToken({ prompt: interactive ? 'consent' : '', mode: 'ensure', silent });
     return resp.access_token;
   } catch (err) {
     err.isAuthError = true;
@@ -2675,7 +2680,7 @@ async function api(sheet, range, opts = {}) {
   if (_apiInflight[key]) return _apiInflight[key];
 
   _apiInflight[key] = apiQueueRun(
-    () => _apiFetch(sheet, range, key, 0, paramStr),
+    () => _apiFetch(sheet, range, key, 0, paramStr, opts),
     { priority: opts.priority || 0 }
   );
   try {
@@ -2699,13 +2704,13 @@ function apiFresh(sheet, range, opts = {}) {
 }
 
 function apiFreshOrNull(sheet, range, opts = {}) {
-  return apiFresh(sheet, range, opts).catch(err => {
+  return apiFresh(sheet, range, { silent: true, ...opts }).catch(err => {
     try { console.warn('Sheets live refresh skipped', sheet + '!' + range, err); } catch (_) {}
     return null;
   });
 }
 
-async function _apiFetch(sheet, range, key, retryCount = 0, params = '') {
+async function _apiFetch(sheet, range, key, retryCount = 0, params = '', opts = {}) {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/`
             + encodeURIComponent(sheet + '!' + range)
             + (params ? '?' + params : '');
@@ -2724,12 +2729,15 @@ async function _apiFetch(sheet, range, key, retryCount = 0, params = '') {
 
   let r;
   try {
-    r = await fetch(url, { headers: await authHeaders(), signal: ctrl.signal });
+    r = await fetch(url, { headers: await authHeaders({}, { silent: !!opts.silent }), signal: ctrl.signal });
   } catch (err) {
     clearTimeout(tid);
     _apiControllers.delete(ctrl);
     if (ctrl._cancelReason) throw new Error(ctrl._cancelReason);
-    if (err.isAuthError) { showLoginScreen(); throw new Error('auth'); }
+    if (err.isAuthError) {
+      if (!opts.silent) showLoginScreen();
+      throw new Error('auth');
+    }
     if (retryCount < 3) {
       // Тихий первый retry; сообщаем только начиная со второй неудачи
       if (retryCount === 1) toast('Связь с Google нестабильна — повторяю…', 'i');
@@ -2737,7 +2745,7 @@ async function _apiFetch(sheet, range, key, retryCount = 0, params = '') {
       const waits = [700, 1500, 3000];
       const wait = (waits[retryCount] || 3000) + jitter;
       await new Promise(res => setTimeout(res, wait));
-      return _apiFetch(sheet, range, key, retryCount + 1, params);
+      return _apiFetch(sheet, range, key, retryCount + 1, params, opts);
     }
     toast('Не удалось получить данные Google. Проверьте сеть и обновите экран', 'e');
     throw err;
@@ -2751,7 +2759,7 @@ async function _apiFetch(sheet, range, key, retryCount = 0, params = '') {
       const wait = (retryCount + 1) * 4000; // 4s, 8s, 12s
       if (retryCount === 1) toast('Лимит запросов — повтор через ' + (wait/1000) + 'с…', 'i');
       await new Promise(res => setTimeout(res, wait));
-      return _apiFetch(sheet, range, key, retryCount + 1, params);
+      return _apiFetch(sheet, range, key, retryCount + 1, params, opts);
     }
     toast('Превышен лимит Sheets API — подождите минуту', 'e');
     throw new Error('QUOTA_EXCEEDED');
@@ -2771,13 +2779,13 @@ async function _apiFetch(sheet, range, key, retryCount = 0, params = '') {
           localStorage.removeItem('crm_exp');
         } catch (e) { /* iOS PWA private mode иногда блокирует */ }
         try {
-          await ensureToken();
-          return _apiFetch(sheet, range, key, retryCount + 1, params);
+          await ensureToken({ silent: !!opts.silent });
+          return _apiFetch(sheet, range, key, retryCount + 1, params, opts);
         } catch(authErr) {
-          toast('Сессия требует повторного входа', 'e');
+          if (!opts.silent) toast('Сессия требует повторного входа', 'e');
         }
       }
-      showLoginScreen();
+      if (!opts.silent) showLoginScreen();
       throw new Error('auth');
     }
     if (r.status === 404) throw new Error('NOT_FOUND');

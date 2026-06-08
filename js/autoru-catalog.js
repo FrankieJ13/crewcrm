@@ -10,7 +10,7 @@ window.autoruCatalogInit = function () {
     statusMobile: $('statusMobile'), counterMobile: $('counterMobile'),
     grid: $('grid'), chips: $('chips'),
     q: $('q'),
-    city: $('city'), brand: $('brand'), body: $('body'),
+    city: $('city'), brand: $('brand'), model: $('model'), body: $('body'),
     transmission: $('transmission'), drive: $('drive'), wheel: $('wheel'),
     country: $('country'), seats: $('seats'), owners: $('owners'),
     pts: $('pts'), condition: $('condition'), color: $('color'),
@@ -22,7 +22,7 @@ window.autoruCatalogInit = function () {
   };
 
   // Поля-фильтры по типу — для удобства итерации (reset, badge, события).
-  const SELECT_FILTERS = ['city','brand','body','transmission','drive','wheel','country','seats','owners','pts','condition','color'];
+  const SELECT_FILTERS = ['city','brand','model','body','transmission','drive','wheel','country','seats','owners','pts','condition','color'];
   const NUMBER_FILTERS = ['priceMin','priceMax','yearMin','yearMax','mileageMax'];
 
   let cars = [];
@@ -71,6 +71,7 @@ window.autoruCatalogInit = function () {
     };
     fillText(els.city, cars.map(c => c.city));
     fillText(els.brand, cars.map(c => c.brand));
+    fillText(els.model, cars.map(c => c.model));
     fillText(els.body, cars.map(c => c.body));
     fillText(els.transmission, cars.map(c => c.transmission));
     fillText(els.drive, cars.map(c => c.drive));
@@ -90,7 +91,7 @@ window.autoruCatalogInit = function () {
 
     // селекты накладываются поверх распарсенного запроса
     const sel = {
-      city: els.city.value, brand: els.brand.value, body: els.body.value,
+      city: els.city.value, brand: els.brand.value, model: els.model.value, body: els.body.value,
       transmission: els.transmission.value, drive: els.drive.value, wheel: els.wheel.value,
       country: els.country.value, condition: els.condition.value, color: els.color.value,
       pts: els.pts.value, seats: els.seats.value, owners: els.owners.value,
@@ -106,6 +107,7 @@ window.autoruCatalogInit = function () {
     filtered = cars.filter(c => {
       if (sel.city  && c.city  !== sel.city)  return false;
       if (sel.brand && c.brand !== sel.brand) return false;
+      if (sel.model && c.model !== sel.model) return false;
       if (sel.body  && c.body  !== sel.body)  return false;
       if (sel.transmission && c.transmission !== sel.transmission) return false;
       if (sel.drive && c.drive !== sel.drive) return false;
@@ -344,16 +346,9 @@ window.autoruCatalogInit = function () {
 
   // ============ СОБЫТИЯ ============
   els.q.addEventListener('input', apply);
-  // Фильтры (селекты + числа) больше не применяются «онлайн» — только по
-  // кнопке «Применить» в попапе. Сортировка применяется сразу, как и
-  // основная поисковая строка.
-  els.sort.addEventListener('change', apply);
-  // Кнопка применить — теперь обязательное действие для подтверждения фильтров
-  const applyBtn = document.getElementById('filtersApply');
-  if (applyBtn) applyBtn.addEventListener('click', () => {
-    apply();
-    if (els.filtersPopup) els.filtersPopup.hidden = true;
-  });
+  // Фильтры применяются мгновенно по change/input (как было в оригинале)
+  SELECT_FILTERS.concat('sort').forEach(k => els[k] && els[k].addEventListener('change', apply));
+  NUMBER_FILTERS.forEach(k => els[k] && els[k].addEventListener('input', apply));
   els.reset.addEventListener('click', () => {
     els.q.value = '';
     SELECT_FILTERS.forEach(k => { els[k].value = ''; });

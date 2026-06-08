@@ -359,4 +359,7 @@ window.autoruCatalogInit = function () {
     if (e.key === 'Escape') els.filtersPopup.hidden = true;
   });
   window.autoruCatalogReload = () => { try { window._autoruCatInited = false; window.autoruCatalogInit(); } catch(e){} };
+  // Экспонируем рендер карточки + список авто для использования в чате (тот же дизайн).
+  window.autoruRenderCard = card;
+  window.autoruGetCars    = () => cars;
 };

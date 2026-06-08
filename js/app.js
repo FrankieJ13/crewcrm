@@ -6983,22 +6983,21 @@ function switchAutoruSub(sub) {
 }
 window.switchAutoruSub = switchAutoruSub;
 
-// Простой чат: AutoSearch.parse + match + рендер top-N через карточку каталога
-let _autoruChatCars = null;
-async function _autoruLoadCarsForChat() {
-  if (_autoruChatCars) return _autoruChatCars;
-  try {
-    const cfg = window.AUTORU_CONFIG || {};
-    const r = await fetch(cfg.dataUrl || 'data/autoru-cars.json', { cache: 'force-cache' });
-    const data = await r.json();
-    const h = data.h || [];
-    _autoruChatCars = (data.r || []).map(row => {
-      const o = {};
-      for (let i = 0; i < h.length; i++) o[h[i]] = row[i] === undefined ? '' : row[i];
-      return o;
-    });
-    return _autoruChatCars;
-  } catch (e) { console.warn('autoru chat: cars load failed', e); return []; }
+// Чат: AutoSearch.parse + match + рендер той же карточкой из каталога
+// (window.autoruRenderCard) — единый дизайн с КАТАЛОГ-режимом.
+async function _autoruEnsureCatalogLoaded() {
+  if (typeof window.autoruCatalogInit === 'function' && !window._autoruCatInited) {
+    try { window.autoruCatalogInit(); } catch(_){}
+  }
+  const deadline = Date.now() + 8000;
+  while (Date.now() < deadline) {
+    if (typeof window.autoruGetCars === 'function') {
+      const cars = window.autoruGetCars();
+      if (cars && cars.length) return cars;
+    }
+    await new Promise(r => setTimeout(r, 120));
+  }
+  return [];
 }
 function _autoruInitChat() {
   const inp = document.getElementById('autoru-chat-input');
@@ -7010,28 +7009,22 @@ function _autoruInitChat() {
     if (q === lastQuery) return;
     lastQuery = q;
     if (!q) { out.innerHTML = ''; return; }
-    const cars = await _autoruLoadCarsForChat();
+    out.innerHTML = '<div class="autoru-chat-hint">Ищем…</div>';
+    const cars = await _autoruEnsureCatalogLoaded();
+    if (!cars.length) { out.innerHTML = '<div class="autoru-chat-hint">Каталог не загрузился. Попробуйте ещё раз.</div>'; return; }
     const parsed = window.AutoSearch ? window.AutoSearch.parse(q) : null;
     const matched = parsed ? cars.filter(c => window.AutoSearch.match(c, parsed)) : [];
-    out.innerHTML = matched.length
-      ? matched.slice(0, 12).map(_autoruChatCardHtml).join('')
-      : '<div class="autoru-chat-hint">Ничего не найдено по запросу.</div>';
+    if (!matched.length) { out.innerHTML = '<div class="autoru-chat-hint">Ничего не найдено по запросу.</div>'; return; }
+    if (typeof window.autoruRenderCard !== 'function') {
+      out.innerHTML = '<div class="autoru-chat-hint">Рендер карточек недоступен.</div>'; return;
+    }
+    out.innerHTML = '';
+    matched.slice(0, 20).forEach(c => out.appendChild(window.autoruRenderCard(c)));
   };
   inp.oninput = () => clearTimeout(inp._t) || (inp._t = setTimeout(run, 250));
   inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); run(); } };
-}
-function _autoruChatCardHtml(c) {
-  const fmt = n => Number(n) ? Number(n).toLocaleString('ru-RU') : '—';
-  const photo = c.image_url || '';
-  return `<div class="autoru-chat-card" style="display:flex;gap:10px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:8px;">
-    ${photo ? `<img src="${photo}" alt="" style="width:100px;height:70px;object-fit:cover;border-radius:6px;flex-shrink:0;background:var(--bg3)" loading="lazy">` : ''}
-    <div style="min-width:0;flex:1">
-      <div style="font-weight:700;color:var(--txt)">${escapeHtml(c.brand || '')} ${escapeHtml(c.model || c.title || '')}</div>
-      <div style="font-family:'Unbounded',sans-serif;font-weight:800;color:var(--acc);font-size:14px;margin:2px 0">${fmt(c.price)} ₽</div>
-      <div style="font-size:11px;color:var(--txt2)">${escapeHtml(c.year || '')} · ${fmt(c.mileage)} км · ${escapeHtml(c.city || '')}</div>
-      ${c.url ? `<a href="${escapeAttr(c.url)}" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:var(--acc)">Открыть на auto.ru →</a>` : ''}
-    </div>
-  </div>`;
+  // Фоном грузим каталог, чтобы первый запрос был быстрым
+  _autoruEnsureCatalogLoaded();
 }
 
 function toggleInstr(id) {

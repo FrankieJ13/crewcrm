@@ -4846,15 +4846,6 @@ body.neo-light .vt-row-card:nth-child(even) {
   display:block;
   object-fit:contain;
 }
-body:not(.cosmic):not(.fluent) .vt-sverka-mark.native-svg.yes .vt-sverka-img {
-  filter: brightness(0) saturate(100%) invert(61%) sepia(91%) saturate(389%) hue-rotate(93deg) brightness(92%) contrast(90%);
-}
-body:not(.cosmic):not(.fluent) .vt-sverka-mark.native-svg.no .vt-sverka-img {
-  filter: brightness(0) saturate(100%) invert(41%) sepia(85%) saturate(2613%) hue-rotate(330deg) brightness(102%) contrast(101%);
-}
-body:not(.cosmic):not(.fluent) .vt-sverka-mark.native-svg.empty .vt-sverka-img {
-  filter: brightness(0) saturate(100%) invert(67%) sepia(100%) saturate(1374%) hue-rotate(359deg) brightness(102%) contrast(101%);
-}
 .vt-sverka-mark.cosmic-native {
   color:inherit; background:transparent; border:none;
 }
@@ -4881,6 +4872,14 @@ body:not(.cosmic):not(.fluent) .vt-sverka-mark.native-svg.empty .vt-sverka-img {
 .vt-sverka-mark.yes { color:var(--grn); background:rgba(46,213,115,.14); }
 .vt-sverka-mark.no { color:var(--red); background:rgba(255,71,87,.13); }
 .vt-sverka-mark.empty { color:var(--org); background:rgba(255,165,2,.16); }
+.vt-sverka-mark.native-svg,
+.vt-sverka-mark.native-svg.yes,
+.vt-sverka-mark.native-svg.no,
+.vt-sverka-mark.native-svg.empty {
+  color: inherit;
+  background: transparent;
+  border: none;
+}
 .vt-sverka-mark.cosmic-native,
 .vt-sverka-mark.cosmic-native.yes,
 .vt-sverka-mark.cosmic-native.no,

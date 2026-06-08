@@ -4760,6 +4760,11 @@ details[open] .vt-week-sum .vt-week-chevron { transform: rotate(90deg); }
   transition: border-color .15s;
   overflow: hidden;
 }
+.vt-row-card:not(.vt-expanded) {
+  height: 52px;
+  min-height: 52px;
+  max-height: 52px;
+}
 /* Тёмные темы: чётные — чуть светлее */
 .vt-row-card:nth-child(even) {
   background: var(--bg3);
@@ -4785,9 +4790,13 @@ body.neo-light .vt-row-card:nth-child(even) {
 }
 .vt-row-card:not(.vt-expanded) .vt-row-compact {
   height:50px;
+  min-height:50px;
+  max-height:50px;
 }
 .vt-row-card.vt-expanded .vt-row-compact {
+  height:50px;
   min-height:50px;
+  max-height:50px;
 }
 .vt-row-compact > * {
   align-self:center;

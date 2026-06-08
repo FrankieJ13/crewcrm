@@ -2607,6 +2607,7 @@ let _apiQueueActive = 0;
 let _apiQueueSeq = 0;
 const _apiQueue = [];
 const _apiControllers = new Set();
+let _lastSheetsFetchOkAt = 0;
 
 function apiCancelPending(reason = 'stale_request') {
   const err = new Error(reason);
@@ -2700,12 +2701,13 @@ async function _apiFetch(sheet, range, key, retryCount = 0, params = '') {
             + (params ? '?' + params : '');
 
   // Таймаут 30с — на медленных мобильных сетях большие unbounded ranges
-  // легко берут 7-15+ сек. НО первый запрос после возврата из idle часто
-  // зависает на dead-TCP до жёсткого таймаута. Поэтому при retry=0 после
-  // wake-up даём 12с — холодное соединение быстро отвалится и retry уйдёт
-  // на свежем сокете.
+  // легко берут 7-15+ сек. НО первый запрос после cold start / возврата из
+  // idle часто зависает на dead-TCP до жёсткого таймаута. Поэтому первые
+  // попытки на холодном соединении обрываем быстрее: лучше пересоздать
+  // сокет, чем ждать 3 круга по 30 секунд.
   const wakeFresh = (Date.now() - _wakeEpoch) < 30_000;
-  const timeoutMs = (retryCount === 0 && wakeFresh) ? 12000 : 30000;
+  const coldConnection = (Date.now() - _lastSheetsFetchOkAt) > 120_000;
+  const timeoutMs = (retryCount <= 2 && (wakeFresh || coldConnection)) ? 12000 : 30000;
   const ctrl = new AbortController();
   _apiControllers.add(ctrl);
   const tid  = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -2775,6 +2777,7 @@ async function _apiFetch(sheet, range, key, retryCount = 0, params = '') {
   }
 
   const data = (await r.json()).values || [];
+  _lastSheetsFetchOkAt = Date.now();
   _apiCache[key] = { ts: Date.now(), data };
   _apiStaleCache[key] = { ts: Date.now(), data };
   return data;
@@ -3730,7 +3733,17 @@ function setLiveHTML(el, html) {
   // morph обновил текст через liveValueTick — spring не запускаем
 }
 
-async function refreshVisibleDataLive() {
+let _visibleRefreshPromise = null;
+
+function refreshVisibleDataLive() {
+  if (_visibleRefreshPromise) return _visibleRefreshPromise;
+  _visibleRefreshPromise = _refreshVisibleDataLive().finally(() => {
+    _visibleRefreshPromise = null;
+  });
+  return _visibleRefreshPromise;
+}
+
+async function _refreshVisibleDataLive() {
   try { window.DIAG?.push('info', 'refresh', ['refreshVisibleDataLive']); } catch(_){}
   const token = screenToken();
   if (document.getElementById('scr-vizity')?.classList.contains('on')) return;

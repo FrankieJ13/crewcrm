@@ -30,9 +30,25 @@ window.autoruCatalogInit = function () {
   let shown = 0;
 
   // ============ ЗАГРУЗКА ============
-  try { window.DIAG?.push('info','autoru-cat', ['fetch', cfg.dataUrl]); } catch(_){}
-  fetch(cfg.dataUrl, { redirect: 'follow' })
-    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  // Сначала пробуем upstream (свежий каталог), при ошибке — локальный fallback
+  const fetchCars = async () => {
+    try {
+      try { window.DIAG?.push('info','autoru-cat', ['fetch upstream', cfg.dataUrl]); } catch(_){}
+      const r = await fetch(cfg.dataUrl, { redirect: 'follow', cache: 'default' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return await r.json();
+    } catch (e) {
+      try { window.DIAG?.push('warn','autoru-cat', ['upstream failed → fallback', e.message]); } catch(_){}
+      if (cfg.fallbackUrl) {
+        const r2 = await fetch(cfg.fallbackUrl, { cache: 'default' });
+        if (!r2.ok) throw new Error('HTTP ' + r2.status + ' (fallback)');
+        return await r2.json();
+      }
+      throw e;
+    }
+  };
+  fetchCars()
+    .then(data => { return data; }) // pass-through, чтобы цепочка ниже работала
     .then(data => {
       const h = data.h || [];
       cars = (data.r || []).map(row => {

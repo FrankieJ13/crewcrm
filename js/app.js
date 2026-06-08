@@ -13837,8 +13837,8 @@ async function loadVizity() {
   if (!stillHere()) return;
   S.vizRows = raw.slice(1).map((row, i) => ({
     idx: i, _sheetRow: i + 2,
-    data: Array.from({length:14}, (_,c) => row[c] || '')
-  }));
+    data: Array.from({length:14}, (_,c) => String(row[c] ?? '').replace(/\u00a0/g, ' ').trim())
+  })).filter(row => row.data.some(Boolean));
   try {
     renderVizity();
   } catch(e) {
@@ -14044,8 +14044,9 @@ function renderVizRow(row, dept, locked, isFirstOfDate) {
   const isSalon = label.includes('В салоне');
   const chipTone = getVizChipTone(label, deal);
   const chipClass = `${isDeal ? 'deal' : isSalon ? 'salon' : ''} ${chipTone}`.trim();
+  const chipText = label.slice(0,18) + (label.length>18?'…':'');
   const chip = label
-    ? `<span class="vt-status-chip ${chipClass}" title="${label}">${label.slice(0,18)}${label.length>18?'…':''}</span>` : '';
+    ? `<span class="vt-status-chip ${escapeAttr(chipClass)}" title="${escapeAttr(label)}">${escapeHtml(chipText)}</span>` : '';
   const formHTML = locked ? '' : renderVizForm(row, dept);
   const dateStyle = isFirstOfDate ? 'font-weight:700;color:var(--txt)' : '';
   const sverkaIcon = getVizSverkaMark(d[13]);
@@ -14059,10 +14060,10 @@ function renderVizRow(row, dept, locked, isFirstOfDate) {
     <div class="vt-row" id="vt-row-${row._sheetRow}">
       <div class="vt-row-card" id="vt-card-${row._sheetRow}">
         <div class="vt-row-compact" onclick="vizToggleExpand(${row._sheetRow})">
-          <span class="vt-row-date" style="${dateStyle}">${(d[0]||'—').slice(0,5)}</span>
+          <span class="vt-row-date" style="${dateStyle}">${escapeHtml((d[0]||'—').slice(0,5))}</span>
           <div>
-            <div class="vt-row-name">${d[1]||'—'}</div>
-            <div class="vt-row-meta"><span class="vt-row-meta-text">${d[8]||''}${d[6]?' · '+d[6]:''}</span></div>
+            <div class="vt-row-name">${escapeHtml(d[1]||'—')}</div>
+            <div class="vt-row-meta"><span class="vt-row-meta-text">${escapeHtml((d[8]||'') + (d[6]?' · '+d[6]:''))}</span></div>
           </div>
           ${sverkaWrap}
           ${chip}

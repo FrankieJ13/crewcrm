@@ -7244,12 +7244,102 @@ function _autoruInitChat() {
     });
   };
 
+  // ─── СЛЕШ-КОМАНДЫ ───
+  const COMMANDS = [
+    { id: 'clear',     cmd: '/очистить',    label: 'Очистить чат',   desc: 'Удалить все сообщения' },
+    { id: 'help',      cmd: '/помощь',      label: 'Помощь',         desc: 'Показать аннотацию раздела' },
+    { id: 'refresh',   cmd: '/обновить',    label: 'Обновить каталог', desc: 'Пересобрать cars.json с upstream' },
+    { id: 'fresh',     cmd: '/актуальность',label: 'Актуальность БД', desc: 'Когда последний раз обновлялись данные' },
+    { id: 'count',     cmd: '/всего',       label: 'Всего авто',     desc: 'Сколько машин в каталоге' },
+    { id: 'examples',  cmd: '/примеры',     label: 'Примеры запросов', desc: 'Подсказки как формулировать' },
+  ];
+  const cmdMenu = document.getElementById('autoru-chat-cmdmenu');
+  const renderCmdMenu = (filter) => {
+    const f = (filter || '').replace(/^\//, '').toLowerCase();
+    const list = COMMANDS.filter(c => !f || c.cmd.includes(f) || c.label.toLowerCase().includes(f));
+    if (!list.length) return '';
+    return list.map(c => `<button type="button" class="autoru-chat-cmditem" data-cmd="${c.cmd}">
+        <strong>${escapeHtml(c.label)}</strong>
+        <span>${escapeHtml(c.cmd)} — ${escapeHtml(c.desc)}</span>
+      </button>`).join('');
+  };
+  const showCmdMenu = (filter) => {
+    if (!cmdMenu) return;
+    const html = renderCmdMenu(filter);
+    if (!html) { cmdMenu.hidden = true; cmdMenu.innerHTML = ''; return; }
+    cmdMenu.innerHTML = html;
+    cmdMenu.hidden = false;
+  };
+  const hideCmdMenu = () => { if (cmdMenu) { cmdMenu.hidden = true; cmdMenu.innerHTML = ''; } };
+  if (cmdMenu && !cmdMenu._bound) {
+    cmdMenu._bound = true;
+    cmdMenu.addEventListener('click', (e) => {
+      const b = e.target.closest('.autoru-chat-cmditem');
+      if (!b) return;
+      inp.value = b.dataset.cmd;
+      hideCmdMenu();
+      submit();
+    });
+  }
+  inp.addEventListener('input', () => {
+    const v = inp.value || '';
+    if (v.startsWith('/')) showCmdMenu(v); else hideCmdMenu();
+  });
+
+  const showHelp = () => addMsg('bot',
+    '<p><strong>Чат</strong> — свободный запрос: марки/модели, бюджет, год, пробег, кузов, города, сленг («ведро», «премиум»). Несколько вариантов через «или»/«и»/запятую.</p>' +
+    '<p><strong>Команды</strong>: /очистить, /помощь, /обновить, /актуальность, /всего, /примеры.</p>'
+  );
+  const showExamples = () => addMsg('bot',
+    '<p>Примеры:</p>' +
+    '<p>• «фольц тигуан 5 мест до 1.2 млн»</p>' +
+    '<p>• «солярис и рио»</p>' +
+    '<p>• «прадо 2018 до 3 млн или qx80 чёрный до 4 млн»</p>' +
+    '<p>• «бмв х5 в перми не старше 2020»</p>' +
+    '<p>• «ведро» (показать самые дешёвые)</p>'
+  );
+
   const submit = async () => {
     const q = (inp.value || '').trim();
     if (!q) return;
     inp.value = '';
+    hideCmdMenu();
     try { window.DIAG?.push('info','autoru-chat', ['submit', q]); } catch(_){}
-    // Скрываем приветственную аннотацию при первом сообщении
+
+    // Обработка слеш-команд (до парсера запросов)
+    if (q.startsWith('/')) {
+      const intro2 = document.getElementById('autoru-chat-intro');
+      if (intro2) intro2.remove();
+      addMsg('user', `<p>${escapeHtml(q)}</p>`);
+      const cmd = COMMANDS.find(c => q.toLowerCase().startsWith(c.cmd));
+      if (!cmd) {
+        addMsg('bot', '<p>Неизвестная команда. Доступные: ' + COMMANDS.map(c => '<code>'+c.cmd+'</code>').join(', ') + '</p>');
+        return;
+      }
+      if (cmd.id === 'clear')   { win.innerHTML = ''; return; }
+      if (cmd.id === 'help')    { showHelp(); return; }
+      if (cmd.id === 'examples'){ showExamples(); return; }
+      if (cmd.id === 'refresh') {
+        addMsg('bot', '<p>Обновляю каталог…</p>');
+        if (typeof window.autoruCatalogReload === 'function') window.autoruCatalogReload();
+        setTimeout(() => addMsg('bot', `<p>Готово. В каталоге <strong>${(window.autoruGetCars?.()||[]).length}</strong> авто.</p>`), 1200);
+        return;
+      }
+      if (cmd.id === 'count') {
+        addMsg('bot', `<p>В каталоге <strong>${(window.autoruGetCars?.()||[]).length}</strong> авто.</p>`);
+        return;
+      }
+      if (cmd.id === 'fresh') {
+        // Берём из cars.json поле ts если есть (там хранится временная метка)
+        const carsArr = window.autoruGetCars?.() || [];
+        const lastUpd = carsArr.length ? (carsArr[0].updated_at || carsArr[0].updatedAt || '—') : '—';
+        addMsg('bot', `<p>Свежесть данных (по первой записи): <strong>${escapeHtml(String(lastUpd))}</strong></p><p>Раннер upstream обновляет cars.json регулярно — нажми /обновить чтобы перезатянуть.</p>`);
+        return;
+      }
+      return;
+    }
+
+    // Скрываем приветственную аннотацию при первом обычном сообщении
     const intro = document.getElementById('autoru-chat-intro');
     if (intro) intro.remove();
     const userMsg = addMsg('user', `<p>${escapeHtml(q)}</p>`);

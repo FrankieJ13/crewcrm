@@ -719,7 +719,36 @@
   grid-template-columns: 1fr auto;
   gap: 6px;
   padding: 8px 0 0;
+  position: relative;
 }
+/* Меню слеш-команд */
+.autoru-chat-cmdmenu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0; right: 0;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 6px;
+  display: flex; flex-direction: column; gap: 2px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.25);
+  z-index: 10;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.autoru-chat-cmditem {
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 6px 10px;
+  border-radius: 7px;
+  color: var(--txt);
+  cursor: pointer;
+  display: flex; flex-direction: column; gap: 1px;
+}
+.autoru-chat-cmditem:hover { background: var(--bg3); }
+.autoru-chat-cmditem strong { font-size: 12px; font-weight: 700; }
+.autoru-chat-cmditem span { font-size: 10.5px; color: var(--txt3); }
 .autoru-chat-input {
   width: 100%;
   padding: 10px 12px;

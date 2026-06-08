@@ -200,20 +200,21 @@
 
 /* ============ TILES ============ */
 #autoru-fullscreen .tiles {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 9px 22px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px;
   flex: 1; align-content: start;
 }
 #autoru-fullscreen .tile {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 6px;
   min-width: 0;
 }
+/* Иконка без бокса/подложки — только SVG */
 #autoru-fullscreen .tile__icon {
   color: var(--accent); flex: none;
-  width: 30px; height: 30px;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--accent-soft); border-radius: 8px;
+  width: 16px; height: 16px;
+  background: transparent; border-radius: 0;
+  display: inline-flex; align-items: center; justify-content: center;
 }
-.tile__icon svg { width: 18px; height: 18px; }
+.tile__icon svg { width: 16px; height: 16px; }
 #autoru-fullscreen .tile__value {
   color: var(--text); font-size: 13px; font-weight: 500;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -280,19 +281,21 @@
 #autoru-fullscreen.embedded .topbar__brand,
 #autoru-fullscreen.embedded .topbar__meta-mobile { display: none !important; }
 
-/* Topbar в embedded: одна строка, поиск во всю ширину + иконка-кнопка фильтра справа */
+/* Topbar в embedded: одна строка БЕЗ контейнера-плашки, поиск во всю ширину
+   + иконка-кнопка фильтра справа. Sticky под sub-tabs. */
 #autoru-fullscreen.embedded .topbar {
   display: grid !important;
   grid-template-columns: 1fr auto !important;
-  gap: 8px !important;
-  padding: 8px 0 10px !important;
+  gap: 6px !important;
+  padding: 0 !important;
   background: transparent !important;
   border-bottom: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   position: sticky !important;
-  top: 0 !important;
+  top: 44px !important;            /* под высотой sub-tabs */
   z-index: 20;
+  margin-bottom: 8px;
 }
 #autoru-fullscreen.embedded .topbar__search {
   width: 100% !important;
@@ -374,39 +377,86 @@
   }
 }
 
+/* Карточка в embedded — компактные отступы во всём */
+#autoru-fullscreen.embedded .card {
+  padding: 8px !important;
+  column-gap: 8px !important;
+  row-gap: 6px !important;
+  border-radius: 12px !important;
+}
+#autoru-fullscreen.embedded .card__head { padding-bottom: 6px !important; }
+#autoru-fullscreen.embedded .card__title { font-size: 15px !important; line-height: 1.15 !important; }
+#autoru-fullscreen.embedded .card__subtitle { font-size: 13px !important; margin-top: 1px !important; }
+#autoru-fullscreen.embedded .card__price { font-size: 14px !important; }
+#autoru-fullscreen.embedded .card__addr { font-size: 11px !important; }
+#autoru-fullscreen.embedded .tiles { gap: 3px 10px !important; }
+#autoru-fullscreen.embedded .tile { gap: 5px !important; }
+#autoru-fullscreen.embedded .tile__icon { width: 14px !important; height: 14px !important; }
+#autoru-fullscreen.embedded .tile__icon svg { width: 14px !important; height: 14px !important; }
+#autoru-fullscreen.embedded .tile__value { font-size: 11px !important; }
+#autoru-fullscreen.embedded .card__strip {
+  margin-top: 6px !important;
+  padding: 6px 8px !important;
+  font-size: 11px !important;
+  gap: 6px !important;
+}
+#autoru-fullscreen.embedded .card__strip svg { width: 14px !important; height: 14px !important; }
+
 /* Карточка адаптируется — на узких 1 колонка с фото сверху */
 @media (max-width: 480px) {
   #autoru-fullscreen.embedded .card {
     grid-template-columns: 1fr !important;
-    padding: 10px !important;
   }
-  #autoru-fullscreen.embedded .card__title { font-size: 16px !important; }
-  #autoru-fullscreen.embedded .card__subtitle { font-size: 14px !important; }
 }
 
-/* Sub-tabs ЧАТ | КАТАЛОГ — обычный flex наверху таба, scroll-away
-   (чтобы не конфликтовать с sticky topbar каталога ниже) */
+/* Sub-tabs ЧАТ | КАТАЛОГ — единый pill с двумя секциями и разделителем,
+   sticky сверху при скролле */
 .autoru-subtabs {
-  display: flex; align-items: center; gap: 6px;
-  padding: 6px 0 4px;
+  display: inline-flex;
+  align-items: stretch;
+  padding: 3px;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  margin: 6px 0 8px;
+  width: 100%;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.autoru-subtabs::before {
+  /* Подложка под активную вкладку (анимируемая через JS позицию или CSS-class) */
+  content: '';
+  display: none;
 }
 .autoru-subtab {
   flex: 1;
-  background: var(--bg3);
-  border: 1px solid var(--line);
+  background: transparent;
+  border: 0;
   color: var(--txt2);
   font-family: 'Unbounded', sans-serif;
   font-size: 11px; font-weight: 800; letter-spacing: .08em;
   padding: 7px 14px;
   border-radius: 999px;
   cursor: pointer;
-  transition: background .15s, color .15s, transform .1s;
+  transition: background .18s, color .18s, transform .1s;
+  position: relative;
+}
+.autoru-subtab + .autoru-subtab::before {
+  /* Вертикальный разделитель между секциями (виден только когда оба не активны) */
+  content: '';
+  position: absolute;
+  left: 0; top: 25%; bottom: 25%;
+  width: 1px;
+  background: var(--line);
 }
 .autoru-subtab.active {
   background: var(--acc);
   color: #0f0f10;
-  border-color: var(--acc);
 }
+.autoru-subtab.active + .autoru-subtab::before,
+.autoru-subtab + .autoru-subtab.active::before { background: transparent; }
 .autoru-subtab:active { transform: scale(.97); }
 
 /* ЧАТ-секция */

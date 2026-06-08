@@ -294,8 +294,8 @@
    кнопка фильтра перенесена в subtabs-row через JS. Скрываем. */
 #autoru-fullscreen.embedded .topbar { display: none !important; }
 
-/* Контент сдвигаем под фикс-панель subtabs-row (52 + 46 = 98) */
-#scr-instruktsii:has(.autoru-subtabs-row) #c-instruktsii { padding-top: 50px; }
+/* Контент сдвигаем под фикс-панель subtabs-row без лишней пустой полосы */
+#scr-instruktsii:has(.autoru-subtabs-row) #c-instruktsii { padding-top: 24px; }
 
 /* Кнопка фильтра в subtabs-row: круглая 36×36, как refresh.
    Видима только в catalog-режиме. */
@@ -492,7 +492,7 @@
 
 /* Грид — на узких контейнерах 1 колонка, на широких автозаполнение */
 #autoru-fullscreen.embedded .grid {
-  padding: 10px 0 16px !important;
+  padding: 6px 0 16px !important;
   grid-template-columns: 1fr !important;
   gap: 10px !important;
 }
@@ -589,9 +589,11 @@
   margin: 0 auto;
   width: 100%;
   max-width: 720px;
-  padding: 6px 10px 4px;
-  z-index: 100;
+  padding: 6px 10px 5px;
+  z-index: 9998;
   background: var(--bg);
+  box-shadow: 0 8px 14px var(--bg);
+  isolation: isolate;
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
   will-change: transform;

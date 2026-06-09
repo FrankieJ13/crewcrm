@@ -191,6 +191,7 @@ window.autoruCatalogInit = function () {
       els.filtersCount.textContent = active;
       els.filtersCount.hidden = false;
     } else {
+      els.filtersCount.textContent = '';
       els.filtersCount.hidden = true;
     }
   }

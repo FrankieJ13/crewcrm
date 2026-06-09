@@ -330,6 +330,9 @@ body.autoru-tab-active #scr-instruktsii #c-instruktsii { padding-top: 24px; }
   padding: 0 4px !important; border-radius: 999px !important;
   line-height: 1; z-index: 110 !important;
 }
+.autoru-subtabs-row #openFilters .btn-filters__badge[hidden] {
+  display: none !important;
+}
 /* Показываем фильтр только в режиме каталога */
 .autoru-subtabs-row:has(+ #autoru-tab-host #autoru-fullscreen.mode-catalog) #openFilters,
 .autoru-subtabs-row:has(~ #autoru-tab-host #autoru-fullscreen.mode-catalog) #openFilters,

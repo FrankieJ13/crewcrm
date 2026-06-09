@@ -396,12 +396,16 @@ window.autoruCatalogInit = function () {
   if (els.brand && els.model) {
     els.brand.addEventListener('change', () => { repopulateModels(); apply(); });
   }
-  els.reset.addEventListener('click', () => {
+  els.reset.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     els.q.value = '';
     SELECT_FILTERS.forEach(k => { els[k].value = ''; });
     NUMBER_FILTERS.forEach(k => { els[k].value = ''; });
     els.sort.value = 'price_asc';
+    updateFiltersBadge();
     apply();
+    updateFiltersBadge();
   });
   els.loadMore.addEventListener('click', render);
 

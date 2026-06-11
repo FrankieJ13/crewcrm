@@ -47,6 +47,41 @@
     wordCloud: 'Анаграмма / облако значений'
   };
 
+  const FORMAT_HELP = {
+    rollingTrend: ['Сглаженная динамика', 'Для нагрузки по датам, источникам, ответственным и пиков.'],
+    trend: ['Обычная динамика', 'Для быстрых изменений по дням, неделям или часам.'],
+    histogram: ['Распределение', 'Для сроков, часов, сумм и частотных диапазонов.'],
+    ranking: ['Топ значений', 'Для городов, ответственных, источников, этапов и форм.'],
+    categoryCompare: ['Сравнение категорий', 'Для понятного сравнения сильных и слабых групп.'],
+    shareStructure: ['Структура объема', 'Для долей источников, этапов, тегов и причин.'],
+    heatmap: ['Дни и часы', 'Для поиска перегруженных интервалов.'],
+    kpiSummary: ['Главная цифра', 'Для управленческого вывода без сложного графика.'],
+    tableDetail: ['Детализация', 'Для сверки и просмотра топ-строк.'],
+    comboWidget: ['Комбинация', 'Для связки тренда и рейтинга в одном блоке.'],
+    wordCloud: ['Частотные слова', 'Для тегов, причин, форм и текстовых полей.']
+  };
+
+  const ROLE_LABELS = {
+    date: 'Дата',
+    metric: 'Метрика',
+    groupBy: 'Группировка',
+    filter: 'Фильтр',
+    splitBy: 'Разрез',
+    label: 'Подпись',
+    sortBy: 'Сортировка',
+    tooltip: 'Подсказка',
+    ignore: 'Не участвует'
+  };
+
+  const PERIOD_LABELS = {
+    all: 'Все данные',
+    today: 'Сегодня',
+    currentWeek: 'Текущая неделя',
+    currentMonth: 'Текущий месяц',
+    prevWeek: 'Прошлая неделя',
+    prevMonth: 'Прошлый месяц'
+  };
+
   const state = {
     rows: null,
     fields: null,
@@ -522,7 +557,11 @@
   function makeTrend(items, prevItems, mode) {
     const buckets = new Map();
     items.forEach(x => {
-      const key = mode === 'weekday' ? weekday(x.created) : String(x.created.getDate()).padStart(2, '0');
+      const key = mode === 'hour'
+        ? `${String(x.created.getHours()).padStart(2, '0')}:00`
+        : mode === 'weekday'
+          ? weekday(x.created)
+          : String(x.created.getDate()).padStart(2, '0');
       buckets.set(key, (buckets.get(key) || 0) + 1);
     });
     const points = Array.from(buckets, ([label, value]) => ({ label, value }));
@@ -633,8 +672,8 @@
         <div class="traffic-toolbar">
           <button class="traffic-btn primary" id="traffic-add-widget" ${widgets.length >= 15 ? 'disabled' : ''}>+ Добавить виджет</button>
           <button class="traffic-btn danger" id="traffic-clear-csv">Очистить CSV</button>
-          <button class="traffic-btn" id="traffic-import-widgets">Импорт</button>
-          <button class="traffic-btn" id="traffic-export-widgets">Экспорт</button>
+          <button class="traffic-btn" id="traffic-import-widgets">Импорт настроек</button>
+          <button class="traffic-btn" id="traffic-export-widgets">Экспорт настроек</button>
           <input class="traffic-file-input" id="traffic-import-file" type="file" accept=".json,.crm-traffic-widgets.json,application/json">
         </div>
         <p class="traffic-muted">${widgets.length} из 15 виджетов</p>
@@ -649,16 +688,18 @@
   }
 
   function renderCustomWidget(widget) {
-    const fields = (widget.selectedFields || []).map(f => f.normalizedName).join(', ');
-    const primary = widget.selectedFields?.[0]?.normalizedName;
-    const rows = state.rows.map(row => ({ row, created: parseDate(row[state.mapping.createdAt])?.date })).filter(x => x.row);
+    const fields = (widget.selectedFields || []).map(f => `${f.normalizedName}${f.role ? ` (${ROLE_LABELS[f.role] || f.role})` : ''}`).join(', ');
+    const primary = getPrimaryGroupField(widget)?.normalizedName;
+    const rows = rowsForWidget(widget);
     const data = primary ? makeRanking(rows, primary) : null;
+    const period = PERIOD_LABELS[widget.period?.type || 'all'] || 'Все данные';
     return `
       <article class="traffic-widget traffic-custom-widget traffic-format-${esc(widget.format || 'ranking')}">
         <div class="traffic-widget-head">
           <div>
             <h3>${esc(widget.title || 'Без названия')}</h3>
-            <p class="traffic-muted">${esc(FORMAT_LABELS[widget.format] || widget.format || 'Виджет')} · ${esc(fields || 'поля не выбраны')}</p>
+            <p class="traffic-muted">${esc(FORMAT_LABELS[widget.format] || widget.format || 'Виджет')} · ${esc(period)}</p>
+            <p class="traffic-muted">${esc(fields || 'поля не выбраны')}</p>
           </div>
           <button class="traffic-delete-icon" data-delete-traffic-widget="${esc(widget.id)}" aria-label="Удалить">⌫</button>
         </div>
@@ -683,7 +724,7 @@
   }
 
   function renderCustomTrend(widget, rows, format) {
-    const trend = makeTrend(rows.filter(x => x.created), [], 'day');
+    const trend = makeTrend(rows.filter(x => x.created), [], widget.period?.type === 'today' ? 'hour' : 'day');
     const pts = format === 'rollingTrend' ? rollingPoints(trend.points) : trend.points;
     return `
       <div class="traffic-custom-trend">
@@ -787,7 +828,7 @@
   }
 
   function renderCustomCombo(widget, data, rows) {
-    const trend = makeTrend(rows.filter(x => x.created), [], 'day');
+    const trend = makeTrend(rows.filter(x => x.created), [], widget.period?.type === 'today' ? 'hour' : 'day');
     return `
       <div class="traffic-combo">
         ${renderLineSvg(trend.points, false)}
@@ -810,6 +851,50 @@
         <strong>${r.value}</strong>
         <span class="traffic-rank-track"><span class="traffic-rank-fill" style="width:${Math.max(4, r.value / max * 100)}%"></span></span>
       </div>`).join('') || '<p class="traffic-muted">Нет данных</p>';
+  }
+
+  function getPrimaryGroupField(widget) {
+    const fields = widget.selectedFields || [];
+    return fields.find(f => f.role === 'groupBy')
+      || fields.find(f => f.role === 'splitBy')
+      || fields.find(f => f.role !== 'date' && f.role !== 'ignore')
+      || fields[0];
+  }
+
+  function getDateField(widget) {
+    const fields = widget.selectedFields || [];
+    return fields.find(f => f.role === 'date')?.normalizedName || state.mapping.createdAt;
+  }
+
+  function rowsForWidget(widget) {
+    const dateKey = getDateField(widget);
+    const rows = state.rows.map(row => ({ row, created: parseDate(row[dateKey])?.date })).filter(x => x.row);
+    return filterRowsByPeriod(rows, widget.period?.type || 'all');
+  }
+
+  function filterRowsByPeriod(rows, periodType) {
+    if (!periodType || periodType === 'all') return rows;
+    const now = new Date();
+    let from = null;
+    let to = new Date(now);
+    if (periodType === 'today') {
+      from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    } else if (periodType === 'currentWeek') {
+      from = startOfWeek(now);
+    } else if (periodType === 'currentMonth') {
+      from = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else if (periodType === 'prevWeek') {
+      to = startOfWeek(now);
+      to.setMilliseconds(-1);
+      from = new Date(to);
+      from.setDate(from.getDate() - 6);
+      from.setHours(0,0,0,0);
+    } else if (periodType === 'prevMonth') {
+      from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      to = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+    }
+    if (!from) return rows;
+    return rows.filter(x => x.created && x.created >= from && x.created <= to);
   }
 
   function renderLineSvg(points, smooth) {
@@ -842,13 +927,28 @@
   function showWidgetBuilder() {
     const modal = document.getElementById('traffic-modal');
     if (!modal) return;
-    const formatOptions = Object.entries(FORMAT_LABELS).map(([v, label]) => `<option value="${v}">${esc(label)}</option>`).join('');
+    const formatCards = Object.entries(FORMAT_LABELS).map(([value, label], i) => {
+      const help = FORMAT_HELP[value] || ['', ''];
+      return `
+        <label class="traffic-format-card ${i === 0 ? 'active' : ''}" data-format-card="${esc(value)}">
+          <input type="radio" name="traffic-widget-format" value="${esc(value)}" ${i === 0 ? 'checked' : ''}>
+          <span class="traffic-format-preview traffic-preview-${esc(value)}"></span>
+          <strong>${esc(label)}</strong>
+          <small>${esc(help[0])}</small>
+          <em>${esc(help[1])}</em>
+        </label>`;
+    }).join('');
+    const roleOptions = Object.entries(ROLE_LABELS).map(([value, label]) => `<option value="${value}">${esc(label)}</option>`).join('');
+    const periodOptions = Object.entries(PERIOD_LABELS).map(([value, label], i) => `<label class="traffic-segment"><input type="radio" name="traffic-widget-period" value="${value}" ${i === 0 ? 'checked' : ''}><span>${esc(label)}</span></label>`).join('');
     modal.innerHTML = `
       <div class="traffic-modal-card">
         <h2>Новый виджет</h2>
         <p class="traffic-muted">Формат определяет внешний вид. Расчеты будут выполнены по выбранным полям CSV.</p>
         <label class="traffic-field">Название виджета<input id="traffic-widget-title" placeholder="Заявки по источникам"></label>
-        <label class="traffic-field">Формат виджета<select id="traffic-widget-format">${formatOptions}</select></label>
+        <div class="traffic-builder-section">
+          <strong>Выберите формат виджета</strong>
+          <div class="traffic-format-grid">${formatCards}</div>
+        </div>
         <div>
           <strong>Выбрать поля из CSV</strong>
           <p class="traffic-muted" id="traffic-selected-count">Выбрано 0 из 10</p>
@@ -860,6 +960,22 @@
               </label>`).join('')}
           </div>
         </div>
+        <div class="traffic-builder-section">
+          <strong>Роли выбранных полей</strong>
+          <div class="traffic-role-list" id="traffic-role-list"><p class="traffic-muted">Выберите поля выше, чтобы назначить роли.</p></div>
+        </div>
+        <div class="traffic-builder-section">
+          <strong>Период</strong>
+          <div class="traffic-segment-grid">${periodOptions}</div>
+        </div>
+        <div class="traffic-builder-section">
+          <strong>Ориентация данных</strong>
+          <div class="traffic-segment-grid">
+            <label class="traffic-segment"><input type="radio" name="traffic-widget-orientation" value="auto" checked><span>Авто</span></label>
+            <label class="traffic-segment"><input type="radio" name="traffic-widget-orientation" value="horizontal"><span>Горизонтально</span></label>
+            <label class="traffic-segment"><input type="radio" name="traffic-widget-orientation" value="vertical"><span>Вертикально</span></label>
+          </div>
+        </div>
         <div class="traffic-modal-actions">
           <button class="traffic-btn" data-traffic-close>Отмена</button>
           <button class="traffic-btn primary" id="traffic-save-widget">Сохранить виджет</button>
@@ -868,6 +984,50 @@
     modal.classList.add('open');
     modal.querySelector('[data-traffic-close]').onclick = closeModal;
     const checks = modal.querySelectorAll('.traffic-field-check');
+    const roleList = modal.querySelector('#traffic-role-list');
+    const syncRoleList = () => {
+      const selected = Array.from(checks).filter(x => x.checked).map(x => x.value);
+      if (!selected.length) {
+        roleList.innerHTML = '<p class="traffic-muted">Выберите поля выше, чтобы назначить роли.</p>';
+        return;
+      }
+      roleList.innerHTML = selected.map((name, idx) => {
+        const f = state.fields.find(field => field.normalizedName === name);
+        const suggestedRole = (f.type === 'date' || f.type === 'datetime') ? 'date' : idx === 0 ? 'groupBy' : idx === 1 ? 'splitBy' : 'filter';
+        return `
+          <div class="traffic-role-row">
+            <div>
+              <strong>${esc(name)}</strong>
+              <small>${esc(f.type)} · ${esc(f.example || '-')}</small>
+            </div>
+            <select class="traffic-role-select" data-role-index="${idx}">${roleOptions}</select>
+            <select class="traffic-agg-select" data-agg-index="${idx}">
+              <option value="count">count</option>
+              <option value="uniqueCount">uniqueCount</option>
+              <option value="sum">sum</option>
+              <option value="average">average</option>
+              <option value="min">min</option>
+              <option value="max">max</option>
+              <option value="median">median</option>
+              <option value="share">share</option>
+            </select>
+          </div>`;
+      }).join('');
+      selected.forEach((name, idx) => {
+        const f = state.fields.find(field => field.normalizedName === name);
+        const role = (f.type === 'date' || f.type === 'datetime') ? 'date' : idx === 0 ? 'groupBy' : idx === 1 ? 'splitBy' : 'filter';
+        const roleSel = roleList.querySelector(`[data-role-index="${idx}"]`);
+        const aggSel = roleList.querySelector(`[data-agg-index="${idx}"]`);
+        if (roleSel) roleSel.value = role;
+        if (aggSel) aggSel.value = f.type === 'number' || f.type === 'money' ? 'sum' : 'count';
+      });
+    };
+    modal.querySelectorAll('.traffic-format-card').forEach(card => {
+      card.onclick = () => {
+        modal.querySelectorAll('.traffic-format-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+      };
+    });
     checks.forEach(ch => {
       ch.onchange = () => {
         const selected = Array.from(checks).filter(x => x.checked);
@@ -876,6 +1036,7 @@
           notify('В один виджет можно добавить не больше 10 полей.', 'e');
         }
         modal.querySelector('#traffic-selected-count').textContent = `Выбрано ${Array.from(checks).filter(x => x.checked).length} из 10`;
+        syncRoleList();
       };
     });
     modal.querySelector('#traffic-save-widget').onclick = () => {
@@ -886,23 +1047,29 @@
       }
       const now = new Date().toISOString();
       const selectedFields = selected.map(name => {
+        const idx = selected.indexOf(name);
         const f = state.fields.find(field => field.normalizedName === name);
+        const role = modal.querySelector(`[data-role-index="${idx}"]`)?.value || ((f.type === 'date' || f.type === 'datetime') ? 'date' : 'groupBy');
+        const aggregation = modal.querySelector(`[data-agg-index="${idx}"]`)?.value || (f.type === 'number' || f.type === 'money' ? 'sum' : 'count');
         return {
           originalName: f.originalName,
           normalizedName: f.normalizedName,
-          role: f.type === 'date' || f.type === 'datetime' ? 'date' : 'groupBy',
+          role,
           type: f.type,
-          aggregation: f.type === 'number' || f.type === 'money' ? 'sum' : 'count'
+          aggregation
         };
       });
       const title = modal.querySelector('#traffic-widget-title').value.trim() || selected.join(' + ');
+      const format = modal.querySelector('input[name="traffic-widget-format"]:checked')?.value || 'ranking';
+      const periodType = modal.querySelector('input[name="traffic-widget-period"]:checked')?.value || 'all';
+      const orientation = modal.querySelector('input[name="traffic-widget-orientation"]:checked')?.value || 'auto';
       state.widgets.push({
         id: `widget_${Date.now()}`,
         title,
-        format: modal.querySelector('#traffic-widget-format').value,
-        orientation: 'auto',
+        format,
+        orientation,
         selectedFields,
-        period: { type: 'all', dateFrom: null, dateTo: null },
+        period: { type: periodType, dateFrom: null, dateTo: null },
         filters: [],
         textBlocks: ['total','average','peak','summary'],
         chart: { type: 'auto', showPeak: true, showLegend: true },

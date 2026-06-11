@@ -732,6 +732,202 @@
   font: inherit;
 }
 
+.traffic-builder-section {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.traffic-format-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.traffic-format-card {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  min-height: 150px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--line, #d8d8d8) 80%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--bg3, #eee) 62%, transparent);
+  color: var(--txt, #111);
+  cursor: pointer;
+}
+
+.traffic-format-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.traffic-format-card.active,
+.traffic-format-card:has(input:checked) {
+  border-color: color-mix(in srgb, var(--acc, #1a86eb) 72%, transparent);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--acc, #1a86eb) 16%, transparent), color-mix(in srgb, var(--bg2, #fff) 92%, transparent));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--acc, #1a86eb) 28%, transparent);
+}
+
+.traffic-format-card strong {
+  font-family: 'Unbounded', system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.traffic-format-card small,
+.traffic-format-card em {
+  color: var(--txt2, #666);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.traffic-format-card em {
+  font-style: normal;
+}
+
+.traffic-format-preview {
+  display: block;
+  height: 50px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg2, #fff) 85%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line, #d8d8d8) 62%, transparent);
+  overflow: hidden;
+}
+
+.traffic-preview-rollingTrend,
+.traffic-preview-trend,
+.traffic-preview-comboWidget {
+  background:
+    linear-gradient(130deg, transparent 44%, color-mix(in srgb, var(--acc, #1a86eb) 16%, transparent) 45% 100%),
+    radial-gradient(circle at 18% 68%, var(--acc, #1a86eb) 0 3px, transparent 4px),
+    radial-gradient(circle at 42% 42%, var(--acc, #1a86eb) 0 3px, transparent 4px),
+    radial-gradient(circle at 68% 56%, var(--acc, #1a86eb) 0 3px, transparent 4px),
+    radial-gradient(circle at 88% 24%, var(--acc, #1a86eb) 0 3px, transparent 4px),
+    linear-gradient(150deg, transparent 0 18%, var(--acc, #1a86eb) 19% 21%, transparent 22% 40%, var(--acc, #1a86eb) 41% 43%, transparent 44% 64%, var(--acc, #1a86eb) 65% 67%, transparent 68%);
+}
+
+.traffic-preview-histogram,
+.traffic-preview-categoryCompare {
+  background:
+    linear-gradient(to top, var(--acc, #1a86eb) 0 46%, transparent 47%) 12% 100% / 10% 70% no-repeat,
+    linear-gradient(to top, var(--acc, #1a86eb) 0 70%, transparent 71%) 32% 100% / 10% 70% no-repeat,
+    linear-gradient(to top, var(--acc, #1a86eb) 0 88%, transparent 89%) 52% 100% / 10% 70% no-repeat,
+    linear-gradient(to top, var(--acc, #1a86eb) 0 56%, transparent 57%) 72% 100% / 10% 70% no-repeat,
+    color-mix(in srgb, var(--bg2, #fff) 85%, transparent);
+}
+
+.traffic-preview-ranking,
+.traffic-preview-tableDetail {
+  background:
+    linear-gradient(90deg, var(--acc, #1a86eb) 0 82%, transparent 83%) 14px 12px / 78% 6px no-repeat,
+    linear-gradient(90deg, var(--acc, #1a86eb) 0 62%, transparent 63%) 14px 24px / 78% 6px no-repeat,
+    linear-gradient(90deg, var(--acc, #1a86eb) 0 44%, transparent 45%) 14px 36px / 78% 6px no-repeat,
+    color-mix(in srgb, var(--bg2, #fff) 85%, transparent);
+}
+
+.traffic-preview-shareStructure,
+.traffic-preview-wordCloud {
+  background:
+    radial-gradient(circle at 32% 50%, transparent 0 13px, var(--acc, #1a86eb) 14px 22px, transparent 23px),
+    radial-gradient(circle at 68% 34%, #8b5cf6 0 8px, transparent 9px),
+    radial-gradient(circle at 70% 64%, var(--grn, #2ed573) 0 6px, transparent 7px),
+    color-mix(in srgb, var(--bg2, #fff) 85%, transparent);
+}
+
+.traffic-preview-heatmap {
+  background:
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--acc, #1a86eb) 20%, transparent) 0 12px, transparent 12px 18px),
+    repeating-linear-gradient(0deg, color-mix(in srgb, var(--acc, #1a86eb) 28%, transparent) 0 10px, transparent 10px 16px),
+    color-mix(in srgb, var(--bg2, #fff) 85%, transparent);
+}
+
+.traffic-preview-kpiSummary {
+  background:
+    radial-gradient(circle at 22% 54%, var(--acc, #1a86eb) 0 16px, transparent 17px),
+    linear-gradient(90deg, color-mix(in srgb, var(--acc, #1a86eb) 36%, transparent) 0 54%, transparent 55%) 52% 16px / 40% 8px no-repeat,
+    linear-gradient(90deg, color-mix(in srgb, var(--grn, #2ed573) 42%, transparent) 0 34%, transparent 35%) 52% 30px / 40% 8px no-repeat,
+    color-mix(in srgb, var(--bg2, #fff) 85%, transparent);
+}
+
+.traffic-role-list {
+  display: grid;
+  gap: 8px;
+}
+
+.traffic-role-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(118px, .8fr) minmax(110px, .7fr);
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg3, #eee) 64%, transparent);
+}
+
+.traffic-role-row strong,
+.traffic-role-row small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.traffic-role-row small {
+  margin-top: 3px;
+  color: var(--txt2, #666);
+  font-size: 11px;
+}
+
+.traffic-role-row select {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid color-mix(in srgb, var(--line, #d8d8d8) 80%, transparent);
+  border-radius: 12px;
+  padding: 0 10px;
+  background: color-mix(in srgb, var(--bg2, #fff) 92%, transparent);
+  color: var(--txt, #111);
+}
+
+.traffic-segment-grid {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.traffic-segment {
+  flex: 1 1 auto;
+  min-width: 116px;
+}
+
+.traffic-segment input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.traffic-segment span {
+  display: grid;
+  min-height: 40px;
+  place-items: center;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--line, #d8d8d8) 80%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg3, #eee) 62%, transparent);
+  color: var(--txt, #111);
+  font-family: 'Unbounded', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.traffic-segment input:checked + span {
+  border-color: transparent;
+  background: var(--acc, #1a86eb);
+  color: var(--btnText, #fff);
+}
+
 .traffic-requirements {
   justify-self: center;
   min-height: 44px;
@@ -858,6 +1054,18 @@
   .traffic-modal-actions .traffic-btn {
     flex: 1 1 calc(50% - 6px);
     padding-inline: 10px;
+  }
+
+  .traffic-format-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .traffic-role-row {
+    grid-template-columns: 1fr;
+  }
+
+  .traffic-segment {
+    min-width: calc(50% - 6px);
   }
 }
 

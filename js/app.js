@@ -434,7 +434,7 @@ function syncTheme() {
     'dock-btn-dohod':       COSMIC_ICON_BASE + 'cosmic_money.svg',
     'dock-btn-grafik':      COSMIC_ICON_BASE + 'cosmic_grafik.svg',
     'dock-btn-instruktsii': COSMIC_ICON_BASE + 'cosmic_faq.svg',
-    'dock-btn-analytics':   COSMIC_ICON_BASE + 'cosmic-analysis.svg',
+    'dock-btn-analytics':   COSMIC_ICON_BASE + 'cosmic-analytics.svg',
     'dock-btn-vizity':      COSMIC_ICON_BASE + 'cosmic_vizity.svg',
     'btn-presence':         COSMIC_ICON_BASE + 'cosmic_online.svg',
     'btn-notify':           COSMIC_ICON_BASE + 'cosmic-send-noti.svg',

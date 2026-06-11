@@ -150,27 +150,27 @@
   function renderImport() {
     return `
       <section class="traffic-page">
-        <div class="traffic-hero">
-          <p class="traffic-kicker">Аналитика</p>
+        <div class="traffic-top">
           <h1 class="traffic-title">Трафик</h1>
           <p class="traffic-subtitle">Аналитика входящего трафика и лидогенерации на основе CSV-выгрузки из amoCRM.</p>
         </div>
         <div class="traffic-import-card">
-          <div>
-            <h2>Импорт данных</h2>
-            <p class="traffic-muted">Загрузите CSV из вашей CRM, чтобы начать анализ.</p>
+          <div class="traffic-import-head">
+            <h2>Импортируйте raw CSV из amoCRM</h2>
+            <p class="traffic-muted">Файл должен быть выгружен в формате CSV с разделителем запятая и кодировкой UTF-8.</p>
           </div>
           <label class="traffic-dropzone" id="traffic-dropzone">
             <input class="traffic-file-input" id="traffic-file" type="file" accept=".csv,text/csv">
             <span class="traffic-upload-icon">
               <svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
             </span>
-            <strong>Перетащите CSV файл сюда</strong>
-            <span class="traffic-muted">или выберите файл на устройстве</span>
+            <strong>Загрузите raw CSV из amoCRM</strong>
+            <span class="traffic-muted">Перетащите файл сюда или выберите его на устройстве.</span>
+            <span class="traffic-muted">Первая строка должна содержать заголовки столбцов.</span>
             <span class="traffic-btn primary">Выбрать CSV</span>
           </label>
-          <p class="traffic-muted">Файл обрабатывается локально. Данные не отправляются на сервер.</p>
-          <p class="traffic-muted">После импорта появятся вкладки «Базовый» и «Расширенный».</p>
+          <button class="traffic-requirements" type="button">Посмотреть требования к файлу</button>
+          <p class="traffic-note">После импорта появятся вкладки «Базовый» и «Расширенный». Файл обрабатывается локально.</p>
         </div>
       </section>`;
   }
@@ -178,8 +178,12 @@
   function bindImport() {
     const file = document.getElementById('traffic-file');
     const drop = document.getElementById('traffic-dropzone');
+    const req = document.querySelector('.traffic-requirements');
     if (!file || !drop) return;
     file.onchange = () => file.files?.[0] && importTrafficCsv(file.files[0]);
+    if (req) {
+      req.onclick = () => alert('CSV: первая строка — заголовки, разделитель — запятая, кодировка — UTF-8. Поддерживаются кавычки, переносы строк внутри кавычек и дубли заголовков.');
+    }
     ['dragenter','dragover'].forEach(evt => drop.addEventListener(evt, e => {
       e.preventDefault();
       drop.classList.add('drag');
@@ -254,19 +258,42 @@
 
   function renderProcessing() {
     const p = state.processing;
+    const pct = Math.min(100, Math.round(((p.step + 1) / PROCESS_STEPS.length) * 100));
     return `
       <section class="traffic-page">
-        <div class="traffic-processing traffic-card">
+        <div class="traffic-top">
           <h1 class="traffic-title">Трафик</h1>
-          <p><strong>${esc(p.fileName)}</strong></p>
-          <p class="traffic-muted">${p.rows ? `${p.rows} строк · ${p.cols} колонок` : 'Обрабатываем файл...'}</p>
-          <div class="traffic-process-list">
-            ${PROCESS_STEPS.map((s, i) => `
-              <div class="traffic-process-step">
-                <span class="mark">${i < p.step ? '✓' : i === p.step ? '◌' : '○'}</span>
-                <span>${esc(s)}</span>
-              </div>`).join('')}
+          <p class="traffic-subtitle">Аналитика входящего трафика и лидогенерации</p>
+        </div>
+        <div class="traffic-tabs">
+          <button class="traffic-tab active" type="button">Базовый</button>
+          <button class="traffic-tab" type="button">Расширенный</button>
+        </div>
+        <h2 class="traffic-section-title">Базовый · Трафик</h2>
+        <div class="traffic-processing traffic-card">
+          <div class="traffic-process-layout">
+            <div class="traffic-progress-ring" style="--traffic-progress:${pct * 3.6}deg">
+              <strong>${pct}%</strong>
+              <span>обработка...</span>
+            </div>
+            <div class="traffic-process-copy">
+              <p><strong>${esc(p.fileName)}</strong></p>
+              <p class="traffic-muted">${p.rows ? `${p.rows} строк · ${p.cols} колонок` : 'Обрабатываем файл...'}</p>
+              <div class="traffic-process-list">
+                ${PROCESS_STEPS.map((s, i) => `
+                  <div class="traffic-process-step">
+                    <span class="mark">${i < p.step ? '✓' : i === p.step ? '◌' : '○'}</span>
+                    <span>${esc(s)}</span>
+                  </div>`).join('')}
+              </div>
+            </div>
           </div>
+          <div class="traffic-progress-line"><span style="width:${pct}%"></span></div>
+        </div>
+        <div class="traffic-skeleton wide"></div>
+        <div class="traffic-skeleton-grid">
+          <div class="traffic-skeleton"></div>
+          <div class="traffic-skeleton"></div>
         </div>
       </section>`;
   }
@@ -418,21 +445,20 @@
     const period = [state.meta?.periodFrom, state.meta?.periodTo].filter(Boolean).map(v => fmtDate(new Date(v))).join(' — ');
     return `
       <section class="traffic-page">
-        <div class="traffic-hero">
-          <div class="traffic-dashboard-head">
-            <div>
-              <p class="traffic-kicker">Аналитика</p>
-              <h1 class="traffic-title">Трафик</h1>
-              <p class="traffic-subtitle">${esc(state.meta.fileName)} · ${state.meta.rows} строк · ${state.meta.cols} колонок${period ? ` · ${esc(period)}` : ''}</p>
-            </div>
-            <span class="traffic-meta-pill">CSV успешно импортирован</span>
+        <div class="traffic-top">
+          <div class="traffic-top-copy">
+            <h1 class="traffic-title">Трафик</h1>
+            <p class="traffic-subtitle">Аналитика входящего трафика и лидогенерации</p>
           </div>
-          ${state.meta.storageWarning ? `<p class="traffic-muted">${esc(state.meta.storageWarning)}</p>` : ''}
+          <span class="traffic-meta-pill">✓ CSV успешно импортирован</span>
         </div>
         <div class="traffic-tabs">
           <button class="traffic-tab ${tab === 'base' ? 'active' : ''}" data-traffic-tab="base">Базовый</button>
           <button class="traffic-tab ${tab === 'advanced' ? 'active' : ''}" data-traffic-tab="advanced">Расширенный</button>
         </div>
+        <h2 class="traffic-section-title">${tab === 'advanced' ? 'Расширенный' : 'Базовый'} · Трафик</h2>
+        <p class="traffic-meta-line">${esc(state.meta.fileName)} · ${state.meta.rows} строк · ${state.meta.cols} колонок${period ? ` · ${esc(period)}` : ''}</p>
+        ${state.meta.storageWarning ? `<p class="traffic-muted">${esc(state.meta.storageWarning)}</p>` : ''}
         ${tab === 'advanced' ? renderAdvancedTab() : renderBaseTab()}
       </section>
       <div class="traffic-modal" id="traffic-modal"></div>`;
@@ -463,8 +489,8 @@
         ${renderTrendWidget('Текущий месяц · весь трафик · все сделки', metrics.month, true)}
         ${renderTrendWidget('Текущая неделя · весь трафик · все сделки', metrics.week, true)}
         ${renderRankingWidget('Неделя по городам', metrics.cities, ['Лидер','Доля лидера','Всего городов','Всего заявок'])}
-        ${renderRankingWidget('Неделя по ответственным', metrics.responsible, ['Самый загруженный','Среднее на ответственного','Всего ответственных','Всего заявок'])}
         ${renderHoursWidget(metrics.hours)}
+        ${renderRankingWidget('Неделя по ответственным', metrics.responsible, ['Самый загруженный','Среднее на ответственного','Всего ответственных','Всего заявок'])}
       </div>`;
   }
 
@@ -542,13 +568,16 @@
     return `
       <article class="traffic-widget ${wide ? 'wide' : ''}">
         <h3>${esc(title)}</h3>
-        <div class="traffic-stat-row">
-          <div class="traffic-stat"><span class="traffic-stat-label">Всего</span><span class="traffic-stat-value">${data.total}</span></div>
-          <div class="traffic-stat"><span class="traffic-stat-label">Среднее в день</span><span class="traffic-stat-value">${data.avg.toFixed(1)}</span></div>
-          <div class="traffic-stat"><span class="traffic-stat-label">Пиковый день</span><span class="traffic-stat-value">${esc(data.peak?.label || '-')}</span></div>
-          <div class="traffic-stat"><span class="traffic-stat-label">Динамика</span><span class="traffic-stat-value">${data.change === null ? '-' : `${data.change > 0 ? '+' : ''}${data.change.toFixed(0)}%`}</span></div>
+        <div class="traffic-main-metric">
+          <strong>${data.total}</strong>
+          <span>лидов</span>
+          <em>${data.change === null ? 'нет прошлого периода' : `${data.change > 0 ? '↑' : '↓'} ${Math.abs(data.change).toFixed(0)}% к прошлому периоду`}</em>
         </div>
         ${renderBars(data.points)}
+        <div class="traffic-stat-row">
+          <div class="traffic-stat"><span class="traffic-stat-label">Среднее в день</span><span class="traffic-stat-value">${data.avg.toFixed(1)}</span></div>
+          <div class="traffic-stat"><span class="traffic-stat-label">Пиковый день</span><span class="traffic-stat-value">${esc(data.peak?.label || '-')}</span></div>
+        </div>
         <p class="traffic-widget-note">${data.total ? 'Основная нагрузка видна по пиковым точкам графика.' : 'Нет данных за выбранный период.'}</p>
       </article>`;
   }
@@ -600,12 +629,12 @@
   function renderAdvancedTab() {
     const widgets = state.widgets || [];
     return `
-      <div class="traffic-card" style="padding:16px">
+      <div class="traffic-card traffic-advanced-head">
         <div class="traffic-toolbar">
           <button class="traffic-btn primary" id="traffic-add-widget" ${widgets.length >= 15 ? 'disabled' : ''}>+ Добавить виджет</button>
-          <button class="traffic-btn" id="traffic-import-widgets">Импорт настроек</button>
-          <button class="traffic-btn" id="traffic-export-widgets">Экспорт настроек</button>
           <button class="traffic-btn danger" id="traffic-clear-csv">Очистить CSV</button>
+          <button class="traffic-btn" id="traffic-import-widgets">Импорт</button>
+          <button class="traffic-btn" id="traffic-export-widgets">Экспорт</button>
           <input class="traffic-file-input" id="traffic-import-file" type="file" accept=".json,.crm-traffic-widgets.json,application/json">
         </div>
         <p class="traffic-muted">${widgets.length} из 15 виджетов</p>

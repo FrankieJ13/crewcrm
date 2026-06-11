@@ -651,15 +651,192 @@
   function renderCustomWidget(widget) {
     const fields = (widget.selectedFields || []).map(f => f.normalizedName).join(', ');
     const primary = widget.selectedFields?.[0]?.normalizedName;
-    const data = primary ? makeRanking(state.rows.map(row => ({ row })), primary) : null;
+    const rows = state.rows.map(row => ({ row, created: parseDate(row[state.mapping.createdAt])?.date })).filter(x => x.row);
+    const data = primary ? makeRanking(rows, primary) : null;
     return `
-      <article class="traffic-widget">
-        <h3>${esc(widget.title || 'Без названия')}</h3>
-        <p class="traffic-muted">${esc(FORMAT_LABELS[widget.format] || widget.format || 'Виджет')} · ${esc(fields || 'поля не выбраны')}</p>
-        ${data ? renderRankingWidget('Предпросмотр', data).replace('class="traffic-widget"', 'class="traffic-card" style="padding:12px"') : '<p class="traffic-muted">Нет данных для построения.</p>'}
+      <article class="traffic-widget traffic-custom-widget traffic-format-${esc(widget.format || 'ranking')}">
+        <div class="traffic-widget-head">
+          <div>
+            <h3>${esc(widget.title || 'Без названия')}</h3>
+            <p class="traffic-muted">${esc(FORMAT_LABELS[widget.format] || widget.format || 'Виджет')} · ${esc(fields || 'поля не выбраны')}</p>
+          </div>
+          <button class="traffic-delete-icon" data-delete-traffic-widget="${esc(widget.id)}" aria-label="Удалить">⌫</button>
+        </div>
+        ${data ? renderWidgetByFormat(widget, data, rows, primary) : '<p class="traffic-muted">Нет данных для построения.</p>'}
         <p class="traffic-widget-note">Пересчитано: ${esc(fmtDateTime(new Date(widget.updatedAt || Date.now())))}</p>
-        <button class="traffic-btn danger" data-delete-traffic-widget="${esc(widget.id)}">Удалить</button>
       </article>`;
+  }
+
+  function renderWidgetByFormat(widget, data, rows, primary) {
+    const format = widget.format || 'ranking';
+    if (format === 'rollingTrend' || format === 'trend') return renderCustomTrend(widget, rows, format);
+    if (format === 'histogram') return renderCustomHistogram(data);
+    if (format === 'ranking') return renderCustomRanking(data);
+    if (format === 'categoryCompare') return renderCustomCompare(data);
+    if (format === 'shareStructure') return renderCustomShare(data);
+    if (format === 'heatmap') return renderCustomHeatmap(rows);
+    if (format === 'kpiSummary') return renderCustomKpi(data, rows);
+    if (format === 'tableDetail') return renderCustomTable(data);
+    if (format === 'comboWidget') return renderCustomCombo(widget, data, rows);
+    if (format === 'wordCloud') return renderCustomCloud(data);
+    return renderCustomRanking(data);
+  }
+
+  function renderCustomTrend(widget, rows, format) {
+    const trend = makeTrend(rows.filter(x => x.created), [], 'day');
+    const pts = format === 'rollingTrend' ? rollingPoints(trend.points) : trend.points;
+    return `
+      <div class="traffic-custom-trend">
+        <div class="traffic-main-metric">
+          <strong>${trend.total}</strong>
+          <span>записей</span>
+          <em>${format === 'rollingTrend' ? 'сглаженный тренд' : 'тренд по датам'}</em>
+        </div>
+        ${renderLineSvg(pts, format === 'rollingTrend')}
+        <div class="traffic-mini-kpis">
+          <span>Пик: <b>${esc(trend.peak?.label || '-')}</b></span>
+          <span>Среднее: <b>${trend.avg.toFixed(1)}</b></span>
+          <span>Точек: <b>${pts.length}</b></span>
+        </div>
+      </div>`;
+  }
+
+  function renderCustomHistogram(data) {
+    const top = data.rows.slice(0, 8);
+    return `
+      <div class="traffic-histogram">
+        ${renderBars(top.map((r, i) => ({ label: String(i + 1), value: r.value })), '1')}
+        <div class="traffic-mini-kpis">
+          <span>Частый диапазон: <b>${esc(top[0]?.label || '-')}</b></span>
+          <span>Записей: <b>${data.total}</b></span>
+        </div>
+      </div>`;
+  }
+
+  function renderCustomRanking(data) {
+    return `<div class="traffic-ranking traffic-custom-ranking">${renderRankRows(data, 7)}</div>`;
+  }
+
+  function renderCustomCompare(data) {
+    const rows = data.rows.slice(0, 6);
+    const max = Math.max(...rows.map(r => r.value), 1);
+    return `
+      <div class="traffic-compare">
+        ${rows.map((r, i) => `
+          <div class="traffic-compare-row">
+            <span>${esc(r.label)}</span>
+            <strong>${r.value}</strong>
+            <i style="width:${Math.max(4, r.value / max * 100)}%"></i>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  function renderCustomShare(data) {
+    const rows = data.rows.slice(0, 5);
+    const total = Math.max(data.total, 1);
+    let cursor = 0;
+    const gradient = rows.map((r, i) => {
+      const next = cursor + Math.max(1, Math.round(r.value / total * 100));
+      const segment = `${shareColor(i)} ${cursor}% ${Math.min(100, next)}%`;
+      cursor = next;
+      return segment;
+    }).join(', ');
+    return `
+      <div class="traffic-share">
+        <div class="traffic-donut" style="background:conic-gradient(${gradient || 'var(--bg3) 0 100%'})"><span>${data.unique}</span></div>
+        <div class="traffic-share-list">${rows.map((r, i) => `<span><i style="background:${shareColor(i)}"></i>${esc(r.label)} <b>${Math.round(r.value / total * 100)}%</b></span>`).join('')}</div>
+      </div>`;
+  }
+
+  function renderCustomHeatmap(rows) {
+    const matrix = new Map();
+    rows.filter(x => x.created).forEach(x => {
+      const key = `${x.created.getDay()}_${x.created.getHours()}`;
+      matrix.set(key, (matrix.get(key) || 0) + 1);
+    });
+    const max = Math.max(...matrix.values(), 1);
+    const days = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+    const hours = [9,10,11,12,13,14,15,16,17,18];
+    return `<div class="traffic-heatmap">
+      ${days.map((d, di) => `<div class="traffic-heat-row"><b>${d}</b>${hours.map(h => {
+        const jsDay = di === 6 ? 0 : di + 1;
+        const v = matrix.get(`${jsDay}_${h}`) || 0;
+        return `<span style="opacity:${.18 + (v / max) * .82}" title="${d} ${h}:00 · ${v}"></span>`;
+      }).join('')}</div>`).join('')}
+    </div>`;
+  }
+
+  function renderCustomKpi(data, rows) {
+    const filled = data.rows.reduce((s, r) => s + r.value, 0);
+    return `
+      <div class="traffic-kpi-summary">
+        <strong>${rows.length}</strong>
+        <span>главная метрика</span>
+        <div class="traffic-mini-kpis">
+          <span>Уникальных: <b>${data.unique}</b></span>
+          <span>Заполнено: <b>${filled}</b></span>
+          <span>Лидер: <b>${esc(data.leader?.label || '-')}</b></span>
+        </div>
+      </div>`;
+  }
+
+  function renderCustomTable(data) {
+    return `<div class="traffic-table-mini">
+      ${data.rows.slice(0, 6).map(r => `<div><span>${esc(r.label)}</span><b>${r.value}</b></div>`).join('')}
+    </div>`;
+  }
+
+  function renderCustomCombo(widget, data, rows) {
+    const trend = makeTrend(rows.filter(x => x.created), [], 'day');
+    return `
+      <div class="traffic-combo">
+        ${renderLineSvg(trend.points, false)}
+        <div class="traffic-ranking">${renderRankRows(data, 4)}</div>
+      </div>`;
+  }
+
+  function renderCustomCloud(data) {
+    const max = Math.max(...data.rows.map(r => r.value), 1);
+    return `<div class="traffic-word-cloud">
+      ${data.rows.slice(0, 18).map(r => `<span style="font-size:${12 + (r.value / max) * 18}px">${esc(r.label)}</span>`).join('')}
+    </div>`;
+  }
+
+  function renderRankRows(data, limit) {
+    const max = Math.max(...data.rows.map(r => r.value), 1);
+    return data.rows.slice(0, limit).map(r => `
+      <div class="traffic-rank-row">
+        <span class="traffic-rank-label">${esc(r.label)}</span>
+        <strong>${r.value}</strong>
+        <span class="traffic-rank-track"><span class="traffic-rank-fill" style="width:${Math.max(4, r.value / max * 100)}%"></span></span>
+      </div>`).join('') || '<p class="traffic-muted">Нет данных</p>';
+  }
+
+  function renderLineSvg(points, smooth) {
+    const max = Math.max(...points.map(p => p.value), 1);
+    const w = 320, h = 120;
+    const coords = points.length ? points.map((p, i) => {
+      const x = points.length === 1 ? 0 : (i / (points.length - 1)) * w;
+      const y = h - (p.value / max) * (h - 12) - 6;
+      return [x, y];
+    }) : [[0, h], [w, h]];
+    const d = coords.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
+    const area = `${d} L${w} ${h} L0 ${h} Z`;
+    return `<svg class="traffic-line-svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+      <path class="traffic-line-area" d="${area}"></path>
+      <path class="traffic-line-path ${smooth ? 'smooth' : ''}" d="${d}"></path>
+    </svg>`;
+  }
+
+  function rollingPoints(points) {
+    return points.map((p, i) => {
+      const slice = points.slice(Math.max(0, i - 2), i + 1);
+      return { ...p, value: Math.round(slice.reduce((s, x) => s + x.value, 0) / slice.length) };
+    });
+  }
+
+  function shareColor(i) {
+    return ['var(--acc, #1a86eb)', '#8b5cf6', 'var(--grn, #2ed573)', '#ffb020', '#ef476f'][i % 5];
   }
 
   function showWidgetBuilder() {

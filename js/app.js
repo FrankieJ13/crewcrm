@@ -434,6 +434,7 @@ function syncTheme() {
     'dock-btn-dohod':       COSMIC_ICON_BASE + 'cosmic_money.svg',
     'dock-btn-grafik':      COSMIC_ICON_BASE + 'cosmic_grafik.svg',
     'dock-btn-instruktsii': COSMIC_ICON_BASE + 'cosmic_faq.svg',
+    'dock-btn-analytics':   COSMIC_ICON_BASE + 'cosmic-analysis.svg',
     'dock-btn-vizity':      COSMIC_ICON_BASE + 'cosmic_vizity.svg',
     'btn-presence':         COSMIC_ICON_BASE + 'cosmic_online.svg',
     'btn-notify':           COSMIC_ICON_BASE + 'cosmic-send-noti.svg',
@@ -455,6 +456,7 @@ function syncTheme() {
     'dock-btn-dohod':       DEFAULT_ICON_BASE + 'money.svg',
     'dock-btn-grafik':      DEFAULT_ICON_BASE + 'grafik.svg',
     'dock-btn-instruktsii': DEFAULT_ICON_BASE + 'faq.svg',
+    'dock-btn-analytics':   DEFAULT_ICON_BASE + 'Analytics.svg',
     'dock-btn-vizity':      DEFAULT_ICON_BASE + 'vizity.svg',
     'btn-presence':         DEFAULT_ICON_BASE + 'online.svg',
     'btn-notify':           DEFAULT_ICON_BASE + 'send-noti.svg',
@@ -507,6 +509,7 @@ function syncTheme() {
     'dock-btn-dohod':       FLUENT_ICON_BASE + 'FluentColor-Cash.svg',
     'dock-btn-grafik':      FLUENT_ICON_BASE + 'FluentColor-Grafik.svg',
     'dock-btn-instruktsii': FLUENT_ICON_BASE + 'FluentColor-FAQ.svg',
+    'dock-btn-analytics':   FLUENT_ICON_BASE + 'FluentColor-Analytics.svg',
     'dock-btn-vizity':      FLUENT_ICON_BASE + 'FluentColor-Vizity.svg',
     'btn-presence':         FLUENT_ICON_BASE + 'FluentColor-Online.svg',
     'btn-notify':           FLUENT_ICON_BASE + 'FluentColor-Alert.svg',
@@ -987,7 +990,7 @@ function showScr(id) {
     if (typeof _apReturnToBody === 'function') _apReturnToBody();
     if (typeof _arReturnToBody === 'function') _arReturnToBody();
   }
-  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo','analiz','trophies','profile'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const el = document.getElementById('scr-'+t);
     if (el) el.classList.remove('on');
   });
@@ -1020,7 +1023,7 @@ function isScreenTokenActive(id, token) {
 
 function showStartupLoader(text = 'Синхронизация профиля…') {
   hideStartupLoader();
-  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo','analiz','trophies','profile'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const el = document.getElementById('scr-'+t);
     if (el) el.classList.remove('on');
   });
@@ -1381,6 +1384,7 @@ function getPresencePageLabel() {
   if (document.getElementById('scr-dohod')?.classList.contains('on')) {
     return isCeo ? `Доход ${deptLabel(effectiveDohodDept)}` : 'Мой доход';
   }
+  if (document.getElementById('scr-traffic')?.classList.contains('on')) return 'Трафик';
   if (document.getElementById('scr-vizity')?.classList.contains('on')) return `Визиты ${deptLabel(S.vizDept || roleDept)}`;
   if (document.getElementById('scr-instruktsii')?.classList.contains('on')) {
     const sub = S.autoruSubTab === 'chat' ? 'Чат Auto.ru' : 'Каталог Auto.ru';
@@ -2202,6 +2206,7 @@ function renderUser() {
   const hmbAccSep = document.getElementById('hmb-sep-account');
   if (hmbAcc) hmbAcc.style.display = '';
   if (hmbAccSep) hmbAccSep.style.display = '';
+  if (typeof updateTrafficDockAccess === 'function') updateTrafficDockAccess();
   document.getElementById('user-wrap').style.display = 'none'; // скрыт из хедера
 }
 
@@ -11790,14 +11795,14 @@ function closePlanEditorFull() {
   scheduleFirebasePageUpdate();
 }
 function dockSetActive(id) {
-  ['home','kpi','rating','dohod','grafik','instruktsii','vizity'].forEach(k => {
+  ['home','kpi','rating','dohod','grafik','instruktsii','analytics','vizity'].forEach(k => {
     const btn = document.getElementById('dock-btn-' + k);
     if (btn) btn.classList.toggle('dock-active', k === id);
   });
 }
 
 function closeAllDockPopups() {
-  ['dock-kpi-popup','dock-dohod-popup','dock-faq-popup','dock-vizity-popup'].forEach(pid => {
+  ['dock-kpi-popup','dock-dohod-popup','dock-faq-popup','dock-analytics-popup','dock-vizity-popup'].forEach(pid => {
     document.getElementById(pid)?.classList.remove('open');
   });
 }
@@ -11860,6 +11865,10 @@ function _highlightActiveDockPopupItem(popupId) {
       // Автоподбор открывается отдельной модалкой — особый кейс
       if (m[1] === 'autopodbor') return !!onAutopodbor;
       return screenOn('instruktsii') && m[1] === (S.faqTab || '');
+    },
+    'dock-analytics-popup': (btn) => {
+      if (!screenOn('traffic')) return false;
+      return /dockAnalytics\(['"]traffic['"]\)/.test(btn.getAttribute('onclick') || '');
     },
     'dock-vizity-popup': (btn) => {
       if (!screenOn('vizity')) return false;

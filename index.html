@@ -27,8 +27,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&family=Exo+2:wght@200;300;700&family=JetBrains+Mono:wght@300;400&family=Oswald:wght@400;700&display=swap" rel="stylesheet"/>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<link rel="stylesheet" href="./css/styles.css?v=319"/>
-<link rel="stylesheet" href="./css/autopodbor.css?v=319"/>
+<link rel="stylesheet" href="./css/styles.css?v=320"/>
+<link rel="stylesheet" href="./css/autopodbor.css?v=320"/>
+<link rel="stylesheet" href="./css/traffic-analytics.css?v=320"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -607,6 +608,11 @@
         <div id="c-rating"></div>
       </div>
     </div>
+    <div id="scr-traffic" class="scr">
+      <div class="w">
+        <div id="c-traffic"></div>
+      </div>
+    </div>
     <div id="scr-vizity" class="scr" style="padding:0">
       <div id="c-vizity"></div>
     </div>
@@ -739,6 +745,25 @@
         </button>
         <button class="dock-popup-btn" onclick="dockFaq('dozhim-search')">
           <span class="dock-popup-dot" style="background:#ec4899"></span>ТРАФИК ПОИСК
+        </button>
+      </div>
+    </div>
+
+    <!-- Аналитика — выпадающее меню -->
+    <div class="dock-item" id="dock-analytics-wrap" style="display:none">
+      <button class="dock-btn" id="dock-btn-analytics" onclick="dockAnalyticsToggle(event)" aria-label="Аналитика">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 19V5"/>
+          <path d="M4 19h17"/>
+          <rect x="7" y="11" width="3" height="5" rx="1"/>
+          <rect x="12" y="7" width="3" height="9" rx="1"/>
+          <rect x="17" y="3" width="3" height="13" rx="1"/>
+        </svg>
+        <span class="dock-btn-lbl">Аналитика</span>
+      </button>
+      <div class="dock-popup" id="dock-analytics-popup">
+        <button class="dock-popup-btn" onclick="dockAnalytics('traffic')">
+          <span class="dock-popup-dot" style="background:var(--acc)"></span>ТРАФИК
         </button>
       </div>
     </div>
@@ -960,7 +985,8 @@
   </div>
 </div>
 
-<script src="./js/app.js?v=319"></script>
+<script src="./js/app.js?v=320"></script>
+<script src="./js/traffic-analytics.js?v=320"></script>
 <!-- Затемнение фона при открытом popup напоминаний -->
 <div class="rem-backdrop" id="rem-backdrop" onclick="closeRemPanel()"></div>
 
@@ -999,12 +1025,12 @@
     </form>
   </div>
 </div>
-<script src="./js/autopodbor-config.js?v=319"></script>
-<script src="./js/autopodbor-dictionary.js?v=319"></script>
-<script src="./js/autopodbor-chat.js?v=319"></script>
+<script src="./js/autopodbor-config.js?v=320"></script>
+<script src="./js/autopodbor-dictionary.js?v=320"></script>
+<script src="./js/autopodbor-chat.js?v=320"></script>
 
 <!-- AUTO.RU CM — каталог + поиск (см. https://github.com/FrankieJ13/AUTORUCM66CARSDB) -->
-<link rel="stylesheet" href="./css/autoru.css?v=319"/>
+<link rel="stylesheet" href="./css/autoru.css?v=320"/>
 <div id="autoru-fullscreen" aria-hidden="true">
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
@@ -1104,9 +1130,9 @@
     </form>
   </div>
 </div>
-<script src="./js/autoru-config.js?v=319"></script>
-<script src="./js/autoru-search.js?v=319"></script>
-<script src="./js/autoru-catalog.js?v=319"></script>
+<script src="./js/autoru-config.js?v=320"></script>
+<script src="./js/autoru-search.js?v=320"></script>
+<script src="./js/autoru-catalog.js?v=320"></script>
 
 <!-- Модалка профиля менеджера (открывается с рейтинга) -->
 <div id="profile-modal-overlay" class="profile-modal-overlay" onclick="if(event.target===this)closeProfileModal()">

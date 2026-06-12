@@ -520,7 +520,7 @@
   function renderBaseTab() {
     const metrics = buildBaseMetrics();
     return `
-      <div class="traffic-grid">
+      <div class="traffic-grid traffic-base-grid">
         ${renderTrendWidget('Текущий месяц · весь трафик · все сделки', metrics.month, true)}
         ${renderTrendWidget('Текущая неделя · весь трафик · все сделки', metrics.week, true)}
         ${renderRankingWidget('Неделя по городам', metrics.cities, ['Лидер','Доля лидера','Всего городов','Всего заявок'])}
@@ -564,12 +564,23 @@
           : String(x.created.getDate()).padStart(2, '0');
       buckets.set(key, (buckets.get(key) || 0) + 1);
     });
-    const points = Array.from(buckets, ([label, value]) => ({ label, value }));
+    const points = Array.from(buckets, ([label, value]) => ({ label, value }))
+      .sort((a, b) => trendOrder(a.label, mode) - trendOrder(b.label, mode));
     const peak = points.reduce((a, b) => b.value > (a?.value || 0) ? b : a, null);
     const total = items.length;
     const avg = points.length ? total / points.length : 0;
     const change = prevItems.length ? ((total - prevItems.length) / prevItems.length) * 100 : null;
     return { total, avg, peak, change, points };
+  }
+
+  function trendOrder(label, mode) {
+    if (mode === 'weekday') {
+      const order = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+      const idx = order.indexOf(label);
+      return idx === -1 ? 99 : idx;
+    }
+    const n = Number(String(label).replace(':00', ''));
+    return Number.isFinite(n) ? n : 99;
   }
 
   function makeRanking(items, key) {
@@ -604,18 +615,23 @@
   }
 
   function renderTrendWidget(title, data, wide) {
+    const peakText = data.peak?.label ? `${data.peak.label}${data.peak.value ? ` · ${data.peak.value}` : ''}` : '-';
     return `
-      <article class="traffic-widget ${wide ? 'wide' : ''}">
+      <article class="traffic-widget traffic-trend-widget ${wide ? 'wide' : ''}">
         <h3>${esc(title)}</h3>
-        <div class="traffic-main-metric">
-          <strong>${data.total}</strong>
-          <span>лидов</span>
-          <em>${data.change === null ? 'нет прошлого периода' : `${data.change > 0 ? '↑' : '↓'} ${Math.abs(data.change).toFixed(0)}% к прошлому периоду`}</em>
+        <div class="traffic-trend-body">
+          <div class="traffic-main-metric">
+            <strong>${formatMetricValue(data.total)}</strong>
+            <span>лидов</span>
+            <em>${data.change === null ? 'нет прошлого периода' : `${data.change > 0 ? '↑' : '↓'} ${Math.abs(data.change).toFixed(0)}% к прошлому периоду`}</em>
+          </div>
+          <div class="traffic-trend-chart">
+            ${renderLineSvg(data.points, false)}
+          </div>
         </div>
-        ${renderBars(data.points)}
-        <div class="traffic-stat-row">
+        <div class="traffic-stat-row traffic-stat-row-compact">
           <div class="traffic-stat"><span class="traffic-stat-label">Среднее в день</span><span class="traffic-stat-value">${data.avg.toFixed(1)}</span></div>
-          <div class="traffic-stat"><span class="traffic-stat-label">Пиковый день</span><span class="traffic-stat-value">${esc(data.peak?.label || '-')}</span></div>
+          <div class="traffic-stat"><span class="traffic-stat-label">Пиковый день</span><span class="traffic-stat-value">${esc(peakText)}</span></div>
         </div>
         <p class="traffic-widget-note">${data.total ? 'Основная нагрузка видна по пиковым точкам графика.' : 'Нет данных за выбранный период.'}</p>
       </article>`;
@@ -625,36 +641,33 @@
     const max = Math.max(...data.rows.map(r => r.value), 1);
     const top = data.rows.slice(0, 5);
     return `
-      <article class="traffic-widget">
+      <article class="traffic-widget traffic-ranking-widget">
         <h3>${esc(title)}</h3>
-        <div class="traffic-stat-row">
-          <div class="traffic-stat"><span class="traffic-stat-label">Лидер</span><span class="traffic-stat-value">${esc(data.leader?.label || '-')}</span></div>
-          <div class="traffic-stat"><span class="traffic-stat-label">Доля лидера</span><span class="traffic-stat-value">${data.leader && data.total ? Math.round(data.leader.value / data.total * 100) : 0}%</span></div>
-          <div class="traffic-stat"><span class="traffic-stat-label">Всего значений</span><span class="traffic-stat-value">${data.unique}</span></div>
-          <div class="traffic-stat"><span class="traffic-stat-label">Всего заявок</span><span class="traffic-stat-value">${data.total}</span></div>
-        </div>
         <div class="traffic-ranking">
           ${top.map(r => `
             <div class="traffic-rank-row">
               <span class="traffic-rank-label">${esc(r.label)}</span>
-              <strong>${r.value}</strong>
+              <strong>${formatMetricValue(r.value)}</strong>
               <span class="traffic-rank-track"><span class="traffic-rank-fill" style="width:${Math.max(4, r.value / max * 100)}%"></span></span>
             </div>`).join('') || '<p class="traffic-muted">Нет данных</p>'}
+        </div>
+        <div class="traffic-mini-kpis">
+          <span>Лидер: <b>${esc(data.leader?.label || '-')}</b></span>
+          <span>Всего: <b>${formatMetricValue(data.total)}</b></span>
         </div>
       </article>`;
   }
 
   function renderHoursWidget(data) {
     return `
-      <article class="traffic-widget wide">
+      <article class="traffic-widget traffic-hours-widget">
         <h3>Пиковые часы 9–18</h3>
-        <div class="traffic-stat-row">
-          <div class="traffic-stat"><span class="traffic-stat-label">Пик трафика</span><span class="traffic-stat-value">${data.peak?.label || '-'}:00</span></div>
-          <div class="traffic-stat"><span class="traffic-stat-label">Среднее значение</span><span class="traffic-stat-value">${data.avg.toFixed(1)}</span></div>
-          <div class="traffic-stat"><span class="traffic-stat-label">Отклонение от среднего</span><span class="traffic-stat-value">${data.deviation.toFixed(1)}</span></div>
-          <div class="traffic-stat"><span class="traffic-stat-label">Всего в рабочие часы</span><span class="traffic-stat-value">${data.total}</span></div>
-        </div>
         ${renderBars(data.rows, data.peak?.label)}
+        <div class="traffic-mini-kpis">
+          <span>Пик: <b>${data.peak?.label || '-'}:00</b></span>
+          <span>Среднее: <b>${data.avg.toFixed(1)}</b></span>
+          <span>Всего: <b>${formatMetricValue(data.total)}</b></span>
+        </div>
       </article>`;
   }
 
@@ -691,7 +704,7 @@
     const fields = (widget.selectedFields || []).map(f => `${f.normalizedName}${f.role ? ` (${ROLE_LABELS[f.role] || f.role})` : ''}`).join(', ');
     const primary = getPrimaryGroupField(widget)?.normalizedName;
     const rows = rowsForWidget(widget);
-    const data = primary ? makeRanking(rows, primary) : null;
+    const data = primary ? makeWidgetData(widget, rows, primary) : null;
     const period = PERIOD_LABELS[widget.period?.type || 'all'] || 'Все данные';
     return `
       <article class="traffic-widget traffic-custom-widget traffic-format-${esc(widget.format || 'ranking')}">
@@ -811,11 +824,11 @@
     const filled = data.rows.reduce((s, r) => s + r.value, 0);
     return `
       <div class="traffic-kpi-summary">
-        <strong>${rows.length}</strong>
+        <strong>${formatMetricValue(data.aggregation && data.aggregation !== 'count' ? data.total : rows.length)}</strong>
         <span>главная метрика</span>
         <div class="traffic-mini-kpis">
           <span>Уникальных: <b>${data.unique}</b></span>
-          <span>Заполнено: <b>${filled}</b></span>
+          <span>Заполнено: <b>${formatMetricValue(filled)}</b></span>
           <span>Лидер: <b>${esc(data.leader?.label || '-')}</b></span>
         </div>
       </div>`;
@@ -823,7 +836,7 @@
 
   function renderCustomTable(data) {
     return `<div class="traffic-table-mini">
-      ${data.rows.slice(0, 6).map(r => `<div><span>${esc(r.label)}</span><b>${r.value}</b></div>`).join('')}
+      ${data.rows.slice(0, 6).map(r => `<div><span>${esc(r.label)}</span><b>${formatMetricValue(r.value)}</b></div>`).join('')}
     </div>`;
   }
 
@@ -848,9 +861,15 @@
     return data.rows.slice(0, limit).map(r => `
       <div class="traffic-rank-row">
         <span class="traffic-rank-label">${esc(r.label)}</span>
-        <strong>${r.value}</strong>
+        <strong>${formatMetricValue(r.value)}</strong>
         <span class="traffic-rank-track"><span class="traffic-rank-fill" style="width:${Math.max(4, r.value / max * 100)}%"></span></span>
       </div>`).join('') || '<p class="traffic-muted">Нет данных</p>';
+  }
+
+  function formatMetricValue(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return esc(value ?? '-');
+    return new Intl.NumberFormat('ru-RU', { maximumFractionDigits: n % 1 ? 1 : 0 }).format(n);
   }
 
   function getPrimaryGroupField(widget) {
@@ -859,6 +878,87 @@
       || fields.find(f => f.role === 'splitBy')
       || fields.find(f => f.role !== 'date' && f.role !== 'ignore')
       || fields[0];
+  }
+
+  function getMetricField(widget) {
+    const fields = widget.selectedFields || [];
+    return fields.find(f => f.role === 'metric')
+      || fields.find(f => ['number','money','percent'].includes(f.type) && f.role !== 'ignore');
+  }
+
+  function makeWidgetData(widget, rows, primary) {
+    const metric = getMetricField(widget);
+    const aggregation = metric?.aggregation || 'count';
+    if (!metric || aggregation === 'count') return makeRanking(rows, primary);
+    if (aggregation === 'uniqueCount') return makeUniqueRanking(rows, primary, metric.normalizedName);
+    const groups = new Map();
+    rows.forEach(x => {
+      splitValue(x.row[primary]).forEach(label => {
+        const parsed = parseMetricNumber(x.row[metric.normalizedName]);
+        if (parsed === null) return;
+        if (!groups.has(label)) groups.set(label, []);
+        groups.get(label).push(parsed);
+      });
+    });
+    const dataRows = Array.from(groups, ([label, values]) => ({ label, value: aggregateNumbers(values, aggregation), count: values.length }))
+      .filter(r => Number.isFinite(r.value))
+      .sort((a, b) => b.value - a.value || a.label.localeCompare(b.label));
+    const total = aggregateNumbers(dataRows.map(r => r.value), aggregation === 'average' ? 'sum' : 'sum');
+    return {
+      rows: dataRows,
+      total,
+      unique: dataRows.length,
+      leader: dataRows[0] || null,
+      avg: dataRows.length ? total / dataRows.length : 0,
+      metricLabel: metric.normalizedName,
+      aggregation
+    };
+  }
+
+  function makeUniqueRanking(rows, primary, metricKey) {
+    const groups = new Map();
+    rows.forEach(x => {
+      splitValue(x.row[primary]).forEach(label => {
+        if (!groups.has(label)) groups.set(label, new Set());
+        splitValue(x.row[metricKey]).forEach(v => groups.get(label).add(v));
+      });
+    });
+    const dataRows = Array.from(groups, ([label, set]) => ({ label, value: set.size }))
+      .sort((a, b) => b.value - a.value || a.label.localeCompare(b.label));
+    return {
+      rows: dataRows,
+      total: dataRows.reduce((s, r) => s + r.value, 0),
+      unique: dataRows.length,
+      leader: dataRows[0] || null,
+      avg: dataRows.length ? dataRows.reduce((s, r) => s + r.value, 0) / dataRows.length : 0,
+      aggregation: 'uniqueCount'
+    };
+  }
+
+  function parseMetricNumber(value) {
+    const raw = String(value ?? '').trim().toLowerCase();
+    if (!raw) return null;
+    const mult = raw.includes('млн') ? 1000000 : raw.includes('тыс') ? 1000 : 1;
+    const normalized = raw
+      .replace(/\s+/g, '')
+      .replace(',', '.')
+      .replace(/[^0-9.+-]/g, '');
+    if (!normalized || normalized === '-' || normalized === '+') return null;
+    const n = Number(normalized);
+    return Number.isFinite(n) ? n * mult : null;
+  }
+
+  function aggregateNumbers(values, aggregation) {
+    const nums = values.filter(Number.isFinite).sort((a, b) => a - b);
+    if (!nums.length) return 0;
+    if (aggregation === 'average') return nums.reduce((s, n) => s + n, 0) / nums.length;
+    if (aggregation === 'min') return nums[0];
+    if (aggregation === 'max') return nums[nums.length - 1];
+    if (aggregation === 'median') {
+      const mid = Math.floor(nums.length / 2);
+      return nums.length % 2 ? nums[mid] : (nums[mid - 1] + nums[mid]) / 2;
+    }
+    return nums.reduce((s, n) => s + n, 0);
   }
 
   function getDateField(widget) {

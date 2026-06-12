@@ -58,7 +58,7 @@
 .traffic-modal-card h2 {
   margin: 0 0 8px;
   font-family: 'Unbounded', system-ui, sans-serif;
-  font-size: clamp(18px, 5vw, 24px);
+  font-size: clamp(17px, 4.4vw, 22px);
   line-height: 1.15;
 }
 
@@ -73,15 +73,15 @@
 .traffic-title {
   margin: 0;
   font-family: 'Unbounded', system-ui, sans-serif;
-  font-size: clamp(24px, 6.2vw, 34px);
+  font-size: clamp(22px, 5.4vw, 30px);
   line-height: 1;
   color: var(--txt, #111);
 }
 
 .traffic-subtitle {
-  margin: 10px 0 0;
-  font-size: 15px;
-  line-height: 1.45;
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.38;
 }
 
 .traffic-import-card {
@@ -92,12 +92,12 @@
 
 .traffic-dropzone {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   place-items: center;
-  min-height: clamp(230px, 54vw, 420px);
+  min-height: clamp(200px, 48vw, 360px);
   border: 2px dashed color-mix(in srgb, var(--acc, #1a86eb) 48%, transparent);
   border-radius: 22px;
-  padding: clamp(18px, 5vw, 30px);
+  padding: clamp(16px, 4.4vw, 26px);
   text-align: center;
   background: color-mix(in srgb, var(--acc, #1a86eb) 8%, transparent);
 }
@@ -108,8 +108,8 @@
 }
 
 .traffic-upload-icon {
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   display: grid;
   place-items: center;
   border-radius: 20px;
@@ -121,13 +121,13 @@
   max-width: 100%;
   overflow-wrap: anywhere;
   font-family: 'Unbounded', system-ui, sans-serif;
-  font-size: clamp(17px, 4.5vw, 22px);
+  font-size: clamp(16px, 4vw, 19px);
   line-height: 1.18;
 }
 
 .traffic-upload-icon svg {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2;
@@ -149,6 +149,15 @@
 .traffic-btn {
   padding: 0 18px;
   white-space: nowrap;
+}
+
+.traffic-dropzone .traffic-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 28px;
+  line-height: 1;
 }
 
 .traffic-btn.primary {
@@ -323,6 +332,15 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+.traffic-base-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.traffic-base-grid .traffic-trend-widget,
+.traffic-base-grid .traffic-ranking-widget:last-child {
+  grid-column: 1 / -1;
+}
+
 .traffic-widget {
   overflow: hidden;
   width: 100%;
@@ -332,7 +350,8 @@
 .traffic-widget h3 {
   margin: 0 0 10px;
   font-family: 'Unbounded', system-ui, sans-serif;
-  font-size: 16px;
+  font-size: clamp(13px, 3.6vw, 16px);
+  line-height: 1.15;
   color: var(--acc, #1a86eb);
 }
 
@@ -365,7 +384,7 @@
 
 .traffic-main-metric strong {
   font-family: 'Unbounded', system-ui, sans-serif;
-  font-size: clamp(32px, 9vw, 48px);
+  font-size: clamp(28px, 7.8vw, 44px);
   line-height: .95;
   color: var(--txt, #111);
 }
@@ -406,9 +425,67 @@
 .traffic-stat-value {
   display: block;
   font-family: 'Unbounded', system-ui, sans-serif;
-  font-size: clamp(18px, 5vw, 22px);
+  font-size: clamp(15px, 4.2vw, 20px);
   color: var(--txt, #111);
   overflow-wrap: anywhere;
+}
+
+.traffic-trend-widget {
+  padding: clamp(14px, 3.5vw, 18px);
+}
+
+.traffic-trend-body {
+  display: grid;
+  grid-template-columns: minmax(108px, .42fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.traffic-trend-chart {
+  min-width: 0;
+}
+
+.traffic-trend-widget .traffic-line-svg {
+  height: clamp(92px, 25vw, 132px);
+  margin: 0;
+}
+
+.traffic-trend-widget .traffic-line-path {
+  stroke-width: 4;
+}
+
+.traffic-stat-row-compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 10px 0 8px;
+}
+
+.traffic-ranking-widget,
+.traffic-hours-widget {
+  padding: clamp(12px, 3.2vw, 16px);
+}
+
+.traffic-ranking-widget .traffic-mini-kpis,
+.traffic-hours-widget .traffic-mini-kpis {
+  margin-top: 10px;
+}
+
+.traffic-ranking-widget .traffic-mini-kpis span,
+.traffic-hours-widget .traffic-mini-kpis span {
+  padding: 7px 9px;
+  font-size: 11px;
+}
+
+.traffic-ranking-widget .traffic-rank-row {
+  gap: 6px 8px;
+}
+
+.traffic-ranking-widget .traffic-rank-label {
+  font-size: 12px;
+}
+
+.traffic-hours-widget .traffic-chart {
+  height: clamp(112px, 30vw, 148px);
+  padding-top: 6px;
 }
 
 .traffic-chart {
@@ -1085,11 +1162,19 @@
     grid-template-columns: 1fr;
   }
 
+  .traffic-base-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .traffic-trend-body {
+    grid-template-columns: 1fr;
+  }
+
   .traffic-toolbar .traffic-btn {
     flex-basis: 100%;
   }
 
   .traffic-dropzone {
-    min-height: 220px;
+    min-height: 190px;
   }
 }

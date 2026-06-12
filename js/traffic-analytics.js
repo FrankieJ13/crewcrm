@@ -522,14 +522,20 @@
       <section class="traffic-page">
         <div class="traffic-top">
           <div class="traffic-top-copy">
-            <h1 class="traffic-title">Трафик</h1>
+            <div class="traffic-title-row">
+              <h1 class="traffic-title">Трафик</h1>
+              <div class="traffic-tabs traffic-tabs-icons" aria-label="Режим аналитики">
+                <button class="traffic-tab ${tab === 'base' ? 'active' : ''}" data-traffic-tab="base" type="button" aria-label="Базовый">
+                  <img src="${trafficTabIcon('base')}" alt="" onerror="this.style.display='none'">
+                </button>
+                <button class="traffic-tab ${tab === 'advanced' ? 'active' : ''}" data-traffic-tab="advanced" type="button" aria-label="Расширенный">
+                  <img src="${trafficTabIcon('advanced')}" alt="" onerror="this.style.display='none'">
+                </button>
+              </div>
+            </div>
             <p class="traffic-subtitle">Аналитика входящего трафика и лидогенерации</p>
           </div>
           <span class="traffic-meta-pill">✓ CSV успешно импортирован</span>
-        </div>
-        <div class="traffic-tabs">
-          <button class="traffic-tab ${tab === 'base' ? 'active' : ''}" data-traffic-tab="base">Базовый</button>
-          <button class="traffic-tab ${tab === 'advanced' ? 'active' : ''}" data-traffic-tab="advanced">Расширенный</button>
         </div>
         <h2 class="traffic-section-title">${tab === 'advanced' ? 'Расширенный' : 'Базовый'} · Трафик</h2>
         <p class="traffic-meta-line">${esc(state.meta.fileName)} · ${state.meta.rows} строк · ${state.meta.cols} колонок${period ? ` · ${esc(period)}` : ''}</p>
@@ -537,6 +543,17 @@
         ${tab === 'advanced' ? renderAdvancedTab() : renderBaseTab()}
       </section>
       <div class="traffic-modal" id="traffic-modal"></div>`;
+  }
+
+  function trafficTabIcon(tab) {
+    const body = document.body?.classList;
+    if (body?.contains('fluent')) {
+      return tab === 'base' ? './logos/Fluent/FluentColor-Base.svg' : './logos/Fluent/FluentColor-Extended.svg';
+    }
+    if (body?.contains('cosmic')) {
+      return tab === 'base' ? './logos/cosmic/cosmoc-base.svg' : './logos/cosmic/cosmic-extended.svg';
+    }
+    return tab === 'base' ? './logos/default/default-base.svg' : './logos/default/default-extended.svg';
   }
 
   function bindDashboard() {
@@ -663,24 +680,46 @@
 
   function renderLeadTrendWidget(type) {
     const data = buildBaseMetrics(basePeriod(type));
-    const sourceRank = makeRanking(data.rows, mappedField('source')).rows.slice(0, 3);
     const body = `
-      <div class="traffic-lead-trend">
+      ${renderLeadMarketChart(data)}`;
+    return renderBaseWidgetShell(type, 'Все сделки', body, { wide: true, className: 'traffic-leads-widget traffic-market-widget' });
+  }
+
+  function renderLeadMarketChart(data) {
+    const points = data.trend.points || [];
+    const max = points.reduce((m, p) => Math.max(m, p.value || 0), 1);
+    const minPoint = points.reduce((a, b) => !a || b.value < a.value ? b : a, null);
+    const maxPoint = points.reduce((a, b) => !a || b.value > a.value ? b : a, null);
+    const avg = data.trend.avg || 0;
+    const dyn = data.trend.change;
+    const periodSuffix = data.periodKey === 'day' ? 'к вчера' : data.periodKey === 'month' ? 'к прошлому месяцу' : 'к прошлой неделе';
+    return `
+      <div class="traffic-market-top">
         <div class="traffic-main-metric">
           <strong>${formatMetricValue(data.trend.total)}</strong>
           <span>лидов</span>
-          <em>${formatChange(data.trend.change, data.periodKey)}</em>
-        </div>
-        <div class="traffic-trend-chart">
-          ${renderTrendCandles(data.trend.points)}
-          ${renderLineSvg(data.trend.points, true)}
-          ${renderLineAxis(data.trend.points)}
+          <em class="${dyn !== null && dyn < 0 ? 'down' : 'up'}">${formatChange(dyn, data.periodKey)}</em>
         </div>
       </div>
-      <div class="traffic-source-legend">
-        ${sourceRank.map((r, i) => `<span><i style="background:${shareColor(i)}"></i>${esc(r.label)} <b>${formatMetricValue(r.value)}</b></span>`).join('') || '<span>Нет источников</span>'}
+      <div class="traffic-market-chart">
+        ${renderTrendCandles(points)}
+        ${renderLineSvg(points, true)}
+        <div class="traffic-market-bars">
+          ${points.map((p, i) => {
+            const prev = i ? points[i - 1].value : p.value;
+            const cls = p.value >= prev ? 'up' : 'down';
+            const h = Math.max(8, Math.round((p.value / max) * 100));
+            return `<span class="traffic-market-bar ${cls}" style="height:${h}%"><b>${formatMetricValue(p.value)}</b></span>`;
+          }).join('')}
+        </div>
+      </div>
+      ${renderLineAxis(points)}
+      <div class="traffic-market-summary">
+        <span><i></i><em>Максимум</em><b>${formatMetricValue(maxPoint?.value || 0)}</b><small>${esc(pointDateLabel(maxPoint, data.periodKey))}</small></span>
+        <span><i class="min"></i><em>Минимум</em><b>${formatMetricValue(minPoint?.value || 0)}</b><small>${esc(pointDateLabel(minPoint, data.periodKey))}</small></span>
+        <span><i></i><em>Среднее</em><b>${formatMetricValue(avg)}</b><small>${data.periodKey === 'day' ? 'в час' : 'в день'}</small></span>
+        <span><i class="${dyn !== null && dyn < 0 ? 'down' : 'up'}"></i><em>Динамика</em><b>${dyn === null ? '—' : `${dyn >= 0 ? '+' : '-'}${Math.abs(dyn).toFixed(0)}%`}</b><small>${periodSuffix}</small></span>
       </div>`;
-    return renderBaseWidgetShell(type, 'Лиды по источникам', body, { wide: true, className: 'traffic-leads-widget' });
   }
 
   function renderSourceShareWidget(type) {
@@ -706,6 +745,11 @@
     return `width:${width}%;background:linear-gradient(90deg,color-mix(in srgb,var(--acc,#1a86eb) ${strong}%,#dff1ff),color-mix(in srgb,#8b5cf6 ${warm}%,var(--acc,#1a86eb)))`;
   }
 
+  function shortTrafficLabel(label) {
+    const text = String(label || '').trim();
+    return text.replace(/^Закрыто\s+и\s+не\s+реализовано\s*(\(.*\))$/i, 'ЗинР $1');
+  }
+
   function renderRankingWidget(type, title, key, withFooter, options = {}) {
     const data = buildBaseMetrics(basePeriod(type));
     const ranking = makeRanking(data.rows, key);
@@ -716,7 +760,7 @@
         ${top.map((r, i) => `
           <div class="traffic-rank-row">
             <small>${i + 1}</small>
-            <span class="traffic-rank-label">${esc(r.label)}</span>
+            <span class="traffic-rank-label" title="${esc(r.label)}">${esc(shortTrafficLabel(r.label))}</span>
             <span class="traffic-rank-track"><span class="traffic-rank-fill" style="${trafficRankFillStyle(r.value, max)}"></span></span>
             <strong>${formatMetricValue(r.value)}</strong>
             ${withFooter ? `<em>${ranking.total ? Math.round(r.value / ranking.total * 100) : 0}%</em>` : ''}
@@ -862,6 +906,23 @@
     const suffix = periodKey === 'day' ? 'к вчера' : periodKey === 'month' ? 'к прошлому месяцу' : 'к прошлой неделе';
     if (change === null) return 'нет прошлого периода';
     return `${change >= 0 ? '↑' : '↓'} ${Math.abs(change).toFixed(0)}% ${suffix}`;
+  }
+
+  function pointDateLabel(point, periodKey) {
+    if (!point) return '-';
+    const now = new Date();
+    if (periodKey === 'week') {
+      const order = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+      const idx = order.indexOf(point.label);
+      const d = startOfWeek(now);
+      if (idx >= 0) d.setDate(d.getDate() + idx);
+      return `${point.label} · ${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+    if (periodKey === 'month') {
+      const day = Number(point.label);
+      return `${String(day || now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+    return point.label;
   }
 
   function renderLineAxis(points) {
@@ -1090,7 +1151,7 @@
     const max = Math.max(...data.rows.map(r => r.value), 1);
     return data.rows.slice(0, limit).map(r => `
       <div class="traffic-rank-row">
-        <span class="traffic-rank-label">${esc(r.label)}</span>
+        <span class="traffic-rank-label" title="${esc(r.label)}">${esc(shortTrafficLabel(r.label))}</span>
         <strong>${formatMetricValue(r.value)}</strong>
         <span class="traffic-rank-track"><span class="traffic-rank-fill" style="${trafficRankFillStyle(r.value, max)}"></span></span>
       </div>`).join('') || '<p class="traffic-muted">Нет данных</p>';
@@ -1257,6 +1318,7 @@
     return `<svg class="traffic-line-svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
       <path class="traffic-line-area" d="${area}"></path>
       <path class="traffic-line-path ${smooth ? 'smooth' : ''}" d="${d}"></path>
+      <g class="traffic-line-points">${coords.map(([x, y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.6"></circle>`).join('')}</g>
     </svg>`;
   }
 

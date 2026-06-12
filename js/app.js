@@ -16375,7 +16375,6 @@ function renderExportPage() {
           <p class="export-page-kicker">Аналитика</p>
           <h1>Экспорт отчёта</h1>
         </div>
-        <button class="export-page-back" type="button" onclick="dockAnalytics('traffic')">Трафик</button>
       </div>
       <div id="export-page-host"></div>
     </section>`;
@@ -18127,7 +18126,6 @@ function openRepeatSearchPage() {
           <p class="repeats-page-kicker">Аналитика</p>
           <h1>Поиск повторов</h1>
         </div>
-        <button class="repeats-page-back" type="button" onclick="dockAnalytics('traffic')">Трафик</button>
       </div>
       <div id="repeats-page-host"></div>
     </section>`;

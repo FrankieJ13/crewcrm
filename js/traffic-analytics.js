@@ -572,6 +572,9 @@
     document.querySelectorAll('[data-delete-traffic-widget]').forEach(btn => {
       btn.onclick = () => deleteWidget(btn.dataset.deleteTrafficWidget);
     });
+    document.querySelectorAll('[data-traffic-custom-widget]').forEach(card => {
+      card.onclick = () => showCustomWidgetModal(card.dataset.trafficCustomWidget);
+    });
     document.querySelectorAll('[data-traffic-period]').forEach(btn => {
       btn.onclick = e => {
         e.stopPropagation();
@@ -986,6 +989,23 @@
   }
 
   function renderCustomWidget(widget) {
+    const primary = getPrimaryGroupField(widget)?.normalizedName;
+    const rows = rowsForWidget(widget);
+    const data = primary ? makeWidgetData(widget, rows, primary) : null;
+    const period = PERIOD_LABELS[widget.period?.type || 'all'] || 'Все данные';
+    return `
+      <article class="traffic-widget traffic-custom-widget traffic-format-${esc(widget.format || 'ranking')}" data-traffic-custom-widget="${esc(widget.id)}">
+        <div class="traffic-widget-head">
+          <div>
+            <h3>${esc(widget.title || 'Без названия')}</h3>
+            <p class="traffic-muted">${esc(FORMAT_LABELS[widget.format] || widget.format || 'Виджет')} · ${esc(period)}</p>
+          </div>
+        </div>
+        ${data ? renderWidgetByFormat(widget, data, rows, primary) : '<p class="traffic-muted">Нет данных для построения.</p>'}
+      </article>`;
+  }
+
+  function renderCustomWidgetDetail(widget) {
     const fields = (widget.selectedFields || []).map(f => `${f.normalizedName}${f.role ? ` (${ROLE_LABELS[f.role] || f.role})` : ''}`).join(', ');
     const primary = getPrimaryGroupField(widget)?.normalizedName;
     const rows = rowsForWidget(widget);
@@ -999,11 +1019,72 @@
             <p class="traffic-muted">${esc(FORMAT_LABELS[widget.format] || widget.format || 'Виджет')} · ${esc(period)}</p>
             <p class="traffic-muted">${esc(fields || 'поля не выбраны')}</p>
           </div>
-          <button class="traffic-delete-icon" data-delete-traffic-widget="${esc(widget.id)}" aria-label="Удалить">⌫</button>
         </div>
         ${data ? renderWidgetByFormat(widget, data, rows, primary) : '<p class="traffic-muted">Нет данных для построения.</p>'}
         <p class="traffic-widget-note">Пересчитано: ${esc(fmtDateTime(new Date(widget.updatedAt || Date.now())))}</p>
       </article>`;
+  }
+
+  function showCustomWidgetModal(id) {
+    const widget = (state.widgets || []).find(w => w.id === id);
+    const modal = document.getElementById('traffic-modal');
+    if (!widget || !modal) return;
+    modal.innerHTML = `
+      <div class="traffic-modal-card traffic-advanced-modal-card">
+        <div class="traffic-modal-topbar">
+          <button class="traffic-modal-close" data-traffic-close type="button">×</button>
+          <div class="traffic-modal-tools">
+            <button class="traffic-icon-tool danger" data-traffic-modal-delete type="button" aria-label="Удалить виджет">⌫</button>
+            <button class="traffic-icon-tool" data-traffic-modal-edit type="button" aria-label="Редактировать виджет">✎</button>
+            <button class="traffic-icon-tool" data-traffic-modal-info type="button" aria-label="Информация о виджете">i</button>
+          </div>
+        </div>
+        <div class="traffic-advanced-detail">
+          ${renderCustomWidgetDetail(widget)}
+          <div class="traffic-widget-info" id="traffic-widget-info" hidden>
+            ${renderWidgetInfo(widget)}
+          </div>
+        </div>
+      </div>`;
+    modal.classList.add('open');
+    bindModalDismiss(modal);
+    modal.querySelector('[data-traffic-close]').onclick = closeModal;
+    modal.querySelector('[data-traffic-modal-delete]').onclick = e => {
+      e.stopPropagation();
+      closeModal();
+      deleteWidget(id);
+    };
+    modal.querySelector('[data-traffic-modal-edit]').onclick = e => {
+      e.stopPropagation();
+      closeModal();
+      showWidgetBuilder(id);
+    };
+    modal.querySelector('[data-traffic-modal-info]').onclick = e => {
+      e.stopPropagation();
+      const info = modal.querySelector('#traffic-widget-info');
+      if (info) info.hidden = !info.hidden;
+    };
+  }
+
+  function renderWidgetInfo(widget) {
+    const fields = widget.selectedFields || [];
+    return `
+      <h3>Из чего собран виджет</h3>
+      <div class="traffic-info-grid">
+        <span>Формат</span><b>${esc(FORMAT_LABELS[widget.format] || widget.format || '-')}</b>
+        <span>Период</span><b>${esc(PERIOD_LABELS[widget.period?.type || 'all'] || 'Все данные')}</b>
+        <span>Ориентация</span><b>${esc(widget.orientation || 'auto')}</b>
+        <span>Полей</span><b>${fields.length}</b>
+      </div>
+      <div class="traffic-info-fields">
+        ${fields.map(f => `
+          <div>
+            <strong>${esc(f.normalizedName)}</strong>
+            <small>${esc(f.type || 'unknown')} · ${esc(ROLE_LABELS[f.role] || f.role || 'роль не задана')} · ${esc(f.aggregation || 'count')}</small>
+            <em>${Array.isArray(f.values) && f.values.length ? `Фильтр: ${f.values.map(esc).join(', ')}` : 'Все значения'}</em>
+          </div>
+        `).join('') || '<p class="traffic-muted">Поля не выбраны.</p>'}
+      </div>`;
   }
 
   function renderWidgetByFormat(widget, data, rows, primary) {
@@ -1388,14 +1469,18 @@
     });
   }
 
-  function showWidgetBuilder() {
+  function showWidgetBuilder(editId) {
     const modal = document.getElementById('traffic-modal');
     if (!modal) return;
+    const editing = typeof editId === 'string' ? (state.widgets || []).find(w => w.id === editId) : null;
+    const editingFields = editing?.selectedFields || [];
+    const editingNames = new Set(editingFields.map(f => f.normalizedName));
     const formatCards = Object.entries(FORMAT_LABELS).map(([value, label], i) => {
       const help = FORMAT_HELP[value] || ['', ''];
+      const checked = editing ? editing.format === value : i === 0;
       return `
-        <label class="traffic-format-card ${i === 0 ? 'active' : ''}" data-format-card="${esc(value)}">
-          <input type="radio" name="traffic-widget-format" value="${esc(value)}" ${i === 0 ? 'checked' : ''}>
+        <label class="traffic-format-card ${checked ? 'active' : ''}" data-format-card="${esc(value)}">
+          <input type="radio" name="traffic-widget-format" value="${esc(value)}" ${checked ? 'checked' : ''}>
           <span class="traffic-format-preview traffic-preview-${esc(value)}"></span>
           <strong>${esc(label)}</strong>
           <small>${esc(help[0])}</small>
@@ -1403,23 +1488,30 @@
         </label>`;
     }).join('');
     const roleOptions = Object.entries(ROLE_LABELS).map(([value, label]) => `<option value="${value}">${esc(label)}</option>`).join('');
-    const periodOptions = Object.entries(PERIOD_LABELS).map(([value, label], i) => `<label class="traffic-segment"><input type="radio" name="traffic-widget-period" value="${value}" ${i === 0 ? 'checked' : ''}><span>${esc(label)}</span></label>`).join('');
+    const periodOptions = Object.entries(PERIOD_LABELS).map(([value, label], i) => {
+      const checked = editing ? (editing.period?.type || 'all') === value : i === 0;
+      return `<label class="traffic-segment"><input type="radio" name="traffic-widget-period" value="${value}" ${checked ? 'checked' : ''}><span>${esc(label)}</span></label>`;
+    }).join('');
     modal.innerHTML = `
       <div class="traffic-modal-card">
-        <h2>Новый виджет</h2>
+        <h2>${editing ? 'Редактировать виджет' : 'Новый виджет'}</h2>
         <p class="traffic-muted">Формат определяет внешний вид. Расчеты будут выполнены по выбранным полям CSV.</p>
-        <label class="traffic-field">Название виджета<input id="traffic-widget-title" placeholder="Заявки по источникам"></label>
+        <label class="traffic-field">Название виджета<input id="traffic-widget-title" placeholder="Заявки по источникам" value="${esc(editing?.title || '')}"></label>
         <div class="traffic-builder-section">
           <strong>Выберите формат виджета</strong>
           <div class="traffic-format-grid">${formatCards}</div>
         </div>
-        <div>
+        <div class="traffic-builder-section">
           <strong>Выбрать поля из CSV</strong>
-          <p class="traffic-muted" id="traffic-selected-count">Выбрано 0 из 10</p>
-          <div class="traffic-fields">
+          <div class="traffic-field-search">
+            <input id="traffic-field-search" type="search" placeholder="Поиск метрики: источник, город, ответственный...">
+            <button id="traffic-field-search-clear" type="button" aria-label="Очистить поиск">×</button>
+          </div>
+          <p class="traffic-muted" id="traffic-selected-count">Выбрано ${editingNames.size} из 10</p>
+          <div class="traffic-fields" id="traffic-fields-list">
             ${state.fields.map(f => `
-              <label class="traffic-field">
-                <span><input type="checkbox" class="traffic-field-check" value="${esc(f.normalizedName)}"> ${esc(f.normalizedName)}</span>
+              <label class="traffic-field traffic-field-option" data-field-search="${esc(`${f.normalizedName} ${f.originalName} ${f.type} ${f.example || ''}`.toLowerCase())}">
+                <span><input type="checkbox" class="traffic-field-check" value="${esc(f.normalizedName)}" ${editingNames.has(f.normalizedName) ? 'checked' : ''}> ${esc(f.normalizedName)}</span>
                 <span class="traffic-field-meta">${esc(f.type)} · пример: ${esc(f.example || '-')}</span>
               </label>`).join('')}
           </div>
@@ -1442,12 +1534,16 @@
         </div>
         <div class="traffic-modal-actions">
           <button class="traffic-btn" data-traffic-close>Отмена</button>
-          <button class="traffic-btn primary" id="traffic-save-widget">Сохранить виджет</button>
+          <button class="traffic-btn primary" id="traffic-save-widget">${editing ? 'Сохранить изменения' : 'Сохранить виджет'}</button>
         </div>
       </div>`;
     modal.classList.add('open');
     bindModalDismiss(modal);
     modal.querySelector('[data-traffic-close]').onclick = closeModal;
+    if (editing?.orientation) {
+      const orient = modal.querySelector(`input[name="traffic-widget-orientation"][value="${editing.orientation}"]`);
+      if (orient) orient.checked = true;
+    }
     const checks = modal.querySelectorAll('.traffic-field-check');
     const roleList = modal.querySelector('#traffic-role-list');
     const syncRoleList = () => {
@@ -1458,6 +1554,7 @@
       }
       roleList.innerHTML = selected.map((name, idx) => {
         const f = state.fields.find(field => field.normalizedName === name);
+        const saved = editingFields.find(field => field.normalizedName === name);
         const values = uniqueFieldValues(name, 80);
         return `
           <div class="traffic-role-card">
@@ -1482,7 +1579,7 @@
               <summary>Значения: все${values.length ? ` · ${values.length}` : ''}</summary>
               <div class="traffic-value-list">
                 ${values.map(v => `
-                  <label><input type="checkbox" data-value-index="${idx}" value="${esc(v)}"> <span>${esc(v)}</span></label>
+                  <label><input type="checkbox" data-value-index="${idx}" value="${esc(v)}" ${saved?.values?.includes(v) ? 'checked' : ''}> <span>${esc(v)}</span></label>
                 `).join('') || '<span class="traffic-muted">В этом поле нет значений.</span>'}
               </div>
               <small>Ничего не отмечено — используются все значения.</small>
@@ -1491,12 +1588,28 @@
       }).join('');
       selected.forEach((name, idx) => {
         const f = state.fields.find(field => field.normalizedName === name);
-        const role = (f.type === 'date' || f.type === 'datetime') ? 'date' : idx === 0 ? 'groupBy' : idx === 1 ? 'splitBy' : 'filter';
+        const saved = editingFields.find(field => field.normalizedName === name);
+        const role = saved?.role || ((f.type === 'date' || f.type === 'datetime') ? 'date' : idx === 0 ? 'groupBy' : idx === 1 ? 'splitBy' : 'filter');
         const roleSel = roleList.querySelector(`[data-role-index="${idx}"]`);
         const aggSel = roleList.querySelector(`[data-agg-index="${idx}"]`);
         if (roleSel) roleSel.value = role;
-        if (aggSel) aggSel.value = f.type === 'number' || f.type === 'money' ? 'sum' : 'count';
+        if (aggSel) aggSel.value = saved?.aggregation || (f.type === 'number' || f.type === 'money' ? 'sum' : 'count');
       });
+    };
+    const fieldSearch = modal.querySelector('#traffic-field-search');
+    const clearSearch = modal.querySelector('#traffic-field-search-clear');
+    const filterFields = () => {
+      const q = norm(fieldSearch.value);
+      modal.querySelectorAll('.traffic-field-option').forEach(option => {
+        option.hidden = q && !norm(option.dataset.fieldSearch || '').includes(q);
+      });
+      clearSearch.classList.toggle('show', Boolean(fieldSearch.value));
+    };
+    fieldSearch.oninput = filterFields;
+    clearSearch.onclick = () => {
+      fieldSearch.value = '';
+      filterFields();
+      fieldSearch.focus();
     };
     modal.querySelectorAll('.traffic-format-card').forEach(card => {
       card.onclick = () => {
@@ -1515,6 +1628,7 @@
         syncRoleList();
       };
     });
+    syncRoleList();
     modal.querySelector('#traffic-save-widget').onclick = () => {
       const selected = Array.from(checks).filter(x => x.checked).map(x => x.value);
       if (!selected.length) {
@@ -1541,8 +1655,8 @@
       const format = modal.querySelector('input[name="traffic-widget-format"]:checked')?.value || 'ranking';
       const periodType = modal.querySelector('input[name="traffic-widget-period"]:checked')?.value || 'all';
       const orientation = modal.querySelector('input[name="traffic-widget-orientation"]:checked')?.value || 'auto';
-      state.widgets.push({
-        id: `widget_${Date.now()}`,
+      const nextWidget = {
+        id: editing?.id || `widget_${Date.now()}`,
         title,
         format,
         orientation,
@@ -1551,13 +1665,19 @@
         filters: [],
         textBlocks: ['total','average','peak','summary'],
         chart: { type: 'auto', showPeak: true, showLegend: true },
-        createdAt: now,
+        createdAt: editing?.createdAt || now,
         updatedAt: now
-      });
+      };
+      if (editing) {
+        const index = state.widgets.findIndex(w => w.id === editing.id);
+        if (index >= 0) state.widgets[index] = nextWidget;
+      } else {
+        state.widgets.push(nextWidget);
+      }
       localStorage.setItem(STORAGE.widgets, JSON.stringify(state.widgets));
       closeModal();
       renderTrafficAnalytics();
-      notify('Виджет сохранён', 's');
+      notify(editing ? 'Виджет обновлён' : 'Виджет сохранён', 's');
     };
   }
 

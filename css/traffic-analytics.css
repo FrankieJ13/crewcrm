@@ -377,6 +377,15 @@
   padding: clamp(14px, 3.8vw, 18px);
 }
 
+.traffic-custom-widget {
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.traffic-custom-widget:active {
+  transform: scale(.992);
+}
+
 .traffic-widget h3 {
   margin: 0;
   font-family: 'Unbounded', system-ui, sans-serif;
@@ -1228,12 +1237,68 @@
   margin-top: 10px;
 }
 
+.traffic-field-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  border: 1px solid color-mix(in srgb, var(--acc, #1a86eb) 34%, var(--line, #d8d8d8));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg2, #fff) 94%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 55%, transparent), 0 8px 20px rgba(0,0,0,.06);
+}
+
+.traffic-field-search input {
+  width: 100%;
+  min-height: 46px;
+  border: 0;
+  outline: 0;
+  padding: 0 44px 0 14px;
+  background: transparent;
+  color: var(--txt, #111);
+  font: 600 14px/1.2 'Golos Text', system-ui, sans-serif;
+}
+
+.traffic-field-search button {
+  position: absolute;
+  right: 7px;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--bg3, #eee) 82%, transparent);
+  color: var(--txt2, #666);
+  font-size: 20px;
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.traffic-field-search button.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .traffic-field {
   display: grid;
   gap: 4px;
   padding: 10px;
   border-radius: 14px;
   background: color-mix(in srgb, var(--bg3, #eee) 68%, transparent);
+}
+
+.traffic-field-option {
+  border: 1px solid color-mix(in srgb, var(--line, #d8d8d8) 70%, transparent);
+  background: color-mix(in srgb, var(--bg2, #fff) 82%, transparent);
+}
+
+.traffic-field-option:has(input:checked) {
+  border-color: color-mix(in srgb, var(--acc, #1a86eb) 58%, transparent);
+  background: color-mix(in srgb, var(--acc, #1a86eb) 10%, var(--bg2, #fff));
+}
+
+.traffic-field-option[hidden] {
+  display: none;
 }
 
 .traffic-field input:not([type="checkbox"]),
@@ -1553,6 +1618,101 @@
   max-height: 100%;
   overflow: auto;
   padding: 18px;
+}
+
+.traffic-advanced-modal-card {
+  padding-top: 12px;
+}
+
+.traffic-modal-topbar {
+  position: sticky;
+  top: -12px;
+  z-index: 4;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin: -12px -6px 10px;
+  padding: 10px 6px 8px;
+  background: color-mix(in srgb, var(--bg2, #fff) 92%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.traffic-modal-tools {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.traffic-modal-topbar .traffic-modal-close {
+  position: static;
+  flex: 0 0 auto;
+}
+
+.traffic-icon-tool {
+  width: 36px;
+  height: 36px;
+  border: 1px solid color-mix(in srgb, var(--line, #d8d8d8) 75%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg3, #eee) 72%, transparent);
+  color: var(--txt, #111);
+  font: 900 15px/1 'Unbounded', system-ui, sans-serif;
+}
+
+.traffic-icon-tool.danger {
+  border-color: color-mix(in srgb, var(--red, #e53935) 34%, transparent);
+  background: color-mix(in srgb, var(--red, #e53935) 9%, transparent);
+  color: var(--red, #e53935);
+}
+
+.traffic-widget-info {
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--line, #d8d8d8) 72%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--bg3, #eee) 58%, transparent);
+}
+
+.traffic-widget-info h3 {
+  margin: 0 0 10px;
+  font: 900 15px/1.1 'Unbounded', system-ui, sans-serif;
+  color: var(--txt, #111);
+}
+
+.traffic-info-grid {
+  display: grid;
+  grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+  gap: 8px 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line, #d8d8d8) 68%, transparent);
+}
+
+.traffic-info-grid span,
+.traffic-info-fields small,
+.traffic-info-fields em {
+  color: var(--txt2, #666);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.traffic-info-grid b,
+.traffic-info-fields strong {
+  min-width: 0;
+  color: var(--txt, #111);
+  overflow-wrap: anywhere;
+}
+
+.traffic-info-fields {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.traffic-info-fields div {
+  display: grid;
+  gap: 3px;
+  padding: 9px 10px;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--bg2, #fff) 78%, transparent);
 }
 
 .traffic-base-modal-card {

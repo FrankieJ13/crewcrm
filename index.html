@@ -27,7 +27,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&family=Exo+2:wght@200;300;700&family=JetBrains+Mono:wght@300;400&family=Oswald:wght@400;700&display=swap" rel="stylesheet"/>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<link rel="stylesheet" href="./css/styles.css?v=323"/>
+<link rel="stylesheet" href="./css/styles.css?v=324"/>
 <link rel="stylesheet" href="./css/autopodbor.css?v=323"/>
 <link rel="stylesheet" href="./css/traffic-analytics.css?v=326"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -613,6 +613,16 @@
         <div id="c-traffic"></div>
       </div>
     </div>
+    <div id="scr-export" class="scr">
+      <div class="w">
+        <div id="c-export"></div>
+      </div>
+    </div>
+    <div id="scr-repeats" class="scr">
+      <div class="w">
+        <div id="c-repeats"></div>
+      </div>
+    </div>
     <div id="scr-vizity" class="scr" style="padding:0">
       <div id="c-vizity"></div>
     </div>
@@ -764,6 +774,15 @@
       <div class="dock-popup" id="dock-analytics-popup">
         <button class="dock-popup-btn" onclick="dockAnalytics('traffic')">
           <span class="dock-popup-dot" style="background:var(--acc)"></span>ТРАФИК
+        </button>
+        <button class="dock-popup-btn" onclick="dockAnalytics('analiz')">
+          <span class="dock-popup-dot" style="background:#8b5cf6"></span>АНАЛИТИК ИИ
+        </button>
+        <button class="dock-popup-btn" onclick="dockAnalytics('export')">
+          <span class="dock-popup-dot" style="background:#2ed573"></span>ЭКСПОРТ ОТЧЁТА
+        </button>
+        <button class="dock-popup-btn" onclick="dockAnalytics('repeats')">
+          <span class="dock-popup-dot" style="background:#ffb020"></span>ПОИСК ПОВТОРОВ
         </button>
       </div>
     </div>
@@ -985,8 +1004,8 @@
   </div>
 </div>
 
-<script src="./js/app.js?v=323"></script>
-<script src="./js/traffic-analytics.js?v=326"></script>
+<script src="./js/app.js?v=324"></script>
+<script src="./js/traffic-analytics.js?v=327"></script>
 <!-- Затемнение фона при открытом popup напоминаний -->
 <div class="rem-backdrop" id="rem-backdrop" onclick="closeRemPanel()"></div>
 

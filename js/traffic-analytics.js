@@ -141,7 +141,10 @@
   };
 
   window.dockAnalytics = function dockAnalytics(tab) {
-    if (tab === 'traffic') openTrafficAnalytics();
+    if (tab === 'traffic') return openTrafficAnalytics();
+    if (tab === 'analiz' && typeof openAnaliz === 'function') return openAnaliz();
+    if (tab === 'export' && typeof openExportPage === 'function') return openExportPage();
+    if (tab === 'repeats' && typeof openRepeatSearchPage === 'function') return openRepeatSearchPage();
   };
 
   window.openTrafficAnalytics = function openTrafficAnalytics() {
@@ -194,7 +197,11 @@
       state.rows = rows;
       state.fields = fields;
       const savedMapping = Object.fromEntries(Object.entries(mapping || {}).filter(([, value]) => value));
-      state.mapping = { ...detectColumns(fields), ...savedMapping };
+      const detectedMapping = detectColumns(fields);
+      state.mapping = { ...detectedMapping, ...savedMapping };
+      if (detectedMapping.source && fields.some(f => normHeader(f.originalName) === normHeader('Источник обращения'))) {
+        state.mapping.source = detectedMapping.source;
+      }
       state.meta = meta;
     }
   }
@@ -691,23 +698,31 @@
     return renderBaseWidgetShell(type, 'Лиды по источнику обращения', body, { className: 'traffic-share-widget' });
   }
 
-  function renderRankingWidget(type, title, key, withFooter) {
+  function trafficRankFillStyle(value, max) {
+    const ratio = max ? Math.max(0, Math.min(1, value / max)) : 0;
+    const width = Math.max(4, ratio * 100);
+    const strong = Math.round(36 + ratio * 44);
+    const warm = Math.round(ratio * 76);
+    return `width:${width}%;background:linear-gradient(90deg,color-mix(in srgb,var(--acc,#1a86eb) ${strong}%,#dff1ff),color-mix(in srgb,#8b5cf6 ${warm}%,var(--acc,#1a86eb)))`;
+  }
+
+  function renderRankingWidget(type, title, key, withFooter, options = {}) {
     const data = buildBaseMetrics(basePeriod(type));
     const ranking = makeRanking(data.rows, key);
     const max = Math.max(...ranking.rows.map(r => r.value), 1);
-    const top = ranking.rows.slice(0, 5);
+    const top = ranking.rows.slice(0, options.full ? ranking.rows.length : 5);
     const body = `
       <div class="traffic-ranking traffic-ranking-compact">
         ${top.map((r, i) => `
           <div class="traffic-rank-row">
             <small>${i + 1}</small>
             <span class="traffic-rank-label">${esc(r.label)}</span>
-            <span class="traffic-rank-track"><span class="traffic-rank-fill" style="width:${Math.max(4, r.value / max * 100)}%"></span></span>
+            <span class="traffic-rank-track"><span class="traffic-rank-fill" style="${trafficRankFillStyle(r.value, max)}"></span></span>
             <strong>${formatMetricValue(r.value)}</strong>
             ${withFooter ? `<em>${ranking.total ? Math.round(r.value / ranking.total * 100) : 0}%</em>` : ''}
           </div>`).join('') || '<p class="traffic-muted">Нет данных</p>'}
       </div>
-      ${withFooter ? `<div class="traffic-purple-strip"><span>Конверсия в сделку</span><b>${ranking.total ? Math.round(((top[top.length - 1]?.value || 0) / ranking.total) * 1000) / 10 : 0}%</b></div>` : `<button class="traffic-link-btn" type="button">Смотреть все ›</button>`}`;
+      ${withFooter ? `<div class="traffic-purple-strip"><span>Конверсия в сделку</span><b>${ranking.total ? Math.round(((top[top.length - 1]?.value || 0) / ranking.total) * 1000) / 10 : 0}%</b></div>` : (options.full ? '' : `<button class="traffic-link-btn" type="button">Смотреть все ›</button>`)}`;
     return renderBaseWidgetShell(type, title, body, { className: 'traffic-ranking-widget' });
   }
 
@@ -1077,7 +1092,7 @@
       <div class="traffic-rank-row">
         <span class="traffic-rank-label">${esc(r.label)}</span>
         <strong>${formatMetricValue(r.value)}</strong>
-        <span class="traffic-rank-track"><span class="traffic-rank-fill" style="width:${Math.max(4, r.value / max * 100)}%"></span></span>
+        <span class="traffic-rank-track"><span class="traffic-rank-fill" style="${trafficRankFillStyle(r.value, max)}"></span></span>
       </div>`).join('') || '<p class="traffic-muted">Нет данных</p>';
   }
 
@@ -1266,15 +1281,15 @@
     return ['var(--acc, #1a86eb)', '#8b5cf6', 'var(--grn, #2ed573)', '#ffb020', '#ef476f'][i % 5];
   }
 
-  function renderBaseWidgetByType(type) {
+  function renderBaseWidgetByType(type, options = {}) {
     if (type === 'leadTrend') return renderLeadTrendWidget(type);
     if (type === 'sourceShare') return renderSourceShareWidget(type);
-    if (type === 'cities') return renderRankingWidget(type, 'Города', state.mapping.city);
+    if (type === 'cities') return renderRankingWidget(type, 'Города', state.mapping.city, false, options);
     if (type === 'hours') return renderHoursWidget(type);
-    if (type === 'stages') return renderRankingWidget(type, 'Этапы воронки', state.mapping.stage, true);
-    if (type === 'lossReasons') return renderRankingWidget(type, 'Причины закрытия', state.mapping.lossReason);
+    if (type === 'stages') return renderRankingWidget(type, 'Этапы воронки', state.mapping.stage, true, options);
+    if (type === 'lossReasons') return renderRankingWidget(type, 'Причины закрытия', state.mapping.lossReason, false, options);
     if (type === 'lifetime') return renderLifetimeWidget(type);
-    if (type === 'responsible') return renderRankingWidget(type, 'Ответственные', state.mapping.responsible);
+    if (type === 'responsible') return renderRankingWidget(type, 'Ответственные', state.mapping.responsible, false, options);
     return '';
   }
 
@@ -1282,7 +1297,7 @@
     const modal = document.getElementById('traffic-modal');
     if (!modal) return;
     const data = buildBaseMetrics(basePeriod(type));
-    const card = renderBaseWidgetByType(type);
+    const card = renderBaseWidgetByType(type, { full: true });
     modal.innerHTML = `
       <div class="traffic-modal-card traffic-base-modal-card">
         <button class="traffic-modal-close" data-traffic-close type="button">×</button>

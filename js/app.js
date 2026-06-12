@@ -664,8 +664,9 @@ function openAnaliz() {
   azData = azLoad();
   ['curr','prev','plan'].forEach(azEnsure);
   showScr('analiz');
-  dockSetActive('home');
+  dockSetActive('analytics');
   renderAnaliz();
+  scheduleFirebasePageUpdate();
 }
 
 function renderAnaliz() {
@@ -990,7 +991,7 @@ function showScr(id) {
     if (typeof _apReturnToBody === 'function') _apReturnToBody();
     if (typeof _arReturnToBody === 'function') _arReturnToBody();
   }
-  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','vizity','ceo','analiz','trophies','profile'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const el = document.getElementById('scr-'+t);
     if (el) el.classList.remove('on');
   });
@@ -1023,7 +1024,7 @@ function isScreenTokenActive(id, token) {
 
 function showStartupLoader(text = 'Синхронизация профиля…') {
   hideStartupLoader();
-  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','vizity','ceo','analiz','trophies','profile'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const el = document.getElementById('scr-'+t);
     if (el) el.classList.remove('on');
   });
@@ -1350,8 +1351,8 @@ function getPresencePageLabel() {
   const roleDept = role === 'dozhim' ? 'dozhim' : 'crm';
   const effectiveRatingDept = isCeo ? S.ratingDept : roleDept;
   const effectiveDohodDept = isCeo ? S.dohodTab : roleDept;
-  if (isVisible('export-modal-overlay')) return 'Экспорт отчёта';
-  if (isVisible('repeats-overlay')) return 'Поиск повторов';
+  if (document.getElementById('scr-export')?.classList.contains('on') || isVisible('export-modal-overlay')) return 'Экспорт отчёта';
+  if (document.getElementById('scr-repeats')?.classList.contains('on') || isVisible('repeats-overlay')) return 'Поиск повторов';
   if (isVisible('about-overlay')) return 'О проекте';
   if (isVisible('diag-modal')) {
     return localStorage.getItem(CRM_LOG_TAB_KEY) === 'crm' ? 'Логи CRM' : 'Логи Sys';
@@ -2547,7 +2548,7 @@ function onLogout() {
   if (hdrGreeting2) { hdrGreeting2.style.display = 'none'; hdrGreeting2.classList.remove('aurora'); }
   closeHamburger();
   // Сбрасываем ВСЕ экраны
-  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo','analiz','trophies','profile'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const s = document.getElementById('scr-'+t);
     if (s) { s.classList.remove('on'); s.style.display = ''; }
   });
@@ -8098,14 +8099,13 @@ function showPlanEditBtnIfCeo(matched) {
   const isCeo = matched && isCeoLike(matched.role);
   if (hmb) hmb.style.display = isCeo ? '' : 'none';
   if (sep) sep.style.display = isCeo ? '' : 'none';
-  // Кнопка экспорта отчёта — только CEO
+  // Эти инструменты перенесены в dock → Аналитика, в гамбургере больше не дублируем.
   const hmbExp = document.getElementById('hmb-export');
-  if (hmbExp) hmbExp.style.display = isCeo ? '' : 'none';
-  // Кнопка «Поиск повторов» — только CEO/ROP
+  if (hmbExp) hmbExp.style.display = 'none';
   const hmbRep = document.getElementById('hmb-repeats');
-  if (hmbRep) hmbRep.style.display = isCeo ? '' : 'none';
+  if (hmbRep) hmbRep.style.display = 'none';
   const hmbAnaliz = document.getElementById('hmb-analiz');
-  if (hmbAnaliz) hmbAnaliz.style.display = isCeo ? '' : 'none';
+  if (hmbAnaliz) hmbAnaliz.style.display = 'none';
   // Итоги — видны всем
   const itogiBtn = document.getElementById('dock-kpi-itogi');
   if (itogiBtn) itogiBtn.style.display = '';
@@ -8672,7 +8672,7 @@ function showAccessDenied(reason = 'Почта не найдена в USERS') {
   const hmbAccSep = document.getElementById('hmb-sep-account'); if (hmbAccSep) hmbAccSep.style.display = 'none';
   const hmbT = document.getElementById('hmb-trophies'); if (hmbT) hmbT.style.display = 'none';
   const hmbA = document.getElementById('hmb-about-btn'); if (hmbA) hmbA.style.display = 'none';
-  ['otchet','dohod','grafik','instruktsii','personal','rating','vizity','ceo','analiz','trophies','profile'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const s = document.getElementById('scr-'+t);
     if (s) { s.classList.remove('on'); s.style.display = ''; }
   });
@@ -11867,8 +11867,14 @@ function _highlightActiveDockPopupItem(popupId) {
       return screenOn('instruktsii') && m[1] === (S.faqTab || '');
     },
     'dock-analytics-popup': (btn) => {
-      if (!screenOn('traffic')) return false;
-      return /dockAnalytics\(['"]traffic['"]\)/.test(btn.getAttribute('onclick') || '');
+      if (!screenOn('traffic') && !screenOn('analiz') && !screenOn('export') && !screenOn('repeats')) return false;
+      const m = (btn.getAttribute('onclick') || '').match(/dockAnalytics\(['"]([^'"]+)['"]\)/);
+      if (!m) return false;
+      if (screenOn('traffic')) return m[1] === 'traffic';
+      if (screenOn('analiz')) return m[1] === 'analiz';
+      if (screenOn('export')) return m[1] === 'export';
+      if (screenOn('repeats')) return m[1] === 'repeats';
+      return false;
     },
     'dock-vizity-popup': (btn) => {
       if (!screenOn('vizity')) return false;
@@ -16326,10 +16332,9 @@ function exp_loadExcelJS() {
   return _expLibLoading;
 }
 
-function exp_openModal() {
-  const ov = document.getElementById('export-modal-overlay');
+function exp_prepareForm() {
   const sel = document.getElementById('exp-month-sel');
-  if (!ov || !sel) return;
+  if (!sel) return;
   // Заполняем список месяцев (6 последних)
   sel.innerHTML = '';
   for (let i = 0; i < 6; i++) {
@@ -16347,6 +16352,54 @@ function exp_openModal() {
   if (status) { status.textContent = ''; status.className = 'export-status'; }
   const btn = document.getElementById('exp-go-btn');
   if (btn) btn.disabled = false;
+}
+
+function openExportPage() {
+  const matched = findUserInSheet();
+  if (!matched || !isCeoLike(matched.role)) return;
+  closeAllDockPopups();
+  showScr('export');
+  dockSetActive('analytics');
+  renderExportPage();
+  scheduleFirebasePageUpdate();
+}
+
+function renderExportPage() {
+  const host = document.getElementById('c-export');
+  const modal = document.getElementById('export-modal');
+  if (!host || !modal) return;
+  host.innerHTML = `
+    <section class="export-page">
+      <div class="export-page-head">
+        <div>
+          <p class="export-page-kicker">Аналитика</p>
+          <h1>Экспорт отчёта</h1>
+        </div>
+        <button class="export-page-back" type="button" onclick="dockAnalytics('traffic')">Трафик</button>
+      </div>
+      <div id="export-page-host"></div>
+    </section>`;
+  document.getElementById('export-page-host')?.appendChild(modal);
+  modal.classList.add('export-page-card');
+  const closeBtn = modal.querySelector('.export-modal-close');
+  if (closeBtn) closeBtn.style.display = 'none';
+  exp_prepareForm();
+}
+
+function exp_openModal() {
+  openExportPage();
+}
+
+function exp_openLegacyModal() {
+  const ov = document.getElementById('export-modal-overlay');
+  const sel = document.getElementById('exp-month-sel');
+  if (!ov || !sel) return;
+  exp_prepareForm();
+  const modal = document.getElementById('export-modal');
+  if (modal && modal.parentElement !== ov) ov.appendChild(modal);
+  const closeBtn = modal?.querySelector('.export-modal-close');
+  if (closeBtn) closeBtn.style.display = '';
+  modal?.classList.remove('export-page-card');
   ov.style.display = 'flex';
   scheduleFirebasePageUpdate();
 }
@@ -18053,15 +18106,43 @@ function _rsBindHdrScrollState(perMgrCount, crossCount) {
 }
 
 function openRepeatSearchModal() {
+  openRepeatSearchPage();
+}
+
+function openRepeatSearchPage() {
+  const matched = findUserInSheet();
+  if (!matched || !isCeoLike(matched.role)) return;
   const ov = _rsEnsureOverlay();
+  const shell = document.querySelector('.repeats-shell');
+  const host = document.getElementById('c-repeats');
   const body = document.getElementById('repeats-body');
-  ov.classList.add('open');
-  document.body.style.overflow = 'hidden';
+  if (!shell || !host || !body) return;
+  closeAllDockPopups();
+  showScr('repeats');
+  dockSetActive('analytics');
+  host.innerHTML = `
+    <section class="repeats-page">
+      <div class="repeats-page-head">
+        <div>
+          <p class="repeats-page-kicker">Аналитика</p>
+          <h1>Поиск повторов</h1>
+        </div>
+        <button class="repeats-page-back" type="button" onclick="dockAnalytics('traffic')">Трафик</button>
+      </div>
+      <div id="repeats-page-host"></div>
+    </section>`;
+  document.getElementById('repeats-page-host')?.appendChild(shell);
+  ov.classList.remove('open');
+  document.body.style.overflow = '';
   body.innerHTML = _rsRenderConfigHtml();
   scheduleFirebasePageUpdate();
 }
 
 function closeRepeatSearchModal() {
+  if (document.getElementById('scr-repeats')?.classList.contains('on')) {
+    dockAnalytics('traffic');
+    return;
+  }
   const ov = document.getElementById('repeats-overlay');
   if (!ov) return;
   ov.classList.remove('open');

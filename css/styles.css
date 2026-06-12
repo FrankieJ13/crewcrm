@@ -5561,6 +5561,53 @@ body:not(.cosmic) .sched-person-name {
 }
 .export-modal-close:hover { color: var(--txt); }
 
+.export-page,
+.repeats-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px));
+}
+.export-page-head,
+.repeats-page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+.export-page-kicker,
+.repeats-page-kicker {
+  margin: 0 0 4px;
+  font: 800 10px/1 'Unbounded', sans-serif;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--acc);
+}
+.export-page-head h1,
+.repeats-page-head h1 {
+  margin: 0;
+  font: 900 clamp(22px, 6vw, 34px)/1 'Unbounded', sans-serif;
+  color: var(--txt);
+}
+.export-page-back,
+.repeats-page-back {
+  min-height: 34px;
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg2);
+  color: var(--txt);
+  font: 800 10px/1 'Unbounded', sans-serif;
+  cursor: pointer;
+}
+#export-page-host #export-modal {
+  max-width: 680px;
+  max-height: none;
+}
+#export-page-host .export-page-card {
+  box-shadow: var(--shadow);
+}
+
 .export-modal-body {
   padding: 16px 18px 18px;
   overflow-y: auto;
@@ -8218,6 +8265,21 @@ body.fluent .vac-cell        { color: #111; }
   background: var(--bg); color: var(--txt);
   display: flex; flex-direction: column;
   box-shadow: 0 0 60px rgba(0,0,0,.4);
+}
+.repeats-page .repeats-shell {
+  height: auto;
+  min-height: 520px;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.repeats-page .repeats-hdr {
+  padding-top: 12px;
+}
+.repeats-page .repeats-body {
+  min-height: 420px;
 }
 .repeats-hdr {
   flex: 0 0 auto;

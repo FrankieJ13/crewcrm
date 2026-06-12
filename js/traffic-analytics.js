@@ -193,7 +193,8 @@
     if (Array.isArray(rows) && Array.isArray(fields) && meta) {
       state.rows = rows;
       state.fields = fields;
-      state.mapping = mapping || {};
+      const savedMapping = Object.fromEntries(Object.entries(mapping || {}).filter(([, value]) => value));
+      state.mapping = { ...detectColumns(fields), ...savedMapping };
       state.meta = meta;
     }
   }
@@ -433,18 +434,30 @@
   }
 
   function detectColumns(fields) {
-    const byName = new Map(fields.map(f => [norm(f.originalName), f.normalizedName]));
+    const byName = new Map();
+    fields.forEach(f => {
+      byName.set(normHeader(f.originalName), f.normalizedName);
+      byName.set(normHeader(f.normalizedName), f.normalizedName);
+    });
     const mapping = {};
     Object.entries(FIELD_ALIASES).forEach(([key, aliases]) => {
-      const exact = aliases.map(norm).find(a => byName.has(a));
+      const normalizedAliases = aliases.map(normHeader);
+      const exact = normalizedAliases.find(a => byName.has(a));
       if (exact) {
         mapping[key] = byName.get(exact);
         return;
       }
-      const fuzzy = fields.find(f => aliases.some(a => norm(f.originalName).includes(norm(a))));
+      const fuzzy = fields.find(f => {
+        const names = [f.originalName, f.normalizedName].map(normHeader);
+        return normalizedAliases.some(alias => alias.length >= 6 && names.some(name => name.includes(alias) || alias.includes(name)));
+      });
       if (fuzzy) mapping[key] = fuzzy.normalizedName;
     });
     return mapping;
+  }
+
+  function normHeader(v) {
+    return norm(v).replace(/\s+#\d+$/, '');
   }
 
   function norm(v) {
@@ -611,6 +624,16 @@
     return state.basePeriods[type] || BASE_WIDGET_DEFAULT_PERIODS[type] || 'week';
   }
 
+  function mappedField(key) {
+    if (state.mapping?.[key]) return state.mapping[key];
+    const aliases = FIELD_ALIASES[key] || [];
+    const found = (state.fields || []).find(f => {
+      const names = [f.originalName, f.normalizedName].map(normHeader);
+      return aliases.map(normHeader).some(alias => names.includes(alias));
+    });
+    return found?.normalizedName || '';
+  }
+
   function renderBaseWidgetShell(type, title, body, opts = {}) {
     const active = basePeriod(type);
     return `
@@ -633,7 +656,7 @@
 
   function renderLeadTrendWidget(type) {
     const data = buildBaseMetrics(basePeriod(type));
-    const sourceRank = makeRanking(data.rows, state.mapping.source).rows.slice(0, 3);
+    const sourceRank = makeRanking(data.rows, mappedField('source')).rows.slice(0, 3);
     const body = `
       <div class="traffic-lead-trend">
         <div class="traffic-main-metric">
@@ -642,7 +665,8 @@
           <em>${formatChange(data.trend.change, data.periodKey)}</em>
         </div>
         <div class="traffic-trend-chart">
-          ${renderLineSvg(data.trend.points, false)}
+          ${renderTrendCandles(data.trend.points)}
+          ${renderLineSvg(data.trend.points, true)}
           ${renderLineAxis(data.trend.points)}
         </div>
       </div>
@@ -654,7 +678,7 @@
 
   function renderSourceShareWidget(type) {
     const data = buildBaseMetrics(basePeriod(type));
-    const ranking = makeRanking(data.rows, state.mapping.source);
+    const ranking = makeRanking(data.rows, mappedField('source'));
     const rows = ranking.rows.slice(0, 5);
     const body = `
       <div class="traffic-share traffic-base-share">
@@ -743,13 +767,32 @@
           : String(x.created.getDate()).padStart(2, '0');
       buckets.set(key, (buckets.get(key) || 0) + 1);
     });
-    const points = Array.from(buckets, ([label, value]) => ({ label, value }))
-      .sort((a, b) => trendOrder(a.label, mode) - trendOrder(b.label, mode));
+    const labels = trendLabels(mode);
+    const points = labels.length
+      ? labels.map(label => ({ label, value: buckets.get(label) || 0 }))
+      : Array.from(buckets, ([label, value]) => ({ label, value }))
+        .sort((a, b) => trendOrder(a.label, mode) - trendOrder(b.label, mode));
     const peak = points.reduce((a, b) => b.value > (a?.value || 0) ? b : a, null);
     const total = items.length;
     const avg = points.length ? total / points.length : 0;
     const change = prevItems.length ? ((total - prevItems.length) / prevItems.length) * 100 : null;
     return { total, avg, peak, change, points };
+  }
+
+  function trendLabels(mode) {
+    const now = new Date();
+    if (mode === 'weekday') {
+      const order = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+      const todayIndex = (now.getDay() + 6) % 7;
+      return order.slice(0, todayIndex + 1);
+    }
+    if (mode === 'hour') {
+      return Array.from({ length: now.getHours() + 1 }, (_, h) => `${String(h).padStart(2, '0')}:00`);
+    }
+    if (mode === 'day') {
+      return Array.from({ length: now.getDate() }, (_, i) => String(i + 1).padStart(2, '0'));
+    }
+    return [];
   }
 
   function trendOrder(label, mode) {
@@ -808,11 +851,27 @@
 
   function renderLineAxis(points) {
     if (!points.length) return '<div class="traffic-line-axis"><span>-</span><span>-</span><span>-</span></div>';
+    if (points.length <= 7) {
+      return `<div class="traffic-line-axis all">${points.map(p => `<span>${esc(p.label)}</span>`).join('')}</div>`;
+    }
     const mid = points[Math.floor(points.length / 2)];
     return `<div class="traffic-line-axis">
       <span>${esc(points[0].label)}</span>
       <span>${esc(mid.label)}</span>
       <span>${esc(points[points.length - 1].label)}</span>
+    </div>`;
+  }
+
+  function renderTrendCandles(points) {
+    if (!points.length) return '';
+    const max = Math.max(...points.map(p => p.value), 1);
+    return `<div class="traffic-candle-layer">
+      ${points.map((p, i) => {
+        const prev = i ? points[i - 1].value : p.value;
+        const cls = p.value >= prev ? 'up' : 'down';
+        const h = Math.max(6, Math.round((p.value / max) * 88));
+        return `<span class="traffic-candle ${cls}" style="height:${h}%"><b>${formatMetricValue(p.value)}</b></span>`;
+      }).join('')}
     </div>`;
   }
 
@@ -887,7 +946,9 @@
   }
 
   function renderCustomTrend(widget, rows, format) {
-    const trend = makeTrend(rows.filter(x => x.created), [], widget.period?.type === 'today' ? 'hour' : 'day');
+    const periodType = widget.period?.type;
+    const mode = periodType === 'today' ? 'hour' : (periodType === 'currentWeek' || periodType === 'prevWeek') ? 'weekday' : 'day';
+    const trend = makeTrend(rows.filter(x => x.created), [], mode);
     const pts = format === 'rollingTrend' ? rollingPoints(trend.points) : trend.points;
     return `
       <div class="traffic-custom-trend">
@@ -896,7 +957,11 @@
           <span>записей</span>
           <em>${format === 'rollingTrend' ? 'сглаженный тренд' : 'тренд по датам'}</em>
         </div>
-        ${renderLineSvg(pts, format === 'rollingTrend')}
+        <div class="traffic-trend-chart">
+          ${renderTrendCandles(pts)}
+          ${renderLineSvg(pts, true)}
+          ${renderLineAxis(pts)}
+        </div>
         <div class="traffic-mini-kpis">
           <span>Пик: <b>${esc(trend.peak?.label || '-')}</b></span>
           <span>Среднее: <b>${trend.avg.toFixed(1)}</b></span>
@@ -1119,7 +1184,24 @@
   function rowsForWidget(widget) {
     const dateKey = getDateField(widget);
     const rows = state.rows.map(row => ({ row, created: parseDate(row[dateKey])?.date })).filter(x => x.row);
-    return filterRowsByPeriod(rows, widget.period?.type || 'all');
+    let filtered = filterRowsByPeriod(rows, widget.period?.type || 'all');
+    (widget.selectedFields || []).forEach(field => {
+      if (!Array.isArray(field.values) || !field.values.length) return;
+      const allowed = new Set(field.values.map(norm));
+      filtered = filtered.filter(x => splitValue(x.row[field.normalizedName]).some(v => allowed.has(norm(v))));
+    });
+    return filtered;
+  }
+
+  function uniqueFieldValues(fieldName, limit = 100) {
+    const counts = new Map();
+    (state.rows || []).forEach(row => {
+      splitValue(row[fieldName]).forEach(value => counts.set(value, (counts.get(value) || 0) + 1));
+    });
+    return Array.from(counts, ([value, count]) => ({ value, count }))
+      .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value))
+      .slice(0, limit)
+      .map(x => x.value);
   }
 
   function filterRowsByPeriod(rows, periodType) {
@@ -1155,12 +1237,22 @@
       const y = h - (p.value / max) * (h - 12) - 6;
       return [x, y];
     }) : [[0, h], [w, h]];
-    const d = coords.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
+    const d = smooth ? smoothPath(coords) : coords.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
     const area = `${d} L${w} ${h} L0 ${h} Z`;
     return `<svg class="traffic-line-svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
       <path class="traffic-line-area" d="${area}"></path>
       <path class="traffic-line-path ${smooth ? 'smooth' : ''}" d="${d}"></path>
     </svg>`;
+  }
+
+  function smoothPath(coords) {
+    if (coords.length < 2) return coords.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
+    return coords.reduce((d, curr, i) => {
+      if (!i) return `M${curr[0].toFixed(1)} ${curr[1].toFixed(1)}`;
+      const prev = coords[i - 1];
+      const midX = (prev[0] + curr[0]) / 2;
+      return `${d} C${midX.toFixed(1)} ${prev[1].toFixed(1)}, ${midX.toFixed(1)} ${curr[1].toFixed(1)}, ${curr[0].toFixed(1)} ${curr[1].toFixed(1)}`;
+    }, '');
   }
 
   function rollingPoints(points) {
@@ -1205,6 +1297,7 @@
         </div>
       </div>`;
     modal.classList.add('open');
+    bindModalDismiss(modal);
     modal.querySelector('[data-traffic-close]').onclick = closeModal;
     modal.querySelectorAll('[data-traffic-period]').forEach(btn => {
       btn.onclick = e => {
@@ -1276,6 +1369,7 @@
         </div>
       </div>`;
     modal.classList.add('open');
+    bindModalDismiss(modal);
     modal.querySelector('[data-traffic-close]').onclick = closeModal;
     const checks = modal.querySelectorAll('.traffic-field-check');
     const roleList = modal.querySelector('#traffic-role-list');
@@ -1287,24 +1381,35 @@
       }
       roleList.innerHTML = selected.map((name, idx) => {
         const f = state.fields.find(field => field.normalizedName === name);
-        const suggestedRole = (f.type === 'date' || f.type === 'datetime') ? 'date' : idx === 0 ? 'groupBy' : idx === 1 ? 'splitBy' : 'filter';
+        const values = uniqueFieldValues(name, 80);
         return `
-          <div class="traffic-role-row">
-            <div>
-              <strong>${esc(name)}</strong>
-              <small>${esc(f.type)} · ${esc(f.example || '-')}</small>
+          <div class="traffic-role-card">
+            <div class="traffic-role-row">
+              <div>
+                <strong>${esc(name)}</strong>
+                <small>${esc(f.type)} · ${esc(f.example || '-')}</small>
+              </div>
+              <select class="traffic-role-select" data-role-index="${idx}">${roleOptions}</select>
+              <select class="traffic-agg-select" data-agg-index="${idx}">
+                <option value="count">count</option>
+                <option value="uniqueCount">uniqueCount</option>
+                <option value="sum">sum</option>
+                <option value="average">average</option>
+                <option value="min">min</option>
+                <option value="max">max</option>
+                <option value="median">median</option>
+                <option value="share">share</option>
+              </select>
             </div>
-            <select class="traffic-role-select" data-role-index="${idx}">${roleOptions}</select>
-            <select class="traffic-agg-select" data-agg-index="${idx}">
-              <option value="count">count</option>
-              <option value="uniqueCount">uniqueCount</option>
-              <option value="sum">sum</option>
-              <option value="average">average</option>
-              <option value="min">min</option>
-              <option value="max">max</option>
-              <option value="median">median</option>
-              <option value="share">share</option>
-            </select>
+            <details class="traffic-value-picker">
+              <summary>Значения: все${values.length ? ` · ${values.length}` : ''}</summary>
+              <div class="traffic-value-list">
+                ${values.map(v => `
+                  <label><input type="checkbox" data-value-index="${idx}" value="${esc(v)}"> <span>${esc(v)}</span></label>
+                `).join('') || '<span class="traffic-muted">В этом поле нет значений.</span>'}
+              </div>
+              <small>Ничего не отмечено — используются все значения.</small>
+            </details>
           </div>`;
       }).join('');
       selected.forEach((name, idx) => {
@@ -1345,12 +1450,14 @@
         const f = state.fields.find(field => field.normalizedName === name);
         const role = modal.querySelector(`[data-role-index="${idx}"]`)?.value || ((f.type === 'date' || f.type === 'datetime') ? 'date' : 'groupBy');
         const aggregation = modal.querySelector(`[data-agg-index="${idx}"]`)?.value || (f.type === 'number' || f.type === 'money' ? 'sum' : 'count');
+        const values = Array.from(modal.querySelectorAll(`[data-value-index="${idx}"]:checked`)).map(input => input.value);
         return {
           originalName: f.originalName,
           normalizedName: f.normalizedName,
           role,
           type: f.type,
-          aggregation
+          aggregation,
+          values
         };
       });
       const title = modal.querySelector('#traffic-widget-title').value.trim() || selected.join(' + ');
@@ -1391,6 +1498,7 @@
         </div>
       </div>`;
     modal.classList.add('open');
+    bindModalDismiss(modal);
     modal.querySelector('[data-traffic-close]').onclick = closeModal;
     modal.querySelector('#traffic-clear-only').onclick = () => {
       clearTrafficMemory(false);
@@ -1412,6 +1520,12 @@
       modal.classList.remove('open');
       modal.innerHTML = '';
     }
+  }
+
+  function bindModalDismiss(modal) {
+    modal.onclick = e => {
+      if (e.target === modal) closeModal();
+    };
   }
 
   function clearTrafficMemory(withWidgets) {

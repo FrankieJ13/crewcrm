@@ -6,7 +6,8 @@
     widgets: 'crmTrafficAdvancedWidgets',
     meta: 'crmTrafficLastImportMeta',
     tab: 'crmTrafficActiveTab',
-    draft: 'crmTrafficWidgetDraft'
+    draft: 'crmTrafficWidgetDraft',
+    basePeriods: 'crmTrafficBasePeriods'
   };
 
   const PROCESS_STEPS = [
@@ -82,12 +83,30 @@
     prevMonth: 'Прошлый месяц'
   };
 
+  const BASE_PERIOD_LABELS = {
+    day: 'День',
+    week: 'Неделя',
+    month: 'Месяц'
+  };
+
+  const BASE_WIDGET_DEFAULT_PERIODS = {
+    leadTrend: 'week',
+    sourceShare: 'month',
+    cities: 'week',
+    hours: 'week',
+    stages: 'month',
+    lossReasons: 'month',
+    lifetime: 'month',
+    responsible: 'week'
+  };
+
   const state = {
     rows: null,
     fields: null,
     mapping: null,
     meta: null,
     widgets: [],
+    basePeriods: { ...BASE_WIDGET_DEFAULT_PERIODS },
     activeTab: 'base',
     processing: null,
     storageWarning: ''
@@ -163,6 +182,7 @@
   };
 
   function loadTrafficFromStorage() {
+    state.basePeriods = { ...BASE_WIDGET_DEFAULT_PERIODS, ...safeJson(localStorage.getItem(STORAGE.basePeriods), {}) };
     if (state.rows && state.fields && state.meta) return;
     state.activeTab = localStorage.getItem(STORAGE.tab) || 'base';
     state.widgets = safeJson(localStorage.getItem(STORAGE.widgets), []);
@@ -515,43 +535,202 @@
     document.querySelectorAll('[data-delete-traffic-widget]').forEach(btn => {
       btn.onclick = () => deleteWidget(btn.dataset.deleteTrafficWidget);
     });
+    document.querySelectorAll('[data-traffic-period]').forEach(btn => {
+      btn.onclick = e => {
+        e.stopPropagation();
+        const type = btn.dataset.trafficPeriodWidget;
+        state.basePeriods[type] = btn.dataset.trafficPeriod;
+        localStorage.setItem(STORAGE.basePeriods, JSON.stringify(state.basePeriods));
+        renderTrafficAnalytics();
+      };
+    });
+    document.querySelectorAll('[data-traffic-base-widget]').forEach(card => {
+      card.onclick = () => showBaseWidgetModal(card.dataset.trafficBaseWidget);
+    });
   }
 
   function renderBaseTab() {
-    const metrics = buildBaseMetrics();
     return `
       <div class="traffic-grid traffic-base-grid">
-        ${renderTrendWidget('Текущий месяц · весь трафик · все сделки', metrics.month, true)}
-        ${renderTrendWidget('Текущая неделя · весь трафик · все сделки', metrics.week, true)}
-        ${renderRankingWidget('Неделя по городам', metrics.cities, ['Лидер','Доля лидера','Всего городов','Всего заявок'])}
-        ${renderHoursWidget(metrics.hours)}
-        ${renderRankingWidget('Неделя по ответственным', metrics.responsible, ['Самый загруженный','Среднее на ответственного','Всего ответственных','Всего заявок'])}
+        ${renderLeadTrendWidget('leadTrend')}
+        ${renderSourceShareWidget('sourceShare')}
+        ${renderRankingWidget('cities', 'Города', state.mapping.city)}
+        ${renderHoursWidget('hours')}
+        ${renderRankingWidget('stages', 'Этапы воронки', state.mapping.stage, true)}
+        ${renderRankingWidget('lossReasons', 'Причины закрытия', state.mapping.lossReason)}
+        ${renderLifetimeWidget('lifetime')}
+        ${renderRankingWidget('responsible', 'Ответственные', state.mapping.responsible)}
       </div>`;
   }
 
-  function buildBaseMetrics() {
+  function buildBaseMetrics(periodKey) {
+    return getPeriodDataset(periodKey);
+  }
+
+  function getDatedRows() {
     const createdKey = state.mapping.createdAt;
-    const cityKey = state.mapping.city;
-    const respKey = state.mapping.responsible;
-    const withDates = state.rows.map(r => ({ row: r, created: parseDate(r[createdKey])?.date })).filter(x => x.created);
+    return state.rows.map(r => ({ row: r, created: parseDate(r[createdKey])?.date })).filter(x => x.created);
+  }
+
+  function getPeriodDataset(periodKey) {
+    const withDates = getDatedRows();
     const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
-    const weekStart = startOfWeek(now);
-    const prevWeekStart = new Date(weekStart); prevWeekStart.setDate(prevWeekStart.getDate() - 7);
-    const prevWeekEnd = new Date(weekStart); prevWeekEnd.setMilliseconds(-1);
-    const month = withDates.filter(x => x.created >= monthStart && x.created <= now);
-    const prevMonth = withDates.filter(x => x.created >= prevMonthStart && x.created <= prevMonthEnd);
-    const week = withDates.filter(x => x.created >= weekStart && x.created <= now);
-    const prevWeek = withDates.filter(x => x.created >= prevWeekStart && x.created <= prevWeekEnd);
+    let from;
+    let prevFrom;
+    let prevTo;
+    let mode = 'day';
+    if (periodKey === 'day') {
+      from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      prevFrom = new Date(from); prevFrom.setDate(prevFrom.getDate() - 1);
+      prevTo = new Date(from); prevTo.setMilliseconds(-1);
+      mode = 'hour';
+    } else if (periodKey === 'month') {
+      from = new Date(now.getFullYear(), now.getMonth(), 1);
+      prevFrom = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      prevTo = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+      mode = 'day';
+    } else {
+      from = startOfWeek(now);
+      prevFrom = new Date(from); prevFrom.setDate(prevFrom.getDate() - 7);
+      prevTo = new Date(from); prevTo.setMilliseconds(-1);
+      mode = 'weekday';
+    }
+    const rows = withDates.filter(x => x.created >= from && x.created <= now);
+    const prevRows = withDates.filter(x => x.created >= prevFrom && x.created <= prevTo);
     return {
-      month: makeTrend(month, prevMonth, 'day'),
-      week: makeTrend(week, prevWeek, 'weekday'),
-      cities: makeRanking(week, cityKey),
-      responsible: makeRanking(week, respKey),
-      hours: makeHours(week)
+      periodKey,
+      label: BASE_PERIOD_LABELS[periodKey] || 'Неделя',
+      rows,
+      prevRows,
+      mode,
+      trend: makeTrend(rows, prevRows, mode)
     };
+  }
+
+  function basePeriod(type) {
+    return state.basePeriods[type] || BASE_WIDGET_DEFAULT_PERIODS[type] || 'week';
+  }
+
+  function renderBaseWidgetShell(type, title, body, opts = {}) {
+    const active = basePeriod(type);
+    return `
+      <article class="traffic-widget traffic-base-widget ${opts.wide ? 'wide' : ''} ${opts.className || ''}" data-traffic-base-widget="${esc(type)}">
+        <div class="traffic-base-head">
+          <h3>${esc(title)}</h3>
+          ${renderBasePeriodControls(type, active)}
+        </div>
+        ${body}
+      </article>`;
+  }
+
+  function renderBasePeriodControls(type, active) {
+    return `<div class="traffic-period-pills" aria-label="Период">
+      ${[['day','Д'],['week','Н'],['month','М']].map(([value, label]) => `
+        <button class="${active === value ? 'active' : ''}" data-traffic-period-widget="${esc(type)}" data-traffic-period="${value}" type="button">${label}</button>
+      `).join('')}
+    </div>`;
+  }
+
+  function renderLeadTrendWidget(type) {
+    const data = buildBaseMetrics(basePeriod(type));
+    const sourceRank = makeRanking(data.rows, state.mapping.source).rows.slice(0, 3);
+    const body = `
+      <div class="traffic-lead-trend">
+        <div class="traffic-main-metric">
+          <strong>${formatMetricValue(data.trend.total)}</strong>
+          <span>лидов</span>
+          <em>${formatChange(data.trend.change, data.periodKey)}</em>
+        </div>
+        <div class="traffic-trend-chart">
+          ${renderLineSvg(data.trend.points, false)}
+          ${renderLineAxis(data.trend.points)}
+        </div>
+      </div>
+      <div class="traffic-source-legend">
+        ${sourceRank.map((r, i) => `<span><i style="background:${shareColor(i)}"></i>${esc(r.label)} <b>${formatMetricValue(r.value)}</b></span>`).join('') || '<span>Нет источников</span>'}
+      </div>`;
+    return renderBaseWidgetShell(type, 'Лиды по источникам', body, { wide: true, className: 'traffic-leads-widget' });
+  }
+
+  function renderSourceShareWidget(type) {
+    const data = buildBaseMetrics(basePeriod(type));
+    const ranking = makeRanking(data.rows, state.mapping.source);
+    const rows = ranking.rows.slice(0, 5);
+    const body = `
+      <div class="traffic-share traffic-base-share">
+        ${renderDonut(rows, ranking.total)}
+        <div class="traffic-share-list">
+          ${rows.map((r, i) => `<span><i style="background:${shareColor(i)}"></i>${esc(r.label)} <b>${formatMetricValue(r.value)}</b> <em>${ranking.total ? Math.round(r.value / ranking.total * 100) : 0}%</em></span>`).join('') || '<span>Нет данных</span>'}
+        </div>
+      </div>
+      <div class="traffic-total-strip"><span>Всего лидов</span><b>${formatMetricValue(ranking.total)}</b></div>`;
+    return renderBaseWidgetShell(type, 'Лиды по источнику обращения', body, { className: 'traffic-share-widget' });
+  }
+
+  function renderRankingWidget(type, title, key, withFooter) {
+    const data = buildBaseMetrics(basePeriod(type));
+    const ranking = makeRanking(data.rows, key);
+    const max = Math.max(...ranking.rows.map(r => r.value), 1);
+    const top = ranking.rows.slice(0, 5);
+    const body = `
+      <div class="traffic-ranking traffic-ranking-compact">
+        ${top.map((r, i) => `
+          <div class="traffic-rank-row">
+            <small>${i + 1}</small>
+            <span class="traffic-rank-label">${esc(r.label)}</span>
+            <span class="traffic-rank-track"><span class="traffic-rank-fill" style="width:${Math.max(4, r.value / max * 100)}%"></span></span>
+            <strong>${formatMetricValue(r.value)}</strong>
+            ${withFooter ? `<em>${ranking.total ? Math.round(r.value / ranking.total * 100) : 0}%</em>` : ''}
+          </div>`).join('') || '<p class="traffic-muted">Нет данных</p>'}
+      </div>
+      ${withFooter ? `<div class="traffic-purple-strip"><span>Конверсия в сделку</span><b>${ranking.total ? Math.round(((top[top.length - 1]?.value || 0) / ranking.total) * 1000) / 10 : 0}%</b></div>` : `<button class="traffic-link-btn" type="button">Смотреть все ›</button>`}`;
+    return renderBaseWidgetShell(type, title, body, { className: 'traffic-ranking-widget' });
+  }
+
+  function renderHoursWidget(type) {
+    const data = buildBaseMetrics(basePeriod(type));
+    const hours = makeHours(data.rows);
+    const body = `
+      ${renderBars(hours.rows, hours.peak?.label)}
+      <div class="traffic-purple-strip"><span>◷ Пик трафика</span><b>${hours.peak?.label || '-'}:00</b></div>`;
+    return renderBaseWidgetShell(type, 'Пиковые часы 9–18', body, { className: 'traffic-hours-widget' });
+  }
+
+  function renderLifetimeWidget(type) {
+    const data = buildBaseMetrics(basePeriod(type));
+    const lifetime = makeLifetime(data.rows);
+    const body = `
+      <div class="traffic-lifetime-head"><strong>${lifetime.avg.toFixed(1)}</strong><span>дня в среднем</span></div>
+      ${renderBars(lifetime.rows, lifetime.peak?.label)}
+      <div class="traffic-chart-caption">Дней</div>`;
+    return renderBaseWidgetShell(type, 'Срок жизни сделки', body, { className: 'traffic-lifetime-widget' });
+  }
+
+  function makeLifetime(items) {
+    const closedKey = state.mapping.closedAt;
+    const buckets = [
+      { label: '0–1', min: 0, max: 1, value: 0 },
+      { label: '2–3', min: 2, max: 3, value: 0 },
+      { label: '4–7', min: 4, max: 7, value: 0 },
+      { label: '8–14', min: 8, max: 14, value: 0 },
+      { label: '15–30', min: 15, max: 30, value: 0 },
+      { label: '31–60', min: 31, max: 60, value: 0 },
+      { label: '60+', min: 61, max: Infinity, value: 0 }
+    ];
+    const values = [];
+    if (closedKey) {
+      items.forEach(x => {
+        const closed = parseDate(x.row[closedKey])?.date;
+        if (!closed) return;
+        const days = Math.max(0, Math.ceil((closed - x.created) / 86400000));
+        values.push(days);
+        const bucket = buckets.find(b => days >= b.min && days <= b.max);
+        if (bucket) bucket.value++;
+      });
+    }
+    const avg = values.length ? values.reduce((s, n) => s + n, 0) / values.length : 0;
+    const peak = buckets.reduce((a, b) => b.value > (a?.value || 0) ? b : a, null);
+    return { rows: buckets, avg, peak };
   }
 
   function makeTrend(items, prevItems, mode) {
@@ -614,68 +793,39 @@
     return { rows, total, peak, avg, deviation: peak ? peak.value - avg : 0 };
   }
 
-  function renderTrendWidget(title, data, wide) {
-    const peakText = data.peak?.label ? `${data.peak.label}${data.peak.value ? ` · ${data.peak.value}` : ''}` : '-';
-    return `
-      <article class="traffic-widget traffic-trend-widget ${wide ? 'wide' : ''}">
-        <h3>${esc(title)}</h3>
-        <div class="traffic-trend-body">
-          <div class="traffic-main-metric">
-            <strong>${formatMetricValue(data.total)}</strong>
-            <span>лидов</span>
-            <em>${data.change === null ? 'нет прошлого периода' : `${data.change > 0 ? '↑' : '↓'} ${Math.abs(data.change).toFixed(0)}% к прошлому периоду`}</em>
-          </div>
-          <div class="traffic-trend-chart">
-            ${renderLineSvg(data.points, false)}
-          </div>
-        </div>
-        <div class="traffic-stat-row traffic-stat-row-compact">
-          <div class="traffic-stat"><span class="traffic-stat-label">Среднее в день</span><span class="traffic-stat-value">${data.avg.toFixed(1)}</span></div>
-          <div class="traffic-stat"><span class="traffic-stat-label">Пиковый день</span><span class="traffic-stat-value">${esc(peakText)}</span></div>
-        </div>
-        <p class="traffic-widget-note">${data.total ? 'Основная нагрузка видна по пиковым точкам графика.' : 'Нет данных за выбранный период.'}</p>
-      </article>`;
-  }
-
-  function renderRankingWidget(title, data) {
-    const max = Math.max(...data.rows.map(r => r.value), 1);
-    const top = data.rows.slice(0, 5);
-    return `
-      <article class="traffic-widget traffic-ranking-widget">
-        <h3>${esc(title)}</h3>
-        <div class="traffic-ranking">
-          ${top.map(r => `
-            <div class="traffic-rank-row">
-              <span class="traffic-rank-label">${esc(r.label)}</span>
-              <strong>${formatMetricValue(r.value)}</strong>
-              <span class="traffic-rank-track"><span class="traffic-rank-fill" style="width:${Math.max(4, r.value / max * 100)}%"></span></span>
-            </div>`).join('') || '<p class="traffic-muted">Нет данных</p>'}
-        </div>
-        <div class="traffic-mini-kpis">
-          <span>Лидер: <b>${esc(data.leader?.label || '-')}</b></span>
-          <span>Всего: <b>${formatMetricValue(data.total)}</b></span>
-        </div>
-      </article>`;
-  }
-
-  function renderHoursWidget(data) {
-    return `
-      <article class="traffic-widget traffic-hours-widget">
-        <h3>Пиковые часы 9–18</h3>
-        ${renderBars(data.rows, data.peak?.label)}
-        <div class="traffic-mini-kpis">
-          <span>Пик: <b>${data.peak?.label || '-'}:00</b></span>
-          <span>Среднее: <b>${data.avg.toFixed(1)}</b></span>
-          <span>Всего: <b>${formatMetricValue(data.total)}</b></span>
-        </div>
-      </article>`;
-  }
-
   function renderBars(points, peakLabel) {
     const max = Math.max(...points.map(p => p.value), 1);
     return `<div class="traffic-chart">
       ${points.map(p => `<div class="traffic-bar ${p.label === peakLabel ? 'peak' : ''}" title="${esc(p.label)}: ${p.value}" style="height:${Math.max(3, p.value / max * 100)}%"><span>${esc(p.label)}</span></div>`).join('')}
     </div>`;
+  }
+
+  function formatChange(change, periodKey) {
+    const suffix = periodKey === 'day' ? 'к вчера' : periodKey === 'month' ? 'к прошлому месяцу' : 'к прошлой неделе';
+    if (change === null) return 'нет прошлого периода';
+    return `${change >= 0 ? '↑' : '↓'} ${Math.abs(change).toFixed(0)}% ${suffix}`;
+  }
+
+  function renderLineAxis(points) {
+    if (!points.length) return '<div class="traffic-line-axis"><span>-</span><span>-</span><span>-</span></div>';
+    const mid = points[Math.floor(points.length / 2)];
+    return `<div class="traffic-line-axis">
+      <span>${esc(points[0].label)}</span>
+      <span>${esc(mid.label)}</span>
+      <span>${esc(points[points.length - 1].label)}</span>
+    </div>`;
+  }
+
+  function renderDonut(rows, total) {
+    let cursor = 0;
+    const safeTotal = Math.max(total, 1);
+    const segments = rows.map((r, i) => {
+      const next = cursor + Math.max(1, Math.round(r.value / safeTotal * 100));
+      const segment = `${shareColor(i)} ${cursor}% ${Math.min(100, next)}%`;
+      cursor = next;
+      return segment;
+    }).join(', ');
+    return `<div class="traffic-donut" style="background:conic-gradient(${segments || 'var(--bg3) 0 100%'})"><span>${rows.length}</span></div>`;
   }
 
   function renderAdvancedTab() {
@@ -1022,6 +1172,50 @@
 
   function shareColor(i) {
     return ['var(--acc, #1a86eb)', '#8b5cf6', 'var(--grn, #2ed573)', '#ffb020', '#ef476f'][i % 5];
+  }
+
+  function renderBaseWidgetByType(type) {
+    if (type === 'leadTrend') return renderLeadTrendWidget(type);
+    if (type === 'sourceShare') return renderSourceShareWidget(type);
+    if (type === 'cities') return renderRankingWidget(type, 'Города', state.mapping.city);
+    if (type === 'hours') return renderHoursWidget(type);
+    if (type === 'stages') return renderRankingWidget(type, 'Этапы воронки', state.mapping.stage, true);
+    if (type === 'lossReasons') return renderRankingWidget(type, 'Причины закрытия', state.mapping.lossReason);
+    if (type === 'lifetime') return renderLifetimeWidget(type);
+    if (type === 'responsible') return renderRankingWidget(type, 'Ответственные', state.mapping.responsible);
+    return '';
+  }
+
+  function showBaseWidgetModal(type) {
+    const modal = document.getElementById('traffic-modal');
+    if (!modal) return;
+    const data = buildBaseMetrics(basePeriod(type));
+    const card = renderBaseWidgetByType(type);
+    modal.innerHTML = `
+      <div class="traffic-modal-card traffic-base-modal-card">
+        <button class="traffic-modal-close" data-traffic-close type="button">×</button>
+        <div class="traffic-base-detail">
+          ${card}
+          <div class="traffic-detail-kpis">
+            <span>Всего: <b>${formatMetricValue(data.trend.total)}</b></span>
+            <span>Среднее: <b>${data.trend.avg.toFixed(1)}</b></span>
+            <span>Пик: <b>${esc(data.trend.peak?.label || '-')}</b></span>
+            <span>Период: <b>${esc(data.label)}</b></span>
+          </div>
+        </div>
+      </div>`;
+    modal.classList.add('open');
+    modal.querySelector('[data-traffic-close]').onclick = closeModal;
+    modal.querySelectorAll('[data-traffic-period]').forEach(btn => {
+      btn.onclick = e => {
+        e.stopPropagation();
+        state.basePeriods[btn.dataset.trafficPeriodWidget] = btn.dataset.trafficPeriod;
+        localStorage.setItem(STORAGE.basePeriods, JSON.stringify(state.basePeriods));
+        closeModal();
+        renderTrafficAnalytics();
+        showBaseWidgetModal(type);
+      };
+    });
   }
 
   function showWidgetBuilder() {

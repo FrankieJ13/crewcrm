@@ -762,27 +762,26 @@
           <em class="${dyn !== null && dyn < 0 ? 'down' : 'up'}">${formatChange(dyn, data.periodKey)}</em>
         </div>
       </div>
-      <div class="traffic-market-chart">
-        ${renderLineSvg(barPoints, true)}
+      <div class="traffic-market-chart ${isMonth ? 'is-month' : ''}">
+        ${renderLineSvg(barPoints, true, true)}
         <div class="traffic-market-columns">
           ${barPoints.map((p) => {
             const index = points.indexOf(p);
             const prev = index > 0 ? points[index - 1].value : p.value;
             const cls = p.value >= prev ? 'up' : 'down';
-            const h = Math.max(8, Math.round((p.value / max) * 100));
             const ratio = max ? Math.max(0, Math.min(1, p.value / max)) : 0;
-            const dotTop = 30 + ((1 - ratio) * 30);
-            const candleH = Math.max(18, Math.round(22 + (p.value / max) * 28));
-            return `<span class="traffic-market-column ${cls}" style="--dot-top:${dotTop.toFixed(1)}%;--bar-h:${h}%">
-              <i class="traffic-candle ${cls}" style="height:${candleH}px"></i>
+            const dotTop = 10 + ((1 - ratio) * 44);
+            const candleH = Math.max(14, Math.round(18 + ratio * 22));
+            return `<span class="traffic-market-column ${cls}" style="--dot-top:${dotTop.toFixed(1)}%;--candle-h:${candleH}px">
+              <i class="traffic-candle ${cls}"></i>
               <i class="traffic-market-dot"></i>
-              <i class="traffic-market-bar ${cls}"></i>
-              ${isMonth ? '' : `<b>${formatMetricValue(p.value)}</b><small>${esc(marketPointLabel(p, data.periodKey))}</small>`}
+              ${isMonth ? '' : `<b>${formatMetricValue(p.value)}</b>`}
+              <small>${esc(marketPointLabel(p, data.periodKey))}</small>
             </span>`;
           }).join('')}
         </div>
-        ${isMonth ? renderMarketWeekLabels(points) : ''}
       </div>
+      ${data.periodKey === 'month' ? renderMarketWeekLabels(points) : ''}
       <div class="traffic-market-summary">
         <span><i></i><em>Максимум</em><b>${formatMetricValue(maxPoint?.value || 0)}</b><small>${esc(pointDateLabel(maxPoint, data.periodKey))}</small></span>
         <span><i class="min"></i><em>Минимум</em><b>${formatMetricValue(minPoint?.value || 0)}</b><small>${esc(pointDateLabel(minPoint, data.periodKey))}</small></span>
@@ -1506,13 +1505,14 @@
     return rows.filter(x => x.created && x.created >= from && x.created <= to);
   }
 
-  function renderLineSvg(points, smooth) {
+  function renderLineSvg(points, smooth, marketMode = false) {
     const max = Math.max(...points.map(p => p.value), 1);
     const w = 320, h = 120;
     const gradId = `traffic-line-gradient-${Math.random().toString(36).slice(2)}`;
     const coords = points.length ? points.map((p, i) => {
       const x = points.length === 1 ? 0 : (i / (points.length - 1)) * w;
-      const y = h - (p.value / max) * (h - 12) - 6;
+      const ratio = max ? Math.max(0, Math.min(1, (Number(p.value) || 0) / max)) : 0;
+      const y = marketMode ? ((10 + ((1 - ratio) * 44)) / 100) * h : h - ratio * (h - 12) - 6;
       return [x, y];
     }) : [[0, h], [w, h]];
     const d = smooth ? smoothPath(coords) : coords.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');

@@ -747,6 +747,7 @@
   function renderLeadMarketChart(data) {
     const points = data.trend.points || [];
     const barPoints = marketBarPoints(points);
+    const isMonth = data.periodKey === 'month';
     const max = points.reduce((m, p) => Math.max(m, p.value || 0), 1);
     const minPoint = points.reduce((a, b) => !a || b.value < a.value ? b : a, null);
     const maxPoint = points.reduce((a, b) => !a || b.value > a.value ? b : a, null);
@@ -776,11 +777,11 @@
               <i class="traffic-candle ${cls}" style="height:${candleH}px"></i>
               <i class="traffic-market-dot"></i>
               <i class="traffic-market-bar ${cls}"></i>
-              <b>${formatMetricValue(p.value)}</b>
-              <small>${esc(marketPointLabel(p, data.periodKey))}</small>
+              ${isMonth ? '' : `<b>${formatMetricValue(p.value)}</b><small>${esc(marketPointLabel(p, data.periodKey))}</small>`}
             </span>`;
           }).join('')}
         </div>
+        ${isMonth ? renderMarketWeekLabels(points) : ''}
       </div>
       <div class="traffic-market-summary">
         <span><i></i><em>Максимум</em><b>${formatMetricValue(maxPoint?.value || 0)}</b><small>${esc(pointDateLabel(maxPoint, data.periodKey))}</small></span>
@@ -798,6 +799,22 @@
     if (!point) return '';
     if (periodKey === 'week') return point.weekday || point.label;
     return point.label || String(point.dateLabel || '').slice(0, 2);
+  }
+
+  function renderMarketWeekLabels(points) {
+    if (!points.length) return '';
+    const weeks = [];
+    for (let i = 0; i < points.length; i += 7) {
+      const slice = points.slice(i, i + 7);
+      const total = slice.reduce((sum, p) => sum + (Number(p.value) || 0), 0);
+      const avg = slice.length ? total / slice.length : 0;
+      const from = slice[0]?.label || String(slice[0]?.dateLabel || '').slice(0, 2);
+      const to = slice[slice.length - 1]?.label || String(slice[slice.length - 1]?.dateLabel || '').slice(0, 2);
+      weeks.push({ total, avg, range: `${from}-${to}` });
+    }
+    return `<div class="traffic-market-week-labels" style="--week-count:${weeks.length}">
+      ${weeks.map(w => `<span><b>${formatMetricValue(w.total)}</b><em>~ ${formatMetricValue(w.avg)}</em><small>${esc(w.range)}</small></span>`).join('')}
+    </div>`;
   }
 
   function renderSourceShareWidget(type, options = {}) {
@@ -1492,6 +1509,7 @@
   function renderLineSvg(points, smooth) {
     const max = Math.max(...points.map(p => p.value), 1);
     const w = 320, h = 120;
+    const gradId = `traffic-line-gradient-${Math.random().toString(36).slice(2)}`;
     const coords = points.length ? points.map((p, i) => {
       const x = points.length === 1 ? 0 : (i / (points.length - 1)) * w;
       const y = h - (p.value / max) * (h - 12) - 6;
@@ -1500,7 +1518,13 @@
     const d = smooth ? smoothPath(coords) : coords.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
     const area = `${d} L${w} ${h} L0 ${h} Z`;
     return `<svg class="traffic-line-svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
-      <path class="traffic-line-area" d="${area}"></path>
+      <defs>
+        <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="currentColor" stop-opacity=".28"></stop>
+          <stop offset="100%" stop-color="currentColor" stop-opacity="0"></stop>
+        </linearGradient>
+      </defs>
+      <path class="traffic-line-area" d="${area}" style="fill:url(#${gradId})"></path>
       <path class="traffic-line-path ${smooth ? 'smooth' : ''}" d="${d}"></path>
       <g class="traffic-line-points">${coords.map(([x, y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.6"></circle>`).join('')}</g>
     </svg>`;

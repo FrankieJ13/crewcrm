@@ -708,21 +708,38 @@
         ${renderTrendCandles(points)}
         ${renderLineSvg(points, true)}
         <div class="traffic-market-bars">
-          ${points.map((p, i) => {
-            const prev = i ? points[i - 1].value : p.value;
+          ${marketBarPoints(points).map((p) => {
+            const index = points.indexOf(p);
+            const prev = index > 0 ? points[index - 1].value : p.value;
             const cls = p.value >= prev ? 'up' : 'down';
             const h = Math.max(8, Math.round((p.value / max) * 100));
-            return `<span class="traffic-market-bar ${cls}" style="height:${h}%"><b>${formatMetricValue(p.value)}</b></span>`;
+            return `<span class="traffic-market-bar ${cls}" style="height:${h}%"><b>${formatMetricValue(p.value)}</b><small>${esc(marketPointLabel(p, data.periodKey))}</small></span>`;
           }).join('')}
         </div>
       </div>
-      ${renderLineAxis(points)}
       <div class="traffic-market-summary">
         <span><i></i><em>Максимум</em><b>${formatMetricValue(maxPoint?.value || 0)}</b><small>${esc(pointDateLabel(maxPoint, data.periodKey))}</small></span>
         <span><i class="min"></i><em>Минимум</em><b>${formatMetricValue(minPoint?.value || 0)}</b><small>${esc(pointDateLabel(minPoint, data.periodKey))}</small></span>
         <span><i></i><em>Среднее</em><b>${formatMetricValue(avg)}</b><small>${data.periodKey === 'day' ? 'в час' : 'в день'}</small></span>
         <span><i class="${dyn !== null && dyn < 0 ? 'down' : 'up'}"></i><em>Динамика</em><b>${dyn === null ? '—' : `${dyn >= 0 ? '+' : '-'}${Math.abs(dyn).toFixed(0)}%`}</b><small>${periodSuffix}</small></span>
       </div>`;
+  }
+
+  function marketBarPoints(points) {
+    if (points.length <= 5) return points;
+    const wanted = Math.min(5, points.length);
+    const picked = new Set();
+    for (let i = 0; i < wanted; i++) {
+      picked.add(Math.round(i * (points.length - 1) / (wanted - 1)));
+    }
+    return Array.from(picked).sort((a, b) => a - b).map(i => points[i]);
+  }
+
+  function marketPointLabel(point, periodKey) {
+    if (!point) return '';
+    if (periodKey === 'week') return point.label;
+    if (periodKey === 'day') return point.label;
+    return String(point.label).padStart(2, '0');
   }
 
   function renderSourceShareWidget(type) {

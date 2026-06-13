@@ -593,7 +593,7 @@
 
   function renderDashboard() {
     const tab = state.activeTab === 'advanced' ? 'advanced' : 'base';
-    const sectionTitle = tab === 'advanced' ? 'Редактор виджетов' : 'Стандартные виджеты';
+    const sectionTitle = tab === 'advanced' ? 'Редактор виджетов' : 'Аналитика CRM';
     return `
       <section class="traffic-page">
         <div class="traffic-top">
@@ -2823,16 +2823,25 @@
         </div>
         ${data.hint ? `<div class="tz-issue-hint">${esc(data.hint)}</div>` : ''}
         <div class="tz-issue-ids">${idsHtml || '<span class="tz-issue-empty">Нет ID</span>'}</div>
-        <button class="tz-issue-copy" data-tz-issue-copy type="button">Скопировать ID</button>
+        <div class="tz-issue-actions">
+          <button class="tz-issue-copy" data-tz-issue-copy="ids" type="button">Скопировать ID</button>
+          <button class="tz-issue-copy tz-issue-copy-alt" data-tz-issue-copy="links" type="button">Скопировать ссылки</button>
+        </div>
       </div>`;
     overlay.classList.add('open');
     overlay.setAttribute('aria-hidden', 'false');
     const close = () => { overlay.classList.remove('open'); overlay.setAttribute('aria-hidden', 'true'); overlay.innerHTML = ''; };
     overlay.querySelector('[data-tz-issue-close]').onclick = close;
     overlay.onclick = (e) => { if (e.target === overlay) close(); };
-    overlay.querySelector('[data-tz-issue-copy]').onclick = () => {
-      try { navigator.clipboard.writeText(data.ids.join(', ')); notify('ID скопированы', 's'); } catch(_){}
-    };
+    const AMO = 'https://ksocm66.amocrm.ru/leads/detail/';
+    overlay.querySelectorAll('[data-tz-issue-copy]').forEach(btn => {
+      btn.onclick = () => {
+        const text = btn.dataset.tzIssueCopy === 'links'
+          ? data.ids.map(id => AMO + id).join('\n')      // каждая ссылка с новой строки
+          : data.ids.join('\n');                          // каждый ID с новой строки
+        try { navigator.clipboard.writeText(text); notify(btn.dataset.tzIssueCopy === 'links' ? 'Ссылки скопированы' : 'ID скопированы', 's'); } catch(_){}
+      };
+    });
   }
 
   document.addEventListener('DOMContentLoaded', () => {

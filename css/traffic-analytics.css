@@ -2348,9 +2348,12 @@
 
 /* Панели фильтров: hidden действительно скрывает (CSS display перебивал) */
 .tz-ms-panel[hidden], .tz-range-panel[hidden] { display: none !important; }
-/* Анти-overflow на узких экранах: панели не уезжают за правый край */
-.tz-range-panel { left: auto; right: 0; max-width: calc(100vw - 28px); }
-.tz-ms-panel { right: 0; left: auto; max-width: calc(100vw - 28px); }
+/* Панели открываются вправо от левого края кнопки и клампятся по вьюпорту.
+   Фильтры стоят слева/по центру, поэтому left:0 держит панель в видимой зоне. */
+.tz-ms-panel { left: 0; right: auto; width: 230px; max-width: calc(100vw - 32px); }
+.tz-range-panel { left: 0; right: auto; max-width: calc(100vw - 32px); }
+/* Последний мультиселект (Вид реализации) — самый правый, открываем влево */
+.tz-filter-selects .tz-ms:last-child .tz-ms-panel { left: auto; right: 0; }
 
 /* Круглая кнопка-корзина «очистить выборку» в строке периодов */
 .tz-reset-btn {
@@ -2424,8 +2427,25 @@
   padding: 3px 8px; color: var(--txt, #1a1a1a);
 }
 .tz-issue-empty { color: var(--txt3, #999); font-size: 12px; }
+.tz-issue-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .tz-issue-copy {
   border: 0; background: var(--acc, #4f7cff); color: #fff; font-weight: 700; font-size: 12px;
   padding: 9px; border-radius: 10px; cursor: pointer;
 }
+.tz-issue-copy-alt { background: var(--bg3, #f0f0f0); color: var(--txt, #1a1a1a); border: 1px solid var(--line, #e4e4e4); }
 .tz-issue-copy:active { transform: scale(.98); }
+
+/* ── Чистая геометрия кнопок шапки (фикс овалов) ── */
+.traffic-head-actions { align-items: center; }
+.traffic-head-actions .traffic-icon-btn,
+.traffic-head-actions .traffic-info-btn {
+  width: 32px !important; height: 32px !important; min-width: 32px; aspect-ratio: 1;
+  flex: 0 0 32px; align-self: center; padding: 0; box-sizing: border-box;
+  border-radius: 50%;
+}
+.traffic-head-actions .traffic-seg {
+  align-self: center; height: 32px; box-sizing: border-box;
+  border-radius: 999px; flex: 0 0 auto;
+}
+.traffic-head-actions .traffic-seg-btn { width: 32px; height: 26px; }
+.traffic-head-actions .traffic-seg-thumb { top: 3px; bottom: 3px; }

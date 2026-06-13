@@ -661,6 +661,7 @@ function azFmtInt(n){if(!isFinite(n))return '—';return Math.round(n).toLocaleS
 function openAnaliz() {
   const matched = findUserInSheet();
   if (!matched || !isCeoLike(matched.role)) return;
+  closeAllDockPopups?.();
   azData = azLoad();
   ['curr','prev','plan'].forEach(azEnsure);
   showScr('analiz');
@@ -1396,7 +1397,7 @@ function getPresencePageLabel() {
   }
   if (document.getElementById('scr-profile')?.classList.contains('on')) return 'Мой профиль';
   if (document.getElementById('scr-ceo')?.classList.contains('on')) return 'Главная';
-  if (document.getElementById('scr-analiz')?.classList.contains('on')) return 'Аналитик ИИ';
+  if (document.getElementById('scr-analiz')?.classList.contains('on')) return 'Маркетинг';
   if (document.getElementById('scr-trophies')?.classList.contains('on')) return 'Трофеи';
   if (document.getElementById('scr-personal')?.classList.contains('on')) return 'Мой KPI';
   if (document.getElementById('scr-rating')?.classList.contains('on')) {
@@ -1406,7 +1407,7 @@ function getPresencePageLabel() {
   if (document.getElementById('scr-dohod')?.classList.contains('on')) {
     return isCeo ? `Доход ${deptLabel(effectiveDohodDept)}` : 'Мой доход';
   }
-  if (document.getElementById('scr-traffic')?.classList.contains('on')) return 'Трафик';
+  if (document.getElementById('scr-traffic')?.classList.contains('on')) return 'Аналитика CRM';
   if (document.getElementById('scr-vizity')?.classList.contains('on')) return `Визиты ${deptLabel(S.vizDept || roleDept)}`;
   if (document.getElementById('scr-instruktsii')?.classList.contains('on')) {
     const sub = S.autoruSubTab === 'chat' ? 'Чат Auto.ru' : 'Каталог Auto.ru';

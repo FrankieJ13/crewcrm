@@ -2334,3 +2334,98 @@
 .tz-gloss-row dt { font-family: 'Unbounded', sans-serif; font-size: 12px; font-weight: 800; color: var(--acc, #4f7cff); }
 .tz-gloss-row dd { margin: 2px 0 0; font-size: 12px; line-height: 1.4; color: var(--txt2, #555); }
 .tz-gloss-note { margin-top: 12px; font-size: 11px; }
+
+/* ── Фиксы шапки/фильтров (батч правок) ── */
+.traffic-head-actions { display: inline-flex; align-items: center; gap: 8px; }
+/* «!» — строго круг, не растягивается во flex */
+.traffic-head-actions .traffic-info-btn {
+  flex: 0 0 auto; width: 30px; height: 30px; min-width: 30px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%; box-sizing: border-box; line-height: 1;
+}
+.traffic-head-actions .traffic-icon-btn { flex: 0 0 auto; }
+.traffic-head-actions .traffic-seg { flex: 0 0 auto; }
+
+/* Панели фильтров: hidden действительно скрывает (CSS display перебивал) */
+.tz-ms-panel[hidden], .tz-range-panel[hidden] { display: none !important; }
+/* Анти-overflow на узких экранах: панели не уезжают за правый край */
+.tz-range-panel { left: auto; right: 0; max-width: calc(100vw - 28px); }
+.tz-ms-panel { right: 0; left: auto; max-width: calc(100vw - 28px); }
+
+/* Круглая кнопка-корзина «очистить выборку» в строке периодов */
+.tz-reset-btn {
+  flex: 0 0 auto; width: 30px; height: 30px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%; cursor: pointer;
+  background: color-mix(in srgb, var(--red, #ff4757) 12%, var(--bg3, #f0f0f0));
+  border: 1px solid color-mix(in srgb, var(--red, #ff4757) 30%, var(--line, #e4e4e4));
+  color: var(--red, #ff4757);
+  transition: background .15s, transform .1s;
+}
+.tz-reset-btn:hover { background: color-mix(in srgb, var(--red, #ff4757) 20%, var(--bg3, #f0f0f0)); }
+.tz-reset-btn:active { transform: scale(.92); }
+.tz-filter-periods { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+
+/* Подзаголовок в справке */
+.tz-info-lead { font-size: 12.5px; color: var(--txt2, #555); margin: 0 0 8px; }
+
+/* ── Кнопка «!» виджета (красный пульс) + модалка «вне расчёта» ── */
+.tz-card-title { display: inline-flex; align-items: center; gap: 8px; }
+.tz-issue-btn {
+  position: relative; flex: 0 0 auto;
+  width: 16px; height: 16px; padding: 0; border: 0; background: transparent; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.tz-issue-mark {
+  position: relative; z-index: 2;
+  width: 15px; height: 15px; border-radius: 50%;
+  background: var(--red, #ff4757); color: #fff;
+  font-family: 'Unbounded', sans-serif; font-size: 9px; font-weight: 900; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  box-shadow: 0 1px 4px rgba(255,71,87,.5);
+}
+.tz-issue-pulse {
+  position: absolute; top: 50%; left: 50%; width: 15px; height: 15px; margin: -7.5px 0 0 -7.5px;
+  border-radius: 50%; background: var(--red, #ff4757); opacity: .55; z-index: 1;
+  animation: tzIssuePulse 1.5s cubic-bezier(.2,0,.2,1) infinite;
+}
+@keyframes tzIssuePulse { 0% { transform: scale(.6); opacity: .55; } 70%,100% { transform: scale(2.2); opacity: 0; } }
+
+.tz-issue-overlay {
+  display: none; position: fixed; inset: 0; z-index: 10000;
+  background: rgba(0,0,0,.5); backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px);
+  align-items: center; justify-content: center;
+  padding: 64px 16px calc(96px + env(safe-area-inset-bottom, 0px));
+}
+.tz-issue-overlay.open { display: flex; animation: tzFade .2s ease; }
+@keyframes tzFade { from { opacity: 0; } to { opacity: 1; } }
+.tz-issue-modal {
+  position: relative; width: 100%; max-width: 460px; max-height: 100%;
+  background: var(--bg2, #fff); border: 1px solid var(--line, #e4e4e4);
+  border-radius: 18px; padding: 18px; overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  display: flex; flex-direction: column;
+}
+.tz-issue-close {
+  position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; padding: 0;
+  border: 0; background: transparent; color: var(--txt2, #888); font-size: 20px; line-height: 1; cursor: pointer;
+}
+.tz-issue-head { padding-right: 30px; }
+.tz-issue-title { font-family: 'Unbounded', sans-serif; font-size: 14px; font-weight: 800; color: var(--txt, #1a1a1a); }
+.tz-issue-count { font-size: 12px; color: var(--red, #ff4757); font-weight: 700; margin-top: 2px; }
+.tz-issue-hint { font-size: 12px; color: var(--txt2, #666); margin: 10px 0; line-height: 1.4; }
+.tz-issue-ids {
+  display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 12px;
+  max-height: 46vh; overflow-y: auto;
+}
+.tz-issue-id {
+  font-family: 'Golos Text', monospace; font-size: 11.5px; font-variant-numeric: tabular-nums;
+  background: var(--bg3, #f0f0f0); border: 1px solid var(--line, #e4e4e4); border-radius: 6px;
+  padding: 3px 8px; color: var(--txt, #1a1a1a);
+}
+.tz-issue-empty { color: var(--txt3, #999); font-size: 12px; }
+.tz-issue-copy {
+  border: 0; background: var(--acc, #4f7cff); color: #fff; font-weight: 700; font-size: 12px;
+  padding: 9px; border-radius: 10px; cursor: pointer;
+}
+.tz-issue-copy:active { transform: scale(.98); }

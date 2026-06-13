@@ -601,6 +601,10 @@
             <div class="traffic-title-row">
               <h2 class="traffic-section-title traffic-head-title">${sectionTitle}</h2>
               <div class="traffic-head-actions">
+                <button class="traffic-icon-btn traffic-clear-btn" id="traffic-clear-csv-head" type="button" aria-label="Очистить импортированный CSV" title="Очистить CSV">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>
+                </button>
+                <button class="traffic-info-btn" id="traffic-import-info" type="button" aria-label="Справка и словарь">!</button>
                 <div class="traffic-seg" role="tablist" aria-label="Режим аналитики">
                   <span class="traffic-seg-thumb ${tab === 'advanced' ? 'right' : 'left'}"></span>
                   <button class="traffic-seg-btn ${tab === 'base' ? 'active' : ''}" data-traffic-tab="base" type="button" aria-label="Стандартные виджеты">
@@ -610,13 +614,8 @@
                     <img src="${trafficTabIcon('advanced')}" alt="" onerror="this.style.display='none'">
                   </button>
                 </div>
-                <button class="traffic-icon-btn traffic-clear-btn" id="traffic-clear-csv-head" type="button" aria-label="Очистить импортированный CSV" title="Очистить CSV">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>
-                </button>
-                <button class="traffic-info-btn" id="traffic-import-info" type="button" aria-label="Справка и словарь">!</button>
               </div>
             </div>
-            <p class="traffic-subtitle">Аналитика входящего трафика и лидогенерации</p>
           </div>
         </div>
         ${tab === 'advanced' ? renderAdvancedTab() : renderBaseTab()}
@@ -944,7 +943,8 @@
     modal.innerHTML = `
       <div class="traffic-modal-card traffic-import-info-card tz-info-card">
         <button class="traffic-modal-close" data-traffic-close type="button">×</button>
-        <h2>Справка по разделу «Трафик»</h2>
+        <h2>Справка по разделу «Аналитика CRM»</h2>
+        <p class="tz-info-lead">Аналитика входящего трафика и лидогенерации.</p>
         ${state.meta ? `<p class="tz-info-meta"><strong>${esc(m.fileName || 'CSV')}</strong> · ${formatMetricValue(m.rows || 0)} строк · ${formatMetricValue(m.cols || 0)} колонок${period ? ` · ${esc(period)}` : ''}</p>
         ${m.storageWarning ? `<p class="traffic-muted">${esc(m.storageWarning)}</p>` : ''}` : '<p class="traffic-muted">Импортируйте CSV для аналитики.</p>'}
         <h3 class="tz-gloss-title">Словарь сокращений</h3>
@@ -2191,6 +2191,7 @@
       return `<div class="traffic-grid traffic-base-grid"><div class="tz-empty">Нет данных для расчёта</div></div>`;
     }
     const rows = tzFilteredRows();
+    _tzIssues = {};
     return `
       ${renderTzFilters()}
       <div class="traffic-grid tz-grid">
@@ -2203,7 +2204,13 @@
         ${tzWidgetResponsible(rows)}
         ${tzWidgetCities(rows)}
         ${tzWidgetQuality(rows)}
-      </div>`;
+      </div>
+      <div class="tz-issue-overlay" id="tz-issue-overlay" aria-hidden="true"></div>`;
+  }
+
+  // Список ID для модалки «вне расчёта»
+  function tzIssueIds(rows, predicate) {
+    return rows.filter(predicate).map(tzId).filter(id => id && id !== '—');
   }
 
   // ═══ ВИДЖЕТ 0: Трафик (кол-во лидов во времени) ═══
@@ -2235,10 +2242,12 @@
     const totalLeads = days.reduce((s, x) => s + x.value, 0);
     const peak = days.reduce((a, b) => b.value > (a?.value || 0) ? b : a, null);
     const spanDays = days.length;
-    // ≤31 день — столбики; иначе сглаженная линия
-    const body = spanDays <= 31 ? tzTrendBars(days, peak) : tzTrendLine(days);
+    // Всегда сглаженная линия трендов (как при выборке «Всё»). Для 1–2 точек —
+    // столбики (линию строить не из чего).
+    const body = spanDays <= 2 ? tzTrendBars(days, peak) : tzTrendLine(days);
     const sub = `${fmtDate(minD)} — ${fmtDate(maxD)} · ${spanDays} дн.`;
-    return tzWidgetShell('Трафик', sub, tzNum(totalLeads) + ' лидов', body, { wide: true, className: 'tz-trend-widget' });
+    const issues = tzIssueIds(rows, r => tzDate(tzRaw(r, TZC.created)) === null);
+    return tzWidgetShell('Трафик', sub, tzNum(totalLeads) + ' лидов', body, { wide: true, className: 'tz-trend-widget', issues: { ids: issues, hint: 'Сделки без валидной «Дата создания сделки» — не легли на график.' } });
   }
 
   function tzTrendBars(days, peak) {
@@ -2335,13 +2344,15 @@
               <button class="tz-ms-apply" data-tz-range-apply type="button">Применить</button>
             </div>
           </div>
+          ${hasFilter ? `<button class="tz-reset-btn" data-tz-reset type="button" aria-label="Очистить выборку" title="Очистить выборку">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>
+          </button>` : ''}
         </div>
         <div class="tz-filter-selects">
-          ${tzMultiSelect('source', 'Все источники', TZC.source)}
-          ${tzMultiSelect('city', 'Все города', TZC.city)}
-          ${tzMultiSelect('responsible', 'Все ответственные', TZC.responsible)}
-          ${tzMultiSelect('success', 'Успешное закрытие', TZC.success)}
-          ${hasFilter ? `<button class="tz-fs-reset" data-tz-reset type="button">Сбросить</button>` : ''}
+          ${tzMultiSelect('source', 'Источник', TZC.source)}
+          ${tzMultiSelect('city', 'Город', TZC.city)}
+          ${tzMultiSelect('responsible', 'Ответственный', TZC.responsible)}
+          ${tzMultiSelect('success', 'Вид реализации', TZC.success)}
         </div>
         <div class="tz-filter-count">В выборке: <b>${tzNum(total)}</b>${total !== all ? ` из ${tzNum(all)}` : ''} лидов</div>
       </div>`;
@@ -2380,11 +2391,21 @@
     return { items: top, other, hasOther: true };
   }
 
+  // Реестр «проблемных» сделок по виджетам (для модалки «!»)
+  let _tzIssues = {};
+  function tzId(row) { const v = String(tzRaw(row, TZC.id)).trim(); return v || '—'; }
+
   function tzWidgetShell(title, subtitle, mainValue, body, opts = {}) {
+    let issueBtn = '';
+    if (opts.issues && opts.issues.ids && opts.issues.ids.length) {
+      const key = 'w' + (Object.keys(_tzIssues).length + 1);
+      _tzIssues[key] = { title, hint: opts.issues.hint || '', ids: opts.issues.ids };
+      issueBtn = `<button class="tz-issue-btn" data-tz-issue="${key}" type="button" aria-label="Сделки вне расчёта" title="${esc(opts.issues.ids.length + ' сделок вне расчёта')}"><span class="tz-issue-pulse"></span><span class="tz-issue-mark">!</span></button>`;
+    }
     return `
       <article class="traffic-widget tz-card ${opts.wide ? 'tz-wide' : ''} ${opts.className || ''}">
         <div class="tz-card-head">
-          <div class="tz-card-title">${esc(title)}</div>
+          <div class="tz-card-title">${esc(title)}${issueBtn}</div>
           ${subtitle ? `<div class="tz-card-sub">${esc(subtitle)}</div>` : ''}
         </div>
         ${mainValue ? `<div class="tz-card-main">${mainValue}</div>` : ''}
@@ -2424,7 +2445,8 @@
         </div>
         ${tzDonut(rank.items, total, tzNum(total), 'лидов')}
       </div>`;
-    return tzWidgetShell('Лиды по источнику', 'Источник обращения', tzNum(total) + ' лидов', body, { wide: true, className: 'tz-source-widget' });
+    const issues = tzIssueIds(rows, r => tzEmpty(tzRaw(r, TZC.source)));
+    return tzWidgetShell('Лиды по источнику', 'Источник обращения', tzNum(total) + ' лидов', body, { wide: true, className: 'tz-source-widget', issues: { ids: issues, hint: 'Сделки без «Источник обращения» — попали в «Не заполнено».' } });
   }
 
   // ═══ ВИДЖЕТ 2: Финансы тёплых лидов ═══
@@ -2478,7 +2500,8 @@
       </div>
       <div class="tz-land-title">Разбивка по посадкам</div>
       ${landTable}`;
-    return tzWidgetShell('Финансы тёплых лидов', WARM_SOURCE + ' · только этот источник', '', body, { wide: true, className: 'tz-finance-widget' });
+    const issues = tzIssueIds(warm, r => { const c = tzMoney(tzRaw(r, TZC.cost)); return c === null || c <= 0; });
+    return tzWidgetShell('Финансы тёплых лидов', WARM_SOURCE + ' · только этот источник', '', body, { wide: true, className: 'tz-finance-widget', issues: { ids: issues, hint: 'Тёплые лиды без валидной «Стоимость лида» — не вошли в расход/CPL.' } });
   }
   function tzIsSuccess(r) {
     return !tzEmpty(tzRaw(r, TZC.success)) || String(tzRaw(r, TZC.stage)).trim() === 'Успешно реализовано';
@@ -2536,7 +2559,8 @@
       ${rank.items.map((it, i) => tzRankRow(it.label, it.value, total, max, { colorIndex: i })).join('')}
       ${rank.hasOther ? tzRankRow('Прочие', rank.other, total, max, { colorIndex: 6 }) : ''}
     </div>`;
-    return tzWidgetShell('Этапы воронки', 'Этап сделки', tzNum(total) + ' лидов', body, { className: 'tz-stages-widget' });
+    const issues = tzIssueIds(rows, r => tzEmpty(tzRaw(r, TZC.stage)));
+    return tzWidgetShell('Этапы воронки', 'Этап сделки', tzNum(total) + ' лидов', body, { className: 'tz-stages-widget', issues: { ids: issues, hint: 'Сделки без «Этап сделки».' } });
   }
 
   // ═══ ВИДЖЕТ 4: Причины закрытия ═══
@@ -2562,7 +2586,14 @@
         ${rank.hasOther ? tzRankRow('Прочие', rank.other, total, max, { colorIndex: 6 }) : ''}
       </div>
       <div class="tz-quality-line">Без причины закрытия: <b>${tzNum(without)}</b></div>`;
-    return tzWidgetShell('Причины закрытия', 'Причина закрытия карточки', tzNum(withReason.length) + ' с причиной', body, { className: 'tz-reasons-widget' });
+    // «Вне расчёта» = закрытые сделки (есть дата закрытия / этап «Закрыто…») без причины
+    const issues = tzIssueIds(rows, r => {
+      if (!tzEmpty(tzRaw(r, TZC.reason))) return false;
+      const closed = tzDate(tzRaw(r, TZC.closed)) !== null;
+      const stageClosed = /^Закрыто/i.test(String(tzRaw(r, TZC.stage)).trim());
+      return closed || stageClosed;
+    });
+    return tzWidgetShell('Причины закрытия', 'Причина закрытия карточки', tzNum(withReason.length) + ' с причиной', body, { className: 'tz-reasons-widget', issues: { ids: issues, hint: 'Закрытые сделки без «Причина закрытия карточки».' } });
   }
 
   // ═══ ВИДЖЕТ 5: Срок жизни сделки ═══
@@ -2625,7 +2656,14 @@
     const body = `
       <div class="tz-life-modes">${modes.map(([v, l]) => `<button class="tz-life-mode ${mode === v ? 'active' : ''}" data-tz-life-mode="${v}" type="button">${l}</button>`).join('')}</div>
       ${breakdownBody}`;
-    return tzWidgetShell('Срок жизни сделки', 'От создания до реализации / закрытия', tzHours(med) + ' медиана', body, { wide: true, className: 'tz-lifetime-widget' });
+    // «Вне расчёта» = endDate < startDate (ошибка дат)
+    const issues = tzIssueIds(rows, r => {
+      const start = tzDate(tzRaw(r, TZC.created));
+      if (!start) return false;
+      const end = tzDate(tzRaw(r, TZC.realizDate)) || tzDate(tzRaw(r, TZC.closed));
+      return end && (end - start) < 0;
+    });
+    return tzWidgetShell('Срок жизни сделки', 'От создания до реализации / закрытия', tzHours(med) + ' медиана', body, { wide: true, className: 'tz-lifetime-widget', issues: { ids: issues, hint: 'Сделки с датой завершения раньше создания — исключены из расчёта.' } });
   }
 
   // ═══ ВИДЖЕТ 6: Лиды по ответственному ═══
@@ -2638,7 +2676,8 @@
       ${rank.hasOther ? tzRankRow('Прочие', rank.other, total, max, { colorIndex: 6 }) : ''}
     </div>
     <div class="tz-quality-line tz-note">⚠ В поле «Ответственный» могут быть города/системные значения — проверьте справочник</div>`;
-    return tzWidgetShell('Лиды по ответственному', 'Ответственный', tzNum(total) + ' лидов', body, { className: 'tz-responsible-widget' });
+    const issues = tzIssueIds(rows, r => tzEmpty(tzRaw(r, TZC.responsible)));
+    return tzWidgetShell('Лиды по ответственному', 'Ответственный', tzNum(total) + ' лидов', body, { className: 'tz-responsible-widget', issues: { ids: issues, hint: 'Сделки без «Ответственный».' } });
   }
 
   // ═══ ВИДЖЕТ 7: Лиды по городам ═══
@@ -2650,7 +2689,8 @@
       ${rank.items.map((it, i) => tzRankRow(it.label, it.value, total, max, { colorIndex: i, clickFilter: 'city' })).join('')}
       ${rank.hasOther ? tzRankRow('Прочие', rank.other, total, max, { colorIndex: 6 }) : ''}
     </div>`;
-    return tzWidgetShell('Лиды по городам', 'Город', tzNum(total) + ' лидов', body, { className: 'tz-cities-widget' });
+    const issues = tzIssueIds(rows, r => tzEmpty(tzRaw(r, TZC.city)));
+    return tzWidgetShell('Лиды по городам', 'Город', tzNum(total) + ' лидов', body, { className: 'tz-cities-widget', issues: { ids: issues, hint: 'Сделки без «Город».' } });
   }
 
   // ═══ ВИДЖЕТ 8: Качество данных ═══
@@ -2748,6 +2788,10 @@
     document.querySelectorAll('[data-tz-life-mode]').forEach(b => {
       b.onclick = () => { state.tzLifetimeMode = b.dataset.tzLifeMode; renderTrafficAnalytics(); };
     });
+    // Кнопка «!» виджета → модалка со списком ID сделок вне расчёта
+    document.querySelectorAll('[data-tz-issue]').forEach(btn => {
+      btn.onclick = (e) => { e.stopPropagation(); tzOpenIssueModal(btn.dataset.tzIssue); };
+    });
     // Клик по строке рейтинга → тоггл значения в массиве фильтра
     document.querySelectorAll('[data-tz-rank-filter]').forEach(row => {
       row.onclick = () => {
@@ -2763,6 +2807,32 @@
   }
   function tzCloseAllPanels(except) {
     document.querySelectorAll('.tz-ms-panel, .tz-range-panel').forEach(p => { if (p !== except) p.hidden = true; });
+  }
+
+  function tzOpenIssueModal(key) {
+    const data = _tzIssues[key];
+    const overlay = document.getElementById('tz-issue-overlay');
+    if (!data || !overlay) return;
+    const idsHtml = data.ids.map(id => `<span class="tz-issue-id">${esc(id)}</span>`).join('');
+    overlay.innerHTML = `
+      <div class="tz-issue-modal" role="dialog" aria-modal="true">
+        <button class="tz-issue-close" data-tz-issue-close type="button" aria-label="Закрыть">×</button>
+        <div class="tz-issue-head">
+          <div class="tz-issue-title">${esc(data.title)} · вне расчёта</div>
+          <div class="tz-issue-count">${tzNum(data.ids.length)} сделок</div>
+        </div>
+        ${data.hint ? `<div class="tz-issue-hint">${esc(data.hint)}</div>` : ''}
+        <div class="tz-issue-ids">${idsHtml || '<span class="tz-issue-empty">Нет ID</span>'}</div>
+        <button class="tz-issue-copy" data-tz-issue-copy type="button">Скопировать ID</button>
+      </div>`;
+    overlay.classList.add('open');
+    overlay.setAttribute('aria-hidden', 'false');
+    const close = () => { overlay.classList.remove('open'); overlay.setAttribute('aria-hidden', 'true'); overlay.innerHTML = ''; };
+    overlay.querySelector('[data-tz-issue-close]').onclick = close;
+    overlay.onclick = (e) => { if (e.target === overlay) close(); };
+    overlay.querySelector('[data-tz-issue-copy]').onclick = () => {
+      try { navigator.clipboard.writeText(data.ids.join(', ')); notify('ID скопированы', 's'); } catch(_){}
+    };
   }
 
   document.addEventListener('DOMContentLoaded', () => {

@@ -109,7 +109,10 @@
     basePeriods: { ...BASE_WIDGET_DEFAULT_PERIODS },
     activeTab: 'base',
     processing: null,
-    storageWarning: ''
+    storageWarning: '',
+    // Глобальные фильтры базового таба (ТЗ §6) + режим виджета «Срок жизни»
+    tzFilters: { period: 'all', source: '', city: '', responsible: '' },
+    tzLifetimeMode: 'all'
   };
 
   window.crmTrafficState = state;
@@ -585,20 +588,12 @@
     document.querySelectorAll('[data-traffic-base-widget]').forEach(card => {
       card.onclick = () => showBaseWidgetModal(card.dataset.trafficBaseWidget);
     });
+    bindTzBase();
   }
 
   function renderBaseTab() {
-    return `
-      <div class="traffic-grid traffic-base-grid">
-        ${renderLeadTrendWidget('leadTrend')}
-        ${renderSourceShareWidget('sourceShare')}
-        ${renderRankingWidget('cities', 'Города', state.mapping.city)}
-        ${renderHoursWidget('hours')}
-        ${renderRankingWidget('stages', 'Этапы воронки', state.mapping.stage, true)}
-        ${renderRankingWidget('lossReasons', 'Причины закрытия', state.mapping.lossReason)}
-        ${renderLifetimeWidget('lifetime')}
-        ${renderRankingWidget('responsible', 'Ответственные', state.mapping.responsible)}
-      </div>`;
+    // Новый базовый таб по ТЗ «Трафик» — строгие колонки amoCRM.
+    return renderTzBase();
   }
 
   function buildBaseMetrics(periodKey) {
@@ -1957,6 +1952,520 @@
 
   function fmtDateTime(d) {
     return d.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+     TZ «ТРАФИК» — аналитические виджеты строго по колонкам amoCRM.
+     Источник данных: state.rows (объекты по normalizedName; дубли → " #2").
+     ════════════════════════════════════════════════════════════════ */
+
+  // Колонки amoCRM. Для дублей primary/reserve. row-объекты используют
+  // normalizedName: первое вхождение = базовое имя, второе = "имя #2".
+  const TZC = {
+    id:        ['ID'],
+    created:   ['Дата создания сделки'],
+    closed:    ['Дата закрытия'],
+    stage:     ['Этап сделки'],
+    reason:    ['Причина закрытия карточки'],
+    source:    ['Источник обращения'],            // primary, НЕ "Источник обращения #2"
+    city:      ['Город'],
+    responsible:['Ответственный'],
+    qual:      ['Квал лид'],
+    visitDate: ['Дата визита'],
+    realizDate:['Дата реализации'],
+    success:   ['Успешное закрытие карточки'],
+    cost:      ['Стоимость лида'],
+    landing:   ['Посадка'],
+    revenue:   ['Доходность #2', 'Доходность']     // primary "Доходность.1" (#2), reserve "Доходность"
+  };
+  const WARM_SOURCE = 'Теплые лиды';
+  const EMPTY_LABEL = 'Не заполнено';
+
+  function tzEmpty(v) {
+    if (v === null || v === undefined) return true;
+    const s = String(v).trim().toLowerCase();
+    return s === '' || s === 'nan' || s === 'none' || s === 'null' || s === 'undefined';
+  }
+  // Получить значение строки по канон. имени (учитывает что в state.rows ключ = normalizedName)
+  function tzVal(row, candidates) {
+    for (const name of candidates) {
+      if (name in row && !tzEmpty(row[name])) return row[name];
+      // fallback: точное совпадение по normalizedName уже покрыто; пробуем без изменений
+    }
+    // вернём пустую строку первого кандидата если ничего не нашли
+    return '';
+  }
+  function tzRaw(row, candidates) {
+    for (const name of candidates) if (name in row) return row[name];
+    return '';
+  }
+  function tzMoney(v) {
+    if (tzEmpty(v)) return null;
+    const c = String(v).replace(/\s/g, '').replace(/ /g, '').replace('₽', '').replace(',', '.').trim();
+    if (!c) return null;
+    const n = Number(c);
+    return Number.isFinite(n) ? n : null;
+  }
+  function tzDate(v) {
+    if (tzEmpty(v)) return null;
+    const s = String(v).trim();
+    if (s.toLowerCase() === 'не закрыта') return null;
+    const m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+    if (!m) return null;
+    const d = new Date(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  function tzNum(n) { return Number(n || 0).toLocaleString('ru-RU'); }
+  function tzMoneyFmt(n) { return (n === null || n === undefined || !Number.isFinite(n)) ? '—' : Math.round(n).toLocaleString('ru-RU') + ' ₽'; }
+  function tzPct(part, total) { return total > 0 ? (part / total * 100) : 0; }
+  function tzPctFmt(part, total) { return total > 0 ? (part / total * 100).toFixed(1) + '%' : '—'; }
+  function tzDivFmt(a, b, fmt) { if (!b) return '—'; const v = a / b; return fmt ? fmt(v) : (Math.round(v)).toLocaleString('ru-RU'); }
+  function tzMedian(arr) {
+    if (!arr.length) return 0;
+    const s = [...arr].sort((a, b) => a - b);
+    const m = Math.floor(s.length / 2);
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  }
+  function tzPercentile(arr, p) {
+    if (!arr.length) return 0;
+    const s = [...arr].sort((a, b) => a - b);
+    const k = (s.length - 1) * p / 100;
+    const f = Math.floor(k), c = Math.min(f + 1, s.length - 1);
+    return s[f] + (s[c] - s[f]) * (k - f);
+  }
+  function tzHours(h) { return h.toFixed(1) + ' ч'; }
+
+  // ── ВЫБОРКА с глобальными фильтрами (ТЗ §6) ──
+  function tzAllRows() { return state.rows || []; }
+  function tzFilteredRows() {
+    const f = state.tzFilters;
+    let rows = tzAllRows();
+    if (f.period && f.period !== 'all') {
+      const now = new Date();
+      let from, to = now;
+      if (f.period === 'today') { from = new Date(now.getFullYear(), now.getMonth(), now.getDate()); }
+      else if (f.period === 'week') { from = startOfWeek(now); }
+      else if (f.period === 'month') { from = new Date(now.getFullYear(), now.getMonth(), 1); }
+      else if (f.period === 'prevMonth') {
+        from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        to = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+      }
+      if (from) rows = rows.filter(r => { const d = tzDate(tzRaw(r, TZC.created)); return d && d >= from && d <= to; });
+    }
+    if (f.source) rows = rows.filter(r => String(tzRaw(r, TZC.source)).trim() === f.source);
+    if (f.city) rows = rows.filter(r => String(tzRaw(r, TZC.city)).trim() === f.city);
+    if (f.responsible) rows = rows.filter(r => String(tzRaw(r, TZC.responsible)).trim() === f.responsible);
+    return rows;
+  }
+
+  // Уникальные значения для селектов фильтра
+  function tzUnique(candidates) {
+    const set = new Map();
+    tzAllRows().forEach(r => {
+      const v = String(tzRaw(r, candidates)).trim();
+      if (!tzEmpty(v)) set.set(v, (set.get(v) || 0) + 1);
+    });
+    return Array.from(set, ([label, n]) => ({ label, n })).sort((a, b) => b.n - a.n);
+  }
+
+  function renderTzBase() {
+    if (!state.rows || !state.rows.length) {
+      return `<div class="traffic-grid traffic-base-grid"><div class="tz-empty">Нет данных для расчёта</div></div>`;
+    }
+    const rows = tzFilteredRows();
+    return `
+      ${renderTzFilters()}
+      <div class="traffic-grid tz-grid">
+        ${tzWidgetSource(rows)}
+        ${tzWidgetWarmFinance(rows)}
+        ${tzWidgetStages(rows)}
+        ${tzWidgetReasons(rows)}
+        ${tzWidgetLifetime(rows)}
+        ${tzWidgetResponsible(rows)}
+        ${tzWidgetCities(rows)}
+        ${tzWidgetQuality(rows)}
+      </div>`;
+  }
+
+  function renderTzFilters() {
+    const f = state.tzFilters;
+    const periods = [['all','Всё'],['today','Сегодня'],['week','Неделя'],['month','Месяц'],['prevMonth','Прошлый мес.']];
+    const opt = (list, sel) => list.map(x => `<option value="${esc(x.label)}" ${x.label === sel ? 'selected' : ''}>${esc(x.label)} (${x.n})</option>`).join('');
+    const total = tzFilteredRows().length;
+    const all = tzAllRows().length;
+    return `
+      <div class="tz-filters">
+        <div class="tz-filter-periods">
+          ${periods.map(([v, l]) => `<button class="tz-fp ${f.period === v ? 'active' : ''}" data-tz-period="${v}" type="button">${l}</button>`).join('')}
+        </div>
+        <div class="tz-filter-selects">
+          <select class="tz-fs" data-tz-filter="source"><option value="">Все источники</option>${opt(tzUnique(TZC.source), f.source)}</select>
+          <select class="tz-fs" data-tz-filter="city"><option value="">Все города</option>${opt(tzUnique(TZC.city), f.city)}</select>
+          <select class="tz-fs" data-tz-filter="responsible"><option value="">Все ответственные</option>${opt(tzUnique(TZC.responsible), f.responsible)}</select>
+          ${(f.source || f.city || f.responsible || f.period !== 'all') ? `<button class="tz-fs-reset" data-tz-reset type="button">Сбросить</button>` : ''}
+        </div>
+        <div class="tz-filter-count">В выборке: <b>${tzNum(total)}</b>${total !== all ? ` из ${tzNum(all)}` : ''} лидов</div>
+      </div>`;
+  }
+
+  // ── Рейтинговая строка (ТЗ §7.2) ──
+  function tzRankRow(label, value, total, max, opts = {}) {
+    const pct = tzPct(value, total);
+    const fillPct = max > 0 ? (value / max * 100) : 0;
+    const cls = shareColorClass(opts.colorIndex || 0);
+    const clickAttr = opts.clickFilter ? `data-tz-rank-filter="${esc(opts.clickFilter)}" data-tz-rank-value="${esc(label)}"` : '';
+    return `
+      <div class="tz-rank-row ${opts.clickFilter ? 'clickable' : ''}" ${clickAttr}>
+        <div class="tz-rank-top">
+          <span class="tz-rank-label" title="${esc(label)}">${esc(label)}</span>
+          <span class="tz-rank-value">${tzNum(value)}</span>
+          <span class="tz-rank-percent">${pct.toFixed(1)}%</span>
+        </div>
+        <div class="tz-rank-bar"><div class="tz-rank-bar-fill ${cls}" style="width:${Math.max(2, fillPct).toFixed(1)}%"></div></div>
+      </div>`;
+  }
+  function shareColorClass(i) { return i >= 6 ? 'tz-c6' : 'tz-c' + i; }
+
+  // Сборка топ-рейтинга с объединением «Прочие» (ТЗ §7.3)
+  function tzRanking(rows, candidates, { emptyAs = EMPTY_LABEL } = {}) {
+    const counts = new Map();
+    rows.forEach(r => {
+      let v = String(tzRaw(r, candidates)).trim();
+      if (tzEmpty(v)) v = emptyAs;
+      counts.set(v, (counts.get(v) || 0) + 1);
+    });
+    const sorted = Array.from(counts, ([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value);
+    if (sorted.length <= 10) return { items: sorted, hasOther: false };
+    const top = sorted.slice(0, 10);
+    const other = sorted.slice(10).reduce((s, x) => s + x.value, 0);
+    return { items: top, other, hasOther: true };
+  }
+
+  function tzWidgetShell(title, subtitle, mainValue, body, opts = {}) {
+    return `
+      <article class="traffic-widget tz-card ${opts.wide ? 'tz-wide' : ''} ${opts.className || ''}">
+        <div class="tz-card-head">
+          <div class="tz-card-title">${esc(title)}</div>
+          ${subtitle ? `<div class="tz-card-sub">${esc(subtitle)}</div>` : ''}
+        </div>
+        ${mainValue ? `<div class="tz-card-main">${mainValue}</div>` : ''}
+        <div class="tz-card-body">${body}</div>
+      </article>`;
+  }
+
+  // Мини-кольцо (donut) для долей топ-N
+  function tzDonut(items, total, centerLabel, centerSub) {
+    let cursor = 0;
+    const safeTotal = Math.max(total, 1);
+    const segs = items.slice(0, 6).map((it, i) => {
+      const frac = it.value / safeTotal * 100;
+      const next = cursor + frac;
+      const s = `var(--tz-c${i % 6}) ${cursor.toFixed(2)}% ${next.toFixed(2)}%`;
+      cursor = next;
+      return s;
+    });
+    if (cursor < 100) segs.push(`var(--line) ${cursor.toFixed(2)}% 100%`);
+    return `<div class="tz-donut-wrap">
+      <div class="tz-donut" style="background:conic-gradient(${segs.join(',')})">
+        <div class="tz-donut-hole"><b>${esc(centerLabel)}</b><span>${esc(centerSub || '')}</span></div>
+      </div>
+    </div>`;
+  }
+
+  // ═══ ВИДЖЕТ 1: Лиды по источнику ═══
+  function tzWidgetSource(rows) {
+    const total = rows.length;
+    const rank = tzRanking(rows, TZC.source);
+    const max = rank.items[0]?.value || 1;
+    const body = `
+      <div class="tz-rank-with-ring">
+        <div class="tz-rank-list">
+          ${rank.items.map((it, i) => tzRankRow(it.label, it.value, total, max, { colorIndex: i, clickFilter: 'source' })).join('')}
+          ${rank.hasOther ? tzRankRow('Прочие', rank.other, total, max, { colorIndex: 6 }) : ''}
+        </div>
+        ${tzDonut(rank.items, total, tzNum(total), 'лидов')}
+      </div>`;
+    return tzWidgetShell('Лиды по источнику', 'Источник обращения', tzNum(total) + ' лидов', body, { wide: true, className: 'tz-source-widget' });
+  }
+
+  // ═══ ВИДЖЕТ 2: Финансы тёплых лидов ═══
+  function tzWidgetWarmFinance(rows) {
+    const warm = rows.filter(r => String(tzRaw(r, TZC.source)).trim() === WARM_SOURCE);
+    if (!warm.length) {
+      return tzWidgetShell('Финансы тёплых лидов', WARM_SOURCE, '', '<div class="tz-empty-inline">Нет тёплых лидов для финансового расчёта</div>', { wide: true, className: 'tz-finance-widget' });
+    }
+    const fin = tzWarmStats(warm);
+    const ringPct = Math.round(fin.revenueCoverage);
+    const romiOk = fin.revenueCoverage >= 90;
+    const kpis = [
+      ['Тёплые лиды', tzNum(fin.count)],
+      ['Расход', tzMoneyFmt(fin.costSum)],
+      ['CPL', tzDivFmt(fin.costSum, fin.costCount, tzMoneyFmt)],
+      ['Квал. лиды', tzNum(fin.qualCount)],
+      ['CPQL', tzDivFmt(fin.costSum, fin.qualCount, tzMoneyFmt)],
+      ['Визиты', tzNum(fin.visitCount)],
+      ['CPV', tzDivFmt(fin.costSum, fin.visitCount, tzMoneyFmt)],
+      ['Реализации', tzNum(fin.successCount)],
+      ['CPA', tzDivFmt(fin.costSum, fin.successCount, tzMoneyFmt)],
+      ['Доходность', tzMoneyFmt(fin.revenueSum)],
+    ];
+    // Подтаблица по посадкам
+    const landRows = tzWarmByLanding(warm);
+    const landTable = `
+      <div class="tz-land-table">
+        <div class="tz-land-head"><span>Посадка</span><span>Лиды</span><span>Расход</span><span>CPL</span><span>CPA</span></div>
+        ${landRows.map(l => `
+          <div class="tz-land-row">
+            <span class="tz-land-name" title="${esc(l.name)}">${esc(l.name)}</span>
+            <span>${tzNum(l.count)}</span>
+            <span>${tzMoneyFmt(l.costSum)}</span>
+            <span>${tzDivFmt(l.costSum, l.costCount, tzMoneyFmt)}</span>
+            <span>${tzDivFmt(l.costSum, l.successCount, tzMoneyFmt)}</span>
+          </div>`).join('')}
+      </div>`;
+    const body = `
+      <div class="tz-fin-top">
+        <div class="tz-kpi-grid">
+          ${kpis.map(([l, v]) => `<div class="tz-kpi"><div class="tz-kpi-lbl">${esc(l)}</div><div class="tz-kpi-val">${v}</div></div>`).join('')}
+        </div>
+        <div class="tz-fin-ring">
+          <div class="tz-cov-ring" style="--p:${ringPct}">
+            <div class="tz-cov-hole"><b>${ringPct}%</b><span>покрытие<br>доходности</span></div>
+          </div>
+          ${romiOk
+            ? `<div class="tz-romi-ok">ROMI: ${fin.costSum > 0 ? Math.round((fin.revenueSum - fin.costSum) / fin.costSum * 100) : '—'}%</div>`
+            : `<div class="tz-romi-warn">ROMI не рассчитан: доходность заполнена не по всем успешным тёплым лидам (${ringPct}%).</div>`}
+        </div>
+      </div>
+      <div class="tz-land-title">Разбивка по посадкам</div>
+      ${landTable}`;
+    return tzWidgetShell('Финансы тёплых лидов', WARM_SOURCE + ' · только этот источник', '', body, { wide: true, className: 'tz-finance-widget' });
+  }
+  function tzIsSuccess(r) {
+    return !tzEmpty(tzRaw(r, TZC.success)) || String(tzRaw(r, TZC.stage)).trim() === 'Успешно реализовано';
+  }
+  function tzRevenue(r) {
+    const a = tzMoney(tzRaw(r, ['Доходность #2']));
+    if (a !== null) return a;
+    return tzMoney(tzRaw(r, ['Доходность']));
+  }
+  function tzWarmStats(warm) {
+    const costs = warm.map(r => tzMoney(tzRaw(r, TZC.cost))).filter(c => c !== null && c > 0);
+    const costSum = costs.reduce((s, c) => s + c, 0);
+    const costCount = costs.length;
+    const qualCount = warm.filter(r => String(tzRaw(r, TZC.qual)).trim() === 'Да').length;
+    const visitCount = warm.filter(r => tzDate(tzRaw(r, TZC.visitDate)) !== null).length;
+    const success = warm.filter(tzIsSuccess);
+    const successCount = success.length;
+    const revRows = success.filter(r => tzRevenue(r) !== null);
+    const revenueSum = revRows.reduce((s, r) => s + tzRevenue(r), 0);
+    const revenueCoverage = successCount > 0 ? (revRows.length / successCount * 100) : 0;
+    return { count: warm.length, costSum, costCount, qualCount, visitCount, successCount, revenueSum, revenueCoverage };
+  }
+  function tzWarmByLanding(warm) {
+    const map = new Map();
+    warm.forEach(r => {
+      let land = String(tzRaw(r, TZC.landing)).trim();
+      if (tzEmpty(land)) land = EMPTY_LABEL;
+      if (!map.has(land)) map.set(land, []);
+      map.get(land).push(r);
+    });
+    return Array.from(map, ([name, rs]) => {
+      const costs = rs.map(r => tzMoney(tzRaw(r, TZC.cost))).filter(c => c !== null && c > 0);
+      return {
+        name, count: rs.length,
+        costSum: costs.reduce((s, c) => s + c, 0),
+        costCount: costs.length,
+        qualCount: rs.filter(r => String(tzRaw(r, TZC.qual)).trim() === 'Да').length,
+        visitCount: rs.filter(r => tzDate(tzRaw(r, TZC.visitDate)) !== null).length,
+        successCount: rs.filter(tzIsSuccess).length
+      };
+    }).sort((a, b) => b.count - a.count);
+  }
+
+  // ═══ ВИДЖЕТ 3: Этапы воронки ═══
+  function tzWidgetStages(rows) {
+    const total = rows.length;
+    const rank = tzRanking(rows, TZC.stage);
+    const max = rank.items[0]?.value || 1;
+    const body = `<div class="tz-rank-list">
+      ${rank.items.map((it, i) => tzRankRow(it.label, it.value, total, max, { colorIndex: i })).join('')}
+      ${rank.hasOther ? tzRankRow('Прочие', rank.other, total, max, { colorIndex: 6 }) : ''}
+    </div>`;
+    return tzWidgetShell('Этапы воронки', 'Этап сделки', tzNum(total) + ' лидов', body, { className: 'tz-stages-widget' });
+  }
+
+  // ═══ ВИДЖЕТ 4: Причины закрытия ═══
+  function tzWidgetReasons(rows) {
+    const total = rows.length;
+    const withReason = rows.filter(r => !tzEmpty(tzRaw(r, TZC.reason)));
+    const without = total - withReason.length;
+    const rank = tzRanking(withReason, TZC.reason, { emptyAs: EMPTY_LABEL });
+    const max = rank.items[0]?.value || 1;
+    const closedTotal = withReason.length;
+    const body = `
+      <div class="tz-rank-list">
+        ${rank.items.map((it, i) => `
+          <div class="tz-rank-row">
+            <div class="tz-rank-top">
+              <span class="tz-rank-label" title="${esc(it.label)}">${esc(it.label)}</span>
+              <span class="tz-rank-value">${tzNum(it.value)}</span>
+              <span class="tz-rank-percent">${tzPct(it.value, total).toFixed(1)}%</span>
+            </div>
+            <div class="tz-rank-bar"><div class="tz-rank-bar-fill ${shareColorClass(i)}" style="width:${Math.max(2, it.value / max * 100).toFixed(1)}%"></div></div>
+            <div class="tz-rank-sub">${tzPct(it.value, closedTotal).toFixed(1)}% от закрытых с причиной</div>
+          </div>`).join('')}
+        ${rank.hasOther ? tzRankRow('Прочие', rank.other, total, max, { colorIndex: 6 }) : ''}
+      </div>
+      <div class="tz-quality-line">Без причины закрытия: <b>${tzNum(without)}</b></div>`;
+    return tzWidgetShell('Причины закрытия', 'Причина закрытия карточки', tzNum(withReason.length) + ' с причиной', body, { className: 'tz-reasons-widget' });
+  }
+
+  // ═══ ВИДЖЕТ 5: Срок жизни сделки ═══
+  function tzLifetimeData(rows) {
+    let closed = [], openCnt = 0, invalid = 0;
+    rows.forEach(r => {
+      const start = tzDate(tzRaw(r, TZC.created));
+      if (!start) return;
+      const end = tzDate(tzRaw(r, TZC.realizDate)) || tzDate(tzRaw(r, TZC.closed));
+      if (!end) { openCnt++; return; }
+      const ms = end - start;
+      if (ms < 0) { invalid++; return; }
+      closed.push({ row: r, hours: ms / 3600000 });
+    });
+    return { closed, openCnt, invalid };
+  }
+  function tzWidgetLifetime(rows) {
+    const mode = state.tzLifetimeMode || 'all';
+    const data = tzLifetimeData(rows);
+    const hoursArr = data.closed.map(x => x.hours);
+    const avg = hoursArr.length ? hoursArr.reduce((s, h) => s + h, 0) / hoursArr.length : 0;
+    const med = tzMedian(hoursArr);
+    const p75 = tzPercentile(hoursArr, 75);
+    const p90 = tzPercentile(hoursArr, 90);
+    const modes = [['all','Все'],['source','Источники'],['city','Города'],['responsible','Ответственные']];
+    let breakdownBody = '';
+    if (mode === 'all') {
+      const stats = [['Средний', tzHours(avg)],['Медиана', tzHours(med)],['P75', tzHours(p75)],['P90', tzHours(p90)]];
+      breakdownBody = `
+        <div class="tz-life-stats">
+          ${stats.map(([l, v]) => `<div class="tz-life-stat"><div class="tz-life-lbl">${l}</div><div class="tz-life-val">${v}</div></div>`).join('')}
+        </div>
+        <div class="tz-life-foot">
+          <span>В расчёте: <b>${tzNum(data.closed.length)}</b></span>
+          <span>Открытых: <b>${tzNum(data.openCnt)}</b></span>
+          ${data.invalid ? `<span class="tz-life-warn">Ошибок дат: ${tzNum(data.invalid)}</span>` : ''}
+        </div>`;
+    } else {
+      const cand = mode === 'source' ? TZC.source : mode === 'city' ? TZC.city : TZC.responsible;
+      const groups = new Map();
+      data.closed.forEach(x => {
+        let g = String(tzRaw(x.row, cand)).trim(); if (tzEmpty(g)) g = EMPTY_LABEL;
+        if (!groups.has(g)) groups.set(g, []);
+        groups.get(g).push(x.hours);
+      });
+      const list = Array.from(groups, ([label, hs]) => ({
+        label, n: hs.length,
+        avg: hs.reduce((s, h) => s + h, 0) / hs.length,
+        med: tzMedian(hs), p75: tzPercentile(hs, 75)
+      })).sort((a, b) => b.n - a.n).slice(0, 10);
+      breakdownBody = `
+        <div class="tz-life-table">
+          <div class="tz-life-thead"><span>${mode === 'source' ? 'Источник' : mode === 'city' ? 'Город' : 'Ответственный'}</span><span>Завер.</span><span>Сред.</span><span>Медиана</span><span>P75</span></div>
+          ${list.map(g => `<div class="tz-life-trow">
+            <span class="tz-life-gname" title="${esc(g.label)}">${esc(g.label)}</span>
+            <span>${tzNum(g.n)}</span><span>${g.avg.toFixed(1)}ч</span><span>${g.med.toFixed(1)}ч</span><span>${g.p75.toFixed(1)}ч</span>
+          </div>`).join('')}
+        </div>`;
+    }
+    const body = `
+      <div class="tz-life-modes">${modes.map(([v, l]) => `<button class="tz-life-mode ${mode === v ? 'active' : ''}" data-tz-life-mode="${v}" type="button">${l}</button>`).join('')}</div>
+      ${breakdownBody}`;
+    return tzWidgetShell('Срок жизни сделки', 'От создания до реализации / закрытия', tzHours(med) + ' медиана', body, { wide: true, className: 'tz-lifetime-widget' });
+  }
+
+  // ═══ ВИДЖЕТ 6: Лиды по ответственному ═══
+  function tzWidgetResponsible(rows) {
+    const total = rows.length;
+    const rank = tzRanking(rows, TZC.responsible);
+    const max = rank.items[0]?.value || 1;
+    const body = `<div class="tz-rank-list">
+      ${rank.items.map((it, i) => tzRankRow(it.label, it.value, total, max, { colorIndex: i, clickFilter: 'responsible' })).join('')}
+      ${rank.hasOther ? tzRankRow('Прочие', rank.other, total, max, { colorIndex: 6 }) : ''}
+    </div>
+    <div class="tz-quality-line tz-note">⚠ В поле «Ответственный» могут быть города/системные значения — проверьте справочник</div>`;
+    return tzWidgetShell('Лиды по ответственному', 'Ответственный', tzNum(total) + ' лидов', body, { className: 'tz-responsible-widget' });
+  }
+
+  // ═══ ВИДЖЕТ 7: Лиды по городам ═══
+  function tzWidgetCities(rows) {
+    const total = rows.length;
+    const rank = tzRanking(rows, TZC.city);
+    const max = rank.items[0]?.value || 1;
+    const body = `<div class="tz-rank-list">
+      ${rank.items.map((it, i) => tzRankRow(it.label, it.value, total, max, { colorIndex: i, clickFilter: 'city' })).join('')}
+      ${rank.hasOther ? tzRankRow('Прочие', rank.other, total, max, { colorIndex: 6 }) : ''}
+    </div>`;
+    return tzWidgetShell('Лиды по городам', 'Город', tzNum(total) + ' лидов', body, { className: 'tz-cities-widget' });
+  }
+
+  // ═══ ВИДЖЕТ 8: Качество данных ═══
+  function tzWidgetQuality(rows) {
+    const total = rows.length;
+    const noSource = rows.filter(r => tzEmpty(tzRaw(r, TZC.source))).length;
+    const noCity = rows.filter(r => tzEmpty(tzRaw(r, TZC.city))).length;
+    const noResp = rows.filter(r => tzEmpty(tzRaw(r, TZC.responsible))).length;
+    const noStage = rows.filter(r => tzEmpty(tzRaw(r, TZC.stage))).length;
+    const noReason = rows.filter(r => tzEmpty(tzRaw(r, TZC.reason))).length;
+    const warm = rows.filter(r => String(tzRaw(r, TZC.source)).trim() === WARM_SOURCE);
+    const warmNoCost = warm.filter(r => { const c = tzMoney(tzRaw(r, TZC.cost)); return c === null || c <= 0; }).length;
+    const success = rows.filter(tzIsSuccess);
+    const succNoRev = success.filter(r => tzRevenue(r) === null).length;
+    const realizNoSucc = rows.filter(r => tzDate(tzRaw(r, TZC.realizDate)) && tzEmpty(tzRaw(r, TZC.success))).length;
+    const succWrongStage = rows.filter(r => !tzEmpty(tzRaw(r, TZC.success)) && String(tzRaw(r, TZC.stage)).trim() !== 'Успешно реализовано').length;
+    const checks = [
+      ['Источник не заполнен', noSource],
+      ['Город не заполнен', noCity],
+      ['Ответственный не заполнен', noResp],
+      ['Этап не заполнен', noStage],
+      ['Причина закрытия не заполнена', noReason],
+      ['Тёплые лиды без стоимости', warmNoCost],
+      ['Успешные без доходности', succNoRev],
+      ['Реализация есть, успех пуст', realizNoSucc],
+      ['Успех есть, этап ≠ «Успешно реализовано»', succWrongStage],
+    ];
+    const body = `<div class="tz-quality-list">
+      ${checks.map(([l, v]) => `<div class="tz-quality-item ${v > 0 ? 'has' : 'ok'}">
+        <span class="tz-quality-lbl">${esc(l)}</span>
+        <span class="tz-quality-num">${tzNum(v)}</span>
+      </div>`).join('')}
+    </div>`;
+    return tzWidgetShell('Качество данных', 'Проверка полноты и согласованности', '', body, { className: 'tz-quality-widget' });
+  }
+
+  function bindTzBase() {
+    document.querySelectorAll('[data-tz-period]').forEach(b => {
+      b.onclick = () => { state.tzFilters.period = b.dataset.tzPeriod; renderTrafficAnalytics(); };
+    });
+    document.querySelectorAll('[data-tz-filter]').forEach(sel => {
+      sel.onchange = () => { state.tzFilters[sel.dataset.tzFilter] = sel.value; renderTrafficAnalytics(); };
+    });
+    document.querySelector('[data-tz-reset]')?.addEventListener('click', () => {
+      state.tzFilters = { period: 'all', source: '', city: '', responsible: '' };
+      renderTrafficAnalytics();
+    });
+    document.querySelectorAll('[data-tz-life-mode]').forEach(b => {
+      b.onclick = () => { state.tzLifetimeMode = b.dataset.tzLifeMode; renderTrafficAnalytics(); };
+    });
+    document.querySelectorAll('[data-tz-rank-filter]').forEach(row => {
+      row.onclick = () => {
+        const key = row.dataset.tzRankFilter;
+        const val = row.dataset.tzRankValue;
+        if (val === 'Прочие' || val === EMPTY_LABEL) return;
+        state.tzFilters[key] = state.tzFilters[key] === val ? '' : val;
+        renderTrafficAnalytics();
+      };
+    });
   }
 
   document.addEventListener('DOMContentLoaded', () => {

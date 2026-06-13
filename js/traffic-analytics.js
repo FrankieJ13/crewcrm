@@ -19,6 +19,42 @@
     'Подготовка вкладок'
   ];
 
+  // ── IndexedDB для больших датасетов (localStorage ~5МБ мало для 18МБ CSV) ──
+  const IDB = { name: 'crmTraffic', store: 'kv', key: 'rows' };
+  function idbOpen() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) return reject(new Error('no-idb'));
+      const req = indexedDB.open(IDB.name, 1);
+      req.onupgradeneeded = () => { try { req.result.createObjectStore(IDB.store); } catch(_){} };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error || new Error('idb-open'));
+    });
+  }
+  async function idbSet(value) {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB.store, 'readwrite');
+      tx.objectStore(IDB.store).put(value, IDB.key);
+      tx.oncomplete = () => { db.close(); resolve(true); };
+      tx.onerror = () => { db.close(); reject(tx.error); };
+    });
+  }
+  async function idbGet() {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB.store, 'readonly');
+      const r = tx.objectStore(IDB.store).get(IDB.key);
+      r.onsuccess = () => { db.close(); resolve(r.result || null); };
+      r.onerror = () => { db.close(); reject(r.error); };
+    });
+  }
+  async function idbDel() {
+    try {
+      const db = await idbOpen();
+      await new Promise((resolve) => { const tx = db.transaction(IDB.store, 'readwrite'); tx.objectStore(IDB.store).delete(IDB.key); tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => { db.close(); resolve(); }; });
+    } catch(_){}
+  }
+
   const FIELD_ALIASES = {
     createdAt: ['Дата создания сделки','Дата создания','created_at','date_create'],
     closedAt: ['Дата закрытия','Дата закрытия сделки','closed_at'],
@@ -111,8 +147,11 @@
     processing: null,
     storageWarning: '',
     // Глобальные фильтры базового таба (ТЗ §6) + режим виджета «Срок жизни»
-    tzFilters: { period: 'all', source: '', city: '', responsible: '' },
-    tzLifetimeMode: 'all'
+    // source/city/responsible/success — массивы (мультивыбор). period: all|today|week|month|range.
+    tzFilters: { period: 'all', dateFrom: '', dateTo: '', source: [], city: [], responsible: [], success: [] },
+    tzLifetimeMode: 'all',
+    tzTrendMode: 'auto' // виджет «Трафик»: auto = по периоду
+
   };
 
   window.crmTrafficState = state;
@@ -178,6 +217,12 @@
       root.innerHTML = renderProcessing();
       return;
     }
+    // Большой датасет в IndexedDB — строки грузятся асинхронно
+    if (!state.rows && state.meta && state.meta.rowsInIdb && !state._idbTried) {
+      root.innerHTML = `<section class="traffic-page"><div class="traffic-hero"><h1 class="traffic-title">Трафик</h1><p class="traffic-subtitle">Загружаю сохранённые данные…</p></div></section>`;
+      hydrateRowsFromIdb();
+      return;
+    }
     if (!state.rows || !state.fields || !state.meta) {
       root.innerHTML = renderImport();
       bindImport();
@@ -196,8 +241,8 @@
     const fields = safeJson(localStorage.getItem(STORAGE.fields), null);
     const mapping = safeJson(localStorage.getItem(STORAGE.mapping), null);
     const meta = safeJson(localStorage.getItem(STORAGE.meta), null);
-    if (Array.isArray(rows) && Array.isArray(fields) && meta) {
-      state.rows = rows;
+    // Поля/маппинг/мета грузим всегда (нужны и для idb-варианта)
+    if (Array.isArray(fields) && meta) {
       state.fields = fields;
       const savedMapping = Object.fromEntries(Object.entries(mapping || {}).filter(([, value]) => value));
       const detectedMapping = detectColumns(fields);
@@ -206,7 +251,23 @@
         state.mapping.source = detectedMapping.source;
       }
       state.meta = meta;
+      if (Array.isArray(rows)) state.rows = rows;       // быстрый путь — localStorage
     }
+  }
+
+  // Async-гидрация строк из IndexedDB (большие датасеты). Вызывается из render.
+  async function hydrateRowsFromIdb() {
+    if (state._idbTried) return;
+    state._idbTried = true;
+    try {
+      const rows = await idbGet();
+      if (Array.isArray(rows) && rows.length) {
+        state.rows = rows;
+        renderTrafficAnalytics();
+      } else {
+        renderTrafficAnalytics();
+      }
+    } catch (_) { renderTrafficAnalytics(); }
   }
 
   function safeJson(text, fallback) {
@@ -269,8 +330,8 @@
       notify('Выберите CSV-файл.', 'e');
       return;
     }
-    if (file.size > 14 * 1024 * 1024) {
-      notify('Файл слишком большой для обработки на устройстве.', 'e');
+    if (file.size > 60 * 1024 * 1024) {
+      notify('Файл больше 60 МБ — слишком большой даже для IndexedDB.', 'e');
       return;
     }
     state.processing = { fileName: file.name, fileSize: file.size, step: 0, rows: 0, cols: 0 };
@@ -499,47 +560,65 @@
     localStorage.setItem(STORAGE.fields, JSON.stringify(state.fields));
     localStorage.setItem(STORAGE.mapping, JSON.stringify(state.mapping));
     localStorage.setItem(STORAGE.meta, JSON.stringify(state.meta));
+    let rowsInIdb = false;
     try {
       const rowsJson = JSON.stringify(state.rows);
       if (rowsJson.length < 3_500_000) {
+        // Маленький датасет — быстрый путь через localStorage
         localStorage.setItem(STORAGE.rows, rowsJson);
         state.storageWarning = '';
+        idbDel();
       } else {
+        // Большой датасет — IndexedDB (квота сотни МБ)
         localStorage.removeItem(STORAGE.rows);
-        state.storageWarning = 'Файл обработан, но строки не сохранены в браузере: объём выше безопасного лимита localStorage.';
+        try {
+          await idbSet(state.rows);
+          rowsInIdb = true;
+          state.storageWarning = '';
+        } catch (e) {
+          state.storageWarning = 'Файл обработан, но не сохранён: ' + (e.message || 'нет места в браузере') + '. Доступен до перезагрузки.';
+        }
       }
     } catch (_) {
       localStorage.removeItem(STORAGE.rows);
-      state.storageWarning = 'Файл обработан, но не сохранён в браузере: превышен лимит localStorage.';
+      try { await idbSet(state.rows); rowsInIdb = true; state.storageWarning = ''; }
+      catch (e) { state.storageWarning = 'Файл обработан, но не сохранён в браузере. Доступен до перезагрузки.'; }
     }
     if (state.meta) {
       state.meta.storageWarning = state.storageWarning;
+      state.meta.rowsInIdb = rowsInIdb;
       localStorage.setItem(STORAGE.meta, JSON.stringify(state.meta));
     }
   }
 
   function renderDashboard() {
     const tab = state.activeTab === 'advanced' ? 'advanced' : 'base';
+    const sectionTitle = tab === 'advanced' ? 'Редактор виджетов' : 'Стандартные виджеты';
     return `
       <section class="traffic-page">
         <div class="traffic-top">
           <div class="traffic-top-copy">
             <div class="traffic-title-row">
-              <h1 class="traffic-title">Трафик</h1>
-              <button class="traffic-info-btn" id="traffic-import-info" type="button" aria-label="Информация об импорте">!</button>
-              <div class="traffic-tabs traffic-tabs-icons" aria-label="Режим аналитики">
-                <button class="traffic-tab ${tab === 'base' ? 'active' : ''}" data-traffic-tab="base" type="button" aria-label="Базовый">
-                  <img src="${trafficTabIcon('base')}" alt="" onerror="this.style.display='none'">
+              <h2 class="traffic-section-title traffic-head-title">${sectionTitle}</h2>
+              <div class="traffic-head-actions">
+                <div class="traffic-seg" role="tablist" aria-label="Режим аналитики">
+                  <span class="traffic-seg-thumb ${tab === 'advanced' ? 'right' : 'left'}"></span>
+                  <button class="traffic-seg-btn ${tab === 'base' ? 'active' : ''}" data-traffic-tab="base" type="button" aria-label="Стандартные виджеты">
+                    <img src="${trafficTabIcon('base')}" alt="" onerror="this.style.display='none'">
+                  </button>
+                  <button class="traffic-seg-btn ${tab === 'advanced' ? 'active' : ''}" data-traffic-tab="advanced" type="button" aria-label="Редактор виджетов">
+                    <img src="${trafficTabIcon('advanced')}" alt="" onerror="this.style.display='none'">
+                  </button>
+                </div>
+                <button class="traffic-icon-btn traffic-clear-btn" id="traffic-clear-csv-head" type="button" aria-label="Очистить импортированный CSV" title="Очистить CSV">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>
                 </button>
-                <button class="traffic-tab ${tab === 'advanced' ? 'active' : ''}" data-traffic-tab="advanced" type="button" aria-label="Расширенный">
-                  <img src="${trafficTabIcon('advanced')}" alt="" onerror="this.style.display='none'">
-                </button>
+                <button class="traffic-info-btn" id="traffic-import-info" type="button" aria-label="Справка и словарь">!</button>
               </div>
             </div>
             <p class="traffic-subtitle">Аналитика входящего трафика и лидогенерации</p>
           </div>
         </div>
-        <h2 class="traffic-section-title">${tab === 'advanced' ? 'Расширенный' : 'Базовый'} · Трафик</h2>
         ${tab === 'advanced' ? renderAdvancedTab() : renderBaseTab()}
       </section>
       <div class="traffic-modal" id="traffic-modal"></div>`;
@@ -565,6 +644,7 @@
       };
     });
     document.getElementById('traffic-clear-csv')?.addEventListener('click', showClearModal);
+    document.getElementById('traffic-clear-csv-head')?.addEventListener('click', showClearModal);
     document.getElementById('traffic-import-info')?.addEventListener('click', showTrafficImportInfo);
     document.getElementById('traffic-export-widgets')?.addEventListener('click', exportWidgets);
     document.getElementById('traffic-import-widgets')?.addEventListener('click', () => document.getElementById('traffic-import-file')?.click());
@@ -837,16 +917,39 @@
     return mappedField('source');
   }
 
+  const TZ_GLOSSARY = [
+    ['CPL', 'Cost Per Lead — стоимость лида. Расход ÷ число лидов с валидной стоимостью.'],
+    ['CPQL', 'Cost Per Qualified Lead — стоимость квалифицированного лида. Расход ÷ число лидов с «Квал лид = Да».'],
+    ['CPV', 'Cost Per Visit — стоимость визита. Расход ÷ число лидов с заполненной «Дата визита».'],
+    ['CPA', 'Cost Per Action — стоимость реализации. Расход ÷ число успешно реализованных сделок.'],
+    ['ROMI', 'Return On Marketing Investment — окупаемость рекламы: (доходность − расход) ÷ расход × 100%. Считается только при покрытии доходности ≥ 90%.'],
+    ['Расход', 'Сумма «Стоимость лида» по тёплым лидам с валидной (> 0) стоимостью.'],
+    ['Доходность', 'Маржа по успешным сделкам. Заполняется только в сделках со статусом «Кредит» (Успешное закрытие карточки).'],
+    ['Покрытие доходности', 'Доля сделок «Кредит», у которых заполнена доходность. Ниже 90% → ROMI скрыт как ненадёжный.'],
+    ['Квал. лид', 'Квалифицированный лид — поле «Квал лид = Да».'],
+    ['Тёплый лид', 'Лид с источником «Теплые лиды». Только по ним считаются финансовые метрики (есть цена лида).'],
+    ['Срок жизни', 'Время от «Дата создания сделки» до «Дата реализации» (или «Дата закрытия»).'],
+    ['Медиана', 'Серединное значение: половина сделок быстрее, половина медленнее. Устойчивее среднего к выбросам.'],
+    ['P75 / P90', 'Перцентили: 75% / 90% сделок укладываются в этот срок.'],
+    ['Реализация', 'Успешная сделка: заполнено «Успешное закрытие карточки» или этап «Успешно реализовано».'],
+  ];
+
   function showTrafficImportInfo() {
     const modal = document.getElementById('traffic-modal');
-    if (!modal || !state.meta) return;
-    const period = [state.meta.periodFrom, state.meta.periodTo].filter(Boolean).map(v => fmtDate(new Date(v))).join(' — ');
+    if (!modal) return;
+    const m = state.meta || {};
+    const period = [m.periodFrom, m.periodTo].filter(Boolean).map(v => fmtDate(new Date(v))).join(' — ');
+    const glossary = TZ_GLOSSARY.map(([term, def]) => `
+      <div class="tz-gloss-row"><dt>${esc(term)}</dt><dd>${esc(def)}</dd></div>`).join('');
     modal.innerHTML = `
-      <div class="traffic-modal-card traffic-import-info-card">
+      <div class="traffic-modal-card traffic-import-info-card tz-info-card">
         <button class="traffic-modal-close" data-traffic-close type="button">×</button>
-        <h2>✓ CSV успешно импортирован</h2>
-        <p><strong>${esc(state.meta.fileName || 'CSV')}</strong> · ${formatMetricValue(state.meta.rows || 0)} строк · ${formatMetricValue(state.meta.cols || 0)} колонок${period ? ` · ${esc(period)}` : ''}</p>
-        ${state.meta.storageWarning ? `<p class="traffic-muted">${esc(state.meta.storageWarning)}</p>` : '<p class="traffic-muted">Файл обработан и доступен для аналитики.</p>'}
+        <h2>Справка по разделу «Трафик»</h2>
+        ${state.meta ? `<p class="tz-info-meta"><strong>${esc(m.fileName || 'CSV')}</strong> · ${formatMetricValue(m.rows || 0)} строк · ${formatMetricValue(m.cols || 0)} колонок${period ? ` · ${esc(period)}` : ''}</p>
+        ${m.storageWarning ? `<p class="traffic-muted">${esc(m.storageWarning)}</p>` : ''}` : '<p class="traffic-muted">Импортируйте CSV для аналитики.</p>'}
+        <h3 class="tz-gloss-title">Словарь сокращений</h3>
+        <dl class="tz-gloss">${glossary}</dl>
+        <p class="traffic-muted tz-gloss-note">Финансовые метрики (CPL/CPQL/CPV/CPA/ROMI) считаются только по тёплым лидам — у остальных источников нет цены лида.</p>
       </div>`;
     modal.classList.add('open');
     bindModalDismiss(modal);
@@ -1846,7 +1949,9 @@
     state.mapping = null;
     state.meta = null;
     state.processing = null;
+    state._idbTried = false;
     [STORAGE.rows, STORAGE.mapping, STORAGE.fields, STORAGE.meta, STORAGE.draft].forEach(k => localStorage.removeItem(k));
+    idbDel();
     if (withWidgets) {
       state.widgets = [];
       localStorage.removeItem(STORAGE.widgets);
@@ -2037,24 +2142,37 @@
 
   // ── ВЫБОРКА с глобальными фильтрами (ТЗ §6) ──
   function tzAllRows() { return state.rows || []; }
+  function tzDateRange() {
+    const f = state.tzFilters;
+    const now = new Date();
+    if (f.period === 'today') return [new Date(now.getFullYear(), now.getMonth(), now.getDate()), now];
+    if (f.period === 'week') return [startOfWeek(now), now];
+    if (f.period === 'month') return [new Date(now.getFullYear(), now.getMonth(), 1), now];
+    if (f.period === 'range') {
+      const from = f.dateFrom ? new Date(f.dateFrom + 'T00:00:00') : null;
+      const to = f.dateTo ? new Date(f.dateTo + 'T23:59:59') : null;
+      return [from, to];
+    }
+    return [null, null];
+  }
   function tzFilteredRows() {
     const f = state.tzFilters;
     let rows = tzAllRows();
-    if (f.period && f.period !== 'all') {
-      const now = new Date();
-      let from, to = now;
-      if (f.period === 'today') { from = new Date(now.getFullYear(), now.getMonth(), now.getDate()); }
-      else if (f.period === 'week') { from = startOfWeek(now); }
-      else if (f.period === 'month') { from = new Date(now.getFullYear(), now.getMonth(), 1); }
-      else if (f.period === 'prevMonth') {
-        from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        to = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
-      }
-      if (from) rows = rows.filter(r => { const d = tzDate(tzRaw(r, TZC.created)); return d && d >= from && d <= to; });
+    const [from, to] = tzDateRange();
+    if (from || to) {
+      rows = rows.filter(r => {
+        const d = tzDate(tzRaw(r, TZC.created));
+        if (!d) return false;
+        if (from && d < from) return false;
+        if (to && d > to) return false;
+        return true;
+      });
     }
-    if (f.source) rows = rows.filter(r => String(tzRaw(r, TZC.source)).trim() === f.source);
-    if (f.city) rows = rows.filter(r => String(tzRaw(r, TZC.city)).trim() === f.city);
-    if (f.responsible) rows = rows.filter(r => String(tzRaw(r, TZC.responsible)).trim() === f.responsible);
+    const inList = (list, val) => !list || !list.length || list.includes(String(val).trim());
+    if (f.source && f.source.length) rows = rows.filter(r => inList(f.source, tzRaw(r, TZC.source)));
+    if (f.city && f.city.length) rows = rows.filter(r => inList(f.city, tzRaw(r, TZC.city)));
+    if (f.responsible && f.responsible.length) rows = rows.filter(r => inList(f.responsible, tzRaw(r, TZC.responsible)));
+    if (f.success && f.success.length) rows = rows.filter(r => inList(f.success, tzRaw(r, TZC.success)));
     return rows;
   }
 
@@ -2076,6 +2194,7 @@
     return `
       ${renderTzFilters()}
       <div class="traffic-grid tz-grid">
+        ${tzWidgetTrend(rows)}
         ${tzWidgetSource(rows)}
         ${tzWidgetWarmFinance(rows)}
         ${tzWidgetStages(rows)}
@@ -2087,22 +2206,142 @@
       </div>`;
   }
 
+  // ═══ ВИДЖЕТ 0: Трафик (кол-во лидов во времени) ═══
+  // Базовые параметры — источник/период из глобальных фильтров.
+  // ≤31 день → столбики с датой и кол-вом (текст повёрнут на 90°).
+  // Иначе → сглаженная линия тренда (как визиты на перс. странице).
+  function tzWidgetTrend(rows) {
+    // Группируем по дню создания
+    const byDay = new Map();
+    let minD = null, maxD = null;
+    rows.forEach(r => {
+      const d = tzDate(tzRaw(r, TZC.created));
+      if (!d) return;
+      const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const key = +day;
+      byDay.set(key, (byDay.get(key) || 0) + 1);
+      if (!minD || day < minD) minD = day;
+      if (!maxD || day > maxD) maxD = day;
+    });
+    if (!byDay.size) {
+      return tzWidgetShell('Трафик', 'Лиды во времени', '', '<div class="tz-empty-inline">Нет датированных лидов в выборке</div>', { wide: true, className: 'tz-trend-widget' });
+    }
+    // Полный диапазон дней
+    const days = [];
+    for (let d = new Date(minD); d <= maxD; d.setDate(d.getDate() + 1)) {
+      const day = new Date(d);
+      days.push({ date: day, value: byDay.get(+day) || 0 });
+    }
+    const totalLeads = days.reduce((s, x) => s + x.value, 0);
+    const peak = days.reduce((a, b) => b.value > (a?.value || 0) ? b : a, null);
+    const spanDays = days.length;
+    // ≤31 день — столбики; иначе сглаженная линия
+    const body = spanDays <= 31 ? tzTrendBars(days, peak) : tzTrendLine(days);
+    const sub = `${fmtDate(minD)} — ${fmtDate(maxD)} · ${spanDays} дн.`;
+    return tzWidgetShell('Трафик', sub, tzNum(totalLeads) + ' лидов', body, { wide: true, className: 'tz-trend-widget' });
+  }
+
+  function tzTrendBars(days, peak) {
+    const max = Math.max(...days.map(d => d.value), 1);
+    return `
+      <div class="tz-trend-bars" style="--tz-cols:${days.length}">
+        ${days.map(d => {
+          const h = Math.max(3, d.value / max * 100);
+          const isPeak = peak && +d.date === +peak.date;
+          return `<div class="tz-tb ${isPeak ? 'peak' : ''}" title="${fmtDate(d.date)}: ${d.value}">
+            <span class="tz-tb-val">${d.value}</span>
+            <span class="tz-tb-fill" style="height:${h}%"></span>
+            <span class="tz-tb-day">${String(d.date.getDate()).padStart(2, '0')}</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+  }
+
+  function tzTrendLine(days) {
+    // Сглаженная линия (Catmull-Rom → Безье), как на перс. странице по визитам
+    const W = 640, H = 150, padX = 6, padY = 14;
+    const max = Math.max(...days.map(d => d.value), 1);
+    const n = days.length;
+    const pts = days.map((d, i) => [
+      padX + (n === 1 ? 0 : i / (n - 1)) * (W - padX * 2),
+      H - padY - (d.value / max) * (H - padY * 2)
+    ]);
+    let path = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+    for (let i = 0; i < n - 1; i++) {
+      const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+      const c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
+      const c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
+      path += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+    }
+    const area = path + ` L ${pts[n - 1][0].toFixed(1)} ${H} L ${pts[0][0].toFixed(1)} ${H} Z`;
+    const peakIdx = days.reduce((a, d, i) => d.value > days[a].value ? i : a, 0);
+    return `
+      <div class="tz-trend-line">
+        <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="tz-trend-svg">
+          <defs><linearGradient id="tzTrendGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--acc,#4f7cff)" stop-opacity="0.28"/>
+            <stop offset="100%" stop-color="var(--acc,#4f7cff)" stop-opacity="0"/>
+          </linearGradient></defs>
+          <path d="${area}" fill="url(#tzTrendGrad)"/>
+          <path d="${path}" fill="none" stroke="var(--acc,#4f7cff)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+          <circle cx="${pts[peakIdx][0].toFixed(1)}" cy="${pts[peakIdx][1].toFixed(1)}" r="3.5" fill="var(--acc,#4f7cff)"/>
+        </svg>
+        <div class="tz-trend-axis"><span>${fmtDate(days[0].date)}</span><span>пик ${days[peakIdx].value} · ${fmtDate(days[peakIdx].date)}</span><span>${fmtDate(days[n - 1].date)}</span></div>
+      </div>`;
+  }
+
+  // Кастомный мультиселект (чекбоксы в поповере)
+  function tzMultiSelect(key, label, cand) {
+    const sel = state.tzFilters[key] || [];
+    const items = tzUnique(cand);
+    const btnLabel = sel.length === 0 ? label : (sel.length === 1 ? sel[0] : `${label}: ${sel.length}`);
+    const list = items.map(x => {
+      const on = sel.includes(x.label);
+      return `<label class="tz-ms-opt ${on ? 'on' : ''}"><input type="checkbox" data-tz-ms-cb="${esc(key)}" value="${esc(x.label)}" ${on ? 'checked' : ''}><span class="tz-ms-name" title="${esc(x.label)}">${esc(x.label)}</span><span class="tz-ms-n">${x.n}</span></label>`;
+    }).join('');
+    return `
+      <div class="tz-ms" data-tz-ms-wrap="${esc(key)}">
+        <button class="tz-ms-btn ${sel.length ? 'active' : ''}" data-tz-ms="${esc(key)}" type="button">
+          <span class="tz-ms-btn-label" title="${esc(btnLabel)}">${esc(btnLabel)}</span>
+          <svg viewBox="0 0 12 12" width="11" height="11"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="tz-ms-panel" data-tz-ms-panel="${esc(key)}" hidden>
+          <div class="tz-ms-panel-head"><span>${esc(label)}</span>${sel.length ? `<button class="tz-ms-clear" data-tz-ms-clear="${esc(key)}" type="button">Очистить</button>` : ''}</div>
+          <div class="tz-ms-list">${list || '<div class="tz-ms-empty">Нет значений</div>'}</div>
+          <button class="tz-ms-apply" data-tz-ms-apply type="button">Готово</button>
+        </div>
+      </div>`;
+  }
+
   function renderTzFilters() {
     const f = state.tzFilters;
-    const periods = [['all','Всё'],['today','Сегодня'],['week','Неделя'],['month','Месяц'],['prevMonth','Прошлый мес.']];
-    const opt = (list, sel) => list.map(x => `<option value="${esc(x.label)}" ${x.label === sel ? 'selected' : ''}>${esc(x.label)} (${x.n})</option>`).join('');
+    const periods = [['all','Всё'],['today','Сегодня'],['week','Неделя'],['month','Месяц']];
     const total = tzFilteredRows().length;
     const all = tzAllRows().length;
+    const rangeActive = f.period === 'range';
+    const rangeLabel = rangeActive && (f.dateFrom || f.dateTo)
+      ? `${f.dateFrom ? f.dateFrom.split('-').reverse().join('.') : '…'} – ${f.dateTo ? f.dateTo.split('-').reverse().join('.') : '…'}`
+      : 'Период';
+    const hasFilter = (f.source.length || f.city.length || f.responsible.length || f.success.length || f.period !== 'all');
     return `
       <div class="tz-filters">
         <div class="tz-filter-periods">
           ${periods.map(([v, l]) => `<button class="tz-fp ${f.period === v ? 'active' : ''}" data-tz-period="${v}" type="button">${l}</button>`).join('')}
+          <div class="tz-range" data-tz-range-wrap>
+            <button class="tz-fp tz-fp-range ${rangeActive ? 'active' : ''}" data-tz-range-toggle type="button">📅 ${esc(rangeLabel)}</button>
+            <div class="tz-range-panel" data-tz-range-panel hidden>
+              <label>От<input type="date" data-tz-date="from" value="${esc(f.dateFrom || '')}"></label>
+              <label>До<input type="date" data-tz-date="to" value="${esc(f.dateTo || '')}"></label>
+              <button class="tz-ms-apply" data-tz-range-apply type="button">Применить</button>
+            </div>
+          </div>
         </div>
         <div class="tz-filter-selects">
-          <select class="tz-fs" data-tz-filter="source"><option value="">Все источники</option>${opt(tzUnique(TZC.source), f.source)}</select>
-          <select class="tz-fs" data-tz-filter="city"><option value="">Все города</option>${opt(tzUnique(TZC.city), f.city)}</select>
-          <select class="tz-fs" data-tz-filter="responsible"><option value="">Все ответственные</option>${opt(tzUnique(TZC.responsible), f.responsible)}</select>
-          ${(f.source || f.city || f.responsible || f.period !== 'all') ? `<button class="tz-fs-reset" data-tz-reset type="button">Сбросить</button>` : ''}
+          ${tzMultiSelect('source', 'Все источники', TZC.source)}
+          ${tzMultiSelect('city', 'Все города', TZC.city)}
+          ${tzMultiSelect('responsible', 'Все ответственные', TZC.responsible)}
+          ${tzMultiSelect('success', 'Успешное закрытие', TZC.success)}
+          ${hasFilter ? `<button class="tz-fs-reset" data-tz-reset type="button">Сбросить</button>` : ''}
         </div>
         <div class="tz-filter-count">В выборке: <b>${tzNum(total)}</b>${total !== all ? ` из ${tzNum(all)}` : ''} лидов</div>
       </div>`;
@@ -2234,7 +2473,7 @@
           </div>
           ${romiOk
             ? `<div class="tz-romi-ok">ROMI: ${fin.costSum > 0 ? Math.round((fin.revenueSum - fin.costSum) / fin.costSum * 100) : '—'}%</div>`
-            : `<div class="tz-romi-warn">ROMI не рассчитан: доходность заполнена не по всем успешным тёплым лидам (${ringPct}%).</div>`}
+            : `<div class="tz-romi-warn">ROMI не рассчитан: доходность заполнена у ${ringPct}% сделок «Кредит» (${fin.creditCount} шт). Нужно ≥ 90%.</div>`}
         </div>
       </div>
       <div class="tz-land-title">Разбивка по посадкам</div>
@@ -2257,10 +2496,15 @@
     const visitCount = warm.filter(r => tzDate(tzRaw(r, TZC.visitDate)) !== null).length;
     const success = warm.filter(tzIsSuccess);
     const successCount = success.length;
+    // Доходность ставится ТОЛЬКО в сделках «Кредит» (Успешное закрытие карточки).
+    // Покрытие меряем относительно кредитных сделок — иначе нал/обмен/комиссия
+    // занижают покрытие, хотя доходность у них и не предусмотрена.
+    const creditDeals = warm.filter(r => String(tzRaw(r, TZC.success)).trim() === 'Кредит');
     const revRows = success.filter(r => tzRevenue(r) !== null);
     const revenueSum = revRows.reduce((s, r) => s + tzRevenue(r), 0);
-    const revenueCoverage = successCount > 0 ? (revRows.length / successCount * 100) : 0;
-    return { count: warm.length, costSum, costCount, qualCount, visitCount, successCount, revenueSum, revenueCoverage };
+    const creditWithRev = creditDeals.filter(r => tzRevenue(r) !== null).length;
+    const revenueCoverage = creditDeals.length > 0 ? (creditWithRev / creditDeals.length * 100) : 0;
+    return { count: warm.length, costSum, costCount, qualCount, visitCount, successCount, revenueSum, revenueCoverage, creditCount: creditDeals.length };
   }
   function tzWarmByLanding(warm) {
     const map = new Map();
@@ -2444,28 +2688,81 @@
   }
 
   function bindTzBase() {
+    // Период-кнопки (быстрые)
     document.querySelectorAll('[data-tz-period]').forEach(b => {
       b.onclick = () => { state.tzFilters.period = b.dataset.tzPeriod; renderTrafficAnalytics(); };
     });
-    document.querySelectorAll('[data-tz-filter]').forEach(sel => {
-      sel.onchange = () => { state.tzFilters[sel.dataset.tzFilter] = sel.value; renderTrafficAnalytics(); };
+    // Календарь-диапазон
+    const rangeToggle = document.querySelector('[data-tz-range-toggle]');
+    const rangePanel = document.querySelector('[data-tz-range-panel]');
+    if (rangeToggle && rangePanel) {
+      rangeToggle.onclick = (e) => { e.stopPropagation(); tzCloseAllPanels(rangePanel); rangePanel.hidden = !rangePanel.hidden; };
+      rangePanel.querySelectorAll('[data-tz-date]').forEach(inp => {
+        inp.onchange = () => {
+          if (inp.dataset.tzDate === 'from') state.tzFilters.dateFrom = inp.value;
+          else state.tzFilters.dateTo = inp.value;
+        };
+      });
+      rangePanel.querySelector('[data-tz-range-apply]').onclick = () => {
+        state.tzFilters.period = (state.tzFilters.dateFrom || state.tzFilters.dateTo) ? 'range' : 'all';
+        renderTrafficAnalytics();
+      };
+    }
+    // Мультиселекты
+    document.querySelectorAll('[data-tz-ms]').forEach(btn => {
+      const key = btn.dataset.tzMs;
+      const panel = document.querySelector(`[data-tz-ms-panel="${key}"]`);
+      btn.onclick = (e) => { e.stopPropagation(); tzCloseAllPanels(panel); if (panel) panel.hidden = !panel.hidden; };
     });
+    document.querySelectorAll('[data-tz-ms-cb]').forEach(cb => {
+      cb.onchange = () => {
+        const key = cb.dataset.tzMsCb;
+        const arr = state.tzFilters[key] || (state.tzFilters[key] = []);
+        const i = arr.indexOf(cb.value);
+        if (cb.checked && i < 0) arr.push(cb.value);
+        else if (!cb.checked && i >= 0) arr.splice(i, 1);
+        cb.closest('.tz-ms-opt')?.classList.toggle('on', cb.checked);
+      };
+    });
+    document.querySelectorAll('[data-tz-ms-clear]').forEach(btn => {
+      btn.onclick = () => { state.tzFilters[btn.dataset.tzMsClear] = []; renderTrafficAnalytics(); };
+    });
+    document.querySelectorAll('[data-tz-ms-apply]').forEach(btn => {
+      btn.onclick = () => renderTrafficAnalytics();
+    });
+    // Клик вне панелей — закрыть (и применить мультиселекты при изменениях)
+    if (!document._tzPanelDoc) {
+      document._tzPanelDoc = true;
+      document.addEventListener('click', (e) => {
+        const open = document.querySelectorAll('.tz-ms-panel:not([hidden]), .tz-range-panel:not([hidden])');
+        if (!open.length) return;
+        let inside = false;
+        open.forEach(p => { if (p.contains(e.target) || p.parentElement.contains(e.target)) inside = true; });
+        if (!inside) { open.forEach(p => p.hidden = true); renderTrafficAnalytics(); }
+      });
+    }
     document.querySelector('[data-tz-reset]')?.addEventListener('click', () => {
-      state.tzFilters = { period: 'all', source: '', city: '', responsible: '' };
+      state.tzFilters = { period: 'all', dateFrom: '', dateTo: '', source: [], city: [], responsible: [], success: [] };
       renderTrafficAnalytics();
     });
     document.querySelectorAll('[data-tz-life-mode]').forEach(b => {
       b.onclick = () => { state.tzLifetimeMode = b.dataset.tzLifeMode; renderTrafficAnalytics(); };
     });
+    // Клик по строке рейтинга → тоггл значения в массиве фильтра
     document.querySelectorAll('[data-tz-rank-filter]').forEach(row => {
       row.onclick = () => {
         const key = row.dataset.tzRankFilter;
         const val = row.dataset.tzRankValue;
         if (val === 'Прочие' || val === EMPTY_LABEL) return;
-        state.tzFilters[key] = state.tzFilters[key] === val ? '' : val;
+        const arr = state.tzFilters[key] || (state.tzFilters[key] = []);
+        const i = arr.indexOf(val);
+        if (i >= 0) arr.splice(i, 1); else arr.push(val);
         renderTrafficAnalytics();
       };
     });
+  }
+  function tzCloseAllPanels(except) {
+    document.querySelectorAll('.tz-ms-panel, .tz-range-panel').forEach(p => { if (p !== except) p.hidden = true; });
   }
 
   document.addEventListener('DOMContentLoaded', () => {

@@ -2235,3 +2235,102 @@
 .tz-quality-line { margin-top: 10px; font-size: 12px; color: var(--txt2, #666); }
 .tz-quality-line b { color: var(--txt, #1a1a1a); }
 .tz-note { font-size: 11px; color: var(--txt3, #888); }
+
+/* ── Шапка: заголовок + сегмент-тоглер + иконки ── */
+.traffic-head-title { margin: 0; }
+.traffic-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.traffic-head-actions { display: inline-flex; align-items: center; gap: 8px; }
+.traffic-seg {
+  position: relative; display: inline-flex; gap: 0;
+  background: var(--bg3, #f0f0f0); border: 1px solid var(--line, #e4e4e4);
+  border-radius: 999px; padding: 3px;
+}
+.traffic-seg-thumb {
+  position: absolute; top: 3px; bottom: 3px; width: calc(50% - 3px);
+  background: var(--acc, #4f7cff); border-radius: 999px;
+  transition: transform .22s cubic-bezier(.4,0,.2,1); z-index: 0;
+}
+.traffic-seg-thumb.left { transform: translateX(0); }
+.traffic-seg-thumb.right { transform: translateX(100%); }
+.traffic-seg-btn {
+  position: relative; z-index: 1;
+  width: 34px; height: 30px; border: 0; background: transparent; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; border-radius: 999px;
+  transition: filter .2s;
+}
+.traffic-seg-btn img { width: 18px; height: 18px; object-fit: contain; transition: filter .2s; }
+.traffic-seg-btn.active img { filter: brightness(0) invert(1); }
+.traffic-icon-btn {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid var(--line, #e4e4e4); background: var(--bg3, #f0f0f0);
+  color: var(--txt2, #666); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: color .15s, background .15s;
+}
+.traffic-icon-btn:hover { color: var(--red, #ff4757); background: var(--bg2, #fff); }
+
+/* ── Мультиселект ── */
+.tz-ms { position: relative; }
+.tz-ms-btn {
+  display: inline-flex; align-items: center; gap: 6px; max-width: 200px;
+  background: var(--bg3, #f0f0f0); color: var(--txt, #1a1a1a);
+  border: 1px solid var(--line, #e4e4e4); border-radius: 8px;
+  padding: 6px 10px; font-size: 12px; cursor: pointer;
+}
+.tz-ms-btn.active { border-color: var(--acc, #4f7cff); color: var(--acc, #4f7cff); }
+.tz-ms-btn-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tz-ms-panel {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 50;
+  width: 240px; max-width: 80vw;
+  background: var(--bg2, #fff); border: 1px solid var(--line, #e4e4e4);
+  border-radius: 12px; padding: 8px; box-shadow: 0 12px 40px rgba(0,0,0,.3);
+}
+.tz-ms-panel-head { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--txt3, #888); padding: 2px 4px 6px; }
+.tz-ms-clear { border: 0; background: transparent; color: var(--red, #ff4757); font-size: 11px; font-weight: 700; cursor: pointer; }
+.tz-ms-list { max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; }
+.tz-ms-opt { display: flex; align-items: center; gap: 8px; padding: 6px 7px; border-radius: 7px; cursor: pointer; font-size: 12px; }
+.tz-ms-opt:hover { background: var(--bg3, #f5f5f5); }
+.tz-ms-opt.on { background: color-mix(in srgb, var(--acc, #4f7cff) 10%, transparent); }
+.tz-ms-opt input { accent-color: var(--acc, #4f7cff); flex-shrink: 0; }
+.tz-ms-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--txt, #1a1a1a); }
+.tz-ms-n { font-size: 10px; color: var(--txt3, #999); }
+.tz-ms-empty { padding: 10px; text-align: center; color: var(--txt3, #999); font-size: 12px; }
+.tz-ms-apply { width: 100%; margin-top: 6px; border: 0; background: var(--acc, #4f7cff); color: #fff; font-weight: 700; font-size: 12px; padding: 7px; border-radius: 8px; cursor: pointer; }
+
+/* ── Календарь-диапазон ── */
+.tz-range { position: relative; }
+.tz-fp-range { white-space: nowrap; }
+.tz-range-panel {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 50;
+  background: var(--bg2, #fff); border: 1px solid var(--line, #e4e4e4);
+  border-radius: 12px; padding: 10px; box-shadow: 0 12px 40px rgba(0,0,0,.3);
+  display: flex; flex-direction: column; gap: 8px; min-width: 180px;
+}
+.tz-range-panel label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--txt3, #888); }
+.tz-range-panel input[type="date"] { background: var(--bg3, #f5f5f5); color: var(--txt, #1a1a1a); border: 1px solid var(--line, #e4e4e4); border-radius: 7px; padding: 6px 8px; font-size: 12px; }
+
+/* ── Виджет «Трафик»: бары (≤31 дн) ── */
+.tz-trend-bars {
+  display: grid; grid-template-columns: repeat(var(--tz-cols, 12), 1fr);
+  gap: 4px; align-items: end; height: 180px; padding-top: 22px;
+}
+.tz-tb { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; min-width: 0; position: relative; }
+.tz-tb-fill { width: 70%; max-width: 26px; border-radius: 5px 5px 0 0; background: linear-gradient(180deg, var(--acc, #4f7cff), color-mix(in srgb, var(--acc, #4f7cff) 55%, transparent)); transition: height .5s cubic-bezier(.2,.7,.2,1); }
+.tz-tb.peak .tz-tb-fill { background: linear-gradient(180deg, var(--org, #ffa502), color-mix(in srgb, var(--org, #ffa502) 55%, transparent)); }
+.tz-tb-val { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) rotate(-90deg); transform-origin: center bottom; font-size: 10px; font-weight: 700; color: var(--txt2, #555); white-space: nowrap; font-variant-numeric: tabular-nums; padding-bottom: 2px; }
+.tz-tb-day { margin-top: 4px; font-size: 9px; color: var(--txt3, #999); font-variant-numeric: tabular-nums; }
+
+/* ── Виджет «Трафик»: линия (>31 дн) ── */
+.tz-trend-line { width: 100%; }
+.tz-trend-svg { width: 100%; height: 150px; display: block; }
+.tz-trend-axis { display: flex; justify-content: space-between; font-size: 10px; color: var(--txt3, #999); margin-top: 4px; }
+.tz-trend-axis span:nth-child(2) { color: var(--acc, #4f7cff); font-weight: 700; }
+
+/* ── Словарь в модалке «!» ── */
+.tz-info-card { max-width: 460px; text-align: left; }
+.tz-info-meta { font-size: 12px; color: var(--txt2, #666); }
+.tz-gloss-title { font-size: 13px; margin: 14px 0 8px; color: var(--txt, #1a1a1a); }
+.tz-gloss { display: flex; flex-direction: column; gap: 8px; margin: 0; max-height: 46vh; overflow-y: auto; }
+.tz-gloss-row dt { font-family: 'Unbounded', sans-serif; font-size: 12px; font-weight: 800; color: var(--acc, #4f7cff); }
+.tz-gloss-row dd { margin: 2px 0 0; font-size: 12px; line-height: 1.4; color: var(--txt2, #555); }
+.tz-gloss-note { margin-top: 12px; font-size: 11px; }

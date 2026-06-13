@@ -3251,6 +3251,13 @@ body.neo-light .presence-row {
   box-shadow:0 0 0 3px rgba(46,213,115,.14);
   flex-shrink:0;
 }
+.presence-device {
+  flex-shrink:0;
+  width:18px;
+  font-size:13px;
+  line-height:1;
+  text-align:center;
+}
 .presence-name {
   min-width:0;
   font-family:'Golos Text',sans-serif;

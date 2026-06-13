@@ -1338,6 +1338,27 @@ function _presenceShortName(full) {
   return `${firstName} ${initial}.`;
 }
 
+// Иконка устройства по userAgent (вместо зелёного кружка в «сейчас онлайн»).
+// CrystalCRM — наш десктоп-клиент (WPF на Windows / DMG на Mac).
+function _presenceDeviceIcon(ua) {
+  const s = String(ua || '');
+  const isClient = /CrystalCRM/i.test(s);
+  const isWin = /Windows/i.test(s);
+  const isMac = /Macintosh|Mac OS X/i.test(s);
+  const isAndroid = /Android/i.test(s);
+  const isiOS = /iPhone|iPad|iPod/i.test(s);
+  let icon, title;
+  if (isClient && isWin)      { icon = '🖥️'; title = 'ПК · клиент Windows'; }
+  else if (isClient && isMac) { icon = '🖥️'; title = 'Mac · клиент'; }
+  else if (isClient)          { icon = '🖥️'; title = 'Десктоп-клиент'; }
+  else if (isAndroid)         { icon = '📱'; title = 'Android'; }
+  else if (isiOS)             { icon = '📱'; title = 'iPhone / iPad'; }
+  else if (isWin)             { icon = '🌐'; title = 'Браузер · Windows'; }
+  else if (isMac)             { icon = '🌐'; title = 'Браузер · Mac'; }
+  else                        { icon = '🌐'; title = 'Браузер'; }
+  return `<span class="presence-device" title="${escapeHtml(title)}">${icon}</span>`;
+}
+
 function getPresencePageLabel() {
   const deptLabel = dept => dept === 'dozhim' ? 'Дожим' : 'CRM';
   const isVisible = id => {
@@ -1449,7 +1470,7 @@ function renderPresenceState() {
   }
   const rows = users.map(u => `
     <div class="presence-row">
-      <span class="presence-dot"></span>
+      ${_presenceDeviceIcon(u.userAgent)}
       <span class="presence-name">${escapeHtml(_presenceShortName(u.name) || u.email || 'Без имени')}</span>
       <span class="presence-page">${escapeHtml(u.page || 'Сайт')}</span>
     </div>

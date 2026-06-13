@@ -517,7 +517,6 @@
 
   function renderDashboard() {
     const tab = state.activeTab === 'advanced' ? 'advanced' : 'base';
-    const period = [state.meta?.periodFrom, state.meta?.periodTo].filter(Boolean).map(v => fmtDate(new Date(v))).join(' — ');
     return `
       <section class="traffic-page">
         <div class="traffic-top">
@@ -536,11 +535,8 @@
             </div>
             <p class="traffic-subtitle">Аналитика входящего трафика и лидогенерации</p>
           </div>
-          <span class="traffic-meta-pill">✓ CSV успешно импортирован</span>
         </div>
         <h2 class="traffic-section-title">${tab === 'advanced' ? 'Расширенный' : 'Базовый'} · Трафик</h2>
-        <p class="traffic-meta-line">${esc(state.meta.fileName)} · ${state.meta.rows} строк · ${state.meta.cols} колонок${period ? ` · ${esc(period)}` : ''}</p>
-        ${state.meta.storageWarning ? `<p class="traffic-muted">${esc(state.meta.storageWarning)}</p>` : ''}
         ${tab === 'advanced' ? renderAdvancedTab() : renderBaseTab()}
       </section>
       <div class="traffic-modal" id="traffic-modal"></div>`;
@@ -676,18 +672,76 @@
   }
 
   function renderBasePeriodControls(type, active) {
+    const items = type === 'leadTrend'
+      ? [['week','Н'],['month','М']]
+      : [['day','Д'],['week','Н'],['month','М']];
+    const safeActive = type === 'leadTrend' && active === 'day' ? 'week' : active;
     return `<div class="traffic-period-pills" aria-label="Период">
-      ${[['day','Д'],['week','Н'],['month','М']].map(([value, label]) => `
-        <button class="${active === value ? 'active' : ''}" data-traffic-period-widget="${esc(type)}" data-traffic-period="${value}" type="button">${label}</button>
+      ${items.map(([value, label]) => `
+        <button class="${safeActive === value ? 'active' : ''}" data-traffic-period-widget="${esc(type)}" data-traffic-period="${value}" type="button">${label}</button>
       `).join('')}
     </div>`;
   }
 
   function renderLeadTrendWidget(type) {
-    const data = buildBaseMetrics(basePeriod(type));
+    const period = basePeriod(type) === 'month' ? 'month' : 'week';
+    const data = buildLeadTrendMetrics(period);
     const body = `
       ${renderLeadMarketChart(data)}`;
     return renderBaseWidgetShell(type, 'Все сделки', body, { wide: true, className: 'traffic-leads-widget traffic-market-widget' });
+  }
+
+  function buildLeadTrendMetrics(periodKey) {
+    const withDates = getDatedRows();
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let dates = [];
+    let prevFrom;
+    let prevTo;
+    if (periodKey === 'month') {
+      const from = new Date(today.getFullYear(), today.getMonth(), 1);
+      for (let d = new Date(from); d <= today; d.setDate(d.getDate() + 1)) dates.push(new Date(d));
+      prevFrom = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      prevTo = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59);
+    } else {
+      const end = new Date(today); end.setDate(end.getDate() - 1);
+      const from = new Date(end); from.setDate(from.getDate() - 6);
+      for (let d = new Date(from); d <= end; d.setDate(d.getDate() + 1)) dates.push(new Date(d));
+      prevFrom = new Date(from); prevFrom.setDate(prevFrom.getDate() - 7);
+      prevTo = new Date(from); prevTo.setMilliseconds(-1);
+    }
+    const from = dates[0] || today;
+    const to = new Date(dates[dates.length - 1] || today); to.setHours(23, 59, 59, 999);
+    const rows = withDates.filter(x => x.created >= from && x.created <= to);
+    const prevRows = withDates.filter(x => x.created >= prevFrom && x.created <= prevTo);
+    return {
+      periodKey,
+      label: BASE_PERIOD_LABELS[periodKey] || 'Неделя',
+      rows,
+      prevRows,
+      mode: 'day',
+      trend: makeDateTrend(rows, prevRows, dates)
+    };
+  }
+
+  function makeDateTrend(items, prevItems, dates) {
+    const buckets = new Map();
+    items.forEach(x => buckets.set(dateKey(x.created), (buckets.get(dateKey(x.created)) || 0) + 1));
+    const points = dates.map(d => ({
+      label: String(d.getDate()).padStart(2, '0'),
+      dateLabel: `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`,
+      weekday: weekday(d),
+      value: buckets.get(dateKey(d)) || 0
+    }));
+    const peak = points.reduce((a, b) => b.value > (a?.value || 0) ? b : a, null);
+    const total = items.length;
+    const avg = points.length ? total / points.length : 0;
+    const change = prevItems.length ? ((total - prevItems.length) / prevItems.length) * 100 : null;
+    return { total, avg, peak, change, points };
+  }
+
+  function dateKey(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
   function renderLeadMarketChart(data) {
@@ -715,11 +769,13 @@
             const prev = index > 0 ? points[index - 1].value : p.value;
             const cls = p.value >= prev ? 'up' : 'down';
             const h = Math.max(8, Math.round((p.value / max) * 100));
+            const ratio = max ? Math.max(0, Math.min(1, p.value / max)) : 0;
+            const dotTop = 30 + ((1 - ratio) * 30);
             const candleH = Math.max(18, Math.round(22 + (p.value / max) * 28));
-            return `<span class="traffic-market-column ${cls}">
+            return `<span class="traffic-market-column ${cls}" style="--dot-top:${dotTop.toFixed(1)}%;--bar-h:${h}%">
               <i class="traffic-candle ${cls}" style="height:${candleH}px"></i>
               <i class="traffic-market-dot"></i>
-              <i class="traffic-market-bar ${cls}" style="height:${h}%"></i>
+              <i class="traffic-market-bar ${cls}"></i>
               <b>${formatMetricValue(p.value)}</b>
               <small>${esc(marketPointLabel(p, data.periodKey))}</small>
             </span>`;
@@ -735,20 +791,13 @@
   }
 
   function marketBarPoints(points) {
-    if (points.length <= 5) return points;
-    const wanted = Math.min(5, points.length);
-    const picked = new Set();
-    for (let i = 0; i < wanted; i++) {
-      picked.add(Math.round(i * (points.length - 1) / (wanted - 1)));
-    }
-    return Array.from(picked).sort((a, b) => a - b).map(i => points[i]);
+    return points;
   }
 
   function marketPointLabel(point, periodKey) {
     if (!point) return '';
-    if (periodKey === 'week') return point.label;
-    if (periodKey === 'day') return point.label;
-    return String(point.label).padStart(2, '0');
+    if (periodKey === 'week') return point.weekday || point.label;
+    return point.label || String(point.dateLabel || '').slice(0, 2);
   }
 
   function renderSourceShareWidget(type, options = {}) {
@@ -966,6 +1015,7 @@
 
   function pointDateLabel(point, periodKey) {
     if (!point) return '-';
+    if (point.dateLabel) return periodKey === 'week' ? `${point.weekday || ''} · ${point.dateLabel}` : point.dateLabel;
     const now = new Date();
     if (periodKey === 'week') {
       const order = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -1492,19 +1542,12 @@
   function showBaseWidgetModal(type) {
     const modal = document.getElementById('traffic-modal');
     if (!modal) return;
-    const data = buildBaseMetrics(basePeriod(type));
     const card = renderBaseWidgetByType(type, { full: true });
     modal.innerHTML = `
       <div class="traffic-modal-card traffic-base-modal-card">
         <button class="traffic-modal-close" data-traffic-close type="button">×</button>
         <div class="traffic-base-detail">
           ${card}
-          <div class="traffic-detail-kpis">
-            <span>Всего: <b>${formatMetricValue(data.trend.total)}</b></span>
-            <span>Среднее: <b>${data.trend.avg.toFixed(1)}</b></span>
-            <span>Пик: <b>${esc(data.trend.peak?.label || '-')}</b></span>
-            <span>Период: <b>${esc(data.label)}</b></span>
-          </div>
         </div>
       </div>`;
     modal.classList.add('open');

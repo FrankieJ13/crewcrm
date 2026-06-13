@@ -634,11 +634,11 @@
 
 .traffic-market-columns {
   position: absolute;
-  inset: 10px 4% 10px;
+  inset: 8px 4% 6px;
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(42px, 1fr);
-  gap: clamp(8px, 4vw, 34px);
+  grid-auto-columns: minmax(16px, 1fr);
+  gap: clamp(2px, 1.1vw, 10px);
   align-items: stretch;
   z-index: 4;
 }
@@ -646,21 +646,20 @@
 .traffic-market-column {
   position: relative;
   min-width: 0;
-  display: grid;
-  grid-template-rows: 54px 34px minmax(52px, 1fr) 20px 16px;
-  justify-items: center;
-  align-items: end;
   overflow: hidden;
 }
 
 .traffic-market-bar {
-  position: relative;
-  justify-self: center;
-  width: 28px;
-  max-height: 100%;
+  position: absolute;
+  left: 50%;
+  bottom: 32px;
+  width: clamp(7px, 1.75vw, 18px);
+  height: min(var(--bar-h), calc(100% - 72px));
+  transform: translateX(-50%);
   border-radius: 999px 999px 0 0;
   background: linear-gradient(180deg, #00d48b, #18f2a7 46%, rgba(24,242,167,0));
   box-shadow: 0 10px 24px rgba(0, 212, 139, .22);
+  z-index: 2;
 }
 
 .traffic-market-bar.down {
@@ -669,10 +668,15 @@
 }
 
 .traffic-market-chart .traffic-candle {
+  position: absolute;
+  left: 50%;
+  top: max(4px, calc(var(--dot-top) - 44px));
   display: block;
-  width: 10px;
+  width: 7px;
+  transform: translateX(-50%);
   border-radius: 4px;
   opacity: .82;
+  z-index: 5;
 }
 
 .traffic-market-chart .traffic-candle::before {
@@ -689,13 +693,17 @@
 }
 
 .traffic-market-dot {
-  align-self: center;
+  position: absolute;
+  left: 50%;
+  top: var(--dot-top);
   width: 11px;
   height: 11px;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
   background: color-mix(in srgb, var(--grn, #2ed573) 52%, white);
   border: 2px solid color-mix(in srgb, var(--bg2, #fff) 92%, transparent);
   box-shadow: 0 2px 6px rgba(0,0,0,.14);
+  z-index: 6;
 }
 
 .traffic-market-chart .traffic-candle.up {
@@ -711,18 +719,22 @@
 }
 
 .traffic-market-column > b {
-  position: static;
-  transform: none;
-  font: 900 clamp(9px, 2.9vw, 15px)/1 'Unbounded', system-ui, sans-serif;
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  font: 900 clamp(11px, 3.2vw, 17px)/1 'Unbounded', system-ui, sans-serif;
   color: var(--txt, #111);
   white-space: nowrap;
 }
 
 .traffic-market-column > small {
-  position: static;
-  transform: none;
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
   color: var(--txt2, #666);
-  font-size: clamp(8px, 2.3vw, 11px);
+  font-size: clamp(8px, 2.1vw, 10px);
   white-space: nowrap;
 }
 
@@ -771,14 +783,14 @@
   display: block;
   color: var(--txt2, #666);
   font-style: normal;
-  font-size: 7px;
+  font-size: 9px;
   line-height: 1.25;
 }
 
 .traffic-market-summary b {
   display: block;
   margin-top: 1px;
-  font: 900 clamp(8px, 2.1vw, 11px)/1 'Unbounded', system-ui, sans-serif;
+  font: 900 clamp(12px, 3vw, 17px)/1 'Unbounded', system-ui, sans-serif;
   color: var(--txt, #111);
 }
 
@@ -1974,22 +1986,18 @@
   }
 
   .traffic-market-columns {
-    left: 9%;
-    right: 9%;
-    gap: clamp(22px, 8vw, 42px);
-    grid-auto-columns: minmax(38px, 1fr);
+    left: 4%;
+    right: 4%;
+    gap: clamp(1px, .8vw, 6px);
+    grid-auto-columns: minmax(13px, 1fr);
   }
 
   .traffic-market-bar {
-    width: 22px;
-  }
-
-  .traffic-market-column {
-    grid-template-rows: 50px 30px minmax(48px, 1fr) 18px 14px;
+    width: clamp(6px, 1.8vw, 12px);
   }
 
   .traffic-market-chart .traffic-candle {
-    width: 8px;
+    width: 6px;
   }
 
   .traffic-market-summary {

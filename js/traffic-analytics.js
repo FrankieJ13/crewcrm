@@ -524,6 +524,7 @@
           <div class="traffic-top-copy">
             <div class="traffic-title-row">
               <h1 class="traffic-title">Трафик</h1>
+              <button class="traffic-info-btn" id="traffic-import-info" type="button" aria-label="Информация об импорте">!</button>
               <div class="traffic-tabs traffic-tabs-icons" aria-label="Режим аналитики">
                 <button class="traffic-tab ${tab === 'base' ? 'active' : ''}" data-traffic-tab="base" type="button" aria-label="Базовый">
                   <img src="${trafficTabIcon('base')}" alt="" onerror="this.style.display='none'">
@@ -565,6 +566,7 @@
       };
     });
     document.getElementById('traffic-clear-csv')?.addEventListener('click', showClearModal);
+    document.getElementById('traffic-import-info')?.addEventListener('click', showTrafficImportInfo);
     document.getElementById('traffic-export-widgets')?.addEventListener('click', exportWidgets);
     document.getElementById('traffic-import-widgets')?.addEventListener('click', () => document.getElementById('traffic-import-file')?.click());
     document.getElementById('traffic-import-file')?.addEventListener('change', e => e.target.files?.[0] && importWidgets(e.target.files[0]));
@@ -690,6 +692,7 @@
 
   function renderLeadMarketChart(data) {
     const points = data.trend.points || [];
+    const barPoints = marketBarPoints(points);
     const max = points.reduce((m, p) => Math.max(m, p.value || 0), 1);
     const minPoint = points.reduce((a, b) => !a || b.value < a.value ? b : a, null);
     const maxPoint = points.reduce((a, b) => !a || b.value > a.value ? b : a, null);
@@ -705,15 +708,21 @@
         </div>
       </div>
       <div class="traffic-market-chart">
-        ${renderTrendCandles(points)}
-        ${renderLineSvg(points, true)}
-        <div class="traffic-market-bars">
-          ${marketBarPoints(points).map((p) => {
+        ${renderLineSvg(barPoints, true)}
+        <div class="traffic-market-columns">
+          ${barPoints.map((p) => {
             const index = points.indexOf(p);
             const prev = index > 0 ? points[index - 1].value : p.value;
             const cls = p.value >= prev ? 'up' : 'down';
             const h = Math.max(8, Math.round((p.value / max) * 100));
-            return `<span class="traffic-market-bar ${cls}" style="height:${h}%"><b>${formatMetricValue(p.value)}</b><small>${esc(marketPointLabel(p, data.periodKey))}</small></span>`;
+            const candleH = Math.max(18, Math.round(22 + (p.value / max) * 28));
+            return `<span class="traffic-market-column ${cls}">
+              <i class="traffic-candle ${cls}" style="height:${candleH}px"></i>
+              <i class="traffic-market-dot"></i>
+              <i class="traffic-market-bar ${cls}" style="height:${h}%"></i>
+              <b>${formatMetricValue(p.value)}</b>
+              <small>${esc(marketPointLabel(p, data.periodKey))}</small>
+            </span>`;
           }).join('')}
         </div>
       </div>
@@ -742,19 +751,46 @@
     return String(point.label).padStart(2, '0');
   }
 
-  function renderSourceShareWidget(type) {
+  function renderSourceShareWidget(type, options = {}) {
     const data = buildBaseMetrics(basePeriod(type));
-    const ranking = makeRanking(data.rows, mappedField('source'));
-    const rows = ranking.rows.slice(0, 5);
+    const ranking = makeRanking(data.rows, trafficSourceField());
+    const full = !!options.full;
+    const rows = full ? ranking.rows : ranking.rows.slice(0, 5);
     const body = `
-      <div class="traffic-share traffic-base-share">
-        ${renderDonut(rows, ranking.total)}
-        <div class="traffic-share-list">
-          ${rows.map((r, i) => `<span><i style="background:${shareColor(i)}"></i>${esc(r.label)} <b>${formatMetricValue(r.value)}</b> <em>${ranking.total ? Math.round(r.value / ranking.total * 100) : 0}%</em></span>`).join('') || '<span>Нет данных</span>'}
-        </div>
+      <div class="traffic-ranking traffic-ranking-compact traffic-source-ranking">
+        ${rows.map((r, i) => `
+          <div class="traffic-rank-row">
+            <small>${i + 1}</small>
+            <span class="traffic-rank-label" title="${esc(r.label)}">${esc(shortTrafficLabel(r.label))}</span>
+            <span class="traffic-rank-track"><span class="traffic-rank-fill" style="${trafficRankFillStyle(r.value, Math.max(...ranking.rows.map(x => x.value), 1))}"></span></span>
+            <strong>${formatMetricValue(r.value)}</strong>
+            <em>${ranking.total ? Math.round(r.value / ranking.total * 100) : 0}%</em>
+          </div>`).join('') || '<p class="traffic-muted">Нет данных по полю Источник обращения</p>'}
       </div>
       <div class="traffic-total-strip"><span>Всего лидов</span><b>${formatMetricValue(ranking.total)}</b></div>`;
     return renderBaseWidgetShell(type, 'Лиды по источнику обращения', body, { className: 'traffic-share-widget' });
+  }
+
+  function trafficSourceField() {
+    const exact = (state.fields || []).find(f => normHeader(f.originalName) === normHeader('Источник обращения') || normHeader(f.normalizedName) === normHeader('Источник обращения'));
+    if (exact) return exact.normalizedName;
+    return mappedField('source');
+  }
+
+  function showTrafficImportInfo() {
+    const modal = document.getElementById('traffic-modal');
+    if (!modal || !state.meta) return;
+    const period = [state.meta.periodFrom, state.meta.periodTo].filter(Boolean).map(v => fmtDate(new Date(v))).join(' — ');
+    modal.innerHTML = `
+      <div class="traffic-modal-card traffic-import-info-card">
+        <button class="traffic-modal-close" data-traffic-close type="button">×</button>
+        <h2>✓ CSV успешно импортирован</h2>
+        <p><strong>${esc(state.meta.fileName || 'CSV')}</strong> · ${formatMetricValue(state.meta.rows || 0)} строк · ${formatMetricValue(state.meta.cols || 0)} колонок${period ? ` · ${esc(period)}` : ''}</p>
+        ${state.meta.storageWarning ? `<p class="traffic-muted">${esc(state.meta.storageWarning)}</p>` : '<p class="traffic-muted">Файл обработан и доступен для аналитики.</p>'}
+      </div>`;
+    modal.classList.add('open');
+    bindModalDismiss(modal);
+    modal.querySelector('[data-traffic-close]').onclick = closeModal;
   }
 
   function trafficRankFillStyle(value, max) {
@@ -1443,7 +1479,7 @@
 
   function renderBaseWidgetByType(type, options = {}) {
     if (type === 'leadTrend') return renderLeadTrendWidget(type);
-    if (type === 'sourceShare') return renderSourceShareWidget(type);
+    if (type === 'sourceShare') return renderSourceShareWidget(type, options);
     if (type === 'cities') return renderRankingWidget(type, 'Города', state.mapping.city, false, options);
     if (type === 'hours') return renderHoursWidget(type);
     if (type === 'stages') return renderRankingWidget(type, 'Этапы воронки', state.mapping.stage, true, options);

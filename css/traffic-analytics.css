@@ -38,7 +38,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
+}
+
+.traffic-title-row .traffic-title {
+  margin-right: auto;
 }
 
 .traffic-hero,
@@ -263,8 +267,8 @@
 
 .traffic-tabs {
   display: inline-flex;
-  gap: 6px;
-  padding: 5px;
+  gap: 4px;
+  padding: 4px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--bg3, #eee) 84%, transparent);
   border: 1px solid color-mix(in srgb, var(--line, #d8d8d8) 70%, transparent);
@@ -281,8 +285,8 @@
 }
 
 .traffic-tabs-icons .traffic-tab {
-  width: 40px;
-  height: 38px;
+  width: 34px;
+  height: 32px;
   display: grid;
   place-items: center;
   border-radius: 999px;
@@ -290,14 +294,28 @@
 }
 
 .traffic-tabs-icons .traffic-tab img {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   object-fit: contain;
 }
 
 .traffic-tab.active {
-  background: var(--acc, #1a86eb);
-  color: var(--btnText, #fff);
+  background: color-mix(in srgb, var(--bg2, #fff) 72%, var(--acc, #1a86eb) 8%);
+  color: var(--txt, #111);
+  box-shadow: inset 0 2px 7px rgba(0,0,0,.18), inset 0 -1px 2px rgba(255,255,255,.35);
+}
+
+.traffic-info-btn {
+  width: 34px;
+  height: 34px;
+  border: 1px solid color-mix(in srgb, var(--line, #d8d8d8) 78%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg2, #fff) 82%, transparent);
+  color: var(--acc, #1a86eb);
+  font-family: 'Unbounded', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: inset 0 1px 2px rgba(255,255,255,.45), 0 4px 10px rgba(0,0,0,.08);
 }
 
 .traffic-dashboard-head {
@@ -345,6 +363,19 @@
   margin: 0;
   color: var(--txt2, #666);
   font-size: 13px;
+  line-height: 1.45;
+}
+
+.traffic-import-info-card {
+  max-width: min(560px, calc(100vw - 28px));
+}
+
+.traffic-import-info-card h2 {
+  color: var(--grn, #2ed573);
+}
+
+.traffic-import-info-card p {
+  margin: 0 0 10px;
   line-height: 1.45;
 }
 
@@ -569,9 +600,11 @@
 
 .traffic-market-chart {
   position: relative;
-  min-height: clamp(220px, 46vw, 330px);
+  min-height: clamp(210px, 44vw, 310px);
   margin-top: 0;
   overflow: hidden;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--bg2, #fff) 72%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--line, #d8d8d8) 75%, transparent);
 }
 
@@ -579,9 +612,9 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: 29%;
+  top: 28%;
   width: 100%;
-  height: 39%;
+  height: 34%;
   z-index: 3;
   overflow: visible;
 }
@@ -596,41 +629,35 @@
 }
 
 .traffic-market-chart .traffic-line-svg circle {
-  fill: color-mix(in srgb, var(--grn, #2ed573) 56%, white);
-  stroke: color-mix(in srgb, var(--bg2, #fff) 92%, transparent);
-  stroke-width: 2;
-  filter: drop-shadow(0 3px 5px rgba(0,0,0,.18));
+  display: none;
 }
 
-.traffic-market-chart .traffic-candle-layer {
-  top: 24px;
-  left: 4%;
-  right: 4%;
-  bottom: auto;
-  height: clamp(38px, 10vw, 64px);
-  align-items: flex-end;
-  gap: clamp(7px, 2vw, 18px);
-  z-index: 2;
-}
-
-.traffic-market-bars {
+.traffic-market-columns {
   position: absolute;
-  left: 4%;
-  right: 4%;
-  bottom: 60px;
-  height: 37%;
+  inset: 10px 4% 10px;
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(34px, 1fr);
-  align-items: end;
-  gap: clamp(30px, 7vw, 92px);
+  grid-auto-columns: minmax(42px, 1fr);
+  gap: clamp(8px, 4vw, 34px);
+  align-items: stretch;
   z-index: 4;
+}
+
+.traffic-market-column {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: 54px 34px minmax(52px, 1fr) 20px 16px;
+  justify-items: center;
+  align-items: end;
+  overflow: hidden;
 }
 
 .traffic-market-bar {
   position: relative;
   justify-self: center;
-  width: clamp(22px, 6.5vw, 42px);
+  width: 28px;
+  max-height: 100%;
   border-radius: 999px 999px 0 0;
   background: linear-gradient(180deg, #00d48b, #18f2a7 46%, rgba(24,242,167,0));
   box-shadow: 0 10px 24px rgba(0, 212, 139, .22);
@@ -642,6 +669,8 @@
 }
 
 .traffic-market-chart .traffic-candle {
+  display: block;
+  width: 10px;
   border-radius: 4px;
   opacity: .82;
 }
@@ -659,6 +688,16 @@
   opacity: .72;
 }
 
+.traffic-market-dot {
+  align-self: center;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--grn, #2ed573) 52%, white);
+  border: 2px solid color-mix(in srgb, var(--bg2, #fff) 92%, transparent);
+  box-shadow: 0 2px 6px rgba(0,0,0,.14);
+}
+
 .traffic-market-chart .traffic-candle.up {
   color: #00c98a;
 }
@@ -671,21 +710,17 @@
   display: none;
 }
 
-.traffic-market-bar b {
-  position: absolute;
-  left: 50%;
-  bottom: -24px;
-  transform: translateX(-50%);
+.traffic-market-column > b {
+  position: static;
+  transform: none;
   font: 900 clamp(9px, 2.9vw, 15px)/1 'Unbounded', system-ui, sans-serif;
   color: var(--txt, #111);
   white-space: nowrap;
 }
 
-.traffic-market-bar small {
-  position: absolute;
-  left: 50%;
-  bottom: -40px;
-  transform: translateX(-50%);
+.traffic-market-column > small {
+  position: static;
+  transform: none;
   color: var(--txt2, #666);
   font-size: clamp(8px, 2.3vw, 11px);
   white-space: nowrap;
@@ -704,7 +739,7 @@
 
 .traffic-market-summary span {
   min-width: 0;
-  padding: 7px 9px;
+  padding: 6px 7px;
   border-right: 1px solid color-mix(in srgb, var(--line, #d8d8d8) 70%, transparent);
 }
 
@@ -736,14 +771,14 @@
   display: block;
   color: var(--txt2, #666);
   font-style: normal;
-  font-size: 8px;
+  font-size: 7px;
   line-height: 1.25;
 }
 
 .traffic-market-summary b {
   display: block;
   margin-top: 1px;
-  font: 900 clamp(9px, 2.4vw, 12px)/1 'Unbounded', system-ui, sans-serif;
+  font: 900 clamp(8px, 2.1vw, 11px)/1 'Unbounded', system-ui, sans-serif;
   color: var(--txt, #111);
 }
 
@@ -800,6 +835,10 @@
 
 .traffic-source-legend b {
   margin-left: auto;
+}
+
+.traffic-source-ranking {
+  margin-top: 4px;
 }
 
 .traffic-trend-body {
@@ -1934,33 +1973,39 @@
     font-size: clamp(14px, 4.4vw, 18px);
   }
 
-  .traffic-market-bars {
+  .traffic-market-columns {
     left: 9%;
     right: 9%;
-    bottom: 58px;
-    height: 34%;
     gap: clamp(22px, 8vw, 42px);
+    grid-auto-columns: minmax(38px, 1fr);
   }
 
   .traffic-market-bar {
-    width: clamp(22px, 7vw, 34px);
+    width: 22px;
   }
 
-  .traffic-market-chart .traffic-candle-layer {
-    top: 28px;
-    height: 44px;
+  .traffic-market-column {
+    grid-template-rows: 50px 30px minmax(48px, 1fr) 18px 14px;
+  }
+
+  .traffic-market-chart .traffic-candle {
+    width: 8px;
   }
 
   .traffic-market-summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .traffic-market-summary span:nth-child(2n) {
-    border-right: 0;
+    border-right: 1px solid color-mix(in srgb, var(--line, #d8d8d8) 70%, transparent);
   }
 
   .traffic-market-summary span:nth-child(-n+2) {
-    border-bottom: 1px solid color-mix(in srgb, var(--line, #d8d8d8) 70%, transparent);
+    border-bottom: 0;
+  }
+
+  .traffic-market-summary span:last-child {
+    border-right: 0;
   }
 }
 

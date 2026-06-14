@@ -1,6 +1,6 @@
 {
   "name": "CRM Crew Dashboard",
-  "short_name": "Crew CRM",
+  "short_name": "dashboard",
   "id": "./",
   "start_url": "./index.html",
   "scope": "./",

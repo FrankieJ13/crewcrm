@@ -2299,6 +2299,10 @@
 }
 .tz-ms-btn.active { border-color: var(--acc, #4f7cff); color: var(--acc, #4f7cff); }
 .tz-ms-btn-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Иконка-фильтр: компактная кнопка с SVG вместо текста */
+.tz-ms-btn.tz-ms-iconic { gap: 5px; padding: 6px 9px; }
+.tz-ms-ic { flex: 0 0 auto; }
+.tz-ms-btn.tz-ms-iconic .tz-ms-btn-label { max-width: 90px; font-weight: 700; }
 .tz-ms-panel {
   position: absolute; top: calc(100% + 6px); left: 0; z-index: 50;
   width: 240px; max-width: 80vw;
@@ -2603,33 +2607,33 @@
 .tz-wm-preview .tz-card { border: 0; background: transparent; padding: 0; }
 
 /* ════════════ РЕЖИМЫ ОТОБРАЖЕНИЯ: КОМПАКТНО / ДЕТАЛЬНО ════════════ */
-/* Глобальный сегмент-тумблер — геометрия идентична базовому traffic-seg */
+/* Тумблер — идентичен базовому шапочному traffic-seg: пилюля 26px, без
+   бегунка, активный режим — «вмятина» с inset-тенью, иконки 15×15. */
 .tz-mode-seg {
-  position: relative; display: inline-flex; gap: 0; flex: 0 0 auto;
-  background: var(--bg3, #f0f0f0); border: 1px solid var(--line, #e4e4e4);
-  border-radius: 999px; padding: 3px;
+  position: relative; display: inline-flex; align-items: center; gap: 2px; flex: 0 0 auto;
+  height: 26px; padding: 3px; box-sizing: border-box;
+  background: var(--bg3, #ececec); border: 1px solid var(--line, #e0e0e0);
+  border-radius: 999px;
 }
-.tz-mode-thumb {
-  position: absolute; top: 3px; bottom: 3px; width: calc(50% - 3px);
-  background: var(--acc, #4f7cff); border-radius: 999px;
-  transition: transform .22s cubic-bezier(.4,0,.2,1); z-index: 0;
-}
-.tz-mode-thumb.left { transform: translateX(0); }
-.tz-mode-thumb.right { transform: translateX(100%); }
+.tz-mode-thumb { display: none !important; }
 .tz-mode-seg-btn {
-  position: relative; z-index: 1;
-  border: 0; background: transparent; color: var(--txt2, #666);
-  width: 34px; height: 30px; border-radius: 999px; cursor: pointer;
+  width: 28px; height: 20px; border: 0; background: transparent; color: var(--txt2, #666);
+  border-radius: 999px; cursor: pointer; box-shadow: none;
   display: inline-flex; align-items: center; justify-content: center;
-  transition: color .2s;
+  transition: box-shadow .18s, background .18s;
 }
-.tz-mode-seg-btn svg { width: 16px; height: 16px; }
-.tz-mode-seg-btn.active { color: #fff; }
+.tz-mode-seg-btn svg { width: 15px; height: 15px; opacity: .5; transition: opacity .18s; }
+.tz-mode-seg-btn.active {
+  background: color-mix(in srgb, var(--acc, #4f7cff) 10%, var(--bg2, #fff));
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.22), inset 0 -1px 0 rgba(255,255,255,.4);
+}
+.tz-mode-seg-btn.active svg { opacity: 1; }
 
-/* Кнопка свернуть/развернуть — вдвое компактнее, плотнее к углу */
-.tz-card-head { position: relative; padding-right: 18px; }
+/* Угловые инструменты виджета: issue-метка + кнопка свернуть/развернуть */
+.tz-card-head { position: relative; padding-right: 42px; }
+.tz-card-tools { position: absolute; top: -2px; right: -2px; display: inline-flex; align-items: center; gap: 5px; }
 .tz-mode-btn {
-  position: absolute; top: -2px; right: -2px;
+  position: static; flex: 0 0 auto;
   width: 16px; height: 16px; border-radius: 5px;
   border: 1px solid var(--line, #e4e4e4); background: var(--bg3, #f5f5f5);
   color: var(--txt3, #888); cursor: pointer; padding: 0;
@@ -2638,9 +2642,13 @@
 }
 .tz-mode-btn svg { width: 11px; height: 11px; display: block; }
 .tz-mode-btn:hover { color: var(--acc, #4f7cff); border-color: color-mix(in srgb, var(--acc, #4f7cff) 35%, var(--line, #e4e4e4)); }
+/* issue-метка теперь живёт в углу рядом с кнопкой свёртки, не в заголовке */
+.tz-card-tools .tz-issue-btn { width: 15px; height: 15px; }
 
-/* Компактная карточка: только название, период и итоговое значение */
+/* Компактная карточка: только название и итоговое значение (подзаголовок скрыт) */
 .tz-card.tz-compact { cursor: pointer; }
+.tz-card.tz-compact .tz-card-sub { display: none; }
+.tz-card.tz-compact .tz-card-head { margin-bottom: 4px; }
 .tz-card.tz-compact .tz-card-main { font-size: 18px; margin-bottom: 0; }
 .tz-card.tz-compact:hover { border-color: color-mix(in srgb, var(--acc, #4f7cff) 40%, var(--line, #e4e4e4)); }
 .tz-card.tz-compact:active { transform: scale(.99); }

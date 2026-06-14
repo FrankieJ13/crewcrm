@@ -2312,18 +2312,28 @@
   }
 
   // Кастомный мультиселект (чекбоксы в поповере)
+  // SVG-иконки фильтров (Bootstrap Icons, fill=currentColor)
+  const TZ_FILTER_ICONS = {
+    source: '<path d="M4.98 1a.5.5 0 0 0-.39.188L1.54 5H6a.5.5 0 0 1 .5.5a1.5 1.5 0 0 0 3 0A.5.5 0 0 1 10 5h4.46l-3.05-3.812A.5.5 0 0 0 11.02 1zM3.81.563A1.5 1.5 0 0 1 4.98 0h6.04a1.5 1.5 0 0 1 1.17.563l3.7 4.625a.5.5 0 0 1 .106.374l-.39 3.124A1.5 1.5 0 0 1 14.117 10H1.883A1.5 1.5 0 0 1 .394 8.686l-.39-3.124a.5.5 0 0 1 .106-.374zM.125 11.17A.5.5 0 0 1 .5 11H6a.5.5 0 0 1 .5.5a1.5 1.5 0 0 0 3 0a.5.5 0 0 1 .5-.5h5.5a.5.5 0 0 1 .496.562l-.39 3.124A1.5 1.5 0 0 1 14.117 16H1.883a1.5 1.5 0 0 1-1.489-1.314l-.39-3.124a.5.5 0 0 1 .121-.393z"/>',
+    city: '<g><path d="m10.495 6.92l1.278-.619a.483.483 0 0 0 .126-.782c-.252-.244-.682-.139-.932.107c-.23.226-.513.373-.816.53l-.102.054c-.338.178-.264.626.1.736a.48.48 0 0 0 .346-.027ZM7.741 9.808V9.78a.413.413 0 1 1 .783.183l-.22.443a.6.6 0 0 1-.12.167l-.193.185a.36.36 0 1 1-.5-.516l.112-.108a.45.45 0 0 0 .138-.326M5.672 12.5l.482.233A.386.386 0 1 0 6.32 12h-.416a.7.7 0 0 1-.419-.139l-.277-.206a.302.302 0 1 0-.298.52z"/><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0M1.612 10.867l.756-1.288a1 1 0 0 1 1.545-.225l1.074 1.005a.986.986 0 0 0 1.36-.011l.038-.037a.88.88 0 0 0 .26-.755c-.075-.548.37-1.033.92-1.099c.728-.086 1.587-.324 1.728-.957c.086-.386-.114-.83-.361-1.2c-.207-.312 0-.8.374-.8c.123 0 .24-.055.318-.15l.393-.474c.196-.237.491-.368.797-.403c.554-.064 1.407-.277 1.583-.973c.098-.391-.192-.634-.484-.88c-.254-.212-.51-.426-.515-.741a7 7 0 0 1 3.425 7.692a1 1 0 0 0-.087-.063l-.316-.204a1 1 0 0 0-.977-.06l-.169.082a1 1 0 0 1-.741.051l-1.021-.329A1 1 0 0 0 11.205 9h-.165a1 1 0 0 0-.945.674l-.172.499a1 1 0 0 1-.404.514l-.802.518a1 1 0 0 0-.458.84v.455a1 1 0 0 0 1 1h.257a1 1 0 0 1 .542.16l.762.49a1 1 0 0 0 .283.126a7 7 0 0 1-9.49-3.409Z"/></g>',
+    responsible: '<path d="M7 14s-1 0-1-1s1-4 5-4s5 3 5 4s-1 1-1 1zm4-6a3 3 0 1 0 0-6a3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5a2.5 2.5 0 0 0 0 5"/>',
+    success: '<g><path fill-rule="evenodd" d="M11 15a4 4 0 1 0 0-8a4 4 0 0 0 0 8m5-4a5 5 0 1 1-10 0a5 5 0 0 1 10 0"/><path d="M9.438 11.944c.047.596.518 1.06 1.363 1.116v.44h.375v-.443c.875-.061 1.386-.529 1.386-1.207c0-.618-.39-.936-1.09-1.1l-.296-.07v-1.2c.376.043.614.248.671.532h.658c-.047-.575-.54-1.024-1.329-1.073V8.5h-.375v.45c-.747.073-1.255.522-1.255 1.158c0 .562.378.92 1.007 1.066l.248.061v1.272c-.384-.058-.639-.27-.696-.563h-.668zm1.36-1.354c-.369-.085-.569-.26-.569-.522c0-.294.216-.514.572-.578v1.1zm.432.746c.449.104.655.272.655.569c0 .339-.257.571-.709.614v-1.195z"/><path d="M1 0a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h4.083q.088-.517.258-1H3a2 2 0 0 0-2-2V3a2 2 0 0 0 2-2h10a2 2 0 0 0 2 2v3.528c.38.34.717.728 1 1.154V1a1 1 0 0 0-1-1z"/><path d="M9.998 5.083L10 5a2 2 0 1 0-3.132 1.65a6 6 0 0 1 3.13-1.567"/></g>',
+  };
   function tzMultiSelect(key, label, cand) {
     const sel = state.tzFilters[key] || [];
     const items = tzUnique(cand);
     const btnLabel = sel.length === 0 ? label : (sel.length === 1 ? sel[0] : `${label}: ${sel.length}`);
+    const icon = TZ_FILTER_ICONS[key];
+    const selText = sel.length === 1 ? sel[0] : String(sel.length);
     const list = items.map(x => {
       const on = sel.includes(x.label);
       return `<label class="tz-ms-opt ${on ? 'on' : ''}"><input type="checkbox" data-tz-ms-cb="${esc(key)}" value="${esc(x.label)}" ${on ? 'checked' : ''}><span class="tz-ms-name" title="${esc(x.label)}">${esc(x.label)}</span><span class="tz-ms-n">${x.n}</span></label>`;
     }).join('');
     return `
       <div class="tz-ms" data-tz-ms-wrap="${esc(key)}">
-        <button class="tz-ms-btn ${sel.length ? 'active' : ''}" data-tz-ms="${esc(key)}" type="button">
-          <span class="tz-ms-btn-label" title="${esc(btnLabel)}">${esc(btnLabel)}</span>
+        <button class="tz-ms-btn ${sel.length ? 'active' : ''} ${icon ? 'tz-ms-iconic' : ''}" data-tz-ms="${esc(key)}" type="button" aria-label="${esc(label)}" title="${esc(btnLabel)}">
+          ${icon ? `<svg class="tz-ms-ic" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">${icon}</svg>` : ''}
+          ${(!icon || sel.length) ? `<span class="tz-ms-btn-label">${esc(icon ? selText : btnLabel)}</span>` : ''}
           <svg viewBox="0 0 12 12" width="11" height="11"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <div class="tz-ms-panel" data-tz-ms-panel="${esc(key)}" hidden>
@@ -2487,8 +2497,8 @@
     return `
       <article class="traffic-widget tz-card ${compact ? 'tz-compact' : (opts.wide ? 'tz-wide' : 'tz-detailed')} ${opts.className || ''}">
         <div class="tz-card-head">
-          <div class="tz-card-title">${esc(title)}${issueBtn}</div>
-          ${toggleBtn}
+          <div class="tz-card-title">${esc(title)}</div>
+          <div class="tz-card-tools">${issueBtn}${toggleBtn}</div>
           ${sub ? `<div class="tz-card-sub">${esc(sub)}</div>` : ''}
         </div>
         ${shownMain ? `<div class="tz-card-main">${shownMain}</div>` : ''}
@@ -2904,10 +2914,12 @@
       ['Реализация есть, успех пуст', r => tzDate(tzRaw(r, TZC.realizDate)) && tzEmpty(tzRaw(r, TZC.success))],
       ['Успех есть, этап ≠ «Успешно реализовано»', r => !tzEmpty(tzRaw(r, TZC.success)) && String(tzRaw(r, TZC.stage)).trim() !== 'Успешно реализовано'],
     ];
+    let nonZero = 0;
     const body = `<div class="tz-quality-list">
       ${checks.map(([l, pred]) => {
         const ids = tzIssueIds(rows, pred);
         const v = ids.length;
+        if (v > 0) nonZero++;
         let key = '';
         if (v > 0) { key = 'q' + (Object.keys(_tzIssues).length + 1); _tzIssues[key] = { title: l, hint: 'Сделки по проверке «' + l + '».', ids }; }
         return `<div class="tz-quality-item ${v > 0 ? 'has clickable' : 'ok'}" ${v > 0 ? `data-tz-issue="${key}"` : ''}>
@@ -2916,7 +2928,8 @@
         </div>`;
       }).join('')}
     </div>`;
-    return tzWidgetShell('Качество данных', 'Проверка полноты и согласованности', '', body, { className: 'tz-quality-widget' });
+    // Компактно: сколько проверок с ненулевыми проблемами из общего числа
+    return tzWidgetShell('Качество данных', 'Проверка полноты и согласованности', '', body, { className: 'tz-quality-widget', compactValue: `${nonZero} / ${checks.length}` });
   }
 
   function bindTzBase() {
@@ -3291,7 +3304,7 @@
       <article class="traffic-widget tz-card ${compact ? 'tz-compact' : 'tz-detailed'} tz-custom-widget" data-traffic-custom-widget="${esc(w.id)}">
         <div class="tz-card-head">
           <div class="tz-card-title">${esc(w.title || 'Виджет')}</div>
-          ${toggleBtn}
+          <div class="tz-card-tools">${toggleBtn}</div>
           <div class="tz-card-sub">${esc(sub)}${per ? ' · ' + per : ''}</div>
         </div>
         ${main ? `<div class="tz-card-main">${main}</div>` : ''}

@@ -1184,42 +1184,11 @@
   }
 
   function renderAdvancedTab() {
-    const widgets = state.widgets || [];
-    return `
-      <div class="traffic-card traffic-advanced-head">
-        <div class="traffic-toolbar">
-          <button class="traffic-btn primary" id="traffic-add-widget" ${widgets.length >= 15 ? 'disabled' : ''}>+ Добавить виджет</button>
-          <button class="traffic-btn danger" id="traffic-clear-csv">Очистить CSV</button>
-          <button class="traffic-btn" id="traffic-import-widgets">Импорт настроек</button>
-          <button class="traffic-btn" id="traffic-export-widgets">Экспорт настроек</button>
-          <input class="traffic-file-input" id="traffic-import-file" type="file" accept=".json,.crm-traffic-widgets.json,application/json">
-        </div>
-        <p class="traffic-muted">${widgets.length} из 15 виджетов</p>
-      </div>
-      <div class="traffic-grid">
-        ${widgets.map(renderCustomWidget).join('') || `
-          <div class="traffic-empty traffic-card">
-            <h3>Пользовательских виджетов пока нет</h3>
-            <p class="traffic-muted">Создайте первый виджет на основе колонок импортированного CSV.</p>
-          </div>`}
-      </div>`;
+    return tzRenderEditor();
   }
 
   function renderCustomWidget(widget) {
-    const primary = getPrimaryGroupField(widget)?.normalizedName;
-    const rows = rowsForWidget(widget);
-    const data = primary ? makeWidgetData(widget, rows, primary) : null;
-    const period = PERIOD_LABELS[widget.period?.type || 'all'] || 'Все данные';
-    return `
-      <article class="traffic-widget traffic-custom-widget traffic-format-${esc(widget.format || 'ranking')}" data-traffic-custom-widget="${esc(widget.id)}">
-        <div class="traffic-widget-head">
-          <div>
-            <h3>${esc(widget.title || 'Без названия')}</h3>
-            <p class="traffic-muted">${esc(FORMAT_LABELS[widget.format] || widget.format || 'Виджет')} · ${esc(period)}</p>
-          </div>
-        </div>
-        ${data ? renderWidgetByFormat(widget, data, rows, primary) : '<p class="traffic-muted">Нет данных для построения.</p>'}
-      </article>`;
+    return tzRenderCustomWidget(widget);
   }
 
   function renderCustomWidgetDetail(widget) {
@@ -1243,6 +1212,9 @@
   }
 
   function showCustomWidgetModal(id) {
+    return tzShowWidgetModal(id);
+  }
+  function showCustomWidgetModalLegacy(id) {
     const widget = (state.widgets || []).find(w => w.id === id);
     const modal = document.getElementById('traffic-modal');
     if (!widget || !modal) return;
@@ -1688,6 +1660,9 @@
   }
 
   function showWidgetBuilder(editId) {
+    return tzShowBuilder(editId);
+  }
+  function showWidgetBuilderLegacy(editId) {
     const modal = document.getElementById('traffic-modal');
     if (!modal) return;
     const editing = typeof editId === 'string' ? (state.widgets || []).find(w => w.id === editId) : null;
@@ -1965,13 +1940,15 @@
     renderTrafficAnalytics();
   }
 
+  const TZ_WIDGET_LIMIT = 50;
+
   function exportWidgets() {
     if (!state.widgets?.length) {
       notify('Нет созданных виджетов для экспорта.', 'e');
       return;
     }
     const payload = {
-      schemaVersion: 1,
+      schemaVersion: 2,
       exportedAt: new Date().toISOString(),
       source: 'crmTrafficAnalytics',
       widgets: state.widgets
@@ -1991,18 +1968,17 @@
     reader.onload = () => {
       try {
         const data = JSON.parse(String(reader.result || ''));
-        if (data.schemaVersion !== 1 || !Array.isArray(data.widgets)) throw new Error('Некорректный файл настроек.');
-        const currentNames = new Set((state.fields || []).map(f => f.normalizedName));
-        const prepared = data.widgets.map(w => ({
-          ...w,
-          id: `widget_${Date.now()}_${Math.random().toString(16).slice(2)}`,
-          selectedFields: (w.selectedFields || []).filter(f => currentNames.has(f.normalizedName)),
-          updatedAt: new Date().toISOString()
-        })).filter(w => w.selectedFields.length);
-        if (!prepared.length) throw new Error('В настройках не найдено полей, совпадающих с текущим CSV.');
+        if (!Array.isArray(data.widgets)) throw new Error('Некорректный файл настроек.');
+        // v2: виджеты определяются конфигом (kind/dimension/metric), не привязаны
+        // к именам колонок — переносимы между импортами. v1 мигрируем.
+        const prepared = data.widgets.map(w => {
+          const mig = tzMigrateWidget(w);
+          return { ...mig, id: `widget_${Date.now()}_${Math.random().toString(16).slice(2)}`, updatedAt: new Date().toISOString() };
+        }).filter(Boolean);
+        if (!prepared.length) throw new Error('В файле нет валидных виджетов.');
         const replace = confirm('Заменить текущие виджеты импортируемыми? Нажмите Отмена, чтобы добавить к текущим.');
-        const next = replace ? prepared : [...(state.widgets || []), ...prepared].slice(0, 15);
-        state.widgets = next.slice(0, 15);
+        const next = replace ? prepared : [...(state.widgets || []), ...prepared];
+        state.widgets = next.slice(0, TZ_WIDGET_LIMIT);
         localStorage.setItem(STORAGE.widgets, JSON.stringify(state.widgets));
         renderTrafficAnalytics();
         notify('Настройки виджетов импортированы', 's');
@@ -2965,6 +2941,337 @@
         try { navigator.clipboard.writeText(text); notify(btn.dataset.tzIssueCopy === 'links' ? 'Ссылки скопированы' : 'ID скопированы', 's'); } catch(_){}
       };
     });
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+     РЕДАКТОР ВИДЖЕТОВ v2 — concept-driven конструктор.
+     Логика связей всегда валидна: вид → только допустимые контролы,
+     метрики и разрезы — из курируемых списков. Нелогичных комбинаций нет.
+     ════════════════════════════════════════════════════════════════ */
+
+  // Разрезы (категориальные поля)
+  const TZ_DIMS = {
+    source:      { label: 'Источник',         cand: TZC.source },
+    city:        { label: 'Город',            cand: TZC.city },
+    responsible: { label: 'Ответственный',    cand: TZC.responsible },
+    stage:       { label: 'Этап сделки',      cand: TZC.stage },
+    reason:      { label: 'Причина закрытия', cand: TZC.reason },
+    success:     { label: 'Вид реализации',   cand: TZC.success },
+    landing:     { label: 'Посадка',          cand: TZC.landing },
+    qual:        { label: 'Квал лид',         cand: TZC.qual },
+  };
+  // Дата-поля для трендов
+  const TZ_DATEF = {
+    created:    { label: 'Дата создания',    cand: TZC.created },
+    closed:     { label: 'Дата закрытия',    cand: TZC.closed },
+    visitDate:  { label: 'Дата визита',      cand: TZC.visitDate },
+    realizDate: { label: 'Дата реализации',  cand: TZC.realizDate },
+  };
+  // Метрики (каждая — корректная свёртка набора строк → число)
+  const TZ_METRICS = {
+    count:     { label: 'Кол-во лидов',        fmt: tzNum,      reduce: rs => rs.length },
+    costSum:   { label: 'Σ Стоимость лида',    fmt: tzMoneyFmt, reduce: rs => { const c = rs.map(r => tzMoney(tzRaw(r, TZC.cost))).filter(x => x !== null && x > 0); return c.length ? c.reduce((s, x) => s + x, 0) : 0; } },
+    costAvg:   { label: 'Ср. стоимость лида',  fmt: tzMoneyFmt, reduce: rs => { const c = rs.map(r => tzMoney(tzRaw(r, TZC.cost))).filter(x => x !== null && x > 0); return c.length ? c.reduce((s, x) => s + x, 0) / c.length : null; } },
+    revSum:    { label: 'Σ Доходность',        fmt: tzMoneyFmt, reduce: rs => rs.filter(tzIsSuccess).map(tzRevenue).filter(x => x !== null).reduce((s, x) => s + x, 0) },
+    revAvg:    { label: 'Ср. доходность',      fmt: tzMoneyFmt, reduce: rs => { const v = rs.filter(tzIsSuccess).map(tzRevenue).filter(x => x !== null); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; } },
+    convVisit: { label: '% в визит',           fmt: v => v === null ? '—' : v.toFixed(1) + '%', reduce: rs => rs.length ? rs.filter(r => tzDate(tzRaw(r, TZC.visitDate)) !== null).length / rs.length * 100 : null },
+    convReal:  { label: '% в реализацию',      fmt: v => v === null ? '—' : v.toFixed(1) + '%', reduce: rs => rs.length ? rs.filter(tzIsSuccess).length / rs.length * 100 : null },
+    qualRate:  { label: '% квал-лидов',        fmt: v => v === null ? '—' : v.toFixed(1) + '%', reduce: rs => rs.length ? rs.filter(r => String(tzRaw(r, TZC.qual)).trim() === 'Да').length / rs.length * 100 : null },
+  };
+  // Виды виджетов и какие контролы им нужны
+  const TZ_KINDS = {
+    ranking: { label: 'Рейтинг',      need: ['dimension', 'metric', 'topN'], hint: 'Топ значений разреза по метрике' },
+    share:   { label: 'Доля',         need: ['dimension', 'metricShare'],    hint: 'Кольцо долей по разрезу' },
+    trend:   { label: 'Динамика',     need: ['dateField', 'granularity', 'metric'], hint: 'Линия во времени' },
+    compare: { label: 'Сравнение',    need: ['dimension', 'splitBy', 'metric'], hint: 'Разрез × разрез (таблица)' },
+    kpi:     { label: 'KPI-число',    need: ['metric'],                      hint: 'Одна крупная цифра' },
+    table:   { label: 'Таблица',      need: ['dimension', 'metricsMulti'],   hint: 'Разрез + несколько метрик' },
+  };
+  const TZ_SHARE_METRICS = ['count', 'costSum', 'revSum'];   // для доли — только аддитивные
+
+  function tzDimLabel(k) { return TZ_DIMS[k]?.label || k; }
+  function tzMetricLabel(k) { return TZ_METRICS[k]?.label || k; }
+
+  // Миграция v1 → v2 (старые виджеты с format/selectedFields)
+  function tzMigrateWidget(w) {
+    if (!w) return null;
+    if (w.v === 2) return w;
+    // Пытаемся вытащить разрез из старых selectedFields по совпадению с TZC
+    let dimension = 'source';
+    const sel = w.selectedFields || [];
+    for (const f of sel) {
+      const hit = Object.entries(TZ_DIMS).find(([, d]) => d.cand.some(c => c === f.normalizedName || c === f.originalName));
+      if (hit) { dimension = hit[0]; break; }
+    }
+    const kindMap = { ranking: 'ranking', shareStructure: 'share', rollingTrend: 'trend', trend: 'trend', kpiSummary: 'kpi', tableDetail: 'table' };
+    return {
+      v: 2, id: w.id || `widget_${Date.now()}`, title: w.title || 'Виджет',
+      kind: kindMap[w.format] || 'ranking', dimension, splitBy: '', dateField: 'created',
+      granularity: 'day', metric: 'count', metrics: ['count'], topN: 10,
+      period: w.period || { type: 'all', dateFrom: null, dateTo: null }, filters: {},
+      createdAt: w.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString()
+    };
+  }
+
+  // Строки виджета: state.rows, отфильтрованные по периоду + собств. фильтрам
+  function tzWidgetRows(w) {
+    let rows = state.rows || [];
+    const p = w.period || { type: 'all' };
+    if (p.type && p.type !== 'all') {
+      const now = new Date();
+      let from = null, to = now;
+      if (p.type === 'today') from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      else if (p.type === 'week') from = startOfWeek(now);
+      else if (p.type === 'month') from = new Date(now.getFullYear(), now.getMonth(), 1);
+      else if (p.type === 'range') { from = p.dateFrom ? new Date(p.dateFrom + 'T00:00:00') : null; to = p.dateTo ? new Date(p.dateTo + 'T23:59:59') : now; }
+      if (from || p.type === 'range') rows = rows.filter(r => { const d = tzDate(tzRaw(r, TZC.created)); if (!d) return false; if (from && d < from) return false; if (to && d > to) return false; return true; });
+    }
+    const fl = w.filters || {};
+    Object.entries(fl).forEach(([dim, vals]) => {
+      if (!vals || !vals.length || !TZ_DIMS[dim]) return;
+      rows = rows.filter(r => vals.includes(String(tzRaw(r, TZ_DIMS[dim].cand)).trim()));
+    });
+    return rows;
+  }
+
+  // Группировка строк по разрезу → [{label, rows}]
+  function tzGroupBy(rows, dimKey) {
+    const cand = TZ_DIMS[dimKey].cand;
+    const map = new Map();
+    rows.forEach(r => { let v = String(tzRaw(r, cand)).trim(); if (tzEmpty(v)) v = EMPTY_LABEL; if (!map.has(v)) map.set(v, []); map.get(v).push(r); });
+    return Array.from(map, ([label, rs]) => ({ label, rows: rs }));
+  }
+
+  function tzRenderEditor() {
+    const widgets = (state.widgets || []).map(tzMigrateWidget).filter(Boolean);
+    state.widgets = widgets; // нормализуем
+    return `
+      <div class="tz-editor-bar">
+        <div class="tz-editor-actions">
+          <button class="tz-ed-btn primary" id="traffic-add-widget" ${widgets.length >= TZ_WIDGET_LIMIT ? 'disabled' : ''}>+ Новый виджет</button>
+          <button class="tz-ed-btn" id="traffic-export-widgets">Экспорт</button>
+          <button class="tz-ed-btn" id="traffic-import-widgets">Импорт</button>
+          <input class="traffic-file-input" id="traffic-import-file" type="file" accept=".json,application/json" hidden>
+        </div>
+        <div class="tz-editor-count">${widgets.length} / ${TZ_WIDGET_LIMIT}</div>
+      </div>
+      <div class="traffic-grid tz-grid">
+        ${widgets.length ? widgets.map(tzRenderCustomWidget).join('') : `
+          <div class="tz-empty">Виджетов нет. Нажмите «+ Новый виджет» — конструктор проведёт по шагам и не даст собрать нелогичную комбинацию.</div>`}
+      </div>
+      <div class="tz-issue-overlay" id="tz-issue-overlay" aria-hidden="true"></div>`;
+  }
+
+  function tzRenderCustomWidget(w) {
+    w = tzMigrateWidget(w);
+    const rows = tzWidgetRows(w);
+    const kind = TZ_KINDS[w.kind] ? w.kind : 'ranking';
+    const per = tzPeriodLabel(rows);
+    let body = '', main = '', sub = TZ_KINDS[kind].label;
+    if (!rows.length) {
+      body = '<div class="tz-empty-inline">Нет данных в выбранном периоде</div>';
+    } else if (kind === 'ranking' || kind === 'share') {
+      const groups = tzGroupBy(rows, w.dimension);
+      const metricKey = kind === 'share' ? (TZ_SHARE_METRICS.includes(w.metric) ? w.metric : 'count') : (w.metric || 'count');
+      const M = TZ_METRICS[metricKey];
+      const items = groups.map(g => ({ label: g.label, value: M.reduce(g.rows) || 0 })).filter(x => x.value > 0).sort((a, b) => b.value - a.value);
+      const totalVal = items.reduce((s, x) => s + x.value, 0);
+      const topN = kind === 'share' ? 6 : (w.topN || 10);
+      const top = items.slice(0, topN);
+      const otherVal = items.slice(topN).reduce((s, x) => s + x.value, 0);
+      const max = top[0]?.value || 1;
+      sub = `${tzDimLabel(w.dimension)} · ${M.label}`;
+      main = M.fmt(totalVal);
+      if (kind === 'share') {
+        body = `<div class="tz-rank-with-ring"><div class="tz-rank-list">
+          ${top.map((it, i) => `<div class="tz-rank-row"><div class="tz-rank-top"><span class="tz-rank-label" title="${esc(it.label)}">${esc(it.label)}</span><span class="tz-rank-value">${M.fmt(it.value)}</span><span class="tz-rank-percent">${tzPct(it.value, totalVal).toFixed(1)}%</span></div><div class="tz-rank-bar"><div class="tz-rank-bar-fill ${shareColorClass(i)}" style="width:${Math.max(2, it.value / max * 100).toFixed(1)}%"></div></div></div>`).join('')}
+        </div>${tzDonut(top, totalVal, top.length + '', 'групп')}</div>`;
+      } else {
+        body = `<div class="tz-rank-list">
+          ${top.map((it, i) => `<div class="tz-rank-row"><div class="tz-rank-top"><span class="tz-rank-label" title="${esc(it.label)}">${esc(it.label)}</span><span class="tz-rank-value">${M.fmt(it.value)}</span><span class="tz-rank-percent">${tzPct(it.value, totalVal).toFixed(1)}%</span></div><div class="tz-rank-bar"><div class="tz-rank-bar-fill ${shareColorClass(i)}" style="width:${Math.max(2, it.value / max * 100).toFixed(1)}%"></div></div></div>`).join('')}
+          ${otherVal > 0 ? `<div class="tz-rank-row"><div class="tz-rank-top"><span class="tz-rank-label">Прочие</span><span class="tz-rank-value">${M.fmt(otherVal)}</span><span class="tz-rank-percent">${tzPct(otherVal, totalVal).toFixed(1)}%</span></div><div class="tz-rank-bar"><div class="tz-rank-bar-fill tz-c6" style="width:${Math.max(2, otherVal / max * 100).toFixed(1)}%"></div></div></div>` : ''}
+        </div>`;
+      }
+    } else if (kind === 'trend') {
+      const cand = (TZ_DATEF[w.dateField] || TZ_DATEF.created).cand;
+      const M = TZ_METRICS[w.metric || 'count'];
+      const gran = w.granularity || 'day';
+      const buckets = new Map();
+      rows.forEach(r => {
+        const d = tzDate(tzRaw(r, cand)); if (!d) return;
+        let key;
+        if (gran === 'month') key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+        else if (gran === 'week') { const ws = startOfWeek(d); key = `${ws.getFullYear()}-${String(ws.getMonth() + 1).padStart(2, '0')}-${String(ws.getDate()).padStart(2, '0')}`; }
+        else key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        if (!buckets.has(key)) buckets.set(key, []); buckets.get(key).push(r);
+      });
+      const pts = Array.from(buckets, ([key, rs]) => ({ key, date: new Date(key), value: M.reduce(rs) || 0 })).sort((a, b) => a.date - b.date);
+      sub = `${(TZ_DATEF[w.dateField] || TZ_DATEF.created).label} · ${M.label} · ${gran === 'month' ? 'по месяцам' : gran === 'week' ? 'по неделям' : 'по дням'}`;
+      main = M.fmt(pts.reduce((s, p) => s + p.value, 0));
+      body = pts.length <= 2
+        ? tzTrendBars(pts.map(p => ({ date: p.date, value: p.value })), pts.reduce((a, b) => b.value > (a?.value || 0) ? b : a, null))
+        : tzTrendLine(pts.map(p => ({ date: p.date, value: p.value })));
+    } else if (kind === 'compare') {
+      const dimA = w.dimension, dimB = w.splitBy && TZ_DIMS[w.splitBy] ? w.splitBy : null;
+      const M = TZ_METRICS[w.metric || 'count'];
+      sub = dimB ? `${tzDimLabel(dimA)} × ${tzDimLabel(dimB)} · ${M.label}` : `${tzDimLabel(dimA)} · ${M.label}`;
+      const groupsA = tzGroupBy(rows, dimA).map(g => ({ label: g.label, rows: g.rows, value: M.reduce(g.rows) || 0 })).sort((a, b) => b.value - a.value).slice(0, 8);
+      if (!dimB) {
+        const max = groupsA[0]?.value || 1;
+        body = `<div class="tz-rank-list">${groupsA.map((g, i) => `<div class="tz-rank-row"><div class="tz-rank-top"><span class="tz-rank-label" title="${esc(g.label)}">${esc(g.label)}</span><span class="tz-rank-value">${M.fmt(g.value)}</span></div><div class="tz-rank-bar"><div class="tz-rank-bar-fill ${shareColorClass(i)}" style="width:${Math.max(2, g.value / max * 100).toFixed(1)}%"></div></div></div>`).join('')}</div>`;
+      } else {
+        const colsAll = tzGroupBy(rows, dimB).map(g => ({ label: g.label, value: g.rows.length })).sort((a, b) => b.value - a.value).slice(0, 4).map(c => c.label);
+        body = `<div class="tz-cmp-table"><div class="tz-cmp-row tz-cmp-head"><span>${esc(tzDimLabel(dimA))}</span>${colsAll.map(c => `<span title="${esc(c)}">${esc(c)}</span>`).join('')}</div>
+          ${groupsA.map(g => {
+            const cells = colsAll.map(col => { const sub = g.rows.filter(r => String(tzRaw(r, TZ_DIMS[dimB].cand)).trim() === col); return M.fmt(M.reduce(sub) || 0); });
+            return `<div class="tz-cmp-row"><span class="tz-cmp-name" title="${esc(g.label)}">${esc(g.label)}</span>${cells.map(c => `<span>${c}</span>`).join('')}</div>`;
+          }).join('')}</div>`;
+      }
+    } else if (kind === 'kpi') {
+      const M = TZ_METRICS[w.metric || 'count'];
+      sub = M.label;
+      const val = M.reduce(rows);
+      body = `<div class="tz-kpi-big">${M.fmt(val === null ? null : val)}</div><div class="tz-kpi-big-sub">${esc(M.label)} · ${tzNum(rows.length)} лидов в выборке</div>`;
+    } else if (kind === 'table') {
+      const metrics = (w.metrics && w.metrics.length ? w.metrics : ['count']).filter(k => TZ_METRICS[k]).slice(0, 4);
+      sub = `${tzDimLabel(w.dimension)} · ${metrics.map(tzMetricLabel).join(' · ')}`;
+      const groups = tzGroupBy(rows, w.dimension).map(g => ({ label: g.label, rows: g.rows, sort: TZ_METRICS[metrics[0]].reduce(g.rows) || 0 })).sort((a, b) => b.sort - a.sort).slice(0, w.topN || 12);
+      body = `<div class="tz-cmp-table"><div class="tz-cmp-row tz-cmp-head"><span>${esc(tzDimLabel(w.dimension))}</span>${metrics.map(m => `<span>${esc(TZ_METRICS[m].label)}</span>`).join('')}</div>
+        ${groups.map(g => `<div class="tz-cmp-row"><span class="tz-cmp-name" title="${esc(g.label)}">${esc(g.label)}</span>${metrics.map(m => { const v = TZ_METRICS[m].reduce(g.rows); return `<span>${TZ_METRICS[m].fmt(v === null ? null : v)}</span>`; }).join('')}</div>`).join('')}</div>`;
+    }
+    return `
+      <article class="traffic-widget tz-card tz-wide tz-custom-widget" data-traffic-custom-widget="${esc(w.id)}">
+        <div class="tz-card-head">
+          <div class="tz-card-title">${esc(w.title || 'Виджет')}</div>
+          <div class="tz-card-sub">${esc(sub)}${per ? ' · ' + per : ''}</div>
+        </div>
+        ${main ? `<div class="tz-card-main">${main}</div>` : ''}
+        <div class="tz-card-body">${body}</div>
+      </article>`;
+  }
+
+  // ── Конструктор (модалка) ──
+  function tzShowBuilder(editId) {
+    const modal = document.getElementById('traffic-modal');
+    if (!modal) return;
+    if ((state.widgets || []).length >= TZ_WIDGET_LIMIT && !editId) { notify(`Лимит ${TZ_WIDGET_LIMIT} виджетов достигнут.`, 'e'); return; }
+    const editing = typeof editId === 'string' ? (state.widgets || []).map(tzMigrateWidget).find(w => w.id === editId) : null;
+    // Рабочая копия конфигурации
+    const cfg = editing ? JSON.parse(JSON.stringify(editing)) : {
+      v: 2, id: `widget_${Date.now()}`, title: '', kind: 'ranking',
+      dimension: 'source', splitBy: '', dateField: 'created', granularity: 'day',
+      metric: 'count', metrics: ['count'], topN: 10, period: { type: 'all', dateFrom: null, dateTo: null }, filters: {}
+    };
+    modal.innerHTML = `<div class="traffic-modal-card tz-builder-card">
+      <button class="traffic-modal-close" data-traffic-close type="button">×</button>
+      <h2>${editing ? 'Редактировать виджет' : 'Новый виджет'}</h2>
+      <label class="tz-b-field">Название<input id="tzb-title" placeholder="Напр. Лиды по источникам" value="${esc(cfg.title)}"></label>
+      <div class="tz-b-sec"><div class="tz-b-lbl">Вид виджета</div><div class="tz-b-kinds">
+        ${Object.entries(TZ_KINDS).map(([k, v]) => `<button type="button" class="tz-b-kind ${cfg.kind === k ? 'active' : ''}" data-tzb-kind="${k}"><b>${esc(v.label)}</b><span>${esc(v.hint)}</span></button>`).join('')}
+      </div></div>
+      <div class="tz-b-controls" id="tzb-controls"></div>
+      <div class="tz-b-sec"><div class="tz-b-lbl">Период</div><div class="tz-b-period" id="tzb-period">
+        ${[['all','Всё'],['today','Сегодня'],['week','Неделя'],['month','Месяц']].map(([v, l]) => `<button type="button" class="tz-b-pill ${cfg.period.type === v ? 'active' : ''}" data-tzb-period="${v}">${l}</button>`).join('')}
+      </div></div>
+      <div class="tz-b-preview" id="tzb-preview"></div>
+      <div class="traffic-modal-actions">
+        <button class="tz-ed-btn" data-traffic-close>Отмена</button>
+        <button class="tz-ed-btn primary" id="tzb-save">${editing ? 'Сохранить' : 'Создать'}</button>
+      </div>
+    </div>`;
+    modal.classList.add('open');
+    bindModalDismiss(modal);
+    modal.querySelector('[data-traffic-close]').onclick = closeModal;
+
+    const dimOpts = (sel) => Object.entries(TZ_DIMS).map(([k, d]) => `<option value="${k}" ${sel === k ? 'selected' : ''}>${esc(d.label)}</option>`).join('');
+    const metricOpts = (sel, only) => Object.entries(TZ_METRICS).filter(([k]) => !only || only.includes(k)).map(([k, m]) => `<option value="${k}" ${sel === k ? 'selected' : ''}>${esc(m.label)}</option>`).join('');
+    const dateOpts = (sel) => Object.entries(TZ_DATEF).map(([k, d]) => `<option value="${k}" ${sel === k ? 'selected' : ''}>${esc(d.label)}</option>`).join('');
+
+    const renderControls = () => {
+      const need = TZ_KINDS[cfg.kind].need;
+      const ctrl = document.getElementById('tzb-controls');
+      let h = '';
+      if (need.includes('dimension')) h += `<label class="tz-b-field">Разрез<select id="tzb-dim">${dimOpts(cfg.dimension)}</select></label>`;
+      if (need.includes('splitBy')) h += `<label class="tz-b-field">Второй разрез (столбцы)<select id="tzb-split"><option value="">— нет —</option>${Object.entries(TZ_DIMS).map(([k, d]) => `<option value="${k}" ${cfg.splitBy === k ? 'selected' : ''}>${esc(d.label)}</option>`).join('')}</select></label>`;
+      if (need.includes('dateField')) h += `<label class="tz-b-field">Дата по оси X<select id="tzb-datef">${dateOpts(cfg.dateField)}</select></label>`;
+      if (need.includes('granularity')) h += `<label class="tz-b-field">Шаг<select id="tzb-gran"><option value="day" ${cfg.granularity==='day'?'selected':''}>День</option><option value="week" ${cfg.granularity==='week'?'selected':''}>Неделя</option><option value="month" ${cfg.granularity==='month'?'selected':''}>Месяц</option></select></label>`;
+      if (need.includes('metric')) h += `<label class="tz-b-field">Метрика<select id="tzb-metric">${metricOpts(cfg.metric)}</select></label>`;
+      if (need.includes('metricShare')) h += `<label class="tz-b-field">Метрика<select id="tzb-metric">${metricOpts(TZ_SHARE_METRICS.includes(cfg.metric) ? cfg.metric : 'count', TZ_SHARE_METRICS)}</select></label>`;
+      if (need.includes('metricsMulti')) h += `<div class="tz-b-field"><span>Метрики (до 4)</span><div class="tz-b-metrics">${Object.entries(TZ_METRICS).map(([k, m]) => `<label class="tz-b-chk"><input type="checkbox" data-tzb-metric="${k}" ${(cfg.metrics||[]).includes(k)?'checked':''}> ${esc(m.label)}</label>`).join('')}</div></div>`;
+      if (need.includes('topN')) h += `<label class="tz-b-field">Сколько показывать<select id="tzb-topn">${[5,10,15,20].map(n => `<option value="${n}" ${cfg.topN===n?'selected':''}>Топ ${n}</option>`).join('')}</select></label>`;
+      ctrl.innerHTML = h;
+      // bind control changes
+      ctrl.querySelector('#tzb-dim') && (ctrl.querySelector('#tzb-dim').onchange = e => { cfg.dimension = e.target.value; preview(); });
+      ctrl.querySelector('#tzb-split') && (ctrl.querySelector('#tzb-split').onchange = e => { cfg.splitBy = e.target.value; preview(); });
+      ctrl.querySelector('#tzb-datef') && (ctrl.querySelector('#tzb-datef').onchange = e => { cfg.dateField = e.target.value; preview(); });
+      ctrl.querySelector('#tzb-gran') && (ctrl.querySelector('#tzb-gran').onchange = e => { cfg.granularity = e.target.value; preview(); });
+      ctrl.querySelector('#tzb-metric') && (ctrl.querySelector('#tzb-metric').onchange = e => { cfg.metric = e.target.value; preview(); });
+      ctrl.querySelector('#tzb-topn') && (ctrl.querySelector('#tzb-topn').onchange = e => { cfg.topN = +e.target.value; preview(); });
+      ctrl.querySelectorAll('[data-tzb-metric]').forEach(cb => cb.onchange = () => {
+        const k = cb.dataset.tzbMetric;
+        cfg.metrics = cfg.metrics || [];
+        if (cb.checked) { if (cfg.metrics.length >= 4) { cb.checked = false; notify('Максимум 4 метрики', 'e'); return; } if (!cfg.metrics.includes(k)) cfg.metrics.push(k); }
+        else cfg.metrics = cfg.metrics.filter(x => x !== k);
+        preview();
+      });
+    };
+    const preview = () => {
+      cfg.title = (document.getElementById('tzb-title').value || '').trim();
+      const prev = document.getElementById('tzb-preview');
+      try { prev.innerHTML = tzRenderCustomWidget({ ...cfg, title: cfg.title || 'Превью' }); } catch(e) { prev.innerHTML = '<div class="tz-empty-inline">Ошибка превью</div>'; }
+    };
+    modal.querySelectorAll('[data-tzb-kind]').forEach(b => b.onclick = () => {
+      cfg.kind = b.dataset.tzbKind;
+      modal.querySelectorAll('[data-tzb-kind]').forEach(x => x.classList.toggle('active', x === b));
+      renderControls(); preview();
+    });
+    modal.querySelectorAll('[data-tzb-period]').forEach(b => b.onclick = () => {
+      cfg.period = { ...cfg.period, type: b.dataset.tzbPeriod };
+      modal.querySelectorAll('[data-tzb-period]').forEach(x => x.classList.toggle('active', x === b));
+      preview();
+    });
+    document.getElementById('tzb-title').oninput = preview;
+    renderControls();
+    preview();
+    document.getElementById('tzb-save').onclick = () => {
+      cfg.title = (document.getElementById('tzb-title').value || '').trim() || TZ_KINDS[cfg.kind].label;
+      cfg.updatedAt = new Date().toISOString();
+      if (!cfg.createdAt) cfg.createdAt = cfg.updatedAt;
+      const list = (state.widgets || []).map(tzMigrateWidget);
+      const idx = list.findIndex(w => w.id === cfg.id);
+      if (idx >= 0) list[idx] = cfg; else list.push(cfg);
+      state.widgets = list.slice(0, TZ_WIDGET_LIMIT);
+      localStorage.setItem(STORAGE.widgets, JSON.stringify(state.widgets));
+      closeModal();
+      renderTrafficAnalytics();
+      notify(editing ? 'Виджет сохранён' : 'Виджет создан', 's');
+    };
+  }
+
+  // ── Просмотр виджета (модалка с редактировать/удалить) ──
+  function tzShowWidgetModal(id) {
+    const w = (state.widgets || []).map(tzMigrateWidget).find(x => x.id === id);
+    const modal = document.getElementById('traffic-modal');
+    if (!w || !modal) return;
+    modal.innerHTML = `<div class="traffic-modal-card tz-builder-card">
+      <button class="traffic-modal-close" data-traffic-close type="button">×</button>
+      <div class="tz-wm-tools">
+        <button class="tz-ed-btn" id="tzwm-edit">✎ Редактировать</button>
+        <button class="tz-ed-btn danger" id="tzwm-del">Удалить</button>
+      </div>
+      <div class="tz-wm-preview">${tzRenderCustomWidget(w)}</div>
+    </div>`;
+    modal.classList.add('open');
+    bindModalDismiss(modal);
+    modal.querySelector('[data-traffic-close]').onclick = closeModal;
+    document.getElementById('tzwm-edit').onclick = () => { closeModal(); tzShowBuilder(w.id); };
+    document.getElementById('tzwm-del').onclick = () => {
+      if (!confirm('Удалить виджет?')) return;
+      state.widgets = (state.widgets || []).filter(x => x.id !== w.id);
+      localStorage.setItem(STORAGE.widgets, JSON.stringify(state.widgets));
+      closeModal();
+      renderTrafficAnalytics();
+    };
   }
 
   document.addEventListener('DOMContentLoaded', () => {

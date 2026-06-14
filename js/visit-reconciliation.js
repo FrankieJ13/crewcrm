@@ -38,6 +38,24 @@
     if (d.length === 11 && (d[0] === '7' || d[0] === '8')) d = d.slice(1);
     return d.length === 10 ? d : '';
   }
+  // Из ячейки вытаскиваем ВСЕ номера → массив 10-значных «ядер».
+  // Ячейка может содержать несколько номеров (через , ; / перенос), мусорный
+  // текст и любые форматы: +7 (923) 680-92-56, .../89199202520, 89028012585,
+  // '+79322515905, 9322515745 Альбина, 9050815802 и т.п.
+  function extractPhones(cell) {
+    const out = new Set();
+    String(cell == null ? '' : cell).split(/[,;/\n]+/).forEach(part => {
+      let d = part.replace(/\D/g, '');
+      // греедли вытаскиваем номера из возможной склейки
+      while (d.length >= 10) {
+        let core;
+        if (d.length >= 11 && (d[0] === '7' || d[0] === '8')) { core = d.slice(1, 11); d = d.slice(11); }
+        else { core = d.slice(0, 10); d = d.slice(10); }
+        if (core.length === 10) out.add(core); else break;
+      }
+    });
+    return [...out];
+  }
   function fmtPhone(core) {
     if (!core || core.length !== 10) return core || '—';
     return '+7 (' + core.slice(0, 3) + ') ' + core.slice(3, 6) + '-' + core.slice(6, 8) + '-' + core.slice(8);
@@ -125,7 +143,7 @@
       const visitRaw = idVisit != null ? String(row[idVisit] || '').trim() : '';
       if (!visitRaw) continue;                                 // только сделки с проставленной датой визита
       const phones = new Set();
-      phoneIdx.forEach(i => { const p = normPhone(row[i]); if (p) phones.add(p); });
+      phoneIdx.forEach(i => { extractPhones(row[i]).forEach(p => phones.add(p)); });
       deals.push({
         id: idId != null ? String(row[idId] || '').trim() : '',
         responsible: idResp != null ? String(row[idResp] || '').trim() : '',
@@ -163,10 +181,11 @@
       const manager = String(row[8] || '').trim();
       // строка-черновик без даты/телефона/менеджера не сверяем
       if (!date && !phoneRaw && !manager) continue;
+      const vphones = extractPhones(phoneRaw);
       out.push({
         rowNo: i + 1,
         dateRaw: date, date: parseDMY(date),
-        phoneRaw, phone: normPhone(phoneRaw),
+        phoneRaw, phone: vphones[0] || normPhone(phoneRaw), phones: vphones,
         city: String(row[3] || '').trim(),
         comment: String(row[4] || '').trim(),
         source: String(row[5] || '').trim(),
@@ -186,7 +205,10 @@
     visits.forEach(v => { if (v.phone) vizPhoneCount.set(v.phone, (vizPhoneCount.get(v.phone) || 0) + 1); });
 
     const results = visits.map(v => {
-      const dealsForPhone = v.phone ? (byPhone.get(v.phone) || []) : [];
+      // у визита может быть несколько номеров — матчим по любому совпавшему
+      const vphones = (v.phones && v.phones.length) ? v.phones : (v.phone ? [v.phone] : []);
+      const seenDeal = new Set();
+      const dealsForPhone = vphones.flatMap(p => byPhone.get(p) || []).filter(d => { const k = d.id || d; if (seenDeal.has(k)) return false; seenDeal.add(k); return true; });
       const distinctIds = [...new Set(dealsForPhone.map(d => d.id).filter(Boolean))];
       // выбираем эталонную сделку: с лучшим совпадением даты, иначе первую
       let deal = null;
@@ -197,7 +219,7 @@
       }
       const checks = {};
       // ТЕЛЕФОН (критично)
-      checks.phone = !v.phone ? 'fail' : (dealsForPhone.length ? 'ok' : 'fail');
+      checks.phone = !vphones.length ? 'fail' : (dealsForPhone.length ? 'ok' : 'fail');
       if (deal) {
         // ДАТА (критично): полное дд.мм.гггг → ok, иначе мм.гггг → month, иначе fail
         if (v.date && deal.visit) {
@@ -242,6 +264,8 @@
       return { viz: v, deal, distinctIds, dupDeals, dupViz, warmBad, noDeal, checks, status, bucket };
     });
 
+    const byField = { date: 0, phone: 0, manager: 0, source: 0 };
+    results.forEach(r => vrBadFields(r).forEach(f => { if (f in byField) byField[f]++; }));
     const stats = {
       total: results.length,
       ok: results.filter(r => r.status === 'ok').length,
@@ -249,8 +273,20 @@
       fail: results.filter(r => r.status === 'fail').length,
       correct: results.filter(r => r.bucket === 'correct'),
       attention: results.filter(r => r.bucket === 'attention'),
+      byField,
     };
     return { results, stats };
+  }
+  // Поля с несоответствием (для фильтров по типам)
+  function vrBadFields(r) {
+    const c = r.checks, out = [];
+    if (c.date === 'fail' || c.date === 'month') out.push('date');
+    if (c.phone === 'fail') out.push('phone');
+    if (c.manager === 'fail') out.push('manager');
+    if (c.source === 'fail' || c.source === 'warm-bad') out.push('source');
+    if (c.city === 'fail') out.push('city');
+    if (c.comment === 'fail') out.push('comment');
+    return out;
   }
 
   // ── навигация / доступ ────────────────────────────────────────────────
@@ -495,6 +531,13 @@
               `<button class="vr-fbtn ${i === 0 ? 'on' : ''}" data-vr-filter="${k}" type="button">${l}</button>`).join('')}
           </div>
         </div>
+        <div class="vr-field-filters" id="vr-field-filters">
+          <span class="vr-ff-lbl">Несоответствия:</span>
+          ${[['date', 'Дата'], ['phone', 'Телефон'], ['manager', 'Менеджер'], ['source', 'Источник']].map(([k, l]) => {
+            const n = s.byField[k] || 0;
+            return `<button class="vr-ff-btn" data-vr-field="${k}" type="button" ${n ? '' : 'disabled'}>${l}<span class="vr-ff-n">${n}</span></button>`;
+          }).join('')}
+        </div>
 
         <div class="vr-table-wrap">
           ${renderTable(VR.results)}
@@ -564,7 +607,7 @@
       const mgrTitle = r.deal ? `CRM: ${esc(r.deal.responsible || '—')}` : '';
       const cmtTitle = r.deal ? `CRM: ${esc(r.deal.success || '—')}` : '';
       const dupViz = r.dupViz ? '<span class="vr-dup" title="Этот телефон внесён в визиты несколько раз">дубль</span>' : '';
-      return `<tr class="vr-row ${r.status}" data-vr-status="${r.status}" data-vr-i="${i}">
+      return `<tr class="vr-row ${r.status}" data-vr-status="${r.status}" data-vr-bad="${vrBadFields(r).join(' ')}" data-vr-i="${i}">
         <td class="${cellCls(c.date)}" data-l="Дата">${esc(v.dateRaw || '—')} ${dateNote}</td>
         <td class="${cellCls(c.phone)}" data-l="Телефон">${esc(fmtPhone(v.phone) || v.phoneRaw || '—')} ${dupViz}</td>
         <td class="${cellCls(c.manager)}" data-l="Менеджер" title="${mgrTitle}">${esc(v.manager || '—')}</td>
@@ -580,12 +623,27 @@
   function bindReport() {
     bindHeader();
     document.getElementById('vr-new')?.addEventListener('click', renderStart);
-    document.querySelectorAll('[data-vr-filter]').forEach(b => b.addEventListener('click', () => {
-      const f = b.dataset.vrFilter;
-      document.querySelectorAll('[data-vr-filter]').forEach(x => x.classList.toggle('on', x === b));
+    // Комбинированная фильтрация: статус (один) + типы несоответствий (мультивыбор)
+    let statusF = 'all';
+    const fieldF = new Set();
+    const applyFilters = () => {
       document.querySelectorAll('.vr-row').forEach(row => {
-        row.style.display = (f === 'all' || row.dataset.vrStatus === f) ? '' : 'none';
+        const okStatus = statusF === 'all' || row.dataset.vrStatus === statusF;
+        const bad = (row.dataset.vrBad || '').split(' ').filter(Boolean);
+        const okField = fieldF.size === 0 || [...fieldF].some(f => bad.includes(f));
+        row.style.display = (okStatus && okField) ? '' : 'none';
       });
+    };
+    document.querySelectorAll('[data-vr-filter]').forEach(b => b.addEventListener('click', () => {
+      statusF = b.dataset.vrFilter;
+      document.querySelectorAll('[data-vr-filter]').forEach(x => x.classList.toggle('on', x === b));
+      applyFilters();
+    }));
+    document.querySelectorAll('[data-vr-field]').forEach(b => b.addEventListener('click', () => {
+      const f = b.dataset.vrField;
+      if (fieldF.has(f)) fieldF.delete(f); else fieldF.add(f);
+      b.classList.toggle('on', fieldF.has(f));
+      applyFilters();
     }));
     document.querySelectorAll('[data-vr-copy]').forEach(b => b.addEventListener('click', () => {
       const kind = b.dataset.vrBucket;

@@ -2428,6 +2428,10 @@
     if (label === EMPTY_LABEL || label === 'Прочие') return label;
     return dimKey === 'responsible' ? tzShortFio(label) : label;
   }
+  // Сокращения длинных названий этапов («Закрыто и не реализовано (N)» → «ЗнР (N)»)
+  function tzStageShort(s) {
+    return String(s == null ? '' : s).replace(/закрыто\s+и\s+не\s+реализовано/gi, 'ЗнР');
+  }
 
   // ── Режимы отображения (компактный / детальный) ──
   function tzActiveTab() { return state.activeTab === 'advanced' ? 'advanced' : 'base'; }
@@ -2479,6 +2483,32 @@
     return `<button class="tz-mode-btn" data-tz-card-toggle="${esc(wkey)}" type="button" aria-label="${compact ? 'Развернуть' : 'Свернуть'}" title="${compact ? 'Развернуть' : 'Свернуть'}">${icon}</button>`;
   }
 
+  // Эмблематичные SVG-иконки базовых виджетов (перед заголовком), по className
+  const TZ_SVG = (inner, sw = 2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+  const TZ_WIDGET_ICONS = {
+    'tz-trend-widget': TZ_SVG('<path d="M3 17l5-5 4 4 8-9"/><path d="M16 7h4v4"/>'),
+    'tz-source-widget': TZ_SVG('<path d="M3 4h18l-7 8.5V20l-4-2v-5.5z"/>'),
+    'tz-realiz-widget': TZ_SVG('<path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 6H4.5a2.5 2.5 0 0 0 4 2M17 6h2.5a2.5 2.5 0 0 1-4 2"/><path d="M10 17h4M9 20h6M12 13v4"/>'),
+    'tz-finance-widget': TZ_SVG('<path d="M12 21c3.3 0 5.5-2.4 5.5-5.4c0-2.4-1.4-4-2.8-5.6c-.5 1.8-1.7 2.2-1.7 2.2s.8-2.4-.6-4.6C11.2 5.6 9.3 7 9 9c-.8-.4-1-1.8-1-1.8C7 8.4 6.5 10 6.5 12.2C6.5 16 8.7 21 12 21z"/>'),
+    'tz-stages-widget': TZ_SVG('<path d="M3 5h18M6 10h12M9 15h6M11 20h2"/>'),
+    'tz-reasons-widget': TZ_SVG('<circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/>'),
+    'tz-lifetime-widget': TZ_SVG('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>'),
+    'tz-responsible-widget': TZ_SVG('<circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/>'),
+    'tz-cities-widget': TZ_SVG('<path d="M12 21s-6-5.1-6-11a6 6 0 0 1 12 0c0 5.9-6 11-6 11z"/><circle cx="12" cy="10" r="2.3"/>'),
+    'tz-quality-widget': TZ_SVG('<path d="M12 3l7 3v5c0 4.6-3.1 7.9-7 9c-3.9-1.1-7-4.4-7-9V6z"/><path d="M9 12l2 2 4-4.5"/>'),
+  };
+  // Иконки для пунктов проверки в виджете «Качество данных» (по порядку checks)
+  const TZ_QUALITY_ICONS = [
+    TZ_SVG('<path d="M3 4h18l-7 8.5V20l-4-2v-5.5z"/>', 1.8),                                  // источник
+    TZ_SVG('<path d="M12 21s-6-5.1-6-11a6 6 0 0 1 12 0c0 5.9-6 11-6 11z"/><circle cx="12" cy="10" r="2.3"/>', 1.8), // город
+    TZ_SVG('<circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/>', 1.8), // ответственный
+    TZ_SVG('<path d="M3 5h18M6 10h12M9 15h6M11 20h2"/>', 1.8),                                  // этап
+    TZ_SVG('<path d="M20 13.3L13.3 20a2 2 0 0 1-2.8 0l-6.5-6.5a2 2 0 0 1 0-2.8L8 4h8a2 2 0 0 1 2 2v7.3z"/><circle cx="12.5" cy="8.5" r="1.2"/>', 1.8), // причина (тег)
+    TZ_SVG('<path d="M12 21c3.3 0 5.5-2.4 5.5-5.4c0-2.4-1.4-4-2.8-5.6c-.5 1.8-1.7 2.2-1.7 2.2s.8-2.4-.6-4.6C11.2 5.6 9.3 7 9 9c-.8-.4-1-1.8-1-1.8C7 8.4 6.5 10 6.5 12.2C6.5 16 8.7 21 12 21z"/>', 1.8), // тёплый без стоимости
+    TZ_SVG('<path d="M9 6h4.5a3 3 0 0 1 0 6H9m0 0h7M9 16h7M9 6v10"/>', 1.8),                     // успех без доходности (₽)
+    TZ_SVG('<rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M3.5 9h17M8 3v4M16 3v4"/><path d="M10 14l4 4M14 14l-4 4"/>', 1.8), // реализация без успеха (календарь-X)
+    TZ_SVG('<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/>', 1.8),                       // успех, этап неверный (alert)
+  ];
   function tzWidgetShell(title, subtitle, mainValue, body, opts = {}) {
     let issueBtn = '';
     if (opts.issues && opts.issues.ids && opts.issues.ids.length) {
@@ -2494,10 +2524,11 @@
     // В компактном режиме показываем только значение без слова-метрики
     // (название виджета уже объясняет смысл). opts.compactValue — явное переопределение.
     const shownMain = compact ? (opts.compactValue != null ? opts.compactValue : tzStripUnit(mainValue)) : mainValue;
+    const icon = opts.icon != null ? opts.icon : (TZ_WIDGET_ICONS[opts.className] || '');
     return `
       <article class="traffic-widget tz-card ${compact ? 'tz-compact' : (opts.wide ? 'tz-wide' : 'tz-detailed')} ${opts.className || ''}">
         <div class="tz-card-head">
-          <div class="tz-card-title">${esc(title)}</div>
+          <div class="tz-card-title">${icon ? `<span class="tz-card-ic">${icon}</span>` : ''}${esc(title)}</div>
           <div class="tz-card-tools">${issueBtn}${toggleBtn}</div>
           ${sub ? `<div class="tz-card-sub">${esc(sub)}</div>` : ''}
         </div>
@@ -2700,6 +2731,14 @@
   function tzIsSuccess(r) {
     return !tzEmpty(tzRaw(r, TZC.success)) || String(tzRaw(r, TZC.stage)).trim() === 'Успешно реализовано';
   }
+  // Потеря: закрыто и не реализовано (по этапу)
+  function tzIsLost(r) {
+    const st = String(tzRaw(r, TZC.stage)).trim().toLowerCase().replace(/ё/g, 'е');
+    return /не\s+реализовано/.test(st) || st === 'закрыто и не реализовано';
+  }
+  function tzIsQual(r) { return String(tzRaw(r, TZC.qual)).trim().toLowerCase().replace(/ё/g, 'е') === 'да'; }
+  function tzHasVisit(r) { return tzDate(tzRaw(r, TZC.visitDate)) !== null; }
+  function tzCost(r) { const c = tzMoney(tzRaw(r, TZC.cost)); return c !== null && c > 0 ? c : null; }
   function tzRevenue(r) {
     const a = tzMoney(tzRaw(r, ['Доходность #2']));
     if (a !== null) return a;
@@ -2750,7 +2789,7 @@
     const rank = tzRanking(rows, TZC.stage);
     const max = rank.items[0]?.value || 1;
     const body = `<div class="tz-rank-list">
-      ${rank.items.map((it, i) => tzRankRow(it.label, it.value, total, max, { colorIndex: i })).join('')}
+      ${rank.items.map((it, i) => tzRankRow(it.label, it.value, total, max, { colorIndex: i, display: tzStageShort(it.label) })).join('')}
       ${rank.hasOther ? tzRankRow('Прочие', rank.other, total, max, { colorIndex: 6 }) : ''}
     </div>`;
     const issues = tzIssueIds(rows, r => tzEmpty(tzRaw(r, TZC.stage)));
@@ -2916,13 +2955,14 @@
     ];
     let nonZero = 0;
     const body = `<div class="tz-quality-list">
-      ${checks.map(([l, pred]) => {
+      ${checks.map(([l, pred], qi) => {
         const ids = tzIssueIds(rows, pred);
         const v = ids.length;
         if (v > 0) nonZero++;
         let key = '';
         if (v > 0) { key = 'q' + (Object.keys(_tzIssues).length + 1); _tzIssues[key] = { title: l, hint: 'Сделки по проверке «' + l + '».', ids }; }
         return `<div class="tz-quality-item ${v > 0 ? 'has clickable' : 'ok'}" ${v > 0 ? `data-tz-issue="${key}"` : ''}>
+          <span class="tz-quality-ic">${TZ_QUALITY_ICONS[qi] || ''}</span>
           <span class="tz-quality-lbl">${esc(l)}</span>
           <span class="tz-quality-num">${tzNum(v)}</span>
         </div>`;
@@ -3066,7 +3106,9 @@
     const data = _tzIssues[key];
     const overlay = document.getElementById('tz-issue-overlay');
     if (!data || !overlay) return;
-    const idsHtml = data.ids.map(id => `<span class="tz-issue-id">${esc(id)}</span>`).join('');
+    const AMO = 'https://ksocm66.amocrm.ru/leads/detail/';
+    // Чипы кликабельны — открывают сделку в amoCRM
+    const idsHtml = data.ids.map(id => `<a class="tz-issue-id" href="${AMO}${encodeURIComponent(id)}" target="_blank" rel="noopener">${esc(id)}</a>`).join('');
     overlay.innerHTML = `
       <div class="tz-issue-modal" role="dialog" aria-modal="true">
         <button class="tz-issue-close" data-tz-issue-close type="button" aria-label="Закрыть">×</button>
@@ -3086,7 +3128,6 @@
     const close = () => { overlay.classList.remove('open'); overlay.setAttribute('aria-hidden', 'true'); overlay.innerHTML = ''; };
     overlay.querySelector('[data-tz-issue-close]').onclick = close;
     overlay.onclick = (e) => { if (e.target === overlay) close(); };
-    const AMO = 'https://ksocm66.amocrm.ru/leads/detail/';
     overlay.querySelectorAll('[data-tz-issue-copy]').forEach(btn => {
       btn.onclick = () => {
         const text = btn.dataset.tzIssueCopy === 'links'
@@ -3130,7 +3171,19 @@
     revAvg:    { label: 'Ср. доходность',      fmt: tzMoneyFmt, reduce: rs => { const v = rs.filter(tzIsSuccess).map(tzRevenue).filter(x => x !== null); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; } },
     convVisit: { label: '% в визит',           fmt: v => v === null ? '—' : v.toFixed(1) + '%', reduce: rs => rs.length ? rs.filter(r => tzDate(tzRaw(r, TZC.visitDate)) !== null).length / rs.length * 100 : null },
     convReal:  { label: '% в реализацию',      fmt: v => v === null ? '—' : v.toFixed(1) + '%', reduce: rs => rs.length ? rs.filter(tzIsSuccess).length / rs.length * 100 : null },
-    qualRate:  { label: '% квал-лидов',        fmt: v => v === null ? '—' : v.toFixed(1) + '%', reduce: rs => rs.length ? rs.filter(r => String(tzRaw(r, TZC.qual)).trim() === 'Да').length / rs.length * 100 : null },
+    qualRate:  { label: '% квал-лидов',        fmt: v => v === null ? '—' : v.toFixed(1) + '%', reduce: rs => rs.length ? rs.filter(tzIsQual).length / rs.length * 100 : null },
+    // ── Продажи / эффективность ──
+    realizCount: { label: 'Кол-во реализаций', fmt: tzNum,      reduce: rs => rs.filter(tzIsSuccess).length },
+    revPerLead:  { label: 'Доход на лид',      fmt: tzMoneyFmt, reduce: rs => { if (!rs.length) return 0; const v = rs.filter(tzIsSuccess).map(tzRevenue).filter(x => x !== null).reduce((s, x) => s + x, 0); return v / rs.length; } },
+    profit:      { label: 'Прибыль (дох−расх)', fmt: tzMoneyFmt, reduce: rs => { const rev = rs.filter(tzIsSuccess).map(tzRevenue).filter(x => x !== null).reduce((s, x) => s + x, 0); const cost = rs.map(tzCost).filter(x => x !== null).reduce((s, x) => s + x, 0); return rev - cost; } },
+    romi:        { label: 'ROMI %',            fmt: v => v === null ? '—' : (v >= 0 ? '+' : '') + v.toFixed(0) + '%', reduce: rs => { const cost = rs.map(tzCost).filter(x => x !== null).reduce((s, x) => s + x, 0); if (cost <= 0) return null; const rev = rs.filter(tzIsSuccess).map(tzRevenue).filter(x => x !== null).reduce((s, x) => s + x, 0); return (rev - cost) / cost * 100; } },
+    // ── Воронка / потери ──
+    visitCount:  { label: 'Кол-во визитов',    fmt: tzNum,      reduce: rs => rs.filter(tzHasVisit).length },
+    lostCount:   { label: 'Потери (ЗнР)',      fmt: tzNum,      reduce: rs => rs.filter(tzIsLost).length },
+    lostRate:    { label: '% потерь',          fmt: v => v === null ? '—' : v.toFixed(1) + '%', reduce: rs => rs.length ? rs.filter(tzIsLost).length / rs.length * 100 : null },
+    convVisitReal:{ label: '% визит→реализация', fmt: v => v === null ? '—' : v.toFixed(1) + '%', reduce: rs => { const vis = rs.filter(tzHasVisit).length; return vis ? rs.filter(tzIsSuccess).length / vis * 100 : null; } },
+    // ── Квалификация ──
+    qualCount:   { label: 'Кол-во квалов',     fmt: tzNum,      reduce: rs => rs.filter(tzIsQual).length },
   };
   // Виды виджетов и какие контролы им нужны
   const TZ_KINDS = {
@@ -3141,7 +3194,8 @@
     kpi:     { label: 'KPI-число',    need: ['metric'],                      hint: 'Одна крупная цифра' },
     table:   { label: 'Таблица',      need: ['dimension', 'metricsMulti'],   hint: 'Разрез + несколько метрик' },
   };
-  const TZ_SHARE_METRICS = ['count', 'costSum', 'revSum'];   // для доли — только аддитивные
+  // для доли — только аддитивные (суммируемые) метрики
+  const TZ_SHARE_METRICS = ['count', 'costSum', 'revSum', 'realizCount', 'visitCount', 'lostCount', 'qualCount', 'profit'];
 
   function tzDimLabel(k) { return TZ_DIMS[k]?.label || k; }
   function tzMetricLabel(k) { return TZ_METRICS[k]?.label || k; }

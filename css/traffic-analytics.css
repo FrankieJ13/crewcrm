@@ -2108,9 +2108,13 @@
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
   margin-bottom: 14px;
   padding: 10px 12px;
-  background: color-mix(in srgb, var(--bg2, #fff) 70%, transparent);
+  background: color-mix(in srgb, var(--bg2, #fff) 88%, transparent);
   border: 1px solid var(--line, #e4e4e4);
   border-radius: 14px;
+  /* Закрепляем панель периодов/фильтров при прокрутке вниз */
+  position: sticky; top: 6px; z-index: 30;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 6px 18px -10px rgba(0,0,0,.18);
 }
 .tz-filter-periods { display: inline-flex; gap: 4px; background: var(--bg3, #f0f0f0); border-radius: 999px; padding: 3px; }
 .tz-fp {
@@ -2236,10 +2240,13 @@
 
 /* Качество данных */
 .tz-quality-list { display: flex; flex-direction: column; gap: 6px; }
-.tz-quality-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 11px; border-radius: 9px; background: var(--bg3, #f5f5f5); }
+.tz-quality-item { display: flex; align-items: center; gap: 9px; padding: 8px 11px; border-radius: 9px; background: var(--bg3, #f5f5f5); }
 .tz-quality-item.has { background: color-mix(in srgb, var(--org, #ffa502) 12%, var(--bg2, #fff)); }
 .tz-quality-item.ok { opacity: .65; }
-.tz-quality-lbl { font-size: 12px; color: var(--txt, #1a1a1a); }
+.tz-quality-ic { flex: 0 0 auto; width: 16px; height: 16px; color: var(--txt3, #999); display: inline-flex; }
+.tz-quality-ic svg { width: 100%; height: 100%; }
+.tz-quality-item.has .tz-quality-ic { color: var(--org, #ffa502); }
+.tz-quality-lbl { flex: 1; min-width: 0; font-size: 12px; color: var(--txt, #1a1a1a); }
 .tz-quality-num { font-family: 'Unbounded', sans-serif; font-size: 13px; font-weight: 800; }
 .tz-quality-item.has .tz-quality-num { color: var(--org, #ffa502); }
 .tz-quality-line { margin-top: 10px; font-size: 12px; color: var(--txt2, #666); }
@@ -2398,7 +2405,11 @@
 .tz-info-lead { font-size: 12.5px; color: var(--txt2, #555); margin: 0 0 8px; }
 
 /* ── Кнопка «!» виджета (красный пульс) + модалка «вне расчёта» ── */
-.tz-card-title { display: inline-flex; align-items: center; gap: 8px; }
+.tz-card-title { display: inline-flex; align-items: center; gap: 7px; }
+/* Эмблема виджета перед заголовком */
+.tz-card-ic { flex: 0 0 auto; width: 18px; height: 18px; color: var(--acc, #4f7cff); display: inline-flex; align-items: center; justify-content: center; }
+.tz-card-ic svg { width: 100%; height: 100%; display: block; }
+.tz-card.tz-compact .tz-card-ic { width: 15px; height: 15px; }
 .tz-issue-btn {
   position: relative; flex: 0 0 auto;
   width: 16px; height: 16px; padding: 0; border: 0; background: transparent; cursor: pointer;
@@ -2444,13 +2455,16 @@
 .tz-issue-hint { font-size: 12px; color: var(--txt2, #666); margin: 10px 0; line-height: 1.4; }
 .tz-issue-ids {
   display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 12px;
+  justify-content: center;                 /* список ID — по центру */
   max-height: 46vh; overflow-y: auto;
 }
 .tz-issue-id {
   font-family: 'Golos Text', monospace; font-size: 11.5px; font-variant-numeric: tabular-nums;
   background: var(--bg3, #f0f0f0); border: 1px solid var(--line, #e4e4e4); border-radius: 6px;
   padding: 3px 8px; color: var(--txt, #1a1a1a);
+  text-decoration: none; cursor: pointer; transition: background .15s, border-color .15s, color .15s;
 }
+.tz-issue-id:hover { background: color-mix(in srgb, var(--acc, #4f7cff) 12%, var(--bg2, #fff)); border-color: color-mix(in srgb, var(--acc, #4f7cff) 40%, var(--line, #e4e4e4)); color: var(--acc, #4f7cff); }
 .tz-issue-empty { color: var(--txt3, #999); font-size: 12px; }
 .tz-issue-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .tz-issue-copy {

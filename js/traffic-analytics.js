@@ -189,6 +189,7 @@
     if (tab === 'analiz' && typeof openAnaliz === 'function') return openAnaliz();
     if (tab === 'export' && typeof openExportPage === 'function') return openExportPage();
     if (tab === 'repeats' && typeof openRepeatSearchPage === 'function') return openRepeatSearchPage();
+    if (tab === 'sverka' && typeof openVisitReconciliation === 'function') return openVisitReconciliation();
   };
 
   window.openTrafficAnalytics = function openTrafficAnalytics() {

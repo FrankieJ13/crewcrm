@@ -30,6 +30,7 @@
 <link rel="stylesheet" href="./css/styles.css?v=325"/>
 <link rel="stylesheet" href="./css/autopodbor.css?v=323"/>
 <link rel="stylesheet" href="./css/traffic-analytics.css?v=344"/>
+<link rel="stylesheet" href="./css/visit-reconciliation.css?v=344"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -623,6 +624,11 @@
         <div id="c-repeats"></div>
       </div>
     </div>
+    <div id="scr-sverka" class="scr">
+      <div class="w">
+        <div id="c-sverka"></div>
+      </div>
+    </div>
     <div id="scr-vizity" class="scr" style="padding:0">
       <div id="c-vizity"></div>
     </div>
@@ -783,6 +789,9 @@
         </button>
         <button class="dock-popup-btn" onclick="dockAnalytics('repeats')">
           <span class="dock-popup-dot" style="background:#ffb020"></span>ПОИСК ПОВТОРОВ
+        </button>
+        <button class="dock-popup-btn" onclick="dockAnalytics('sverka')">
+          <span class="dock-popup-dot" style="background:#ff4757"></span>СВЕРКА ВИЗИТОВ
         </button>
       </div>
     </div>
@@ -1006,6 +1015,7 @@
 
 <script src="./js/app.js?v=325"></script>
 <script src="./js/traffic-analytics.js?v=344"></script>
+<script src="./js/visit-reconciliation.js?v=344"></script>
 <!-- Затемнение фона при открытом popup напоминаний -->
 <div class="rem-backdrop" id="rem-backdrop" onclick="closeRemPanel()"></div>
 

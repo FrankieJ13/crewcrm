@@ -992,7 +992,7 @@ function showScr(id) {
     if (typeof _apReturnToBody === 'function') _apReturnToBody();
     if (typeof _arReturnToBody === 'function') _arReturnToBody();
   }
-  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','vizity','ceo','analiz','trophies','profile'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','sverka','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const el = document.getElementById('scr-'+t);
     if (el) el.classList.remove('on');
   });
@@ -1025,7 +1025,7 @@ function isScreenTokenActive(id, token) {
 
 function showStartupLoader(text = 'Синхронизация профиля…') {
   hideStartupLoader();
-  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','vizity','ceo','analiz','trophies','profile'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','sverka','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const el = document.getElementById('scr-'+t);
     if (el) el.classList.remove('on');
   });
@@ -1381,6 +1381,7 @@ function getPresencePageLabel() {
   const effectiveDohodDept = isCeo ? S.dohodTab : roleDept;
   if (document.getElementById('scr-export')?.classList.contains('on') || isVisible('export-modal-overlay')) return 'Экспорт отчёта';
   if (document.getElementById('scr-repeats')?.classList.contains('on') || isVisible('repeats-overlay')) return 'Поиск повторов';
+  if (document.getElementById('scr-sverka')?.classList.contains('on')) return 'Сверка визитов';
   if (isVisible('about-overlay')) return 'О проекте';
   if (isVisible('diag-modal')) {
     return localStorage.getItem(CRM_LOG_TAB_KEY) === 'crm' ? 'Логи CRM' : 'Логи Sys';
@@ -2576,7 +2577,7 @@ function onLogout() {
   if (hdrGreeting2) { hdrGreeting2.style.display = 'none'; hdrGreeting2.classList.remove('aurora'); }
   closeHamburger();
   // Сбрасываем ВСЕ экраны
-  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','vizity','ceo','analiz','trophies','profile'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','sverka','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const s = document.getElementById('scr-'+t);
     if (s) { s.classList.remove('on'); s.style.display = ''; }
   });
@@ -8700,7 +8701,7 @@ function showAccessDenied(reason = 'Почта не найдена в USERS') {
   const hmbAccSep = document.getElementById('hmb-sep-account'); if (hmbAccSep) hmbAccSep.style.display = 'none';
   const hmbT = document.getElementById('hmb-trophies'); if (hmbT) hmbT.style.display = 'none';
   const hmbA = document.getElementById('hmb-about-btn'); if (hmbA) hmbA.style.display = 'none';
-  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','vizity','ceo','analiz','trophies','profile'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','sverka','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const s = document.getElementById('scr-'+t);
     if (s) { s.classList.remove('on'); s.style.display = ''; }
   });

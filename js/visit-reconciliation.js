@@ -270,18 +270,46 @@
     else if (typeof window.updateFirebasePage === 'function') window.updateFirebasePage();
   };
 
+  function chipLabel() {
+    if (!VR.suffix) return '';
+    return `${VR.suffix.slice(0, 2)} · 20${VR.suffix.slice(2)}`;
+  }
   function shell(inner) {
+    const hasMonth = !!VR.suffix;
     return `
       <section class="vr-page">
         <div class="vr-head">
-          <div>
-            <p class="vr-kicker">Аналитика</p>
-            <h1 class="vr-title">Сверка визитов</h1>
-          </div>
-          ${VR.monthLabel ? `<span class="vr-month-chip">${esc(VR.monthLabel)}</span>` : ''}
+          <h1 class="vr-title">Сверка визитов</h1>
+          ${hasMonth ? `<div class="vr-head-tools">
+            <button class="vr-icon-btn" id="vr-refresh" type="button" aria-label="Обновить сверку" title="Обновить сверку">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v5h-5"/></svg>
+            </button>
+            <span class="vr-month-chip">${esc(chipLabel())}</span>
+          </div>` : ''}
         </div>
         ${inner}
       </section>`;
+  }
+  function bindHeader() {
+    const rb = document.getElementById('vr-refresh');
+    if (rb) rb.onclick = vrRefresh;
+  }
+  async function vrRefresh() {
+    if (VR.busy || !VR.suffix || !VR.deals.length) return;
+    const rb = document.getElementById('vr-refresh');
+    rb && rb.classList.add('spin');
+    VR.busy = true;
+    try {
+      const vizData = await window.api('ВИЗИТЫ' + VR.suffix, 'A:N', { force: true }).catch(() => null);
+      if (vizData) {
+        VR.vizRows = extractVisits(vizData);
+        const { results, stats } = runMatch(VR.deals, VR.vizRows);
+        VR.results = results; VR.stats = stats;
+      }
+    } finally {
+      VR.busy = false;
+      renderReport();
+    }
   }
 
   // ── 1) стартовый экран ────────────────────────────────────────────────
@@ -365,6 +393,7 @@
       </div>`);
     document.getElementById('vr-back')?.addEventListener('click', renderStart);
     document.getElementById('vr-report')?.addEventListener('click', () => { if (allDone) renderReport(); });
+    bindHeader();
   }
   function stepIcon(state) {
     if (state === 'ok') return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
@@ -506,21 +535,26 @@
     if (kind === 'source' || kind === 'city') return state === 'warm-bad' ? 'fail' : 'warn';
     return 'fail';                                            // phone/date/manager
   }
-  function statusBadge(status) {
-    if (status === 'ok') return '<span class="vr-st ok" title="Совпадение">✓</span>';
-    if (status === 'warn') return '<span class="vr-st warn" title="Частичное совпадение">!</span>';
-    return '<span class="vr-st fail" title="Есть критичные расхождения">✕</span>';
+  // SVG-иконки статуса (галочка / восклицательный знак / крестик)
+  function statusIcon(status) {
+    const t = status === 'ok' ? 'Совпадение' : status === 'warn' ? 'Частичное совпадение' : 'Есть критичные расхождения';
+    let p;
+    if (status === 'ok') p = '<path d="M20 6L9 17l-5-5"/>';
+    else if (status === 'warn') p = '<path d="M12 6.5v7"/><path d="M12 17.5h.01"/>';
+    else p = '<path d="M18 6L6 18M6 6l12 12"/>';
+    return `<span class="vr-st ${status}" title="${t}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${p}</svg></span>`;
   }
+  // Ячейка «Сделка»: [иконка статуса] СДЕЛКА … номер-ссылка
   function dealCell(r) {
-    if (r.deal && r.deal.id) {
-      const extra = r.dupDeals ? `<span class="vr-dup" title="Телефон встречается в нескольких сделках">×${r.distinctIds.length}</span>` : '';
-      return `<a class="vr-lead" href="${LEAD_URL}${encodeURIComponent(r.deal.id)}" target="_blank" rel="noopener">${esc(r.deal.id)}</a>${extra}`;
-    }
-    return '<span class="vr-nodeal">нет сделки</span>';
+    const dup = r.dupDeals ? `<span class="vr-dup" title="Телефон встречается в нескольких сделках">×${r.distinctIds.length}</span>` : '';
+    const link = (r.deal && r.deal.id)
+      ? `<a class="vr-lead" href="${LEAD_URL}${encodeURIComponent(r.deal.id)}" target="_blank" rel="noopener">${esc(r.deal.id)}</a>${dup}`
+      : '<span class="vr-nodeal">нет сделки</span>';
+    return `${statusIcon(r.status)}${link}`;
   }
 
   function renderTable(results) {
-    const cols = ['Дата', 'Телефон', 'Менеджер', 'Город', 'Источник', 'Комментарий', 'Сделка', ''];
+    const cols = ['Дата', 'Телефон', 'Менеджер', 'Город', 'Источник', 'Комментарий', 'Сделка'];
     const head = `<tr>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr>`;
     const body = results.map((r, i) => {
       const v = r.viz, c = r.checks;
@@ -538,13 +572,13 @@
         <td class="${cellCls(c.source, 'source')}" data-l="Источник" title="${srcTitle}">${esc(v.source || '—')}</td>
         <td class="${cellCls(c.comment, 'comment')}" data-l="Комментарий" title="${cmtTitle}">${esc(v.comment || '—')}</td>
         <td class="vr-deal-cell" data-l="Сделка">${dealCell(r)}</td>
-        <td class="vr-status-cell" data-l="Статус">${statusBadge(r.status)}</td>
       </tr>`;
     }).join('');
-    return `<table class="vr-table"><thead>${head}</thead><tbody>${body || `<tr><td colspan="8" class="vr-empty">Нет визитов</td></tr>`}</tbody></table>`;
+    return `<table class="vr-table"><thead>${head}</thead><tbody>${body || `<tr><td colspan="7" class="vr-empty">Нет визитов</td></tr>`}</tbody></table>`;
   }
 
   function bindReport() {
+    bindHeader();
     document.getElementById('vr-new')?.addEventListener('click', renderStart);
     document.querySelectorAll('[data-vr-filter]').forEach(b => b.addEventListener('click', () => {
       const f = b.dataset.vrFilter;

@@ -1,9 +1,12 @@
 /* ════════════ СВЕРКА ВИЗИТОВ ════════════ */
-.vr-page { max-width: 1100px; margin: 0 auto; padding: 18px 14px 90px; }
-.vr-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
-.vr-kicker { margin: 0; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--txt3, #999); }
-.vr-title { margin: 2px 0 0; font-family: 'Unbounded', system-ui, sans-serif; font-size: clamp(18px, 5vw, 26px); color: var(--txt, #1a1a1a); }
-.vr-month-chip { background: color-mix(in srgb, var(--acc, #4f7cff) 14%, transparent); color: var(--acc, #4f7cff); border: 1px solid color-mix(in srgb, var(--acc, #4f7cff) 30%, transparent); border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: 13px; text-transform: capitalize; }
+.vr-page { max-width: 1100px; margin: 0 auto; padding: 5px 5px 110px; }
+.vr-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 6px 4px 16px; flex-wrap: wrap; }
+.vr-title { margin: 0; font-family: 'Unbounded', system-ui, sans-serif; font-size: clamp(17px, 4.6vw, 24px); color: var(--txt, #1a1a1a); }
+.vr-head-tools { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.vr-icon-btn { width: 32px; height: 32px; flex: 0 0 auto; border-radius: 50%; border: 1px solid var(--line, #e4e4e4); background: var(--bg3, #f0f0f0); color: var(--txt2, #666); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: color .15s, background .15s; }
+.vr-icon-btn:hover { color: var(--acc, #4f7cff); background: var(--bg2, #fff); }
+.vr-icon-btn.spin svg { animation: vr-spin .7s linear infinite; }
+.vr-month-chip { background: color-mix(in srgb, var(--acc, #4f7cff) 14%, transparent); color: var(--acc, #4f7cff); border: 1px solid color-mix(in srgb, var(--acc, #4f7cff) 30%, transparent); border-radius: 999px; padding: 6px 13px; font-weight: 800; font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* кнопки */
 .vr-btn { border: 1px solid var(--line, #e4e4e4); background: var(--bg3, #f0f0f0); color: var(--txt, #1a1a1a); font-family: 'Golos Text', sans-serif; font-weight: 700; font-size: 13px; padding: 10px 18px; border-radius: 12px; cursor: pointer; transition: background .15s, transform .1s, border-color .15s; }
@@ -48,10 +51,11 @@
 .vr-scan-actions { display: flex; gap: 10px; justify-content: center; margin-top: 24px; }
 
 /* ── отчёт ── */
-.vr-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
-.vr-sum { border: 1px solid var(--line, #e4e4e4); border-radius: 14px; padding: 14px; text-align: center; background: var(--bg2, #fff); }
-.vr-sum-v { font-family: 'Unbounded', sans-serif; font-weight: 900; font-size: 24px; line-height: 1; }
-.vr-sum-l { margin-top: 6px; font-size: 11px; color: var(--txt3, #999); text-transform: uppercase; letter-spacing: .03em; }
+/* Сводка всегда 4 в ряд (и на мобайле), размеры адаптивные */
+.vr-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(5px, 1.6vw, 10px); margin-bottom: 16px; }
+.vr-sum { border: 1px solid var(--line, #e4e4e4); border-radius: clamp(10px, 2.4vw, 14px); padding: clamp(8px, 2.4vw, 14px) clamp(4px, 1.6vw, 12px); text-align: center; background: var(--bg2, #fff); min-width: 0; }
+.vr-sum-v { font-family: 'Unbounded', sans-serif; font-weight: 900; font-size: clamp(16px, 5.4vw, 24px); line-height: 1; }
+.vr-sum-l { margin-top: 5px; font-size: clamp(8.5px, 2.3vw, 11px); color: var(--txt3, #999); text-transform: uppercase; letter-spacing: .02em; line-height: 1.15; }
 .vr-sum.ok .vr-sum-v { color: var(--grn, #2ed573); }
 .vr-sum.warn .vr-sum-v { color: var(--org, #ffa502); }
 .vr-sum.fail .vr-sum-v { color: var(--red, #ff4757); }
@@ -97,8 +101,10 @@
 .vr-lead { color: var(--acc, #4f7cff); font-weight: 700; text-decoration: none; font-variant-numeric: tabular-nums; }
 .vr-lead:hover { text-decoration: underline; }
 .vr-nodeal { color: var(--red, #ff4757); font-size: 11.5px; font-style: italic; }
-.vr-status-cell { text-align: center; }
-.vr-st { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-weight: 900; font-size: 13px; color: #fff; }
+/* Ячейка «Сделка»: иконка статуса + ссылка */
+.vr-deal-cell { display: flex; align-items: center; gap: 7px; }
+.vr-st { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; flex: 0 0 auto; border-radius: 50%; color: #fff; }
+.vr-st svg { width: 11px; height: 11px; display: block; }
 .vr-st.ok { background: var(--grn, #2ed573); }
 .vr-st.warn { background: var(--org, #ffa502); }
 .vr-st.fail { background: var(--red, #ff4757); }
@@ -123,8 +129,11 @@
   .vr-table td { border: 0 !important; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 8px; margin: 2px 0; }
   .vr-table td::before { content: attr(data-l); font-size: 10.5px; text-transform: uppercase; letter-spacing: .03em; color: var(--txt3, #999); font-weight: 700; flex: 0 0 auto; }
   .vr-table td.na::before { color: var(--txt3, #bbb); }
-  .vr-status-cell { position: absolute; top: 6px; right: 8px; width: auto; padding: 0; margin: 0; }
-  .vr-status-cell::before { display: none; }
-  .vr-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Сделка: [иконка] СДЕЛКА … ссылка */
+  .vr-table td.vr-deal-cell { gap: 8px; }
+  .vr-deal-cell .vr-st { order: 0; }
+  .vr-deal-cell::before { order: 1; }
+  .vr-deal-cell .vr-lead, .vr-deal-cell .vr-nodeal { order: 2; margin-left: auto; }
+  .vr-deal-cell .vr-dup { order: 3; }
   .vr-copy-row { grid-template-columns: 1fr; }
 }

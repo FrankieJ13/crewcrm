@@ -606,6 +606,9 @@
             <div class="traffic-title-row">
               <h2 class="traffic-section-title traffic-head-title">${sectionTitle}</h2>
               <div class="traffic-head-actions">
+                <button class="traffic-icon-btn traffic-refresh-btn" id="traffic-refresh-head" type="button" aria-label="Обновить" title="Обновить">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v5h-5"/></svg>
+                </button>
                 <button class="traffic-icon-btn traffic-clear-btn" id="traffic-clear-csv-head" type="button" aria-label="Очистить импортированный CSV" title="Очистить CSV">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>
                 </button>
@@ -649,6 +652,10 @@
     });
     document.getElementById('traffic-clear-csv')?.addEventListener('click', showClearModal);
     document.getElementById('traffic-clear-csv-head')?.addEventListener('click', showClearModal);
+    document.getElementById('traffic-refresh-head')?.addEventListener('click', e => {
+      e.currentTarget.classList.add('spin');
+      setTimeout(() => renderTrafficAnalytics(), 360);
+    });
     document.getElementById('traffic-import-info')?.addEventListener('click', showTrafficImportInfo);
     document.getElementById('traffic-export-widgets')?.addEventListener('click', exportWidgets);
     document.getElementById('traffic-import-widgets')?.addEventListener('click', () => document.getElementById('traffic-import-file')?.click());
@@ -2102,6 +2109,14 @@
     return Number.isNaN(d.getTime()) ? null : d;
   }
   function tzNum(n) { return Number(n || 0).toLocaleString('ru-RU'); }
+  // Русское склонение: tzPlural(2,'лид','лида','лидов') → 'лида'
+  function tzPlural(n, one, few, many) {
+    const a = Math.abs(n) % 100, b = a % 10;
+    if (a > 10 && a < 20) return many;
+    if (b > 1 && b < 5) return few;
+    if (b === 1) return one;
+    return many;
+  }
   function tzMoneyFmt(n) { return (n === null || n === undefined || !Number.isFinite(n)) ? '—' : Math.round(n).toLocaleString('ru-RU') + ' ₽'; }
   function tzPct(part, total) { return total > 0 ? (part / total * 100) : 0; }
   function tzPctFmt(part, total) { return total > 0 ? (part / total * 100).toFixed(1) + '%' : '—'; }
@@ -2288,9 +2303,9 @@
             <stop offset="0%" stop-color="var(--acc,#4f7cff)" stop-opacity="0.28"/>
             <stop offset="100%" stop-color="var(--acc,#4f7cff)" stop-opacity="0"/>
           </linearGradient></defs>
-          <path d="${area}" fill="url(#tzTrendGrad)"/>
-          <path d="${path}" fill="none" stroke="var(--acc,#4f7cff)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-          <circle cx="${pts[peakIdx][0].toFixed(1)}" cy="${pts[peakIdx][1].toFixed(1)}" r="3.5" fill="var(--acc,#4f7cff)"/>
+          <path class="tz-trend-area" d="${area}" fill="url(#tzTrendGrad)"/>
+          <path class="tz-trend-path" d="${path}" pathLength="1" fill="none" stroke="var(--acc,#4f7cff)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+          <circle class="tz-trend-peak" cx="${pts[peakIdx][0].toFixed(1)}" cy="${pts[peakIdx][1].toFixed(1)}" r="3.5" fill="var(--acc,#4f7cff)"/>
         </svg>
         <div class="tz-trend-axis"><span>${fmtDate(days[0].date)}</span><span>пик ${days[peakIdx].value} · ${fmtDate(days[peakIdx].date)}</span><span>${fmtDate(days[n - 1].date)}</span></div>
       </div>`;
@@ -2434,13 +2449,24 @@
   }
   window.tzToggleCard = tzToggleCard;
   function tzGridClass() { return tzGlobalMode() === 'compact' ? 'tz-mode-compact' : 'tz-mode-detailed'; }
-  // Глобальный сегмент-тумблер «Компактно / Детально»
+  // Глобальный сегмент-тумблер «Компактно / Детально» — той же геометрии,
+  // что базовый traffic-seg (бегунок + 2 иконки-кнопки)
+  const TZ_ICON_COMPACT = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="1.6"/><rect x="13" y="3" width="8" height="8" rx="1.6"/><rect x="3" y="13" width="8" height="8" rx="1.6"/><rect x="13" y="13" width="8" height="8" rx="1.6"/></svg>';
+  const TZ_ICON_DETAILED = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>';
   function tzModeToggle() {
     const m = tzGlobalMode();
-    return `<div class="tz-mode-seg" role="group" aria-label="Режим отображения">
-      <button class="tz-mode-seg-btn ${m === 'compact' ? 'active' : ''}" data-tz-global-mode="compact" type="button" title="Компактно">▦</button>
-      <button class="tz-mode-seg-btn ${m === 'detailed' ? 'active' : ''}" data-tz-global-mode="detailed" type="button" title="Детально">▤</button>
+    return `<div class="tz-mode-seg" role="group" aria-label="Режим виджетов">
+      <span class="tz-mode-thumb ${m === 'compact' ? 'left' : 'right'}"></span>
+      <button class="tz-mode-seg-btn ${m === 'compact' ? 'active' : ''}" data-tz-global-mode="compact" type="button" title="Компактно" aria-label="Компактно">${TZ_ICON_COMPACT}</button>
+      <button class="tz-mode-seg-btn ${m === 'detailed' ? 'active' : ''}" data-tz-global-mode="detailed" type="button" title="Детально" aria-label="Детально">${TZ_ICON_DETAILED}</button>
     </div>`;
+  }
+  // Мини-кнопка свернуть/развернуть в углу виджета (SVG-шеврон)
+  function tzCardToggleBtn(wkey, compact) {
+    const icon = compact
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>';
+    return `<button class="tz-mode-btn" data-tz-card-toggle="${esc(wkey)}" type="button" aria-label="${compact ? 'Развернуть' : 'Свернуть'}" title="${compact ? 'Развернуть' : 'Свернуть'}">${icon}</button>`;
   }
 
   function tzWidgetShell(title, subtitle, mainValue, body, opts = {}) {
@@ -2454,7 +2480,10 @@
     // Режим отображения базового виджета (ключ bw:<className|title>)
     const wkey = 'bw:' + (opts.wkey || opts.className || title);
     const compact = tzEffMode(wkey) === 'compact';
-    const toggleBtn = `<button class="tz-mode-btn" data-tz-card-toggle="${esc(wkey)}" type="button" aria-label="${compact ? 'Развернуть' : 'Свернуть'}" title="${compact ? 'Развернуть' : 'Свернуть'}">${compact ? '⤢' : '⤡'}</button>`;
+    const toggleBtn = tzCardToggleBtn(wkey, compact);
+    // В компактном режиме показываем только значение без слова-метрики
+    // (название виджета уже объясняет смысл). opts.compactValue — явное переопределение.
+    const shownMain = compact ? (opts.compactValue != null ? opts.compactValue : tzStripUnit(mainValue)) : mainValue;
     return `
       <article class="traffic-widget tz-card ${compact ? 'tz-compact' : (opts.wide ? 'tz-wide' : 'tz-detailed')} ${opts.className || ''}">
         <div class="tz-card-head">
@@ -2462,25 +2491,43 @@
           ${toggleBtn}
           ${sub ? `<div class="tz-card-sub">${esc(sub)}</div>` : ''}
         </div>
-        ${mainValue ? `<div class="tz-card-main">${mainValue}</div>` : ''}
+        ${shownMain ? `<div class="tz-card-main">${shownMain}</div>` : ''}
         ${compact ? '' : `<div class="tz-card-body">${body}</div>`}
       </article>`;
   }
+  // Убирает завершающее слово-метрику («436 реализаций» → «436», «15 322 лида» → «15 322»),
+  // сохраняя ₽/%/числа.
+  function tzStripUnit(v) {
+    const s = String(v == null ? '' : v);
+    return s.replace(/(?:\s+[А-Яа-яЁё]+\.?)+$/u, '').trim() || s;
+  }
 
-  // Мини-кольцо (donut) для долей топ-N
+  // Ступенчатое кольцо (donut): сегмент = доля топ-N; чем больше значение,
+  // тем толще дуга и тем дальше наружу («слой выше») — круговая лесенка.
+  // Анимация построения: от меньшего значения к большему (stroke-dashoffset).
   function tzDonut(items, total, centerLabel, centerSub) {
-    let cursor = 0;
     const safeTotal = Math.max(total, 1);
-    const segs = items.slice(0, 6).map((it, i) => {
-      const frac = it.value / safeTotal * 100;
-      const next = cursor + frac;
-      const s = `var(--tz-c${i % 6}) ${cursor.toFixed(2)}% ${next.toFixed(2)}%`;
-      cursor = next;
-      return s;
-    });
-    if (cursor < 100) segs.push(`var(--line) ${cursor.toFixed(2)}% 100%`);
+    const list = (items || []).filter(it => it.value > 0).slice(0, 6);
+    const maxV = list.reduce((m, it) => Math.max(m, it.value), 1);
+    const INNER = 33, SW_MIN = 7, SW_MAX = 17;            // viewBox 100×100
+    // порядок появления: меньшие значения первыми
+    const order = list.map((_, i) => i).sort((a, b) => list[a].value - list[b].value);
+    const delay = {}; order.forEach((idx, rank) => { delay[idx] = (rank * 0.09).toFixed(2); });
+    let cum = 0;
+    const arc = (frac, sw, color, d, dash) => {
+      const r = INNER + sw / 2;
+      const C = 2 * Math.PI * r;
+      const A = frac * C;
+      const start = cum * 360;
+      cum += frac;
+      return `<circle class="tz-donut-seg" cx="50" cy="50" r="${r.toFixed(2)}" fill="none" stroke="${color}" stroke-width="${sw.toFixed(2)}" stroke-dasharray="${A.toFixed(2)} ${(C - A + 1).toFixed(2)}" transform="rotate(${start.toFixed(2)} 50 50)" style="--a:${A.toFixed(2)};animation-delay:${d}s"/>`;
+    };
+    const segs = list.map((it, i) => arc(it.value / safeTotal, SW_MIN + (it.value / maxV) * (SW_MAX - SW_MIN), `var(--tz-c${i % 6})`, delay[i])).join('');
+    let rem = '';
+    if (cum < 0.999) rem = arc(1 - cum, SW_MIN, 'var(--line,#e4e4e4)', (list.length * 0.09).toFixed(2));
     return `<div class="tz-donut-wrap">
-      <div class="tz-donut" style="background:conic-gradient(${segs.join(',')})">
+      <div class="tz-donut">
+        <svg viewBox="0 0 100 100">${segs}${rem}</svg>
         <div class="tz-donut-hole"><b>${esc(centerLabel)}</b><span>${esc(centerSub || '')}</span></div>
       </div>
     </div>`;
@@ -2491,6 +2538,8 @@
     const total = rows.length;
     const rank = tzRanking(rows, TZC.source);
     const max = rank.items[0]?.value || 1;
+    // Кол-во уникальных источников (включая «Не заполнено»)
+    const srcCount = new Set(rows.map(r => { const v = String(tzRaw(r, TZC.source)).trim(); return tzEmpty(v) ? EMPTY_LABEL : v; })).size;
     const body = `
       <div class="tz-rank-with-ring">
         <div class="tz-rank-list">
@@ -2500,7 +2549,8 @@
         ${tzDonut(rank.items, total, tzNum(total), 'лидов')}
       </div>`;
     const issues = tzIssueIds(rows, r => tzEmpty(tzRaw(r, TZC.source)));
-    return tzWidgetShell('Лиды по источнику', 'Источник обращения', tzNum(total) + ' лидов', body, { wide: true, className: 'tz-source-widget', issues: { ids: issues, hint: 'Сделки без «Источник обращения» — попали в «Не заполнено».' } });
+    const mainVal = `${tzNum(srcCount)} ${tzPlural(srcCount, 'источник', 'источника', 'источников')} / ${tzNum(total)} ${tzPlural(total, 'лид', 'лида', 'лидов')}`;
+    return tzWidgetShell('Лиды по источнику', 'Источник обращения', mainVal, body, { wide: true, className: 'tz-source-widget', compactValue: tzNum(total), issues: { ids: issues, hint: 'Сделки без «Источник обращения» — попали в «Не заполнено».' } });
   }
 
   // ═══ ВИДЖЕТ: Успешные реализации ═══
@@ -2727,7 +2777,7 @@
       const stageClosed = /^Закрыто/i.test(String(tzRaw(r, TZC.stage)).trim());
       return closed || stageClosed;
     });
-    return tzWidgetShell('Причины закрытия', 'Причина закрытия карточки', tzNum(withReason.length) + ' с причиной', body, { className: 'tz-reasons-widget', issues: { ids: issues, hint: 'Закрытые сделки без «Причина закрытия карточки».' } });
+    return tzWidgetShell('Причины закрытия', 'Причина закрытия карточки', tzNum(withReason.length) + ' с причиной', body, { className: 'tz-reasons-widget', compactValue: tzNum(withReason.length), issues: { ids: issues, hint: 'Закрытые сделки без «Причина закрытия карточки».' } });
   }
 
   // ═══ ВИДЖЕТ 5: Срок жизни сделки ═══
@@ -2797,7 +2847,7 @@
       const end = tzDate(tzRaw(r, TZC.realizDate)) || tzDate(tzRaw(r, TZC.closed));
       return end && (end - start) < 0;
     });
-    return tzWidgetShell('Срок жизни сделки', 'От создания до реализации / закрытия', tzHours(med) + ' медиана', body, { wide: true, className: 'tz-lifetime-widget', issues: { ids: issues, hint: 'Сделки с датой завершения раньше создания — исключены из расчёта.' } });
+    return tzWidgetShell('Срок жизни сделки', 'От создания до реализации / закрытия', tzHours(med) + ' медиана', body, { wide: true, className: 'tz-lifetime-widget', compactValue: tzHours(med), issues: { ids: issues, hint: 'Сделки с датой завершения раньше создания — исключены из расчёта.' } });
   }
 
   // ═══ ВИДЖЕТ 6: Лиды по ответственному ═══
@@ -3236,7 +3286,7 @@
     }
     const wkey = 'cw:' + w.id;
     const compact = tzEffMode(wkey) === 'compact';
-    const toggleBtn = `<button class="tz-mode-btn" data-tz-card-toggle="${esc(wkey)}" type="button" aria-label="${compact ? 'Развернуть' : 'Свернуть'}" title="${compact ? 'Развернуть' : 'Свернуть'}">${compact ? '⤢' : '⤡'}</button>`;
+    const toggleBtn = tzCardToggleBtn(wkey, compact);
     return `
       <article class="traffic-widget tz-card ${compact ? 'tz-compact' : 'tz-detailed'} tz-custom-widget" data-traffic-custom-widget="${esc(w.id)}">
         <div class="tz-card-head">

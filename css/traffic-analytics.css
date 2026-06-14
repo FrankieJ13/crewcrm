@@ -2143,14 +2143,14 @@
   background: var(--bg2, #fff);
   border: 1px solid var(--line, #e4e4e4);
   border-radius: 16px;
-  padding: 16px;
+  padding: clamp(11px, 3vw, 16px);
   display: flex; flex-direction: column;
   min-width: 0;
 }
 .tz-card-head { margin-bottom: 8px; }
-.tz-card-title { font-family: 'Unbounded', sans-serif; font-size: 14px; font-weight: 800; color: var(--txt, #1a1a1a); }
-.tz-card-sub { font-size: 11px; color: var(--txt3, #888); margin-top: 2px; }
-.tz-card-main { font-family: 'Unbounded', sans-serif; font-size: 22px; font-weight: 900; color: var(--acc, #4f7cff); margin-bottom: 10px; }
+.tz-card-title { font-family: 'Unbounded', sans-serif; font-size: clamp(12.5px, 3.4vw, 14px); font-weight: 800; color: var(--txt, #1a1a1a); }
+.tz-card-sub { font-size: clamp(10px, 2.6vw, 11px); color: var(--txt3, #888); margin-top: 2px; }
+.tz-card-main { font-family: 'Unbounded', sans-serif; font-size: clamp(18px, 5.2vw, 22px); font-weight: 900; color: var(--acc, #4f7cff); margin-bottom: 10px; }
 .tz-card-body { flex: 1; min-width: 0; }
 
 /* Рейтинговые строки */
@@ -2162,21 +2162,31 @@
 .tz-rank-value { font-family: 'Unbounded', sans-serif; font-size: 12px; font-weight: 800; color: var(--txt, #1a1a1a); }
 .tz-rank-percent { font-size: 11px; color: var(--txt3, #888); min-width: 42px; text-align: right; }
 .tz-rank-bar { height: 7px; background: var(--bg3, #f0f0f0); border-radius: 999px; overflow: hidden; }
-.tz-rank-bar-fill { height: 100%; border-radius: 999px; transition: width .5s cubic-bezier(.2,.7,.2,1); }
+.tz-rank-bar-fill { height: 100%; border-radius: 999px; transition: width .5s cubic-bezier(.2,.7,.2,1); transform-origin: left center; animation: tz-bar-in .6s cubic-bezier(.2,.7,.2,1) both; }
+/* лёгкий stagger построения сверху вниз */
+.tz-rank-row:nth-child(1) .tz-rank-bar-fill { animation-delay: .02s; }
+.tz-rank-row:nth-child(2) .tz-rank-bar-fill { animation-delay: .07s; }
+.tz-rank-row:nth-child(3) .tz-rank-bar-fill { animation-delay: .12s; }
+.tz-rank-row:nth-child(4) .tz-rank-bar-fill { animation-delay: .17s; }
+.tz-rank-row:nth-child(5) .tz-rank-bar-fill { animation-delay: .22s; }
+.tz-rank-row:nth-child(6) .tz-rank-bar-fill { animation-delay: .27s; }
+.tz-rank-row:nth-child(7) .tz-rank-bar-fill { animation-delay: .32s; }
+.tz-rank-row:nth-child(n+8) .tz-rank-bar-fill { animation-delay: .37s; }
 .tz-rank-sub { font-size: 10px; color: var(--txt3, #999); margin-top: 2px; }
 .tz-c0 { background: var(--tz-c0); } .tz-c1 { background: var(--tz-c1); } .tz-c2 { background: var(--tz-c2); }
 .tz-c3 { background: var(--tz-c3); } .tz-c4 { background: var(--tz-c4); } .tz-c5 { background: var(--tz-c5); }
 .tz-c6 { background: var(--txt3, #999); }
 
-.tz-rank-with-ring { display: grid; grid-template-columns: 1fr; gap: 14px; }
-@media (min-width: 560px) { .tz-rank-with-ring { grid-template-columns: 1fr auto; align-items: center; } }
+/* Список + кольцо всегда в ряд (донат не уезжает вниз даже на узких экранах) */
+.tz-rank-with-ring { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: clamp(8px, 2.5vw, 16px); align-items: center; }
 
-/* Donut */
+/* Donut (адаптивный размер, не раздувается на малом экране) */
 .tz-donut-wrap { display: flex; align-items: center; justify-content: center; }
-.tz-donut { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-.tz-donut-hole { width: 78px; height: 78px; border-radius: 50%; background: var(--bg2, #fff); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.tz-donut-hole b { font-family: 'Unbounded', sans-serif; font-size: 16px; font-weight: 900; color: var(--txt, #1a1a1a); }
-.tz-donut-hole span { font-size: 10px; color: var(--txt3, #888); }
+.tz-donut { position: relative; width: clamp(84px, 23vw, 118px); height: clamp(84px, 23vw, 118px); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.tz-donut svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.tz-donut-hole { width: 66%; height: 66%; border-radius: 50%; background: var(--bg2, #fff); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1; }
+.tz-donut-hole b { font-family: 'Unbounded', sans-serif; font-size: clamp(13px, 3.6vw, 16px); font-weight: 900; color: var(--txt, #1a1a1a); }
+.tz-donut-hole span { font-size: clamp(8px, 2.2vw, 10px); color: var(--txt3, #888); }
 
 /* Финансы */
 .tz-fin-top { display: grid; grid-template-columns: 1fr; gap: 14px; }
@@ -2275,6 +2285,9 @@
   transition: color .15s, background .15s;
 }
 .traffic-icon-btn:hover { color: var(--red, #ff4757); background: var(--bg2, #fff); }
+.traffic-refresh-btn:hover { color: var(--acc, #4f7cff); background: var(--bg2, #fff); }
+.traffic-refresh-btn.spin svg { animation: tz-spin .7s linear infinite; }
+@keyframes tz-spin { to { transform: rotate(360deg); } }
 
 /* ── Мультиселект ── */
 .tz-ms { position: relative; }
@@ -2516,7 +2529,7 @@
 .tz-rm { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 8px; min-width: 0; }
 .tz-rm-lbl { font-size: 10px; color: var(--txt3, #999); text-align: right; white-space: nowrap; text-transform: capitalize; }
 .tz-rm-track { height: 8px; background: var(--bg3, #f0f0f0); border-radius: 999px; overflow: hidden; }
-.tz-rm-fill { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--grn, #2ed573), color-mix(in srgb, var(--grn, #2ed573) 55%, transparent)); transition: width .5s cubic-bezier(.2,.7,.2,1); }
+.tz-rm-fill { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--grn, #2ed573), color-mix(in srgb, var(--grn, #2ed573) 55%, transparent)); transition: width .5s cubic-bezier(.2,.7,.2,1); transform-origin: left center; animation: tz-bar-in .6s cubic-bezier(.2,.7,.2,1) both; }
 .tz-rm-val { font-family: 'Unbounded', sans-serif; font-size: 10.5px; font-weight: 800; color: var(--grn, #2ed573); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .tz-realiz-kinds { margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; }
 .tz-realiz-tops { display: flex; flex-direction: column; gap: 6px; }
@@ -2590,30 +2603,40 @@
 .tz-wm-preview .tz-card { border: 0; background: transparent; padding: 0; }
 
 /* ════════════ РЕЖИМЫ ОТОБРАЖЕНИЯ: КОМПАКТНО / ДЕТАЛЬНО ════════════ */
-/* Глобальный сегмент-тумблер в шапке/баре редактора */
+/* Глобальный сегмент-тумблер — геометрия идентична базовому traffic-seg */
 .tz-mode-seg {
-  display: inline-flex; gap: 2px; flex: 0 0 auto;
+  position: relative; display: inline-flex; gap: 0; flex: 0 0 auto;
   background: var(--bg3, #f0f0f0); border: 1px solid var(--line, #e4e4e4);
   border-radius: 999px; padding: 3px;
 }
-.tz-mode-seg-btn {
-  border: 0; background: transparent; color: var(--txt2, #666);
-  width: 30px; height: 26px; border-radius: 999px; cursor: pointer;
-  font-size: 14px; line-height: 1; display: inline-flex; align-items: center; justify-content: center;
-  transition: background .15s, color .15s;
+.tz-mode-thumb {
+  position: absolute; top: 3px; bottom: 3px; width: calc(50% - 3px);
+  background: var(--acc, #4f7cff); border-radius: 999px;
+  transition: transform .22s cubic-bezier(.4,0,.2,1); z-index: 0;
 }
-.tz-mode-seg-btn.active { background: var(--acc, #4f7cff); color: #fff; }
+.tz-mode-thumb.left { transform: translateX(0); }
+.tz-mode-thumb.right { transform: translateX(100%); }
+.tz-mode-seg-btn {
+  position: relative; z-index: 1;
+  border: 0; background: transparent; color: var(--txt2, #666);
+  width: 34px; height: 30px; border-radius: 999px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: color .2s;
+}
+.tz-mode-seg-btn svg { width: 16px; height: 16px; }
+.tz-mode-seg-btn.active { color: #fff; }
 
-/* Кнопка свернуть/развернуть в правом верхнем углу карточки */
-.tz-card-head { position: relative; padding-right: 30px; }
+/* Кнопка свернуть/развернуть — вдвое компактнее, плотнее к углу */
+.tz-card-head { position: relative; padding-right: 18px; }
 .tz-mode-btn {
-  position: absolute; top: 0; right: 0;
-  width: 24px; height: 24px; border-radius: 7px;
+  position: absolute; top: -2px; right: -2px;
+  width: 16px; height: 16px; border-radius: 5px;
   border: 1px solid var(--line, #e4e4e4); background: var(--bg3, #f5f5f5);
-  color: var(--txt3, #888); cursor: pointer; font-size: 13px; line-height: 1;
+  color: var(--txt3, #888); cursor: pointer; padding: 0;
   display: inline-flex; align-items: center; justify-content: center;
   transition: background .15s, color .15s, border-color .15s;
 }
+.tz-mode-btn svg { width: 11px; height: 11px; display: block; }
 .tz-mode-btn:hover { color: var(--acc, #4f7cff); border-color: color-mix(in srgb, var(--acc, #4f7cff) 35%, var(--line, #e4e4e4)); }
 
 /* Компактная карточка: только название, период и итоговое значение */
@@ -2644,4 +2667,22 @@
   font-size: clamp(11px, 2.8vw, 13px);
   white-space: normal; line-height: 1.2; text-align: center;
   padding-left: 12px; padding-right: 12px;
+}
+
+/* ════════════ АНИМАЦИИ ПОСТРОЕНИЯ ВИДЖЕТОВ ════════════ */
+/* Рейтинги/топы — бар растёт слева */
+@keyframes tz-bar-in { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+/* Тренд — линия рисуется из начала в конец */
+.tz-trend-path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: tz-draw 1.05s cubic-bezier(.4,0,.2,1) forwards; }
+.tz-trend-area { opacity: 0; animation: tz-fade-in .6s ease .55s forwards; }
+.tz-trend-peak { opacity: 0; transform-box: fill-box; transform-origin: center; animation: tz-pop .4s cubic-bezier(.3,1.5,.5,1) 1s forwards; }
+@keyframes tz-draw { to { stroke-dashoffset: 0; } }
+@keyframes tz-fade-in { to { opacity: 1; } }
+@keyframes tz-pop { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+/* Donut — ступенчатое построение сегментов от меньшего к большему */
+.tz-donut-seg { stroke-dashoffset: 0; animation: tz-donut-draw .7s cubic-bezier(.3,.8,.4,1) both; }
+@keyframes tz-donut-draw { from { stroke-dashoffset: var(--a); } to { stroke-dashoffset: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .tz-rank-bar-fill, .tz-rm-fill, .tz-trend-path, .tz-trend-area, .tz-trend-peak, .tz-donut-seg { animation: none !important; opacity: 1 !important; stroke-dashoffset: 0 !important; transform: none !important; }
 }

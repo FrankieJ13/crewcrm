@@ -3193,9 +3193,21 @@
     compare: { label: 'Сравнение',    need: ['dimension', 'splitBy', 'metric'], hint: 'Разрез × разрез (таблица)' },
     kpi:     { label: 'KPI-число',    need: ['metric'],                      hint: 'Одна крупная цифра' },
     table:   { label: 'Таблица',      need: ['dimension', 'metricsMulti'],   hint: 'Разрез + несколько метрик' },
+    hybrid:  { label: 'Гибрид',       need: ['baseId', 'op', 'metric'],      hint: 'Связка: метрика A базового виджета ⊕ метрика B по его разрезу' },
   };
   // для доли — только аддитивные (суммируемые) метрики
   const TZ_SHARE_METRICS = ['count', 'costSum', 'revSum', 'realizCount', 'visitCount', 'lostCount', 'qualCount', 'profit'];
+  // Операции гибрида: A — метрика базового виджета, B — метрика гибрида
+  const TZ_HYBRID_OPS = {
+    ratio:    { label: 'Отношение (A ÷ B)',     sym: '÷', calc: (a, b) => (b ? a / b : null), fmt: v => v == null ? '—' : (Math.round(v * 100) / 100).toLocaleString('ru-RU') },
+    ratioPct: { label: 'Отношение, % (A ÷ B)',  sym: '÷', pct: true, calc: (a, b) => (b ? a / b * 100 : null), fmt: v => v == null ? '—' : (Math.round(v * 10) / 10) + '%' },
+    diff:     { label: 'Разность (A − B)',      sym: '−', useAfmt: true, calc: (a, b) => (a || 0) - (b || 0) },
+  };
+  // Виджеты, которые можно взять как базу гибрида (есть разрез, не гибрид)
+  function tzHybridBaseCandidates(excludeId) {
+    return (state.widgets || []).map(tzMigrateWidget).filter(Boolean)
+      .filter(p => p.id !== excludeId && p.kind !== 'hybrid' && ['ranking', 'share', 'table', 'compare'].includes(p.kind));
+  }
 
   function tzDimLabel(k) { return TZ_DIMS[k]?.label || k; }
   function tzMetricLabel(k) { return TZ_METRICS[k]?.label || k; }
@@ -3350,6 +3362,33 @@
       const groups = tzGroupBy(rows, w.dimension).map(g => ({ label: g.label, rows: g.rows, sort: TZ_METRICS[metrics[0]].reduce(g.rows) || 0 })).sort((a, b) => b.sort - a.sort).slice(0, w.topN || 12);
       body = `<div class="tz-cmp-table"><div class="tz-cmp-row tz-cmp-head"><span>${esc(tzDimLabel(w.dimension))}</span>${metrics.map(m => `<span>${esc(TZ_METRICS[m].label)}</span>`).join('')}</div>
         ${groups.map(g => `<div class="tz-cmp-row"><span class="tz-cmp-name" title="${esc(g.label)}">${esc(tzDimDisplay(w.dimension, g.label))}</span>${metrics.map(m => { const v = TZ_METRICS[m].reduce(g.rows); return `<span>${TZ_METRICS[m].fmt(v === null ? null : v)}</span>`; }).join('')}</div>`).join('')}</div>`;
+    } else if (kind === 'hybrid') {
+      // Гибрид: берёт разрез + метрику A у базового виджета, считает A ⊕ B по группам
+      const parent = tzHybridBaseCandidates(w.id).find(p => p.id === w.baseId);
+      const op = TZ_HYBRID_OPS[w.op] || TZ_HYBRID_OPS.ratio;
+      if (!parent) {
+        sub = 'Гибрид';
+        body = '<div class="tz-empty-inline">Выберите базовый виджет с разрезом</div>';
+      } else {
+        const dimA = parent.dimension, mA = TZ_METRICS[parent.metric || 'count'], mB = TZ_METRICS[w.metric || 'count'];
+        const fmt = op.useAfmt ? mA.fmt : op.fmt;
+        sub = `${parent.title || tzDimLabel(dimA)} · ${mA.label} ${op.sym} ${mB.label}`;
+        const groups = tzGroupBy(rows, dimA).map(g => {
+          const a = mA.reduce(g.rows), b = mB.reduce(g.rows);
+          return { label: g.label, a: a || 0, b: b || 0, v: op.calc(a || 0, b || 0) };
+        }).filter(g => g.v !== null && Number.isFinite(g.v)).sort((x, y) => y.v - x.v).slice(0, w.topN || 10);
+        const A = mA.reduce(rows), B = mB.reduce(rows);
+        const totalV = op.calc(A || 0, B || 0);
+        main = fmt(totalV === null ? null : totalV);
+        const maxAbs = Math.max(...groups.map(g => Math.abs(g.v)), 1);
+        body = groups.length ? `<div class="tz-rank-list">
+          ${groups.map((g, i) => `<div class="tz-rank-row"><div class="tz-rank-top">
+            <span class="tz-rank-label" title="${esc(g.label)}">${esc(tzDimDisplay(dimA, g.label))}</span>
+            <span class="tz-rank-value ${g.v < 0 ? 'tz-neg' : ''}">${fmt(g.v)}</span>
+          </div><div class="tz-rank-bar"><div class="tz-rank-bar-fill ${g.v < 0 ? 'tz-neg-bar' : shareColorClass(i)}" style="width:${Math.max(2, Math.abs(g.v) / maxAbs * 100).toFixed(1)}%"></div></div>
+          <div class="tz-rank-sub">${mA.fmt(g.a)} ${op.sym} ${mB.fmt(g.b)}</div></div>`).join('')}
+        </div>` : '<div class="tz-empty-inline">Нет данных по разрезу базового виджета</div>';
+      }
     }
     const wkey = 'cw:' + w.id;
     const compact = tzEffMode(wkey) === 'compact';
@@ -3376,8 +3415,10 @@
     const cfg = editing ? JSON.parse(JSON.stringify(editing)) : {
       v: 2, id: `widget_${Date.now()}`, title: '', kind: 'ranking',
       dimension: 'source', splitBy: '', dateField: 'created', granularity: 'day',
-      metric: 'count', metrics: ['count'], topN: 10, period: { type: 'all', dateFrom: null, dateTo: null }, filters: {}
+      metric: 'count', metrics: ['count'], topN: 10, baseId: '', op: 'ratio',
+      period: { type: 'all', dateFrom: null, dateTo: null }, filters: {}
     };
+    if (cfg.op == null) cfg.op = 'ratio';
     modal.innerHTML = `<div class="traffic-modal-card tz-builder-card">
       <button class="traffic-modal-close" data-traffic-close type="button">×</button>
       <h2>${editing ? 'Редактировать виджет' : 'Новый виджет'}</h2>
@@ -3409,7 +3450,14 @@
       if (need.includes('splitBy')) h += `<label class="tz-b-field">Второй разрез (столбцы)<select id="tzb-split"><option value="">— нет —</option>${Object.entries(TZ_DIMS).map(([k, d]) => `<option value="${k}" ${cfg.splitBy === k ? 'selected' : ''}>${esc(d.label)}</option>`).join('')}</select></label>`;
       if (need.includes('dateField')) h += `<label class="tz-b-field">Дата по оси X<select id="tzb-datef">${dateOpts(cfg.dateField)}</select></label>`;
       if (need.includes('granularity')) h += `<label class="tz-b-field">Шаг<select id="tzb-gran"><option value="day" ${cfg.granularity==='day'?'selected':''}>День</option><option value="week" ${cfg.granularity==='week'?'selected':''}>Неделя</option><option value="month" ${cfg.granularity==='month'?'selected':''}>Месяц</option></select></label>`;
-      if (need.includes('metric')) h += `<label class="tz-b-field">Метрика<select id="tzb-metric">${metricOpts(cfg.metric)}</select></label>`;
+      if (need.includes('baseId')) {
+        const cands = tzHybridBaseCandidates(cfg.id);
+        h += cands.length
+          ? `<label class="tz-b-field">Базовый виджет (разрез + метрика A)<select id="tzb-base"><option value="">— выберите —</option>${cands.map(p => `<option value="${esc(p.id)}" ${cfg.baseId === p.id ? 'selected' : ''}>${esc(p.title || TZ_KINDS[p.kind].label)} · ${esc(tzDimLabel(p.dimension))} · ${esc(TZ_METRICS[p.metric || 'count'].label)}</option>`).join('')}</select></label>`
+          : `<div class="tz-b-field tz-b-note">Сначала создайте виджет с разрезом (Рейтинг / Доля / Таблица / Сравнение) — он станет базой гибрида.</div>`;
+      }
+      if (need.includes('op')) h += `<label class="tz-b-field">Операция<select id="tzb-op">${Object.entries(TZ_HYBRID_OPS).map(([k, o]) => `<option value="${k}" ${cfg.op === k ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select></label>`;
+      if (need.includes('metric')) h += `<label class="tz-b-field">${cfg.kind === 'hybrid' ? 'Метрика B (второй операнд)' : 'Метрика'}<select id="tzb-metric">${metricOpts(cfg.metric)}</select></label>`;
       if (need.includes('metricShare')) h += `<label class="tz-b-field">Метрика<select id="tzb-metric">${metricOpts(TZ_SHARE_METRICS.includes(cfg.metric) ? cfg.metric : 'count', TZ_SHARE_METRICS)}</select></label>`;
       if (need.includes('metricsMulti')) h += `<div class="tz-b-field"><span>Метрики (до 4)</span><div class="tz-b-metrics">${Object.entries(TZ_METRICS).map(([k, m]) => `<label class="tz-b-chk"><input type="checkbox" data-tzb-metric="${k}" ${(cfg.metrics||[]).includes(k)?'checked':''}> ${esc(m.label)}</label>`).join('')}</div></div>`;
       if (need.includes('topN')) h += `<label class="tz-b-field">Сколько показывать<select id="tzb-topn">${[5,10,15,20].map(n => `<option value="${n}" ${cfg.topN===n?'selected':''}>Топ ${n}</option>`).join('')}</select></label>`;
@@ -3420,6 +3468,8 @@
       ctrl.querySelector('#tzb-datef') && (ctrl.querySelector('#tzb-datef').onchange = e => { cfg.dateField = e.target.value; preview(); });
       ctrl.querySelector('#tzb-gran') && (ctrl.querySelector('#tzb-gran').onchange = e => { cfg.granularity = e.target.value; preview(); });
       ctrl.querySelector('#tzb-metric') && (ctrl.querySelector('#tzb-metric').onchange = e => { cfg.metric = e.target.value; preview(); });
+      ctrl.querySelector('#tzb-base') && (ctrl.querySelector('#tzb-base').onchange = e => { cfg.baseId = e.target.value; preview(); });
+      ctrl.querySelector('#tzb-op') && (ctrl.querySelector('#tzb-op').onchange = e => { cfg.op = e.target.value; preview(); });
       ctrl.querySelector('#tzb-topn') && (ctrl.querySelector('#tzb-topn').onchange = e => { cfg.topN = +e.target.value; preview(); });
       ctrl.querySelectorAll('[data-tzb-metric]').forEach(cb => cb.onchange = () => {
         const k = cb.dataset.tzbMetric;
@@ -3458,6 +3508,7 @@
     modal.querySelectorAll('[data-traffic-close]').forEach(b => { b.onclick = tzBuilderClose; });
     modal.onclick = e => { if (e.target === modal) tzBuilderClose(); };
     document.getElementById('tzb-save').onclick = () => {
+      if (cfg.kind === 'hybrid' && !cfg.baseId) { notify('Гибриду нужен базовый виджет', 'e'); return; }
       cfg.title = (document.getElementById('tzb-title').value || '').trim() || TZ_KINDS[cfg.kind].label;
       cfg.updatedAt = new Date().toISOString();
       if (!cfg.createdAt) cfg.createdAt = cfg.updatedAt;

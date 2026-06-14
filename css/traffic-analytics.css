@@ -2348,12 +2348,13 @@
 
 /* Панели фильтров: hidden действительно скрывает (CSS display перебивал) */
 .tz-ms-panel[hidden], .tz-range-panel[hidden] { display: none !important; }
-/* Панели открываются вправо от левого края кнопки и клампятся по вьюпорту.
-   Фильтры стоят слева/по центру, поэтому left:0 держит панель в видимой зоне. */
-.tz-ms-panel { left: 0; right: auto; width: 230px; max-width: calc(100vw - 32px); }
-.tz-range-panel { left: 0; right: auto; max-width: calc(100vw - 32px); }
-/* Последний мультиселект (Вид реализации) — самый правый, открываем влево */
-.tz-filter-selects .tz-ms:last-child .tz-ms-panel { left: auto; right: 0; }
+/* Панели позиционируются JS-ом (position:fixed) строго внутри вьюпорта
+   на любом устройстве — tzPositionPanel клампит left/top/width. */
+.tz-ms-panel, .tz-range-panel {
+  position: fixed !important;
+  left: 0; top: 0; right: auto;
+  width: 230px; max-width: calc(100vw - 16px);
+}
 
 /* Круглая кнопка-корзина «очистить выборку» в строке периодов */
 .tz-reset-btn {

@@ -2833,7 +2833,7 @@
     const rangeToggle = document.querySelector('[data-tz-range-toggle]');
     const rangePanel = document.querySelector('[data-tz-range-panel]');
     if (rangeToggle && rangePanel) {
-      rangeToggle.onclick = (e) => { e.stopPropagation(); tzCloseAllPanels(rangePanel); rangePanel.hidden = !rangePanel.hidden; };
+      rangeToggle.onclick = (e) => { e.stopPropagation(); const willOpen = rangePanel.hidden; tzCloseAllPanels(rangePanel); rangePanel.hidden = !rangePanel.hidden; if (willOpen) tzPositionPanel(rangeToggle, rangePanel); };
       rangePanel.querySelectorAll('[data-tz-date]').forEach(inp => {
         inp.onchange = () => {
           if (inp.dataset.tzDate === 'from') state.tzFilters.dateFrom = inp.value;
@@ -2849,7 +2849,7 @@
     document.querySelectorAll('[data-tz-ms]').forEach(btn => {
       const key = btn.dataset.tzMs;
       const panel = document.querySelector(`[data-tz-ms-panel="${key}"]`);
-      btn.onclick = (e) => { e.stopPropagation(); tzCloseAllPanels(panel); if (panel) panel.hidden = !panel.hidden; };
+      btn.onclick = (e) => { e.stopPropagation(); const willOpen = panel && panel.hidden; tzCloseAllPanels(panel); if (panel) { panel.hidden = !panel.hidden; if (willOpen) tzPositionPanel(btn, panel); } };
     });
     document.querySelectorAll('[data-tz-ms-cb]').forEach(cb => {
       cb.onchange = () => {
@@ -2904,6 +2904,32 @@
   }
   function tzCloseAllPanels(except) {
     document.querySelectorAll('.tz-ms-panel, .tz-range-panel').forEach(p => { if (p !== except) p.hidden = true; });
+  }
+
+  // Позиционирует поповер (position:fixed) строго внутри вьюпорта на любом
+  // устройстве: под кнопкой, с клампом left/top/width по краям экрана.
+  function tzPositionPanel(btn, panel) {
+    if (!btn || !panel) return;
+    const M = 8;                                   // отступ от краёв
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const r = btn.getBoundingClientRect();
+    // Ширина: не шире вьюпорта
+    let w = panel.offsetWidth || 230;
+    w = Math.min(w, vw - M * 2);
+    panel.style.width = w + 'px';
+    // Левый край: выравниваем по кнопке, затем клампим
+    let left = r.left;
+    if (left + w > vw - M) left = vw - M - w;       // не вылезать вправо
+    if (left < M) left = M;                          // не вылезать влево
+    panel.style.left = left + 'px';
+    // Верх: под кнопкой; если не влезает вниз — над кнопкой
+    let top = r.bottom + 6;
+    const h = panel.offsetHeight || 200;
+    if (top + h > vh - M) {
+      const above = r.top - 6 - h;
+      top = above >= M ? above : Math.max(M, vh - M - h);
+    }
+    panel.style.top = top + 'px';
   }
 
   function tzOpenIssueModal(key) {

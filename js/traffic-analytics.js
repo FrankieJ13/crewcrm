@@ -150,7 +150,9 @@
     // source/city/responsible/success — массивы (мультивыбор). period: all|today|week|month|range.
     tzFilters: { period: 'all', dateFrom: '', dateTo: '', source: [], city: [], responsible: [], success: [] },
     tzLifetimeMode: 'all',
-    tzTrendMode: 'auto' // виджет «Трафик»: auto = по периоду
+    tzTrendMode: 'auto', // виджет «Трафик»: auto = по периоду
+    tzView: { base: 'detailed', advanced: 'detailed' }, // глобальный режим по табам
+    tzCardMode: {} // персональные override режима по ключу виджета
 
   };
 
@@ -234,6 +236,8 @@
 
   function loadTrafficFromStorage() {
     state.basePeriods = { ...BASE_WIDGET_DEFAULT_PERIODS, ...safeJson(localStorage.getItem(STORAGE.basePeriods), {}) };
+    state.tzView = { base: 'detailed', advanced: 'detailed', ...safeJson(localStorage.getItem('crmTrafficView'), {}) };
+    state.tzCardMode = safeJson(localStorage.getItem('crmTrafficCardMode'), {}) || {};
     if (state.rows && state.fields && state.meta) return;
     state.activeTab = localStorage.getItem(STORAGE.tab) || 'base';
     state.widgets = safeJson(localStorage.getItem(STORAGE.widgets), []);
@@ -1881,7 +1885,7 @@
       <div class="traffic-modal-card">
         <h2>Очистить импортированный CSV?</h2>
         <p class="traffic-muted">Данные файла будут удалены из браузера. Пользовательские виджеты можно оставить или также удалить.</p>
-        <div class="traffic-modal-actions">
+        <div class="traffic-modal-actions tz-clear-actions">
           <button class="traffic-btn" data-traffic-close>Отмена</button>
           <button class="traffic-btn" id="traffic-clear-only">Очистить только CSV</button>
           <button class="traffic-btn danger" id="traffic-clear-all">Очистить CSV и виджеты</button>
@@ -2185,7 +2189,7 @@
     _tzPeriod = tzPeriodLabel(rows);
     return `
       ${renderTzFilters()}
-      <div class="traffic-grid tz-grid">
+      <div class="traffic-grid tz-grid ${tzGridClass()}">
         ${tzWidgetTrend(rows)}
         ${tzWidgetSource(rows)}
         ${tzWidgetRealizations(rows)}
@@ -2343,7 +2347,7 @@
           ${tzMultiSelect('responsible', 'Ответственный', TZC.responsible)}
           ${tzMultiSelect('success', 'Вид реализации', TZC.success)}
         </div>
-        <div class="tz-filter-count">В выборке: <b>${tzNum(total)}</b>${total !== all ? ` из ${tzNum(all)}` : ''} лидов${hasFilter ? `<button class="tz-reset-inline" data-tz-reset type="button" aria-label="Очистить выборку" title="Очистить выборку"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg></button>` : ''}</div>
+        <div class="tz-filter-count">В выборке: <b>${tzNum(total)}</b>${total !== all ? ` из ${tzNum(all)}` : ''} лидов${hasFilter ? `<button class="tz-reset-inline" data-tz-reset type="button" aria-label="Очистить выборку" title="Очистить выборку"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg></button>` : ''}${tzModeToggle()}</div>
       </div>`;
   }
 
@@ -2353,10 +2357,11 @@
     const fillPct = max > 0 ? (value / max * 100) : 0;
     const cls = shareColorClass(opts.colorIndex || 0);
     const clickAttr = opts.clickFilter ? `data-tz-rank-filter="${esc(opts.clickFilter)}" data-tz-rank-value="${esc(label)}"` : '';
+    const shown = opts.display != null ? opts.display : label;
     return `
       <div class="tz-rank-row ${opts.clickFilter ? 'clickable' : ''}" ${clickAttr}>
         <div class="tz-rank-top">
-          <span class="tz-rank-label" title="${esc(label)}">${esc(label)}</span>
+          <span class="tz-rank-label" title="${esc(label)}">${esc(shown)}</span>
           <span class="tz-rank-value">${tzNum(value)}</span>
           <span class="tz-rank-percent">${pct.toFixed(1)}%</span>
         </div>
@@ -2385,6 +2390,58 @@
   let _tzPeriod = '';                       // период текущей выборки (для подзаголовков)
   function tzId(row) { const v = String(tzRaw(row, TZC.id)).trim(); return v || '—'; }
 
+  // ФИО → «Фамилия И.О.» (компактно). Несловесные значения (города/система) — без изменений.
+  function tzShortFio(s) {
+    const p = String(s || '').trim().split(/\s+/).filter(Boolean);
+    if (p.length < 2) return s;
+    const initials = p.slice(1).map(x => (x[0] || '').toUpperCase() + '.').join('');
+    return p[0] + ' ' + initials;
+  }
+  // Отображаемая подпись разреза: для «Ответственный» сокращаем ФИО
+  function tzDimDisplay(dimKey, label) {
+    if (label === EMPTY_LABEL || label === 'Прочие') return label;
+    return dimKey === 'responsible' ? tzShortFio(label) : label;
+  }
+
+  // ── Режимы отображения (компактный / детальный) ──
+  function tzActiveTab() { return state.activeTab === 'advanced' ? 'advanced' : 'base'; }
+  function tzGlobalMode() { return state.tzView?.[tzActiveTab()] === 'compact' ? 'compact' : 'detailed'; }
+  function tzEffMode(key) {
+    const ov = state.tzCardMode?.[key];
+    return ov === 'compact' || ov === 'detailed' ? ov : tzGlobalMode();
+  }
+  function tzPersistView() {
+    try {
+      localStorage.setItem('crmTrafficView', JSON.stringify(state.tzView || {}));
+      localStorage.setItem('crmTrafficCardMode', JSON.stringify(state.tzCardMode || {}));
+    } catch(_){}
+  }
+  function tzToggleGlobalMode() {
+    const tab = tzActiveTab();
+    state.tzView[tab] = tzGlobalMode() === 'compact' ? 'detailed' : 'compact';
+    // Сброс персональных override только текущего таба
+    const prefix = tab === 'advanced' ? 'cw:' : 'bw:';
+    Object.keys(state.tzCardMode || {}).forEach(k => { if (k.startsWith(prefix)) delete state.tzCardMode[k]; });
+    tzPersistView();
+    renderTrafficAnalytics();
+  }
+  function tzToggleCard(key) {
+    const cur = tzEffMode(key);
+    state.tzCardMode[key] = cur === 'compact' ? 'detailed' : 'compact';
+    tzPersistView();
+    renderTrafficAnalytics();
+  }
+  window.tzToggleCard = tzToggleCard;
+  function tzGridClass() { return tzGlobalMode() === 'compact' ? 'tz-mode-compact' : 'tz-mode-detailed'; }
+  // Глобальный сегмент-тумблер «Компактно / Детально»
+  function tzModeToggle() {
+    const m = tzGlobalMode();
+    return `<div class="tz-mode-seg" role="group" aria-label="Режим отображения">
+      <button class="tz-mode-seg-btn ${m === 'compact' ? 'active' : ''}" data-tz-global-mode="compact" type="button" title="Компактно">▦</button>
+      <button class="tz-mode-seg-btn ${m === 'detailed' ? 'active' : ''}" data-tz-global-mode="detailed" type="button" title="Детально">▤</button>
+    </div>`;
+  }
+
   function tzWidgetShell(title, subtitle, mainValue, body, opts = {}) {
     let issueBtn = '';
     if (opts.issues && opts.issues.ids && opts.issues.ids.length) {
@@ -2393,14 +2450,19 @@
       issueBtn = `<button class="tz-issue-btn" data-tz-issue="${key}" type="button" aria-label="Сделки вне расчёта" title="${esc(opts.issues.ids.length + ' сделок вне расчёта')}"><span class="tz-issue-pulse"></span><span class="tz-issue-mark">!</span></button>`;
     }
     const sub = subtitle ? (subtitle + (_tzPeriod && !opts.noPeriod ? ' · ' + _tzPeriod : '')) : '';
+    // Режим отображения базового виджета (ключ bw:<className|title>)
+    const wkey = 'bw:' + (opts.wkey || opts.className || title);
+    const compact = tzEffMode(wkey) === 'compact';
+    const toggleBtn = `<button class="tz-mode-btn" data-tz-card-toggle="${esc(wkey)}" type="button" aria-label="${compact ? 'Развернуть' : 'Свернуть'}" title="${compact ? 'Развернуть' : 'Свернуть'}">${compact ? '⤢' : '⤡'}</button>`;
     return `
-      <article class="traffic-widget tz-card ${opts.wide ? 'tz-wide' : ''} ${opts.className || ''}">
+      <article class="traffic-widget tz-card ${compact ? 'tz-compact' : (opts.wide ? 'tz-wide' : 'tz-detailed')} ${opts.className || ''}">
         <div class="tz-card-head">
           <div class="tz-card-title">${esc(title)}${issueBtn}</div>
+          ${toggleBtn}
           ${sub ? `<div class="tz-card-sub">${esc(sub)}</div>` : ''}
         </div>
         ${mainValue ? `<div class="tz-card-main">${mainValue}</div>` : ''}
-        <div class="tz-card-body">${body}</div>
+        ${compact ? '' : `<div class="tz-card-body">${body}</div>`}
       </article>`;
   }
 
@@ -2476,14 +2538,20 @@
       return arr[0] || null;
     };
     const topSource = topBy(TZC.source), topCity = topBy(TZC.city), topResp = topBy(TZC.responsible);
-    // Мини-бар-чарт доходности по месяцам
+    // Горизонтальные бары доходности по месяцам, сортировка по номеру месяца (янв→дек)
     const mMax = Math.max(...months.map(m => m.sum), 1);
+    const multiYear = new Set(months.map(m => m.key.split('-')[0])).size > 1;
+    const monthsSorted = months.slice().sort((a, b) => {
+      const ma = +a.key.split('-')[1], mb = +b.key.split('-')[1];
+      return ma !== mb ? ma - mb : a.key.localeCompare(b.key);
+    });
     const monthBars = months.length ? `
       <div class="tz-realiz-months">
-        ${months.map(m => {
+        ${monthsSorted.map(m => {
           const [y, mo] = m.key.split('-');
-          const mn = ['','янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'][+mo];
-          return `<div class="tz-rm" title="${mn} ${y}: ${tzMoneyFmt(m.sum)} (${m.n})"><span class="tz-rm-fill" style="height:${Math.max(4, m.sum / mMax * 100)}%"></span><span class="tz-rm-lbl">${mn}</span></div>`;
+          const mn = ['', 'янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'][+mo];
+          const lbl = multiYear ? `${mn} ${y.slice(2)}` : mn;
+          return `<div class="tz-rm" title="${mn} ${y}: ${tzMoneyFmt(m.sum)} (${m.n})"><span class="tz-rm-lbl">${lbl}</span><span class="tz-rm-track"><span class="tz-rm-fill" style="width:${Math.max(2, m.sum / mMax * 100)}%"></span></span><span class="tz-rm-val">${tzMoneyFmt(m.sum)}</span></div>`;
         }).join('')}
       </div>` : '';
     const kpis = [
@@ -2493,9 +2561,9 @@
       ['Сред./мес', tzMoneyFmt(avgMonthRevenue)],
     ];
     const tops = [
-      ['Топ источник', topSource],
-      ['Топ город', topCity],
-      ['Топ ответственный', topResp],
+      ['Топ источник', topSource, false],
+      ['Топ город', topCity, false],
+      ['Топ ответственный', topResp, true],
     ];
     const body = `
       <div class="tz-realiz-top">
@@ -2509,7 +2577,7 @@
         ${kinds.map((k, i) => tzRankRow(k.label, k.value, success.length, kindMax, { colorIndex: i })).join('')}
       </div>
       <div class="tz-realiz-tops">
-        ${tops.map(([l, t]) => `<div class="tz-realiz-toprow"><span class="tz-realiz-toplbl">${esc(l)}</span><span class="tz-realiz-topname" title="${esc(t ? t.label : '—')}">${esc(t ? t.label : '—')}</span><span class="tz-realiz-topsum">${t ? tzMoneyFmt(t.sum) : '—'}</span></div>`).join('')}
+        ${tops.map(([l, t, isResp]) => { const nm = t ? (isResp ? tzShortFio(t.label) : t.label) : '—'; return `<div class="tz-realiz-toprow"><span class="tz-realiz-toplbl">${esc(l)}</span><span class="tz-realiz-topname" title="${esc(t ? t.label : '—')}">${esc(nm)}</span><span class="tz-realiz-topsum">${t ? tzMoneyFmt(t.sum) : '—'}</span></div>`; }).join('')}
       </div>`;
     return tzWidgetShell('Успешные реализации', 'Закрытые в плюс', tzNum(success.length) + ' реализаций', body, { wide: true, className: 'tz-realiz-widget' });
   }
@@ -2737,7 +2805,7 @@
     const rank = tzRanking(rows, TZC.responsible);
     const max = rank.items[0]?.value || 1;
     const body = `<div class="tz-rank-list">
-      ${rank.items.map((it, i) => tzRankRow(it.label, it.value, total, max, { colorIndex: i, clickFilter: 'responsible' })).join('')}
+      ${rank.items.map((it, i) => tzRankRow(it.label, it.value, total, max, { colorIndex: i, clickFilter: 'responsible', display: tzDimDisplay('responsible', it.label) })).join('')}
       ${rank.hasOther ? tzRankRow('Прочие', rank.other, total, max, { colorIndex: 6 }) : ''}
     </div>
     <div class="tz-quality-line tz-note">⚠ В поле «Ответственный» могут быть города/системные значения — проверьте справочник</div>`;
@@ -2875,6 +2943,28 @@
         const i = arr.indexOf(val);
         if (i >= 0) arr.splice(i, 1); else arr.push(val);
         renderTrafficAnalytics();
+      };
+    });
+    tzBindModeControls();
+  }
+  // Бинды режима отображения: глобальный сегмент + персональные кнопки виджетов.
+  // Вызывается на обеих вкладках (база и редактор).
+  function tzBindModeControls() {
+    document.querySelectorAll('[data-tz-global-mode]').forEach(b => {
+      b.onclick = () => {
+        const want = b.dataset.tzGlobalMode;
+        if (tzGlobalMode() !== want) tzToggleGlobalMode();
+      };
+    });
+    document.querySelectorAll('[data-tz-card-toggle]').forEach(b => {
+      b.onclick = (e) => { e.stopPropagation(); tzToggleCard(b.dataset.tzCardToggle); };
+    });
+    // Клик по компактному виджету (мимо кнопок/ссылок) → разворачивает его
+    document.querySelectorAll('.traffic-widget.tz-compact').forEach(card => {
+      card.onclick = (e) => {
+        if (e.target.closest('button, a, [data-tz-card-toggle], [data-tz-issue]')) return;
+        const btn = card.querySelector('[data-tz-card-toggle]');
+        if (btn) tzToggleCard(btn.dataset.tzCardToggle);
       };
     });
   }
@@ -3049,13 +3139,17 @@
       <div class="tz-editor-bar">
         <div class="tz-editor-actions">
           <button class="tz-ed-btn primary" id="traffic-add-widget" ${widgets.length >= TZ_WIDGET_LIMIT ? 'disabled' : ''}>+ Новый виджет</button>
-          <button class="tz-ed-btn" id="traffic-export-widgets">Экспорт</button>
-          <button class="tz-ed-btn" id="traffic-import-widgets">Импорт</button>
+          <button class="tz-ed-btn tz-ed-icon" id="traffic-export-widgets" type="button" aria-label="Экспорт настроек" title="Экспорт настроек (.json)">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+          </button>
+          <button class="tz-ed-btn tz-ed-icon" id="traffic-import-widgets" type="button" aria-label="Импорт настроек" title="Импорт настроек (.json)">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5M12 3v12"/></svg>
+          </button>
           <input class="traffic-file-input" id="traffic-import-file" type="file" accept=".json,application/json" hidden>
         </div>
-        <div class="tz-editor-count">${widgets.length} / ${TZ_WIDGET_LIMIT}</div>
+        <div class="tz-editor-right">${tzModeToggle()}<span class="tz-editor-count">${widgets.length} / ${TZ_WIDGET_LIMIT}</span></div>
       </div>
-      <div class="traffic-grid tz-grid">
+      <div class="traffic-grid tz-grid ${tzGridClass()}">
         ${widgets.length ? widgets.map(tzRenderCustomWidget).join('') : `
           <div class="tz-empty">Виджетов нет. Нажмите «+ Новый виджет» — конструктор проведёт по шагам и не даст собрать нелогичную комбинацию.</div>`}
       </div>
@@ -3084,11 +3178,11 @@
       main = M.fmt(totalVal);
       if (kind === 'share') {
         body = `<div class="tz-rank-with-ring"><div class="tz-rank-list">
-          ${top.map((it, i) => `<div class="tz-rank-row"><div class="tz-rank-top"><span class="tz-rank-label" title="${esc(it.label)}">${esc(it.label)}</span><span class="tz-rank-value">${M.fmt(it.value)}</span><span class="tz-rank-percent">${tzPct(it.value, totalVal).toFixed(1)}%</span></div><div class="tz-rank-bar"><div class="tz-rank-bar-fill ${shareColorClass(i)}" style="width:${Math.max(2, it.value / max * 100).toFixed(1)}%"></div></div></div>`).join('')}
+          ${top.map((it, i) => `<div class="tz-rank-row"><div class="tz-rank-top"><span class="tz-rank-label" title="${esc(it.label)}">${esc(tzDimDisplay(w.dimension, it.label))}</span><span class="tz-rank-value">${M.fmt(it.value)}</span><span class="tz-rank-percent">${tzPct(it.value, totalVal).toFixed(1)}%</span></div><div class="tz-rank-bar"><div class="tz-rank-bar-fill ${shareColorClass(i)}" style="width:${Math.max(2, it.value / max * 100).toFixed(1)}%"></div></div></div>`).join('')}
         </div>${tzDonut(top, totalVal, top.length + '', 'групп')}</div>`;
       } else {
         body = `<div class="tz-rank-list">
-          ${top.map((it, i) => `<div class="tz-rank-row"><div class="tz-rank-top"><span class="tz-rank-label" title="${esc(it.label)}">${esc(it.label)}</span><span class="tz-rank-value">${M.fmt(it.value)}</span><span class="tz-rank-percent">${tzPct(it.value, totalVal).toFixed(1)}%</span></div><div class="tz-rank-bar"><div class="tz-rank-bar-fill ${shareColorClass(i)}" style="width:${Math.max(2, it.value / max * 100).toFixed(1)}%"></div></div></div>`).join('')}
+          ${top.map((it, i) => `<div class="tz-rank-row"><div class="tz-rank-top"><span class="tz-rank-label" title="${esc(it.label)}">${esc(tzDimDisplay(w.dimension, it.label))}</span><span class="tz-rank-value">${M.fmt(it.value)}</span><span class="tz-rank-percent">${tzPct(it.value, totalVal).toFixed(1)}%</span></div><div class="tz-rank-bar"><div class="tz-rank-bar-fill ${shareColorClass(i)}" style="width:${Math.max(2, it.value / max * 100).toFixed(1)}%"></div></div></div>`).join('')}
           ${otherVal > 0 ? `<div class="tz-rank-row"><div class="tz-rank-top"><span class="tz-rank-label">Прочие</span><span class="tz-rank-value">${M.fmt(otherVal)}</span><span class="tz-rank-percent">${tzPct(otherVal, totalVal).toFixed(1)}%</span></div><div class="tz-rank-bar"><div class="tz-rank-bar-fill tz-c6" style="width:${Math.max(2, otherVal / max * 100).toFixed(1)}%"></div></div></div>` : ''}
         </div>`;
       }
@@ -3118,13 +3212,13 @@
       const groupsA = tzGroupBy(rows, dimA).map(g => ({ label: g.label, rows: g.rows, value: M.reduce(g.rows) || 0 })).sort((a, b) => b.value - a.value).slice(0, 8);
       if (!dimB) {
         const max = groupsA[0]?.value || 1;
-        body = `<div class="tz-rank-list">${groupsA.map((g, i) => `<div class="tz-rank-row"><div class="tz-rank-top"><span class="tz-rank-label" title="${esc(g.label)}">${esc(g.label)}</span><span class="tz-rank-value">${M.fmt(g.value)}</span></div><div class="tz-rank-bar"><div class="tz-rank-bar-fill ${shareColorClass(i)}" style="width:${Math.max(2, g.value / max * 100).toFixed(1)}%"></div></div></div>`).join('')}</div>`;
+        body = `<div class="tz-rank-list">${groupsA.map((g, i) => `<div class="tz-rank-row"><div class="tz-rank-top"><span class="tz-rank-label" title="${esc(g.label)}">${esc(tzDimDisplay(dimA, g.label))}</span><span class="tz-rank-value">${M.fmt(g.value)}</span></div><div class="tz-rank-bar"><div class="tz-rank-bar-fill ${shareColorClass(i)}" style="width:${Math.max(2, g.value / max * 100).toFixed(1)}%"></div></div></div>`).join('')}</div>`;
       } else {
         const colsAll = tzGroupBy(rows, dimB).map(g => ({ label: g.label, value: g.rows.length })).sort((a, b) => b.value - a.value).slice(0, 4).map(c => c.label);
-        body = `<div class="tz-cmp-table"><div class="tz-cmp-row tz-cmp-head"><span>${esc(tzDimLabel(dimA))}</span>${colsAll.map(c => `<span title="${esc(c)}">${esc(c)}</span>`).join('')}</div>
+        body = `<div class="tz-cmp-table"><div class="tz-cmp-row tz-cmp-head"><span>${esc(tzDimLabel(dimA))}</span>${colsAll.map(c => `<span title="${esc(c)}">${esc(tzDimDisplay(dimB, c))}</span>`).join('')}</div>
           ${groupsA.map(g => {
             const cells = colsAll.map(col => { const sub = g.rows.filter(r => String(tzRaw(r, TZ_DIMS[dimB].cand)).trim() === col); return M.fmt(M.reduce(sub) || 0); });
-            return `<div class="tz-cmp-row"><span class="tz-cmp-name" title="${esc(g.label)}">${esc(g.label)}</span>${cells.map(c => `<span>${c}</span>`).join('')}</div>`;
+            return `<div class="tz-cmp-row"><span class="tz-cmp-name" title="${esc(g.label)}">${esc(tzDimDisplay(dimA, g.label))}</span>${cells.map(c => `<span>${c}</span>`).join('')}</div>`;
           }).join('')}</div>`;
       }
     } else if (kind === 'kpi') {
@@ -3137,16 +3231,20 @@
       sub = `${tzDimLabel(w.dimension)} · ${metrics.map(tzMetricLabel).join(' · ')}`;
       const groups = tzGroupBy(rows, w.dimension).map(g => ({ label: g.label, rows: g.rows, sort: TZ_METRICS[metrics[0]].reduce(g.rows) || 0 })).sort((a, b) => b.sort - a.sort).slice(0, w.topN || 12);
       body = `<div class="tz-cmp-table"><div class="tz-cmp-row tz-cmp-head"><span>${esc(tzDimLabel(w.dimension))}</span>${metrics.map(m => `<span>${esc(TZ_METRICS[m].label)}</span>`).join('')}</div>
-        ${groups.map(g => `<div class="tz-cmp-row"><span class="tz-cmp-name" title="${esc(g.label)}">${esc(g.label)}</span>${metrics.map(m => { const v = TZ_METRICS[m].reduce(g.rows); return `<span>${TZ_METRICS[m].fmt(v === null ? null : v)}</span>`; }).join('')}</div>`).join('')}</div>`;
+        ${groups.map(g => `<div class="tz-cmp-row"><span class="tz-cmp-name" title="${esc(g.label)}">${esc(tzDimDisplay(w.dimension, g.label))}</span>${metrics.map(m => { const v = TZ_METRICS[m].reduce(g.rows); return `<span>${TZ_METRICS[m].fmt(v === null ? null : v)}</span>`; }).join('')}</div>`).join('')}</div>`;
     }
+    const wkey = 'cw:' + w.id;
+    const compact = tzEffMode(wkey) === 'compact';
+    const toggleBtn = `<button class="tz-mode-btn" data-tz-card-toggle="${esc(wkey)}" type="button" aria-label="${compact ? 'Развернуть' : 'Свернуть'}" title="${compact ? 'Развернуть' : 'Свернуть'}">${compact ? '⤢' : '⤡'}</button>`;
     return `
-      <article class="traffic-widget tz-card tz-wide tz-custom-widget" data-traffic-custom-widget="${esc(w.id)}">
+      <article class="traffic-widget tz-card ${compact ? 'tz-compact' : 'tz-detailed'} tz-custom-widget" data-traffic-custom-widget="${esc(w.id)}">
         <div class="tz-card-head">
           <div class="tz-card-title">${esc(w.title || 'Виджет')}</div>
+          ${toggleBtn}
           <div class="tz-card-sub">${esc(sub)}${per ? ' · ' + per : ''}</div>
         </div>
         ${main ? `<div class="tz-card-main">${main}</div>` : ''}
-        <div class="tz-card-body">${body}</div>
+        ${compact ? '' : `<div class="tz-card-body">${body}</div>`}
       </article>`;
   }
 
@@ -3180,8 +3278,6 @@
       </div>
     </div>`;
     modal.classList.add('open');
-    bindModalDismiss(modal);
-    modal.querySelector('[data-traffic-close]').onclick = closeModal;
 
     const dimOpts = (sel) => Object.entries(TZ_DIMS).map(([k, d]) => `<option value="${k}" ${sel === k ? 'selected' : ''}>${esc(d.label)}</option>`).join('');
     const metricOpts = (sel, only) => Object.entries(TZ_METRICS).filter(([k]) => !only || only.includes(k)).map(([k, m]) => `<option value="${k}" ${sel === k ? 'selected' : ''}>${esc(m.label)}</option>`).join('');
@@ -3233,6 +3329,16 @@
     document.getElementById('tzb-title').oninput = preview;
     renderControls();
     preview();
+    // Снимок исходной конфигурации для проверки «грязных» изменений.
+    // Отмена/×/клик по фону: если ничего не менялось — просто закрыть,
+    // иначе спросить о сбросе изменений.
+    const tzBuilderSnapshot = JSON.stringify(cfg);
+    const tzBuilderClose = () => {
+      if (JSON.stringify(cfg) !== tzBuilderSnapshot && !confirm('Сбросить несохранённые изменения?')) return;
+      closeModal();
+    };
+    modal.querySelectorAll('[data-traffic-close]').forEach(b => { b.onclick = tzBuilderClose; });
+    modal.onclick = e => { if (e.target === modal) tzBuilderClose(); };
     document.getElementById('tzb-save').onclick = () => {
       cfg.title = (document.getElementById('tzb-title').value || '').trim() || TZ_KINDS[cfg.kind].label;
       cfg.updatedAt = new Date().toISOString();

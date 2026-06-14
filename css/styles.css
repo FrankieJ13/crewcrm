@@ -3253,11 +3253,11 @@ body.neo-light .presence-row {
 }
 .presence-device {
   flex-shrink:0;
-  width:18px;
-  font-size:13px;
-  line-height:1;
-  text-align:center;
+  width:16px; height:16px;
+  display:inline-flex; align-items:center; justify-content:center;
+  color:var(--txt2);
 }
+.presence-device svg { width:15px; height:15px; display:block; }
 .presence-name {
   min-width:0;
   font-family:'Golos Text',sans-serif;

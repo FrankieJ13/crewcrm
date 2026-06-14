@@ -2176,6 +2176,20 @@
     return rows;
   }
 
+  // Метка периода по фактическим датам создания в выборке (для подзаголовков)
+  function tzPeriodLabel(rows) {
+    let min = null, max = null;
+    rows.forEach(r => {
+      const d = tzDate(tzRaw(r, TZC.created));
+      if (!d) return;
+      if (!min || d < min) min = d;
+      if (!max || d > max) max = d;
+    });
+    if (!min || !max) return '';
+    const f = d => `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getFullYear()).slice(-2)}`;
+    return f(min) === f(max) ? f(min) : `${f(min)}–${f(max)}`;
+  }
+
   // Уникальные значения для селектов фильтра
   function tzUnique(candidates) {
     const set = new Map();
@@ -2192,11 +2206,13 @@
     }
     const rows = tzFilteredRows();
     _tzIssues = {};
+    _tzPeriod = tzPeriodLabel(rows);
     return `
       ${renderTzFilters()}
       <div class="traffic-grid tz-grid">
         ${tzWidgetTrend(rows)}
         ${tzWidgetSource(rows)}
+        ${tzWidgetRealizations(rows)}
         ${tzWidgetWarmFinance(rows)}
         ${tzWidgetStages(rows)}
         ${tzWidgetReasons(rows)}
@@ -2247,7 +2263,7 @@
     const body = spanDays <= 2 ? tzTrendBars(days, peak) : tzTrendLine(days);
     const sub = `${fmtDate(minD)} — ${fmtDate(maxD)} · ${spanDays} дн.`;
     const issues = tzIssueIds(rows, r => tzDate(tzRaw(r, TZC.created)) === null);
-    return tzWidgetShell('Трафик', sub, tzNum(totalLeads) + ' лидов', body, { wide: true, className: 'tz-trend-widget', issues: { ids: issues, hint: 'Сделки без валидной «Дата создания сделки» — не легли на график.' } });
+    return tzWidgetShell('Трафик', sub, tzNum(totalLeads) + ' лидов', body, { wide: true, noPeriod: true, className: 'tz-trend-widget', issues: { ids: issues, hint: 'Сделки без валидной «Дата создания сделки» — не легли на график.' } });
   }
 
   function tzTrendBars(days, peak) {
@@ -2344,9 +2360,6 @@
               <button class="tz-ms-apply" data-tz-range-apply type="button">Применить</button>
             </div>
           </div>
-          ${hasFilter ? `<button class="tz-reset-btn" data-tz-reset type="button" aria-label="Очистить выборку" title="Очистить выборку">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>
-          </button>` : ''}
         </div>
         <div class="tz-filter-selects">
           ${tzMultiSelect('source', 'Источник', TZC.source)}
@@ -2354,7 +2367,7 @@
           ${tzMultiSelect('responsible', 'Ответственный', TZC.responsible)}
           ${tzMultiSelect('success', 'Вид реализации', TZC.success)}
         </div>
-        <div class="tz-filter-count">В выборке: <b>${tzNum(total)}</b>${total !== all ? ` из ${tzNum(all)}` : ''} лидов</div>
+        <div class="tz-filter-count">В выборке: <b>${tzNum(total)}</b>${total !== all ? ` из ${tzNum(all)}` : ''} лидов${hasFilter ? `<button class="tz-reset-inline" data-tz-reset type="button" aria-label="Очистить выборку" title="Очистить выборку"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg></button>` : ''}</div>
       </div>`;
   }
 
@@ -2393,6 +2406,7 @@
 
   // Реестр «проблемных» сделок по виджетам (для модалки «!»)
   let _tzIssues = {};
+  let _tzPeriod = '';                       // период текущей выборки (для подзаголовков)
   function tzId(row) { const v = String(tzRaw(row, TZC.id)).trim(); return v || '—'; }
 
   function tzWidgetShell(title, subtitle, mainValue, body, opts = {}) {
@@ -2402,11 +2416,12 @@
       _tzIssues[key] = { title, hint: opts.issues.hint || '', ids: opts.issues.ids };
       issueBtn = `<button class="tz-issue-btn" data-tz-issue="${key}" type="button" aria-label="Сделки вне расчёта" title="${esc(opts.issues.ids.length + ' сделок вне расчёта')}"><span class="tz-issue-pulse"></span><span class="tz-issue-mark">!</span></button>`;
     }
+    const sub = subtitle ? (subtitle + (_tzPeriod && !opts.noPeriod ? ' · ' + _tzPeriod : '')) : '';
     return `
       <article class="traffic-widget tz-card ${opts.wide ? 'tz-wide' : ''} ${opts.className || ''}">
         <div class="tz-card-head">
           <div class="tz-card-title">${esc(title)}${issueBtn}</div>
-          ${subtitle ? `<div class="tz-card-sub">${esc(subtitle)}</div>` : ''}
+          ${sub ? `<div class="tz-card-sub">${esc(sub)}</div>` : ''}
         </div>
         ${mainValue ? `<div class="tz-card-main">${mainValue}</div>` : ''}
         <div class="tz-card-body">${body}</div>
@@ -2447,6 +2462,80 @@
       </div>`;
     const issues = tzIssueIds(rows, r => tzEmpty(tzRaw(r, TZC.source)));
     return tzWidgetShell('Лиды по источнику', 'Источник обращения', tzNum(total) + ' лидов', body, { wide: true, className: 'tz-source-widget', issues: { ids: issues, hint: 'Сделки без «Источник обращения» — попали в «Не заполнено».' } });
+  }
+
+  // ═══ ВИДЖЕТ: Успешные реализации ═══
+  // По виду реализации (Успешное закрытие карточки), доходности, средней
+  // доходности за месяц, самым доходным источнику/городу/ответственному.
+  function tzWidgetRealizations(rows) {
+    const success = rows.filter(tzIsSuccess);
+    if (!success.length) {
+      return tzWidgetShell('Успешные реализации', 'Закрытые в плюс', '', '<div class="tz-empty-inline">Нет успешных реализаций в выборке</div>', { wide: true, className: 'tz-realiz-widget' });
+    }
+    // Распределение по виду реализации (Успешное закрытие карточки)
+    const byKind = new Map();
+    success.forEach(r => { let k = String(tzRaw(r, TZC.success)).trim(); if (tzEmpty(k)) k = 'Успешно (без вида)'; byKind.set(k, (byKind.get(k) || 0) + 1); });
+    const kinds = Array.from(byKind, ([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value);
+    const kindMax = kinds[0]?.value || 1;
+    // Доходность (по успешным с доходностью)
+    const revRows = success.filter(r => tzRevenue(r) !== null);
+    const revenueSum = revRows.reduce((s, r) => s + tzRevenue(r), 0);
+    const avgRevenue = revRows.length ? revenueSum / revRows.length : 0;
+    // Средняя доходность за месяц: группируем доходные сделки по месяцу реализации/закрытия
+    const byMonth = new Map();
+    revRows.forEach(r => {
+      const d = tzDate(tzRaw(r, TZC.realizDate)) || tzDate(tzRaw(r, TZC.closed)) || tzDate(tzRaw(r, TZC.created));
+      if (!d) return;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!byMonth.has(key)) byMonth.set(key, { sum: 0, n: 0 });
+      const m = byMonth.get(key); m.sum += tzRevenue(r); m.n++;
+    });
+    const months = Array.from(byMonth, ([key, v]) => ({ key, sum: v.sum, n: v.n })).sort((a, b) => a.key.localeCompare(b.key));
+    const avgMonthRevenue = months.length ? months.reduce((s, m) => s + m.sum, 0) / months.length : 0;
+    // Топ-доходные по источнику/городу/ответственному
+    const topBy = (cand) => {
+      const map = new Map();
+      revRows.forEach(r => { let g = String(tzRaw(r, cand)).trim(); if (tzEmpty(g)) g = EMPTY_LABEL; map.set(g, (map.get(g) || 0) + tzRevenue(r)); });
+      const arr = Array.from(map, ([label, sum]) => ({ label, sum })).sort((a, b) => b.sum - a.sum);
+      return arr[0] || null;
+    };
+    const topSource = topBy(TZC.source), topCity = topBy(TZC.city), topResp = topBy(TZC.responsible);
+    // Мини-бар-чарт доходности по месяцам
+    const mMax = Math.max(...months.map(m => m.sum), 1);
+    const monthBars = months.length ? `
+      <div class="tz-realiz-months">
+        ${months.map(m => {
+          const [y, mo] = m.key.split('-');
+          const mn = ['','янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'][+mo];
+          return `<div class="tz-rm" title="${mn} ${y}: ${tzMoneyFmt(m.sum)} (${m.n})"><span class="tz-rm-fill" style="height:${Math.max(4, m.sum / mMax * 100)}%"></span><span class="tz-rm-lbl">${mn}</span></div>`;
+        }).join('')}
+      </div>` : '';
+    const kpis = [
+      ['Реализаций', tzNum(success.length)],
+      ['Доходность', tzMoneyFmt(revenueSum)],
+      ['Средняя', tzMoneyFmt(avgRevenue)],
+      ['Сред./мес', tzMoneyFmt(avgMonthRevenue)],
+    ];
+    const tops = [
+      ['Топ источник', topSource],
+      ['Топ город', topCity],
+      ['Топ ответственный', topResp],
+    ];
+    const body = `
+      <div class="tz-realiz-top">
+        <div class="tz-kpi-grid tz-kpi-4">
+          ${kpis.map(([l, v]) => `<div class="tz-kpi"><div class="tz-kpi-lbl">${esc(l)}</div><div class="tz-kpi-val">${v}</div></div>`).join('')}
+        </div>
+        ${monthBars ? `<div class="tz-realiz-chart"><div class="tz-realiz-chart-t">Доходность по месяцам</div>${monthBars}</div>` : ''}
+      </div>
+      <div class="tz-realiz-kinds">
+        <div class="tz-realiz-sub">Виды реализации</div>
+        ${kinds.map((k, i) => tzRankRow(k.label, k.value, success.length, kindMax, { colorIndex: i })).join('')}
+      </div>
+      <div class="tz-realiz-tops">
+        ${tops.map(([l, t]) => `<div class="tz-realiz-toprow"><span class="tz-realiz-toplbl">${esc(l)}</span><span class="tz-realiz-topname" title="${esc(t ? t.label : '—')}">${esc(t ? t.label : '—')}</span><span class="tz-realiz-topsum">${t ? tzMoneyFmt(t.sum) : '—'}</span></div>`).join('')}
+      </div>`;
+    return tzWidgetShell('Успешные реализации', 'Закрытые в плюс', tzNum(success.length) + ' реализаций', body, { wide: true, className: 'tz-realiz-widget' });
   }
 
   // ═══ ВИДЖЕТ 2: Финансы тёплых лидов ═══
@@ -2707,22 +2796,30 @@
     const succNoRev = success.filter(r => tzRevenue(r) === null).length;
     const realizNoSucc = rows.filter(r => tzDate(tzRaw(r, TZC.realizDate)) && tzEmpty(tzRaw(r, TZC.success))).length;
     const succWrongStage = rows.filter(r => !tzEmpty(tzRaw(r, TZC.success)) && String(tzRaw(r, TZC.stage)).trim() !== 'Успешно реализовано').length;
+    // Каждая проверка: [подпись, predicate]. Клик по строке с N>0 открывает
+    // модалку со списком ID/ссылок этих сделок.
     const checks = [
-      ['Источник не заполнен', noSource],
-      ['Город не заполнен', noCity],
-      ['Ответственный не заполнен', noResp],
-      ['Этап не заполнен', noStage],
-      ['Причина закрытия не заполнена', noReason],
-      ['Тёплые лиды без стоимости', warmNoCost],
-      ['Успешные без доходности', succNoRev],
-      ['Реализация есть, успех пуст', realizNoSucc],
-      ['Успех есть, этап ≠ «Успешно реализовано»', succWrongStage],
+      ['Источник не заполнен', r => tzEmpty(tzRaw(r, TZC.source))],
+      ['Город не заполнен', r => tzEmpty(tzRaw(r, TZC.city))],
+      ['Ответственный не заполнен', r => tzEmpty(tzRaw(r, TZC.responsible))],
+      ['Этап не заполнен', r => tzEmpty(tzRaw(r, TZC.stage))],
+      ['Причина закрытия не заполнена', r => tzEmpty(tzRaw(r, TZC.reason))],
+      ['Тёплые лиды без стоимости', r => String(tzRaw(r, TZC.source)).trim() === WARM_SOURCE && (() => { const c = tzMoney(tzRaw(r, TZC.cost)); return c === null || c <= 0; })()],
+      ['Успешные без доходности', r => tzIsSuccess(r) && tzRevenue(r) === null],
+      ['Реализация есть, успех пуст', r => tzDate(tzRaw(r, TZC.realizDate)) && tzEmpty(tzRaw(r, TZC.success))],
+      ['Успех есть, этап ≠ «Успешно реализовано»', r => !tzEmpty(tzRaw(r, TZC.success)) && String(tzRaw(r, TZC.stage)).trim() !== 'Успешно реализовано'],
     ];
     const body = `<div class="tz-quality-list">
-      ${checks.map(([l, v]) => `<div class="tz-quality-item ${v > 0 ? 'has' : 'ok'}">
-        <span class="tz-quality-lbl">${esc(l)}</span>
-        <span class="tz-quality-num">${tzNum(v)}</span>
-      </div>`).join('')}
+      ${checks.map(([l, pred]) => {
+        const ids = tzIssueIds(rows, pred);
+        const v = ids.length;
+        let key = '';
+        if (v > 0) { key = 'q' + (Object.keys(_tzIssues).length + 1); _tzIssues[key] = { title: l, hint: 'Сделки по проверке «' + l + '».', ids }; }
+        return `<div class="tz-quality-item ${v > 0 ? 'has clickable' : 'ok'}" ${v > 0 ? `data-tz-issue="${key}"` : ''}>
+          <span class="tz-quality-lbl">${esc(l)}</span>
+          <span class="tz-quality-num">${tzNum(v)}</span>
+        </div>`;
+      }).join('')}
     </div>`;
     return tzWidgetShell('Качество данных', 'Проверка полноты и согласованности', '', body, { className: 'tz-quality-widget' });
   }

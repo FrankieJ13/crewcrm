@@ -1348,16 +1348,22 @@ function _presenceDeviceIcon(ua) {
   const isMac = /Macintosh|Mac OS X/i.test(s);
   const isAndroid = /Android/i.test(s);
   const isiOS = /iPhone|iPad|iPod/i.test(s);
-  let icon, title;
-  if (isClient && isWin)      { icon = '🖥️'; title = 'ПК · клиент Windows'; }
-  else if (isClient && isMac) { icon = '🖥️'; title = 'Mac · клиент'; }
-  else if (isClient)          { icon = '🖥️'; title = 'Десктоп-клиент'; }
-  else if (isAndroid)         { icon = '📱'; title = 'Android'; }
-  else if (isiOS)             { icon = '📱'; title = 'iPhone / iPad'; }
-  else if (isWin)             { icon = '🌐'; title = 'Браузер · Windows'; }
-  else if (isMac)             { icon = '🌐'; title = 'Браузер · Mac'; }
-  else                        { icon = '🌐'; title = 'Браузер'; }
-  return `<span class="presence-device" title="${escapeHtml(title)}">${icon}</span>`;
+  // Однотонные SVG (currentColor)
+  const SVG = {
+    desktop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+    phone:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>',
+    globe:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>'
+  };
+  let svg, title;
+  if (isClient && isWin)      { svg = SVG.desktop; title = 'ПК · клиент Windows'; }
+  else if (isClient && isMac) { svg = SVG.desktop; title = 'Mac · клиент'; }
+  else if (isClient)          { svg = SVG.desktop; title = 'Десктоп-клиент'; }
+  else if (isAndroid)         { svg = SVG.phone;   title = 'Android'; }
+  else if (isiOS)             { svg = SVG.phone;   title = 'iPhone / iPad'; }
+  else if (isWin)             { svg = SVG.globe;   title = 'Браузер · Windows'; }
+  else if (isMac)             { svg = SVG.globe;   title = 'Браузер · Mac'; }
+  else                        { svg = SVG.globe;   title = 'Браузер'; }
+  return `<span class="presence-device" title="${escapeHtml(title)}">${svg}</span>`;
 }
 
 function getPresencePageLabel() {

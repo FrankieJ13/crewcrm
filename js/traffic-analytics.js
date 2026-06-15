@@ -2155,16 +2155,22 @@
     return [null, null];
   }
   // Поля даты, по которым может применяться период (выборка/виджеты).
-  // visit — особое: визит засчитывается по «Дата визита» ИЛИ дожимной «Повторная дата визита».
+  // visit — CRM-визит: «Дата визита», плюс дожимная «Повторная дата визита»
+  // ТОЛЬКО когда «ДОЖИМ Ответственный» пуст (иначе это визит отдела ДОЖИМ).
   const TZ_PERIOD_FIELDS = {
-    created: { label: 'Дата создания сделки',      cand: TZC.created },
-    visit:   { label: 'Дата визита (вкл. дожим)',  visit: true },
-    realiz:  { label: 'Дата реализации',           cand: TZC.realizDate },
-    closed:  { label: 'Дата закрытия',             cand: TZC.closed },
+    created: { label: 'Дата создания сделки',         cand: TZC.created },
+    visit:   { label: 'Дата визита CRM (вкл. дожим)', visit: true },
+    realiz:  { label: 'Дата реализации',              cand: TZC.realizDate },
+    closed:  { label: 'Дата закрытия',                cand: TZC.closed },
   };
   function tzRowDates(r, pf) {
     const def = TZ_PERIOD_FIELDS[pf] || TZ_PERIOD_FIELDS.created;
-    if (def.visit) return [tzDate(tzRaw(r, TZC.visitDate)), tzDate(tzRaw(r, TZC.dozhimVisit))].filter(Boolean);
+    if (def.visit) {
+      const ds = [tzDate(tzRaw(r, TZC.visitDate))];
+      // повторный визит засчитываем как CRM только если нет дожим-ответственного
+      if (tzEmpty(tzRaw(r, TZC.dozhimResp))) ds.push(tzDate(tzRaw(r, TZC.dozhimVisit)));
+      return ds.filter(Boolean);
+    }
     return [tzDate(tzRaw(r, def.cand))].filter(Boolean);
   }
   // Попадает ли строка в период [from,to] по выбранному дата-полю
@@ -2173,6 +2179,59 @@
     const ds = tzRowDates(r, pf);
     if (!ds.length) return false;
     return ds.some(d => (!from || d >= from) && (!to || d <= to));
+  }
+
+  // ── Планы из листов ПЛАН{ммГГ} (A=имя, B=план визитов, C=роль, D=план продаж) ──
+  // Кэшируются по суффиксу месяца. Лист помесячный, аналитика — по периоду CSV,
+  // поэтому план = сумма по затронутым месяцам.
+  function tzSuffixesOf(rows, pf) {
+    const set = new Set();
+    rows.forEach(r => tzRowDates(r, pf).forEach(d => set.add(String(d.getMonth() + 1).padStart(2, '0') + String(d.getFullYear()).slice(-2))));
+    return [...set];
+  }
+  function tzParsePlan(data) {
+    let crmVisit = 0, dozhimSales = 0;
+    if (Array.isArray(data)) {
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i]; if (!row || !row[0]) continue;
+        if (/бюджет/i.test(String(row[0]))) continue;
+        const role = String(row[2] || '').trim().toLowerCase();
+        const visitPlan = parseFloat(String(row[1] || '0').replace(/[^\d.]/g, '')) || 0;
+        const salesPlan = parseFloat(String(row[3] || '0').replace(/[^\d.]/g, '')) || 0;
+        if (role === 'dozhim') dozhimSales += salesPlan;
+        else crmVisit += visitPlan;          // crm или пусто
+      }
+    }
+    return { crmVisit, dozhimSales };
+  }
+  function tzEnsurePlans(suffixes) {
+    state.tzPlans = state.tzPlans || {};
+    state.tzPlansLoading = state.tzPlansLoading || {};
+    if (typeof window.api !== 'function') return;
+    const need = suffixes.filter(s => !state.tzPlans[s] && !state.tzPlansLoading[s]);
+    if (!need.length) return;
+    Promise.all(need.map(suf => {
+      state.tzPlansLoading[suf] = true;
+      return window.api('ПЛАН' + suf, 'A:F', { force: false })
+        .then(d => { state.tzPlans[suf] = tzParsePlan(d); })
+        .catch(() => { state.tzPlans[suf] = { crmVisit: 0, dozhimSales: 0, missing: true }; })
+        .finally(() => { delete state.tzPlansLoading[suf]; });
+    })).then(() => { renderTrafficAnalytics(); });
+  }
+  function tzPlanSum(suffixes, key) {
+    let sum = 0, ready = true, any = false;
+    suffixes.forEach(s => { const p = (state.tzPlans || {})[s]; if (!p) ready = false; else { sum += (p[key] || 0); if (!p.missing) any = true; } });
+    return { value: sum, ready, any };
+  }
+  function tzPlanProgress(fact, plan, unit) {
+    const pct = plan > 0 ? Math.round(fact / plan * 100) : 0;
+    const left = Math.max(0, plan - fact);
+    const done = pct >= 100;
+    return `<div class="tz-plan">
+      <div class="tz-plan-top"><span class="tz-plan-lbl">План отдела</span><span class="tz-plan-pct ${done ? 'done' : ''}">${pct}%</span></div>
+      <div class="tz-plan-bar"><div class="tz-plan-fill ${done ? 'done' : ''}" style="width:${Math.min(100, pct)}%"></div></div>
+      <div class="tz-plan-sub">Факт <b>${tzNum(fact)}</b> из <b>${tzNum(plan)}</b> · ${done ? 'выполнен' : 'осталось ' + tzNum(left)} ${esc(unit)}</div>
+    </div>`;
   }
 
   function tzFilteredRows(periodField = 'created') {
@@ -2188,14 +2247,14 @@
     return rows;
   }
 
-  // Метка периода по фактическим датам создания в выборке (для подзаголовков)
-  function tzPeriodLabel(rows) {
+  // Метка периода по фактическим датам выбранного дата-поля (для подзаголовков)
+  function tzPeriodLabel(rows, pf = 'created') {
     let min = null, max = null;
     rows.forEach(r => {
-      const d = tzDate(tzRaw(r, TZC.created));
-      if (!d) return;
-      if (!min || d < min) min = d;
-      if (!max || d > max) max = d;
+      tzRowDates(r, pf).forEach(d => {
+        if (!min || d < min) min = d;
+        if (!max || d > max) max = d;
+      });
     });
     if (!min || !max) return '';
     const f = d => `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getFullYear()).slice(-2)}`;
@@ -2225,6 +2284,7 @@
       <div class="traffic-grid tz-grid ${tzGridClass()}">
         ${tzWidgetTrend(rows)}
         ${tzWidgetSource(rows)}
+        ${tzWidgetVisitsCrm(tzFilteredRows('visit'))}
         ${tzWidgetRealizations(tzFilteredRows('realiz'))}
         ${tzWidgetWarmFinance(rows)}
         ${tzWidgetStages(rows)}
@@ -2523,6 +2583,7 @@
     'tz-trend-widget': TZ_SVG('<path d="M3 17l5-5 4 4 8-9"/><path d="M16 7h4v4"/>'),
     'tz-source-widget': TZ_SVG('<path d="M3 4h18l-7 8.5V20l-4-2v-5.5z"/>'),
     'tz-realiz-widget': TZ_SVG('<path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 6H4.5a2.5 2.5 0 0 0 4 2M17 6h2.5a2.5 2.5 0 0 1-4 2"/><path d="M10 17h4M9 20h6M12 13v4"/>'),
+    'tz-visitscrm-widget': TZ_SVG('<rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M9 14.5l2.2 2.2L15.5 12"/>'),
     'tz-finance-widget': TZ_SVG('<path d="M12 21c3.3 0 5.5-2.4 5.5-5.4c0-2.4-1.4-4-2.8-5.6c-.5 1.8-1.7 2.2-1.7 2.2s.8-2.4-.6-4.6C11.2 5.6 9.3 7 9 9c-.8-.4-1-1.8-1-1.8C7 8.4 6.5 10 6.5 12.2C6.5 16 8.7 21 12 21z"/>'),
     'tz-stages-widget': TZ_SVG('<path d="M3 5h18M6 10h12M9 15h6M11 20h2"/>'),
     'tz-reasons-widget': TZ_SVG('<circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/>'),
@@ -2624,7 +2685,7 @@
         ${tzDonut(rank.items, total, tzNum(total), 'лидов')}
       </div>`;
     const issues = tzIssueIds(rows, r => tzEmpty(tzRaw(r, TZC.source)));
-    const mainVal = `${tzNum(srcCount)} ${tzPlural(srcCount, 'источник', 'источника', 'источников')} / ${tzNum(total)} ${tzPlural(total, 'лид', 'лида', 'лидов')}`;
+    const mainVal = `${tzNum(srcCount)} ист. / ${tzNum(total)} ${tzPlural(total, 'лид', 'лида', 'лидов')}`;
     return tzWidgetShell('Лиды по источнику', 'Источник обращения', mainVal, body, { wide: true, className: 'tz-source-widget', compactValue: tzNum(total), issues: { ids: issues, hint: 'Сделки без «Источник обращения» — попали в «Не заполнено».' } });
   }
 
@@ -2712,7 +2773,7 @@
   function tzWidgetWarmFinance(rows) {
     const warm = rows.filter(r => String(tzRaw(r, TZC.source)).trim() === WARM_SOURCE);
     if (!warm.length) {
-      return tzWidgetShell('Финансы тёплых лидов', WARM_SOURCE, '', '<div class="tz-empty-inline">Нет тёплых лидов для финансового расчёта</div>', { wide: true, className: 'tz-finance-widget' });
+      return tzWidgetShell('Финансы ТЛ',WARM_SOURCE, '', '<div class="tz-empty-inline">Нет тёплых лидов для финансового расчёта</div>', { wide: true, className: 'tz-finance-widget' });
     }
     const fin = tzWarmStats(warm);
     const ringPct = Math.round(fin.revenueCoverage);
@@ -2760,7 +2821,7 @@
       <div class="tz-land-title">Разбивка по посадкам</div>
       ${landTable}`;
     const issues = tzIssueIds(warm, r => { const c = tzMoney(tzRaw(r, TZC.cost)); return c === null || c <= 0; });
-    return tzWidgetShell('Финансы тёплых лидов', WARM_SOURCE + ' · только этот источник', '', body, { wide: true, className: 'tz-finance-widget', issues: { ids: issues, hint: 'Тёплые лиды без валидной «Стоимость лида» — не вошли в расход/CPL.' } });
+    return tzWidgetShell('Финансы ТЛ',WARM_SOURCE + ' · только этот источник', '', body, { wide: true, className: 'tz-finance-widget', issues: { ids: issues, hint: 'Тёплые лиды без валидной «Стоимость лида» — не вошли в расход/CPL.' } });
   }
   function tzIsSuccess(r) {
     return !tzEmpty(tzRaw(r, TZC.success)) || String(tzRaw(r, TZC.stage)).trim() === 'Успешно реализовано';
@@ -2945,6 +3006,30 @@
     <div class="tz-quality-line tz-note">⚠ В поле «Ответственный» могут быть города/системные значения — проверьте справочник</div>`;
     const issues = tzIssueIds(rows, r => tzEmpty(tzRaw(r, TZC.responsible)));
     return tzWidgetShell('Лиды по ответственному', 'Ответственный', tzNum(total) + ' лидов', body, { className: 'tz-responsible-widget', issues: { ids: issues, hint: 'Сделки без «Ответственный».' } });
+  }
+
+  // ═══ ВИДЖЕТ: Визиты CRM ═══
+  // rows уже отфильтрованы по периоду визита (tzFilteredRows('visit')):
+  // «Дата визита» + повторная (дожимная) дата, когда «ДОЖИМ Ответственный» пуст.
+  function tzWidgetVisitsCrm(rows) {
+    const total = rows.length;
+    if (!total) {
+      return tzWidgetShell('Визиты CRM', 'По дате визита · отдел CRM', '', '<div class="tz-empty-inline">Нет визитов CRM в периоде</div>', { className: 'tz-visitscrm-widget' });
+    }
+    const rank = tzRanking(rows, TZC.responsible);
+    const max = rank.items[0]?.value || 1;
+    // План визитов CRM из ПЛАН{месяц} (сумма по затронутым месяцам)
+    const sufs = tzSuffixesOf(rows, 'visit');
+    tzEnsurePlans(sufs);
+    const noFilter = !(state.tzFilters.responsible || []).length;   // план отдела корректен без фильтра по ответственным
+    const plan = tzPlanSum(sufs, 'crmVisit');
+    const planBlock = (noFilter && plan.ready && plan.any && plan.value > 0) ? tzPlanProgress(total, plan.value, 'визитов') : '';
+    const body = `${planBlock}<div class="tz-rank-list">
+      ${rank.items.map((it, i) => tzRankRow(it.label, it.value, total, max, { colorIndex: i, clickFilter: 'responsible', display: tzDimDisplay('responsible', it.label) })).join('')}
+      ${rank.hasOther ? tzOtherRow('Состав «Прочие»', rank.other, total, max, 6, rank.otherItems) : ''}
+    </div>
+    <div class="tz-quality-line tz-note">Период считается по «Дата визита» (вкл. повторный визит, если «ДОЖИМ Ответственный» пуст).</div>`;
+    return tzWidgetShell('Визиты CRM', 'По дате визита · отдел CRM', tzNum(total) + ' визитов', body, { className: 'tz-visitscrm-widget', compactValue: tzNum(total) });
   }
 
   // ═══ ВИДЖЕТ 7: Лиды по городам ═══
@@ -3363,7 +3448,7 @@
     w = tzMigrateWidget(w);
     const rows = tzWidgetRows(w);
     const kind = TZ_KINDS[w.kind] ? w.kind : 'ranking';
-    const per = tzPeriodLabel(rows);
+    const per = tzPeriodLabel(rows, w.periodField || 'created');
     let body = '', main = '', sub = TZ_KINDS[kind].label;
     if (!rows.length) {
       body = '<div class="tz-empty-inline">Нет данных в выбранном периоде</div>';
@@ -3501,7 +3586,11 @@
       </div></div>
       <div class="tz-b-controls" id="tzb-controls"></div>
       <div class="tz-b-sec"><div class="tz-b-lbl">Период</div><div class="tz-b-period" id="tzb-period">
-        ${[['all','Всё'],['today','Сегодня'],['week','Неделя'],['month','Месяц']].map(([v, l]) => `<button type="button" class="tz-b-pill ${cfg.period.type === v ? 'active' : ''}" data-tzb-period="${v}">${l}</button>`).join('')}
+        ${[['all','Всё'],['today','Сегодня'],['week','Неделя'],['month','Месяц'],['range','📅 Свой']].map(([v, l]) => `<button type="button" class="tz-b-pill ${cfg.period.type === v ? 'active' : ''}" data-tzb-period="${v}">${l}</button>`).join('')}
+      </div>
+      <div class="tz-b-range" id="tzb-range" style="${cfg.period.type === 'range' ? '' : 'display:none'}">
+        <label class="tz-b-field">От<input type="date" id="tzb-from" value="${esc(cfg.period.dateFrom || '')}"></label>
+        <label class="tz-b-field">До<input type="date" id="tzb-to" value="${esc(cfg.period.dateTo || '')}"></label>
       </div>
       <label class="tz-b-field" style="margin-top:8px">Период считать по дате<select id="tzb-periodfield">${Object.entries(TZ_PERIOD_FIELDS).map(([k, d]) => `<option value="${k}" ${(cfg.periodField || 'created') === k ? 'selected' : ''}>${esc(d.label)}</option>`).join('')}</select></label></div>
       <div class="tz-b-preview" id="tzb-preview"></div>
@@ -3566,8 +3655,12 @@
     modal.querySelectorAll('[data-tzb-period]').forEach(b => b.onclick = () => {
       cfg.period = { ...cfg.period, type: b.dataset.tzbPeriod };
       modal.querySelectorAll('[data-tzb-period]').forEach(x => x.classList.toggle('active', x === b));
+      const rng = document.getElementById('tzb-range');
+      if (rng) rng.style.display = cfg.period.type === 'range' ? '' : 'none';
       preview();
     });
+    document.getElementById('tzb-from') && (document.getElementById('tzb-from').onchange = e => { cfg.period = { ...cfg.period, dateFrom: e.target.value || null }; preview(); });
+    document.getElementById('tzb-to') && (document.getElementById('tzb-to').onchange = e => { cfg.period = { ...cfg.period, dateTo: e.target.value || null }; preview(); });
     const pfSel = document.getElementById('tzb-periodfield');
     if (pfSel) pfSel.onchange = e => { cfg.periodField = e.target.value; preview(); };
     document.getElementById('tzb-title').oninput = preview;

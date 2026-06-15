@@ -3409,7 +3409,57 @@
       if (!vals || !vals.length || !TZ_DIMS[dim]) return;
       rows = rows.filter(r => vals.includes(String(tzRaw(r, TZ_DIMS[dim].cand)).trim()));
     });
+    // Пользовательские условия по любым полям CSV
+    (w.conditions || []).forEach(c => { rows = rows.filter(r => tzCondMatch(r, c)); });
     return rows;
+  }
+
+  // ── Конструктор условий: реестр полей CSV + проверка условия ──
+  const TZ_COND_OPS = {
+    in:       { label: 'из списка',  needValues: true,  list: true },
+    eq:       { label: 'равно',      needValues: true },
+    contains: { label: 'содержит',   needValues: true,  text: true },
+    empty:    { label: 'пусто',      needValues: false },
+    filled:   { label: 'заполнено',  needValues: false },
+  };
+  // Список полей из загруженного CSV (по заголовкам), дедуп
+  function tzFieldRegistry() {
+    const seen = new Set(), out = [];
+    (state.fields || []).forEach(f => {
+      const key = String(f.originalName || f.normalizedName || '').trim();
+      if (!key || seen.has(key)) return; seen.add(key);
+      out.push({ key, label: key });
+    });
+    return out;
+  }
+  // Уникальные значения поля (для мультивыбора), включая «пусто»
+  function tzFieldValues(field) {
+    const vals = tzUnique([field]);
+    return vals;
+  }
+  function tzCondMatch(r, c) {
+    if (!c || !c.field) return true;
+    const raw = String(tzRaw(r, [c.field])).trim();
+    const empty = tzEmpty(raw);
+    switch (c.op) {
+      case 'empty':  return empty;
+      case 'filled': return !empty;
+      case 'in':     { if (!c.values || !c.values.length) return true; const v = empty ? EMPTY_LABEL : raw; return c.values.includes(v); }
+      case 'eq':     return raw === String((c.values && c.values[0]) || '');
+      case 'contains': return raw.toLowerCase().includes(String((c.values && c.values[0]) || '').toLowerCase());
+      default:       return true;
+    }
+  }
+  // Короткая сводка условий для подзаголовка виджета
+  function tzCondSummary(conditions) {
+    return (conditions || []).filter(c => c.field).map(c => {
+      const op = TZ_COND_OPS[c.op];
+      if (!op) return '';
+      if (c.op === 'empty') return `${c.field}: пусто`;
+      if (c.op === 'filled') return `${c.field}: заполнено`;
+      if (c.op === 'in') return `${c.field}: ${(c.values || []).length || 'все'}`;
+      return `${c.field}: ${(c.values && c.values[0]) || ''}`;
+    }).filter(Boolean).join(' · ');
   }
 
   // Группировка строк по разрезу → [{label, rows}]
@@ -3556,7 +3606,7 @@
         <div class="tz-card-head">
           <div class="tz-card-title">${esc(w.title || 'Виджет')}</div>
           <div class="tz-card-tools">${toggleBtn}</div>
-          <div class="tz-card-sub">${esc(sub)}${per ? ' · ' + per : ''}</div>
+          <div class="tz-card-sub">${esc(sub)}${per ? ' · ' + per : ''}${(() => { const cs = tzCondSummary(w.conditions); return cs ? ' · <span class="tz-cond-tag">⚙ ' + esc(cs) + '</span>' : ''; })()}</div>
         </div>
         ${main ? `<div class="tz-card-main">${main}</div>` : ''}
         ${compact ? '' : `<div class="tz-card-body">${body}</div>`}
@@ -3574,8 +3624,9 @@
       v: 2, id: `widget_${Date.now()}`, title: '', kind: 'ranking',
       dimension: 'source', splitBy: '', dateField: 'created', granularity: 'day',
       metric: 'count', metrics: ['count'], topN: 10, baseId: '', op: 'ratio',
-      period: { type: 'all', dateFrom: null, dateTo: null }, periodField: 'created', filters: {}
+      period: { type: 'all', dateFrom: null, dateTo: null }, periodField: 'created', filters: {}, conditions: []
     };
+    if (!Array.isArray(cfg.conditions)) cfg.conditions = [];
     if (cfg.op == null) cfg.op = 'ratio';
     modal.innerHTML = `<div class="traffic-modal-card tz-builder-card">
       <button class="traffic-modal-close" data-traffic-close type="button">×</button>
@@ -3593,6 +3644,11 @@
         <label class="tz-b-field">До<input type="date" id="tzb-to" value="${esc(cfg.period.dateTo || '')}"></label>
       </div>
       <label class="tz-b-field" style="margin-top:8px">Период считать по дате<select id="tzb-periodfield">${Object.entries(TZ_PERIOD_FIELDS).map(([k, d]) => `<option value="${k}" ${(cfg.periodField || 'created') === k ? 'selected' : ''}>${esc(d.label)}</option>`).join('')}</select></label></div>
+      <div class="tz-b-sec"><div class="tz-b-lbl">Условия (любые поля CSV)</div>
+        <div id="tzb-conditions"></div>
+        <button type="button" class="tz-ed-btn tz-b-addcond" id="tzb-addcond">+ Добавить условие</button>
+        <div class="tz-b-hint">Напр.: «ДОЖИМ Ответственный = пусто» + «Ответственный = из списка». Несколько условий объединяются И.</div>
+      </div>
       <div class="tz-b-preview" id="tzb-preview"></div>
       <div class="traffic-modal-actions">
         <button class="tz-ed-btn" data-traffic-close>Отмена</button>
@@ -3647,6 +3703,38 @@
       const prev = document.getElementById('tzb-preview');
       try { prev.innerHTML = tzRenderCustomWidget({ ...cfg, title: cfg.title || 'Превью' }); } catch(e) { prev.innerHTML = '<div class="tz-empty-inline">Ошибка превью</div>'; }
     };
+    // Конструктор условий: строки «поле → оператор → значения»
+    const fieldReg = tzFieldRegistry();
+    const renderConditions = () => {
+      const host = document.getElementById('tzb-conditions');
+      if (!host) return;
+      host.innerHTML = (cfg.conditions || []).map((c, i) => {
+        const op = TZ_COND_OPS[c.op] ? c.op : 'in';
+        const fieldOpts = `<option value="">— поле —</option>` + fieldReg.map(f => `<option value="${esc(f.key)}" ${c.field === f.key ? 'selected' : ''}>${esc(f.label)}</option>`).join('');
+        const opOpts = Object.entries(TZ_COND_OPS).map(([k, o]) => `<option value="${k}" ${op === k ? 'selected' : ''}>${esc(o.label)}</option>`).join('');
+        let valCtrl = '';
+        if (c.field && TZ_COND_OPS[op].needValues) {
+          if (TZ_COND_OPS[op].list) {
+            const vals = [{ label: EMPTY_LABEL, n: '∅' }].concat(tzFieldValues(c.field).slice(0, 80));
+            valCtrl = `<div class="tz-cond-vals">${vals.map(v => `<label class="tz-b-chk"><input type="checkbox" data-cond-val="${i}" value="${esc(v.label)}" ${(c.values || []).includes(v.label) ? 'checked' : ''}> ${esc(v.label)} <span class="tz-cond-n">${v.n}</span></label>`).join('')}</div>`;
+          } else {
+            valCtrl = `<input class="tz-cond-text" data-cond-text="${i}" placeholder="значение" value="${esc((c.values && c.values[0]) || '')}">`;
+          }
+        }
+        return `<div class="tz-cond-row" data-ci="${i}">
+          <div class="tz-cond-head">
+            <select data-cond-field="${i}">${fieldOpts}</select>
+            <select data-cond-op="${i}">${opOpts}</select>
+            <button type="button" class="tz-cond-del" data-cond-del="${i}" aria-label="Удалить условие">✕</button>
+          </div>${valCtrl}
+        </div>`;
+      }).join('') || '<div class="tz-b-hint" style="margin:0">Условий нет — учитываются все строки.</div>';
+      host.querySelectorAll('[data-cond-field]').forEach(s => s.onchange = e => { const i = +e.target.dataset.condField; cfg.conditions[i].field = e.target.value; cfg.conditions[i].values = []; renderConditions(); preview(); });
+      host.querySelectorAll('[data-cond-op]').forEach(s => s.onchange = e => { const i = +e.target.dataset.condOp; cfg.conditions[i].op = e.target.value; cfg.conditions[i].values = []; renderConditions(); preview(); });
+      host.querySelectorAll('[data-cond-del]').forEach(b => b.onclick = e => { const i = +e.currentTarget.dataset.condDel; cfg.conditions.splice(i, 1); renderConditions(); preview(); });
+      host.querySelectorAll('[data-cond-val]').forEach(cb => cb.onchange = e => { const i = +e.target.dataset.condVal; const arr = cfg.conditions[i].values || (cfg.conditions[i].values = []); const v = e.target.value, k = arr.indexOf(v); if (e.target.checked) { if (k < 0) arr.push(v); } else if (k >= 0) arr.splice(k, 1); preview(); });
+      host.querySelectorAll('[data-cond-text]').forEach(inp => inp.oninput = e => { const i = +e.target.dataset.condText; cfg.conditions[i].values = [e.target.value]; preview(); });
+    };
     modal.querySelectorAll('[data-tzb-kind]').forEach(b => b.onclick = () => {
       cfg.kind = b.dataset.tzbKind;
       modal.querySelectorAll('[data-tzb-kind]').forEach(x => x.classList.toggle('active', x === b));
@@ -3663,8 +3751,10 @@
     document.getElementById('tzb-to') && (document.getElementById('tzb-to').onchange = e => { cfg.period = { ...cfg.period, dateTo: e.target.value || null }; preview(); });
     const pfSel = document.getElementById('tzb-periodfield');
     if (pfSel) pfSel.onchange = e => { cfg.periodField = e.target.value; preview(); };
+    document.getElementById('tzb-addcond') && (document.getElementById('tzb-addcond').onclick = () => { cfg.conditions.push({ field: '', op: 'in', values: [] }); renderConditions(); preview(); });
     document.getElementById('tzb-title').oninput = preview;
     renderControls();
+    renderConditions();
     preview();
     // Снимок исходной конфигурации для проверки «грязных» изменений.
     // Отмена/×/клик по фону: если ничего не менялось — просто закрыть,

@@ -2189,6 +2189,14 @@
     rows.forEach(r => tzRowDates(r, pf).forEach(d => set.add(String(d.getMonth() + 1).padStart(2, '0') + String(d.getFullYear()).slice(-2))));
     return [...set];
   }
+  // Месяцы (ммГГ) между двумя датами включительно — для суммирования планов по периоду
+  function tzMonthsBetween(from, to) {
+    if (!from || !to || from > to) return [];
+    const out = [], d = new Date(from.getFullYear(), from.getMonth(), 1), end = new Date(to.getFullYear(), to.getMonth(), 1);
+    let g = 0;
+    while (d <= end && g++ < 60) { out.push(String(d.getMonth() + 1).padStart(2, '0') + String(d.getFullYear()).slice(-2)); d.setMonth(d.getMonth() + 1); }
+    return out;
+  }
   function tzParsePlan(data) {
     let crmVisit = 0, dozhimSales = 0;
     if (Array.isArray(data)) {
@@ -2419,6 +2427,7 @@
             ${sel.length ? `<button class="tz-ms-clear" data-tz-ms-clear="${esc(key)}" type="button">Очистить</button>` : ''}
           </div></div>
           <div class="tz-ms-hint">Пусто = учитываются все. «Выбрать все», чтобы потом снять лишние.</div>
+          ${items.length > 8 ? `<input class="tz-ms-search" data-tz-ms-search type="text" placeholder="Поиск…" autocomplete="off">` : ''}
           <div class="tz-ms-list">${list || '<div class="tz-ms-empty">Нет значений</div>'}</div>
           <button class="tz-ms-apply" data-tz-ms-apply type="button">Готово</button>
         </div>
@@ -3018,8 +3027,15 @@
     }
     const rank = tzRanking(rows, TZC.responsible);
     const max = rank.items[0]?.value || 1;
-    // План визитов CRM из ПЛАН{месяц} (сумма по затронутым месяцам)
-    const sufs = tzSuffixesOf(rows, 'visit');
+    // План визитов CRM из ПЛАН{месяц}: месяцы берём из ДИАПАЗОНА периода
+    // (а не из дат строк — иначе visit+dozhim даты задваивают месяцы и план).
+    let [pfrom, pto] = tzDateRange();
+    if (!pfrom && !pto) {                                  // «Всё» → охват по фактическим датам визита
+      let mn = null, mx = null;
+      rows.forEach(r => tzRowDates(r, 'visit').forEach(d => { if (!mn || d < mn) mn = d; if (!mx || d > mx) mx = d; }));
+      pfrom = mn; pto = mx;
+    }
+    const sufs = tzMonthsBetween(pfrom, pto);
     tzEnsurePlans(sufs);
     const noFilter = !(state.tzFilters.responsible || []).length;   // план отдела корректен без фильтра по ответственным
     const plan = tzPlanSum(sufs, 'crmVisit');
@@ -3137,6 +3153,17 @@
         const cand = { source: TZC.source, city: TZC.city, responsible: TZC.responsible, success: TZC.success }[key];
         if (cand) { state.tzFilters[key] = tzUnique(cand).map(x => x.label); renderTrafficAnalytics(); }
       };
+    });
+    document.querySelectorAll('[data-tz-ms-search]').forEach(inp => {
+      inp.oninput = () => {
+        const q = inp.value.trim().toLowerCase().replace(/ё/g, 'е');
+        const list = inp.parentElement.querySelector('.tz-ms-list');
+        list && list.querySelectorAll('.tz-ms-opt').forEach(opt => {
+          const name = (opt.querySelector('.tz-ms-name')?.textContent || '').toLowerCase().replace(/ё/g, 'е');
+          opt.style.display = (!q || name.includes(q)) ? '' : 'none';
+        });
+      };
+      inp.onclick = e => e.stopPropagation();
     });
     document.querySelectorAll('[data-tz-ms-apply]').forEach(btn => {
       btn.onclick = () => renderTrafficAnalytics();

@@ -136,18 +136,24 @@
     const idSucc = (H['Успешное закрытие карточки'] || [])[0];
     const idCity = (H['Город'] || [])[0];
     const idSrc = H['Источник обращения'];
+    const idDozhimVisit = (H['Повторная дата визита (ДОЖИМ)'] || [])[0];
+    const idDozhimResp = (H['ДОЖИМ Ответственный'] || [])[0];
     const deals = [];
     for (let r = 1; r < rows.length; r++) {
       const row = rows[r];
       if (!row || !row.length) continue;
       const visitRaw = idVisit != null ? String(row[idVisit] || '').trim() : '';
-      if (!visitRaw) continue;                                 // только сделки с проставленной датой визита
+      const dozhimVisitRaw = idDozhimVisit != null ? String(row[idDozhimVisit] || '').trim() : '';
+      const dozhimResp = idDozhimResp != null ? String(row[idDozhimResp] || '').trim() : '';
+      // берём сделку с осн. датой визита ИЛИ дожимной (когда «ДОЖИМ Ответственный» пуст)
+      if (!visitRaw && !(dozhimVisitRaw && !dozhimResp)) continue;
       const phones = new Set();
       phoneIdx.forEach(i => { extractPhones(row[i]).forEach(p => phones.add(p)); });
       deals.push({
         id: idId != null ? String(row[idId] || '').trim() : '',
         responsible: idResp != null ? String(row[idResp] || '').trim() : '',
         visitRaw, visit: parseDMY(visitRaw),
+        dozhimVisit: parseDMY(dozhimVisitRaw), dozhimResp,
         success: idSucc != null ? String(row[idSucc] || '').trim() : '',
         city: idCity != null ? String(row[idCity] || '').trim() : '',
         source: firstNonEmpty(row, idSrc),
@@ -213,19 +219,28 @@
       // выбираем эталонную сделку: с лучшим совпадением даты, иначе первую
       let deal = null;
       if (dealsForPhone.length) {
-        deal = dealsForPhone.find(d => v.date && d.visit && d.visit.d === v.date.d && d.visit.m === v.date.m && d.visit.y === v.date.y)
-          || dealsForPhone.find(d => v.date && d.visit && d.visit.m === v.date.m && d.visit.y === v.date.y)
+        const dd = d => [d.visit, (d.dozhimVisit && !d.dozhimResp) ? d.dozhimVisit : null].filter(Boolean);
+        deal = dealsForPhone.find(d => v.date && dd(d).some(x => x.d === v.date.d && x.m === v.date.m && x.y === v.date.y))
+          || dealsForPhone.find(d => v.date && dd(d).some(x => x.m === v.date.m && x.y === v.date.y))
           || dealsForPhone[0];
       }
       const checks = {};
       // ТЕЛЕФОН (критично)
       checks.phone = !vphones.length ? 'fail' : (dealsForPhone.length ? 'ok' : 'fail');
       if (deal) {
-        // ДАТА (критично): полное дд.мм.гггг → ok, иначе мм.гггг → month, иначе fail
-        if (v.date && deal.visit) {
-          if (v.date.d === deal.visit.d && v.date.m === deal.visit.m && v.date.y === deal.visit.y) checks.date = 'ok';
-          else if (v.date.m === deal.visit.m && v.date.y === deal.visit.y) checks.date = 'month';
-          else checks.date = 'fail';
+        // ДАТА (критично): полное дд.мм.гггг → ok, иначе мм.гггг → month, иначе fail.
+        // Если осн. «Дата визита» не совпала, но «Повторная дата визита (ДОЖИМ)»
+        // попадает в проверяемый месяц И «ДОЖИМ Ответственный» пуст — верим дожим-дате.
+        if (v.date) {
+          const cands = [];
+          if (deal.visit) cands.push(deal.visit);
+          if (deal.dozhimVisit && !deal.dozhimResp) cands.push(deal.dozhimVisit);
+          let best = 'fail';
+          for (const d of cands) {
+            if (d.d === v.date.d && d.m === v.date.m && d.y === v.date.y) { best = 'ok'; break; }
+            if (d.m === v.date.m && d.y === v.date.y) best = 'month';
+          }
+          checks.date = best;
         } else checks.date = 'fail';
         // МЕНЕДЖЕР (критично): достаточно совпадения фамилии; КОТËЛ = Киричок Лидия
         const vMgr = normText(v.manager) === 'котел' ? 'киричок' : surname(v.manager);

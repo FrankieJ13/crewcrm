@@ -3477,15 +3477,21 @@
       default:       return true;
     }
   }
-  // Короткая сводка условий для подзаголовка виджета
+  // Сводка условий для подзаголовка (HTML): показывает выбранные значения,
+  // первые 3 + «+N», полный список — в тултипе (title).
   function tzCondSummary(conditions) {
     return (conditions || []).filter(c => c.field).map(c => {
       const op = TZ_COND_OPS[c.op];
       if (!op) return '';
-      if (c.op === 'empty') return `${c.field}: пусто`;
-      if (c.op === 'filled') return `${c.field}: заполнено`;
-      if (c.op === 'in') return `${c.field}: ${(c.values || []).length || 'все'}`;
-      return `${c.field}: ${(c.values && c.values[0]) || ''}`;
+      let short, full;
+      if (c.op === 'empty') { short = full = 'пусто'; }
+      else if (c.op === 'filled') { short = full = 'заполнено'; }
+      else if (c.op === 'in') {
+        const vals = c.values || [];
+        if (!vals.length) { short = full = 'все'; }
+        else { full = vals.join(', '); short = vals.slice(0, 3).join(', ') + (vals.length > 3 ? ` +${vals.length - 3}` : ''); }
+      } else { short = full = String((c.values && c.values[0]) || ''); }
+      return `<span class="tz-cond-one" title="${esc(c.field + ': ' + full)}">${esc(c.field)}: ${esc(short)}</span>`;
     }).filter(Boolean).join(' · ');
   }
 
@@ -3633,7 +3639,7 @@
         <div class="tz-card-head">
           <div class="tz-card-title">${esc(w.title || 'Виджет')}</div>
           <div class="tz-card-tools">${toggleBtn}</div>
-          <div class="tz-card-sub">${esc(sub)}${per ? ' · ' + per : ''}${(() => { const cs = tzCondSummary(w.conditions); return cs ? ' · <span class="tz-cond-tag">⚙ ' + esc(cs) + '</span>' : ''; })()}</div>
+          <div class="tz-card-sub">${esc(sub)}${per ? ' · ' + per : ''}${(() => { const cs = tzCondSummary(w.conditions); return cs ? ' · <span class="tz-cond-tag">⚙ ' + cs + '</span>' : ''; })()}</div>
         </div>
         ${main ? `<div class="tz-card-main">${main}</div>` : ''}
         ${compact ? '' : `<div class="tz-card-body">${body}</div>`}
@@ -3737,8 +3743,16 @@
       if (!host) return;
       host.innerHTML = (cfg.conditions || []).map((c, i) => {
         const op = TZ_COND_OPS[c.op] ? c.op : 'in';
-        const fieldOpts = `<option value="">— поле —</option>` + fieldReg.map(f => `<option value="${esc(f.key)}" ${c.field === f.key ? 'selected' : ''}>${esc(f.label)}</option>`).join('');
         const opOpts = Object.entries(TZ_COND_OPS).map(([k, o]) => `<option value="${k}" ${op === k ? 'selected' : ''}>${esc(o.label)}</option>`).join('');
+        // Поле — кастомный поиск-дропдаун (полей много)
+        const fieldList = fieldReg.map(f => `<div class="tz-cond-fieldopt ${c.field === f.key ? 'on' : ''}" data-cond-pick="${i}" data-field="${esc(f.key)}">${esc(f.label)}</div>`).join('');
+        const fieldCtrl = `<div class="tz-cond-fieldwrap">
+          <button type="button" class="tz-cond-fieldbtn ${c.field ? 'has' : ''}" data-cond-fieldbtn="${i}" title="${esc(c.field || '')}"><span>${c.field ? esc(c.field) : '— поле —'}</span><svg viewBox="0 0 12 12" width="11" height="11"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="tz-cond-fieldpanel" data-cond-fieldpanel="${i}" hidden>
+            <input class="tz-cond-fieldsearch" data-cond-fieldsearch="${i}" type="text" placeholder="Поиск поля…" autocomplete="off">
+            <div class="tz-cond-fieldlist">${fieldList}</div>
+          </div>
+        </div>`;
         let valCtrl = '';
         if (c.field && TZ_COND_OPS[op].needValues) {
           if (TZ_COND_OPS[op].list) {
@@ -3750,13 +3764,26 @@
         }
         return `<div class="tz-cond-row" data-ci="${i}">
           <div class="tz-cond-head">
-            <select data-cond-field="${i}">${fieldOpts}</select>
+            ${fieldCtrl}
             <select data-cond-op="${i}">${opOpts}</select>
             <button type="button" class="tz-cond-del" data-cond-del="${i}" aria-label="Удалить условие">✕</button>
           </div>${valCtrl}
         </div>`;
       }).join('') || '<div class="tz-b-hint" style="margin:0">Условий нет — учитываются все строки.</div>';
-      host.querySelectorAll('[data-cond-field]').forEach(s => s.onchange = e => { const i = +e.target.dataset.condField; cfg.conditions[i].field = e.target.value; cfg.conditions[i].values = []; renderConditions(); preview(); });
+      // поиск-дропдаун поля
+      host.querySelectorAll('[data-cond-fieldbtn]').forEach(b => b.onclick = e => {
+        e.stopPropagation();
+        const p = b.parentElement.querySelector('.tz-cond-fieldpanel');
+        const wasHidden = p.hidden;
+        host.querySelectorAll('.tz-cond-fieldpanel').forEach(x => x.hidden = true);
+        p.hidden = !wasHidden;
+        if (!p.hidden) { const s = p.querySelector('.tz-cond-fieldsearch'); s.value = ''; s.dispatchEvent(new Event('input')); s.focus(); }
+      });
+      host.querySelectorAll('[data-cond-fieldsearch]').forEach(inp => {
+        inp.onclick = e => e.stopPropagation();
+        inp.oninput = () => { const q = inp.value.trim().toLowerCase().replace(/ё/g, 'е'); inp.parentElement.querySelectorAll('.tz-cond-fieldopt').forEach(o => { o.style.display = (!q || o.textContent.toLowerCase().replace(/ё/g, 'е').includes(q)) ? '' : 'none'; }); };
+      });
+      host.querySelectorAll('[data-cond-pick]').forEach(o => o.onclick = e => { e.stopPropagation(); const i = +o.dataset.condPick; cfg.conditions[i].field = o.dataset.field; cfg.conditions[i].values = []; renderConditions(); preview(); });
       host.querySelectorAll('[data-cond-op]').forEach(s => s.onchange = e => { const i = +e.target.dataset.condOp; cfg.conditions[i].op = e.target.value; cfg.conditions[i].values = []; renderConditions(); preview(); });
       host.querySelectorAll('[data-cond-del]').forEach(b => b.onclick = e => { const i = +e.currentTarget.dataset.condDel; cfg.conditions.splice(i, 1); renderConditions(); preview(); });
       host.querySelectorAll('[data-cond-val]').forEach(cb => cb.onchange = e => { const i = +e.target.dataset.condVal; const arr = cfg.conditions[i].values || (cfg.conditions[i].values = []); const v = e.target.value, k = arr.indexOf(v); if (e.target.checked) { if (k < 0) arr.push(v); } else if (k >= 0) arr.splice(k, 1); preview(); });
@@ -3779,6 +3806,8 @@
     const pfSel = document.getElementById('tzb-periodfield');
     if (pfSel) pfSel.onchange = e => { cfg.periodField = e.target.value; preview(); };
     document.getElementById('tzb-addcond') && (document.getElementById('tzb-addcond').onclick = () => { cfg.conditions.push({ field: '', op: 'in', values: [] }); renderConditions(); preview(); });
+    // Клик вне дропдауна поля — закрыть его (кнопка/поиск/опции делают stopPropagation)
+    if (!modal._tzCondDoc) { modal._tzCondDoc = true; document.addEventListener('click', () => { document.querySelectorAll('.tz-cond-fieldpanel').forEach(p => p.hidden = true); }); }
     document.getElementById('tzb-title').oninput = preview;
     renderControls();
     renderConditions();

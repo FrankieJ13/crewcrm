@@ -3082,9 +3082,9 @@
       ['Город не заполнен', r => tzEmpty(tzRaw(r, TZC.city))],
       ['Ответственный не заполнен', r => tzEmpty(tzRaw(r, TZC.responsible))],
       ['Этап не заполнен', r => tzEmpty(tzRaw(r, TZC.stage))],
-      ['Причина закрытия не заполнена', r => tzEmpty(tzRaw(r, TZC.reason))],
+      ['Причина закрытия не заполнена', r => tzIsLost(r) && tzEmpty(tzRaw(r, TZC.reason))],
       ['Тёплые лиды без стоимости', r => String(tzRaw(r, TZC.source)).trim() === WARM_SOURCE && (() => { const c = tzMoney(tzRaw(r, TZC.cost)); return c === null || c <= 0; })()],
-      ['Успешные без доходности', r => tzIsSuccess(r) && tzRevenue(r) === null],
+      ['Кредит без доходности', r => String(tzRaw(r, TZC.success)).trim() === 'Кредит' && (() => { const v = tzRevenue(r); return v === null || v === 0; })()],
       ['Реализация есть, успех пуст', r => tzDate(tzRaw(r, TZC.realizDate)) && tzEmpty(tzRaw(r, TZC.success))],
       ['Успех есть, этап ≠ «Успешно реализовано»', r => !tzEmpty(tzRaw(r, TZC.success)) && String(tzRaw(r, TZC.stage)).trim() !== 'Успешно реализовано'],
     ];
@@ -3337,13 +3337,20 @@
     success:     { label: 'Вид реализации',   cand: TZC.success },
     landing:     { label: 'Посадка',          cand: TZC.landing },
     qual:        { label: 'Квал лид',         cand: TZC.qual },
+    tags:        { label: 'Теги',             cand: ['Теги'] },
+    bank:        { label: 'Банк',             cand: ['Банк'] },
+    payType:     { label: 'Вид оплаты',       cand: ['Вид оплаты'] },
+    dozhimResp:  { label: 'ДОЖИМ Ответственный', cand: TZC.dozhimResp },
+    cityOut:     { label: 'Город выдачи',     cand: ['Город Выдачи'] },
   };
   // Дата-поля для трендов
   const TZ_DATEF = {
     created:    { label: 'Дата создания',    cand: TZC.created },
     closed:     { label: 'Дата закрытия',    cand: TZC.closed },
     visitDate:  { label: 'Дата визита',      cand: TZC.visitDate },
+    dozhimVisit:{ label: 'Повторная дата визита (ДОЖИМ)', cand: TZC.dozhimVisit },
     realizDate: { label: 'Дата реализации',  cand: TZC.realizDate },
+    edited:     { label: 'Дата редактирования', cand: ['Дата редактирования'] },
   };
   // Метрики (каждая — корректная свёртка набора строк → число)
   const TZ_METRICS = {
@@ -3367,6 +3374,7 @@
     convVisitReal:{ label: '% визит→реализация', fmt: v => v === null ? '—' : v.toFixed(1) + '%', reduce: rs => { const vis = rs.filter(tzHasVisit).length; return vis ? rs.filter(tzIsSuccess).length / vis * 100 : null; } },
     // ── Квалификация ──
     qualCount:   { label: 'Кол-во квалов',     fmt: tzNum,      reduce: rs => rs.filter(tzIsQual).length },
+    notQualCount:{ label: 'Кол-во не квалов',  fmt: tzNum,      reduce: rs => rs.filter(r => !tzIsQual(r)).length },
   };
   // Виды виджетов и какие контролы им нужны
   const TZ_KINDS = {
@@ -3611,24 +3619,35 @@
         sub = 'Гибрид';
         body = '<div class="tz-empty-inline">Выберите базовый виджет с разрезом</div>';
       } else {
-        const dimA = parent.dimension, mA = TZ_METRICS[parent.metric || 'count'], mB = TZ_METRICS[w.metric || 'count'];
+        const dimA = parent.dimension, mA = TZ_METRICS[parent.metric || 'count'];
         const fmt = op.useAfmt ? mA.fmt : op.fmt;
-        sub = `${parent.title || tzDimLabel(dimA)} · ${mA.label} ${op.sym} ${mB.label}`;
-        const groups = tzGroupBy(rows, dimA).map(g => {
-          const a = mA.reduce(g.rows), b = mB.reduce(g.rows);
-          return { label: g.label, a: a || 0, b: b || 0, v: op.calc(a || 0, b || 0) };
-        }).filter(g => g.v !== null && Number.isFinite(g.v)).sort((x, y) => y.v - x.v).slice(0, w.topN || 10);
-        const A = mA.reduce(rows), B = mB.reduce(rows);
-        const totalV = op.calc(A || 0, B || 0);
+        // операнды B: основной + дополнительные (всего до 7)
+        const bKeys = [w.metric || 'count'].concat(w.metrics2 || []).filter(k => TZ_METRICS[k]).slice(0, 7);
+        const bMetrics = bKeys.map(k => TZ_METRICS[k]);
+        sub = `${parent.title || tzDimLabel(dimA)} · ${mA.label} ${op.sym} ${bMetrics.map(m => m.label).join(', ')}`;
+        const grp = tzGroupBy(rows, dimA).map(g => {
+          const a = mA.reduce(g.rows) || 0;
+          return { label: g.label, a, vs: bMetrics.map(m => op.calc(a, m.reduce(g.rows) || 0)) };
+        }).filter(g => g.vs[0] !== null && Number.isFinite(g.vs[0])).sort((x, y) => (y.vs[0] || 0) - (x.vs[0] || 0)).slice(0, w.topN || 10);
+        const A = mA.reduce(rows) || 0;
+        const totalV = op.calc(A, bMetrics[0].reduce(rows) || 0);
         main = fmt(totalV === null ? null : totalV);
-        const maxAbs = Math.max(...groups.map(g => Math.abs(g.v)), 1);
-        body = groups.length ? `<div class="tz-rank-list">
-          ${groups.map((g, i) => `<div class="tz-rank-row"><div class="tz-rank-top">
-            <span class="tz-rank-label" title="${esc(g.label)}">${esc(tzDimDisplay(dimA, g.label))}</span>
-            <span class="tz-rank-value ${g.v < 0 ? 'tz-neg' : ''}">${fmt(g.v)}</span>
-          </div><div class="tz-rank-bar"><div class="tz-rank-bar-fill ${g.v < 0 ? 'tz-neg-bar' : shareColorClass(i)}" style="width:${Math.max(2, Math.abs(g.v) / maxAbs * 100).toFixed(1)}%"></div></div>
-          <div class="tz-rank-sub">${mA.fmt(g.a)} ${op.sym} ${mB.fmt(g.b)}</div></div>`).join('')}
-        </div>` : '<div class="tz-empty-inline">Нет данных по разрезу базового виджета</div>';
+        if (!grp.length) {
+          body = '<div class="tz-empty-inline">Нет данных по разрезу базового виджета</div>';
+        } else if (bMetrics.length === 1) {
+          // одна метрика B — рейтинг с барами
+          const maxAbs = Math.max(...grp.map(g => Math.abs(g.vs[0])), 1);
+          body = `<div class="tz-rank-list">
+            ${grp.map((g, i) => { const v = g.vs[0]; return `<div class="tz-rank-row"><div class="tz-rank-top">
+              <span class="tz-rank-label" title="${esc(g.label)}">${esc(tzDimDisplay(dimA, g.label))}</span>
+              <span class="tz-rank-value ${v < 0 ? 'tz-neg' : ''}">${fmt(v)}</span>
+            </div><div class="tz-rank-bar"><div class="tz-rank-bar-fill ${v < 0 ? 'tz-neg-bar' : shareColorClass(i)}" style="width:${Math.max(2, Math.abs(v) / maxAbs * 100).toFixed(1)}%"></div></div></div>`; }).join('')}
+          </div>`;
+        } else {
+          // несколько метрик B — таблица: разрез × (A op Bi)
+          body = `<div class="tz-cmp-table"><div class="tz-cmp-row tz-cmp-head"><span>${esc(tzDimLabel(dimA))}</span>${bMetrics.map(m => `<span title="${esc(mA.label + ' ' + op.sym + ' ' + m.label)}">${esc(m.label)}</span>`).join('')}</div>
+            ${grp.map(g => `<div class="tz-cmp-row"><span class="tz-cmp-name" title="${esc(g.label)}">${esc(tzDimDisplay(dimA, g.label))}</span>${g.vs.map(v => `<span class="${v < 0 ? 'tz-neg' : ''}">${fmt(v)}</span>`).join('')}</div>`).join('')}</div>`;
+        }
       }
     }
     const wkey = 'cw:' + w.id;
@@ -3656,10 +3675,11 @@
     const cfg = editing ? JSON.parse(JSON.stringify(editing)) : {
       v: 2, id: `widget_${Date.now()}`, title: '', kind: 'ranking',
       dimension: 'source', splitBy: '', dateField: 'created', granularity: 'day',
-      metric: 'count', metrics: ['count'], topN: 10, baseId: '', op: 'ratio',
+      metric: 'count', metrics: ['count'], metrics2: [], topN: 10, baseId: '', op: 'ratio',
       period: { type: 'all', dateFrom: null, dateTo: null }, periodField: 'created', filters: {}, conditions: []
     };
     if (!Array.isArray(cfg.conditions)) cfg.conditions = [];
+    if (!Array.isArray(cfg.metrics2)) cfg.metrics2 = [];
     if (cfg.op == null) cfg.op = 'ratio';
     modal.innerHTML = `<div class="traffic-modal-card tz-builder-card">
       <button class="traffic-modal-close" data-traffic-close type="button">×</button>
@@ -3710,6 +3730,13 @@
       }
       if (need.includes('op')) h += `<label class="tz-b-field">Операция<select id="tzb-op">${Object.entries(TZ_HYBRID_OPS).map(([k, o]) => `<option value="${k}" ${cfg.op === k ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select></label>`;
       if (need.includes('metric')) h += `<label class="tz-b-field">${cfg.kind === 'hybrid' ? 'Метрика B (второй операнд)' : 'Метрика'}<select id="tzb-metric">${metricOpts(cfg.metric)}</select></label>`;
+      if (cfg.kind === 'hybrid') {
+        const total = 1 + (cfg.metrics2 || []).length;
+        h += `<div class="tz-b-field"><span>Доп. метрики B (всего до 7)</span>
+          <div id="tzb-metrics2">${(cfg.metrics2 || []).map((m, i) => `<div class="tz-b-m2row"><select data-tzb-m2="${i}">${metricOpts(m)}</select><button type="button" class="tz-cond-del" data-tzb-m2del="${i}" aria-label="Убрать">✕</button></div>`).join('')}</div>
+          <button type="button" class="tz-ed-btn tz-b-addcond" id="tzb-addm2" ${total >= 7 ? 'disabled' : ''}>+ Добавить метрику</button>
+        </div>`;
+      }
       if (need.includes('metricShare')) h += `<label class="tz-b-field">Метрика<select id="tzb-metric">${metricOpts(TZ_SHARE_METRICS.includes(cfg.metric) ? cfg.metric : 'count', TZ_SHARE_METRICS)}</select></label>`;
       if (need.includes('metricsMulti')) h += `<div class="tz-b-field"><span>Метрики (до 4)</span><div class="tz-b-metrics">${Object.entries(TZ_METRICS).map(([k, m]) => `<label class="tz-b-chk"><input type="checkbox" data-tzb-metric="${k}" ${(cfg.metrics||[]).includes(k)?'checked':''}> ${esc(m.label)}</label>`).join('')}</div></div>`;
       if (need.includes('topN')) h += `<label class="tz-b-field">Сколько показывать<select id="tzb-topn">${[5,10,15,20].map(n => `<option value="${n}" ${cfg.topN===n?'selected':''}>Топ ${n}</option>`).join('')}</select></label>`;
@@ -3722,6 +3749,9 @@
       ctrl.querySelector('#tzb-metric') && (ctrl.querySelector('#tzb-metric').onchange = e => { cfg.metric = e.target.value; preview(); });
       ctrl.querySelector('#tzb-base') && (ctrl.querySelector('#tzb-base').onchange = e => { cfg.baseId = e.target.value; preview(); });
       ctrl.querySelector('#tzb-op') && (ctrl.querySelector('#tzb-op').onchange = e => { cfg.op = e.target.value; preview(); });
+      ctrl.querySelectorAll('[data-tzb-m2]').forEach(s => s.onchange = e => { const i = +e.target.dataset.tzbM2; cfg.metrics2[i] = e.target.value; preview(); });
+      ctrl.querySelectorAll('[data-tzb-m2del]').forEach(b => b.onclick = e => { const i = +e.currentTarget.dataset.tzbM2del; cfg.metrics2.splice(i, 1); renderControls(); preview(); });
+      ctrl.querySelector('#tzb-addm2') && (ctrl.querySelector('#tzb-addm2').onclick = () => { if ((1 + cfg.metrics2.length) < 7) { cfg.metrics2.push('count'); renderControls(); preview(); } });
       ctrl.querySelector('#tzb-topn') && (ctrl.querySelector('#tzb-topn').onchange = e => { cfg.topN = +e.target.value; preview(); });
       ctrl.querySelectorAll('[data-tzb-metric]').forEach(cb => cb.onchange = () => {
         const k = cb.dataset.tzbMetric;

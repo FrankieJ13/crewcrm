@@ -2638,16 +2638,17 @@
 .tz-kpi-big-sub { font-size: 12px; color: var(--txt3, #888); margin-top: 6px; }
 
 /* Конструктор */
-.tz-builder-card { max-width: 560px; text-align: left; max-height: 100%; overflow-y: auto; }
-/* Футер с действиями: прижат к нижнему краю модалки, во всю её ширину.
-   Отрицательные поля гасят padding карточки (18px) — панель ложится встык
-   к левому/правому/нижнему краям; скругление даёт overflow карточки. */
+/* Низ карточки без паддинга — футер ложится встык к нижнему краю.
+   overflow-x: hidden гасит горизонтальный скролл от full-bleed футера. */
+.tz-builder-card { max-width: 560px; text-align: left; max-height: 100%; overflow-y: auto; overflow-x: hidden; padding-bottom: 0; }
 .tz-builder-card .traffic-modal-actions {
   position: sticky; bottom: 0; z-index: 3;
-  margin: 12px -18px -18px; padding: 12px 18px; gap: 10px;
+  margin: 12px -18px 0; padding: 12px 18px; gap: 10px;
   background: var(--bg2, #fff); border-top: 1px solid var(--line, #e4e4e4);
 }
 .tz-builder-card .traffic-modal-actions .tz-ed-btn { flex: 1 1 0; }
+.tz-b-m2row { display: grid; grid-template-columns: 1fr 28px; gap: 6px; align-items: center; margin-bottom: 6px; }
+.tz-b-m2row select { background: var(--bg2, #fff); color: var(--txt, #1a1a1a); border: 1px solid var(--line, #e4e4e4); border-radius: 8px; padding: 7px 8px; font-size: 12.5px; font-family: 'Golos Text', sans-serif; min-width: 0; }
 .tz-b-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--txt2, #666); margin-bottom: 10px; }
 .tz-b-note { background: color-mix(in srgb, var(--org, #ffa502) 12%, var(--bg2, #fff)); border: 1px solid color-mix(in srgb, var(--org, #ffa502) 30%, var(--line)); border-radius: 9px; padding: 9px 11px; font-size: 11.5px; line-height: 1.4; color: var(--txt2, #555); }
 .tz-b-hint { font-size: 11px; line-height: 1.4; color: var(--txt3, #999); margin-top: 6px; }

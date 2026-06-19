@@ -31,6 +31,7 @@
 <link rel="stylesheet" href="./css/autopodbor.css?v=323"/>
 <link rel="stylesheet" href="./css/traffic-analytics.css?v=354"/>
 <link rel="stylesheet" href="./css/visit-reconciliation.css?v=347"/>
+<link rel="stylesheet" href="./css/timeline-leads.css?v=1"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -629,6 +630,82 @@
         <div id="c-sverka"></div>
       </div>
     </div>
+    <div id="scr-timeline" class="scr" style="padding:0">
+      <div id="tl-app" class="no-data">
+<div class="page">
+  <section class="top">
+    <aside class="brand-card"><div class="filter-panel-title"><span>Фильтры сегмента</span><div class="filter-panel-actions"><button class="eject-upload-btn" id="ejectUploadCsv" type="button" title="Выгрузить текущий CSV и загрузить другой">
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.4 14.5h13.2c.7 0 1.1-.8.7-1.35L12.7 4.4a.86.86 0 0 0-1.4 0L4.7 13.15c-.4.55 0 1.35.7 1.35ZM5 17.25c0-.69.56-1.25 1.25-1.25h11.5a1.25 1.25 0 1 1 0 2.5H6.25C5.56 18.5 5 17.94 5 17.25Z"/></svg>
+</button></div></div><div class="filters" id="filters"></div></aside>
+    <div class="hero"><div class="hero-grid"><div><h1>Где сделка теряется до визита и реализации</h1><div class="subtitle" id="dataSubtitle">Для построения дашборда нужна парсинг-аналитика методом Бочарова Ю.С. на основе таймлайн-событий в сделках и базовых метаданных платформы amoCRM. Загрузите свежий BigData CSV из парсера v4.4.</div><div class="focus" id="headline">Загрузка…</div></div><div class="hero-side"><div class="badge">Воронка КЦ</div><div class="lime-card"><div class="lime-label">Фокус-сигнал</div><div class="lime-value" id="focusPct">—</div><div class="lime-text" id="focusText">—</div></div></div></div></div>
+  </section>
+  <section class="empty-state" id="emptyState">
+    <h2>Загрузите BigData CSV для расчёта дашборда</h2>
+    <p>Нужна парсинг-аналитика методом Бочарова Ю.С. на основе таймлайн-событий в сделках и базовых метаданных платформы amoCRM. После загрузки CSV дашборд пересчитает жизненный цикл сделок, визиты по полю «Дата визита», успешные реализации, нормализованные города, причины закрытия, SLA, звонки, задачи, этапы и цепочки.</p>
+    <p class="hint">Поддерживаемый формат: BigData v4.4 Compact Smart — одна полная карточка на сделку + строки таймлайна.</p>
+    <div class="empty-upload"><div class="upload-panel">
+        <div class="upload-title">Загрузить BigData CSV</div>
+        <div class="upload-row">
+          <input class="file-input" id="csvUpload" type="file" accept=".csv,text/csv">
+          <button class="clear-csv-btn" id="clearCsv" type="button" title="Очистить импортированный CSV">🗑</button>
+        </div>
+        <div class="upload-status" id="uploadStatus">CSV ещё не загружен.</div>
+      </div></div>
+  </section>
+  <section class="tech-loader" id="techLoader">
+    <div class="terminal-frame">
+      <div class="terminal-top">
+        <div>Чтение CSV файла аналитики таймлайна сделок // Бочаров Ю.С.</div>
+      </div>
+      <div class="terminal-body">
+        <div class="terminal-lines" id="terminalLines"></div>
+        <div class="terminal-progress">
+          <div class="terminal-progress-meta"><span id="terminalPhase">Ожидание файла…</span><span id="terminalPercent">0%</span></div>
+          <div class="terminal-progress-track"><div class="terminal-progress-bar" id="terminalProgressBar"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="kpis data-section" id="overview"></section>
+  <section class="section card data-section"><h2>Временная аналитика жизненного цикла</h2><div class="small-note">Здесь жизненный цикл считается как время: от создания до закрытия/текущего момента, от создания до визита, и длительность нахождения на этапах по событиям переходов таймлайна.</div><div class="life-kpis" id="lifeTimeKpis"></div><div class="lifecycle-time-note" id="lifeTimeNote"></div></section>
+  <section class="section grid-main data-section"><div class="card"><h2>Последний этап перед закрытием без визита</h2><div class="small-note" id="segmentPill">Все сегменты</div><div class="bars" id="prevBars"></div></div><div class="card"><h2>Классы жизненного цикла</h2><div class="class-grid" id="classHistory"></div></div></section>
+  <section class="section two data-section"><div class="card"><h2>Где сделка дольше всего находится между переходами</h2><div class="small-note">Считается время нахождения сделки в каждом статусе amoCRM: от момента перехода в статус до следующего перехода, закрытия сделки или текущей даты.</div><div class="small-note">Пример: если сделка 01.06 в 10:00 перешла в «Передано менеджеру», а 01.06 в 12:30 ушла в «Нет ответа», то для статуса «Передано менеджеру» будет засчитано 2 часа 30 минут.</div><table class="table" id="stageDwellTable"></table></div><div class="card"><h2>Текущий месяц: скорость доведения до визита</h2><div class="small-note" id="currentMonthNote">Расчёт по месяцу максимальной даты создания в выбранном сегменте.</div><table class="table" id="currentMonthTimeTable"></table></div></section>
+  <section class="section card data-section"><h2>Самые долгие переходы между этапами</h2><div class="small-note">Пара этапов: откуда → куда. Показывает, между какими статусами проходит больше всего времени.</div><table class="table transition-table" id="transitionTimeTable"></table></section>
+  <section class="section two data-section"><div class="card"><h2>Причины: не квал</h2><div class="reason-list" id="reasonNonqual"></div></div><div class="card"><h2>Причины: квал</h2><div class="reason-list" id="reasonQual"></div></div></section>
+  <section class="section card data-section"><h2>Этапы закрытия: доли и состав</h2><div class="small-note">Состав закрытий по последнему этапу до закрытия. Факт визита определяется по полю «Дата визита».</div><div class="stage-cards" id="stageCards"></div></section>
+  <section class="section two data-section"><div class="card"><h2>Классификация причин</h2><table class="table" id="reasonClassTable"></table></div><div class="card"><h2>Конверсии и риск по этапам</h2><table class="table" id="stageRisk"></table></div></section>
+  <section class="section two data-section"><div class="card"><h2>SLA первого звонка после передачи</h2><div class="small-note">В этой таблице исключены только сделки: этап «Закрыто и не реализовано» + причина «1_ДУБЛЬ» или «1_ХОЗ».</div><table class="table" id="slaTable"></table></div><div class="card"><h2>Звонки и итог</h2><div class="small-note">В этой таблице исключены только сделки: этап «Закрыто и не реализовано» + причина «1_ДУБЛЬ» или «1_ХОЗ».</div><table class="table" id="callTable"></table></div></section>
+  <section class="section card data-section"><h2>Исходящие звонки менеджеров</h2><div class="small-note">Считаются только таймлайн-события «Звонок», где в деталях указан исходящий звонок. Пороги >30 сек, >1 мин и >3 мин — накопительные: звонок длительностью 04:00 попадает во все три столбца.</div><table class="table" id="outgoingManagerTable"></table></section>
+  <section class="section card data-section"><h2>Самые частые цепочки жизненного цикла</h2><table class="table path-table" id="pathTable"></table></section>
+  <section class="section card data-section"><div class="rule"><div><b>Политика расчёта статусов и времени жизненного цикла.</b><br>
+Жизненный цикл по времени считается от даты создания до даты закрытия/реализации или до текущего момента для открытых сделок. Застой на этапе считается от перехода в этап до следующего перехода, закрытия или текущего момента. Реализация = этап «Успешно реализовано» + заполненная «Дата реализации». Поле «Успешное закрытие карточки» используется как вид реализации: Кредит / Комиссия / Наличные / Обмен / Выкуп / пусто. Визит = заполнено поле «Дата визита». Город нормализуется: если «Город» = Екатеринбург / Не указан / Без города, используется «Город Выдачи»; если он пустой — город из текста формирования карточки, затем исходное поле «Город». Единое правило квалификации применяется ко всему дашборду: KPI, фильтрам, причинам, таблицам, классам жизненного цикла и временным разрезам. Приоритет №1 — последнее событие SalesBot по «Квал лид» / тегу «Квал» в таймлайне карточки; если события нет, итоговое поле «Квал лид» / тег «Квал». Если такого события нет в BigData, используется итоговое поле карточки «Квал лид» и тег «Квал». Если SalesBot установил «Квал лид = Да» или добавил тег «Квал» — сделка квал; если последнее событие сняло квал/установило «Нет» — не квал. Если таких событий нет, используются этапы воронки и код причины: 1_ — не квал; 2_, 3_, 4_ — квал. Этапы: «Все заявки», «Передано менеджеру», «Нет ответа», «Отложенный звонок», «В работе/не распределено», «В работе/холодный» — не квал; «В работе/горячий», «Встреча подтверждена», «Не приехал», «Повторный визит», «Приехал», «В работе у КСО» — квал. Факт визита не выводится из 3_/4_, он считается только по «Дата визита». Фильтр «Квалы» — мультивыбор: Квал / Не квал / пусто. Фильтр «Воронка» нормализует значения к Воронка КЦ / CRM / Теплые лиды / пусто.</div><div><b>Логика этапов КЦ.</b><br>
+«Все заявки» → новое обращение; «Передано менеджеру» → менеджер должен отработать не позднее 15 минут; «Нет ответа» → первично не вышел на связь; «Отложенный звонок» → клиент попросил набрать позже без обсуждения покупки/визита; «В работе/холодный» и «В работе/горячий» → степень вероятности визита; «Встреча подтверждена», «Повторный визит», «Приехал», «В работе у КСО» используются как сигналы движения к визиту, но контрольный факт визита — поле «Дата визита».</div></div>
+<div class="policy-note"><b>Источник и модель данных.</b> Источник: парсинг аналитика методом Бочарова Ю.С. на основе таймлайн событий в сделках и базовых метаданных платформы amoCRM / загружаемый BigData CSV. BigData: одна полная карточка на сделку + строки таймлайна. Дашборд агрегирует данные до уровня одной сделки.</div>
+<div class="footer-note" id="footerStats"></div></section>
+</div>
+<div class="success-modal-backdrop" id="successModalBackdrop"></div>
+<div class="success-modal" id="successModal" role="dialog" aria-modal="true" aria-labelledby="successModalTitle">
+  <div class="success-modal-head">
+    <div>
+      <div class="success-modal-title" id="successModalTitle">Успешно реализовано</div>
+      <div class="success-modal-sub" id="successModalSub">Сделки из текущего среза фильтров</div>
+    </div>
+    <button class="success-modal-close" id="successModalClose" type="button" title="Закрыть">×</button>
+  </div>
+  <div class="success-modal-body" id="successModalBody"></div>
+</div>
+<div class="filter-popover-backdrop" id="filterBackdrop"></div>
+<button class="filter-fab" id="filterFab" type="button" title="Открыть фильтры">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.25A1.25 1.25 0 0 1 5.25 5h13.5a1.25 1.25 0 1 1 0 2.5H5.25A1.25 1.25 0 0 1 4 6.25Zm3 5.75a1.25 1.25 0 0 1 1.25-1.25h7.5a1.25 1.25 0 1 1 0 2.5h-7.5A1.25 1.25 0 0 1 7 12Zm3 5.75a1.25 1.25 0 0 1 1.25-1.25h1.5a1.25 1.25 0 1 1 0 2.5h-1.5A1.25 1.25 0 0 1 10 17.75Z"/></svg></button>
+<div class="filter-popover" id="filterPopover">
+  <div class="filter-popover-head">
+    <div class="filter-popover-title">Фильтры сегмента</div>
+    <button class="filter-popover-close" id="filterPopoverClose" type="button" title="Закрыть">×</button>
+  </div>
+  <div id="filtersPopup"></div>
+</div>
+      </div>
+    </div>
     <div id="scr-vizity" class="scr" style="padding:0">
       <div id="c-vizity"></div>
     </div>
@@ -792,6 +869,9 @@
         </button>
         <button class="dock-popup-btn" onclick="dockAnalytics('sverka')">
           <span class="dock-popup-dot" style="background:#ff4757"></span>СВЕРКА ВИЗИТОВ
+        </button>
+        <button class="dock-popup-btn" onclick="dockAnalytics('timeline')">
+          <span class="dock-popup-dot" style="background:#d8ff4f"></span>TIMELINE LEADS
         </button>
       </div>
     </div>
@@ -1014,8 +1094,9 @@
 </div>
 
 <script src="./js/app.js?v=327"></script>
-<script src="./js/traffic-analytics.js?v=354"></script>
+<script src="./js/traffic-analytics.js?v=355"></script>
 <script src="./js/visit-reconciliation.js?v=352"></script>
+<script src="./js/timeline-leads.js?v=1"></script>
 <!-- Затемнение фона при открытом popup напоминаний -->
 <div class="rem-backdrop" id="rem-backdrop" onclick="closeRemPanel()"></div>
 

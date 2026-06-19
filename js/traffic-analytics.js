@@ -190,6 +190,16 @@
     if (tab === 'export' && typeof openExportPage === 'function') return openExportPage();
     if (tab === 'repeats' && typeof openRepeatSearchPage === 'function') return openRepeatSearchPage();
     if (tab === 'sverka' && typeof openVisitReconciliation === 'function') return openVisitReconciliation();
+    if (tab === 'timeline' && typeof openTimelineLeads === 'function') return openTimelineLeads();
+  };
+
+  window.openTimelineLeads = function openTimelineLeads() {
+    if (typeof closeAllDockPopups === 'function') closeAllDockPopups();
+    if (!canViewTrafficAnalytics()) return;
+    if (typeof showScr === 'function') showScr('timeline');
+    if (typeof dockSetActive === 'function') dockSetActive('analytics');
+    if (typeof window.tlOnShow === 'function') window.tlOnShow();
+    if (typeof updateFirebasePage === 'function') updateFirebasePage();
   };
 
   window.openTrafficAnalytics = function openTrafficAnalytics() {

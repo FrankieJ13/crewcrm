@@ -9218,74 +9218,56 @@ body.liquid-glass .dock-container::before {
   pointer-events: none;
 }
 body.liquid-glass .dock-item { position: relative; z-index: 1; }
-/* иконки в покое — тёмные, для контраста на светлом стекле */
-body.liquid-glass .dock-btn { color: rgba(28,30,38,0.74) !important; transition: transform .14s cubic-bezier(.34,1.56,.64,1); }
-/* fallback-подсветка активной (pill перекрывает её, нужна если JS не загрузился) */
-body.liquid-glass .dock-btn.dock-active {
-  color: var(--acc) !important;
-  background: rgba(255,255,255,0.26) !important;
-  border: 1px solid rgba(255,255,255,0.4) !important;
-  border-radius: 14px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6) !important;
-}
-body.liquid-glass .dock-btn.dock-active svg { color: var(--acc) !important; }
-/* клик слегка увеличивает иконку пункта */
-body.liquid-glass .dock-btn:active { transform: scale(0.92); }
+/* DOM-иконки и подсветку активной прячем — их рисует canvas; pill — единственный индикатор */
+body.liquid-glass .dock-container.lg-dock .dock-btn svg,
+body.liquid-glass .dock-container.lg-dock .dock-btn .app-icon { opacity: 0 !important; }
+body.liquid-glass .dock-btn.dock-active { background: transparent !important; border: none !important; box-shadow: none !important; }
+body.liquid-glass .dock-btn:active { transform: none !important; }
+/* штатные DOM-попапы дока скрыты — показываем стеклянный .lg-popup */
+body.liquid-glass .dock-popup { display: none !important; }
 
-/* ── Перетаскиваемый кристальный glass-pill (активный индикатор + лупа) ── */
+/* canvas-слой иконок поверх дока */
+body.liquid-glass .lg-icons { position: absolute; left: 0; top: 0; z-index: 5; pointer-events: none; }
+
+/* перетаскиваемый кристальный pill (единственный индикатор; лупа — canvas внутри) */
 body.liquid-glass .lg-pill {
-  position: absolute;
-  top: 50%;
-  width: 46px; height: 46px;
-  transform: translate(-50%, -50%);
-  border-radius: 14px;
-  z-index: 6;
-  background: linear-gradient(135deg, rgba(255,255,255,0.24), rgba(255,255,255,0.06));
-  -webkit-backdrop-filter: blur(2px) saturate(165%) brightness(1.06) url(#lg-disp);
-          backdrop-filter: blur(2px) saturate(165%) brightness(1.06) url(#lg-disp);
+  position: absolute; top: 50%; left: 0;
+  width: 46px; height: 46px; transform: translate(-50%, -50%);
+  border-radius: 14px; z-index: 6; overflow: hidden;
+  background: linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.05));
+  -webkit-backdrop-filter: blur(2px) saturate(160%) brightness(1.06) url(#lg-disp);
+          backdrop-filter: blur(2px) saturate(160%) brightness(1.06) url(#lg-disp);
   box-shadow:
     inset 1.5px 1.5px 1px rgba(255,255,255,0.82),
     inset -1.5px -1.5px 1px rgba(255,255,255,0.28),
     inset 0 0 7px rgba(255,255,255,0.14),
     0 3px 12px rgba(0,0,0,0.18);
-  display: flex; align-items: center; justify-content: center;
   cursor: grab; touch-action: none; pointer-events: auto;
-  transition: box-shadow .18s ease;
 }
 body.liquid-glass .dock-container.lg-holding .lg-pill {
   cursor: grabbing;
-  -webkit-backdrop-filter: blur(2px) saturate(175%) brightness(1.08) url(#lg-disp-strong);
-          backdrop-filter: blur(2px) saturate(175%) brightness(1.08) url(#lg-disp-strong);
+  -webkit-backdrop-filter: blur(2px) saturate(170%) brightness(1.08) url(#lg-disp-strong);
+          backdrop-filter: blur(2px) saturate(170%) brightness(1.08) url(#lg-disp-strong);
   box-shadow:
     inset 1.5px 1.5px 2px rgba(255,255,255,0.94),
     inset -2px -2px 3px rgba(255,255,255,0.34),
     inset 0 0 9px rgba(255,255,255,0.18),
     0 5px 18px rgba(0,0,0,0.24);
 }
-/* увеличенная (через лупу) иконка внутри pill */
-body.liquid-glass .lg-pill-icon {
-  width: 62%; height: 62%;
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: none;
-  transition: transform .18s cubic-bezier(.34,1.56,.64,1);
-}
-body.liquid-glass .lg-pill-icon svg { width: 100%; height: 100%; color: var(--acc); stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 1px 2px rgba(0,0,0,.22)); }
-body.liquid-glass .lg-pill-icon img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,.22)); }
-body.liquid-glass .dock-container.lg-holding .lg-pill-icon { transform: scale(1.2); }
-@keyframes lgPop { 0%{transform:scale(1)} 42%{transform:scale(1.34)} 100%{transform:scale(1)} }
-body.liquid-glass .lg-pill-icon.lg-pop { animation: lgPop .36s ease; }
+body.liquid-glass .lg-lens { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: inherit; pointer-events: none; }
 
-/* ── Стеклянный попап (прозрачнее + преломление; тёмный текст на свету) ── */
-body.liquid-glass .dock-popup {
-  background: rgba(255,255,255,0.34) !important;
-  -webkit-backdrop-filter: blur(6px) saturate(170%) url(#lg-disp);
-          backdrop-filter: blur(6px) saturate(170%) url(#lg-disp);
-  border: 0.5px solid rgba(255,255,255,0.55) !important;
-  box-shadow:
-    0 12px 30px rgba(0,0,0,0.20),
-    inset 0 0 0 0.5px rgba(255,255,255,0.5),
-    inset 1px 1px 2px rgba(255,255,255,0.7) !important;
+/* стеклянный попап над иконкой (тёмный текст на светлом стекле) */
+body.liquid-glass .lg-popup {
+  position: fixed; z-index: 10000; display: none; flex-direction: column; gap: 0;
+  padding: 5px; border-radius: 16px; min-width: 124px;
+  background: rgba(255,255,255,0.5);
+  -webkit-backdrop-filter: blur(14px) saturate(170%) url(#lg-disp);
+          backdrop-filter: blur(14px) saturate(170%) url(#lg-disp);
+  border: 0.5px solid rgba(255,255,255,0.6);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.2), inset 0 0 0 0.5px rgba(255,255,255,0.5), inset 1px 1px 2px rgba(255,255,255,0.7);
 }
-body.liquid-glass .dock-popup-btn { color: #2a2a30 !important; }
-body.liquid-glass .dock-popup-btn:hover { background: rgba(0,0,0,0.055) !important; color: #111 !important; }
-body.liquid-glass .dock-popup-btn + .dock-popup-btn { border-top: 1px solid rgba(0,0,0,0.10) !important; }
+body.liquid-glass .lg-popup.show { display: flex; animation: lgPopIn .2s cubic-bezier(.175,.885,.32,1.4); }
+@keyframes lgPopIn { from { opacity: 0; transform: translateY(8px) scale(.94); } to { opacity: 1; transform: none; } }
+body.liquid-glass .lg-pop-item { position: relative; font: 600 13px 'Golos Text', -apple-system, sans-serif; color: #2a2a30; padding: 8px 16px; border-radius: 9px; white-space: nowrap; cursor: pointer; transition: background .16s ease; }
+body.liquid-glass .lg-pop-item:hover { background: rgba(0,0,0,0.06); color: #111; }
+body.liquid-glass .lg-pop-item + .lg-pop-item::before { content: ""; position: absolute; top: 0; left: 10%; width: 80%; height: 1px; background: linear-gradient(to right, transparent, rgba(0,0,0,.12) 25%, rgba(0,0,0,.12) 75%, transparent); }

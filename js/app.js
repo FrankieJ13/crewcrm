@@ -376,10 +376,10 @@ const S = {
 };
 
 /* ══ THEME ══ */
-const THEMES = ['fluent', 'cosmic', 'dark', 'light', 'tiffany', 'cinematic', 'neo-dark', 'neo-light'];
+const THEMES = ['fluent', 'liquid-glass', 'cosmic', 'dark', 'light', 'tiffany', 'cinematic', 'neo-dark', 'neo-light'];
 
 function applyTheme(theme) {
-  document.body.classList.remove('light', 'tiffany', 'cinematic', 'neo-dark', 'neo-light', 'cosmic', 'fluent');
+  document.body.classList.remove('light', 'tiffany', 'cinematic', 'neo-dark', 'neo-light', 'cosmic', 'fluent', 'liquid-glass');
   if (theme === 'light')      document.body.classList.add('light');
   if (theme === 'tiffany')    document.body.classList.add('tiffany');
   if (theme === 'cinematic')  document.body.classList.add('cinematic');
@@ -387,6 +387,8 @@ function applyTheme(theme) {
   if (theme === 'neo-light')  document.body.classList.add('neo-light');
   if (theme === 'cosmic')     document.body.classList.add('cosmic');
   if (theme === 'fluent')     document.body.classList.add('fluent');
+  // Liquid Glass — копия Fluent (наследует все его стили), отличается только стилем дока
+  if (theme === 'liquid-glass') document.body.classList.add('fluent', 'liquid-glass');
   localStorage.setItem('crm_theme', theme);
   // Обновляем активный пункт в дропдауне
   THEMES.forEach(t => {
@@ -550,10 +552,11 @@ function syncTheme() {
   if (lockCosmic)  lockCosmic.style.display  = isCosmic ? '' : 'none';
   if (lockFluent)  lockFluent.style.display  = isFluent ? '' : 'none';
 
+  // Активная тема — по сохранённому значению (а не по классу: liquid-glass добавляет и класс fluent)
+  const curTheme = localStorage.getItem('crm_theme') || 'fluent';
   THEMES.forEach(t => {
     const btn = document.getElementById('htd-' + t);
-    const isDarkDefault = t === 'dark' && !THEMES.some(name => name !== 'dark' && b.contains(name));
-    const active = b.contains(t) || isDarkDefault;
+    const active = (t === curTheme);
     if (btn) {
       btn.style.fontWeight = active ? '900' : '';
       btn.classList.toggle('theme-active', active);
@@ -1186,7 +1189,7 @@ function initLogoRotation() {
   const phrases = ['crm_crew', 'dashboard'];
   const baseTypingSpeed = 110;     // мс на символ при наборе
   const baseErasingSpeed = 70;     // мс на символ при стирании
-  const pauseAfterTyping = 2900;   // удержание готовой фразы
+  const pauseAfterTyping = 10000;  // напечатанная фраза держится 10 сек, затем стирается
   const pauseAfterErasing = 450;   // пауза перед набором следующей
 
   function start() {

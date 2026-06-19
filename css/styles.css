@@ -9179,3 +9179,77 @@ body.fluent .vac-cell        { color: #111; }
 /* Тёмные темы */
 body.cinematic .podium-card,
 body.neo-dark .podium-card { background: var(--bg2); }
+
+/* ============================================================
+   LIQUID GLASS — стиль дока (перенос с образца «dock liquid glass»)
+   Тема = копия Fluent (класс fluent добавляется вместе с liquid-glass),
+   отличается только доком: матовая стеклянная капсула, преломление по краю,
+   кристальный glass-pill на активной иконке, стеклянный попап.
+   ============================================================ */
+body.liquid-glass .dock-container {
+  position: relative;
+  background: rgba(255,255,255,0.42) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 0.5px solid rgba(255,255,255,0.55) !important;
+  border-radius: 999px;
+  padding: 6px 10px;
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.16),
+    inset 0 0 0 0.5px rgba(255,255,255,0.45),
+    inset 1px 1px 2px rgba(255,255,255,0.65) !important;
+  overflow: visible;
+}
+/* мягкое преломление по краю капсулы (как у образца) */
+body.liquid-glass .dock-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 0.5px;
+  background: linear-gradient(120deg,
+    rgba(255,255,255,0.85),
+    rgba(255,255,255,0) 35%,
+    rgba(255,255,255,0) 65%,
+    rgba(255,255,255,0.7));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+}
+body.liquid-glass .dock-item { position: relative; z-index: 1; }
+/* иконки в покое — тёмные, для контраста на светлом стекле */
+body.liquid-glass .dock-btn { color: rgba(28,30,38,0.72) !important; }
+/* активная иконка — кристально-чистый glass-pill */
+body.liquid-glass .dock-btn.dock-active {
+  color: var(--acc) !important;
+  background: linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.28)) !important;
+  border: 1px solid rgba(255,255,255,0.6) !important;
+  -webkit-backdrop-filter: blur(3px) saturate(160%) brightness(1.06);
+  backdrop-filter: blur(3px) saturate(160%) brightness(1.06);
+  box-shadow:
+    inset 1.5px 1.5px 1px rgba(255,255,255,0.9),
+    inset -1.5px -1.5px 1px rgba(255,255,255,0.4),
+    inset 0 0 6px rgba(255,255,255,0.25),
+    0 2px 10px rgba(0,0,0,0.14) !important;
+  border-radius: 16px;
+}
+body.liquid-glass .dock-btn.dock-active svg { color: var(--acc) !important; }
+@media (hover: hover) {
+  body.liquid-glass .dock-btn:hover { background: rgba(255,255,255,0.35) !important; }
+}
+/* стеклянный попап над иконкой (светлая тема → тёмный текст) */
+body.liquid-glass .dock-popup {
+  background: rgba(255,255,255,0.55) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(170%);
+  backdrop-filter: blur(16px) saturate(170%);
+  border: 0.5px solid rgba(255,255,255,0.6) !important;
+  box-shadow:
+    0 10px 28px rgba(0,0,0,0.18),
+    inset 0 0 0 0.5px rgba(255,255,255,0.5),
+    inset 1px 1px 2px rgba(255,255,255,0.7) !important;
+}
+body.liquid-glass .dock-popup-btn { color: #2a2a30 !important; }
+body.liquid-glass .dock-popup-btn:hover { background: rgba(0,0,0,0.055) !important; color: #111 !important; }
+body.liquid-glass .dock-popup-btn + .dock-popup-btn { border-top: 1px solid rgba(0,0,0,0.10) !important; }

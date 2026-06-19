@@ -24,10 +24,10 @@
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin/>
 <link rel="dns-prefetch" href="https://sheets.googleapis.com"/>
 <link rel="dns-prefetch" href="https://www.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&family=Exo+2:wght@200;300;700&family=JetBrains+Mono:wght@300;400&family=Oswald:wght@400;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&family=Exo+2:wght@200;300;700&family=JetBrains+Mono:wght@300;400&family=Oswald:wght@400;700&family=Source+Code+Pro:wght@400;500;600&display=swap" rel="stylesheet"/>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<link rel="stylesheet" href="./css/styles.css?v=325"/>
+<link rel="stylesheet" href="./css/styles.css?v=326"/>
 <link rel="stylesheet" href="./css/autopodbor.css?v=323"/>
 <link rel="stylesheet" href="./css/traffic-analytics.css?v=354"/>
 <link rel="stylesheet" href="./css/visit-reconciliation.css?v=347"/>
@@ -48,18 +48,8 @@
   <div class="hdr-inner">
     <div class="hdr-left">
       <div class="logo" onclick="goHome()">
-        <div class="gooey-logo">
-          <svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden;pointer-events:none">
-            <defs>
-              <filter id="gooey-threshold-local" x="-10%" y="-10%" width="120%" height="120%">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="0" result="blur"/>
-                <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -7" result="goo"/>
-                <feComposite in="SourceGraphic" in2="goo" operator="atop"/>
-              </filter>
-            </defs>
-          </svg>
-          <span id="gooey-t1" class="gooey-text"></span>
-          <span id="gooey-t2" class="gooey-text"></span>
+        <div class="type-logo">
+          <span id="type-text" class="type-text"></span><span class="type-cursor" aria-hidden="true">|</span>
         </div>
       </div>
     </div>
@@ -1093,7 +1083,7 @@
   </div>
 </div>
 
-<script src="./js/app.js?v=327"></script>
+<script src="./js/app.js?v=328"></script>
 <script src="./js/traffic-analytics.js?v=355"></script>
 <script src="./js/visit-reconciliation.js?v=352"></script>
 <script src="./js/timeline-leads.js?v=1"></script>

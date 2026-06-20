@@ -9288,9 +9288,9 @@ body.liquid-glass .lg-popup {
 }
 @supports ((-webkit-backdrop-filter: blur(2px)) or (backdrop-filter: blur(2px))) {
   body.liquid-glass .lg-popup {
-    background: rgba(255,255,255,0.22);  /* прозрачнее (~+50% к прежней); стекло держит блюр (iOS+macOS) */
-    -webkit-backdrop-filter: blur(22px) saturate(180%);
-            backdrop-filter: blur(22px) saturate(180%);
+    background: rgba(255,255,255,0.07);  /* +70% прозрачности (было 0.22) — на телефоне попап не «молочный» */
+    -webkit-backdrop-filter: blur(15px) saturate(175%);
+            backdrop-filter: blur(15px) saturate(175%);
   }
 }
 /* искажение/аберрация фона по периметру попапа (как у pill); url() работает на DMG/macOS, на iOS — no-op */

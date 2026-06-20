@@ -20,7 +20,7 @@
   let N = 0, layout = [], ICON = 24, PILL_IDLE = 42, PILL_HELD = 48;
   let pillX = 0, targetX = 0, holding = false, gliding = false, pressIdx = -1, activeIdx = 0;
   const iconImg = [];
-  let popupEl = null, popupIdx = -1, lastSettled = -1;
+  let popupEl = null, popupIdx = -1, lastSettled = -1, tapToggleClose = false;
 
   const el = (t, c) => { const d = document.createElement(t); if (c) d.className = c; return d; };
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -251,8 +251,11 @@
   function localX(e) { const dr = dock.getBoundingClientRect(); return clampX(e.clientX - dr.left); }
   function onDown(e) {
     if (!isLG() || !visible()) return;
-    holding = true; gliding = false; hidePopup();
+    holding = true; gliding = false;
     pressIdx = nearest(e.clientX - dock.getBoundingClientRect().left);
+    // тап по слоту, чей попап уже открыт = закрыть его (toggle), без переоткрытия на settle
+    tapToggleClose = (popupIdx === pressIdx);
+    hidePopup();
     targetX = clampX(iconCX(pressIdx));
     try { pill.setPointerCapture && pill.setPointerCapture(e.pointerId); } catch (_) {}
     e.preventDefault();
@@ -263,6 +266,7 @@
     e.preventDefault();
     targetX = localX(e);
     pressIdx = -1;                 // началось перетаскивание — не тап
+    tapToggleClose = false;        // это не toggle-тап, а перетаскивание
     hidePopup();
     kick();
   }
@@ -278,11 +282,20 @@
   function settle() {
     const i = nearest(pillX);
     if (Math.abs(iconCX(i) - pillX) >= 1) return;
-    if (lastSettled === i) return;
+    const already = (lastSettled === i);
     lastSettled = i;
     activeIdx = i;
-    if (appPopupFor(i)) { showPopup(i); }
-    else { hidePopup(); if (i !== activeButtonIdx()) { try { btns[i].click(); } catch (_) {} } }
+    if (appPopupFor(i)) {
+      // toggle: если этот тап закрывал уже открытый попап — не открывать заново;
+      // иначе показываем (showPopup идемпотентен, повторы безопасны)
+      if (tapToggleClose) { tapToggleClose = false; return; }
+      showPopup(i);
+    } else {
+      tapToggleClose = false;
+      if (already) return;                       // нав-слот: не кликаем повторно по активному
+      hidePopup();
+      if (i !== activeButtonIdx()) { try { btns[i].click(); } catch (_) {} }
+    }
   }
 
   function loop() {

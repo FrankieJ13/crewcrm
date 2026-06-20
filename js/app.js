@@ -2775,7 +2775,12 @@ async function _apiFetch(sheet, range, key, retryCount = 0, params = '', opts = 
   // сокет, чем ждать 3 круга по 30 секунд.
   const wakeFresh = (Date.now() - _wakeEpoch) < 30_000;
   const coldConnection = (Date.now() - _lastSheetsFetchOkAt) > 120_000;
-  const timeoutMs = (retryCount <= 2 && (wakeFresh || coldConnection)) ? 12000 : 30000;
+  // Холодный Google Sheets реально отвечает 20-30с (не dead-TCP) — рвать на 12с
+  // было ошибкой: убивали живой, но медленный запрос и уходили в круги ретраев.
+  // Терпеливо: первая попытка 25с (ловит холодный ответ ~20-25с), ретраи — 45с.
+  const timeoutMs = retryCount === 0
+    ? ((wakeFresh || coldConnection) ? 25000 : 30000)
+    : 45000;
   const ctrl = new AbortController();
   _apiControllers.add(ctrl);
   const tid  = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -3472,40 +3477,34 @@ function reloadCurrent() {
     S.trophies = null;
     S.trophyAwards = null;
     _trophiesCatalogPromise = null;
-    renderTrophiesPage().then(() => toast('Обновлено','s'));
-    return;
+    return renderTrophiesPage().then(() => toast('Обновлено','s'));
   }
   if (document.getElementById('scr-ceo')?.classList.contains('on')) {
     apiCacheInvalidate();
     S.data.vizity = null; S.data.d_vizity = null;
     S.data.plan = null; S.data.cnvrs = null; S.data.stavki = null;
-    loadCeoDashboard().then(() => toast('Обновлено','s'));
-    return;
+    return loadCeoDashboard().then(() => toast('Обновлено','s'));
   }
   // На странице Отчёта — перезагружаем только журнал визитов
   if (document.getElementById('scr-rating')?.classList.contains('on')) {
     apiCacheInvalidate();
     S.data.vizity=null; S.data.d_vizity=null; S.data.plan=null;
     S.data.stavki=null; S.data.d_stavki=null;
-    loadRating().then(() => toast('Обновлено','s'));
-    return;
+    return loadRating().then(() => toast('Обновлено','s'));
   }
   if (document.getElementById('scr-vizity')?.classList.contains('on')) {
     apiCacheInvalidate(vizSheetName());
     S.vizRows = [];
-    loadVizity().then(() => toast('Обновлено','s'));
-    return;
+    return loadVizity().then(() => toast('Обновлено','s'));
   }
   const isPersonal = document.getElementById('scr-personal')?.classList.contains('on');
   if (isPersonal) {
     const matched = findUserInSheet();
-    if (matched) {
-      const isDozhim = matched.role === 'dozhim';
-      if (isDozhim) { apiCacheInvalidate(); S.data.d_vizity = null; S.data.plan = null; }
-      else { apiCacheInvalidate(); S.data.vizity = null; S.data.plan = null; S.data.stavki = null; S.data.cnvrs = null; }
-      loadPersonal(matched).then(() => toast('Обновлено','s'));
-    }
-    return;
+    if (!matched) { location.reload(); return; }   // профиль не сматчился — полный перезапуск, а не тихое бездействие
+    const isDozhim = matched.role === 'dozhim';
+    if (isDozhim) { apiCacheInvalidate(); S.data.d_vizity = null; S.data.plan = null; }
+    else { apiCacheInvalidate(); S.data.vizity = null; S.data.plan = null; S.data.stavki = null; S.data.cnvrs = null; }
+    return loadPersonal(matched).then(() => toast('Обновлено','s'));
   }
   const tab = document.querySelector('.tab.on')?.dataset.tab || 'otchet';
   if (tab === 'grafik') _schedWeek = null;
@@ -3513,7 +3512,7 @@ function reloadCurrent() {
   S.data[tab] = null;
   if (tab === 'otchet') { S.data.d_vizity = null; S.data.cnvrs = null; S.data.vizity = null; S.data.plan = null; }
   if (tab === 'dohod') { S.data.vizity = null; S.data.plan = null; S.data.stavki = null; S.data.d_dohod = null; }
-  loadTab(tab).then(() => toast('Обновлено','s'));
+  return loadTab(tab).then(() => toast('Обновлено','s'));
 }
 
 function renderTab(tab) {
@@ -8718,7 +8717,7 @@ function showAccessDenied(reason = 'Почта не найдена в USERS') {
   document.getElementById('user-wrap').style.display = 'none';
   const hmbl = document.getElementById('hmb-logout'); if (hmbl) hmbl.style.display = 'none';
   const hmbsl = document.getElementById('hmb-sep-logout'); if (hmbsl) hmbsl.style.display = 'none';
-  const hmbcc = document.getElementById('hmb-clearcache'); if (hmbcc) hmbcc.style.display = 'none';
+  const hmbcc = document.getElementById('hmb-clearcache'); if (hmbcc) hmbcc.style.display = '';  // «Очистить кэш» доступен и на экране авторизации
   const hmblg = document.getElementById('hmb-logs'); if (hmblg) hmblg.style.display = 'none';
   const hmbAcc = document.getElementById('hmb-account-btn'); if (hmbAcc) hmbAcc.style.display = 'none';
   const hmbAccSep = document.getElementById('hmb-sep-account'); if (hmbAccSep) hmbAccSep.style.display = 'none';
@@ -11451,7 +11450,12 @@ function closeIncomeDetail(e) {
 }
 
 // ==================== INIT ====================
-document.getElementById('btn-refresh').addEventListener('click', reloadCurrent);
+document.getElementById('btn-refresh').addEventListener('click', () => {
+  const btn = document.getElementById('btn-refresh');
+  if (btn.classList.contains('refreshing')) return;   // защита от повторного клика
+  btn.classList.add('refreshing');                     // единый визуальный отклик на всех экранах
+  Promise.resolve(reloadCurrent()).catch(() => {}).finally(() => setTimeout(() => btn.classList.remove('refreshing'), 450));
+});
 document.getElementById('btn-presence')?.addEventListener('click', e => {
   e.stopPropagation();
   const pop = document.getElementById('presence-popover');

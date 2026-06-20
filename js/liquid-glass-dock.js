@@ -212,7 +212,18 @@
 
   /* ---------- попап ---------- */
   function appPopupFor(i) { const it = btns[i] && btns[i].closest('.dock-item'); return it ? it.querySelector('.dock-popup') : null; }
-  function hidePopup() { if (popupEl) { popupEl.classList.remove('show'); } popupIdx = -1; }
+  function hidePopup(viaSelect) {
+    const wasOpen = popupIdx !== -1;
+    if (popupEl) popupEl.classList.remove('show');
+    popupIdx = -1;
+    // попап закрыт без выбора подпункта → pill возвращается на реально активный экран
+    // (док-слот с попапом «не активен», пока не выбран подраздел)
+    if (wasOpen && !viaSelect && !holding && !gliding) {
+      const i = activeButtonIdx();
+      lastSettled = i;
+      if (Math.abs(iconCX(i) - pillX) > 1) { targetX = clampX(iconCX(i)); kick(); }
+    }
+  }
   function showPopup(i) {
     const ap = appPopupFor(i);
     if (!ap) { hidePopup(); return; }
@@ -223,7 +234,7 @@
       const it = el('div', 'lg-pop-item');
       it.textContent = srcBtn.textContent.trim();
       it.addEventListener('pointerdown', (e) => { e.stopPropagation(); });
-      it.addEventListener('click', (e) => { e.stopPropagation(); hidePopup(); lastSettled = -1; try { srcBtn.click(); } catch (_) {} });
+      it.addEventListener('click', (e) => { e.stopPropagation(); hidePopup(true); try { srcBtn.click(); } catch (_) {} });
       popupEl.appendChild(it);
     });
     popupEl.classList.add('show');
@@ -315,17 +326,17 @@
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
     window.addEventListener('resize', reflow);
-    document.addEventListener('pointerdown', (e) => { if (popupIdx !== -1 && !popupEl.contains(e.target) && !dock.contains(e.target)) { hidePopup(); lastSettled = -1; } }, true);
+    document.addEventListener('pointerdown', (e) => { if (popupIdx !== -1 && !popupEl.contains(e.target) && !dock.contains(e.target)) hidePopup(false); }, true);
 
     // наведение курсора на пункт дока → показать его попап (только мышь)
     if (window.matchMedia && window.matchMedia('(hover: hover)').matches) {
       let hoverHide = 0;
       const cancelHide = () => { clearTimeout(hoverHide); };
-      const scheduleHide = () => { clearTimeout(hoverHide); hoverHide = setTimeout(hidePopup, 160); };
+      const scheduleHide = () => { clearTimeout(hoverHide); hoverHide = setTimeout(() => hidePopup(false), 160); };
       btns.forEach((b, i) => b.addEventListener('mouseenter', () => {
         if (holding || gliding) return;
         cancelHide();
-        if (appPopupFor(i)) showPopup(i); else hidePopup();
+        if (appPopupFor(i)) showPopup(i); else hidePopup(false);
       }));
       dock.addEventListener('mouseleave', scheduleHide);
       dock.addEventListener('mouseenter', cancelHide);

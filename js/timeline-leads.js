@@ -831,6 +831,47 @@ function deriveDashboardDealsFromBigData(text) {
   for(const r of rows) addBigDataRowToGroups(r, byDeal);
   return deriveDashboardDealsFromGroups(byDeal);
 }
+
+// JSON-загрузка (компактный формат — легче тяжёлого CSV). Принимает:
+//  • массив ГОТОВЫХ сделок дашборда (экспорт deriveDashboardDealsFromGroups) —
+//    используется напрямую;
+//  • массив «сырых» строк BigData (header→value, как из CSV) — прогоняется
+//    через тот же конвейер addBigDataRowToGroups → deriveDashboardDealsFromGroups;
+//  • обёртку-объект { deals:[…] } / { rows:[…] } / { data:[…] } / { items:[…] }.
+function deriveDashboardDealsFromJson(text) {
+  let data;
+  try { data = JSON.parse(String(text || '')); }
+  catch(e) { throw new Error('Файл не является корректным JSON: ' + (e.message || e)); }
+  let arr = data;
+  if(arr && !Array.isArray(arr)) arr = arr.deals || arr.rows || arr.data || arr.items || null;
+  if(!Array.isArray(arr) || !arr.length) {
+    throw new Error('В JSON не найден массив сделок (ожидается массив или { deals:[…] }).');
+  }
+  const first = arr.find(x => x && typeof x === 'object') || {};
+  // Уже готовые сделки дашборда — есть характерные производные поля.
+  const looksDerived = ('callEventsJson' in first) || ('lifecycle' in first) || ('qualBucket' in first)
+    || ('qualification' in first && 'final' in first);
+  if(looksDerived) {
+    const deals = arr.filter(d => d && typeof d === 'object').map(d => {
+      d.id = (d.id != null ? String(d.id) : '');
+      // Подстраховка: поля, читаемые через JSON.parse в коде, должны быть строками.
+      if(d.callEventsJson == null) d.callEventsJson = '[]';
+      if(d.stageSpansJson == null) d.stageSpansJson = '[]';
+      if(d.transitionPairsJson == null) d.transitionPairsJson = '[]';
+      return d;
+    });
+    return deals.sort((a,b)=>parseNum(a.id)-parseNum(b.id));
+  }
+  // Иначе считаем это «сырыми» строками BigData v4.x.
+  const looksRaw = ('BD_ID сделки' in first) || ('TL_ID' in first) || ('ID' in first)
+    || Object.keys(first).some(k => /^(SUM_|DEAL_|TL_)/.test(k));
+  if(!looksRaw) {
+    throw new Error('Не вижу структуру BigData: ни готовых сделок дашборда, ни строк BD_ID / TL_ID.');
+  }
+  const byDeal = new Map();
+  for(const r of arr) if(r && typeof r === 'object') addBigDataRowToGroups(r, byDeal);
+  return deriveDashboardDealsFromGroups(byDeal);
+}
 function fmtRuDateTime(d) {
   return fmtDateOnly(d)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
 }
@@ -1023,13 +1064,19 @@ async function handleCsvUpload(file) {
     updateFilterLabels();
     updateDataSubtitle();
     const t0=performance.now();
+    const isJson = /\.json$/i.test(file.name || '') || file.type === 'application/json';
     const nextDeals = await runTerminalBoot(file.name, file.size || 0, async () => {
       await sleep(120);
+      if(isJson) {
+        if(status) status.innerHTML = `Читаю JSON: <b>${esc(file.name)}</b>…`;
+        const text = await readFileAsText(file);
+        return deriveDashboardDealsFromJson(text);
+      }
       return await deriveDashboardDealsFromBigDataFile(file, status);
     });
     if(!nextDeals.length) throw new Error('После парсинга не найдено ни одной сделки.');
     deals = nextDeals;
-    currentDataSource = 'загруженный CSV';
+    currentDataSource = isJson ? 'загруженный JSON' : 'загруженный CSV';
     currentDataFile = file.name;
     for(const k of Object.keys(state)) { if(state[k] instanceof Set) state[k].clear(); }
     state.dateFrom=''; state.dateTo='';
@@ -1040,7 +1087,7 @@ async function handleCsvUpload(file) {
     setLoadingState(false);
     updateFilterFabVisibility();
     const sec=((performance.now()-t0)/1000).toFixed(1);
-    status.innerHTML = `Загружено потоково: <b>${fmt.format(deals.length)} сделок</b> из файла ${esc(file.name)}<br>Пересчёт и визуальная инициализация: ${sec} сек.`;
+    status.innerHTML = `Загружено ${isJson ? 'из JSON' : 'потоково'}: <b>${fmt.format(deals.length)} сделок</b> из файла ${esc(file.name)}<br>Пересчёт и визуальная инициализация: ${sec} сек.`;
   } catch(err) {
     console.error(err);
     deals = [];

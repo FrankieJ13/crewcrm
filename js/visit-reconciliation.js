@@ -311,12 +311,96 @@
     return !!(u && typeof window.isCeoLike === 'function' && window.isCeoLike(u.role));
   }
 
+  // ── персистентность отчёта (как в «Аналитике CRM») ───────────────────
+  // Лёгкая мета — в localStorage (мгновенно решаем report/start без await),
+  // тяжёлые массивы (deals/vizRows/results) — в IndexedDB. Загруженный файл
+  // «остаётся на месте» при переходе в другой раздел и возврате, и даже
+  // переживает перезагрузку нативной оболочки.
+  const VR_LS_KEY = 'crmSverkaMeta';
+  const VR_IDB = { name: 'crmSverka', store: 'kv', key: 'state', ver: 1 };
+  function vrIdbOpen() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) return reject(new Error('no-idb'));
+      const req = indexedDB.open(VR_IDB.name, VR_IDB.ver);
+      req.onupgradeneeded = () => { try { req.result.createObjectStore(VR_IDB.store); } catch (_) {} };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error || new Error('idb-open'));
+    });
+  }
+  async function vrIdbSet(value) {
+    const db = await vrIdbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(VR_IDB.store, 'readwrite');
+      tx.objectStore(VR_IDB.store).put(value, VR_IDB.key);
+      tx.oncomplete = () => { db.close(); resolve(true); };
+      tx.onerror = () => { db.close(); reject(tx.error); };
+    });
+  }
+  async function vrIdbGet() {
+    const db = await vrIdbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(VR_IDB.store, 'readonly');
+      const r = tx.objectStore(VR_IDB.store).get(VR_IDB.key);
+      r.onsuccess = () => { db.close(); resolve(r.result || null); };
+      r.onerror = () => { db.close(); reject(r.error); };
+    });
+  }
+  function vrPersist() {
+    if (!VR.stats || !VR.results || !VR.results.length) return;
+    try {
+      localStorage.setItem(VR_LS_KEY, JSON.stringify({
+        fileName: VR.fileName, suffix: VR.suffix, monthLabel: VR.monthLabel,
+        stats: VR.stats, t: Date.now()
+      }));
+    } catch (_) {}
+    vrIdbSet({
+      deals: VR.deals, vizRows: VR.vizRows, results: VR.results, stats: VR.stats,
+      suffix: VR.suffix, monthLabel: VR.monthLabel, fileName: VR.fileName
+    }).catch(() => {});
+  }
+  function vrReadMeta() {
+    try {
+      const raw = localStorage.getItem(VR_LS_KEY);
+      if (!raw) return null;
+      const m = JSON.parse(raw);
+      return (m && m.suffix && m.stats) ? m : null;
+    } catch (_) { return null; }
+  }
+  async function vrHydrateAndRender() {
+    try {
+      const st = await vrIdbGet();
+      if (st && Array.isArray(st.results) && st.results.length) {
+        VR.deals = st.deals || []; VR.vizRows = st.vizRows || [];
+        VR.results = st.results; VR.stats = st.stats || VR.stats;
+        VR.suffix = st.suffix || VR.suffix; VR.monthLabel = st.monthLabel || VR.monthLabel;
+        VR.fileName = st.fileName || VR.fileName;
+        renderReport();
+        return;
+      }
+    } catch (_) {}
+    renderStart();
+  }
+
   window.openVisitReconciliation = function openVisitReconciliation() {
     if (!canView()) return;
     if (typeof window.closeAllDockPopups === 'function') window.closeAllDockPopups();
     if (typeof window.showScr === 'function') window.showScr('sverka');
     if (typeof window.dockSetActive === 'function') window.dockSetActive('analytics');
-    renderStart();
+    // Персист: отчёт уже в памяти → показываем; иначе восстанавливаем из хранилища.
+    if (VR.results && VR.results.length && VR.stats) {
+      renderReport();
+    } else {
+      const meta = vrReadMeta();
+      if (meta) {
+        VR.fileName = meta.fileName || ''; VR.suffix = meta.suffix || '';
+        VR.monthLabel = meta.monthLabel || ''; VR.stats = meta.stats || null;
+        const h = host();
+        if (h) h.innerHTML = shell(`<div class="vr-start"><div class="vr-drop"><div class="vr-drop-t">Восстановление сохранённого отчёта…</div></div></div>`);
+        vrHydrateAndRender();
+      } else {
+        renderStart();
+      }
+    }
     if (typeof window.scheduleFirebasePageUpdate === 'function') window.scheduleFirebasePageUpdate();
     else if (typeof window.updateFirebasePage === 'function') window.updateFirebasePage();
   };
@@ -356,6 +440,7 @@
         VR.vizRows = extractVisits(vizData);
         const { results, stats } = runMatch(VR.deals, VR.vizRows);
         VR.results = results; VR.stats = stats;
+        vrPersist();   // обновлённый отчёт тоже сохраняем
       }
     } finally {
       VR.busy = false;
@@ -514,6 +599,7 @@
       const att = VR.stats.attention.length;
       setStep('dups', 'ok', att ? `${att} визитов на повышенное внимание` : 'подозрительных не найдено');
     } else setStep('dups', 'error', 'сверка не выполнена');
+    vrPersist();   // сохраняем отчёт, чтобы файл «оставался на месте» между разделами
     renderScan();
   }
 

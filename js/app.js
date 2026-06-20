@@ -2044,6 +2044,9 @@ function showLoginScreen() {
     login.classList.add('on');
   }
   document.body.classList.add('login-active');
+  // «Очистить кэш» должен быть доступен и на экране авторизации (свежая загрузка
+  // без токена идёт сюда, а не через showAccessDenied). См. также 2585/8720.
+  const hmbcc = document.getElementById('hmb-clearcache'); if (hmbcc) hmbcc.style.display = '';
   if (window._loginLiquidInit) window._loginLiquidInit();
 }
 
@@ -16407,9 +16410,9 @@ function exp_loadExcelJS() {
 function exp_prepareForm() {
   const sel = document.getElementById('exp-month-sel');
   if (!sel) return;
-  // Заполняем список месяцев (6 последних)
+  // Заполняем список месяцев (12 последних)
   sel.innerHTML = '';
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 12; i++) {
     const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
     const yy = d.getFullYear().toString().slice(-2);
     const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -18228,7 +18231,7 @@ function _rsRenderConfigHtml() {
   const colsHtml = RS_COL_DEFS.map(c =>
     `<label class="rs-col-chip"><input type="checkbox" data-col="${c.key}" ${c.key==='phone'?'checked disabled':'checked'}> ${escapeHtml(c.label)}</label>`
   ).join('');
-  const pills = [2,3,4,5,6].map(n =>
+  const pills = [2,3,4,5,6,12].map(n =>
     `<button class="rs-pill${n===3?' on':''}" data-months="${n}" onclick="_rsSelectMonths(${n})">${n}</button>`
   ).join('');
   return `

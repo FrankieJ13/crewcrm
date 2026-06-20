@@ -633,14 +633,14 @@
     <div class="hero"><div class="hero-grid"><div><h1>Где сделка теряется до визита и реализации</h1><div class="subtitle" id="dataSubtitle">Для построения дашборда нужна парсинг-аналитика методом Бочарова Ю.С. на основе таймлайн-событий в сделках и базовых метаданных платформы amoCRM. Загрузите свежий BigData CSV из парсера v4.4.</div><div class="focus" id="headline">Загрузка…</div></div><div class="hero-side"><div class="badge">Воронка КЦ</div><div class="lime-card"><div class="lime-label">Фокус-сигнал</div><div class="lime-value" id="focusPct">—</div><div class="lime-text" id="focusText">—</div></div></div></div></div>
   </section>
   <section class="empty-state" id="emptyState">
-    <h2>Загрузите BigData CSV для расчёта дашборда</h2>
-    <p>Нужна парсинг-аналитика методом Бочарова Ю.С. на основе таймлайн-событий в сделках и базовых метаданных платформы amoCRM. После загрузки CSV дашборд пересчитает жизненный цикл сделок, визиты по полю «Дата визита», успешные реализации, нормализованные города, причины закрытия, SLA, звонки, задачи, этапы и цепочки.</p>
-    <p class="hint">Поддерживаемый формат: BigData v4.4 Compact Smart — одна полная карточка на сделку + строки таймлайна.</p>
+    <h2>Загрузите BigData CSV или JSON для расчёта дашборда</h2>
+    <p>Нужна парсинг-аналитика методом Бочарова Ю.С. на основе таймлайн-событий в сделках и базовых метаданных платформы amoCRM. После загрузки данных дашборд пересчитает жизненный цикл сделок, визиты по полю «Дата визита», успешные реализации, нормализованные города, причины закрытия, SLA, звонки, задачи, этапы и цепочки.</p>
+    <p class="hint">Поддерживаемые форматы: BigData v4.4 Compact Smart (CSV) — одна полная карточка на сделку + строки таймлайна; либо компактный JSON (массив готовых сделок дашборда или строк BigData).</p>
     <div class="empty-upload"><div class="upload-panel">
-        <div class="upload-title">Загрузить BigData CSV</div>
+        <div class="upload-title">Загрузить BigData CSV / JSON</div>
         <div class="upload-row">
-          <input class="file-input" id="csvUpload" type="file" accept=".csv,text/csv">
-          <button class="clear-csv-btn" id="clearCsv" type="button" title="Очистить импортированный CSV">🗑</button>
+          <input class="file-input" id="csvUpload" type="file" accept=".csv,.json,text/csv,application/json">
+          <button class="clear-csv-btn" id="clearCsv" type="button" title="Очистить импортированные данные">🗑</button>
         </div>
         <div class="upload-status" id="uploadStatus">CSV ещё не загружен.</div>
       </div></div>
@@ -851,6 +851,12 @@
         <button class="dock-popup-btn" onclick="dockAnalytics('traffic')">
           <span class="dock-popup-dot" style="background:var(--acc)"></span>АНАЛИТИКА CRM
         </button>
+        <button class="dock-popup-btn" onclick="dockAnalytics('timeline')">
+          <span class="dock-popup-dot" style="background:#d8ff4f"></span>TIMELINE LEADS
+        </button>
+        <button class="dock-popup-btn" onclick="dockAnalytics('sverka')">
+          <span class="dock-popup-dot" style="background:#ff4757"></span>СВЕРКА ВИЗИТОВ
+        </button>
         <button class="dock-popup-btn" onclick="dockAnalytics('analiz')">
           <span class="dock-popup-dot" style="background:#8b5cf6"></span>МАРКЕТИНГ
         </button>
@@ -859,12 +865,6 @@
         </button>
         <button class="dock-popup-btn" onclick="dockAnalytics('repeats')">
           <span class="dock-popup-dot" style="background:#ffb020"></span>ПОИСК ПОВТОРОВ
-        </button>
-        <button class="dock-popup-btn" onclick="dockAnalytics('sverka')">
-          <span class="dock-popup-dot" style="background:#ff4757"></span>СВЕРКА ВИЗИТОВ
-        </button>
-        <button class="dock-popup-btn" onclick="dockAnalytics('timeline')">
-          <span class="dock-popup-dot" style="background:#d8ff4f"></span>TIMELINE LEADS
         </button>
       </div>
     </div>
@@ -1112,10 +1112,10 @@
     </filter>
   </defs>
 </svg>
-<script src="./js/app.js?v=332"></script>
+<script src="./js/app.js?v=333"></script>
 <script src="./js/traffic-analytics.js?v=355"></script>
-<script src="./js/visit-reconciliation.js?v=352"></script>
-<script src="./js/timeline-leads.js?v=1"></script>
+<script src="./js/visit-reconciliation.js?v=353"></script>
+<script src="./js/timeline-leads.js?v=2"></script>
 <script src="./js/liquid-glass-dock.js?v=4"></script>
 <!-- Затемнение фона при открытом popup напоминаний -->
 <div class="rem-backdrop" id="rem-backdrop" onclick="closeRemPanel()"></div>

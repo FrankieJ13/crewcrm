@@ -58,7 +58,7 @@
   function loadIcons() {
     btns.forEach((b, i) => {
       const im = new Image();
-      im.onload = () => { drawSource(); drawIconLayer(); };
+      im.onload = () => { drawSource(); drawIconLayer(); drawLensRest(); };
       im.src = iconSrc(b);
       iconImg[i] = im;
     });
@@ -117,14 +117,22 @@
     iconCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
     iconCtx.clearRect(0, 0, w, h);
     layout.forEach((p, i) => drawIcon(iconCtx, i, p.cx, p.cy, ICON, true));
-    if (holding || gliding) {                 // вырезаем дырку под pill — её заполняет лупа
-      const r = pill.getBoundingClientRect();
-      const cx = (r.left - dr.left) + r.width / 2, cy = (r.top - dr.top) + r.height / 2;
-      iconCtx.globalCompositeOperation = 'destination-out';
-      roundRect(iconCtx, cx - r.width / 2, cy - r.height / 2, r.width, r.height, Math.round(Math.min(r.width, r.height) * 0.26));
-      iconCtx.fill();
-      iconCtx.globalCompositeOperation = 'source-over';
-    }
+    // дырку под pill вырезаем ВСЕГДА — её заполняет лупа (в покое — чёткая иконка,
+    // не размытая backdrop-blur'ом стекла)
+    const r = pill.getBoundingClientRect();
+    const cx = (r.left - dr.left) + r.width / 2, cy = (r.top - dr.top) + r.height / 2;
+    iconCtx.globalCompositeOperation = 'destination-out';
+    roundRect(iconCtx, cx - r.width / 2, cy - r.height / 2, r.width, r.height, Math.round(Math.min(r.width, r.height) * 0.26));
+    iconCtx.fill();
+    iconCtx.globalCompositeOperation = 'source-over';
+  }
+  // чёткая иконка 1:1 в покое (без искажений и блюра стекла)
+  function drawLensRest() {
+    if (!lens || !lensCtx) return;
+    const { w, h } = sizeLens();
+    lensCtx.setTransform(SS, 0, 0, SS, 0, 0);
+    lensCtx.clearRect(0, 0, w, h);
+    drawIcon(lensCtx, nearest(pillX), w / 2, h / 2, ICON);
   }
 
   /* ---------- лупа (бочка + хром. аберрация), порт образца ---------- */
@@ -135,9 +143,7 @@
     lens.style.width = w + 'px'; lens.style.height = h + 'px';
     return { w, h };
   }
-  function drawLens() {
-    const lensActive = holding || gliding;
-    if (!lensActive) { lensCtx && lensCtx.clearRect(0, 0, lens.width, lens.height); return; }
+  function drawLens() {                  // вызывается только при удержании/проезде (лупа активна)
     const { w, h } = sizeLens();
     const cx = w / 2, cy = h / 2;
     const radius = Math.sqrt(w * w + h * h) / 2;
@@ -275,10 +281,10 @@
     dock.classList.toggle('lg-holding', active);
     placePill();
     drawIconLayer();
-    drawLens();
-    if (!holding && !gliding) settle();
+    if (active) drawLens(); else drawLensRest();
+    if (!active) settle();
     if (active || Math.abs(targetX - pillX) > 0.4) raf = requestAnimationFrame(loop);
-    else { raf = 0; lensCtx && lensCtx.clearRect(0, 0, lens.width, lens.height); drawIconLayer(); }
+    else raf = 0;       // финальный кадр уже отрисовал чёткую иконку в покое
   }
   function kick() { if (!raf) raf = requestAnimationFrame(loop); }
 
@@ -286,7 +292,7 @@
     if (!built || !visible()) return;
     computeLayout();
     if (!holding && !gliding) { const i = activeButtonIdx(); activeIdx = i; pillX = targetX = clampX(iconCX(i)); lastSettled = i; }
-    drawSource(); drawIconLayer(); placePill(); drawLens();
+    drawSource(); drawIconLayer(); placePill(); drawLensRest();
   }
 
   function build() {
@@ -310,6 +316,22 @@
     window.addEventListener('pointercancel', onUp);
     window.addEventListener('resize', reflow);
     document.addEventListener('pointerdown', (e) => { if (popupIdx !== -1 && !popupEl.contains(e.target) && !dock.contains(e.target)) { hidePopup(); lastSettled = -1; } }, true);
+
+    // наведение курсора на пункт дока → показать его попап (только мышь)
+    if (window.matchMedia && window.matchMedia('(hover: hover)').matches) {
+      let hoverHide = 0;
+      const cancelHide = () => { clearTimeout(hoverHide); };
+      const scheduleHide = () => { clearTimeout(hoverHide); hoverHide = setTimeout(hidePopup, 160); };
+      btns.forEach((b, i) => b.addEventListener('mouseenter', () => {
+        if (holding || gliding) return;
+        cancelHide();
+        if (appPopupFor(i)) showPopup(i); else hidePopup();
+      }));
+      dock.addEventListener('mouseleave', scheduleHide);
+      dock.addEventListener('mouseenter', cancelHide);
+      popupEl.addEventListener('mouseenter', cancelHide);
+      popupEl.addEventListener('mouseleave', scheduleHide);
+    }
 
     loadIcons();
     computeLayout();

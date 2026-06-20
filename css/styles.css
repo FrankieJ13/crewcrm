@@ -1649,6 +1649,16 @@ body.tiffany .gate-card {
   opacity: 0;
   transform: translateY(-4px);
 }
+/* Бегущий лог этапов синхронизации (под «Синхронизация…») */
+.loader-title { text-align:center; font-size:14px; font-weight:700; color:var(--txt); }
+.sync-log {
+  margin-top:6px; width:min(86vw,420px); min-height:104px;
+  display:flex; flex-direction:column; gap:2px;
+  font-family:'Source Code Pro','JetBrains Mono',ui-monospace,monospace;
+  font-size:11px; line-height:1.55; color:var(--txt2); text-align:left;
+}
+.sync-log-line { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:opacity .4s ease; animation:syncLineIn .28s ease; }
+@keyframes syncLineIn { from{transform:translateY(4px)} to{transform:none} }
 /* Particle orbit loader */
 .ldv2 {
   --uib-size: 34px;
@@ -9190,8 +9200,10 @@ body.neo-dark .podium-card { background: var(--bg2); }
 body.liquid-glass .dock-container {
   position: relative;
   background: rgba(255,255,255,0.16) !important;
-  -webkit-backdrop-filter: blur(3px) saturate(175%) url(#lg-disp);
-          backdrop-filter: blur(3px) saturate(175%) url(#lg-disp);
+  /* url() ломает backdrop-filter в iOS WebKit (вся декларация невалидна → стекла нет).
+     Базовый фрост — без url() (работает iOS+macOS); искажение фона — отдельным слоем ::after */
+  -webkit-backdrop-filter: blur(7px) saturate(180%);
+          backdrop-filter: blur(7px) saturate(180%);
   border: 0.5px solid rgba(255,255,255,0.5) !important;
   border-radius: 999px;
   padding: 6px 10px;
@@ -9201,6 +9213,16 @@ body.liquid-glass .dock-container {
     inset 1.5px 1.5px 2px rgba(255,255,255,0.55),
     inset -1px -1px 2px rgba(255,255,255,0.16) !important;
   overflow: visible;
+}
+/* искажение/аберрация фона по периметру дока (там, где url() в backdrop поддержан — DMG/macOS) */
+body.liquid-glass .dock-container::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
+  -webkit-backdrop-filter: blur(0.5px) url(#lg-disp);
+          backdrop-filter: blur(0.5px) url(#lg-disp);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  padding: 11px;
 }
 /* яркое преломление по краю капсулы (бликовая кайма) */
 body.liquid-glass .dock-container::before {
@@ -9235,8 +9257,8 @@ body.liquid-glass .lg-pill {
   width: 46px; height: 46px; transform: translate(-50%, -50%);
   border-radius: 14px; z-index: 6; overflow: hidden;
   background: linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.05));
-  -webkit-backdrop-filter: blur(2px) saturate(160%) brightness(1.06) url(#lg-disp);
-          backdrop-filter: blur(2px) saturate(160%) brightness(1.06) url(#lg-disp);
+  -webkit-backdrop-filter: blur(2px) saturate(160%) brightness(1.06);
+          backdrop-filter: blur(2px) saturate(160%) brightness(1.06);
   box-shadow:
     inset 1.5px 1.5px 1px rgba(255,255,255,0.82),
     inset -1.5px -1.5px 1px rgba(255,255,255,0.28),
@@ -9246,8 +9268,8 @@ body.liquid-glass .lg-pill {
 }
 body.liquid-glass .dock-container.lg-holding .lg-pill {
   cursor: grabbing;
-  -webkit-backdrop-filter: blur(2px) saturate(170%) brightness(1.08) url(#lg-disp-strong);
-          backdrop-filter: blur(2px) saturate(170%) brightness(1.08) url(#lg-disp-strong);
+  -webkit-backdrop-filter: blur(2px) saturate(170%) brightness(1.08);
+          backdrop-filter: blur(2px) saturate(170%) brightness(1.08);
   box-shadow:
     inset 1.5px 1.5px 2px rgba(255,255,255,0.94),
     inset -2px -2px 3px rgba(255,255,255,0.34),
@@ -9259,15 +9281,66 @@ body.liquid-glass .lg-lens { position: absolute; inset: 0; width: 100%; height: 
 /* стеклянный попап над иконкой (тёмный текст на светлом стекле) */
 body.liquid-glass .lg-popup {
   position: fixed; z-index: 10000; display: none; flex-direction: column; gap: 0;
-  padding: 5px; border-radius: 16px; min-width: 124px;
-  background: rgba(255,255,255,0.5);
-  -webkit-backdrop-filter: blur(14px) saturate(170%) url(#lg-disp);
-          backdrop-filter: blur(14px) saturate(170%) url(#lg-disp);
+  padding: 5px; border-radius: 16px; min-width: 124px; isolation: isolate;
+  background: rgba(255,255,255,0.74);   /* fallback: backdrop-filter не поддержан (старый iOS) — непрозрачно, читаемо */
   border: 0.5px solid rgba(255,255,255,0.6);
   box-shadow: 0 12px 30px rgba(0,0,0,0.2), inset 0 0 0 0.5px rgba(255,255,255,0.5), inset 1px 1px 2px rgba(255,255,255,0.7);
+}
+@supports ((-webkit-backdrop-filter: blur(2px)) or (backdrop-filter: blur(2px))) {
+  body.liquid-glass .lg-popup {
+    background: rgba(255,255,255,0.22);  /* прозрачнее (~+50% к прежней); стекло держит блюр (iOS+macOS) */
+    -webkit-backdrop-filter: blur(22px) saturate(180%);
+            backdrop-filter: blur(22px) saturate(180%);
+  }
+}
+/* искажение/аберрация фона по периметру попапа (как у pill); url() работает на DMG/macOS, на iOS — no-op */
+body.liquid-glass .lg-popup::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
+  -webkit-backdrop-filter: blur(0.5px) url(#lg-disp);
+          backdrop-filter: blur(0.5px) url(#lg-disp);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  padding: 12px;
 }
 body.liquid-glass .lg-popup.show { display: flex; animation: lgPopIn .2s cubic-bezier(.175,.885,.32,1.4); }
 @keyframes lgPopIn { from { opacity: 0; transform: translateY(8px) scale(.94); } to { opacity: 1; transform: none; } }
 body.liquid-glass .lg-pop-item { position: relative; font: 600 13px 'Golos Text', -apple-system, sans-serif; color: #2a2a30; padding: 8px 16px; border-radius: 9px; white-space: nowrap; cursor: pointer; transition: background .16s ease; }
 body.liquid-glass .lg-pop-item:hover { background: rgba(0,0,0,0.06); color: #111; }
 body.liquid-glass .lg-pop-item + .lg-pop-item::before { content: ""; position: absolute; top: 0; left: 10%; width: 80%; height: 1px; background: linear-gradient(to right, transparent, rgba(0,0,0,.12) 25%, rgba(0,0,0,.12) 75%, transparent); }
+
+/* ============================================================
+   LIQUID GLASS — единый формат модалок (foundation).
+   Все модалки темы — жидкое стекло в стиле док-попапа (как в DMG).
+   Цвет фона/границы/тени переопределяем; вёрстку не трогаем.
+   Расширять список по мере охвата остальных модалок проекта.
+   ============================================================ */
+body.liquid-glass .traffic-modal-card,
+body.liquid-glass .traffic-base-modal-card,
+body.liquid-glass .traffic-advanced-modal-card,
+body.liquid-glass .income-modal-content,
+body.liquid-glass .profile-modal-content,
+body.liquid-glass .mop-modal,
+body.liquid-glass .vt-picker-modal,
+body.liquid-glass .hamburger-dropdown {
+  background: rgba(255,255,255,0.80) !important;   /* fallback: нет backdrop-filter */
+  border: 0.5px solid rgba(255,255,255,0.6) !important;
+  box-shadow:
+    0 24px 64px rgba(0,0,0,0.30),
+    inset 0 0 0 0.5px rgba(255,255,255,0.5),
+    inset 1px 1px 2px rgba(255,255,255,0.7) !important;
+}
+@supports ((-webkit-backdrop-filter: blur(2px)) or (backdrop-filter: blur(2px))) {
+  body.liquid-glass .traffic-modal-card,
+  body.liquid-glass .traffic-base-modal-card,
+  body.liquid-glass .traffic-advanced-modal-card,
+  body.liquid-glass .income-modal-content,
+  body.liquid-glass .profile-modal-content,
+  body.liquid-glass .mop-modal,
+  body.liquid-glass .vt-picker-modal,
+  body.liquid-glass .hamburger-dropdown {
+    background: rgba(255,255,255,0.55) !important;   /* стекло держит блюр (модалки чуть плотнее попапов — для читаемости) */
+    -webkit-backdrop-filter: blur(26px) saturate(185%);
+            backdrop-filter: blur(26px) saturate(185%);
+  }
+}

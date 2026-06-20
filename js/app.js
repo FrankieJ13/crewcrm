@@ -1037,11 +1037,49 @@ function showStartupLoader(text = 'Синхронизация профиля…'
   const node = document.createElement('div');
   node.id = 'startup-loader';
   node.className = 'loader';
-  node.innerHTML = `<div class="spin"></div><div>${text}</div>`;
+  node.innerHTML = `<div class="spin"></div><div class="loader-title">${text}</div><div class="sync-log" id="sync-log" aria-hidden="true"></div>`;
   main.prepend(node);
+  startSyncLog();
 }
 
+// Бегущий лог этапов загрузки под «Синхронизация…» — простые понятные строки,
+// верхние (старые) бледнеют по мере появления новых.
+let _syncLogTimer = null;
+const SYNC_STAGES = [
+  'подключение к серверу…',
+  'проверка доступа…',
+  'загрузка настроек…',
+  'чтение таблиц CRM…',
+  'профиль и роль…',
+  'расчёт KPI…',
+  'формирование рейтинга…',
+  'синхронизация визитов…',
+  'доход и планы…',
+  'обновление кэша…',
+  'отрисовка интерфейса…',
+];
+function startSyncLog() {
+  stopSyncLog();
+  const box = document.getElementById('sync-log');
+  if (!box) return;
+  let i = 0;
+  const push = () => {
+    const line = document.createElement('div');
+    line.className = 'sync-log-line';
+    line.textContent = '> ' + SYNC_STAGES[i % SYNC_STAGES.length];
+    box.appendChild(line);
+    while (box.children.length > 6) box.removeChild(box.firstChild);
+    const n = box.children.length;
+    [...box.children].forEach((el, idx) => { el.style.opacity = (0.16 + 0.84 * ((idx + 1) / n)).toFixed(2); });
+    i++;
+  };
+  push();
+  _syncLogTimer = setInterval(push, 720);
+}
+function stopSyncLog() { if (_syncLogTimer) { clearInterval(_syncLogTimer); _syncLogTimer = null; } }
+
 function hideStartupLoader() {
+  stopSyncLog();
   document.getElementById('startup-loader')?.remove();
 }
 
@@ -2544,7 +2582,7 @@ function onLogout() {
   document.getElementById('main-dock').style.display = 'none';
   const hmbl2 = document.getElementById('hmb-logout'); if (hmbl2) hmbl2.style.display = 'none';
   const hmbsl2 = document.getElementById('hmb-sep-logout'); if (hmbsl2) hmbsl2.style.display = 'none';
-  const hmbcc2 = document.getElementById('hmb-clearcache'); if (hmbcc2) hmbcc2.style.display = 'none';
+  const hmbcc2 = document.getElementById('hmb-clearcache'); if (hmbcc2) hmbcc2.style.display = '';  // «Очистить кэш» доступен и на экране авторизации
   const hmblg2 = document.getElementById('hmb-logs'); if (hmblg2) hmblg2.style.display = 'none';
   const hmbAcc2 = document.getElementById('hmb-account-btn'); if (hmbAcc2) hmbAcc2.style.display = 'none';
   const hmbAccSep2 = document.getElementById('hmb-sep-account'); if (hmbAccSep2) hmbAccSep2.style.display = 'none';

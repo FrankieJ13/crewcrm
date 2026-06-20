@@ -1224,7 +1224,7 @@ function initLogoRotation() {
 // ==================== TYPING LOGO ANIMATION ====================
 // Печать → мигающий курсор → стирание → следующая фраза, зациклено (~10с на полный цикл).
 (function initTypingLogo() {
-  const phrases = ['crm_crew', 'dashboard', 'crystal_motors', 'дашборд', 'effective_team'];
+  const phrases = ['crm_crew', 'dashboard'];
   const baseTypingSpeed = 110;     // мс на символ при наборе
   const baseErasingSpeed = 70;     // мс на символ при стирании
   const pauseAfterTyping = 10000;  // напечатанная фраза держится 10 сек, затем стирается

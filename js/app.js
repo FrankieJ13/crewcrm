@@ -990,7 +990,10 @@ async function azImportSheet() {
 
 function showScr(id) {
   hideStartupLoader();
-  // Если уходим с инструкций — возвращаем узел Автоподбора в body (чтоб не уносился со scr-instruktsii)
+  // Само-исцеление блокировки фона: смена экрана = модалок-оверлеев нет, снимаем
+  // overflow:hidden (наблюдатель уберёт .modal-open), чтобы лок главного скроллера
+  // не «залипал», если какая-то модалка закрылась без сброса overflow.
+  if (document.body.style.overflow === 'hidden') document.body.style.overflow = '';
   if (id !== 'instruktsii') {
     if (typeof _apReturnToBody === 'function') _apReturnToBody();
     if (typeof _arReturnToBody === 'function') _arReturnToBody();
@@ -2049,6 +2052,20 @@ function showLoginScreen() {
   const hmbcc = document.getElementById('hmb-clearcache'); if (hmbcc) hmbcc.style.display = '';
   if (window._loginLiquidInit) window._loginLiquidInit();
 }
+
+/* iOS-надёжная блокировка фона при открытой модалке.
+   Все модалки ставят document.body.style.overflow='hidden'. На iOS этого мало —
+   реальный скроллер (#app/main) продолжает «ловиться» пальцем за модалкой. Здесь
+   зеркалим inline-overflow body в класс .modal-open, который CSS темы Liquid Glass
+   использует, чтобы жёстко заблокировать #app/main (модалки лежат вне #app). */
+(function initModalScrollLock() {
+  if (!document.body) { document.addEventListener('DOMContentLoaded', initModalScrollLock); return; }
+  const sync = () => document.body.classList.toggle('modal-open', document.body.style.overflow === 'hidden');
+  try {
+    new MutationObserver(sync).observe(document.body, { attributes: true, attributeFilter: ['style'] });
+  } catch (_) {}
+  sync();
+})();
 
 function requestGoogleToken({ prompt = '', mode = 'ensure', force = false, silent = false } = {}) {
   if (!tokenClient) return Promise.reject(new Error('oauth_not_ready'));

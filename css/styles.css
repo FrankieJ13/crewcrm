@@ -9410,6 +9410,113 @@ body.liquid-glass .export-modal-overlay {
           backdrop-filter: blur(2.2px) saturate(115%) !important;
 }
 
+/* ============================================================
+   LIQUID GLASS — ЕДИНАЯ МОДАЛКА НА ВЕСЬ ПРОЕКТ (надстройка над блоком выше).
+   Один источник правды: переменные --lgm-* + ОДИН список модалок (:is(...)).
+   Чтобы перекрутить вид ВСЕХ модалок — меняйте переменные в :root-блоке ниже.
+   Внутри модалок локально переопределяются токены фона/линий (--bg/--bg2/--bg3/
+   --line) → все вложенные панели/чипы/бейджи автоматически становятся стеклом,
+   без перечисления их классов. Заголовки — белые с тенью; у текста лёгкая тень.
+   ============================================================ */
+body.liquid-glass {
+  --lgm-radius: 22px;
+  --lgm-blur: 3px;                 /* размытие фона под стеклом модалки */
+  --lgm-tint: rgba(255,255,255,0.20);
+  --lgm-bg-fallback: rgba(255,255,255,0.62); /* нет url() в backdrop (iOS) — читаемо */
+  --lgm-text-shadow: 0 1px 1px rgba(255,255,255,0.5);
+  --lgm-head: #ffffff;             /* цвет заголовков модалок */
+  --lgm-head-shadow: 0 1px 2px rgba(0,0,0,0.38), 0 0 2px rgba(0,0,0,0.22); /* тёмный ореол → белый читаем на светлом стекле */
+  --lgm-field-bg: rgba(255,255,255,0.16);
+  --lgm-field-bdr: rgba(255,255,255,0.5);
+  /* стеклянные токены для ВЛОЖЕННЫХ панелей внутри модалок */
+  --lgm-inner-bg2: rgba(255,255,255,0.12);
+  --lgm-inner-bg3: rgba(255,255,255,0.18);
+  --lgm-inner-line: rgba(120,130,150,0.22);
+}
+
+/* === ЕДИНЫЙ список модалок проекта (добавляете новую модалку — сюда) === */
+body.liquid-glass :is(.traffic-modal-card,.traffic-base-modal-card,.traffic-advanced-modal-card,.income-modal-content,.income-modal,.profile-modal-content,.mop-modal,.vt-picker-modal,.fc-modal,.plan-editor-modal,.sched-bulk-modal,.notify-modal,.export-modal,.gate-card,.day-detail-modal,.tz-issue-modal) {
+  /* убираем «коробки в коробке»: вложенные панели берут стеклянные токены */
+  --bg: transparent;
+  --bg2: var(--lgm-inner-bg2);
+  --bg3: var(--lgm-inner-bg3);
+  --line: var(--lgm-inner-line);
+  --line2: var(--lgm-inner-line);
+  text-shadow: var(--lgm-text-shadow);
+  /* скролл внутри модалки не «протекает» в фон и не уходит в пустоту */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+/* внутренние скролл-области тоже держат overscroll */
+body.liquid-glass :is(.mop-modal-body,.income-modal-body,.notify-modal-body,.traffic-modal-card,.sched-bulk-modal,.pe-body,.fc-body,.vt-picker-body,.day-detail-body) {
+  overscroll-behavior: contain;
+}
+
+/* заголовки модалок — белые с лёгкой тенью */
+body.liquid-glass :is(.traffic-modal-card,.traffic-base-modal-card,.traffic-advanced-modal-card,.income-modal-content,.income-modal,.profile-modal-content,.mop-modal,.vt-picker-modal,.fc-modal,.plan-editor-modal,.sched-bulk-modal,.notify-modal,.export-modal,.gate-card,.day-detail-modal,.tz-issue-modal) :is(h1,h2,h3,h4,.mop-modal-title,.income-modal-title,.income-sec-title,.notify-modal-title,.pe-title,.export-modal-title,.sched-bulk-title,.vt-picker-hdr,.fc-title,.traffic-head-title,.traffic-modal-title,.traffic-section-title,.tz-issue-title,.gate-title,.si-title,.day-detail-title) {
+  color: var(--lgm-head) !important;
+  text-shadow: var(--lgm-head-shadow) !important;
+}
+/* шапки модалок — без собственного фона (только стекло), мягкий разделитель */
+body.liquid-glass :is(.mop-modal-hdr,.income-modal-hdr,.notify-modal-hdr,.sched-bulk-head,.traffic-modal-topbar,.vt-picker-hdr,.pe-head,.fc-head,.day-detail-hdr) {
+  background: transparent !important;
+  border-bottom-color: rgba(255,255,255,0.22) !important;
+  -webkit-backdrop-filter: none !important;
+          backdrop-filter: none !important;
+}
+
+/* поля форм внутри модалок — лёгкое стекло */
+body.liquid-glass :is(.traffic-modal-card,.traffic-base-modal-card,.traffic-advanced-modal-card,.income-modal-content,.income-modal,.profile-modal-content,.mop-modal,.vt-picker-modal,.fc-modal,.plan-editor-modal,.sched-bulk-modal,.notify-modal,.export-modal,.gate-card,.day-detail-modal,.tz-issue-modal) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea) {
+  background: var(--lgm-field-bg) !important;
+  border: 1px solid var(--lgm-field-bdr) !important;
+  color: var(--txt) !important;
+  text-shadow: none;
+  -webkit-backdrop-filter: blur(6px) saturate(150%);
+          backdrop-filter: blur(6px) saturate(150%);
+}
+
+/* ===== Блокировка фона при открытой модалке (надёжно для iOS) =====
+   Модалки ставят body.style.overflow='hidden' → JS зеркалит класс .modal-open.
+   На iOS overflow:hidden на body не держит; реальный скроллер — #app/main, и он
+   вне модалок (они в body), поэтому блокируем именно его. */
+body.liquid-glass.modal-open #app { overflow: hidden !important; }
+body.liquid-glass.modal-open main {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+/* фон при открытии модалки размыт слабее (день-детали тоже) */
+body.liquid-glass .day-detail-overlay {
+  -webkit-backdrop-filter: blur(2.2px) saturate(115%) !important;
+          backdrop-filter: blur(2.2px) saturate(115%) !important;
+}
+
+/* новые модалки получают то же ПОЛНОПОВЕРХНОСТНОЕ стекло (как блок выше) */
+body.liquid-glass :is(.income-modal,.day-detail-modal,.tz-issue-modal) {
+  position: relative; isolation: isolate; overflow: hidden;
+  background: var(--lgm-bg-fallback) !important;
+  border: none !important;
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.18), 0 26px 70px rgba(0,0,0,0.24),
+    inset 2px 2px 1px 0 rgba(255,255,255,0.55), inset -1px -1px 1px 1px rgba(255,255,255,0.45) !important;
+}
+@supports ((backdrop-filter: url("#glass-distortion")) or (-webkit-backdrop-filter: url("#glass-distortion"))) {
+  body.liquid-glass :is(.income-modal,.day-detail-modal,.tz-issue-modal) { background: transparent !important; }
+}
+body.liquid-glass :is(.income-modal,.day-detail-modal,.tz-issue-modal)::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  background: var(--lgm-tint);
+  -webkit-backdrop-filter: blur(var(--lgm-blur)) url(#glass-distortion);
+          backdrop-filter: blur(var(--lgm-blur)) url(#glass-distortion);
+}
+/* income был особый: тёмное тело + синий текст → приводим к единому светлому стеклу */
+body.liquid-glass .income-modal-body {
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+          backdrop-filter: none !important;
+}
+body.liquid-glass .income-modal-content { color: var(--txt); }
+
 /* Единый отклик кнопки обновления — вращение иконки во время рефреша (все темы/экраны) */
 @keyframes refresh-spin { to { transform: rotate(360deg); } }
 #btn-refresh.refreshing svg,

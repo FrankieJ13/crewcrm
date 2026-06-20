@@ -27,7 +27,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&family=Exo+2:wght@200;300;700&family=JetBrains+Mono:wght@300;400&family=Oswald:wght@400;700&family=Source+Code+Pro:wght@400;500;600&display=swap" rel="stylesheet"/>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<link rel="stylesheet" href="./css/styles.css?v=333"/>
+<link rel="stylesheet" href="./css/styles.css?v=334"/>
 <link rel="stylesheet" href="./css/autopodbor.css?v=323"/>
 <link rel="stylesheet" href="./css/traffic-analytics.css?v=354"/>
 <link rel="stylesheet" href="./css/visit-reconciliation.css?v=347"/>
@@ -1098,6 +1098,17 @@
       <feTurbulence type="fractalNoise" baseFrequency="0.014 0.02" numOctaves="2" seed="9" result="n"/>
       <feGaussianBlur in="n" stdDeviation="1.3" result="s"/>
       <feDisplacementMap in="SourceGraphic" in2="s" scale="28" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <!-- Полноповерхностное преломление стекла (по образцу lucasromerodb liquid-glass) -->
+    <filter id="glass-distortion" x="0%" y="0%" width="100%" height="100%" filterUnits="objectBoundingBox">
+      <feTurbulence type="fractalNoise" baseFrequency="0.01 0.01" numOctaves="1" seed="5" result="turbulence"/>
+      <feComponentTransfer in="turbulence" result="mapped">
+        <feFuncR type="gamma" amplitude="1" exponent="10" offset="0.5"/>
+        <feFuncG type="gamma" amplitude="0" exponent="1" offset="0"/>
+        <feFuncB type="gamma" amplitude="0" exponent="1" offset="0.5"/>
+      </feComponentTransfer>
+      <feGaussianBlur in="turbulence" stdDeviation="3" result="softMap"/>
+      <feDisplacementMap in="SourceGraphic" in2="softMap" scale="70" xChannelSelector="R" yChannelSelector="G"/>
     </filter>
   </defs>
 </svg>

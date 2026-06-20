@@ -9310,10 +9310,11 @@ body.liquid-glass .lg-pop-item:hover { background: rgba(0,0,0,0.06); color: #111
 body.liquid-glass .lg-pop-item + .lg-pop-item::before { content: ""; position: absolute; top: 0; left: 10%; width: 80%; height: 1px; background: linear-gradient(to right, transparent, rgba(0,0,0,.12) 25%, rgba(0,0,0,.12) 75%, transparent); }
 
 /* ============================================================
-   LIQUID GLASS — единый формат модалок (iOS-26 liquid glass).
-   Матовое стекло + преломление/дисторсия заднего слоя по кромке (::before,
-   backdrop url(#lg-disp-strong), маска по периметру) + зеркальная грань (::after).
-   url() в backdrop работает на DMG/macOS; на iOS — мягкая деградация до фроста.
+   LIQUID GLASS — единый формат модалок (по образцу lucasromerodb liquid-glass).
+   ПОЛНОПОВЕРХНОСТНОЕ преломление фона: слой ::before с
+   backdrop-filter: blur + url(#glass-distortion) + лёгкая тонировка;
+   зеркальные грани — inset box-shadow (shine). url() в backdrop работает на
+   Chromium (DMG → Chrome/130); на iOS — читаемый матовый фолбэк.
    ============================================================ */
 body.liquid-glass .traffic-modal-card,
 body.liquid-glass .traffic-base-modal-card,
@@ -9330,16 +9331,17 @@ body.liquid-glass .export-modal,
 body.liquid-glass .gate-card {
   position: relative;
   isolation: isolate;
-  background: rgba(255,255,255,0.64) !important;   /* fallback: нет backdrop-filter (старый iOS) */
-  border: 0.5px solid rgba(255,255,255,0.5) !important;
+  overflow: hidden;
+  background: rgba(255,255,255,0.62) !important;   /* фолбэк (нет backdrop url): читаемо */
+  border: none !important;
   box-shadow:
-    0 30px 80px rgba(0,0,0,0.30),
-    0 2px 10px rgba(0,0,0,0.12),
-    inset 1.6px 1.6px 1.5px rgba(255,255,255,0.85),
-    inset -1.6px -1.6px 1.5px rgba(255,255,255,0.32),
-    inset 0 0 26px rgba(255,255,255,0.10) !important;
+    0 10px 30px rgba(0,0,0,0.18),
+    0 26px 70px rgba(0,0,0,0.24),
+    inset 2px 2px 1px 0 rgba(255,255,255,0.55),
+    inset -1px -1px 1px 1px rgba(255,255,255,0.45) !important;
 }
-@supports ((-webkit-backdrop-filter: blur(2px)) or (backdrop-filter: blur(2px))) {
+/* где поддержан url() в backdrop (Chromium) — фон карточки прозрачный, стекло даёт ::before */
+@supports ((backdrop-filter: url("#glass-distortion")) or (-webkit-backdrop-filter: url("#glass-distortion"))) {
   body.liquid-glass .traffic-modal-card,
   body.liquid-glass .traffic-base-modal-card,
   body.liquid-glass .traffic-advanced-modal-card,
@@ -9353,12 +9355,10 @@ body.liquid-glass .gate-card {
   body.liquid-glass .notify-modal,
   body.liquid-glass .export-modal,
   body.liquid-glass .gate-card {
-    background: rgba(255,255,255,0.42) !important;   /* стекло держит блюр (iOS+macOS) */
-    -webkit-backdrop-filter: blur(20px) saturate(185%);
-            backdrop-filter: blur(20px) saturate(185%);
+    background: transparent !important;
   }
 }
-/* преломление/дисторсия заднего слоя по кромке (iOS-26) — слой ::before, маска по периметру */
+/* эффект-слой: блюр + полноповерхностное преломление фона + лёгкая тонировка */
 body.liquid-glass .traffic-modal-card::before,
 body.liquid-glass .traffic-base-modal-card::before,
 body.liquid-glass .traffic-advanced-modal-card::before,
@@ -9372,51 +9372,22 @@ body.liquid-glass .sched-bulk-modal::before,
 body.liquid-glass .notify-modal::before,
 body.liquid-glass .export-modal::before,
 body.liquid-glass .gate-card::before {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
-  -webkit-backdrop-filter: blur(1px) url(#lg-disp-strong);
-          backdrop-filter: blur(1px) url(#lg-disp-strong);
-  /* искажение только у кромки, плавно растворяется к центру (без жёсткой внутренней рамки):
-     объединяем вертикальный и горизонтальный краевые градиенты → непрозрачно у ЛЮБОГО края */
-  -webkit-mask:
-    linear-gradient(to top, #000, transparent 26px, transparent calc(100% - 26px), #000),
-    linear-gradient(to left, #000, transparent 26px, transparent calc(100% - 26px), #000);
-          mask:
-    linear-gradient(to top, #000, transparent 26px, transparent calc(100% - 26px), #000),
-    linear-gradient(to left, #000, transparent 26px, transparent calc(100% - 26px), #000);
-  -webkit-mask-composite: source-over;
-          mask-composite: add;
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  background: rgba(255,255,255,0.20);
+  -webkit-backdrop-filter: blur(3px) url(#glass-distortion);
+          backdrop-filter: blur(3px) url(#glass-distortion);
 }
-/* зеркально-бликовая грань (specular rim) */
-body.liquid-glass .traffic-modal-card::after,
-body.liquid-glass .traffic-base-modal-card::after,
-body.liquid-glass .traffic-advanced-modal-card::after,
-body.liquid-glass .income-modal-content::after,
-body.liquid-glass .profile-modal-content::after,
-body.liquid-glass .mop-modal::after,
-body.liquid-glass .vt-picker-modal::after,
-body.liquid-glass .fc-modal::after,
-body.liquid-glass .plan-editor-modal::after,
-body.liquid-glass .sched-bulk-modal::after,
-body.liquid-glass .notify-modal::after,
-body.liquid-glass .export-modal::after,
-body.liquid-glass .gate-card::after {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2; padding: 1.2px;
-  background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.08) 30%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.12) 70%, rgba(255,255,255,0.88));
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude;
-}
-/* гамбургер-меню — то же стекло, но без position/pseudo (это позиционированный dropdown) */
+/* гамбургер — стекло без преломления (это dropdown с вложенным меню, overflow нельзя резать) */
 body.liquid-glass .hamburger-dropdown {
-  background: rgba(255,255,255,0.64) !important;
+  background: rgba(255,255,255,0.62) !important;
   border: 0.5px solid rgba(255,255,255,0.5) !important;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.30), inset 1.5px 1.5px 1.5px rgba(255,255,255,0.8), inset -1.5px -1.5px 1.5px rgba(255,255,255,0.28) !important;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.30), inset 2px 2px 1px rgba(255,255,255,0.55), inset -1px -1px 1px 1px rgba(255,255,255,0.4) !important;
 }
 @supports ((-webkit-backdrop-filter: blur(2px)) or (backdrop-filter: blur(2px))) {
   body.liquid-glass .hamburger-dropdown {
     background: rgba(255,255,255,0.45) !important;
-    -webkit-backdrop-filter: blur(22px) saturate(185%);
-            backdrop-filter: blur(22px) saturate(185%);
+    -webkit-backdrop-filter: blur(22px) saturate(180%);
+            backdrop-filter: blur(22px) saturate(180%);
   }
 }
 

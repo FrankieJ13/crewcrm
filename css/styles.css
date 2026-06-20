@@ -9517,6 +9517,33 @@ body.liquid-glass .income-modal-body {
 }
 body.liquid-glass .income-modal-content { color: var(--txt); }
 
+/* ============================================================
+   LIQUID GLASS — панели/карточки/формы ПО ВСЕМУ ПРИЛОЖЕНИЮ в стекле
+   (как модалки/попапы). Консервативно: translucent bg + blur (iOS-safe, без url),
+   тонкая грань, мягкая тень. Без !important — точечные стили компонентов могут
+   перекрывать, где нужно. Семантичные цветные бейджи (статусы) НЕ трогаем здесь.
+   ============================================================ */
+body.liquid-glass :is(
+  .rating-card,.podium-card,.dept-card,.neo-card,
+  .ceo-metric-card,.ceo-card-delta,.ps-card,.az-kpi-card,
+  .trophy-card,.ds-card,.vis-step-card,
+  .traffic-card,.traffic-role-card,.traffic-format-card,.traffic-import-card,
+  .tz-card,.tz-builder-card
+) {
+  background: rgba(255,255,255,0.13);
+  border: 1px solid rgba(255,255,255,0.40);
+  -webkit-backdrop-filter: blur(11px) saturate(160%);
+          backdrop-filter: blur(11px) saturate(160%);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.10), inset 1px 1px 1px rgba(255,255,255,0.5);
+}
+/* поля форм по всему приложению — лёгкое стекло */
+body.liquid-glass :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),select,textarea):not(.lg-pop-item) {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.45);
+  -webkit-backdrop-filter: blur(6px) saturate(150%);
+          backdrop-filter: blur(6px) saturate(150%);
+}
+
 /* Единый отклик кнопки обновления — вращение иконки во время рефреша (все темы/экраны) */
 @keyframes refresh-spin { to { transform: rotate(360deg); } }
 #btn-refresh.refreshing svg,

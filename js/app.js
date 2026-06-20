@@ -2779,8 +2779,8 @@ async function _apiFetch(sheet, range, key, retryCount = 0, params = '', opts = 
   // было ошибкой: убивали живой, но медленный запрос и уходили в круги ретраев.
   // Терпеливо: первая попытка 25с (ловит холодный ответ ~20-25с), ретраи — 45с.
   const timeoutMs = retryCount === 0
-    ? ((wakeFresh || coldConnection) ? 25000 : 30000)
-    : 45000;
+    ? ((wakeFresh || coldConnection) ? 45000 : 30000)  // холодное value-чтение реально 38-45с — даём дожить на 1й попытке
+    : 70000;
   const ctrl = new AbortController();
   _apiControllers.add(ctrl);
   const tid  = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -8758,7 +8758,7 @@ function _loadUsersCache() {
   } catch(e) { return null; }
 }
 
-async function loadUsersAndStart() {
+async function loadUsersAndStart(coldRetry = 0) {
   // CACHE-FIRST стратегия. Главная цель — убрать 20-30 секунд cold-start
   // Sheets API при первом обращении к USERS. С кешем UI стартует мгновенно,
   // свежие данные подтягиваются в фоне; если в них что-то изменилось
@@ -8816,9 +8816,20 @@ async function loadUsersAndStart() {
       // Фоллбэк на устаревший кеш если он есть
       S.usersData = cached;
       try { toast('Данные USERS из кеша (нет связи)', 'i'); } catch(_){}
+    } else if (S.token && coldRetry < 3) {
+      // Токен валиден → пользователь авторизован. USERS просто медленный/холодный
+      // (Google Sheets value-чтение 30-45с). НЕ деавторизуем и НЕ показываем
+      // «нет доступа» — держим экран синхронизации и терпеливо повторяем.
+      try {
+        const t = document.querySelector('#startup-loader .loader-title') || document.querySelector('#silent-loader div:last-child');
+        if (t) t.textContent = 'Google Sheets отвечает медленно, ждём…';
+      } catch(_){}
+      try { window.DIAG?.push('warn', 'auth', ['USERS холодный — повтор', coldRetry + 1]); } catch(_){}
+      await new Promise(r => setTimeout(r, 2500));
+      return loadUsersAndStart(coldRetry + 1);
     } else {
       S.usersData = [];
-      showAccessDenied('Нет доступа к таблице');
+      showAccessDenied('Google Sheets не отвечает. Нажмите «Обновить» или войдите снова');
       return;
     }
   }

@@ -9199,30 +9199,32 @@ body.neo-dark .podium-card { background: var(--bg2); }
 /* ── Док-капсула: прозрачное жидкое стекло с преломлением (SVG-displacement) ── */
 body.liquid-glass .dock-container {
   position: relative;
-  background: rgba(255,255,255,0.16) !important;
-  /* url() ломает backdrop-filter в iOS WebKit (вся декларация невалидна → стекла нет).
-     Базовый фрост — без url() (работает iOS+macOS); искажение фона — отдельным слоем ::after */
-  -webkit-backdrop-filter: blur(7px) saturate(180%);
-          backdrop-filter: blur(7px) saturate(180%);
-  border: 0.5px solid rgba(255,255,255,0.5) !important;
+  background: rgba(255,255,255,0.14) !important;
+  /* объёмное стекло: чистый фрост без url() (без волн-искажений, которые были в модалках) */
+  -webkit-backdrop-filter: blur(9px) saturate(185%) brightness(1.04);
+          backdrop-filter: blur(9px) saturate(185%) brightness(1.04);
+  border: 0.5px solid rgba(255,255,255,0.55) !important;
   border-radius: 999px;
   padding: 6px 10px;
+  /* «толщина» стекла: яркий верхний блик + тёмный низ-кант + внешняя тень + контактная тень */
   box-shadow:
-    0 12px 34px rgba(0,0,0,0.20),
-    inset 0 0 0 0.5px rgba(255,255,255,0.30),
-    inset 1.5px 1.5px 2px rgba(255,255,255,0.55),
-    inset -1px -1px 2px rgba(255,255,255,0.16) !important;
+    0 14px 38px rgba(0,0,0,0.24),
+    0 2px 6px rgba(0,0,0,0.14),
+    inset 0 1.5px 1px rgba(255,255,255,0.9),
+    inset 1.5px 0 1px rgba(255,255,255,0.4),
+    inset -1.5px 0 1px rgba(255,255,255,0.4),
+    inset 0 -2px 3px rgba(40,50,80,0.22),
+    inset 0 0 12px rgba(255,255,255,0.12) !important;
   overflow: visible;
 }
-/* искажение/аберрация фона по периметру дока (там, где url() в backdrop поддержан — DMG/macOS) */
+/* объёмный «купол»: вертикальный градиент-блик (светлый верх → прозрачный низ) — стекло выглядит выпуклым, без искажений */
 body.liquid-glass .dock-container::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
-  -webkit-backdrop-filter: blur(0.5px) url(#lg-disp);
-          backdrop-filter: blur(0.5px) url(#lg-disp);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude;
-  padding: 11px;
+  background: linear-gradient(to bottom,
+    rgba(255,255,255,0.34) 0%,
+    rgba(255,255,255,0.08) 32%,
+    rgba(255,255,255,0) 55%,
+    rgba(80,95,130,0.05) 100%);
 }
 /* яркое преломление по краю капсулы (бликовая кайма) */
 body.liquid-glass .dock-container::before {
@@ -9294,15 +9296,8 @@ body.liquid-glass .lg-popup {
   }
 }
 /* искажение/аберрация фона по периметру попапа (как у pill); url() работает на DMG/macOS, на iOS — no-op */
-body.liquid-glass .lg-popup::before {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
-  -webkit-backdrop-filter: blur(0.5px) url(#lg-disp);
-          backdrop-filter: blur(0.5px) url(#lg-disp);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude;
-  padding: 12px;
-}
+/* убрали краевое url()-искажение попапа — блюр теперь РАВНОМЕРНЫЙ по всей площади
+   (раньше у края была «другая» размытость, чем под текстом) */
 body.liquid-glass .lg-popup.show { display: flex; animation: lgPopIn .2s cubic-bezier(.175,.885,.32,1.4); }
 @keyframes lgPopIn { from { opacity: 0; transform: translateY(8px) scale(.94); } to { opacity: 1; transform: none; } }
 body.liquid-glass .lg-pop-item { position: relative; font: 600 13px 'Golos Text', -apple-system, sans-serif; color: #2a2a30; padding: 8px 16px; border-radius: 9px; white-space: nowrap; cursor: pointer; transition: background .16s ease; }
@@ -9414,6 +9409,10 @@ body.liquid-glass .export-modal-overlay {
   -webkit-backdrop-filter: blur(2.2px) saturate(115%) !important;
           backdrop-filter: blur(2.2px) saturate(115%) !important;
 }
+/* income/visits-оверлей: центрируем модалку по вертикали (fluent ставил flex-start) */
+body.liquid-glass #income-overlay,
+body.liquid-glass .income-overlay { align-items: center !important; }
+body.liquid-glass .income-modal { max-height: calc(100dvh - 124px) !important; }
 
 /* ============================================================
    LIQUID GLASS — ЕДИНАЯ МОДАЛКА НА ВЕСЬ ПРОЕКТ (надстройка над блоком выше).
@@ -9528,6 +9527,26 @@ body.liquid-glass .income-modal-body {
           backdrop-filter: none !important;
 }
 body.liquid-glass .income-modal-content { color: var(--txt); }
+/* .income-modal-content / -body — это ВНУТРЕННИЕ контейнеры (стекло даёт .income-modal),
+   у них НЕ должно быть своего стекла/фона → иначе «коробка в коробке» (тёмная таблица) */
+body.liquid-glass .income-modal-content,
+body.liquid-glass .income-modal-body {
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+          backdrop-filter: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+body.liquid-glass .income-modal-content::before,
+body.liquid-glass .income-modal-body::before { display: none !important; content: none !important; }
+/* любые ВЛОЖЕННЫЕ панели/карточки внутри модалок — без своего стекла (контент на стекле модалки) */
+body.liquid-glass :is(.traffic-modal-card,.traffic-base-modal-card,.traffic-advanced-modal-card,.income-modal-content,.income-modal,.profile-modal-content,.mop-modal,.vt-picker-modal,.fc-modal,.plan-editor-modal,.sched-bulk-modal,.notify-modal,.export-modal,.gate-card,.day-detail-modal,.tz-issue-modal) :is(.vis-step-card,.vis-card-total,.rating-card,.podium-card,.dept-card,.neo-card,.ceo-metric-card,.ceo-card-delta,.ps-card,.az-kpi-card,.trophy-card,.ds-card,.traffic-card,.traffic-role-card,.traffic-format-card,.tz-card,.tz-builder-card) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+          backdrop-filter: none !important;
+}
 
 /* ============================================================
    LIQUID GLASS — панели/карточки/формы ПО ВСЕМУ ПРИЛОЖЕНИЮ в стекле

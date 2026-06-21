@@ -135,7 +135,7 @@
     const r = pill.getBoundingClientRect();
     const cx = (r.left - dr.left) + r.width / 2, cy = (r.top - dr.top) + r.height / 2;
     iconCtx.globalCompositeOperation = 'destination-out';
-    roundRect(iconCtx, cx - r.width / 2, cy - r.height / 2, r.width, r.height, Math.round(Math.min(r.width, r.height) * 0.26));
+    roundRect(iconCtx, cx - r.width / 2, cy - r.height / 2, r.width, r.height, Math.round(Math.min(r.width, r.height) * 0.5));
     iconCtx.fill();
     iconCtx.globalCompositeOperation = 'source-over';
   }
@@ -219,7 +219,7 @@
   function placePill() {
     const w = (holding || gliding) ? PILL_HELD : PILL_IDLE;
     pill.style.width = w + 'px'; pill.style.height = w + 'px';
-    pill.style.borderRadius = Math.round(w * 0.28) + 'px';
+    pill.style.borderRadius = '50%';          // круглый pill — в тон скруглённому доку
     pill.style.left = pillX + 'px'; pill.style.top = '50%';
   }
 

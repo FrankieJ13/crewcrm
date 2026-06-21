@@ -9257,7 +9257,7 @@ body.liquid-glass .lg-icons { position: absolute; left: 0; top: 0; z-index: 5; p
 body.liquid-glass .lg-pill {
   position: absolute; top: 50%; left: 0;
   width: 46px; height: 46px; transform: translate(-50%, -50%);
-  border-radius: 14px; z-index: 6; overflow: hidden;
+  border-radius: 50%; z-index: 6; overflow: hidden;
   background: linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.05));
   -webkit-backdrop-filter: blur(2px) saturate(160%) brightness(1.06);
           backdrop-filter: blur(2px) saturate(160%) brightness(1.06);
@@ -9369,8 +9369,8 @@ body.liquid-glass .export-modal::before,
 body.liquid-glass .gate-card::before {
   content: ""; position: absolute; inset: -40px; z-index: -1; pointer-events: none;
   background: var(--lgm-tint);
-  -webkit-backdrop-filter: blur(6px) url(#glass-distortion);
-          backdrop-filter: blur(6px) url(#glass-distortion);
+  -webkit-backdrop-filter: blur(18px) url(#glass-distortion);
+          backdrop-filter: blur(18px) url(#glass-distortion);
 }
 /* гамбургер — стекло без преломления (это dropdown с вложенным меню, overflow нельзя резать) */
 body.liquid-glass .hamburger-dropdown {
@@ -9380,11 +9380,16 @@ body.liquid-glass .hamburger-dropdown {
 }
 @supports ((-webkit-backdrop-filter: blur(2px)) or (backdrop-filter: blur(2px))) {
   body.liquid-glass .hamburger-dropdown {
-    background: rgba(255,255,255,0.45) !important;
+    background: rgba(255,255,255,0.55) !important;
     -webkit-backdrop-filter: blur(22px) saturate(180%);
             backdrop-filter: blur(22px) saturate(180%);
   }
 }
+/* текст пунктов гамбургера в LG — ТЁМНЫЙ (светлое стекло; fluent ставил #eeeeee → нечитаемо) */
+body.liquid-glass .hamburger-dropdown :is(.hmb-item, .hmb-sub-item, #hmb-account-name, #hmb-month-label, .hmb-item b, .hmb-item span) { color: #1b1d24 !important; }
+body.liquid-glass .hamburger-dropdown .hmb-item:hover { color: var(--acc) !important; background: rgba(0,0,0,0.06) !important; }
+body.liquid-glass #hmb-logout,
+body.liquid-glass #hmb-logout span { color: #e0392b !important; }
 
 /* ===== Liquid Glass — оверлеи модалок: НЕ затемняют фон (остаётся светлым/цветным),
    только лёгкое размытие. Тёмный dim rgba(0,0,0) убран. ===== */
@@ -9424,7 +9429,7 @@ body.liquid-glass .income-modal { max-height: calc(100dvh - 124px) !important; }
    ============================================================ */
 body.liquid-glass {
   --lgm-radius: 22px;
-  --lgm-blur: 6px;                 /* размытие фона под стеклом модалки */
+  --lgm-blur: 18px;                /* сильное размытие фона — текст не сливается с пёстрым фоном */
   --lgm-tint: rgba(22,26,36,0.34);          /* «дымчатое» стекло — белый текст читаем, фон просвечивает */
   --lgm-bg-fallback: rgba(22,26,36,0.52);    /* нет url() в backdrop (iOS) — дымчатый фолбэк под белый текст */
   --lgm-text-shadow: 0 1px 2px rgba(0,0,0,0.35), 0 0 2px rgba(0,0,0,0.2); /* тёмный ореол → белый текст читаем на светлом стекле */
@@ -9587,7 +9592,7 @@ body.liquid-glass:not(.login-active) #lg-aurora {
 /* Aurora-полосы (сине-фиолетовые), мягко размыты и текут; маска концентрирует
    сияние сверху и плавно растворяет его книзу — как в Aceternity AuroraBackground. */
 body.liquid-glass:not(.login-active) #lg-aurora .lg-aurora-layer {
-  --lga: repeating-linear-gradient(100deg, #2f6bf5 8%, #8b5cf6 13%, #ec4899 18%, #f9a8d4 23%, #a78bfa 28%, #3b82f6 33%);
+  --lga: repeating-linear-gradient(100deg, #8b5cf6 7%, #38bdf8 13%, #7c3aed 18%, #60a5fa 23%, #fde68a 26%, #a855f7 31%, #22d3ee 36%);
   position: absolute; inset: -30%;
   background-image: var(--lga);
   background-size: 200% 200%;
@@ -9640,10 +9645,19 @@ body.liquid-glass:not(.login-active) .ceo-alert-yellow {
 }
 
 /* ===== Liquid Glass — ВСЕ панели приложения в стекле (KPI / рейтинг / доход / график) =====
-   Нейтральные панели → translucent-стекло + frost; aurora просвечивает. */
+   СИСТЕМНО: внутри контента (#app) токены фона/линий → стеклянные, поэтому ЛЮБАЯ панель
+   на var(--bg2)/var(--bg3) становится прозрачной автоматически. #main-dock/header/модалки —
+   вне #app, их это не трогает. Плюс frost (blur) на основные контейнеры. */
+body.liquid-glass:not(.login-active) #app {
+  --bg2: rgba(255,255,255,0.10);
+  --bg3: rgba(255,255,255,0.14);
+  --line: rgba(255,255,255,0.40);
+  --line2: rgba(255,255,255,0.48);
+}
 body.liquid-glass:not(.login-active) :is(
   .kpi-stats-panel,.kpi-income-panel,.kpi-badge,
   .ceo-metric-card,.ceo-leader-badge,.ceo-no-leaders,.ceo-alert-muted,.ceo-alert-ok,
+  .ceo-mini-badge,.ceo-mini-badge-eod,
   .rating-card,.podium-card,
   .sched-week,.sched-person,
   .mm,.m4,.dept-cell,

@@ -9,7 +9,9 @@
 
   const isLG = () => document.body.classList.contains('liquid-glass');
   const DPR = Math.min(window.devicePixelRatio || 1, 3);
-  const SS = 2;                          // суперсэмплинг лупы
+  // суперсэмплинг лупы: на тач (iOS) = 1 (вчетверо меньше пикселей в per-pixel цикле →
+  // плавнее перетаскивание), на десктопе = 2 (чётче)
+  const SS = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ? 1 : 2;
   const ICON_PADV = 30, ICON_PADH = 40;  // запас источника для лупы
 
   let dock = null, btns = [], wrap = null, iconLayer = null, iconCtx = null;
@@ -160,7 +162,7 @@
     const { w, h } = sizeLens();
     const cx = w / 2, cy = h / 2;
     const radius = Math.sqrt(w * w + h * h) / 2;
-    drawSource();
+    // источник уже отрисован (onDown/reflow/loadIcons) — НЕ перерисовываем каждый кадр
     const dr = dock.getBoundingClientRect();
     const off = Math.abs(pillX - iconCX(nearest(pillX)));
     const maxOff = Math.max(1, w * 0.6);
@@ -265,6 +267,7 @@
   function onDown(e) {
     if (!isLG() || !visible()) return;
     holding = true; gliding = false;
+    drawSource();   // источник иконок для лупы статичен во время жеста — рисуем ОДИН раз тут, а не каждый кадр
     pressIdx = nearest(e.clientX - dock.getBoundingClientRect().left);
     // тап по слоту, чей попап уже открыт = закрыть его (toggle), без переоткрытия на settle
     tapToggleClose = (popupIdx === pressIdx);

@@ -9593,28 +9593,28 @@ body.liquid-glass:not(.login-active) #lg-aurora {
    сияние сверху и плавно растворяет его книзу — как в Aceternity AuroraBackground. */
 body.liquid-glass:not(.login-active) #lg-aurora .lg-aurora-layer {
   --lga: repeating-linear-gradient(100deg, #8b5cf6 7%, #38bdf8 13%, #7c3aed 18%, #60a5fa 23%, #fde68a 26%, #a855f7 31%, #22d3ee 36%);
-  position: absolute; inset: -30%;
+  position: absolute; inset: -45%;
   background-image: var(--lga);
-  background-size: 200% 200%;
-  background-position: 0% 50%;
-  filter: blur(32px) saturate(1.55);
+  background-size: 165% 165%;
+  filter: blur(34px) saturate(1.55);
   opacity: 0.72;
-  will-change: background-position;
-  animation: lgAurora 38s linear infinite alternate;
-  -webkit-mask-image: radial-gradient(ellipse 110% 90% at 75% -5%, #000 0%, rgba(0,0,0,0.6) 40%, transparent 85%);
-          mask-image: radial-gradient(ellipse 110% 90% at 75% -5%, #000 0%, rgba(0,0,0,0.6) 40%, transparent 85%);
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-mask-image: radial-gradient(ellipse 120% 95% at 70% -5%, #000 0%, rgba(0,0,0,0.6) 42%, transparent 86%);
+          mask-image: radial-gradient(ellipse 120% 95% at 70% -5%, #000 0%, rgba(0,0,0,0.6) 42%, transparent 86%);
 }
-body.liquid-glass:not(.login-active) #lg-aurora .lg-aurora-layer::after {
-  content: ""; position: absolute; inset: 0;
-  background-image: var(--lga);
-  background-size: 180% 180%;
-  background-position: 100% 50%;
-  mix-blend-mode: screen;
-  opacity: 0.6;
-  animation: lgAurora2 52s linear infinite alternate;
+/* Анимация ТОЛЬКО на десктопе (мышь): transform на GPU не вызывает repaint размытого
+   слоя. На тач (iOS) — СТАТИЧНО: иначе постоянный repaint фона заставляет backdrop-filter
+   дока/модалок пересчитываться каждый кадр → жёсткие тормоза при скролле/идле. */
+@media (hover: hover) and (pointer: fine) {
+  body.liquid-glass:not(.login-active) #lg-aurora .lg-aurora-layer {
+    animation: lgAuroraMove 42s ease-in-out infinite alternate;
+  }
 }
-@keyframes lgAurora  { from { background-position: 0% 50%; }   to { background-position: 200% 50%; } }
-@keyframes lgAurora2 { from { background-position: 100% 50%; } to { background-position: -60% 50%; } }
+@keyframes lgAuroraMove {
+  from { transform: translate3d(-7%, -4%, 0) rotate(0deg) scale(1.06); }
+  to   { transform: translate3d(7%, 5%, 0) rotate(6deg) scale(1.16); }
+}
 
 /* ===== Liquid Glass — домашние панели (KPI/Лидеры/Внимание) в стекле =====
    Нейтральные карточки делаем прозрачнее (aurora просвечивает, не «белые»);
@@ -9677,6 +9677,27 @@ body.liquid-glass:not(.login-active) :is(.dept-card,.income-col) {
 body.liquid-glass:not(.login-active) .dept-card {
   background: rgba(255,255,255,0.09) !important;
   border: 1px solid rgba(255,255,255,0.4) !important;
+}
+
+/* ===== Liquid Glass — ОПТИМИЗАЦИЯ для тач (iOS) =====
+   per-element backdrop-filter крайне дорог на iOS (отдельный GPU-проход, пересчёт на
+   каждый кадр скролла). На множестве панелей это и есть «10 fps». Фон aurora уже
+   размыт (blur 34px), поэтому полупрозрачной заливки достаточно для «стекла». Блюр
+   оставляем только на доке/модалках/попапах/гамбургере (их мало, не в скролле). */
+@media (hover: none) and (pointer: coarse) {
+  body.liquid-glass :is(
+    .kpi-stats-panel,.kpi-income-panel,.kpi-badge,
+    .ceo-metric-card,.ceo-leader-badge,.ceo-no-leaders,.ceo-alert-muted,.ceo-alert-ok,
+    .ceo-mini-badge,.ceo-mini-badge-eod,.ceo-salon-alarm,.ceo-kso-fill,.ceo-alert-red,.ceo-alert-yellow,
+    .rating-card,.podium-card,.dept-card,.dept-cell,.income-col,
+    .sched-week,.sched-person,.mm,.m4,
+    .trophy-card,.ds-card,.az-kpi-card,.ps-card,.neo-card,.vis-step-card,.tz-card,
+    .traffic-card,.traffic-role-card,.traffic-format-card,.traffic-import-card,.tz-builder-card,
+    input,select,textarea
+  ) {
+    -webkit-backdrop-filter: none !important;
+            backdrop-filter: none !important;
+  }
 }
 
 /* Единый отклик кнопки обновления — вращение иконки во время рефреша (все темы/экраны) */

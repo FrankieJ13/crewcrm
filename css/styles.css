@@ -9611,6 +9611,34 @@ body.liquid-glass:not(.login-active) #lg-aurora .lg-aurora-layer::after {
 @keyframes lgAurora  { from { background-position: 0% 50%; }   to { background-position: 200% 50%; } }
 @keyframes lgAurora2 { from { background-position: 100% 50%; } to { background-position: -60% 50%; } }
 
+/* ===== Liquid Glass — домашние панели (KPI/Лидеры/Внимание) в стекле =====
+   Нейтральные карточки делаем прозрачнее (aurora просвечивает, не «белые»);
+   цветные (салон/КСО/алерты) — translucent «цветное стекло». :not(.login-active)
+   поднимает специфичность над общим app-wide правилом карточек. */
+body.liquid-glass:not(.login-active) :is(.ceo-metric-card,.ceo-leader-badge,.ceo-no-leaders,.ceo-alert-muted,.ceo-alert-ok) {
+  background: rgba(255,255,255,0.11) !important;
+  border: 1px solid rgba(255,255,255,0.46) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(165%);
+          backdrop-filter: blur(16px) saturate(165%);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08), inset 0 1px 1px rgba(255,255,255,0.5) !important;
+}
+body.liquid-glass:not(.login-active) .ceo-salon-alarm {
+  background: rgba(122,209,122,0.40) !important; border-color: rgba(122,209,122,0.55) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(170%); backdrop-filter: blur(16px) saturate(170%);
+}
+body.liquid-glass:not(.login-active) .ceo-kso-fill {
+  background: rgba(191,90,242,0.44) !important; border-color: rgba(191,90,242,0.6) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(170%); backdrop-filter: blur(16px) saturate(170%);
+}
+body.liquid-glass:not(.login-active) .ceo-alert-red {
+  background: rgba(255,69,58,0.34) !important; border-color: rgba(255,69,58,0.5) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(170%); backdrop-filter: blur(16px) saturate(170%);
+}
+body.liquid-glass:not(.login-active) .ceo-alert-yellow {
+  background: rgba(255,214,10,0.38) !important; border-color: rgba(255,214,10,0.6) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(170%); backdrop-filter: blur(16px) saturate(170%);
+}
+
 /* Единый отклик кнопки обновления — вращение иконки во время рефреша (все темы/экраны) */
 @keyframes refresh-spin { to { transform: rotate(360deg); } }
 #btn-refresh.refreshing svg,

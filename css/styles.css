@@ -9587,13 +9587,13 @@ body.liquid-glass:not(.login-active) #lg-aurora {
 /* Aurora-полосы (сине-фиолетовые), мягко размыты и текут; маска концентрирует
    сияние сверху и плавно растворяет его книзу — как в Aceternity AuroraBackground. */
 body.liquid-glass:not(.login-active) #lg-aurora .lg-aurora-layer {
-  --lga: repeating-linear-gradient(100deg, #3b82f6 10%, #a5b4fc 15%, #93c5fd 20%, #ddd6fe 25%, #60a5fa 30%);
+  --lga: repeating-linear-gradient(100deg, #2f6bf5 8%, #8b5cf6 13%, #ec4899 18%, #f9a8d4 23%, #a78bfa 28%, #3b82f6 33%);
   position: absolute; inset: -30%;
   background-image: var(--lga);
   background-size: 200% 200%;
   background-position: 0% 50%;
-  filter: blur(34px) saturate(1.3);
-  opacity: 0.62;
+  filter: blur(32px) saturate(1.55);
+  opacity: 0.72;
   will-change: background-position;
   animation: lgAurora 38s linear infinite alternate;
   -webkit-mask-image: radial-gradient(ellipse 110% 90% at 75% -5%, #000 0%, rgba(0,0,0,0.6) 40%, transparent 85%);
@@ -9637,6 +9637,32 @@ body.liquid-glass:not(.login-active) .ceo-alert-red {
 body.liquid-glass:not(.login-active) .ceo-alert-yellow {
   background: rgba(255,214,10,0.38) !important; border-color: rgba(255,214,10,0.6) !important;
   -webkit-backdrop-filter: blur(16px) saturate(170%); backdrop-filter: blur(16px) saturate(170%);
+}
+
+/* ===== Liquid Glass — ВСЕ панели приложения в стекле (KPI / рейтинг / доход / график) =====
+   Нейтральные панели → translucent-стекло + frost; aurora просвечивает. */
+body.liquid-glass:not(.login-active) :is(
+  .kpi-stats-panel,.kpi-income-panel,.kpi-badge,
+  .ceo-metric-card,.ceo-leader-badge,.ceo-no-leaders,.ceo-alert-muted,.ceo-alert-ok,
+  .rating-card,.podium-card,
+  .sched-week,.sched-person,
+  .mm,.m4,.dept-cell,
+  .trophy-card,.ds-card,.az-kpi-card,.ps-card,.neo-card,.vis-step-card,.tz-card
+) {
+  background: rgba(255,255,255,0.10) !important;
+  border: 1px solid rgba(255,255,255,0.42) !important;
+  -webkit-backdrop-filter: blur(13px) saturate(162%);
+          backdrop-filter: blur(13px) saturate(162%);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.07), inset 0 1px 1px rgba(255,255,255,0.45) !important;
+}
+/* акцентные/тонированные панели (доход) — оставляем оттенок, добавляем стекло */
+body.liquid-glass:not(.login-active) :is(.dept-card,.income-col) {
+  -webkit-backdrop-filter: blur(13px) saturate(160%);
+          backdrop-filter: blur(13px) saturate(160%);
+}
+body.liquid-glass:not(.login-active) .dept-card {
+  background: rgba(255,255,255,0.09) !important;
+  border: 1px solid rgba(255,255,255,0.4) !important;
 }
 
 /* Единый отклик кнопки обновления — вращение иконки во время рефреша (все темы/экраны) */

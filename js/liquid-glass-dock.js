@@ -79,7 +79,14 @@
   /* ---------- геометрия ---------- */
   function computeLayout() {
     const dr = dock.getBoundingClientRect();
-    layout = btns.map(b => { const r = b.getBoundingClientRect(); return { cx: r.left - dr.left + r.width / 2, cy: dr.height / 2 }; });
+    layout = btns.map(b => {
+      const r = b.getBoundingClientRect();
+      const it = b.closest('.dock-item');
+      // пункт скрыт (display:none — напр. «Аналитика» не для CEO): rect 0 → не рисуем
+      // (иначе иконка скрытого пункта рисуется у левого края дока — «торчащий» пункт)
+      const hidden = !it || it.offsetWidth === 0 || r.width === 0;
+      return { cx: r.left - dr.left + r.width / 2, cy: dr.height / 2, hidden };
+    });
     N = layout.length;
     const h = dr.height;
     PILL_HELD = Math.round(h * 0.78);
@@ -87,8 +94,14 @@
     ICON = Math.round(PILL_IDLE * 0.74);
   }
   function iconCX(i) { return layout[i] ? layout[i].cx : 0; }
-  function nearest(x) { let bi = 0, bd = Infinity; layout.forEach((p, i) => { const d = Math.abs(p.cx - x); if (d < bd) { bd = d; bi = i; } }); return bi; }
-  function clampX(x) { return layout.length ? clamp(x, iconCX(0), iconCX(N - 1)) : x; }
+  function nearest(x) { let bi = -1, bd = Infinity; layout.forEach((p, i) => { if (p.hidden) return; const d = Math.abs(p.cx - x); if (d < bd) { bd = d; bi = i; } }); return bi < 0 ? 0 : bi; }
+  function clampX(x) {
+    const vis = layout.filter(p => !p.hidden);
+    if (!vis.length) return x;
+    let lo = vis[0].cx, hi = vis[0].cx;
+    vis.forEach(p => { if (p.cx < lo) lo = p.cx; if (p.cx > hi) hi = p.cx; });
+    return clamp(x, lo, hi);
+  }
   function activeButtonIdx() { const i = btns.findIndex(b => b.classList.contains('dock-active')); return i < 0 ? 0 : i; }
 
   /* ---------- источник для лупы (полный, без дырки) ---------- */
@@ -102,7 +115,7 @@
     srcCtx.setTransform(SRC, 0, 0, SRC, 0, 0);
     srcCtx.imageSmoothingEnabled = true; srcCtx.imageSmoothingQuality = 'high';
     srcCtx.clearRect(0, 0, w + ICON_PADH * 2, h + ICON_PADV * 2);
-    layout.forEach((p, i) => drawIcon(srcCtx, i, p.cx + ICON_PADH, p.cy + ICON_PADV, ICON));
+    layout.forEach((p, i) => { if (p.hidden) return; drawIcon(srcCtx, i, p.cx + ICON_PADH, p.cy + ICON_PADV, ICON); });
   }
 
   /* ---------- видимый слой иконок (+ дырка под лупой при активной лупе) ---------- */
@@ -116,7 +129,7 @@
     }
     iconCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
     iconCtx.clearRect(0, 0, w, h);
-    layout.forEach((p, i) => drawIcon(iconCtx, i, p.cx, p.cy, ICON, true));
+    layout.forEach((p, i) => { if (p.hidden) return; drawIcon(iconCtx, i, p.cx, p.cy, ICON, true); });
     // дырку под pill вырезаем ВСЕГДА — её заполняет лупа (в покое — чёткая иконка,
     // не размытая backdrop-blur'ом стекла)
     const r = pill.getBoundingClientRect();

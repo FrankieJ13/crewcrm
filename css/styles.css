@@ -9332,7 +9332,7 @@ body.liquid-glass .gate-card {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  background: rgba(255,255,255,0.62) !important;   /* фолбэк (нет backdrop url): читаемо */
+  background: var(--lgm-bg-fallback) !important;   /* фолбэк (нет backdrop url): читаемо */
   border: none !important;
   box-shadow:
     0 10px 30px rgba(0,0,0,0.18),
@@ -9373,7 +9373,7 @@ body.liquid-glass .notify-modal::before,
 body.liquid-glass .export-modal::before,
 body.liquid-glass .gate-card::before {
   content: ""; position: absolute; inset: -40px; z-index: -1; pointer-events: none;
-  background: rgba(255,255,255,0.20);
+  background: var(--lgm-tint);
   -webkit-backdrop-filter: blur(6px) url(#glass-distortion);
           backdrop-filter: blur(6px) url(#glass-distortion);
 }
@@ -9391,7 +9391,8 @@ body.liquid-glass .hamburger-dropdown {
   }
 }
 
-/* ===== Liquid Glass — модалки: фон при открытии размыт слабее (≈−70%) ===== */
+/* ===== Liquid Glass — оверлеи модалок: НЕ затемняют фон (остаётся светлым/цветным),
+   только лёгкое размытие. Тёмный dim rgba(0,0,0) убран. ===== */
 body.liquid-glass #hamburger-backdrop,
 body.liquid-glass #notify-modal-overlay,
 body.liquid-glass #sal-info-overlay,
@@ -9405,7 +9406,11 @@ body.liquid-glass .traffic-modal,
 body.liquid-glass .tz-issue-overlay,
 body.liquid-glass .rem-backdrop,
 body.liquid-glass .income-modal-overlay,
+body.liquid-glass #income-overlay,
+body.liquid-glass .income-overlay,
+body.liquid-glass .day-detail-overlay,
 body.liquid-glass .export-modal-overlay {
+  background: transparent !important;   /* убрать тёмное затемнение фона */
   -webkit-backdrop-filter: blur(2.2px) saturate(115%) !important;
           backdrop-filter: blur(2.2px) saturate(115%) !important;
 }
@@ -9421,9 +9426,9 @@ body.liquid-glass .export-modal-overlay {
 body.liquid-glass {
   --lgm-radius: 22px;
   --lgm-blur: 6px;                 /* размытие фона под стеклом модалки */
-  --lgm-tint: rgba(255,255,255,0.20);
-  --lgm-bg-fallback: rgba(255,255,255,0.62); /* нет url() в backdrop (iOS) — читаемо */
-  --lgm-text-shadow: 0 1px 1px rgba(255,255,255,0.5);
+  --lgm-tint: rgba(22,26,36,0.34);          /* «дымчатое» стекло — белый текст читаем, фон просвечивает */
+  --lgm-bg-fallback: rgba(22,26,36,0.52);    /* нет url() в backdrop (iOS) — дымчатый фолбэк под белый текст */
+  --lgm-text-shadow: 0 1px 2px rgba(0,0,0,0.35), 0 0 2px rgba(0,0,0,0.2); /* тёмный ореол → белый текст читаем на светлом стекле */
   --lgm-head: #ffffff;             /* цвет заголовков модалок */
   --lgm-head-shadow: 0 1px 2px rgba(0,0,0,0.38), 0 0 2px rgba(0,0,0,0.22); /* тёмный ореол → белый читаем на светлом стекле */
   --lgm-field-bg: rgba(255,255,255,0.16);
@@ -9436,12 +9441,18 @@ body.liquid-glass {
 
 /* === ЕДИНЫЙ список модалок проекта (добавляете новую модалку — сюда) === */
 body.liquid-glass :is(.traffic-modal-card,.traffic-base-modal-card,.traffic-advanced-modal-card,.income-modal-content,.income-modal,.profile-modal-content,.mop-modal,.vt-picker-modal,.fc-modal,.plan-editor-modal,.sched-bulk-modal,.notify-modal,.export-modal,.gate-card,.day-detail-modal,.tz-issue-modal) {
-  /* убираем «коробки в коробке»: вложенные панели берут стеклянные токены */
+  /* НЕТ «коробок в коробке»: все вложенные фоны панелей/строк/подытогов прозрачны —
+     только контент лежит на стекле модалки */
   --bg: transparent;
-  --bg2: var(--lgm-inner-bg2);
-  --bg3: var(--lgm-inner-bg3);
-  --line: var(--lgm-inner-line);
-  --line2: var(--lgm-inner-line);
+  --bg2: transparent;
+  --bg3: transparent;
+  --line: rgba(255,255,255,0.18);
+  --line2: rgba(255,255,255,0.24);
+  /* ВЕСЬ текст модалки — белый с тенью (--txt* перекрыты на белые) */
+  --txt: #ffffff;
+  --txt2: rgba(255,255,255,0.82);
+  --txt3: rgba(255,255,255,0.66);
+  color: #fff;
   text-shadow: var(--lgm-text-shadow);
   /* скролл внутри модалки не «протекает» в фон и не уходит в пустоту */
   overscroll-behavior: contain;
@@ -9469,11 +9480,12 @@ body.liquid-glass :is(.mop-modal-hdr,.income-modal-hdr,.notify-modal-hdr,.sched-
 body.liquid-glass :is(.traffic-modal-card,.traffic-base-modal-card,.traffic-advanced-modal-card,.income-modal-content,.income-modal,.profile-modal-content,.mop-modal,.vt-picker-modal,.fc-modal,.plan-editor-modal,.sched-bulk-modal,.notify-modal,.export-modal,.gate-card,.day-detail-modal,.tz-issue-modal) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea) {
   background: var(--lgm-field-bg) !important;
   border: 1px solid var(--lgm-field-bdr) !important;
-  color: var(--txt) !important;
+  color: #1b1d22 !important;   /* тёмный текст в светлом стеклянном поле — читаемо */
   text-shadow: none;
   -webkit-backdrop-filter: blur(6px) saturate(150%);
           backdrop-filter: blur(6px) saturate(150%);
 }
+body.liquid-glass :is(.traffic-modal-card,.income-modal-content,.income-modal,.profile-modal-content,.mop-modal,.vt-picker-modal,.fc-modal,.plan-editor-modal,.sched-bulk-modal,.notify-modal,.export-modal,.gate-card,.day-detail-modal,.tz-issue-modal) :is(input,textarea)::placeholder { color: rgba(0,0,0,0.4); }
 
 /* ===== Блокировка фона при открытой модалке (надёжно для iOS) =====
    Модалки ставят body.style.overflow='hidden' → JS зеркалит класс .modal-open.
@@ -9543,6 +9555,42 @@ body.liquid-glass :is(input:not([type=checkbox]):not([type=radio]):not([type=ran
   -webkit-backdrop-filter: blur(6px) saturate(150%);
           backdrop-filter: blur(6px) saturate(150%);
 }
+
+/* ===== Liquid Glass — AURORA фон (порт Aceternity AuroraBackground) =====
+   Виден только в теме liquid-glass и только ПОСЛЕ авторизации (не на login). */
+#lg-aurora { display: none; }
+body.liquid-glass:not(.login-active) #lg-aurora {
+  display: block;
+  position: fixed; inset: 0; z-index: 0;   /* за #app (z-index:10), над фоном body */
+  overflow: hidden; pointer-events: none;
+  background: #eef1f6;                       /* светлая база (bg-zinc-50) */
+}
+/* Aurora-полосы (сине-фиолетовые), мягко размыты и текут; маска концентрирует
+   сияние сверху и плавно растворяет его книзу — как в Aceternity AuroraBackground. */
+body.liquid-glass:not(.login-active) #lg-aurora .lg-aurora-layer {
+  --lga: repeating-linear-gradient(100deg, #3b82f6 10%, #a5b4fc 15%, #93c5fd 20%, #ddd6fe 25%, #60a5fa 30%);
+  position: absolute; inset: -30%;
+  background-image: var(--lga);
+  background-size: 200% 200%;
+  background-position: 0% 50%;
+  filter: blur(34px) saturate(1.3);
+  opacity: 0.62;
+  will-change: background-position;
+  animation: lgAurora 38s linear infinite alternate;
+  -webkit-mask-image: radial-gradient(ellipse 110% 90% at 75% -5%, #000 0%, rgba(0,0,0,0.6) 40%, transparent 85%);
+          mask-image: radial-gradient(ellipse 110% 90% at 75% -5%, #000 0%, rgba(0,0,0,0.6) 40%, transparent 85%);
+}
+body.liquid-glass:not(.login-active) #lg-aurora .lg-aurora-layer::after {
+  content: ""; position: absolute; inset: 0;
+  background-image: var(--lga);
+  background-size: 180% 180%;
+  background-position: 100% 50%;
+  mix-blend-mode: screen;
+  opacity: 0.6;
+  animation: lgAurora2 52s linear infinite alternate;
+}
+@keyframes lgAurora  { from { background-position: 0% 50%; }   to { background-position: 200% 50%; } }
+@keyframes lgAurora2 { from { background-position: 100% 50%; } to { background-position: -60% 50%; } }
 
 /* Единый отклик кнопки обновления — вращение иконки во время рефреша (все темы/экраны) */
 @keyframes refresh-spin { to { transform: rotate(360deg); } }

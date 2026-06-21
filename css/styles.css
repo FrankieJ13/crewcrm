@@ -9372,10 +9372,10 @@ body.liquid-glass .sched-bulk-modal::before,
 body.liquid-glass .notify-modal::before,
 body.liquid-glass .export-modal::before,
 body.liquid-glass .gate-card::before {
-  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  content: ""; position: absolute; inset: -40px; z-index: -1; pointer-events: none;
   background: rgba(255,255,255,0.20);
-  -webkit-backdrop-filter: blur(3px) url(#glass-distortion);
-          backdrop-filter: blur(3px) url(#glass-distortion);
+  -webkit-backdrop-filter: blur(6px) url(#glass-distortion);
+          backdrop-filter: blur(6px) url(#glass-distortion);
 }
 /* гамбургер — стекло без преломления (это dropdown с вложенным меню, overflow нельзя резать) */
 body.liquid-glass .hamburger-dropdown {
@@ -9420,7 +9420,7 @@ body.liquid-glass .export-modal-overlay {
    ============================================================ */
 body.liquid-glass {
   --lgm-radius: 22px;
-  --lgm-blur: 3px;                 /* размытие фона под стеклом модалки */
+  --lgm-blur: 6px;                 /* размытие фона под стеклом модалки */
   --lgm-tint: rgba(255,255,255,0.20);
   --lgm-bg-fallback: rgba(255,255,255,0.62); /* нет url() в backdrop (iOS) — читаемо */
   --lgm-text-shadow: 0 1px 1px rgba(255,255,255,0.5);
@@ -9504,7 +9504,7 @@ body.liquid-glass :is(.income-modal,.day-detail-modal,.tz-issue-modal) {
   body.liquid-glass :is(.income-modal,.day-detail-modal,.tz-issue-modal) { background: transparent !important; }
 }
 body.liquid-glass :is(.income-modal,.day-detail-modal,.tz-issue-modal)::before {
-  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  content: ""; position: absolute; inset: -40px; z-index: -1; pointer-events: none;
   background: var(--lgm-tint);
   -webkit-backdrop-filter: blur(var(--lgm-blur)) url(#glass-distortion);
           backdrop-filter: blur(var(--lgm-blur)) url(#glass-distortion);

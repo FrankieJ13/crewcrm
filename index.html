@@ -27,7 +27,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&family=Exo+2:wght@200;300;700&family=JetBrains+Mono:wght@300;400&family=Oswald:wght@400;700&family=Source+Code+Pro:wght@400;500;600&display=swap" rel="stylesheet"/>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<link rel="stylesheet" href="./css/styles.css?v=337"/>
+<link rel="stylesheet" href="./css/styles.css?v=338"/>
 <link rel="stylesheet" href="./css/autopodbor.css?v=323"/>
 <link rel="stylesheet" href="./css/traffic-analytics.css?v=354"/>
 <link rel="stylesheet" href="./css/visit-reconciliation.css?v=347"/>
@@ -1107,8 +1107,8 @@
         <feFuncG type="gamma" amplitude="0" exponent="1" offset="0"/>
         <feFuncB type="gamma" amplitude="0" exponent="1" offset="0.5"/>
       </feComponentTransfer>
-      <feGaussianBlur in="turbulence" stdDeviation="3" result="softMap"/>
-      <feDisplacementMap in="SourceGraphic" in2="softMap" scale="70" xChannelSelector="R" yChannelSelector="G"/>
+      <feGaussianBlur in="turbulence" stdDeviation="6" result="softMap"/>
+      <feDisplacementMap in="SourceGraphic" in2="softMap" scale="18" xChannelSelector="R" yChannelSelector="G"/>
     </filter>
   </defs>
 </svg>

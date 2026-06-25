@@ -5794,22 +5794,24 @@ function normalizeSchedVal(v) {
   const s = String(v || '').trim().toUpperCase();
   if (s === 'Р' || s === 'Р*') return 'Р';
   if (s === 'В' || s === 'В*') return 'В';
+  if (s === 'Б') return 'Б';   // больничный — нерабочий день (как В)
   if (s === 'ВС') return 'ВС';
   if (s === 'О')  return 'О';
   return '';
 }
-// Возвращает сырое значение ячейки (Р, Р*, В, В*, ВС, О, '')
+// Возвращает сырое значение ячейки (Р, Р*, В, В*, Б, ВС, О, '')
 function rawSchedVal(v) {
   const s = String(v || '').trim().toUpperCase();
   if (s === 'Р' || s === 'Р*') return s;
   if (s === 'В' || s === 'В*') return s;
+  if (s === 'Б') return 'Б';
   if (s === 'ВС') return 'ВС';
   if (s === 'О')  return 'О';
   return '';
 }
-// Цвет/стиль ячейки в приложении по сырому значению
-const SCHED_CELL_BG = { 'В': '#f50e02', 'В*': '#ffff00', 'Р*': '#4386f5', 'О': '#ff9500' };
-const SCHED_CELL_FG = { 'В': '#fff',    'В*': '#222',    'Р*': '#fff',    'О': '#fff'    };
+// Цвет/стиль ячейки в приложении по сырому значению (Б — больничный, #9b59b6)
+const SCHED_CELL_BG = { 'В': '#f50e02', 'В*': '#ffff00', 'Р*': '#4386f5', 'О': '#ff9500', 'Б': '#9b59b6' };
+const SCHED_CELL_FG = { 'В': '#fff',    'В*': '#222',    'Р*': '#fff',    'О': '#fff',    'Б': '#fff'     };
 function schedCellAppStyle(rawVal) {
   const bg = SCHED_CELL_BG[rawVal];
   if (!bg) return '';
@@ -5821,6 +5823,7 @@ const SCHED_SHEET_BG = {
   'В*': { red: 1,     green: 1,     blue: 0     },
   'Р*': { red: 0.263, green: 0.525, blue: 0.961 },
   'О':  { red: 1,     green: 0.584, blue: 0     }, // #ff9500 — отпуск
+  'Б':  { red: 0.608, green: 0.349, blue: 0.714 }, // #9b59b6 — больничный
 };
 // Показываем звёздочки в дропдауне (перед открытием)
 function schedBulkShowStars(sel) {
@@ -6136,6 +6139,7 @@ function renderGrafik() {
         if (raw === 'Р*')      { cls = 'dr-star'; extraStyle = ''; }
         else if (raw === 'В*') { cls = 'dv-star'; extraStyle = ''; }
         else if (raw === 'О')  { cls = 'do-vac';  extraStyle = schedCellAppStyle('О'); }
+        else if (raw === 'Б')  { cls = 'db';      extraStyle = schedCellAppStyle('Б'); } // больничный — нерабочий
         else {
           cls = norm==='Р'?'dr':norm==='В'?'dv':norm==='ВС'?'dvs':val?'':'empty';
           extraStyle = schedCellAppStyle(raw); // для В — inline #f50e02
@@ -6701,6 +6705,7 @@ function openSchedCellEditor(e, sheetRow, colIdx, name, dayNum) {
       <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'Р*')" style="background:#4386f5;color:#fff" title="Рабочий день + проверка анкет">Р*</button>
       <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'В')" style="background:#f50e02;color:#fff" title="Выходной день">В</button>
       <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'В*')" style="background:#ffff00;color:#222" title="Обязательный выходной день">В*</button>
+      <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'Б')" style="background:#9b59b6;color:#fff" title="Больничный (нерабочий день)">Б</button>
       <button onclick="saveSchedCell(${sheetRow}, ${colIdx}, 'О')" style="background:#ff9500;color:#fff" title="Отпускной день (засчитывается как выходной)">О</button>
     </div>
     <div class="sched-edit-pop-saving" id="sched-pop-saving" style="display:none">
@@ -6818,6 +6823,7 @@ function openScheduleBulkEditor() {
         <option value="Р*" ${val==='Р*'?'selected':''}>Р</option>
         <option value="В"  ${val==='В' ?'selected':''}>В</option>
         <option value="В*" ${val==='В*'?'selected':''}>В</option>
+        <option value="Б"  ${val==='Б' ?'selected':''}>Б</option>
         <option value="О"  ${val==='О' ?'selected':''}>О</option>
       </select>`; /* звёздочки восстанавливаются через onmousedown перед открытием */
     }).join('');

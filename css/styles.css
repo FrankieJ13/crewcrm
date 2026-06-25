@@ -1259,7 +1259,11 @@ body.cosmic .hdr-greeting.aurora {
    fluent — особый случай: тёмный хедер на светлой теме → лого светлым (override ниже) */
 .type-logo {
   position: relative;
-  width: 172px;
+  /* ширина по контенту: имена разделов длиннее домашних фраз (timeline_leads и т.п.).
+     min — чтобы лого не «прыгало» на коротких; max — чтобы не наезжать на иконки хедера */
+  width: auto;
+  min-width: 120px;
+  max-width: min(340px, 56vw);
   height: 50px;
   display: flex;
   align-items: center;

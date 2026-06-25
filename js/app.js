@@ -988,6 +988,29 @@ async function azImportSheet() {
   } catch(e) { azStatus('az-sheet-st','Не удалось: '+e.message,false); }
 }
 
+// Имя раздела для печатной анимации в логотипе (null = главная → цикл crm_crew/dashboard).
+// Пробелы превратятся в подчёркивания внутри setLogoSection (визиты crm → визиты_crm).
+function logoSectionName(id) {
+  switch (id) {
+    case 'personal': case 'ceo': return null;            // главная
+    case 'otchet':   return 'kpi ' + (S.reportTab === 'dozhim' ? 'дожим' : S.reportTab === 'dept' ? 'итоги' : 'crm');
+    case 'grafik':   return 'график';
+    case 'rating':   return 'рейтинг';
+    case 'dohod':    return 'доход' + (S.dohodTab ? ' ' + (S.dohodTab === 'dozhim' ? 'дожим' : 'crm') : '');
+    case 'vizity':   return 'визиты ' + (S.vizDept === 'dozhim' ? 'дожим' : 'crm');
+    case 'traffic':  return 'аналитика crm';
+    case 'timeline': return 'timeline leads';
+    case 'sverka':   return 'сверка визитов';
+    case 'analiz':   return 'маркетинг';
+    case 'export':   return 'экспорт отчёта';
+    case 'repeats':  return 'поиск повторов';
+    case 'instruktsii': return 'faq';
+    case 'trophies': return 'трофеи';
+    case 'profile':  return 'профиль';
+    default:         return null;
+  }
+}
+
 function showScr(id) {
   hideStartupLoader();
   // Само-исцеление блокировки фона: смена экрана = модалок-оверлеев нет, снимаем
@@ -1006,6 +1029,8 @@ function showScr(id) {
   scrEl?.classList.add('on');
   S._screenId = id;
   S._screenSeq = (S._screenSeq || 0) + 1;
+  // Лого: на главной (personal/ceo) — цикл crm_crew/dashboard; в разделе — печатаем его имя
+  if (typeof setLogoSection === 'function') setLogoSection(logoSectionName(id));
   if (scrEl) requestAnimationFrame(() => flushPendingAnimations(scrEl));
   const gs = document.getElementById('grafik-sticky');
   if (gs) gs.style.display = id === 'grafik' ? '' : 'none';
@@ -1227,54 +1252,92 @@ function initLogoRotation() {
 // ==================== TYPING LOGO ANIMATION ====================
 // Печать → мигающий курсор → стирание → следующая фраза, зациклено (~10с на полный цикл).
 (function initTypingLogo() {
-  const phrases = ['crm_crew', 'dashboard'];
+  // Два режима:
+  //  • 'home'  — на главной (персональная/ceo) циклично печатаем crm_crew / dashboard;
+  //  • 'section' — в разделе печатаем ОДНО его имя (пробелы → _) и держим (каретка
+  //    моргает по CSS). Переключение — window.setLogoSection(name | null).
+  const HOME_PHRASES = ['crm_crew', 'dashboard'];
   const baseTypingSpeed = 110;     // мс на символ при наборе
   const baseErasingSpeed = 70;     // мс на символ при стирании
-  const pauseAfterTyping = 10000;  // напечатанная фраза держится 10 сек, затем стирается
+  const pauseAfterTyping = 10000;  // home: держим фразу 10 сек
   const pauseAfterErasing = 450;   // пауза перед набором следующей
 
-  function start() {
-    const el = document.getElementById('type-text');
-    if (!el) { setTimeout(start, 200); return; }
+  let el = null, timer = null;
+  let mode = 'home', sectionText = '';
+  let phraseIndex = 0, charIndex = 0, isErasing = false;
+  let pendingTarget = undefined;   // undefined = нет запроса; null = домой; string = раздел
+  let currentTempo = 1, tempoStepsLeft = 0;
+  const rnd = (min, max) => Math.random() * (max - min) + min;
 
-    let phraseIndex = 0, charIndex = 0, isErasing = false;
-    let currentTempo = 1, tempoStepsLeft = 0;
-    const rnd = (min, max) => Math.random() * (max - min) + min;
+  function pickTempo() {                          // хаотичный темп — «живая» печать
+    const roll = Math.random();
+    if (roll < 0.42)      currentTempo = rnd(0.58, 0.82);
+    else if (roll < 0.78) currentTempo = rnd(0.88, 1.15);
+    else                  currentTempo = rnd(1.22, 1.75);
+    tempoStepsLeft = Math.floor(rnd(1, 4));
+  }
+  function speed(base) {
+    if (tempoStepsLeft <= 0) pickTempo();
+    tempoStepsLeft--;
+    return Math.round(base * currentTempo * rnd(0.88, 1.12));
+  }
+  function cur() { return el ? el.textContent : ''; }
+  function setText(t) { if (el) el.textContent = t; }
+  function schedule(ms) { clearTimeout(timer); timer = setTimeout(tick, ms); }
 
-    function pickTempo() {                          // хаотичный темп — «живая» печать
-      const roll = Math.random();
-      if (roll < 0.42)      currentTempo = rnd(0.58, 0.82);
-      else if (roll < 0.78) currentTempo = rnd(0.88, 1.15);
-      else                  currentTempo = rnd(1.22, 1.75);
-      tempoStepsLeft = Math.floor(rnd(1, 4));
+  function tick() {
+    if (!el) { el = document.getElementById('type-text'); if (!el) { schedule(200); return; } }
+
+    // Запрос на смену раздела: сначала стираем текущий текст до пустого, затем фиксируем цель.
+    if (pendingTarget !== undefined) {
+      if (cur().length > 0) { setText(cur().slice(0, -1)); schedule(speed(baseErasingSpeed)); return; }
+      const want = pendingTarget; pendingTarget = undefined;
+      tempoStepsLeft = 0; charIndex = 0; isErasing = false;
+      if (want === null) { mode = 'home'; phraseIndex = 0; }
+      else { mode = 'section'; sectionText = want; }
+      schedule(pauseAfterErasing); return;
     }
-    function speed(base) {
-      if (tempoStepsLeft <= 0) pickTempo();
-      tempoStepsLeft--;
-      return Math.round(base * currentTempo * rnd(0.88, 1.12));
-    }
-    function tick() {
-      const p = phrases[phraseIndex];
-      if (!isErasing) {
-        el.textContent = p.slice(0, charIndex + 1);
-        charIndex++;
-        if (charIndex === p.length) { isErasing = true; tempoStepsLeft = 0; setTimeout(tick, pauseAfterTyping); return; }
-        setTimeout(tick, speed(baseTypingSpeed));
-      } else {
-        el.textContent = p.slice(0, charIndex - 1);
-        charIndex--;
-        if (charIndex === 0) { isErasing = false; phraseIndex = (phraseIndex + 1) % phrases.length; tempoStepsLeft = 0; setTimeout(tick, pauseAfterErasing); return; }
-        setTimeout(tick, speed(baseErasingSpeed));
+
+    if (mode === 'section') {                       // печатаем имя раздела один раз и держим
+      if (charIndex < sectionText.length) {
+        charIndex++; setText(sectionText.slice(0, charIndex));
+        schedule(speed(baseTypingSpeed));
       }
+      return;                                        // допечатали — стоп (каретка моргает по CSS)
     }
+
+    const p = HOME_PHRASES[phraseIndex];             // home — цикл двух фраз
+    if (!isErasing) {
+      charIndex++; setText(p.slice(0, charIndex));
+      if (charIndex >= p.length) { isErasing = true; tempoStepsLeft = 0; schedule(pauseAfterTyping); return; }
+      schedule(speed(baseTypingSpeed));
+    } else {
+      charIndex--; setText(p.slice(0, charIndex));
+      if (charIndex <= 0) { isErasing = false; phraseIndex = (phraseIndex + 1) % HOME_PHRASES.length; tempoStepsLeft = 0; schedule(pauseAfterErasing); return; }
+      schedule(speed(baseErasingSpeed));
+    }
+  }
+
+  // name === null|'' → домашний цикл; иначе печатаем имя раздела (пробелы → подчёркивания)
+  window.setLogoSection = function (name) {
+    const target = (name == null || name === '') ? null
+      : String(name).trim().toLowerCase().replace(/\s+/g, '_');
+    // уже в нужном состоянии — ничего не делаем (без лишних перепечаток)
+    if (pendingTarget === undefined) {
+      if (target === null && mode === 'home') return;
+      if (target !== null && mode === 'section' && sectionText === target) return;
+    } else if (pendingTarget === target) return;
+    pendingTarget = target;
+    schedule(0);   // прерываем текущую паузу и сразу запускаем переход
+  };
+
+  function start() {
+    el = document.getElementById('type-text');
+    if (!el) { setTimeout(start, 200); return; }
     tick();
   }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', start);
-  } else {
-    start();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
 })();
 
 function firebaseConfigured() {

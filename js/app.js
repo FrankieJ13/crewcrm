@@ -1004,7 +1004,12 @@ function logoSectionName(id) {
     case 'analiz':   return 'маркетинг';
     case 'export':   return 'экспорт отчёта';
     case 'repeats':  return 'поиск повторов';
-    case 'instruktsii': return 'faq';
+    case 'instruktsii': {                                 // FAQ — много подразделов, имя по S.faqTab
+      const f = { instr: 'инструкции', reglament: 'регламент', mango: 'mango',
+                  links: 'сайты см', autopodbor: 'чат см.ru', autoru: 'чат auto.ru',
+                  'dozhim-search': 'трафик поиск' };
+      return f[S.faqTab] || 'faq';
+    }
     case 'trophies': return 'трофеи';
     case 'profile':  return 'профиль';
     default:         return null;

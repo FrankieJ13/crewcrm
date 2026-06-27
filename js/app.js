@@ -1427,30 +1427,66 @@ function _presenceShortName(full) {
   return `${firstName} ${initial}.`;
 }
 
-// Иконка устройства по userAgent (вместо зелёного кружка в «сейчас онлайн»).
-// CrystalCRM — наш десктоп-клиент (WPF на Windows / DMG на Mac).
-function _presenceDeviceIcon(ua) {
-  const s = String(ua || '');
-  const isClient = /CrystalCRM/i.test(s);
-  const isWin = /Windows/i.test(s);
-  const isMac = /Macintosh|Mac OS X/i.test(s);
+// Точное определение клиента ТЕКУЩЕГО устройства (пишется в presence-запись как `client`,
+// чтобы другие видели именно тип клиента, а не угадывали по userAgent).
+// WPF-клиент на Windows = WebView2: единственный, у кого есть window.chrome.webview
+// (DMG на Mac — Chromium/Electron без .webview; iOS — WKWebView; браузеры — нет).
+function detectClientPlatform() {
+  try { if (window.chrome && window.chrome.webview) return 'win-client'; } catch (_) {}
+  const s = navigator.userAgent || '';
+  const isClient  = /CrystalCRM/i.test(s);                 // наш десктоп-клиент помечает UA
+  const isWin     = /Windows/i.test(s);
+  const isMac     = /Macintosh|Mac OS X/i.test(s);
   const isAndroid = /Android/i.test(s);
-  const isiOS = /iPhone|iPad|iPod/i.test(s);
+  // iPadOS маскируется под Mac → ловим по тач-точкам
+  const isiOS     = /iPhone|iPad|iPod/i.test(s) || (isMac && (navigator.maxTouchPoints || 0) > 1);
+  if (isClient && isMac) return 'mac-client';
+  if (isClient && isWin) return 'win-client';
+  if (isClient)          return 'desktop-client';
+  if (isiOS)             return 'ios';
+  if (isAndroid)         return 'android';
+  if (isWin)             return 'browser-win';
+  if (isMac)             return 'browser-mac';
+  return 'browser';
+}
+// Фолбэк для старых записей без поля client — угадываем по userAgent.
+function _clientFromUA(ua) {
+  const s = String(ua || '');
+  const isClient = /CrystalCRM/i.test(s), isWin = /Windows/i.test(s), isMac = /Macintosh|Mac OS X/i.test(s);
+  const isAndroid = /Android/i.test(s), isiOS = /iPhone|iPad|iPod/i.test(s);
+  if (isClient && isMac) return 'mac-client';
+  if (isClient && isWin) return 'win-client';
+  if (isClient)          return 'desktop-client';
+  if (isiOS)             return 'ios';
+  if (isAndroid)         return 'android';
+  if (isWin)             return 'browser-win';
+  if (isMac)             return 'browser-mac';
+  return 'browser';
+}
+// Иконка устройства в «сейчас онлайн». Принимает presence-запись (или строку UA — старый вызов).
+function _presenceDeviceIcon(rec) {
+  const ua = typeof rec === 'string' ? rec : (rec && rec.userAgent) || '';
+  let client = (rec && typeof rec === 'object' && rec.client) ? rec.client : '';
+  if (!client) client = _clientFromUA(ua);
   // Однотонные SVG (currentColor)
   const SVG = {
+    windows: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.1l7.6-1.05v7.35H3V5.1zm0 13.8l7.6 1.05v-7.2H3v6.15zM11.4 3.9L21 2.55v8.85h-9.6V3.9zm0 8.7H21v8.85l-9.6-1.35V12.6z"/></svg>',
+    apple:   '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.36 12.9c.02 2.32 2.04 3.09 2.06 3.1-.02.05-.32 1.11-1.06 2.19-.64.94-1.31 1.87-2.36 1.89-1.02.02-1.35-.6-2.52-.6s-1.54.58-2.5.62c-1 .04-1.78-1.02-2.43-1.95-1.32-1.92-2.33-5.41-.97-7.77.67-1.17 1.88-1.91 3.19-1.93.99-.02 1.93.67 2.54.67.61 0 1.76-.83 2.96-.71.5.02 1.92.2 2.83 1.53-.07.05-1.69.99-1.67 2.94zM14.5 6.6c.54-.66.9-1.58.8-2.49-.78.04-1.72.53-2.28 1.18-.5.59-.94 1.52-.82 2.41.87.07 1.76-.44 2.3-1.1z"/></svg>',
     desktop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
     phone:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>',
     globe:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>'
   };
   let svg, title;
-  if (isClient && isWin)      { svg = SVG.desktop; title = 'ПК · клиент Windows'; }
-  else if (isClient && isMac) { svg = SVG.desktop; title = 'Mac · клиент'; }
-  else if (isClient)          { svg = SVG.desktop; title = 'Десктоп-клиент'; }
-  else if (isAndroid)         { svg = SVG.phone;   title = 'Android'; }
-  else if (isiOS)             { svg = SVG.phone;   title = 'iPhone / iPad'; }
-  else if (isWin)             { svg = SVG.globe;   title = 'Браузер · Windows'; }
-  else if (isMac)             { svg = SVG.globe;   title = 'Браузер · Mac'; }
-  else                        { svg = SVG.globe;   title = 'Браузер'; }
+  switch (client) {
+    case 'win-client':     svg = SVG.windows; title = 'ПК · клиент Windows'; break;
+    case 'mac-client':     svg = SVG.apple;   title = 'Mac · клиент'; break;
+    case 'desktop-client': svg = SVG.desktop; title = 'Десктоп-клиент'; break;
+    case 'ios':            svg = SVG.phone;   title = 'iPhone / iPad'; break;
+    case 'android':        svg = SVG.phone;   title = 'Android'; break;
+    case 'browser-win':    svg = SVG.globe;   title = 'Браузер · Windows'; break;
+    case 'browser-mac':    svg = SVG.globe;   title = 'Браузер · Mac'; break;
+    default:               svg = SVG.globe;   title = 'Браузер';
+  }
   return `<span class="presence-device" title="${escapeHtml(title)}">${svg}</span>`;
 }
 
@@ -1567,7 +1603,7 @@ function renderPresenceState() {
   }
   const rows = users.map(u => `
     <div class="presence-row">
-      ${_presenceDeviceIcon(u.userAgent)}
+      ${_presenceDeviceIcon(u)}
       <span class="presence-name">${escapeHtml(_presenceShortName(u.name) || u.email || 'Без имени')}</span>
       <span class="presence-page">${escapeHtml(u.page || 'Сайт')}</span>
     </div>
@@ -1880,6 +1916,7 @@ function firebaseProfile(user) {
     photoURL: profile.picture || user.photoURL || '',
     page: getPresencePageLabel(),
     userAgent: navigator.userAgent,
+    client: detectClientPlatform(),   // точный тип клиента (win-client/mac-client/ios/browser…)
   };
 }
 

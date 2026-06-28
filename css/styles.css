@@ -6706,6 +6706,24 @@ body:not(.light):not(.neo-light):not(.tiffany):not(.fluent) .personal-metric-otk
 .ceo-metric-pct { font-size: 11px; font-weight: 700; margin-top: 5px; min-height: 14px; font-variant-numeric: tabular-nums; }
 .ceo-spark { display: block; margin-top: 4px; width: 100%; height: 28px; }
 
+/* Анимация «роста» трендов (спарклайнов) — плавно слева направо, один раз после загрузки.
+   До старта (задержка) тренд скрыт clip-path'ом → страница показывается без трендов,
+   затем линия+заливка раскрываются слева направо. Класс spark-grow ставит JS только на
+   «живой» рендер (не на тихом фоновом обновлении), поэтому анимация не повторяется. */
+.ceo-spark.spark-grow,
+.ceo-sparkline.spark-grow {
+  -webkit-clip-path: inset(0 100% 0 0);
+          clip-path: inset(0 100% 0 0);
+  animation: spark-grow 1.05s cubic-bezier(.22,.61,.36,1) .35s forwards;
+  will-change: clip-path;
+}
+@keyframes spark-grow {
+  to { -webkit-clip-path: inset(0 0 0 0); clip-path: inset(0 0 0 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ceo-spark.spark-grow, .ceo-sparkline.spark-grow { animation: none; -webkit-clip-path: none; clip-path: none; }
+}
+
 /* Инкогнито режим (доход скрыт) */
 .kpi-income-panel.kpi-incognito > *:not(.kpi-avatar-wrap):not(.kpi-incognito-btn) { filter: blur(10px); transition: filter .3s; }
 .kpi-income-panel.kpi-incognito .ceo-metric-info-btn { pointer-events: none; }

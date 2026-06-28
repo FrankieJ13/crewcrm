@@ -9727,7 +9727,9 @@ function renderPersonal(matched) {
     }
     const path = smooth(pts);
     if (!path) return ''; // <2 точек → нет валидного пути, не рисуем SVG
-    return `<svg class="ceo-sparkline" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><path d="${path}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/></svg>`;
+    // рост тренда слева-направо только на «живом» рендере (не при тихом фоновом обновлении)
+    const grow = (typeof S !== 'undefined' && S.silentRefresh) ? '' : ' spark-grow';
+    return `<svg class="ceo-sparkline${grow}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><path d="${path}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/></svg>`;
   }
 
   // Сделки + штрафы из crmStats + dozhimStats (если менеджер ведёт визиты
@@ -12760,7 +12762,9 @@ function renderCeoDashboard() {
     if (!linePath) return '';
     const areaPath = linePath + ` L ${w} ${h} L 0 ${h} Z`;
     const gid = `spark-grad-${idSuffix}`;
-    return `<svg class="ceo-spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" width="100%" height="${h}">
+    // рост тренда слева-направо только на «живом» рендере (не при тихом фоновом обновлении)
+    const grow = (typeof S !== 'undefined' && S.silentRefresh) ? '' : ' spark-grow';
+    return `<svg class="ceo-spark${grow}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" width="100%" height="${h}">
       <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.35"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
       <path d="${areaPath}" fill="url(#${gid})"/>
       <path d="${linePath}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>

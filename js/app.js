@@ -13986,6 +13986,110 @@ const VIZ_COMMENT_OPTS = [
   'ожидается визит','КОМИССИЯ (визит)'
 ];
 
+function vizPickerFallbackOptions(colIdx) {
+  if (colIdx === 4) return VIZ_COMMENT_OPTS;
+  if (colIdx === 5) return VIZ_SOURCE_OPTS;
+  if (colIdx === 7) return VIZ_DEAL_OPTS;
+  return [];
+}
+
+function vizUniqOptions(values) {
+  const seen = new Set();
+  const out = [];
+  (values || []).forEach(v => {
+    const val = String(v ?? '').replace(/\u00a0/g, ' ').trim();
+    if (!val) return;
+    const key = val.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(val);
+  });
+  return out;
+}
+
+function vizColA1(colIdx) {
+  let n = colIdx + 1;
+  let s = '';
+  while (n > 0) {
+    const rem = (n - 1) % 26;
+    s = String.fromCharCode(65 + rem) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
+
+function vizQuoteSheetName(name) {
+  return `'${String(name || '').replace(/'/g, "''")}'`;
+}
+
+async function fetchVizValuesByA1(a1) {
+  const range = String(a1 || '').trim().replace(/^=/, '').trim();
+  if (!range || /^(indirect|query|filter)\s*\(/i.test(range)) return [];
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(range)}?majorDimension=COLUMNS`;
+  const resp = await fetch(url, { headers: await authHeaders() });
+  if (!resp.ok) return [];
+  const data = await resp.json();
+  return vizUniqOptions((data.values || []).flat());
+}
+
+async function fetchVizDropdownOptions(colIdx) {
+  const sheet = vizSheetName();
+  const cache = S._vizPickerOptionsCache = S._vizPickerOptionsCache || {};
+  const cacheKey = `${sheet}:${colIdx}`;
+  if (cache[cacheKey]) return cache[cacheKey];
+
+  const col = vizColA1(colIdx);
+  const range = `${vizQuoteSheetName(sheet)}!${col}2:${col}1000`;
+  const fields = 'sheets.data.rowData.values.dataValidation.condition';
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}`
+            + `?ranges=${encodeURIComponent(range)}&fields=${fields}&includeGridData=true`;
+  const resp = await fetch(url, { headers: await authHeaders() });
+  if (!resp.ok) return [];
+
+  const data = await resp.json();
+  const cells = data?.sheets?.[0]?.data?.[0]?.rowData || [];
+  const listValues = [];
+  const rangeRefs = [];
+
+  cells.forEach(row => {
+    (row.values || []).forEach(cell => {
+      const cond = cell?.dataValidation?.condition;
+      if (!cond) return;
+      const vals = cond.values || [];
+      if (cond.type === 'ONE_OF_LIST') {
+        vals.forEach(v => listValues.push(v.userEnteredValue));
+      } else if (cond.type === 'ONE_OF_RANGE') {
+        vals.forEach(v => {
+          if (v.userEnteredValue) rangeRefs.push(v.userEnteredValue);
+        });
+      }
+    });
+  });
+
+  let opts = vizUniqOptions(listValues);
+  if (!opts.length && rangeRefs.length) {
+    for (const ref of vizUniqOptions(rangeRefs)) {
+      opts = opts.concat(await fetchVizValuesByA1(ref));
+      if (opts.length) break;
+    }
+    opts = vizUniqOptions(opts);
+  }
+
+  if (opts.length) cache[cacheKey] = opts;
+  return opts;
+}
+
+async function getVizPickerOptions(colIdx) {
+  const fallback = vizPickerFallbackOptions(colIdx);
+  try {
+    const live = await fetchVizDropdownOptions(colIdx);
+    return live.length ? live : fallback;
+  } catch (e) {
+    try { console.warn('Viz picker validation fallback', colIdx, e); } catch (_) {}
+    return fallback;
+  }
+}
+
 // State for vizity
 S.vizDept = null;
 S.vizRows = [];
@@ -14913,12 +15017,11 @@ async function commitVizDelete(sheetRow) {
   renderVizity();
 }
 
-function openVizPicker(sheetRow, colIdx) {
+async function openVizPicker(sheetRow, colIdx) {
   const curVal = S.vizRows.find(r => r._sheetRow === sheetRow)?.data[colIdx] || '';
-  let opts, free = false;
-  if (colIdx === 4) { opts = VIZ_COMMENT_OPTS; free = true; }
-  else if (colIdx === 5) { opts = VIZ_SOURCE_OPTS; }
-  else { opts = VIZ_DEAL_OPTS; }
+  let free = false;
+  if (colIdx === 4) free = true;
+  const opts = await getVizPickerOptions(colIdx);
   renderVizPicker(opts, curVal, free, sheetRow, colIdx);
 }
 

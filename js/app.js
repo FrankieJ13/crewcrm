@@ -7079,8 +7079,7 @@ function renderInstruktsii() {
   const notesHTML = (mot.notes || []).map(n => `<div class="instr-note">${esc(n).replace(/\n/g, '<br>')}</div>`).join('');
   const motivBody = coefTable + notesHTML;
 
-  el.innerHTML = `<div class="sec-title">Инструкции</div>`
-    + `<div class="instr-search-bar">`
+  el.innerHTML = `<div class="instr-search-bar">`
     +   `<div class="instr-search-field">`
     +     `<span class="instr-search-ic"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>`
     +     `<input type="text" id="instr-search-input" class="instr-search-input" placeholder="Поиск по инструкциям…" autocomplete="off" autocorrect="off" spellcheck="false" oninput="instrSearch(this.value)"/>`
@@ -7094,14 +7093,13 @@ function renderInstruktsii() {
 }
 
 function renderReglamentTab() {
-  return `<div class="sec-title">Регламент</div><div class="faq-under-dev">Раздел в разработке...</div>`;
+  return `<div class="faq-under-dev">Раздел в разработке...</div>`;
 }
 
 function renderAutopodborTab() {
   // Off-режим — стаб «В разработке»
   if (S.autoSMode === false) {
     return `
-      <div class="sec-title">Автоподбор</div>
       <div class="autopodbor-stub">
         <div class="autopodbor-stub-title">В разработке</div>
         <div class="autopodbor-stub-text">
@@ -7118,7 +7116,6 @@ function renderAutopodborTab() {
     <div class="ap-tab-layout">
       <div class="ap-tab-fixed">
         <div class="ap-header-row">
-          <div class="sec-title" style="margin:0">Автоподбор</div>
           <div class="ds-chip ap-chip" id="ap-total-chip">
             <span class="ds-chip-inner">
               <span class="ds-chip-val" id="ap-total-val">…</span>
@@ -8189,7 +8186,6 @@ function renderMangoTab() {
   const mangoData = [['Барнаул','##9912'],['Красноярск','##1118'],['Кемерово','##1478'],['Новокузнецк','##1213'],['Новосибирск','##1516'],['Омск','##108'],['Оренбург','##11444'],['Пермь','##974'],['Сургут','##1811'],['Томск','##1417'],['Тюмень','##1455'],['Челябинск','##1612'],['АСЦ Пермь','239-26-26']];
   const rows = mangoData.map(([c,n]) => '<tr><td>'+c+'</td><td>'+n+'</td></tr>').join('');
   const html =
-    '<div class="sec-title">Добавочные номера Mango</div>' +
     '<div class="mango-wrap"><table class="mango-table"><thead><tr><th>Город</th><th>Доб.№</th></tr></thead><tbody>'+rows+'</tbody></table></div>' +
     '<div class="sec-title">Определить номер</div>' +
     '<div class="pl-wrap">' +
@@ -13572,7 +13568,6 @@ function renderRating() {
 
   setLiveHTML(el, `
     <div class="rating-header">
-      <div class="sec-title" style="margin:0">РЕЙТИНГ</div>
       ${deptToggle}
     </div>
     <div class="rating-slide-wrap"><div class="rating-slide-inner" id="rating-slide-inner">${podiumHTML}<div class="rating-chart">${cardsHTML || '<div class="empty">Нет данных</div>'}</div></div></div>
@@ -13916,7 +13911,6 @@ function renderDozhimSearchTab() {
   return `
     <div class="ds-tab-layout">
       <div class="ds-tab-fixed">
-        <div class="sec-title">Поиск клиентов в базе дожима</div>
         <div id="ds-stats" class="ds-stats"><div class="ds-stats-loading">Загружаю статистику…</div></div>
         <div class="sec-title">Введите телефон клиента</div>
         <div class="pl-wrap">

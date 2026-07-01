@@ -689,6 +689,28 @@ function rerunFor(periodStr) {
 }
 
 /**
+ * АВТОМАТИЧЕСКИЙ ПЕРЕЗАПУСК (для добора после глюков/лимитов и после фикса уровней).
+ * Пере-прогоняет последние CATCHUP_MONTHS месяцев + ДР/отпуск/milestone.
+ * Идемпотентно: существующие выдачи не трогаются, добавляются только НЕДОСТАЮЩИЕ
+ * (в т.ч. пропущенные ранее нижние уровни трофеев). Между месяцами пауза — мягче к лимитам.
+ * Если упрётся в 6-мин лимит — просто запусти ещё раз (дубли не создаст).
+ *   Run → catchUpTrophies
+ */
+const CATCHUP_MONTHS = 3;
+function catchUpTrophies() {
+  const now = new Date();
+  for (let i = 1; i <= CATCHUP_MONTHS; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    awardMonthlyTrophiesFor(d);
+    Utilities.sleep(2000);
+  }
+  awardBirthdayMonthlyFor(now);
+  awardVacationAnnual(now);
+  awardMilestoneTrophies(now);
+  console.log('[trophies] catch-up за ' + CATCHUP_MONTHS + ' мес + ДР/отпуск/milestone завершён');
+}
+
+/**
  * Миграция старых кодов star_monthly → hard_monthly и star2_monthly → normal_monthly.
  * Запускать вручную ОДИН РАЗ из редактора (Run → migrateLegacyMonthlyTrophyCodes).
  */

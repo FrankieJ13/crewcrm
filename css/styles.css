@@ -2895,6 +2895,14 @@ body.cosmic .sched-bulk-svg { color: #1a1a1a; }
   border-right:1px solid var(--line);
 }
 body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
+/* Инструкции (офлайн): колонка Квал/Не квал, тег группы, коэффициенты, заметки (КОТЁЛ и пр.) */
+.instr-table td.instr-kval { white-space:nowrap; width:70px; font-weight:800; font-size:11px; text-align:center; text-transform:uppercase; letter-spacing:.02em; border-right:none; color:var(--txt2); }
+.instr-kval.q  { color:#2ecc71; }
+.instr-kval.nq { color:#ff6b6b; }
+.instr-coef { font-weight:800; color:var(--txt); font-variant-numeric:tabular-nums; }
+.instr-sub-tag { font-size:10px; font-weight:700; opacity:.6; letter-spacing:.03em; }
+.instr-note { margin:10px 0 0; padding:10px 12px; border-radius:10px; background:var(--bg2); border:1px solid var(--line); font-size:12.5px; line-height:1.55; color:var(--txt2); }
+.instr-note:first-child { margin-top:0; }
 .instr-sub { border-top:1px solid var(--line); }
 .instr-sub:first-child { border-top:none }
 .instr-sub-hdr {

@@ -3572,7 +3572,7 @@ async function loadTab(tab) {
   if (el) el.innerHTML = loader();
   try {
     if      (tab==='grafik')      S.data.grafik       = await api(SHEETS.grafik,      'A1:AI25');
-    else if (tab==='instruktsii') S.data.instruktsii  = await api(SHEETS.instruktsii, 'A1:C200');
+    // Инструкции теперь ОФЛАЙН (js/instr-data.js → window.INSTR_DATA), с листа не читаем.
     if (!stillHere()) return;
     renderTab(tab);
   } catch(e) {
@@ -7030,30 +7030,48 @@ function renderInstruktsii() {
   if (S.faqTab === 'autopodbor') { el.innerHTML = renderAutopodborTab(); initAutopodborTab(); return; }
   if (S.faqTab === 'autoru')     { el.innerHTML = renderAutoruTab();     initAutoruTab();     return; }
   if (S.faqTab === 'dozhim-search') { el.innerHTML = renderDozhimSearchTab(); initDozhimSearchTab(); return; }
-  const raw = S.data.instruktsii;
-  if (!raw||!raw.length) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
-  function buildStatusTable(rows) {
-    const ths = '<th>Статус</th><th>Критерии применения</th><th>Обязательные действия в CRM</th>';
-    const trs = rows.filter(r => (r[0]||'').trim() || (r[1]||'').trim()).map(r => `<tr><td>${r[0]||'—'}</td><td>${r[1]||'—'}</td><td>${r[2]||'—'}</td></tr>`).join('');
+  // Офлайн-данные (js/instr-data.js) — раздел больше НЕ читается с Google-листа
+  const D = window.INSTR_DATA;
+  if (!D || !D.statusGroups) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
+  const esc = (typeof escapeHtml === 'function') ? escapeHtml : (s => String(s == null ? '' : s));
+
+  // Таблица статусов (4 колонки: Статус, Критерии, Действия, Квал/Не квал)
+  function statusTable(rows) {
+    const ths = '<th>Статус</th><th>Критерии применения</th><th>Обязательные действия в CRM</th><th>Квал</th>';
+    const trs = (rows || []).map(r => {
+      const kv = (r[3] || '').trim();
+      const cls = kv ? (/не\s*квал/i.test(kv) ? 'nq' : 'q') : '';
+      return `<tr><td>${esc(r[0] || '—')}</td><td>${esc(r[1] || '—')}</td><td>${esc(r[2] || '—')}</td><td class="instr-kval ${cls}">${esc(kv || '—')}</td></tr>`;
+    }).join('');
     return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
   }
-  const primaryRows   = raw.slice(2, 18);
-  const secondaryRows = raw.slice(20, 40);
-  const reglamentBody = `<div class="instr-sub" id="is-primary"><div class="instr-sub-hdr" onclick="toggleSub('is-primary')"><span>СТАТУСЫ ПЕРВИЧНОГО КОНТАКТА</span><div class="instr-sub-toggle">+</div></div><div class="instr-sub-body">${buildStatusTable(primaryRows)}</div></div><div class="instr-sub" id="is-secondary"><div class="instr-sub-hdr" onclick="toggleSub('is-secondary')"><span>СТАТУСЫ ВТОРИЧНОГО КОНТАКТА</span><div class="instr-sub-toggle">+</div></div><div class="instr-sub-body">${buildStatusTable(secondaryRows)}</div></div>`;
-  const ndzRows = raw.slice(41, 57);
-  const ndzHTML = ndzRows.map(r => {
-    const a = (r[0]||'').trim(), b = (r[1]||'').trim();
-    if (!a && !b) return '';
-    const text = b ? `${a} ${b}`.trim() : a;
-    const aUp = a.toUpperCase();
-    if (aUp.startsWith('ЕСЛИ') && aUp.includes('ЗАЯВКА')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}</td></tr>`;
-    if (aUp.startsWith('НО!') || aUp.startsWith('ЛЮБЫЕ')) return `<tr class="ndz-highlight"><td colspan="2">${text}</td></tr>`;
-    if (aUp.startsWith('АЛГОРИТМ ЗВОНКОВ')) return `<tr class="ndz-highlight"><td colspan="2">${text}</td></tr>`;
-    if (aUp.startsWith('ЕСЛИ')) return `<tr class="ndz-sub-hdr"><td colspan="2">${text}</td></tr>`;
-    return `<tr><td colspan="2">${text}</td></tr>`;
-  }).filter(Boolean).join('');
+  // Группы статусов → раскрывающиеся под-блоки
+  const statusSubs = D.statusGroups.map((g, i) => {
+    const id = 'is-' + i;
+    const sub = g.sub ? ` <span class="instr-sub-tag">${esc(g.sub)}</span>` : '';
+    return `<div class="instr-sub" id="${id}"><div class="instr-sub-hdr" onclick="toggleSub('${id}')"><span>${esc(g.title)}${sub}</span><div class="instr-sub-toggle">+</div></div><div class="instr-sub-body">${statusTable(g.rows)}</div></div>`;
+  }).join('');
+
+  // Недозвоны — строки с подсветкой заголовков/акцентов
+  const ndzHTML = (D.ndz || []).map(line => {
+    const up = String(line).toUpperCase();
+    if (up.startsWith('НО!') || up.startsWith('ЛЮБЫЕ') || up.startsWith('АЛГОРИТМ')) return `<tr class="ndz-highlight"><td>${esc(line)}</td></tr>`;
+    if (up.startsWith('ЕСЛИ')) return `<tr class="ndz-sub-hdr"><td>${esc(line)}</td></tr>`;
+    return `<tr><td>${esc(line)}</td></tr>`;
+  }).join('');
   const ndzBody = `<div class="mango-wrap"><table class="ndz-table"><tbody>${ndzHTML}</tbody></table></div>`;
-  el.innerHTML = `<div class="sec-title">Инструкции</div><div class="instr-block" id="ib-reglament"><div class="instr-hdr" onclick="toggleInstr('ib-reglament')"><h3>РЕГЛАМЕНТ КОРРЕКТНОГО ЗАКРЫТИЯ CRM ЗАЯВОК (ЛИДОВ)</h3><div class="instr-toggle">+</div></div><div class="instr-body">${reglamentBody}</div></div><div class="instr-block" id="ib-ndz"><div class="instr-hdr" onclick="toggleInstr('ib-ndz')"><h3>АЛГОРИТМ РАБОТЫ С НЕДОЗВОНАМИ</h3><div class="instr-toggle">+</div></div><div class="instr-body" style="padding:12px 14px">${ndzBody}</div></div>`;
+
+  // Мотивация — таблица коэффициентов + заметки (КОТЁЛ и пр., переносы строк сохраняем)
+  const mot = D.motivation || { coef: [], notes: [] };
+  const coefRows = (mot.coef || []).map(p => `<tr><td>${esc(p[0])}</td><td class="instr-coef">${esc(p[1])}</td></tr>`).join('');
+  const coefTable = coefRows ? `<div class="table-scroll"><table class="instr-table"><thead><tr><th>Выполнение плана</th><th>Коэффициент</th></tr></thead><tbody>${coefRows}</tbody></table></div>` : '';
+  const notesHTML = (mot.notes || []).map(n => `<div class="instr-note">${esc(n).replace(/\n/g, '<br>')}</div>`).join('');
+  const motivBody = coefTable + notesHTML;
+
+  el.innerHTML = `<div class="sec-title">Инструкции</div>`
+    + `<div class="instr-block" id="ib-reglament"><div class="instr-hdr" onclick="toggleInstr('ib-reglament')"><h3>РЕГЛАМЕНТ КОРРЕКТНОГО ЗАКРЫТИЯ CRM ЗАЯВОК (ЛИДОВ)</h3><div class="instr-toggle">+</div></div><div class="instr-body">${statusSubs}</div></div>`
+    + `<div class="instr-block" id="ib-ndz"><div class="instr-hdr" onclick="toggleInstr('ib-ndz')"><h3>АЛГОРИТМ РАБОТЫ С НЕДОЗВОНАМИ</h3><div class="instr-toggle">+</div></div><div class="instr-body" style="padding:12px 14px">${ndzBody}</div></div>`
+    + `<div class="instr-block" id="ib-motiv"><div class="instr-hdr" onclick="toggleInstr('ib-motiv')"><h3>СХЕМА ПРЕМИРОВАНИЯ И МОТИВАЦИЯ</h3><div class="instr-toggle">+</div></div><div class="instr-body" style="padding:12px 14px">${motivBody}</div></div>`;
 }
 
 function renderReglamentTab() {

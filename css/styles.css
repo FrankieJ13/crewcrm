@@ -2874,7 +2874,7 @@ body.cosmic .sched-bulk-svg { color: #1a1a1a; }
   white-space: nowrap;
 }
 .table-scroll { overflow-x: auto; margin:0 -1px; }
-.instr-table { width:100%; border-collapse:collapse; font-size:13px; min-width:600px; }
+.instr-table { width:100%; border-collapse:collapse; font-size:13px; min-width:0; }
 .instr-table th {
   background:var(--bg3);
   padding:10px 14px; text-align:left;
@@ -2903,6 +2903,17 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
 .instr-sub-tag { font-size:10px; font-weight:700; opacity:.6; letter-spacing:.03em; }
 .instr-note { margin:10px 0 0; padding:10px 12px; border-radius:10px; background:var(--bg2); border:1px solid var(--line); font-size:12.5px; line-height:1.55; color:var(--txt2); }
 .instr-note:first-child { margin-top:0; }
+/* Статусы — вертикальные карточки (вместо широкой таблицы, без гориз. скролла) */
+.instr-cards { display:flex; flex-direction:column; gap:10px; padding:10px 0 2px; }
+.instr-card { background:var(--bg2); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+.instr-card-hd { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.instr-card-name { font-weight:800; font-size:13.5px; line-height:1.3; color:var(--txt); }
+.instr-card-hd .instr-kval { flex:none; width:auto; align-self:flex-start; padding:3px 9px; border:1px solid currentColor; border-radius:999px; font-weight:800; font-size:9.5px; letter-spacing:.03em; text-transform:uppercase; white-space:nowrap; }
+.instr-card-field { display:flex; flex-direction:column; gap:2px; margin-top:9px; padding-top:9px; border-top:1px solid var(--line); }
+.instr-card-field:first-of-type { margin-top:10px; }
+.instr-card-hd + .instr-card-field { border-top:none; padding-top:0; }
+.instr-card-label { font-size:9.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--txt3); font-family:'Unbounded',sans-serif; }
+.instr-card-val { font-size:13px; line-height:1.55; color:var(--txt2); }
 .instr-sub { border-top:1px solid var(--line); }
 .instr-sub:first-child { border-top:none }
 .instr-sub-hdr {

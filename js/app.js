@@ -7035,21 +7035,30 @@ function renderInstruktsii() {
   if (!D || !D.statusGroups) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
   const esc = (typeof escapeHtml === 'function') ? escapeHtml : (s => String(s == null ? '' : s));
 
-  // Таблица статусов (4 колонки: Статус, Критерии, Действия, Квал/Не квал)
-  function statusTable(rows) {
-    const ths = '<th>Статус</th><th>Критерии применения</th><th>Обязательные действия в CRM</th><th>Квал</th>';
-    const trs = (rows || []).map(r => {
-      const kv = (r[3] || '').trim();
+  // Статусы → вертикальные карточки (без горизонтального скролла).
+  // Каждая карточка: имя статуса + бейдж Квал/Не квал, ниже — поля Критерии/Действия.
+  function statusCards(rows) {
+    const field = (label, val) => {
+      const v = (val || '').trim();
+      if (!v || v === '—') return '';
+      return `<div class="instr-card-field"><span class="instr-card-label">${esc(label)}</span><span class="instr-card-val">${esc(v)}</span></div>`;
+    };
+    const cards = (rows || []).map(r => {
+      const kv  = (r[3] || '').trim();
       const cls = kv ? (/не\s*квал/i.test(kv) ? 'nq' : 'q') : '';
-      return `<tr><td>${esc(r[0] || '—')}</td><td>${esc(r[1] || '—')}</td><td>${esc(r[2] || '—')}</td><td class="instr-kval ${cls}">${esc(kv || '—')}</td></tr>`;
+      const badge = kv ? `<span class="instr-kval ${cls}">${esc(kv)}</span>` : '';
+      return `<div class="instr-card"><div class="instr-card-hd"><span class="instr-card-name">${esc(r[0] || '—')}</span>${badge}</div>`
+        + field('Критерии применения', r[1])
+        + field('Обязательные действия в CRM', r[2])
+        + `</div>`;
     }).join('');
-    return `<div class="table-scroll"><table class="instr-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
+    return `<div class="instr-cards">${cards}</div>`;
   }
   // Группы статусов → раскрывающиеся под-блоки
   const statusSubs = D.statusGroups.map((g, i) => {
     const id = 'is-' + i;
     const sub = g.sub ? ` <span class="instr-sub-tag">${esc(g.sub)}</span>` : '';
-    return `<div class="instr-sub" id="${id}"><div class="instr-sub-hdr" onclick="toggleSub('${id}')"><span>${esc(g.title)}${sub}</span><div class="instr-sub-toggle">+</div></div><div class="instr-sub-body">${statusTable(g.rows)}</div></div>`;
+    return `<div class="instr-sub" id="${id}"><div class="instr-sub-hdr" onclick="toggleSub('${id}')"><span>${esc(g.title)}${sub}</span><div class="instr-sub-toggle">+</div></div><div class="instr-sub-body">${statusCards(g.rows)}</div></div>`;
   }).join('');
 
   // Недозвоны — строки с подсветкой заголовков/акцентов

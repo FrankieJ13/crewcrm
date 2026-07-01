@@ -2914,6 +2914,18 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
 .instr-card-hd + .instr-card-field { border-top:none; padding-top:0; }
 .instr-card-label { font-size:9.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--txt3); font-family:'Unbounded',sans-serif; }
 .instr-card-val { font-size:13px; line-height:1.55; color:var(--txt2); }
+/* Поиск по инструкциям */
+.instr-search-bar { display:flex; align-items:stretch; gap:8px; margin:10px 0 14px; }
+.instr-search-field { position:relative; flex:1; display:flex; align-items:center; }
+.instr-search-ic { position:absolute; left:12px; display:flex; color:var(--txt3); pointer-events:none; }
+.instr-search-input { width:100%; padding:11px 12px 11px 38px; border-radius:12px; border:1px solid var(--line); background:var(--bg2); color:var(--txt); font-size:16px; font-family:inherit; outline:none; -webkit-appearance:none; }
+.instr-search-input:focus { border-color:var(--acc); }
+.instr-search-input::placeholder { color:var(--txt3); }
+.instr-search-reset { flex:none; padding:0 16px; border-radius:12px; border:1px solid var(--line); background:var(--bg2); color:var(--txt2); font-size:12px; font-weight:800; letter-spacing:.02em; text-transform:uppercase; cursor:pointer; white-space:nowrap; font-family:inherit; }
+.instr-search-reset:hover { background:var(--bg3); color:var(--txt); }
+.instr-search-reset:active { transform:scale(.97); }
+.instr-hidden { display:none !important; }
+.instr-empty { padding:26px 14px; text-align:center; color:var(--txt3); font-size:13px; }
 .instr-sub { border-top:1px solid var(--line); }
 .instr-sub:first-child { border-top:none }
 .instr-sub-hdr {

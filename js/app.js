@@ -7047,7 +7047,8 @@ function renderInstruktsii() {
       const kv  = (r[3] || '').trim();
       const cls = kv ? (/не\s*квал/i.test(kv) ? 'nq' : 'q') : '';
       const badge = kv ? `<span class="instr-kval ${cls}">${esc(kv)}</span>` : '';
-      return `<div class="instr-card"><div class="instr-card-hd"><span class="instr-card-name">${esc(r[0] || '—')}</span>${badge}</div>`
+      const ds = [r[0], r[1], r[2], kv].map(x => String(x || '')).join(' ').toLowerCase();
+      return `<div class="instr-card" data-s="${esc(ds)}"><div class="instr-card-hd"><span class="instr-card-name">${esc(r[0] || '—')}</span>${badge}</div>`
         + field('Критерии применения', r[1])
         + field('Обязательные действия в CRM', r[2])
         + `</div>`;
@@ -7064,9 +7065,10 @@ function renderInstruktsii() {
   // Недозвоны — строки с подсветкой заголовков/акцентов
   const ndzHTML = (D.ndz || []).map(line => {
     const up = String(line).toUpperCase();
-    if (up.startsWith('НО!') || up.startsWith('ЛЮБЫЕ') || up.startsWith('АЛГОРИТМ')) return `<tr class="ndz-highlight"><td>${esc(line)}</td></tr>`;
-    if (up.startsWith('ЕСЛИ')) return `<tr class="ndz-sub-hdr"><td>${esc(line)}</td></tr>`;
-    return `<tr><td>${esc(line)}</td></tr>`;
+    const ds = String(line).toLowerCase();
+    if (up.startsWith('НО!') || up.startsWith('ЛЮБЫЕ') || up.startsWith('АЛГОРИТМ')) return `<tr class="ndz-highlight" data-s="${esc(ds)}"><td>${esc(line)}</td></tr>`;
+    if (up.startsWith('ЕСЛИ')) return `<tr class="ndz-sub-hdr" data-s="${esc(ds)}"><td>${esc(line)}</td></tr>`;
+    return `<tr data-s="${esc(ds)}"><td>${esc(line)}</td></tr>`;
   }).join('');
   const ndzBody = `<div class="mango-wrap"><table class="ndz-table"><tbody>${ndzHTML}</tbody></table></div>`;
 
@@ -7078,6 +7080,14 @@ function renderInstruktsii() {
   const motivBody = coefTable + notesHTML;
 
   el.innerHTML = `<div class="sec-title">Инструкции</div>`
+    + `<div class="instr-search-bar">`
+    +   `<div class="instr-search-field">`
+    +     `<span class="instr-search-ic"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>`
+    +     `<input type="text" id="instr-search-input" class="instr-search-input" placeholder="Поиск по инструкциям…" autocomplete="off" autocorrect="off" spellcheck="false" oninput="instrSearch(this.value)"/>`
+    +   `</div>`
+    +   `<button type="button" class="instr-search-reset" onclick="instrSearchReset()">Сброс</button>`
+    + `</div>`
+    + `<div class="instr-empty" id="instr-search-empty" style="display:none">Ничего не найдено</div>`
     + `<div class="instr-block" id="ib-reglament"><div class="instr-hdr" onclick="toggleInstr('ib-reglament')"><h3>РЕГЛАМЕНТ КОРРЕКТНОГО ЗАКРЫТИЯ CRM ЗАЯВОК (ЛИДОВ)</h3><div class="instr-toggle">+</div></div><div class="instr-body">${statusSubs}</div></div>`
     + `<div class="instr-block" id="ib-ndz"><div class="instr-hdr" onclick="toggleInstr('ib-ndz')"><h3>АЛГОРИТМ РАБОТЫ С НЕДОЗВОНАМИ</h3><div class="instr-toggle">+</div></div><div class="instr-body" style="padding:12px 14px">${ndzBody}</div></div>`
     + `<div class="instr-block" id="ib-motiv"><div class="instr-hdr" onclick="toggleInstr('ib-motiv')"><h3>СХЕМА ПРЕМИРОВАНИЯ И МОТИВАЦИЯ</h3><div class="instr-toggle">+</div></div><div class="instr-body" style="padding:12px 14px">${motivBody}</div></div>`;
@@ -7710,6 +7720,78 @@ function toggleSub(id) {
   sub.classList.toggle('open');
   const btn = sub.querySelector('.instr-sub-toggle, .mop-sub-toggle');
   if (btn) btn.textContent = sub.classList.contains('open') ? '−' : '+';
+}
+
+// Синхронизировать глиф +/− у первого тумблера внутри узла с его классом .open
+function _instrSyncToggle(node, sel) {
+  const b = node.querySelector(sel);
+  if (b) b.textContent = node.classList.contains('open') ? '−' : '+';
+}
+// Поиск по инструкциям — матчит РЕГЛАМЕНТ (карточки статусов) и АЛГОРИТМ НЕДОЗВОНОВ.
+// Схема премирования в поиск НЕ входит (скрывается на время поиска).
+function instrSearch(q) {
+  const el = document.getElementById('c-instruktsii');
+  if (!el) return;
+  const query = (q || '').trim().toLowerCase();
+  if (!query) { instrSearchReset(); return; }
+  el.classList.add('instr-searching');
+  const empty = document.getElementById('instr-search-empty');
+  const motiv = document.getElementById('ib-motiv');
+  if (motiv) motiv.classList.add('instr-hidden'); // схема в поиск не входит
+  let total = 0;
+
+  // РЕГЛАМЕНТ: фильтруем карточки статусов, раскрываем блок + группы с совпадениями
+  const regl = document.getElementById('ib-reglament');
+  if (regl) {
+    let reglMatches = 0;
+    regl.querySelectorAll('.instr-sub').forEach(sub => {
+      let subMatches = 0;
+      sub.querySelectorAll('.instr-card').forEach(card => {
+        const hit = (card.getAttribute('data-s') || '').indexOf(query) !== -1;
+        card.classList.toggle('instr-hidden', !hit);
+        if (hit) subMatches++;
+      });
+      sub.classList.toggle('instr-hidden', subMatches === 0);
+      sub.classList.toggle('open', subMatches > 0);
+      _instrSyncToggle(sub, '.instr-sub-toggle');
+      reglMatches += subMatches;
+    });
+    regl.classList.toggle('instr-hidden', reglMatches === 0);
+    regl.classList.toggle('open', reglMatches > 0);
+    _instrSyncToggle(regl, '.instr-toggle');
+    total += reglMatches;
+  }
+
+  // АЛГОРИТМ НЕДОЗВОНОВ: фильтруем строки
+  const ndz = document.getElementById('ib-ndz');
+  if (ndz) {
+    let ndzMatches = 0;
+    ndz.querySelectorAll('.ndz-table tr').forEach(tr => {
+      const hit = (tr.getAttribute('data-s') || '').indexOf(query) !== -1;
+      tr.classList.toggle('instr-hidden', !hit);
+      if (hit) ndzMatches++;
+    });
+    ndz.classList.toggle('instr-hidden', ndzMatches === 0);
+    ndz.classList.toggle('open', ndzMatches > 0);
+    _instrSyncToggle(ndz, '.instr-toggle');
+    total += ndzMatches;
+  }
+
+  if (empty) empty.style.display = total ? 'none' : 'block';
+}
+// Сброс поиска — возвращает раздел в первоначальный вид (всё свёрнуто, всё видно).
+function instrSearchReset() {
+  const el = document.getElementById('c-instruktsii');
+  if (!el) return;
+  const inp = document.getElementById('instr-search-input');
+  if (inp) inp.value = '';
+  el.classList.remove('instr-searching');
+  el.querySelectorAll('.instr-hidden').forEach(n => n.classList.remove('instr-hidden'));
+  el.querySelectorAll('.instr-block.open, .instr-sub.open').forEach(n => n.classList.remove('open'));
+  el.querySelectorAll('.instr-toggle, .instr-sub-toggle').forEach(b => b.textContent = '+');
+  const empty = document.getElementById('instr-search-empty');
+  if (empty) empty.style.display = 'none';
+  if (inp) inp.focus();
 }
 
 // Ленивый рендер всех городов при раскрытии схлопа Детализация по городам

@@ -2,9 +2,11 @@
  * Crystal Motors Dashboard — автоматическая выдача трофеев.
  *
  * Точки входа (вешаются на триггеры через редактор Apps Script):
- *   1) awardMonthlyTrophies()  — ежемесячно 2-го числа в 03:00 (Time-driven, Month-timer, Day=2)
- *   2) awardDailyTrophies()    — ежедневно в 09:00 (Time-driven, Day-timer)
- *   3) awardHnyTrophies()      — 1 января (Time-driven, Calendar, 1st of January 00:00)
+ *   1) awardMonthlyTrophies()  — ежемесячно 2-го числа в 03:00 (Time-driven, Month-timer, Day=2).
+ *      Делает ВСЁ: месячные результаты + ДР этого месяца + отпуск + milestone-трофеи
+ *      (25/50/75…). Ежедневный триггер БОЛЬШЕ НЕ НУЖЕН — удали его в редакторе.
+ *   2) awardHnyTrophies()      — 1 января (Time-driven, Calendar, 1st of January 00:00)
+ *   (awardDailyTrophies() устарел — оставлен пустым для совместимости со старым триггером.)
  *
  * Все функции идемпотентны: повторный запуск не создаёт дубли.
  * Запись идёт в лист TrophyAwards с колонками:
@@ -54,19 +56,22 @@ const VIS_CATEGORIES = ['кат 800', 'кат 1000', 'кат 1200'];
  */
 function awardMonthlyTrophies() {
   const now = new Date();
-  // Целевой месяц = предыдущий относительно сегодня
+  // Целевой месяц = предыдущий относительно сегодня (для месячной статистики)
   const target = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   awardMonthlyTrophiesFor(target);
+  // Ранее это был ОТДЕЛЬНЫЙ ежедневный триггер — теперь всё в начале месяца:
+  awardBirthdayMonthlyFor(now);   // дни рождения ТЕКУЩЕГО месяца
+  awardVacationAnnual(now);       // отпуск (годовой, идемпотентно)
+  awardMilestoneTrophies(now);    // 25/50/75… — ПОСЛЕ месячных, чтобы счёт учёл новые выдачи
 }
 
 /**
- * Дайли-задачи: ДР + кумулятивные milestone-трофеи (Бронза/Серебро/Золото/Платина).
+ * DEPRECATED. Ежедневный триггер убран — задачи перенесены в awardMonthlyTrophies()
+ * (выдаются в начале месяца). Оставлено пустым, чтобы «висящий» дейли-триггер, если он
+ * ещё не удалён, ничего не делал. УДАЛИ ежедневный триггер в редакторе Apps Script.
  */
 function awardDailyTrophies() {
-  const now = new Date();
-  awardBirthdayFor(now);
-  awardMilestoneTrophies(now);
-  awardVacationAnnual(now);
+  console.log('[trophies] awardDailyTrophies отключён — задачи перенесены в awardMonthlyTrophies (начало месяца). Удали ежедневный триггер.');
 }
 
 /**
@@ -142,47 +147,35 @@ function awardMonthlyTrophiesFor(targetDate) {
   if (antiTop[1]) push('antinumbertwo_monthly',   antiTop[1].name, `${period} · ${Math.round(antiTop[1].prog)}%`);
   if (antiTop[2]) push('antinumberthree_monthly', antiTop[2].name, `${period} · ${Math.round(antiTop[2].prog)}%`);
 
-  // 2) Normal / Hard / I'm Super-man — выдаём по самой высокой достигнутой планке
+  // 2) Normal / Hard / I'm Super-man — выдаём ВСЕ достигнутые планки (не только высшую)
   arr.forEach(m => {
-    if (m.prog >= 150 && m.stats.kred >= 50) {
-      push('veryhard_monthly', m.name, `${period} · ${Math.round(m.prog)}% · ${m.stats.kred} кредитов`);
-    } else if (m.prog >= 130 && m.stats.kred >= 30) {
-      push('hard_monthly',     m.name, `${period} · ${Math.round(m.prog)}% · ${m.stats.kred} кредитов`);
-    } else if (m.prog >= 120 && m.stats.kred >= 20) {
-      push('normal_monthly',   m.name, `${period} · ${Math.round(m.prog)}% · ${m.stats.kred} кредитов`);
-    }
+    const note = `${period} · ${Math.round(m.prog)}% · ${m.stats.kred} кредитов`;
+    if (m.prog >= 120 && m.stats.kred >= 20) push('normal_monthly',   m.name, note);
+    if (m.prog >= 130 && m.stats.kred >= 30) push('hard_monthly',     m.name, note);
+    if (m.prog >= 150 && m.stats.kred >= 50) push('veryhard_monthly', m.name, note);
   });
 
   // 3) Коллектор — max сделок «Комиссия»
   const byKom = arr.filter(m => m.stats.kom > 0).sort((a, b) => b.stats.kom - a.stats.kom);
   if (byKom[0]) push('commission_monthly', byKom[0].name, `${period} · ${byKom[0].stats.kom} комиссии`);
 
-  // 4) Кредиты по дням: 50+ → Святой Грааль, иначе 33+ → Счастливое число CRM
+  // 4) Кредиты: 33+ → Счастливое число CRM И 50+ → Святой Грааль (выдаём ОБА, если достигнуты)
   arr.forEach(m => {
-    if (m.stats.kred >= 50) {
-      push('megakd_monthly', m.name, `${period} · ${m.stats.kred} кредитов`);
-    } else if (m.stats.kred >= 33) {
-      push('kd_monthly',     m.name, `${period} · ${m.stats.kred} кредитов`);
-    }
+    if (m.stats.kred >= 33) push('kd_monthly',     m.name, `${period} · ${m.stats.kred} кредитов`);
+    if (m.stats.kred >= 50) push('megakd_monthly', m.name, `${period} · ${m.stats.kred} кредитов`);
   });
 
-  // 5) Наличные: 20+ → Гамбит, иначе 10+ → Туз в рукаве
+  // 5) Наличные: 10+ → Туз в рукаве И 20+ → Гамбит (оба уровня)
   arr.forEach(m => {
-    if (m.stats.nalOnly >= 20) {
-      push('megacash_monthly', m.name, `${period} · ${m.stats.nalOnly} налом`);
-    } else if (m.stats.nalOnly >= 10) {
-      push('cash_monthly',     m.name, `${period} · ${m.stats.nalOnly} налом`);
-    }
+    if (m.stats.nalOnly >= 10) push('cash_monthly',     m.name, `${period} · ${m.stats.nalOnly} налом`);
+    if (m.stats.nalOnly >= 20) push('megacash_monthly', m.name, `${period} · ${m.stats.nalOnly} налом`);
   });
 
-  // 6) Подряд в один день: 10+ → Флеш-рояль, иначе 3+ → Три в ряд
+  // 6) Подряд в один день: 3+ → Три в ряд И 10+ → Флеш-рояль (оба уровня)
   arr.forEach(m => {
     const maxInDay = maxCreditsInSingleDay(m.stats.kreditDays);
-    if (maxInDay >= 10) {
-      push('10in1_monthly', m.name, `${period} · ${maxInDay} в день`);
-    } else if (maxInDay >= 3) {
-      push('3in1_monthly',  m.name, period);
-    }
+    if (maxInDay >= 3)  push('3in1_monthly',  m.name, period);
+    if (maxInDay >= 10) push('10in1_monthly', m.name, `${period} · ${maxInDay} в день`);
   });
 
   // 7) Идеальная неделя — 7 дней подряд без отказов/ФССП
@@ -340,6 +333,35 @@ function awardBirthdayFor(now) {
   }
   if (toAppend.length) appendRows(ss, SHEET_TROPHY_AWARDS, toAppend);
   console.log(`[trophies] hb ${awardedAt}: ${toAppend.length}`);
+}
+
+/**
+ * МЕСЯЧНАЯ выдача ДР: в начале месяца выдаём hb_YYYY всем, у кого день рождения В ЭТОМ
+ * календарном месяце (день не важен). Идемпотентно (readAwardsIndex по году).
+ */
+function awardBirthdayMonthlyFor(now) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const usersRows = readSheetSafe(ss, SHEET_USERS);
+  const month = now.getMonth() + 1;
+  const period = String(now.getFullYear());
+  const awardedAt = isoDate(now);
+  const existing = readAwardsIndex(ss, period);
+  const hbCode = 'hb_' + period + '_annual';
+  const note = period + '-' + String(month).padStart(2, '0');
+  const toAppend = [];
+  for (let i = 1; i < usersRows.length; i++) {
+    const row = usersRows[i]; if (!row) continue;
+    const name = String(row[U_NAME] || '').trim();
+    const role = String(row[U_ROLE] || '').toLowerCase().trim();
+    if (!name || (role !== 'crm' && role !== 'dozhim')) continue;
+    const dob = parseDob(row[U_DOB]);
+    if (!dob || dob.month !== month) continue;          // ДР в текущем месяце
+    const key = hbCode + '|' + name.toLowerCase();
+    if (existing[key]) continue;
+    toAppend.push([hbCode, name, awardedAt, 'system', 'auto', 'active', note]);
+  }
+  if (toAppend.length) appendRows(ss, SHEET_TROPHY_AWARDS, toAppend);
+  console.log(`[trophies] hb месяц ${month} ${awardedAt}: ${toAppend.length}`);
 }
 
 /* ──────────────────────── ANNUAL: HNY ──────────────────────── */
@@ -651,9 +673,9 @@ function parseDob(val) {
 /* ──────────────────────── РУЧНОЙ ТЕСТ ──────────────────────── */
 // Запускай эти функции из редактора Apps Script (Run → выбрать функцию) для отладки.
 
-function debugLastMonth()   { awardMonthlyTrophies(); }
-function debugTodayBirthday() { awardDailyTrophies(); }
-function debugHnyNow()      { awardHnyTrophies(); }
+function debugLastMonth()     { awardMonthlyTrophies(); }        // всё «начало месяца» (месячные+ДР+отпуск+milestone)
+function debugBirthdayMonth() { awardBirthdayMonthlyFor(new Date()); }
+function debugHnyNow()        { awardHnyTrophies(); }
 function debugMilestonesNow() { awardMilestoneTrophies(new Date()); }
 
 /**

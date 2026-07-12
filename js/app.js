@@ -8310,6 +8310,7 @@ function renderConverterTab() {
         <div class="conv-rules">
           <div>КАТЕГОРИЯ: «Тёплые лиды» → кат 1200, любой другой источник → кат 800.</div>
           <div>СПОСОБ ПОКУПКИ приводится к списку: кредит, наличные, комиссия, обмен, выкуп, оценка авто, трейдин+кредит, трейдин+наличные, лизинг, не уточнили.</div>
+          <div>КОММЕНТАРИЙ проставляется по «Этап сделки»: успешно реализовано → ПОКУПКА (кредит/наличные)/КОМИССИЯ/ОБМЕН/ВЫКУП; отказ банка → ОТКАЗ; ФССП → ФССП не подаем; КСО → В работе КСО.</div>
         </div>
         <div id="conv-copy-status" class="conv-status">Данные ещё не скопированы</div>
         <div class="conv-tablewrap"><table class="conv-table" id="conv-preview"></table></div>
@@ -8467,6 +8468,30 @@ function convNormalizeManager(v) {
   const parts = String(v||'').trim().replace(/\s+/g,' ').split(' ').filter(Boolean);
   return parts.slice(0, 2).join(' ');
 }
+// Значение колонки amoCRM по имени заголовка (без учёта регистра/пробелов)
+function convCol(row, name) {
+  const target = String(name).trim().toLowerCase();
+  for (const k in row) if (String(k).trim().toLowerCase() === target) return String(row[k] || '');
+  return '';
+}
+// Комментарий по «Этап сделки» (+ «Успешное закрытие карточки»). '' — если не подходит.
+function convCommentFromStage(row) {
+  const stage = convCol(row, 'Этап сделки').toLowerCase();
+  if (!stage) return '';
+  if (/успешно реализовано/.test(stage)) {
+    const cl = convCol(row, 'Успешное закрытие карточки').toLowerCase();
+    if (/кредит/.test(cl)) return 'ПОКУПКА (кредит)';
+    if (/налич/.test(cl))  return 'ПОКУПКА (наличные)';
+    if (/комисс/.test(cl)) return 'КОМИССИЯ';
+    if (/обмен/.test(cl))  return 'ОБМЕН';
+    if (/выкуп/.test(cl))  return 'ВЫКУП';
+    return '';
+  }
+  if (/отказ банка/.test(stage))     return 'ОТКАЗ';
+  if (/фссп/.test(stage))            return 'ФССП не подаем';
+  if (/ксо/.test(stage))             return 'В работе КСО';
+  return '';
+}
 function convPhoneFromRow(row, selected) {
   const order = [selected,'Рабочий телефон','Мобильный телефон','Рабочий прямой телефон','Домашний телефон','Другой телефон','Source phone','Source phone.1'];
   for (const k of [...new Set(order.filter(Boolean))]) if (row[k]) return convNormalizePhone(row[k]);
@@ -8487,6 +8512,13 @@ function convValueFor(row, out, selected, fixed, maps) {
   if (out === 'МЕНЕДЖЕР') {
     // В гугл-таблице менеджеры — «Фамилия Имя», без отчества: берём первые 2 слова
     return convNormalizeManager(selected ? (row[selected]||'') : '');
+  }
+  if (out === 'КОММЕНТАРИЙ') {
+    // Комментарий из «Этап сделки» (+ «Успешное закрытие карточки»); иначе — маппинг
+    const derived = convCommentFromStage(row);
+    if (derived) return derived;
+    let cv = selected ? (row[selected]||'') : '';
+    return cv.replace(/\t/g,' ').replace(/\r?\n/g,' ');
   }
   let v = selected ? (row[selected]||'') : '';
   if (out === 'ДАТА') v = convNormalizeDate(v);
@@ -8527,8 +8559,9 @@ function convTSV(includeHeader) {
 }
 function convHtmlTable() {
   const cellStyle = 'border:1px solid #000;text-align:center;vertical-align:middle;padding:4px 8px;font-family:Arial,sans-serif;font-size:8pt;';
+  // valign="middle" — Google Таблицы уважают HTML-атрибут надёжнее CSS vertical-align
   return '<table style="border-collapse:collapse;"><tbody>' +
-    _conv.outputRows.map(r => '<tr>' + r.map(v => `<td style="${cellStyle}">${escapeHtml(v)}</td>`).join('') + '</tr>').join('') +
+    _conv.outputRows.map(r => '<tr>' + r.map(v => `<td valign="middle" style="${cellStyle}">${escapeHtml(v)}</td>`).join('') + '</tr>').join('') +
     '</tbody></table>';
 }
 

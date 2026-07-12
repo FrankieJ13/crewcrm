@@ -8461,6 +8461,12 @@ function convNormalizePurchase(v) {
   if (hasCash) return 'наличные';
   return 'не уточнили';
 }
+function convNormalizeManager(v) {
+  // amoCRM «Ответственный» = «Фамилия Имя Отчество» → отсекаем отчество (3-е слово+),
+  // оставляем «Фамилия Имя», как в гугл-таблице.
+  const parts = String(v||'').trim().replace(/\s+/g,' ').split(' ').filter(Boolean);
+  return parts.slice(0, 2).join(' ');
+}
 function convPhoneFromRow(row, selected) {
   const order = [selected,'Рабочий телефон','Мобильный телефон','Рабочий прямой телефон','Домашний телефон','Другой телефон','Source phone','Source phone.1'];
   for (const k of [...new Set(order.filter(Boolean))]) if (row[k]) return convNormalizePhone(row[k]);
@@ -8477,6 +8483,10 @@ function convValueFor(row, out, selected, fixed, maps) {
     const sourceColumn = maps['ИСТОЧНИК'] || 'Источник обращения';
     const source = String(row[sourceColumn]||'').trim().toLowerCase();
     return source === 'теплые лиды' ? 'кат 1200' : 'кат 800';
+  }
+  if (out === 'МЕНЕДЖЕР') {
+    // В гугл-таблице менеджеры — «Фамилия Имя», без отчества: берём первые 2 слова
+    return convNormalizeManager(selected ? (row[selected]||'') : '');
   }
   let v = selected ? (row[selected]||'') : '';
   if (out === 'ДАТА') v = convNormalizeDate(v);

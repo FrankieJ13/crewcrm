@@ -2926,6 +2926,54 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
 .instr-search-reset:active { transform:scale(.97); }
 .instr-hidden { display:none !important; }
 .instr-empty { padding:26px 14px; text-align:center; color:var(--txt3); font-size:13px; }
+
+/* ═══ Конвертер amoCRM → Google Таблицы (FAQ-подраздел) ═══ */
+.conv-wrap { display:flex; flex-direction:column; gap:14px; padding-top:6px; }
+.conv-lead { font-size:13px; color:var(--txt2); line-height:1.5; }
+.conv-card { background:var(--bg2); border:1px solid var(--line); border-radius:14px; padding:16px; }
+.conv-hidden { display:none; }
+.conv-sec-title { font-family:'Unbounded',sans-serif; font-size:12px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--acc); margin:0 0 12px; }
+/* dropzone */
+.conv-drop { border:2px dashed var(--line2); border-radius:12px; padding:26px 16px; text-align:center; cursor:pointer; color:var(--txt2); transition:border-color .15s, background .15s; }
+.conv-drop:hover, .conv-drop.drag { border-color:var(--acc); background:var(--acc-bg); }
+.conv-drop-ic { color:var(--acc); margin-bottom:6px; }
+.conv-drop-title { font-weight:800; font-size:14px; color:var(--txt); }
+.conv-drop-hint { font-size:12px; color:var(--txt3); margin-top:2px; }
+/* status */
+.conv-status { margin-top:12px; padding:10px 12px; border-radius:10px; font-size:12.5px; line-height:1.45; background:var(--bg3); color:var(--txt2); }
+.conv-status.ok   { background:rgba(46,204,113,.14); color:#2ecc71; }
+.conv-status.warn { background:rgba(245,166,35,.16); color:#f5a623; }
+.conv-status.bad  { background:rgba(255,71,87,.14); color:var(--red); }
+/* mapping */
+.conv-mapping { display:grid; grid-template-columns:150px minmax(0,1fr) minmax(0,150px); gap:8px 10px; align-items:center; }
+.conv-map-head { font-size:9.5px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--txt3); font-family:'Unbounded',sans-serif; }
+.conv-map-lbl { font-weight:700; font-size:12.5px; color:var(--txt); }
+.conv-map-select, .conv-map-fixed { width:100%; border:1px solid var(--line); border-radius:9px; padding:9px 10px; background:var(--bg); color:var(--txt); font-size:16px; font-family:inherit; outline:none; -webkit-appearance:none; }
+.conv-map-select:focus, .conv-map-fixed:focus { border-color:var(--acc); }
+/* buttons */
+.conv-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.conv-btn { border:0; border-radius:10px; padding:10px 15px; background:var(--acc); color:#fff; font-weight:800; font-size:12.5px; cursor:pointer; font-family:inherit; white-space:nowrap; }
+.conv-btn:active { transform:scale(.97); }
+.conv-btn-ghost { background:var(--bg3); color:var(--txt2); }
+.conv-btn-sec { background:var(--acc-bg); color:var(--acc); border:1px solid var(--acc-bdr); }
+/* result */
+.conv-result-hdr { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+.conv-result-hdr-l { min-width:0; }
+.conv-hint { font-size:12px; color:var(--txt3); margin-top:4px; }
+.conv-rules { font-size:11.5px; color:var(--txt3); line-height:1.5; margin-bottom:10px; display:flex; flex-direction:column; gap:3px; }
+.conv-tablewrap { overflow:auto; border:1px solid var(--line); border-radius:10px; max-height:58vh; -webkit-overflow-scrolling:touch; }
+.conv-table { border-collapse:collapse; width:max-content; min-width:100%; font-size:11px; }
+.conv-table th, .conv-table td { padding:7px 10px; border:1px solid var(--line); white-space:nowrap; max-width:260px; overflow:hidden; text-overflow:ellipsis; text-align:center; vertical-align:middle; }
+.conv-table th { position:sticky; top:0; background:var(--bg3); color:var(--txt2); font-weight:800; font-size:9px; text-transform:uppercase; letter-spacing:.03em; z-index:2; }
+.conv-table td { color:var(--txt2); background:var(--bg2); }
+.conv-table td.issue { background:rgba(245,166,35,.18); color:var(--txt); }
+.conv-note { margin-top:12px; border-left:3px solid #f5a623; background:rgba(245,166,35,.08); border-radius:8px; padding:10px 12px; font-size:12px; line-height:1.5; color:var(--txt2); }
+@media (max-width:640px) {
+  .conv-mapping { grid-template-columns:1fr; gap:4px 0; }
+  .conv-map-head { display:none; }
+  .conv-map-lbl { margin-top:12px; }
+  .conv-map-lbl:first-of-type { margin-top:0; }
+}
 .instr-sub { border-top:1px solid var(--line); }
 .instr-sub:first-child { border-top:none }
 .instr-sub-hdr {

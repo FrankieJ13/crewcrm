@@ -1007,7 +1007,7 @@ function logoSectionName(id) {
     case 'instruktsii': {                                 // FAQ — много подразделов, имя по S.faqTab
       const f = { instr: 'инструкции', reglament: 'регламент', mango: 'mango',
                   links: 'сайты см', autopodbor: 'чат см.ru', autoru: 'чат auto.ru',
-                  'dozhim-search': 'трафик поиск' };
+                  'dozhim-search': 'трафик поиск', converter: 'конвертер' };
       return f[S.faqTab] || 'faq';
     }
     case 'trophies': return 'трофеи';
@@ -1548,6 +1548,7 @@ function getPresencePageLabel() {
               : S.faqTab === 'reglament' ? 'Регламент'
               : S.faqTab === 'autopodbor' ? 'Чат CM.ru'
               : S.faqTab === 'dozhim-search' ? 'Трафик поиск'
+              : S.faqTab === 'converter' ? 'Конвертер'
               : S.faqTab === 'autoru' ? sub
               : 'Инструкции';
     return faq;
@@ -7030,6 +7031,7 @@ function renderInstruktsii() {
   if (S.faqTab === 'autopodbor') { el.innerHTML = renderAutopodborTab(); initAutopodborTab(); return; }
   if (S.faqTab === 'autoru')     { el.innerHTML = renderAutoruTab();     initAutoruTab();     return; }
   if (S.faqTab === 'dozhim-search') { el.innerHTML = renderDozhimSearchTab(); initDozhimSearchTab(); return; }
+  if (S.faqTab === 'converter') { el.innerHTML = renderConverterTab(); initConverterTab(); return; }
   // Офлайн-данные (js/instr-data.js) — раздел больше НЕ читается с Google-листа
   const D = window.INSTR_DATA;
   if (!D || !D.statusGroups) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }
@@ -8253,6 +8255,307 @@ function phoneLookup() {
   .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
   .then(render)
   .catch(function(err) { btn.disabled=false; res.innerHTML='<div class="pl-err">Ошибка: '+err.message+'</div>'; });
+}
+
+/* ════════════════════ КОНВЕРТЕР amoCRM → Google Таблицы ════════════════════
+ * FAQ-подраздел (S.faqTab='converter'). Локально парсит CSV-выгрузку визитов из
+ * amoCRM, приводит поля к формату гугл-таблицы и кладёт готовые строки в буфер
+ * обмена (TSV + HTML-таблица) для вставки. Всё офлайн, без сети.
+ * Автор исходной логики — Бочаров Юлиан.
+ */
+const CONV_OUT = ['ДАТА','ФИО','ТЕЛЕФОН','ГОРОД','КОММЕНТАРИЙ','ИСТОЧНИК','КАТЕГОРИЯ','СПОСОБ ПОКУПКИ','МЕНЕДЖЕР'];
+const CONV_DEFAULT_MAP = {
+  'ДАТА':'Дата визита', 'ФИО':'Полное имя контакта', 'ТЕЛЕФОН':'Рабочий телефон',
+  'ГОРОД':'Город', 'КОММЕНТАРИЙ':'', 'ИСТОЧНИК':'Источник обращения',
+  'КАТЕГОРИЯ':'', 'СПОСОБ ПОКУПКИ':'Вид оплаты', 'МЕНЕДЖЕР':'Ответственный'
+};
+// Состояние живёт между переключениями FAQ-вкладок (как _dozhimSearch*).
+const _conv = { headers:[], rows:[], outputRows:[], delimiter:';', fileName:'', fileInfo:null, maps:null, fixed:null };
+
+function renderConverterTab() {
+  return `
+    <div class="conv-wrap">
+      <div class="conv-lead">Загрузите CSV из amoCRM, проверьте соответствие полей и скопируйте готовые строки в Google Таблицу.</div>
+
+      <div class="conv-card">
+        <div class="conv-drop" id="conv-drop">
+          <input id="conv-file" type="file" accept=".csv,text/csv" hidden>
+          <svg class="conv-drop-ic" viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+          <div class="conv-drop-title">Перетащите CSV сюда</div>
+          <div class="conv-drop-hint">или нажмите, чтобы выбрать файл</div>
+        </div>
+        <div id="conv-file-info" class="conv-status">Файл не выбран</div>
+      </div>
+
+      <div class="conv-card conv-hidden" id="conv-mapping-card">
+        <div class="conv-sec-title">Соответствие полей</div>
+        <div class="conv-mapping" id="conv-mapping"></div>
+        <div class="conv-actions" style="margin-top:14px">
+          <button class="conv-btn" id="conv-apply">Сформировать визиты</button>
+          <button class="conv-btn conv-btn-ghost" id="conv-reset">Автонастройка</button>
+        </div>
+      </div>
+
+      <div class="conv-card conv-hidden" id="conv-result-card">
+        <div class="conv-result-hdr">
+          <div class="conv-result-hdr-l">
+            <div class="conv-sec-title" style="margin:0">Результат</div>
+            <div id="conv-summary" class="conv-hint"></div>
+          </div>
+          <div class="conv-actions">
+            <button class="conv-btn" id="conv-copy">Копировать</button>
+            <button class="conv-btn conv-btn-sec" id="conv-download">Скачать TSV</button>
+          </div>
+        </div>
+        <div class="conv-rules">
+          <div>КАТЕГОРИЯ: «Тёплые лиды» → кат 1200, любой другой источник → кат 800.</div>
+          <div>СПОСОБ ПОКУПКИ приводится к списку: кредит, наличные, комиссия, обмен, выкуп, оценка авто, трейдин+кредит, трейдин+наличные, лизинг, не уточнили.</div>
+        </div>
+        <div id="conv-copy-status" class="conv-status">Данные ещё не скопированы</div>
+        <div class="conv-tablewrap"><table class="conv-table" id="conv-preview"></table></div>
+        <div class="conv-note">
+          <b>О выпадающих списках:</b> буфер переносит значения и базовую разметку, но не правила data validation. Вставляйте строки в заранее подготовленный диапазон Google Таблицы, где выпадающие списки уже протянуты вниз.
+        </div>
+      </div>
+    </div>`;
+}
+
+function initConverterTab() {
+  const drop = document.getElementById('conv-drop');
+  const fileInput = document.getElementById('conv-file');
+  if (!drop || !fileInput) return;
+
+  drop.onclick = () => fileInput.click();
+  drop.ondragover = e => { e.preventDefault(); drop.classList.add('drag'); };
+  drop.ondragleave = () => drop.classList.remove('drag');
+  drop.ondrop = e => { e.preventDefault(); drop.classList.remove('drag'); if (e.dataTransfer.files[0]) convLoadFile(e.dataTransfer.files[0]); };
+  fileInput.onchange = e => e.target.files[0] && convLoadFile(e.target.files[0]);
+
+  document.getElementById('conv-apply').onclick = convGenerate;
+  document.getElementById('conv-reset').onclick = () => convBuildMapping(true);
+  document.getElementById('conv-copy').onclick = convCopy;
+  document.getElementById('conv-download').onclick = convDownload;
+
+  // Восстанавливаем состояние при возврате на вкладку
+  if (_conv.fileInfo) {
+    const fi = document.getElementById('conv-file-info');
+    fi.className = 'conv-status ' + _conv.fileInfo.cls;
+    fi.textContent = _conv.fileInfo.text;
+  }
+  if (_conv.headers.length) {
+    convBuildMapping(false);
+    document.getElementById('conv-mapping-card').classList.remove('conv-hidden');
+  }
+  if (_conv.outputRows.length) convRender();
+}
+
+function convDetectDelimiter(text) {
+  const first = (text.split(/\r?\n/).find(Boolean) || '');
+  const counts = { ';':0, ',':0, '\t':0 };
+  let q = false;
+  for (let i = 0; i < first.length; i++) {
+    if (first[i] === '"' && first[i+1] === '"') { i++; continue; }
+    if (first[i] === '"') q = !q;
+    else if (!q && counts[first[i]] !== undefined) counts[first[i]]++;
+  }
+  return Object.entries(counts).sort((a,b) => b[1]-a[1])[0][0];
+}
+
+function convParseCSV(text, delim) {
+  const data = []; let row = [], field = '', quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i], n = text[i+1];
+    if (c === '"') { if (quoted && n === '"') { field += '"'; i++; } else quoted = !quoted; }
+    else if (c === delim && !quoted) { row.push(field); field = ''; }
+    else if ((c === '\n' || c === '\r') && !quoted) {
+      if (c === '\r' && n === '\n') i++;
+      row.push(field); field = '';
+      if (row.some(v => v !== '')) data.push(row);
+      row = [];
+    } else field += c;
+  }
+  if (field !== '' || row.length) { row.push(field); data.push(row); }
+  return data;
+}
+
+async function convLoadFile(file) {
+  const fi = document.getElementById('conv-file-info');
+  try {
+    const buf = await file.arrayBuffer();
+    let text = new TextDecoder('utf-8').decode(buf).replace(/^﻿/, '');
+    if (text.includes('�')) text = new TextDecoder('windows-1251').decode(buf);
+    _conv.delimiter = convDetectDelimiter(text);
+    const parsed = convParseCSV(text, _conv.delimiter);
+    if (parsed.length < 2) throw new Error('В файле нет строк данных');
+    _conv.headers = parsed[0].map(x => x.trim());
+    _conv.rows = parsed.slice(1).map(r => Object.fromEntries(_conv.headers.map((h,i) => [h, (r[i]||'').trim()])));
+    _conv.fileName = file.name;
+    _conv.maps = null; _conv.fixed = null; _conv.outputRows = [];
+    const delimName = _conv.delimiter === ';' ? 'точка с запятой' : _conv.delimiter === ',' ? 'запятая' : 'табуляция';
+    _conv.fileInfo = { cls:'ok', text:`${file.name}: ${_conv.rows.length} строк, ${_conv.headers.length} столбцов, разделитель «${delimName}»` };
+    fi.className = 'conv-status ok';
+    fi.textContent = _conv.fileInfo.text;
+    convBuildMapping(true);
+    document.getElementById('conv-mapping-card').classList.remove('conv-hidden');
+    document.getElementById('conv-result-card').classList.add('conv-hidden');
+  } catch (err) {
+    _conv.fileInfo = { cls:'bad', text:'Ошибка: ' + err.message };
+    fi.className = 'conv-status bad';
+    fi.textContent = _conv.fileInfo.text;
+  }
+}
+
+function convAutoColumn(out) {
+  const preferred = CONV_DEFAULT_MAP[out] || '';
+  return preferred && _conv.headers.includes(preferred) ? preferred : '';
+}
+
+// reset=true — вернуть автонастройку; иначе восстановить сохранённый выбор (_conv.maps/fixed)
+function convBuildMapping(reset) {
+  const box = document.getElementById('conv-mapping');
+  if (!box) return;
+  box.innerHTML = '<div class="conv-map-head">Столбец Google</div><div class="conv-map-head">Столбец amoCRM</div><div class="conv-map-head">Пост. значение</div>';
+  CONV_OUT.forEach(out => {
+    const lab = document.createElement('label'); lab.className = 'conv-map-lbl'; lab.textContent = out;
+    const sel = document.createElement('select'); sel.dataset.out = out; sel.className = 'conv-map-select';
+    sel.innerHTML = '<option value="">— оставить пустым —</option>' + _conv.headers.map(h => `<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join('');
+    sel.value = (!reset && _conv.maps && _conv.maps[out] != null) ? _conv.maps[out] : convAutoColumn(out);
+    const fixed = document.createElement('input'); fixed.type = 'text'; fixed.placeholder = 'необязательно'; fixed.dataset.out = out; fixed.className = 'conv-map-fixed';
+    if (!reset && _conv.fixed && _conv.fixed[out]) fixed.value = _conv.fixed[out];
+    box.append(lab, sel, fixed);
+  });
+}
+
+function convNormalizePhone(v) {
+  const d = String(v||'').replace(/\D/g,'');
+  if (!d) return '';
+  if (d.length === 10) return '7'+d;
+  if (d.length === 11 && d[0] === '8') return '7'+d.slice(1);
+  if (d.length === 11 && d[0] === '7') return d;
+  return d;
+}
+function convNormalizeDate(v) {
+  v = String(v||'').trim();
+  if (!v) return '';
+  let m = v.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/);
+  if (m) return `${m[1].padStart(2,'0')}.${m[2].padStart(2,'0')}.${m[3]}`;
+  m = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[3]}.${m[2]}.${m[1]}`;
+  return v.split(/[ T]/)[0];
+}
+function convNormalizePurchase(v) {
+  const raw = String(v||'').trim().toLowerCase().replace(/ё/g,'е');
+  if (!raw) return 'не уточнили';
+  const compact = raw.replace(/[–—−]/g,'-').replace(/\s+/g,' ').trim();
+  if (/лизинг/.test(compact)) return 'лизинг';
+  if (/комисс/.test(compact)) return 'комиссия';
+  if (/оценк.*авто|авто.*оценк/.test(compact)) return 'оценка авто';
+  if (/выкуп/.test(compact)) return 'выкуп';
+  if (/обмен/.test(compact)) return 'обмен';
+  const isTradeIn = /трейд[ -]?ин|трейдин|trade[ -]?in/.test(compact);
+  const hasCredit = /кредит|автокредит/.test(compact);
+  const hasCash = /налич|за налич/.test(compact);
+  if (isTradeIn && hasCredit) return 'трейдин+кредит';
+  if (isTradeIn && hasCash) return 'трейдин+наличные';
+  if (hasCredit) return 'кредит';
+  if (hasCash) return 'наличные';
+  return 'не уточнили';
+}
+function convPhoneFromRow(row, selected) {
+  const order = [selected,'Рабочий телефон','Мобильный телефон','Рабочий прямой телефон','Домашний телефон','Другой телефон','Source phone','Source phone.1'];
+  for (const k of [...new Set(order.filter(Boolean))]) if (row[k]) return convNormalizePhone(row[k]);
+  return '';
+}
+function convValueFor(row, out, selected, fixed, maps) {
+  if (out === 'СПОСОБ ПОКУПКИ') {
+    const raw = fixed !== '' ? fixed : (selected ? (row[selected]||'') : '');
+    return convNormalizePurchase(raw);
+  }
+  if (fixed !== '') return fixed;
+  if (out === 'ТЕЛЕФОН') return convPhoneFromRow(row, selected);
+  if (out === 'КАТЕГОРИЯ') {
+    const sourceColumn = maps['ИСТОЧНИК'] || 'Источник обращения';
+    const source = String(row[sourceColumn]||'').trim().toLowerCase();
+    return source === 'теплые лиды' ? 'кат 1200' : 'кат 800';
+  }
+  let v = selected ? (row[selected]||'') : '';
+  if (out === 'ДАТА') v = convNormalizeDate(v);
+  return v.replace(/\t/g,' ').replace(/\r?\n/g,' ');
+}
+
+function convGenerate() {
+  const maps = {}, fixed = {};
+  document.querySelectorAll('.conv-map-select').forEach(x => maps[x.dataset.out] = x.value);
+  document.querySelectorAll('.conv-map-fixed').forEach(x => fixed[x.dataset.out] = x.value.trim());
+  _conv.maps = maps; _conv.fixed = fixed;
+  _conv.outputRows = _conv.rows.map(row => CONV_OUT.map(out => convValueFor(row, out, maps[out], fixed[out], maps)));
+  convRender();
+}
+
+function convRender() {
+  const table = document.getElementById('conv-preview');
+  if (!table) return;
+  let badPhones = 0, noDates = 0;
+  const head = '<thead><tr>' + CONV_OUT.map(x => `<th>${escapeHtml(x)}</th>`).join('') + '</tr></thead>';
+  const body = _conv.outputRows.map(r => '<tr>' + r.map((v,i) => {
+    let cls = '';
+    if (CONV_OUT[i] === 'ТЕЛЕФОН' && v && !/^7\d{10}$/.test(v)) { cls = 'issue'; badPhones++; }
+    if (CONV_OUT[i] === 'ДАТА' && !v) { cls = 'issue'; noDates++; }
+    return `<td class="${cls}" title="${escapeHtml(v)}">${escapeHtml(v)}</td>`;
+  }).join('') + '</tr>').join('');
+  table.innerHTML = head + '<tbody>' + body + '</tbody>';
+  document.getElementById('conv-summary').textContent = `Строк: ${_conv.outputRows.length} · тел. нестандартной длины: ${badPhones} · без даты: ${noDates}.`;
+  document.getElementById('conv-result-card').classList.remove('conv-hidden');
+  const cs = document.getElementById('conv-copy-status');
+  cs.className = (badPhones||noDates) ? 'conv-status warn' : 'conv-status ok';
+  cs.textContent = (badPhones||noDates) ? 'Есть подсвеченные поля — проверьте их перед копированием.' : 'Данные готовы к копированию.';
+}
+
+function convTSV(includeHeader) {
+  const all = includeHeader ? [CONV_OUT, ..._conv.outputRows] : _conv.outputRows;
+  return all.map(r => r.map(v => String(v ?? '').replace(/\t/g,' ').replace(/\r?\n/g,' ')).join('\t')).join('\n');
+}
+function convHtmlTable() {
+  const cellStyle = 'border:1px solid #000;text-align:center;vertical-align:middle;padding:4px 8px;font-family:Arial,sans-serif;font-size:8pt;';
+  return '<table style="border-collapse:collapse;"><tbody>' +
+    _conv.outputRows.map(r => '<tr>' + r.map(v => `<td style="${cellStyle}">${escapeHtml(v)}</td>`).join('') + '</tr>').join('') +
+    '</tbody></table>';
+}
+
+async function convCopy() {
+  if (!_conv.outputRows.length) return;
+  const cs = document.getElementById('conv-copy-status');
+  try {
+    if (window.ClipboardItem) {
+      const item = new ClipboardItem({
+        'text/plain': new Blob([convTSV(false)], { type:'text/plain' }),
+        'text/html':  new Blob([convHtmlTable()], { type:'text/html' })
+      });
+      await navigator.clipboard.write([item]);
+    } else {
+      await navigator.clipboard.writeText(convTSV(false));
+    }
+    cs.className = 'conv-status ok';
+    cs.textContent = `Скопировано ${_conv.outputRows.length} строк (без заголовка). Выберите первую ячейку диапазона в Google Таблице и вставьте.`;
+  } catch (e) {
+    // Резервный способ — execCommand (старые WebKit / PWA без async-clipboard)
+    const ta = document.createElement('textarea'); ta.value = convTSV(false);
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch(_) {}
+    ta.remove();
+    cs.className = ok ? 'conv-status ok' : 'conv-status bad';
+    cs.textContent = ok ? `Скопировано ${_conv.outputRows.length} строк (резервный способ).` : 'Не удалось скопировать — скачайте TSV.';
+  }
+}
+function convDownload() {
+  if (!_conv.outputRows.length) return;
+  const blob = new Blob(['﻿' + convTSV(true)], { type:'text/tab-separated-values;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'visits_for_google_sheets.tsv';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 // ==================== PLAN EDITOR (CEO) ====================

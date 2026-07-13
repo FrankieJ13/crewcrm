@@ -9,7 +9,7 @@ if ('serviceWorker' in navigator && ['http:', 'https:'].includes(location.protoc
 // Переносим оверлеи из #app в <body>, иначе #app (z:10) кэпит их z-index
 // в корневом stacking context — они проигрывают mop-overlay (sibling #app в body).
 document.addEventListener('DOMContentLoaded', () => {
-  ['plan-editor-overlay', 'about-overlay', 'profile-modal-overlay'].forEach(id => {
+  ['plan-editor-overlay', 'about-overlay', 'guide-overlay', 'profile-modal-overlay'].forEach(id => {
     const el = document.getElementById(id);
     if (el && el.parentElement && el.parentElement.id !== 'document-body-root') {
       document.body.appendChild(el);
@@ -525,6 +525,7 @@ function syncTheme() {
     'hmb-trophies':         FLUENT_ICON_BASE + 'FluentColor-Trophies.svg',
     'hmb-repeats':          FLUENT_ICON_BASE + 'FluentColor-FindDuble.svg',
     'hmb-logout':           FLUENT_ICON_BASE + 'FluentColor-Exit.svg',
+    'hmb-guide-btn':        FLUENT_ICON_BASE + 'FluentColor-Inform.svg',
     'hmb-about-btn':        FLUENT_ICON_BASE + 'FluentColor-About.svg',
   };
 
@@ -1507,6 +1508,7 @@ function getPresencePageLabel() {
   if (document.getElementById('scr-repeats')?.classList.contains('on') || isVisible('repeats-overlay')) return 'Поиск повторов';
   if (document.getElementById('scr-sverka')?.classList.contains('on')) return 'Сверка визитов';
   if (document.getElementById('scr-timeline')?.classList.contains('on')) return 'Timeline Leads';
+  if (isVisible('guide-overlay')) return 'Гайд по проекту';
   if (isVisible('about-overlay')) return 'О проекте';
   if (isVisible('diag-modal')) {
     return localStorage.getItem(CRM_LOG_TAB_KEY) === 'crm' ? 'Логи CRM' : 'Логи Sys';
@@ -2402,8 +2404,9 @@ function onLogin() {
   }
   const hmbm = document.getElementById('hmb-month-trigger'); if (hmbm) hmbm.style.display = '';
   const hmbms = document.getElementById('hmb-sep-month'); if (hmbms) hmbms.style.display = '';
-  // Трофеи и «О проекте» показываем только после авторизации
+  // Трофеи, Гайд и «О проекте» показываем только после авторизации
   const hmbt = document.getElementById('hmb-trophies'); if (hmbt) hmbt.style.display = '';
+  const hmbg = document.getElementById('hmb-guide-btn'); if (hmbg) hmbg.style.display = '';
   const hmba = document.getElementById('hmb-about-btn'); if (hmba) hmba.style.display = '';
   updateBadge();
   const ls = document.getElementById('scr-login');
@@ -2712,8 +2715,9 @@ function onLogout() {
   const hmblg2 = document.getElementById('hmb-logs'); if (hmblg2) hmblg2.style.display = 'none';
   const hmbAcc2 = document.getElementById('hmb-account-btn'); if (hmbAcc2) hmbAcc2.style.display = 'none';
   const hmbAccSep2 = document.getElementById('hmb-sep-account'); if (hmbAccSep2) hmbAccSep2.style.display = 'none';
-  // Скрываем Трофеи и «О проекте» при выходе — экран авторизации без них
+  // Скрываем Трофеи, Гайд и «О проекте» при выходе — экран авторизации без них
   const hmbt2 = document.getElementById('hmb-trophies'); if (hmbt2) hmbt2.style.display = 'none';
+  const hmbg2 = document.getElementById('hmb-guide-btn'); if (hmbg2) hmbg2.style.display = 'none';
   const hmba2 = document.getElementById('hmb-about-btn'); if (hmba2) hmba2.style.display = 'none';
   const hdrMain2 = document.getElementById('hdr-title');
   const hdrGreeting2 = document.getElementById('hdr-greeting');
@@ -9304,6 +9308,7 @@ function showAccessDenied(reason = 'Почта не найдена в USERS') {
   const hmbAcc = document.getElementById('hmb-account-btn'); if (hmbAcc) hmbAcc.style.display = 'none';
   const hmbAccSep = document.getElementById('hmb-sep-account'); if (hmbAccSep) hmbAccSep.style.display = 'none';
   const hmbT = document.getElementById('hmb-trophies'); if (hmbT) hmbT.style.display = 'none';
+  const hmbG = document.getElementById('hmb-guide-btn'); if (hmbG) hmbG.style.display = 'none';
   const hmbA = document.getElementById('hmb-about-btn'); if (hmbA) hmbA.style.display = 'none';
   ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','sverka','timeline','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const s = document.getElementById('scr-'+t);
@@ -15989,6 +15994,16 @@ function openAbout() {
   if (overlay) { overlay.style.display = 'flex'; }
   scheduleFirebasePageUpdate();
   // НЕ трогаем body.overflow — это ломает position:fixed на iOS
+}
+function openGuide() {
+  const overlay = document.getElementById('guide-overlay');
+  if (overlay) { overlay.style.display = 'flex'; }
+  scheduleFirebasePageUpdate();
+}
+function closeGuide() {
+  const overlay = document.getElementById('guide-overlay');
+  if (overlay) { overlay.style.display = 'none'; }
+  scheduleFirebasePageUpdate();
 }
 function openTrophies() {
   showScr('trophies');

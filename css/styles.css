@@ -2927,6 +2927,28 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
 .instr-hidden { display:none !important; }
 .instr-empty { padding:26px 14px; text-align:center; color:var(--txt3); font-size:13px; }
 
+/* ═══ Гайд по проекту (гамбургер → «Гайд по проекту») ═══ */
+.gd-dock-mock { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; padding:14px 8px; background:var(--bg3); border:1px solid var(--line); border-radius:14px; }
+.gd-dock-item { display:flex; flex-direction:column; align-items:center; gap:5px; width:60px; }
+.gd-dock-ic { width:34px; height:34px; border-radius:10px; background:var(--bg2); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; color:var(--acc); flex:none; }
+.gd-dock-ic svg { width:17px; height:17px; }
+.gd-dock-lbl { font-size:9px; font-weight:700; color:var(--txt2); text-align:center; line-height:1.2; }
+.gd-note { margin-top:8px; font-size:11px; color:var(--txt3); line-height:1.5; }
+.gd-role-grid { display:flex; flex-direction:column; gap:8px; }
+.gd-role-card { background:var(--bg3); border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+.gd-role-name { font-family:'Unbounded',sans-serif; font-size:10px; font-weight:800; color:var(--acc); margin-bottom:3px; }
+.gd-role-desc { font-size:12px; color:var(--txt2); line-height:1.5; }
+.gd-sec-list { display:flex; flex-direction:column; gap:10px; }
+.gd-sec-item { display:flex; gap:10px; align-items:flex-start; }
+.gd-sec-ic { flex:none; width:28px; height:28px; border-radius:8px; background:var(--bg3); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; color:var(--acc); margin-top:1px; }
+.gd-sec-ic svg { width:14px; height:14px; }
+.gd-dot { flex:none; width:6px; height:6px; margin-top:6px; border-radius:50%; background:var(--acc); }
+.gd-sec-body { min-width:0; }
+.gd-sec-title { font-weight:800; font-size:12.5px; color:var(--txt); }
+.gd-sec-desc { font-size:11.5px; color:var(--txt2); line-height:1.5; margin-top:1px; }
+.gd-tip { background:var(--acc-bg); border:1px solid var(--acc-bdr); border-radius:10px; padding:10px 12px; font-size:12px; color:var(--txt2); line-height:1.55; }
+.gd-tip b { color:var(--txt); }
+
 /* ═══ Конвертер amoCRM → Google Таблицы (FAQ-подраздел) ═══ */
 .conv-wrap { display:flex; flex-direction:column; gap:14px; padding-top:6px; }
 .conv-lead { font-size:13px; color:var(--txt2); line-height:1.5; }
@@ -9510,7 +9532,9 @@ body.liquid-glass .income-modal-overlay,
 body.liquid-glass #income-overlay,
 body.liquid-glass .income-overlay,
 body.liquid-glass .day-detail-overlay,
-body.liquid-glass .export-modal-overlay {
+body.liquid-glass .export-modal-overlay,
+body.liquid-glass #about-overlay,
+body.liquid-glass #guide-overlay {
   background: transparent !important;   /* убрать тёмное затемнение фона */
   -webkit-backdrop-filter: blur(2.2px) saturate(115%) !important;
           backdrop-filter: blur(2.2px) saturate(115%) !important;
@@ -9545,7 +9569,7 @@ body.liquid-glass {
 }
 
 /* === ЕДИНЫЙ список модалок проекта (добавляете новую модалку — сюда) === */
-body.liquid-glass :is(.traffic-modal-card,.traffic-base-modal-card,.traffic-advanced-modal-card,.income-modal-content,.income-modal,.profile-modal-content,.mop-modal,.vt-picker-modal,.fc-modal,.plan-editor-modal,.sched-bulk-modal,.notify-modal,.export-modal,.gate-card,.day-detail-modal,.tz-issue-modal) {
+body.liquid-glass :is(.traffic-modal-card,.traffic-base-modal-card,.traffic-advanced-modal-card,.income-modal-content,.income-modal,.profile-modal-content,.mop-modal,.vt-picker-modal,.fc-modal,.plan-editor-modal,.sched-bulk-modal,.notify-modal,.export-modal,.gate-card,.day-detail-modal,.tz-issue-modal,.about-modal,.guide-modal) {
   /* НЕТ «коробок в коробке»: все вложенные фоны панелей/строк/подытогов прозрачны —
      только контент лежит на стекле модалки */
   --bg: transparent;
@@ -9569,7 +9593,7 @@ body.liquid-glass :is(.mop-modal-body,.income-modal-body,.notify-modal-body,.tra
 }
 
 /* заголовки модалок — белые с лёгкой тенью */
-body.liquid-glass :is(.traffic-modal-card,.traffic-base-modal-card,.traffic-advanced-modal-card,.income-modal-content,.income-modal,.profile-modal-content,.mop-modal,.vt-picker-modal,.fc-modal,.plan-editor-modal,.sched-bulk-modal,.notify-modal,.export-modal,.gate-card,.day-detail-modal,.tz-issue-modal) :is(h1,h2,h3,h4,.mop-modal-title,.income-modal-title,.income-sec-title,.notify-modal-title,.pe-title,.export-modal-title,.sched-bulk-title,.vt-picker-hdr,.fc-title,.traffic-head-title,.traffic-modal-title,.traffic-section-title,.tz-issue-title,.gate-title,.si-title,.day-detail-title) {
+body.liquid-glass :is(.traffic-modal-card,.traffic-base-modal-card,.traffic-advanced-modal-card,.income-modal-content,.income-modal,.profile-modal-content,.mop-modal,.vt-picker-modal,.fc-modal,.plan-editor-modal,.sched-bulk-modal,.notify-modal,.export-modal,.gate-card,.day-detail-modal,.tz-issue-modal,.about-modal,.guide-modal) :is(h1,h2,h3,h4,.mop-modal-title,.income-modal-title,.income-sec-title,.notify-modal-title,.pe-title,.export-modal-title,.sched-bulk-title,.vt-picker-hdr,.fc-title,.traffic-head-title,.traffic-modal-title,.traffic-section-title,.tz-issue-title,.gate-title,.si-title,.day-detail-title) {
   color: var(--lgm-head) !important;
   text-shadow: var(--lgm-head-shadow) !important;
 }
@@ -9582,7 +9606,7 @@ body.liquid-glass :is(.mop-modal-hdr,.income-modal-hdr,.notify-modal-hdr,.sched-
 }
 
 /* поля форм внутри модалок — лёгкое стекло */
-body.liquid-glass :is(.traffic-modal-card,.traffic-base-modal-card,.traffic-advanced-modal-card,.income-modal-content,.income-modal,.profile-modal-content,.mop-modal,.vt-picker-modal,.fc-modal,.plan-editor-modal,.sched-bulk-modal,.notify-modal,.export-modal,.gate-card,.day-detail-modal,.tz-issue-modal) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea) {
+body.liquid-glass :is(.traffic-modal-card,.traffic-base-modal-card,.traffic-advanced-modal-card,.income-modal-content,.income-modal,.profile-modal-content,.mop-modal,.vt-picker-modal,.fc-modal,.plan-editor-modal,.sched-bulk-modal,.notify-modal,.export-modal,.gate-card,.day-detail-modal,.tz-issue-modal,.about-modal,.guide-modal) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea) {
   background: var(--lgm-field-bg) !important;
   border: 1px solid var(--lgm-field-bdr) !important;
   color: #1b1d22 !important;   /* тёмный текст в светлом стеклянном поле — читаемо */
@@ -9590,7 +9614,7 @@ body.liquid-glass :is(.traffic-modal-card,.traffic-base-modal-card,.traffic-adva
   -webkit-backdrop-filter: blur(6px) saturate(150%);
           backdrop-filter: blur(6px) saturate(150%);
 }
-body.liquid-glass :is(.traffic-modal-card,.income-modal-content,.income-modal,.profile-modal-content,.mop-modal,.vt-picker-modal,.fc-modal,.plan-editor-modal,.sched-bulk-modal,.notify-modal,.export-modal,.gate-card,.day-detail-modal,.tz-issue-modal) :is(input,textarea)::placeholder { color: rgba(0,0,0,0.4); }
+body.liquid-glass :is(.traffic-modal-card,.income-modal-content,.income-modal,.profile-modal-content,.mop-modal,.vt-picker-modal,.fc-modal,.plan-editor-modal,.sched-bulk-modal,.notify-modal,.export-modal,.gate-card,.day-detail-modal,.tz-issue-modal,.about-modal,.guide-modal) :is(input,textarea)::placeholder { color: rgba(0,0,0,0.4); }
 
 /* ===== Блокировка фона при открытой модалке (надёжно для iOS) =====
    Модалки ставят body.style.overflow='hidden' → JS зеркалит класс .modal-open.
@@ -9609,7 +9633,7 @@ body.liquid-glass .day-detail-overlay {
 }
 
 /* новые модалки получают то же ПОЛНОПОВЕРХНОСТНОЕ стекло (как блок выше) */
-body.liquid-glass :is(.income-modal,.day-detail-modal,.tz-issue-modal) {
+body.liquid-glass :is(.income-modal,.day-detail-modal,.tz-issue-modal,.about-modal,.guide-modal) {
   position: relative; isolation: isolate; overflow: hidden;
   background: var(--lgm-bg-fallback) !important;
   border: none !important;
@@ -9618,9 +9642,9 @@ body.liquid-glass :is(.income-modal,.day-detail-modal,.tz-issue-modal) {
     inset 2px 2px 1px 0 rgba(255,255,255,0.55), inset -1px -1px 1px 1px rgba(255,255,255,0.45) !important;
 }
 @supports ((backdrop-filter: url("#glass-distortion")) or (-webkit-backdrop-filter: url("#glass-distortion"))) {
-  body.liquid-glass :is(.income-modal,.day-detail-modal,.tz-issue-modal) { background: transparent !important; }
+  body.liquid-glass :is(.income-modal,.day-detail-modal,.tz-issue-modal,.about-modal,.guide-modal) { background: transparent !important; }
 }
-body.liquid-glass :is(.income-modal,.day-detail-modal,.tz-issue-modal)::before {
+body.liquid-glass :is(.income-modal,.day-detail-modal,.tz-issue-modal,.about-modal,.guide-modal)::before {
   content: ""; position: absolute; inset: -40px; z-index: -1; pointer-events: none;
   background: var(--lgm-tint);
   -webkit-backdrop-filter: blur(var(--lgm-blur)) url(#glass-distortion);
@@ -9646,7 +9670,7 @@ body.liquid-glass .income-modal-body {
 body.liquid-glass .income-modal-content::before,
 body.liquid-glass .income-modal-body::before { display: none !important; content: none !important; }
 /* любые ВЛОЖЕННЫЕ панели/карточки внутри модалок — без своего стекла (контент на стекле модалки) */
-body.liquid-glass :is(.traffic-modal-card,.traffic-base-modal-card,.traffic-advanced-modal-card,.income-modal-content,.income-modal,.profile-modal-content,.mop-modal,.vt-picker-modal,.fc-modal,.plan-editor-modal,.sched-bulk-modal,.notify-modal,.export-modal,.gate-card,.day-detail-modal,.tz-issue-modal) :is(.vis-step-card,.vis-card-total,.rating-card,.podium-card,.dept-card,.neo-card,.ceo-metric-card,.ceo-card-delta,.ps-card,.az-kpi-card,.trophy-card,.ds-card,.traffic-card,.traffic-role-card,.traffic-format-card,.tz-card,.tz-builder-card) {
+body.liquid-glass :is(.traffic-modal-card,.traffic-base-modal-card,.traffic-advanced-modal-card,.income-modal-content,.income-modal,.profile-modal-content,.mop-modal,.vt-picker-modal,.fc-modal,.plan-editor-modal,.sched-bulk-modal,.notify-modal,.export-modal,.gate-card,.day-detail-modal,.tz-issue-modal,.about-modal,.guide-modal) :is(.vis-step-card,.vis-card-total,.rating-card,.podium-card,.dept-card,.neo-card,.ceo-metric-card,.ceo-card-delta,.ps-card,.az-kpi-card,.trophy-card,.ds-card,.traffic-card,.traffic-role-card,.traffic-format-card,.tz-card,.tz-builder-card) {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;

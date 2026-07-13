@@ -426,18 +426,22 @@
             <div style="font-family:'Unbounded',sans-serif;font-size:10px;font-weight:800;color:var(--txt);letter-spacing:.05em;margin-bottom:8px">Возможности</div>
             <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--txt2)">
               <div>📊 <b style="color:var(--txt)">KPI</b> — визиты, кредиты, наличные, комиссии по каждому менеджеру</div>
-              <div>🏆 <b style="color:var(--txt)">Рейтинг</b> — топ менеджеров с анимированными барами и медалями</div>
+              <div>🏆 <b style="color:var(--txt)">Рейтинг и Трофеи</b> — топ менеджеров, медали, авто-выдача трофеев по итогам месяца</div>
               <div>💰 <b style="color:var(--txt)">Доход</b> — расчёт зарплаты с коэффициентами и котлом</div>
-              <div>📅 <b style="color:var(--txt)">График</b> — расписание смен, просмотр по неделям</div>
-              <div>📋 <b style="color:var(--txt)">Визиты</b> — онлайн-журнал с автосохранением в Google Sheets</div>
+              <div>📅 <b style="color:var(--txt)">График</b> — расписание смен, редактирование прямо из приложения</div>
+              <div>📋 <b style="color:var(--txt)">Визиты и Сверка</b> — онлайн-журнал + сверка с выгрузкой amoCRM</div>
+              <div>📈 <b style="color:var(--txt)">Аналитика CRM</b> — конструктор виджетов, воронка, прогноз плана, Timeline Leads</div>
+              <div>🤖 <b style="color:var(--txt)">Auto.ru / Автоподбор</b> — ИИ-чат поиска авто по разговорному запросу</div>
+              <div>📖 <b style="color:var(--txt)">FAQ</b> — офлайн-инструкции с поиском, конвертер amoCRM → Google Таблицы</div>
+              <div>👤 <b style="color:var(--txt)">Профиль</b> — личная статистика, трофеи, «Кто сейчас онлайн»</div>
               <div>🎂 <b style="color:var(--txt)">Дни рождения</b> — уведомления о праздниках коллег</div>
-              <div>🎨 <b style="color:var(--txt)">Темы</b> — Glass, Tiffany, Cinematic, Neo, Cosmic</div>
-              <div>📱 <b style="color:var(--txt)">PWA</b> — работает как приложение на iOS и Android</div>
+              <div>🎨 <b style="color:var(--txt)">Темы</b> — Glass, Tiffany, Cinematic, Neo, Cosmic, Liquid Glass</div>
+              <div>📱 <b style="color:var(--txt)">PWA</b> — работает как приложение на iOS, Android и Windows (WPF)</div>
             </div>
           </div>
           <div>
             <div style="font-family:'Unbounded',sans-serif;font-size:10px;font-weight:800;color:var(--txt);letter-spacing:.05em;margin-bottom:6px">Стек</div>
-            <p style="font-size:12px;color:var(--txt2);margin:0">Single-file HTML · Google Sheets API v4 · Google OAuth2 · Three.js · WebGL GLSL</p>
+            <p style="font-size:12px;color:var(--txt2);margin:0">Модульный JS · Google Sheets API v4 · Google OAuth2 · Three.js · WebGL GLSL · Service Worker · IndexedDB</p>
           </div>
           <div style="background:var(--bg3);border-radius:var(--r);padding:10px 12px;border:1px solid var(--line);position:relative;overflow:hidden">
             <div style="font-size:10px;color:var(--txt3)">Автор</div>
@@ -458,6 +462,26 @@
             </summary>
             <div class="cfg-spoiler-body" style="padding:12px 0 0">
               <div style="display:flex;flex-direction:column;gap:12px;font-size:12px;color:var(--txt2)">
+                <div>
+                  <div style="font-family:'Unbounded',sans-serif;font-size:10px;font-weight:900;color:var(--acc)">v2.3 — 2026 июнь–июль</div>
+                  <ul style="margin:6px 0 0 16px;line-height:1.8">
+                    <li>Тема Liquid Glass — жидкое стекло: единая модалка на весь проект, объёмный док, Aurora-фон, точечная оптимизация под iOS</li>
+                    <li>Аналитика CRM: новый конструктор виджетов — пользовательские условия, виджеты-гибриды, режимы компакт/детально</li>
+                    <li>Новый раздел «Сверка визитов» — матчинг листа ВИЗИТЫ с выгрузкой amoCRM, подсветка несоответствий</li>
+                    <li>Новый раздел «Timeline Leads» — нативный порт BigData-дашборда с импортом CSV/JSON</li>
+                    <li>Чат Auto.ru и Автоподбор (CM66 BDCARS) — ИИ-поиск авто по разговорному запросу, каталог, история</li>
+                    <li>FAQ: офлайн-инструкции с поиском, «Дожим поиск» по телефону, конвертер amoCRM CSV → буфер для Google Таблиц</li>
+                    <li>Прогноз выполнения плана — pace ratio + историческая форма кривой</li>
+                    <li>Профиль: личная статистика за 3/6/12 мес, карточка менеджера из рейтинга</li>
+                    <li>Трофеи: авто-выдача в начале месяца, все уровни (не только максимальный), докрутка за пропущенные месяцы</li>
+                    <li>«Кто сейчас онлайн»: точное определение клиента (WPF/Windows), статусы «Профиль {Имя}» / «Автоподбор»</li>
+                    <li>График — новый статус «Б» (больничный), не засчитывается как рабочий день</li>
+                    <li>Мотивация — новые комбо-сделки (КОМИССИЯ+КОМИССИЯ, ПОКУПКА+ПОКУПКА и т.п.)</li>
+                    <li>Логотип в шапке печатает название текущего раздела вместо статичной подписи</li>
+                    <li>Тренды на главной — плавная анимация роста слева направо после загрузки страницы</li>
+                    <li>Точечные фиксы производительности на iOS — тормоза скролла, дока и анимации бейджей</li>
+                  </ul>
+                </div>
                 <div>
                   <div style="font-family:'Unbounded',sans-serif;font-size:10px;font-weight:900;color:var(--acc)">v2.2 — 2026 май (вторая половина)</div>
                   <ul style="margin:6px 0 0 16px;line-height:1.8">

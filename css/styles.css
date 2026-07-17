@@ -4608,7 +4608,7 @@ body.neo-dark .income-col .ic-lbl {
 /* New card design */
 .rating-card {
   background: var(--bg2); border: 1px solid var(--line);
-  border-radius: var(--r2); overflow: hidden;
+  border-radius: var(--r2); overflow: visible;
   transition: border-color .15s;
   position: relative;
 }
@@ -4713,6 +4713,7 @@ body:not(.fluent):not(.cosmic) .rt-badge-ico-default { display: inline-block; }
   display: flex; align-items: center; justify-content: center;
   font-family: 'Unbounded', sans-serif; font-size: 10px; font-weight: 900;
   color: var(--txt) !important;
+  position: relative;
 }
 /* Доход: rank-badge цвет = var(--txt) */
 .zp-row .rank-badge { color: var(--txt) !important; }
@@ -9823,6 +9824,105 @@ body.liquid-glass:not(.login-active) .dept-card {
     -webkit-backdrop-filter: none !important;
             backdrop-filter: none !important;
   }
+}
+
+/* День рождения менеджера — только карточка в разделе Рейтинг */
+body .rating-card.is-birthday {
+  border-color: rgba(248, 185, 67, .86) !important;
+  background:
+    radial-gradient(circle at 9% 22%, rgba(255, 221, 142, .22), transparent 32%),
+    linear-gradient(135deg, rgba(255, 248, 232, .16), rgba(247, 178, 56, .10)),
+    var(--bg2) !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 215, 128, .38),
+    0 10px 24px rgba(191, 120, 20, .12),
+    inset 0 0 22px rgba(255, 224, 158, .18) !important;
+  isolation: isolate;
+  animation: ratingBirthdayGlow 3.2s ease-in-out infinite;
+}
+
+.rating-birthday-decor {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+}
+.rating-birthday-decor::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: .62;
+  background:
+    radial-gradient(circle at 5% 76%, rgba(255, 177, 55, .78) 0 1.7px, transparent 2.5px),
+    radial-gradient(circle at 17% 15%, rgba(255, 214, 102, .74) 0 1.9px, transparent 2.8px),
+    radial-gradient(circle at 78% 17%, rgba(255, 151, 66, .55) 0 1.5px, transparent 2.4px),
+    radial-gradient(circle at 93% 76%, rgba(255, 207, 84, .62) 0 1.8px, transparent 2.6px),
+    linear-gradient(28deg, transparent 0 12%, rgba(255, 178, 55, .52) 12% 13.6%, transparent 13.6% 100%),
+    linear-gradient(151deg, transparent 0 82%, rgba(255, 205, 97, .48) 82% 83.4%, transparent 83.4% 100%);
+}
+.rating-birthday-decor::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 7% 28%, rgba(255, 225, 160, .30), transparent 34%),
+    linear-gradient(to right, rgba(255, 188, 64, .13), transparent 22%);
+}
+
+body .rating-card.is-birthday .rating-rank-num {
+  box-shadow:
+    0 0 0 1px rgba(255, 201, 95, .62),
+    0 0 16px rgba(255, 199, 82, .30);
+}
+body .rating-card.is-birthday .rating-rank-num::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: -8px;
+  width: 17px;
+  height: 18px;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: 80% 80% 5px 5px;
+  clip-path: polygon(50% 0, 4% 100%, 96% 100%);
+  background:
+    repeating-conic-gradient(from -18deg, #ff69a8 0 16deg, #ffd659 16deg 32deg, #9c7bff 32deg 48deg, #ff69a8 48deg 64deg);
+  transform: rotate(-18deg);
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.18));
+}
+body .rating-card.is-birthday .rating-rank-num::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: -10px;
+  width: 5px;
+  height: 5px;
+  z-index: 3;
+  pointer-events: none;
+  border-radius: 50%;
+  background: #ffe36d;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.55), 0 0 7px rgba(255, 199, 67, .7);
+}
+
+@keyframes ratingBirthdayGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(255, 215, 128, .35),
+      0 10px 24px rgba(191, 120, 20, .10),
+      inset 0 0 18px rgba(255, 224, 158, .14);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(255, 204, 103, .62),
+      0 12px 28px rgba(191, 120, 20, .16),
+      inset 0 0 28px rgba(255, 224, 158, .24);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body .rating-card.is-birthday { animation: none; }
 }
 
 /* Единый отклик кнопки обновления — вращение иконки во время рефреша (все темы/экраны) */

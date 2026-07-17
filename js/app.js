@@ -8809,6 +8809,22 @@ function daysUntilBirthday(day, month) {
   return Math.round((bday - today) / 86400000);
 }
 
+function isBirthdayTodayByName(name) {
+  if (!S.usersData || !name) return false;
+  const nameLow = String(name).toLowerCase().trim();
+  if (!nameLow) return false;
+  const now = new Date();
+  const todayDay = now.getDate();
+  const todayMonth = now.getMonth() + 1;
+  for (let i = 1; i < S.usersData.length; i++) {
+    const row = S.usersData[i];
+    if (String(row?.[1] || '').toLowerCase().trim() !== nameLow) continue;
+    const dob = parseDOB(row[5]);
+    return !!(dob && dob.day === todayDay && dob.month === todayMonth);
+  }
+  return false;
+}
+
 const BDAY_THRESHOLDS = [14, 10, 7];
 
 function getBdayStorageKey(name, birthdayKey, threshold) {
@@ -13881,6 +13897,9 @@ function renderRating() {
 
     const nl = m.name.toLowerCase();
     const isMe = nl === myName;
+    const isBirthday = isBirthdayTodayByName(nl);
+    const birthdayClass = isBirthday ? ' is-birthday' : '';
+    const birthdayDecor = isBirthday ? '<div class="rating-birthday-decor" aria-hidden="true"></div>' : '';
     const sal = getMgrSalary(nl);
     const links = getMgrLinks(nl);
     const messengerHtml = messengerIcons(links, m.name);
@@ -13890,8 +13909,9 @@ function renderRating() {
 
     const trophyBadgeHtml = _trophyCountBadgeHtml(m.name);
     return `
-      <div class="rating-card ${rankClass}">
+      <div class="rating-card ${rankClass}${birthdayClass}">
         ${petalsHtml}
+        ${birthdayDecor}
         ${stripColor ? `<div class="rating-card-strip" style="background:${stripColor}"></div>` : ''}
         ${trophyBadgeHtml}
         <div class="rating-card-top">

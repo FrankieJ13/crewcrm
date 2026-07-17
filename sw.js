@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crm-crew-dashboard-v328';
+const CACHE_NAME = 'crm-crew-dashboard-v329';
 const STATIC_ASSETS = [
   './manifest.json',
   './logos/pwa-192.png',

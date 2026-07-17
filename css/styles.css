@@ -9828,15 +9828,14 @@ body.liquid-glass:not(.login-active) .dept-card {
 
 /* День рождения менеджера — только карточка в разделе Рейтинг */
 body .rating-card.is-birthday {
-  border-color: rgba(248, 185, 67, .86) !important;
+  border-color: rgba(255, 187, 57, .92) !important;
   background:
-    radial-gradient(circle at 9% 22%, rgba(255, 221, 142, .22), transparent 32%),
-    linear-gradient(135deg, rgba(255, 248, 232, .16), rgba(247, 178, 56, .10)),
+    linear-gradient(90deg, rgba(255, 245, 221, .28), rgba(255, 245, 221, .11) 30%, transparent 68%),
     var(--bg2) !important;
   box-shadow:
-    0 0 0 1px rgba(255, 215, 128, .38),
-    0 10px 24px rgba(191, 120, 20, .12),
-    inset 0 0 22px rgba(255, 224, 158, .18) !important;
+    0 0 0 1px rgba(255, 208, 112, .45),
+    0 10px 24px rgba(191, 120, 20, .10),
+    inset 0 0 18px rgba(255, 224, 158, .15) !important;
   isolation: isolate;
   animation: ratingBirthdayGlow 3.2s ease-in-out infinite;
 }
@@ -9850,25 +9849,43 @@ body .rating-card.is-birthday {
   pointer-events: none;
 }
 .rating-birthday-decor::before {
-  content: "";
+  content: "# День рождения!";
   position: absolute;
-  inset: 0;
-  opacity: .62;
-  background:
-    radial-gradient(circle at 5% 76%, rgba(255, 177, 55, .78) 0 1.7px, transparent 2.5px),
-    radial-gradient(circle at 17% 15%, rgba(255, 214, 102, .74) 0 1.9px, transparent 2.8px),
-    radial-gradient(circle at 78% 17%, rgba(255, 151, 66, .55) 0 1.5px, transparent 2.4px),
-    radial-gradient(circle at 93% 76%, rgba(255, 207, 84, .62) 0 1.8px, transparent 2.6px),
-    linear-gradient(28deg, transparent 0 12%, rgba(255, 178, 55, .52) 12% 13.6%, transparent 13.6% 100%),
-    linear-gradient(151deg, transparent 0 82%, rgba(255, 205, 97, .48) 82% 83.4%, transparent 83.4% 100%);
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 34px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  box-sizing: border-box;
+  padding-left: 4px;
+  border-radius: inherit;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  background: linear-gradient(180deg, rgba(255, 225, 153, .74), rgba(255, 206, 91, .44));
+  color: #f09a18;
+  font-family: 'Unbounded', sans-serif;
+  font-size: 7px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: .02em;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  text-shadow: 0 1px 0 rgba(255,255,255,.55);
 }
 .rating-birthday-decor::after {
   content: "";
   position: absolute;
   inset: 0;
+  opacity: .72;
   background:
-    radial-gradient(circle at 7% 28%, rgba(255, 225, 160, .30), transparent 34%),
-    linear-gradient(to right, rgba(255, 188, 64, .13), transparent 22%);
+    radial-gradient(circle at 18% 13%, rgba(255, 116, 164, .80) 0 1.5px, transparent 2.2px),
+    radial-gradient(circle at 22% 78%, rgba(255, 199, 63, .85) 0 1.6px, transparent 2.4px),
+    radial-gradient(circle at 42% 21%, rgba(124, 188, 255, .58) 0 1.4px, transparent 2.2px),
+    radial-gradient(circle at 63% 72%, rgba(255, 146, 83, .60) 0 1.5px, transparent 2.4px),
+    radial-gradient(circle at 78% 18%, rgba(255, 201, 91, .68) 0 1.7px, transparent 2.6px),
+    radial-gradient(circle at 92% 62%, rgba(255, 122, 156, .58) 0 1.4px, transparent 2.2px);
 }
 
 body .rating-card.is-birthday .rating-rank-num {
@@ -9879,24 +9896,24 @@ body .rating-card.is-birthday .rating-rank-num {
 body .rating-card.is-birthday .rating-rank-num::before {
   content: "";
   position: absolute;
-  left: 6px;
-  top: -8px;
-  width: 17px;
-  height: 18px;
+  left: -7px;
+  top: -11px;
+  width: 18px;
+  height: 19px;
   z-index: 2;
   pointer-events: none;
   border-radius: 80% 80% 5px 5px;
   clip-path: polygon(50% 0, 4% 100%, 96% 100%);
   background:
     repeating-conic-gradient(from -18deg, #ff69a8 0 16deg, #ffd659 16deg 32deg, #9c7bff 32deg 48deg, #ff69a8 48deg 64deg);
-  transform: rotate(-18deg);
+  transform: rotate(-22deg);
   filter: drop-shadow(0 2px 2px rgba(0,0,0,.18));
 }
 body .rating-card.is-birthday .rating-rank-num::after {
   content: "";
   position: absolute;
-  left: 14px;
-  top: -10px;
+  left: 2px;
+  top: -14px;
   width: 5px;
   height: 5px;
   z-index: 3;
@@ -9909,15 +9926,15 @@ body .rating-card.is-birthday .rating-rank-num::after {
 @keyframes ratingBirthdayGlow {
   0%, 100% {
     box-shadow:
-      0 0 0 1px rgba(255, 215, 128, .35),
-      0 10px 24px rgba(191, 120, 20, .10),
-      inset 0 0 18px rgba(255, 224, 158, .14);
+      0 0 0 1px rgba(255, 215, 128, .38),
+      0 10px 24px rgba(191, 120, 20, .09),
+      inset 0 0 16px rgba(255, 224, 158, .13);
   }
   50% {
     box-shadow:
       0 0 0 1px rgba(255, 204, 103, .62),
-      0 12px 28px rgba(191, 120, 20, .16),
-      inset 0 0 28px rgba(255, 224, 158, .24);
+      0 12px 28px rgba(191, 120, 20, .13),
+      inset 0 0 24px rgba(255, 224, 158, .20);
   }
 }
 

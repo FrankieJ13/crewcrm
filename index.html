@@ -30,7 +30,8 @@
 <link rel="stylesheet" href="./css/styles.css?v=354"/>
 <link rel="stylesheet" href="./css/autopodbor.css?v=323"/>
 <link rel="stylesheet" href="./css/traffic-analytics.css?v=354"/>
-<link rel="stylesheet" href="./css/visit-reconciliation.css?v=347"/>
+<link rel="stylesheet" href="./css/visit-reconciliation.css?v=348"/>
+<link rel="stylesheet" href="./css/profile-settings.css?v=1"/>
 <link rel="stylesheet" href="./css/timeline-leads.css?v=2"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
@@ -364,6 +365,15 @@
             Планы по менеджерам
           </summary>
           <div class="cfg-spoiler-body" id="pe-plans-body"></div>
+        </details>
+        <details class="cfg-spoiler" id="profiles-settings-spoiler" hidden>
+          <summary class="cfg-spoiler-hdr">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            Профили
+          </summary>
+          <div class="cfg-spoiler-body profiles-settings-body" id="profiles-settings-body">
+            <div class="cfg-placeholder">Загрузка профилей…</div>
+          </div>
         </details>
         <!-- Спойлер 2: Премирование/депремирование -->
         <details class="cfg-spoiler">
@@ -1238,9 +1248,10 @@
   </defs>
 </svg>
 <script src="./js/instr-data.js?v=1"></script>
-<script src="./js/app.js?v=351"></script>
+<script src="./js/app.js?v=352"></script>
+<script src="./js/profile-settings.js?v=1"></script>
 <script src="./js/traffic-analytics.js?v=355"></script>
-<script src="./js/visit-reconciliation.js?v=353"></script>
+<script src="./js/visit-reconciliation.js?v=354"></script>
 <script src="./js/timeline-leads.js?v=2"></script>
 <script src="./js/liquid-glass-dock.js?v=8"></script>
 <!-- Затемнение фона при открытом popup напоминаний -->

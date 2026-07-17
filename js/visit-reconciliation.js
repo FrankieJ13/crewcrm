@@ -176,7 +176,7 @@
     return new Date(yy, mm - 1, 1).toLocaleString('ru', { month: 'long', year: 'numeric' });
   }
 
-  // ── разбор листа ВИЗИТЫ (колонки A,C,D,E,F,I = 0,2,3,4,5,8) ────────────
+  // ── разбор листа ВИЗИТЫ (A,C,D,E,F,G,I = 0,2,3,4,5,6,8) ────────────────
   function extractVisits(vizData) {
     const out = [];
     if (!vizData || vizData.length < 2) return out;
@@ -195,6 +195,7 @@
         city: String(row[3] || '').trim(),
         comment: String(row[4] || '').trim(),
         source: String(row[5] || '').trim(),
+        category: String(row[6] || '').trim(),
         manager,
       });
     }
@@ -345,6 +346,15 @@
       r.onerror = () => { db.close(); reject(r.error); };
     });
   }
+  async function vrIdbDelete() {
+    const db = await vrIdbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(VR_IDB.store, 'readwrite');
+      tx.objectStore(VR_IDB.store).delete(VR_IDB.key);
+      tx.oncomplete = () => { db.close(); resolve(true); };
+      tx.onerror = () => { db.close(); reject(tx.error); };
+    });
+  }
   function vrPersist() {
     if (!VR.stats || !VR.results || !VR.results.length) return;
     try {
@@ -416,6 +426,9 @@
         <div class="vr-head">
           <h1 class="vr-title">Сверка визитов</h1>
           ${hasMonth ? `<div class="vr-head-tools">
+            <button class="vr-icon-btn" id="vr-eject" type="button" aria-label="Извлечь отчёт" title="Извлечь отчёт">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 4l7 7H5Z"/><path d="M5 16h14v3H5z"/></svg>
+            </button>
             <button class="vr-icon-btn" id="vr-refresh" type="button" aria-label="Обновить сверку" title="Обновить сверку">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v5h-5"/></svg>
             </button>
@@ -426,8 +439,19 @@
       </section>`;
   }
   function bindHeader() {
+    const eb = document.getElementById('vr-eject');
+    if (eb) eb.onclick = ejectReport;
     const rb = document.getElementById('vr-refresh');
     if (rb) rb.onclick = vrRefresh;
+  }
+  async function ejectReport() {
+    if (VR.busy) return;
+    VR.fileName = ''; VR.deals = []; VR.suffix = ''; VR.monthLabel = '';
+    VR.vizRows = []; VR.results = []; VR.stats = null; VR.steps = []; VR.errors = [];
+    try { localStorage.removeItem(VR_LS_KEY); } catch (_) {}
+    try { await vrIdbDelete(); } catch (_) {}
+    renderStart();
+    if (typeof window.toast === 'function') window.toast('Отчёт извлечён', 's');
   }
   async function vrRefresh() {
     if (VR.busy || !VR.suffix || !VR.deals.length) return;
@@ -608,6 +632,7 @@
     const h = host(); if (!h) return;
     const s = VR.stats;
     if (!s) { renderScan(); return; }
+    const sourceFixCount = VR.results.filter(r => r.deal && normText(r.deal.source) && normText(r.viz.source) !== normText(r.deal.source)).length;
     h.innerHTML = shell(`
       <div class="vr-report">
         <div class="vr-summary">
@@ -638,6 +663,12 @@
             const n = s.byField[k] || 0;
             return `<button class="vr-ff-btn" data-vr-field="${k}" type="button" ${n ? '' : 'disabled'}>${l}<span class="vr-ff-n">${n}</span></button>`;
           }).join('')}
+        </div>
+        <div class="vr-bulk-row">
+          <button class="vr-btn vr-bulk-source" id="vr-bulk-source" type="button" ${sourceFixCount ? '' : 'disabled'}>
+            Заменить отличающиеся источники из amoCRM <span>${sourceFixCount}</span>
+          </button>
+          <small>Значения обновятся в листе ВИЗИТЫ; выпадающие списки ячеек сохранятся.</small>
         </div>
 
         <div class="vr-table-wrap">
@@ -697,8 +728,30 @@
     return `${statusIcon(r.status)}${link}`;
   }
 
+  function canEditField(r, field) {
+    if (!r || !r.deal) return false;
+    const state = r.checks?.[field];
+    if (field === 'date') return state === 'fail' || state === 'month';
+    if (field === 'source') return state === 'fail' || state === 'warm-bad' || state === 'na';
+    return state === 'fail' || state === 'na';
+  }
+
+  function editableValue(r, index, field, value, extra) {
+    const content = `${esc(value || '—')}${extra || ''}`;
+    if (!canEditField(r, field)) return content;
+    return `<button class="vr-cell-edit" type="button" data-vr-edit="${field}" data-vr-index="${index}" title="Изменить значение в Google Таблице">
+      <span>${content}</span>
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
+    </button>`;
+  }
+
+  function amoSourceClass(r) {
+    if (!r.deal || !normText(r.deal.source)) return 'na';
+    return normText(r.viz.source) === normText(r.deal.source) ? 'ok' : (r.checks.source === 'warm-bad' ? 'fail' : 'warn');
+  }
+
   function renderTable(results) {
-    const cols = ['Дата', 'Телефон', 'Менеджер', 'Город', 'Источник', 'Комментарий', 'Сделка'];
+    const cols = ['Дата', 'Телефон', 'Менеджер', 'Город', 'Источник', 'Категория', 'Источник amoCRM', 'Комментарий', 'Сделка'];
     const head = `<tr>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr>`;
     const body = results.map((r, i) => {
       const v = r.viz, c = r.checks;
@@ -709,21 +762,214 @@
       const cmtTitle = r.deal ? `CRM: ${esc(r.deal.success || '—')}` : '';
       const dupViz = r.dupViz ? '<span class="vr-dup" title="Этот телефон внесён в визиты несколько раз">дубль</span>' : '';
       return `<tr class="vr-row ${r.status}" data-vr-status="${r.status}" data-vr-bad="${vrBadFields(r).join(' ')}" data-vr-i="${i}">
-        <td class="${cellCls(c.date)}" data-l="Дата">${esc(v.dateRaw || '—')} ${dateNote}</td>
+        <td class="${cellCls(c.date)}" data-l="Дата">${editableValue(r, i, 'date', v.dateRaw, ` ${dateNote}`)}</td>
         <td class="${cellCls(c.phone)}" data-l="Телефон">${esc(fmtPhone(v.phone) || v.phoneRaw || '—')} ${dupViz}</td>
-        <td class="${cellCls(c.manager)}" data-l="Менеджер" title="${mgrTitle}">${esc(v.manager || '—')}</td>
-        <td class="${cellCls(c.city, 'city')}" data-l="Город" title="${cityTitle}">${esc(v.city || '—')}</td>
-        <td class="${cellCls(c.source, 'source')}" data-l="Источник" title="${srcTitle}">${esc(v.source || '—')}</td>
+        <td class="${cellCls(c.manager)}" data-l="Менеджер" title="${mgrTitle}">${editableValue(r, i, 'manager', v.manager)}</td>
+        <td class="${cellCls(c.city, 'city')}" data-l="Город" title="${cityTitle}">${editableValue(r, i, 'city', v.city)}</td>
+        <td class="${cellCls(c.source, 'source')}" data-l="Источник" title="${srcTitle}">${editableValue(r, i, 'source', v.source)}</td>
+        <td class="${v.category ? 'ok' : 'na'}" data-l="Категория">${esc(v.category || '—')}</td>
+        <td class="${amoSourceClass(r)}" data-l="Источник amoCRM">${esc(r.deal?.source || '—')}</td>
         <td class="${cellCls(c.comment, 'comment')}" data-l="Комментарий" title="${cmtTitle}">${esc(v.comment || '—')}</td>
         <td class="vr-deal-cell" data-l="Сделка">${dealCell(r)}</td>
       </tr>`;
     }).join('');
-    return `<table class="vr-table"><thead>${head}</thead><tbody>${body || `<tr><td colspan="7" class="vr-empty">Нет визитов</td></tr>`}</tbody></table>`;
+    return `<table class="vr-table"><thead>${head}</thead><tbody>${body || `<tr><td colspan="9" class="vr-empty">Нет визитов</td></tr>`}</tbody></table>`;
+  }
+
+  const EDIT_FIELDS = {
+    date: { label: 'Дата', col: 'A', key: 'dateRaw' },
+    city: { label: 'Город', col: 'D', key: 'city' },
+    source: { label: 'Источник', col: 'F', key: 'source' },
+    manager: { label: 'Менеджер', col: 'I', key: 'manager' },
+  };
+
+  function formatParsedDate(date) {
+    if (!date) return '';
+    return `${String(date.d).padStart(2, '0')}.${String(date.m).padStart(2, '0')}.${date.y}`;
+  }
+
+  function suggestedValue(result, field) {
+    const deal = result?.deal;
+    if (!deal) return '';
+    if (field === 'date') return formatParsedDate(deal.visit || deal.dozhimVisit);
+    if (field === 'city') return deal.city || '';
+    if (field === 'source') return deal.source || '';
+    if (field === 'manager') return deal.responsible || '';
+    return '';
+  }
+
+  function uniqueValues(values) {
+    const seen = new Set();
+    return values.map(v => String(v ?? '').trim()).filter(value => {
+      const key = normText(value);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  async function editOptions(field) {
+    if (field === 'date') return [];
+    const colMap = { city: 3, source: 5, manager: 8 };
+    const local = VR.vizRows.map(v => v[field]);
+    const crm = VR.deals.map(d => field === 'manager' ? d.responsible : d[field]);
+    let validation = [];
+    try {
+      validation = await window.crmSheetsGetValidationOptions?.('ВИЗИТЫ' + VR.suffix, colMap[field], 1000) || [];
+    } catch (_) {}
+    return uniqueValues(validation.concat(local, crm));
+  }
+
+  async function openCellEditor(index, field) {
+    const result = VR.results[index];
+    const meta = EDIT_FIELDS[field];
+    if (!result || !meta || !canEditField(result, field)) return;
+    document.getElementById('vr-edit-overlay')?.remove();
+    const current = String(result.viz[meta.key] || '');
+    const suggested = suggestedValue(result, field);
+    const overlay = document.createElement('div');
+    overlay.id = 'vr-edit-overlay';
+    overlay.className = 'vr-edit-overlay';
+    overlay.innerHTML = `<form class="vr-edit-modal" id="vr-edit-form" role="dialog" aria-modal="true" aria-labelledby="vr-edit-title">
+      <div class="vr-edit-head">
+        <div><span>Изменить значение</span><strong id="vr-edit-title">${esc(meta.label)}</strong></div>
+        <button type="button" class="vr-edit-close" aria-label="Закрыть">×</button>
+      </div>
+      <label class="vr-edit-label" for="vr-edit-value">Текущее значение в листе ВИЗИТЫ</label>
+      <input class="vr-edit-input" id="vr-edit-value" value="${esc(current)}" autocomplete="off" ${field === 'date' ? 'inputmode="numeric" placeholder="дд.мм.гггг"' : 'list="vr-edit-options"'}>
+      <datalist id="vr-edit-options"></datalist>
+      ${suggested ? `<button type="button" class="vr-edit-suggest" id="vr-edit-suggest"><span>Значение amoCRM</span><b>${esc(suggested)}</b></button>` : ''}
+      <div class="vr-edit-note">Изменится ячейка <b>${esc(meta.col + result.viz.rowNo)}</b>. Выпадающий список Google Таблицы сохранится.</div>
+      <div class="vr-edit-actions">
+        <button type="button" class="vr-btn" id="vr-edit-cancel">Отмена</button>
+        <button type="submit" class="vr-btn primary" id="vr-edit-save">Сохранить</button>
+      </div>
+      <div class="vr-edit-error" id="vr-edit-error"></div>
+    </form>`;
+    document.body.appendChild(overlay);
+    const close = () => overlay.remove();
+    overlay.addEventListener('click', event => { if (event.target === overlay) close(); });
+    overlay.querySelector('.vr-edit-close')?.addEventListener('click', close);
+    overlay.querySelector('#vr-edit-cancel')?.addEventListener('click', close);
+    overlay.querySelector('#vr-edit-suggest')?.addEventListener('click', () => {
+      const input = overlay.querySelector('#vr-edit-value');
+      if (input) { input.value = suggested; input.focus(); }
+    });
+    const input = overlay.querySelector('#vr-edit-value');
+    if (field === 'date') {
+      input?.addEventListener('input', () => {
+        let digits = input.value.replace(/\D/g, '').slice(0, 8);
+        if (digits.length > 4) digits = `${digits.slice(0, 2)}.${digits.slice(2, 4)}.${digits.slice(4)}`;
+        else if (digits.length > 2) digits = `${digits.slice(0, 2)}.${digits.slice(2)}`;
+        input.value = digits;
+      });
+    } else {
+      editOptions(field).then(options => {
+        const list = overlay.querySelector('#vr-edit-options');
+        if (list) list.innerHTML = options.map(value => `<option value="${esc(value)}"></option>`).join('');
+      });
+    }
+    overlay.querySelector('#vr-edit-form')?.addEventListener('submit', event => {
+      event.preventDefault();
+      saveEditedCell(index, field, input?.value || '', overlay);
+    });
+    requestAnimationFrame(() => input?.focus());
+  }
+
+  async function saveEditedCell(index, field, rawValue, overlay) {
+    const result = VR.results[index];
+    const meta = EDIT_FIELDS[field];
+    if (!result || !meta || VR.busy) return;
+    let value = String(rawValue ?? '').trim();
+    if (field === 'date') {
+      const parsed = parseDMY(value);
+      if (!parsed) {
+        const error = overlay.querySelector('#vr-edit-error');
+        if (error) error.textContent = 'Введите дату в формате дд.мм.гггг';
+        return;
+      }
+      value = formatParsedDate(parsed);
+    }
+    const before = String(result.viz[meta.key] || '');
+    if (value === before) { overlay.remove(); return; }
+    const save = overlay.querySelector('#vr-edit-save');
+    const error = overlay.querySelector('#vr-edit-error');
+    if (save) save.disabled = true;
+    if (error) error.textContent = '';
+    VR.busy = true;
+    const sheet = 'ВИЗИТЫ' + VR.suffix;
+    const range = `'${sheet}'!${meta.col}${result.viz.rowNo}`;
+    try {
+      await window.crmSheetsUpdateValues(range, [[value]]);
+      result.viz[meta.key] = value;
+      if (field === 'date') result.viz.date = parseDMY(value);
+      const matched = runMatch(VR.deals, VR.vizRows);
+      VR.results = matched.results; VR.stats = matched.stats;
+      window.apiCacheInvalidate?.(sheet);
+      window.auditLog?.({
+        module: 'visits', action: 'reconciliation-update', sheet, row: result.viz.rowNo,
+        column: meta.label, entityId: `visit:${sheet}:${result.viz.rowNo}`,
+        entityLabel: [result.viz.dateRaw, result.viz.manager, result.viz.phoneRaw, result.viz.category].filter(Boolean).join(' · '),
+        before, after: value,
+      });
+      vrPersist();
+      overlay.remove();
+      renderReport();
+      window.toast?.(`${meta.label}: значение обновлено`, 's');
+    } catch (err) {
+      if (error) error.textContent = err.message || 'Не удалось сохранить значение';
+      if (save) save.disabled = false;
+    } finally {
+      VR.busy = false;
+    }
+  }
+
+  async function replaceAllSources() {
+    if (VR.busy) return;
+    const fixes = VR.results.filter(r => r.deal && normText(r.deal.source) && normText(r.viz.source) !== normText(r.deal.source));
+    if (!fixes.length) return;
+    if (!window.confirm(`Заменить источник в ${fixes.length} визитах значением из amoCRM?`)) return;
+    const button = document.getElementById('vr-bulk-source');
+    if (button) { button.disabled = true; button.textContent = 'Обновляем источники…'; }
+    VR.busy = true;
+    const sheet = 'ВИЗИТЫ' + VR.suffix;
+    try {
+      await window.crmSheetsBatchUpdateValues(fixes.map(r => ({
+        range: `'${sheet}'!F${r.viz.rowNo}`,
+        majorDimension: 'ROWS',
+        values: [[r.deal.source]],
+      })));
+      fixes.forEach(r => {
+        const before = r.viz.source;
+        r.viz.source = r.deal.source;
+        window.auditLog?.({
+          module: 'visits', action: 'reconciliation-source-bulk', sheet, row: r.viz.rowNo,
+          column: 'Источник', entityId: `visit:${sheet}:${r.viz.rowNo}`,
+          entityLabel: [r.viz.dateRaw, r.viz.manager, r.viz.phoneRaw, r.viz.category].filter(Boolean).join(' · '),
+          before, after: r.deal.source,
+        });
+      });
+      const matched = runMatch(VR.deals, VR.vizRows);
+      VR.results = matched.results; VR.stats = matched.stats;
+      window.apiCacheInvalidate?.(sheet);
+      vrPersist();
+      renderReport();
+      window.toast?.(`Источники обновлены: ${fixes.length}`, 's');
+    } catch (err) {
+      if (button) { button.disabled = false; button.textContent = `Повторить замену источников (${fixes.length})`; }
+      window.toast?.(err.message || 'Не удалось обновить источники', 'e');
+    } finally {
+      VR.busy = false;
+    }
   }
 
   function bindReport() {
     bindHeader();
-    document.getElementById('vr-new')?.addEventListener('click', renderStart);
+    document.getElementById('vr-new')?.addEventListener('click', ejectReport);
+    document.getElementById('vr-bulk-source')?.addEventListener('click', replaceAllSources);
+    document.querySelectorAll('[data-vr-edit]').forEach(button => button.addEventListener('click', () => {
+      openCellEditor(Number(button.dataset.vrIndex), button.dataset.vrEdit);
+    }));
     // Комбинированная фильтрация: статус (один) + типы несоответствий (мультивыбор)
     let statusF = 'all';
     const fieldF = new Set();

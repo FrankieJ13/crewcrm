@@ -2998,6 +2998,156 @@ function apiCacheInvalidate(sheetName) {
   }
 }
 
+// Shared Sheets write helpers for isolated feature modules. Values API updates
+// cell contents only, so existing dropdown/data-validation rules stay intact.
+function crmQuoteSheetName(name) {
+  return `'${String(name || '').replace(/'/g, "''")}'`;
+}
+
+function crmColumnA1(colIdx) {
+  let n = Number(colIdx) + 1;
+  let out = '';
+  while (n > 0) {
+    const rem = (n - 1) % 26;
+    out = String.fromCharCode(65 + rem) + out;
+    n = Math.floor((n - 1) / 26);
+  }
+  return out;
+}
+
+async function crmSheetsUpdateValues(range, values, valueInputOption = 'USER_ENTERED') {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=${encodeURIComponent(valueInputOption)}`;
+  const resp = await fetch(url, {
+    method: 'PUT',
+    headers: await authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ range, majorDimension: 'ROWS', values }),
+  });
+  if (!resp.ok) {
+    const body = await resp.json().catch(() => ({}));
+    throw new Error(body?.error?.message || `Sheets update ${resp.status}`);
+  }
+  return resp.json().catch(() => ({}));
+}
+
+async function crmSheetsBatchUpdateValues(data, valueInputOption = 'USER_ENTERED') {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values:batchUpdate`;
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: await authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ valueInputOption, data }),
+  });
+  if (!resp.ok) {
+    const body = await resp.json().catch(() => ({}));
+    throw new Error(body?.error?.message || `Sheets batch update ${resp.status}`);
+  }
+  return resp.json().catch(() => ({}));
+}
+
+async function crmSheetsClearValues(range) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(range)}:clear`;
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: await authHeaders({ 'Content-Type': 'application/json' }),
+    body: '{}',
+  });
+  if (!resp.ok) {
+    const body = await resp.json().catch(() => ({}));
+    throw new Error(body?.error?.message || `Sheets clear ${resp.status}`);
+  }
+  return resp.json().catch(() => ({}));
+}
+
+async function crmSheetsValuesByA1(a1) {
+  const range = String(a1 || '').trim().replace(/^=/, '').trim();
+  if (!range || /^(indirect|query|filter)\s*\(/i.test(range)) return [];
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(range)}?majorDimension=COLUMNS`;
+  const resp = await fetch(url, { headers: await authHeaders() });
+  if (!resp.ok) return [];
+  const data = await resp.json().catch(() => ({}));
+  return vizUniqOptions((data.values || []).flat());
+}
+
+async function crmSheetsGetValidationOptions(sheetName, colIdx, maxRow = 1000) {
+  const cache = S._crmValidationOptionsCache = S._crmValidationOptionsCache || {};
+  const key = `${sheetName}:${colIdx}:${maxRow}`;
+  if (cache[key]) return cache[key].slice();
+  const col = crmColumnA1(colIdx);
+  const range = `${crmQuoteSheetName(sheetName)}!${col}2:${col}${maxRow}`;
+  const fields = 'sheets.data.rowData.values.dataValidation.condition';
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}`
+            + `?ranges=${encodeURIComponent(range)}&fields=${fields}&includeGridData=true`;
+  const resp = await fetch(url, { headers: await authHeaders() });
+  if (!resp.ok) return [];
+  const data = await resp.json().catch(() => ({}));
+  const cells = data?.sheets?.[0]?.data?.[0]?.rowData || [];
+  const listValues = [];
+  const rangeRefs = [];
+  cells.forEach(row => (row.values || []).forEach(cell => {
+    const cond = cell?.dataValidation?.condition;
+    if (!cond) return;
+    if (cond.type === 'ONE_OF_LIST') {
+      (cond.values || []).forEach(v => listValues.push(v.userEnteredValue));
+    } else if (cond.type === 'ONE_OF_RANGE') {
+      (cond.values || []).forEach(v => { if (v.userEnteredValue) rangeRefs.push(v.userEnteredValue); });
+    }
+  }));
+  let options = vizUniqOptions(listValues);
+  if (!options.length) {
+    for (const ref of vizUniqOptions(rangeRefs)) {
+      options = vizUniqOptions(options.concat(await crmSheetsValuesByA1(ref)));
+      if (options.length) break;
+    }
+  }
+  if (options.length) cache[key] = options.slice();
+  return options;
+}
+
+async function crmSheetsCopyValidation(sheetName, sourceRow, targetRow, startColIdx, endColIdxExclusive) {
+  if (sourceRow === targetRow) return;
+  const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}?fields=sheets.properties(sheetId,title)`;
+  const metaResp = await fetch(metaUrl, { headers: await authHeaders() });
+  if (!metaResp.ok) throw new Error('Не удалось получить структуру таблицы');
+  const meta = await metaResp.json();
+  const sheetId = (meta.sheets || []).map(s => s.properties || {}).find(p => p.title === sheetName)?.sheetId;
+  if (sheetId == null) throw new Error(`Лист ${sheetName} не найден`);
+  const gridRange = row => ({
+    sheetId,
+    startRowIndex: row - 1,
+    endRowIndex: row,
+    startColumnIndex: startColIdx,
+    endColumnIndex: endColIdxExclusive,
+  });
+  const resp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}:batchUpdate`, {
+    method: 'POST',
+    headers: await authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ requests: [{ copyPaste: {
+      source: gridRange(sourceRow),
+      destination: gridRange(targetRow),
+      pasteType: 'PASTE_DATA_VALIDATION',
+      pasteOrientation: 'NORMAL',
+    } }] }),
+  });
+  if (!resp.ok) throw new Error('Не удалось перенести выпадающие списки');
+}
+
+function crmProfilesSyncLocal(rows) {
+  if (!Array.isArray(rows)) return;
+  S.usersData = rows;
+  _saveUsersCache(rows);
+  apiCacheInvalidate('USERS');
+}
+
+window.crmSheetsUpdateValues = crmSheetsUpdateValues;
+window.crmSheetsBatchUpdateValues = crmSheetsBatchUpdateValues;
+window.crmSheetsClearValues = crmSheetsClearValues;
+window.crmSheetsGetValidationOptions = crmSheetsGetValidationOptions;
+window.crmSheetsCopyValidation = crmSheetsCopyValidation;
+window.crmQuoteSheetName = crmQuoteSheetName;
+window.crmColumnA1 = crmColumnA1;
+window.apiCacheInvalidate = apiCacheInvalidate;
+window.crmProfilesSyncLocal = crmProfilesSyncLocal;
+window.crmGetUsersData = () => Array.isArray(S.usersData) ? S.usersData.map(r => (r || []).slice()) : [];
+
 const STARTUP_DATA_CACHE_KEY = 'crm_startup_data_cache_v1';
 const STARTUP_DATA_CACHE_TTL = 12 * 60 * 60_000;
 
@@ -12463,6 +12613,7 @@ async function savePlanAndSverka() {
 function openPlanEditorWithSverka() {
   openPlanEditor();
   initSverkaToggle();
+  if (typeof window.initProfilesSettings === 'function') window.initProfilesSettings();
 }
 
 function closePlanEditorFull() {

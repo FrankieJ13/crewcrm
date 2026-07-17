@@ -13900,6 +13900,9 @@ function renderRating() {
     const isBirthday = isBirthdayTodayByName(nl);
     const birthdayClass = isBirthday ? ' is-birthday' : '';
     const birthdayDecor = isBirthday ? '<div class="rating-birthday-decor" aria-hidden="true"></div>' : '';
+    const birthdayBadge = isBirthday
+      ? '<div class="rating-birthday-badge" aria-label="День рождения"><span class="rating-birthday-gift" aria-hidden="true">🎁</span><span class="rating-birthday-label">День рождения!</span></div>'
+      : '';
     const sal = getMgrSalary(nl);
     const links = getMgrLinks(nl);
     const messengerHtml = messengerIcons(links, m.name);
@@ -13920,6 +13923,7 @@ function renderRating() {
             <div class="rating-card-name-text" style="display:flex;align-items:center;gap:4px">${m.name.toUpperCase()}${messengerHtml}</div>
             ${salDisplay ? `<div style="font-size:10px;color:var(--acc);margin-top:2px;font-weight:700">${salDisplay}</div>` : ''}
           </div>
+          ${birthdayBadge}
           <div>
             <div class="rating-card-pct" style="${pctStyle}">${m.progNum}%</div>
             <div class="rating-card-pct-sub">${m.factNum}% факт</div>

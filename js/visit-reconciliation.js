@@ -117,11 +117,6 @@
     header.forEach((h, idx) => { const k = String(h || '').trim(); (map[k] || (map[k] = [])).push(idx); });
     return map;
   }
-  function firstNonEmpty(row, idxs) {
-    if (!idxs) return '';
-    for (const i of idxs) { const v = String(row[i] == null ? '' : row[i]).trim(); if (v) return v; }
-    return '';
-  }
   function extractDeals(rows) {
     if (!rows || rows.length < 2) return [];
     const header = rows[0];
@@ -135,7 +130,9 @@
     const idVisit = (H['Дата визита'] || [])[0];
     const idSucc = (H['Успешное закрытие карточки'] || [])[0];
     const idCity = (H['Город'] || [])[0];
-    const idSrc = H['Источник обращения'];
+    // Источник берём только из первого канонического столбца с точным
+    // заголовком. Не подменяем его значениями одноимённых дублей CSV.
+    const idSrc = (H['Источник обращения'] || [])[0];
     const idDozhimVisit = (H['Повторная дата визита (ДОЖИМ)'] || [])[0];
     const idDozhimResp = (H['ДОЖИМ Ответственный'] || [])[0];
     const deals = [];
@@ -156,7 +153,7 @@
         dozhimVisit: parseDMY(dozhimVisitRaw), dozhimResp,
         success: idSucc != null ? String(row[idSucc] || '').trim() : '',
         city: idCity != null ? String(row[idCity] || '').trim() : '',
-        source: firstNonEmpty(row, idSrc),
+        source: idSrc != null ? String(row[idSrc] || '').trim() : '',
         phones: [...phones],
       });
     }

@@ -8464,7 +8464,7 @@ function renderConverterTab() {
         <div class="conv-rules">
           <div>КАТЕГОРИЯ: «Тёплые лиды» → кат 1200, любой другой источник → кат 800.</div>
           <div>СПОСОБ ПОКУПКИ приводится к списку: кредит, наличные, комиссия, обмен, выкуп, оценка авто, трейдин+кредит, трейдин+наличные, лизинг, не уточнили.</div>
-          <div>КОММЕНТАРИЙ проставляется по «Этап сделки»: успешно реализовано → ПОКУПКА (кредит/наличные)/КОМИССИЯ/ОБМЕН/ВЫКУП; отказ банка → ОТКАЗ; ФССП → ФССП не подаем; КСО → В работе КСО.</div>
+          <div>КОММЕНТАРИЙ проставляется по «Этап сделки»: успешно реализовано → ПОКУПКА (кредит/наличные)/КОМИССИЯ/ОБМЕН/ВЫКУП; отказ банка → ОТКАЗ; ФССП → ФССП не подаем; КСО → В работе КСО; остальные этапы → В салоне.</div>
         </div>
         <div id="conv-copy-status" class="conv-status">Данные ещё не скопированы</div>
         <div class="conv-tablewrap"><table class="conv-table" id="conv-preview"></table></div>
@@ -8628,10 +8628,10 @@ function convCol(row, name) {
   for (const k in row) if (String(k).trim().toLowerCase() === target) return String(row[k] || '');
   return '';
 }
-// Комментарий по «Этап сделки» (+ «Успешное закрытие карточки»). '' — если не подходит.
+// Комментарий по «Этап сделки» (+ «Успешное закрытие карточки»).
 function convCommentFromStage(row) {
   const stage = convCol(row, 'Этап сделки').toLowerCase();
-  if (!stage) return '';
+  if (!stage) return 'В салоне';
   if (/успешно реализовано/.test(stage)) {
     const cl = convCol(row, 'Успешное закрытие карточки').toLowerCase();
     if (/кредит/.test(cl)) return 'ПОКУПКА (кредит)';
@@ -8639,12 +8639,12 @@ function convCommentFromStage(row) {
     if (/комисс/.test(cl)) return 'КОМИССИЯ';
     if (/обмен/.test(cl))  return 'ОБМЕН';
     if (/выкуп/.test(cl))  return 'ВЫКУП';
-    return '';
+    return 'В салоне';
   }
   if (/отказ банка/.test(stage))     return 'ОТКАЗ';
   if (/фссп/.test(stage))            return 'ФССП не подаем';
   if (/ксо/.test(stage))             return 'В работе КСО';
-  return '';
+  return 'В салоне';
 }
 function convPhoneFromRow(row, selected) {
   const order = [selected,'Рабочий телефон','Мобильный телефон','Рабочий прямой телефон','Домашний телефон','Другой телефон','Source phone','Source phone.1'];
@@ -8668,11 +8668,7 @@ function convValueFor(row, out, selected, fixed, maps) {
     return convNormalizeManager(selected ? (row[selected]||'') : '');
   }
   if (out === 'КОММЕНТАРИЙ') {
-    // Комментарий из «Этап сделки» (+ «Успешное закрытие карточки»); иначе — маппинг
-    const derived = convCommentFromStage(row);
-    if (derived) return derived;
-    let cv = selected ? (row[selected]||'') : '';
-    return cv.replace(/\t/g,' ').replace(/\r?\n/g,' ');
+    return convCommentFromStage(row);
   }
   let v = selected ? (row[selected]||'') : '';
   if (out === 'ДАТА') v = convNormalizeDate(v);

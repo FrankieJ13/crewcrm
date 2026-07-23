@@ -130,15 +130,18 @@
     const idVisit = (H['Дата визита'] || [])[0];
     const idSucc = (H['Успешное закрытие карточки'] || [])[0];
     const idCity = (H['Город'] || [])[0];
-    // В выгрузке amoCRM встречаются одноимённые поля сделки, контакта и
-    // компании. Берём точный «Источник обращения» из того же блока, что и
-    // «Дата визита»: это ближайшее к ней одноимённое поле сделки.
-    // Похожие source/utm-поля не используем.
+    // В текущей выгрузке amoCRM источник сделки находится в BW (индекс 74).
+    // Проверяем точный заголовок, чтобы при изменении структуры CSV не взять
+    // постороннее поле. Запасной вариант — одноимённая колонка рядом с датой
+    // визита. Похожие source/utm-поля не используем.
     const sourceColumns = H['Источник обращения'] || [];
-    const idSrc = sourceColumns.reduce((best, idx) => {
-      if (best == null || idVisit == null) return best == null ? idx : best;
-      return Math.abs(idx - idVisit) < Math.abs(best - idVisit) ? idx : best;
-    }, null);
+    const dealSourceColumn = 74; // BW
+    const idSrc = String(header[dealSourceColumn] || '').trim() === 'Источник обращения'
+      ? dealSourceColumn
+      : sourceColumns.reduce((best, idx) => {
+          if (best == null || idVisit == null) return best == null ? idx : best;
+          return Math.abs(idx - idVisit) < Math.abs(best - idVisit) ? idx : best;
+        }, null);
     const idDozhimVisit = (H['Повторная дата визита (ДОЖИМ)'] || [])[0];
     const idDozhimResp = (H['ДОЖИМ Ответственный'] || [])[0];
     const deals = [];

@@ -130,11 +130,15 @@
     const idVisit = (H['Дата визита'] || [])[0];
     const idSucc = (H['Успешное закрытие карточки'] || [])[0];
     const idCity = (H['Город'] || [])[0];
-    // В выгрузке amoCRM встречаются одноимённые поля контакта и сделки.
-    // Актуальный источник сделки находится в последнем столбце с точным
-    // заголовком «Источник обращения». Похожие source/utm-поля не используем.
+    // В выгрузке amoCRM встречаются одноимённые поля сделки, контакта и
+    // компании. Берём точный «Источник обращения» из того же блока, что и
+    // «Дата визита»: это ближайшее к ней одноимённое поле сделки.
+    // Похожие source/utm-поля не используем.
     const sourceColumns = H['Источник обращения'] || [];
-    const idSrc = sourceColumns[sourceColumns.length - 1];
+    const idSrc = sourceColumns.reduce((best, idx) => {
+      if (best == null || idVisit == null) return best == null ? idx : best;
+      return Math.abs(idx - idVisit) < Math.abs(best - idVisit) ? idx : best;
+    }, null);
     const idDozhimVisit = (H['Повторная дата визита (ДОЖИМ)'] || [])[0];
     const idDozhimResp = (H['ДОЖИМ Ответственный'] || [])[0];
     const deals = [];

@@ -1435,7 +1435,7 @@ function _presenceShortName(full) {
 function detectClientPlatform() {
   try { if (window.chrome && window.chrome.webview) return 'win-client'; } catch (_) {}
   const s = navigator.userAgent || '';
-  const isClient  = /CrystalCRM/i.test(s);                 // наш десктоп-клиент помечает UA
+  const isClient  = /CRMDesktopClient/i.test(s);                 // наш десктоп-клиент помечает UA
   const isWin     = /Windows/i.test(s);
   const isMac     = /Macintosh|Mac OS X/i.test(s);
   const isAndroid = /Android/i.test(s);
@@ -1453,7 +1453,7 @@ function detectClientPlatform() {
 // Фолбэк для старых записей без поля client — угадываем по userAgent.
 function _clientFromUA(ua) {
   const s = String(ua || '');
-  const isClient = /CrystalCRM/i.test(s), isWin = /Windows/i.test(s), isMac = /Macintosh|Mac OS X/i.test(s);
+  const isClient = /CRMDesktopClient/i.test(s), isWin = /Windows/i.test(s), isMac = /Macintosh|Mac OS X/i.test(s);
   const isAndroid = /Android/i.test(s), isiOS = /iPhone|iPad|iPod/i.test(s);
   if (isClient && isMac) return 'mac-client';
   if (isClient && isWin) return 'win-client';

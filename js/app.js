@@ -8713,6 +8713,7 @@ function convRender() {
       if (!lines.length || !lines.every(p => /^7\d{10}$/.test(p))) { cls = 'issue'; badPhones++; }
     }
     if (CONV_OUT[i] === 'ДАТА' && !v) { cls = 'issue'; noDates++; }
+    if (CONV_OUT[i] === 'КОММЕНТАРИЙ') cls += (cls ? ' ' : '') + 'conv-cell-wrap'; // перенос по словам
     const cellHtml = escapeHtml(String(v)).replace(/\n/g, '<br>');
     return `<td class="${cls}" title="${escapeHtml(String(v))}">${cellHtml}</td>`;
   }).join('') + '</tr>').join('');
@@ -8737,10 +8738,18 @@ function convTSV(includeHeader) {
 }
 function convHtmlTable() {
   const cellStyle = 'border:1px solid #000;text-align:center;vertical-align:middle;padding:4px 8px;font-family:Arial,sans-serif;font-size:8pt;';
-  // valign="middle" — Google Таблицы уважают HTML-атрибут надёжнее CSS vertical-align.
+  const commentIdx = CONV_OUT.indexOf('КОММЕНТАРИЙ');
+  // valign="middle" + vertical-align:middle — все ячейки по центру по вертикали.
+  // КОММЕНТАРИЙ — «Переносить по словам» (white-space:normal + overflow-wrap); остальные
+  // ячейки — nowrap (перетекание). Google Таблицы читают именно white-space при вставке.
   // \n → <br>: несколько телефонов встают на отдельные строки внутри ячейки.
   return '<table style="border-collapse:collapse;"><tbody>' +
-    _conv.outputRows.map(r => '<tr>' + r.map(v => `<td valign="middle" style="${cellStyle}">${escapeHtml(String(v)).replace(/\n/g,'<br>')}</td>`).join('') + '</tr>').join('') +
+    _conv.outputRows.map(r => '<tr>' + r.map((v, i) => {
+      const wrap = i === commentIdx
+        ? 'white-space:normal;overflow-wrap:break-word;word-break:break-word;max-width:180px;'
+        : 'white-space:nowrap;';
+      return `<td valign="middle" style="${cellStyle}${wrap}">${escapeHtml(String(v)).replace(/\n/g,'<br>')}</td>`;
+    }).join('') + '</tr>').join('') +
     '</tbody></table>';
 }
 

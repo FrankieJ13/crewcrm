@@ -2989,6 +2989,7 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
 .conv-table th { position:sticky; top:0; background:var(--bg3); color:var(--txt2); font-weight:800; font-size:9px; text-transform:uppercase; letter-spacing:.03em; z-index:2; }
 .conv-table td { color:var(--txt2); background:var(--bg2); }
 .conv-table td.issue { background:rgba(245,166,35,.18); color:var(--txt); }
+.conv-table td.conv-cell-wrap { white-space:normal; overflow-wrap:break-word; word-break:break-word; max-width:160px; text-overflow:clip; }
 .conv-note { margin-top:12px; border-left:3px solid #f5a623; background:rgba(245,166,35,.08); border-radius:8px; padding:10px 12px; font-size:12px; line-height:1.5; color:var(--txt2); }
 @media (max-width:640px) {
   .conv-mapping { grid-template-columns:1fr; gap:4px 0; }

@@ -955,7 +955,8 @@
         <button class="dock-popup-btn" onclick="dockFaq('links')">
           <span class="dock-popup-dot" style="background:#2ed573"></span>САЙТЫ CM
         </button>
-        <button class="dock-popup-btn" onclick="dockFaq('autopodbor')">
+        <!-- ЧАТ СМ.RU временно скрыт: источник не передаёт актуальные данные. Вернуть — убрать display:none -->
+        <button class="dock-popup-btn" onclick="dockFaq('autopodbor')" style="display:none">
           <span class="dock-popup-dot" style="background:#a855f7"></span>ЧАТ СМ.RU
         </button>
         <button class="dock-popup-btn" onclick="dockFaq('autoru')">
@@ -1248,7 +1249,7 @@
   </defs>
 </svg>
 <script src="./js/instr-data.js?v=1"></script>
-<script src="./js/app.js?v=354"></script>
+<script src="./js/app.js?v=355"></script>
 <script src="./js/profile-settings.js?v=1"></script>
 <script src="./js/traffic-analytics.js?v=355"></script>
 <script src="./js/visit-reconciliation.js?v=358"></script>
@@ -1297,7 +1298,7 @@
 <script src="./js/autopodbor-chat.js?v=323"></script>
 
 <!-- AUTO.RU CM — каталог + поиск (см. https://github.com/FrankieJ13/AUTORUCM66CARSDB) -->
-<link rel="stylesheet" href="./css/autoru.css?v=323"/>
+<link rel="stylesheet" href="./css/autoru.css?v=324"/>
 <div id="autoru-fullscreen" aria-hidden="true">
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
@@ -1326,7 +1327,7 @@
         Фильтры
         <span id="filtersCount" class="btn-filters__badge" hidden>0</span>
       </button>
-      <div id="filtersPopup" class="filters-popup" hidden>
+      <div id="autoruFiltersPopup" class="filters-popup" hidden>
         <div class="filters-popup__row">
           <select id="city"><option value="">Все города</option></select>
           <select id="brand"><option value="">Все марки</option></select>
@@ -1399,7 +1400,7 @@
 </div>
 <script src="./js/autoru-config.js?v=323"></script>
 <script src="./js/autoru-search.js?v=323"></script>
-<script src="./js/autoru-catalog.js?v=323"></script>
+<script src="./js/autoru-catalog.js?v=324"></script>
 
 <!-- Модалка профиля менеджера (открывается с рейтинга) -->
 <div id="profile-modal-overlay" class="profile-modal-overlay" onclick="if(event.target===this)closeProfileModal()">

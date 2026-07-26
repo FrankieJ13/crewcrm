@@ -18,7 +18,7 @@ window.autoruCatalogInit = function () {
     yearMin: $('yearMin'), yearMax: $('yearMax'), mileageMax: $('mileageMax'),
     sort: $('sort'),
     reset: $('reset'), loadMore: $('loadMore'),
-    openFilters: $('openFilters'), filtersPopup: $('filtersPopup'), filtersCount: $('filtersCount'),
+    openFilters: $('openFilters'), filtersPopup: $('autoruFiltersPopup'), filtersCount: $('filtersCount'),
   };
 
   // Поля-фильтры по типу — для удобства итерации (reset, badge, события).

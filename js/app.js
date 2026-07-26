@@ -7433,7 +7433,7 @@ function initAutoruTab() {
   // Видимость в mode-catalog контролируется классом .is-catalog.
   const subRow = document.querySelector('#c-instruktsii .autoru-subtabs-row') || document.querySelector('.autoru-subtabs-row');
   const fBtn   = document.getElementById('openFilters');
-  const fPop   = document.getElementById('filtersPopup');
+  const fPop   = document.getElementById('autoruFiltersPopup');
   if (subRow && subRow.parentElement !== document.body) document.body.appendChild(subRow);
   if (subRow && fBtn && fBtn.parentElement !== subRow) subRow.appendChild(fBtn);
   if (subRow && fPop && fPop.parentElement !== subRow) subRow.appendChild(fPop);
@@ -7474,7 +7474,7 @@ function _arReturnToBody() {
   // Перед перерисовкой возвращаем их обратно в #autoru-fullscreen .topbar__right,
   // иначе они уничтожатся вместе с innerHTML и пропадут.
   const fBtn = document.getElementById('openFilters');
-  const fPop = document.getElementById('filtersPopup');
+  const fPop = document.getElementById('autoruFiltersPopup');
   const tbRight = fs.querySelector('.topbar__right');
   if (fBtn && tbRight && fBtn.parentElement !== tbRight) tbRight.appendChild(fBtn);
   if (fPop && tbRight && fPop.parentElement !== tbRight) tbRight.appendChild(fPop);
@@ -8646,9 +8646,25 @@ function convCommentFromStage(row) {
   if (/ксо/.test(stage))             return 'В работе КСО';
   return 'В салоне';
 }
+// Ячейка amoCRM может содержать НЕСКОЛЬКО телефонов (через запятую/;/перенос/слэш).
+// Нормализуем КАЖДЫЙ отдельно; возвращаем массив уникальных номеров (пустые убираем).
+function convNormalizePhones(v) {
+  const out = [];
+  String(v || '').split(/[,;\n\r\/|]+/).forEach(part => {
+    const n = convNormalizePhone(part);
+    if (n && out.indexOf(n) === -1) out.push(n);
+  });
+  return out;
+}
 function convPhoneFromRow(row, selected) {
   const order = [selected,'Рабочий телефон','Мобильный телефон','Рабочий прямой телефон','Домашний телефон','Другой телефон','Source phone','Source phone.1'];
-  for (const k of [...new Set(order.filter(Boolean))]) if (row[k]) return convNormalizePhone(row[k]);
+  for (const k of [...new Set(order.filter(Boolean))]) {
+    if (row[k]) {
+      const phones = convNormalizePhones(row[k]);
+      // Несколько номеров → каждый на своей строке ВНУТРИ ячейки (Alt+Enter в Google Таблицах)
+      if (phones.length) return phones.join('\n');
+    }
+  }
   return '';
 }
 function convValueFor(row, out, selected, fixed, maps) {
@@ -8691,9 +8707,14 @@ function convRender() {
   const head = '<thead><tr>' + CONV_OUT.map(x => `<th>${escapeHtml(x)}</th>`).join('') + '</tr></thead>';
   const body = _conv.outputRows.map(r => '<tr>' + r.map((v,i) => {
     let cls = '';
-    if (CONV_OUT[i] === 'ТЕЛЕФОН' && v && !/^7\d{10}$/.test(v)) { cls = 'issue'; badPhones++; }
+    if (CONV_OUT[i] === 'ТЕЛЕФОН' && v) {
+      // Ячейка может содержать несколько номеров (по строке на каждый) — проверяем все
+      const lines = String(v).split('\n').filter(Boolean);
+      if (!lines.length || !lines.every(p => /^7\d{10}$/.test(p))) { cls = 'issue'; badPhones++; }
+    }
     if (CONV_OUT[i] === 'ДАТА' && !v) { cls = 'issue'; noDates++; }
-    return `<td class="${cls}" title="${escapeHtml(v)}">${escapeHtml(v)}</td>`;
+    const cellHtml = escapeHtml(String(v)).replace(/\n/g, '<br>');
+    return `<td class="${cls}" title="${escapeHtml(String(v))}">${cellHtml}</td>`;
   }).join('') + '</tr>').join('');
   table.innerHTML = head + '<tbody>' + body + '</tbody>';
   document.getElementById('conv-summary').textContent = `Строк: ${_conv.outputRows.length} · тел. нестандартной длины: ${badPhones} · без даты: ${noDates}.`;
@@ -8705,13 +8726,21 @@ function convRender() {
 
 function convTSV(includeHeader) {
   const all = includeHeader ? [CONV_OUT, ..._conv.outputRows] : _conv.outputRows;
-  return all.map(r => r.map(v => String(v ?? '').replace(/\t/g,' ').replace(/\r?\n/g,' ')).join('\t')).join('\n');
+  // Ячейка с переносами (несколько телефонов) → кавычки по RFC-4180, чтобы Google
+  // Таблицы вставили перенос ВНУТРЬ ячейки, а не разбили строку на несколько.
+  const cell = v => {
+    let s = String(v ?? '').replace(/\t/g,' ').replace(/\r/g,'');
+    if (s.indexOf('\n') !== -1 || s.indexOf('"') !== -1) s = '"' + s.replace(/"/g,'""') + '"';
+    return s;
+  };
+  return all.map(r => r.map(cell).join('\t')).join('\n');
 }
 function convHtmlTable() {
   const cellStyle = 'border:1px solid #000;text-align:center;vertical-align:middle;padding:4px 8px;font-family:Arial,sans-serif;font-size:8pt;';
-  // valign="middle" — Google Таблицы уважают HTML-атрибут надёжнее CSS vertical-align
+  // valign="middle" — Google Таблицы уважают HTML-атрибут надёжнее CSS vertical-align.
+  // \n → <br>: несколько телефонов встают на отдельные строки внутри ячейки.
   return '<table style="border-collapse:collapse;"><tbody>' +
-    _conv.outputRows.map(r => '<tr>' + r.map(v => `<td valign="middle" style="${cellStyle}">${escapeHtml(v)}</td>`).join('') + '</tr>').join('') +
+    _conv.outputRows.map(r => '<tr>' + r.map(v => `<td valign="middle" style="${cellStyle}">${escapeHtml(String(v)).replace(/\n/g,'<br>')}</td>`).join('') + '</tr>').join('') +
     '</tbody></table>';
 }
 

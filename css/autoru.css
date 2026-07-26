@@ -341,7 +341,7 @@ body.autoru-tab-active #scr-instruktsii #c-instruktsii { padding-top: 24px; }
 .autoru-subtabs-row.is-catalog #openFilters { display: inline-flex !important; }
 
 /* Попап фильтров — компактный, привязан к subtabs-row */
-.autoru-subtabs-row #filtersPopup {
+.autoru-subtabs-row #autoruFiltersPopup {
   position: absolute !important;
   top: calc(100% + 6px) !important;
   right: 0 !important;
@@ -359,7 +359,7 @@ body.autoru-tab-active #scr-instruktsii #c-instruktsii { padding-top: 24px; }
   z-index: 120;
 }
 /* Кнопка «Сбросить все фильтры» — sticky внизу попапа */
-.autoru-subtabs-row #filtersPopup .filters-popup__row--actions {
+.autoru-subtabs-row #autoruFiltersPopup .filters-popup__row--actions {
   position: sticky;
   bottom: 0;
   left: 0; right: 0;
@@ -370,32 +370,32 @@ body.autoru-tab-active #scr-instruktsii #c-instruktsii { padding-top: 24px; }
   box-shadow: 0 -12px 18px var(--bg2);
   z-index: 5;
 }
-.autoru-subtabs-row #filtersPopup #reset {
+.autoru-subtabs-row #autoruFiltersPopup #reset {
   background: var(--bg3) !important;
   border: 1px solid var(--line) !important;
   color: var(--txt) !important;
   font-weight: 700;
   padding: 7px 10px !important;
 }
-.autoru-subtabs-row #filtersPopup #reset:hover { border-color: var(--acc) !important; color: var(--acc) !important; }
+.autoru-subtabs-row #autoruFiltersPopup #reset:hover { border-color: var(--acc) !important; color: var(--acc) !important; }
 
 /* Пульсирующая стрелка-подсказка «крути вниз» — над reset, исчезает когда
    юзер докрутил донизу (через trick с дочерним sentinel'ом — но проще:
    просто живёт и пульсирует, не мешает). */
-.autoru-subtabs-row #filtersPopup .filters-popup__row--actions::before { content: none; }
+.autoru-subtabs-row #autoruFiltersPopup .filters-popup__row--actions::before { content: none; }
 @keyframes autoruFilterArrow {
   0%, 100% { transform: translate(-50%, 0); opacity: .35; }
   50%      { transform: translate(-50%, 4px); opacity: 1; }
 }
-.autoru-subtabs-row #filtersPopup .filters-popup__row {
+.autoru-subtabs-row #autoruFiltersPopup .filters-popup__row {
   grid-template-columns: 1fr !important;
   gap: 4px !important;
   margin-bottom: 4px;
 }
-.autoru-subtabs-row #filtersPopup .filters-popup__row > * { margin-bottom: 1px; }
-.autoru-subtabs-row #filtersPopup select,
-.autoru-subtabs-row #filtersPopup input,
-.autoru-subtabs-row #filtersPopup button {
+.autoru-subtabs-row #autoruFiltersPopup .filters-popup__row > * { margin-bottom: 1px; }
+.autoru-subtabs-row #autoruFiltersPopup select,
+.autoru-subtabs-row #autoruFiltersPopup input,
+.autoru-subtabs-row #autoruFiltersPopup button {
   background: var(--bg3) !important;
   color: var(--txt) !important;
   border: 1px solid var(--line) !important;

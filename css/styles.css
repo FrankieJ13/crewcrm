@@ -2990,12 +2990,61 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
 .conv-table td { color:var(--txt2); background:var(--bg2); }
 .conv-table td.issue { background:rgba(245,166,35,.18); color:var(--txt); }
 .conv-table td.conv-cell-wrap { white-space:normal; overflow-wrap:break-word; word-break:break-word; max-width:160px; text-overflow:clip; }
-/* Инструкция «Как пользоваться» в конвертере */
-.conv-steps { margin:0; padding:0; list-style:none; counter-reset:cs; display:flex; flex-direction:column; gap:10px; }
-.conv-steps li { position:relative; padding-left:30px; font-size:12.5px; line-height:1.55; color:var(--txt2); counter-increment:cs; }
-.conv-steps li::before { content:counter(cs); position:absolute; left:0; top:-1px; width:21px; height:21px; border-radius:50%; background:var(--acc-bg); border:1px solid var(--acc-bdr); color:var(--acc); font-size:10px; font-weight:800; display:flex; align-items:center; justify-content:center; font-family:'Unbounded',sans-serif; }
-.conv-steps b { color:var(--txt); font-weight:700; }
-.conv-steps kbd { font-family:inherit; font-size:11px; font-weight:700; background:var(--bg3); border:1px solid var(--line); border-radius:5px; padding:1px 5px; color:var(--txt); }
+/* Иллюстрированная инструкция «Как пользоваться» в конвертере */
+.cg-list { display:flex; flex-direction:column; gap:18px; }
+.cg-step { display:flex; flex-direction:column; gap:9px; }
+.cg-step-row { display:flex; align-items:flex-start; gap:10px; }
+.cg-num { flex:none; width:22px; height:22px; border-radius:50%; background:var(--acc-bg); border:1px solid var(--acc-bdr); color:var(--acc); font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; font-family:'Unbounded',sans-serif; }
+.cg-txt { font-size:12.5px; line-height:1.55; color:var(--txt2); padding-top:1px; }
+.cg-txt b { color:var(--txt); font-weight:700; }
+.cg-step kbd { font-family:inherit; font-size:11px; font-weight:700; background:var(--bg3); border:1px solid var(--line); border-radius:5px; padding:1px 5px; color:var(--txt); }
+.cg-fig { margin-left:32px; }
+.cg-hl { position:relative; box-shadow:0 0 0 2px var(--acc); border-radius:9px; }
+.cg-arrow { color:var(--acc); font-size:11px; margin-left:auto; padding-left:8px; animation:cg-nudge 1.1s ease-in-out infinite; }
+@keyframes cg-nudge { 0%,100%{ transform:translateX(0);} 50%{ transform:translateX(-3px);} }
+/* dock-popup mock */
+.cg-dock { background:#20222a; border-radius:14px; padding:6px; display:flex; flex-direction:column; gap:1px; max-width:230px; box-shadow:0 8px 24px rgba(0,0,0,.25); }
+.cg-dock-item { display:flex; align-items:center; gap:9px; padding:8px 11px; border-radius:9px; font-size:11px; font-weight:800; letter-spacing:.02em; color:#e8eaed; }
+.cg-dock-item.cg-hl { background:rgba(245,166,35,.14); box-shadow:inset 0 0 0 1.5px var(--acc); color:#fff; }
+.cg-dot { flex:none; width:7px; height:7px; border-radius:50%; }
+/* dropzone mock */
+.cg-drop { border:2px dashed var(--line2); border-radius:12px; padding:18px; text-align:center; color:var(--txt2); background:var(--bg2); }
+.cg-drop svg { color:var(--acc); }
+.cg-drop-t { font-weight:800; font-size:13px; color:var(--txt); margin-top:4px; }
+.cg-drop-h { font-size:11px; color:var(--txt3); margin-top:1px; }
+/* mapping mock */
+.cg-map { background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:6px; }
+.cg-map-heads { display:grid; grid-template-columns:74px 1fr 88px; gap:6px; font-size:8px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; color:var(--txt3); }
+.cg-map-row { display:grid; grid-template-columns:74px 1fr 88px; gap:6px; align-items:center; }
+.cg-map-lbl { font-size:10.5px; font-weight:800; color:var(--txt); }
+.cg-field { font-size:11px; color:var(--txt); background:var(--bg); border:1px solid var(--line); border-radius:7px; padding:6px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cg-field-ph { color:var(--txt3); }
+/* panel + buttons mock */
+.cg-panel { background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:10px; }
+.cg-status-ok { background:rgba(46,204,113,.14); color:#2ecc71; border-radius:8px; padding:8px 10px; font-size:11px; }
+.cg-btns { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.cg-btn { display:inline-flex; align-items:center; border-radius:9px; padding:8px 13px; font-size:11.5px; font-weight:800; white-space:nowrap; }
+.cg-btn-primary { background:var(--acc); color:#fff; }
+.cg-btn-ghost { background:var(--bg3); color:var(--txt2); }
+.cg-btn-sec { background:var(--acc-bg); color:var(--acc); border:1px solid var(--acc-bdr); }
+.cg-btn .cg-arrow { color:inherit; }
+/* preview table mock */
+.cg-tbl-wrap { overflow:hidden; border:1px solid var(--line); border-radius:10px; }
+.cg-tbl { width:100%; border-collapse:collapse; font-size:10.5px; }
+.cg-tbl th, .cg-tbl td { border:1px solid var(--line); padding:5px 7px; text-align:center; color:var(--txt2); white-space:nowrap; }
+.cg-tbl th { background:var(--bg3); color:var(--txt2); font-size:8.5px; font-weight:800; text-transform:uppercase; }
+.cg-tbl td { background:var(--bg2); }
+.cg-tbl td.cg-bad { background:rgba(245,166,35,.22); color:var(--txt); font-weight:700; }
+/* google-sheet mock */
+.cg-sheet-wrap { overflow:hidden; border:1px solid var(--line); border-radius:10px; }
+.cg-sheet { width:100%; border-collapse:collapse; font-size:10px; }
+.cg-sheet th, .cg-sheet td { border:1px solid var(--line); padding:5px 7px; text-align:center; color:var(--txt2); white-space:nowrap; }
+.cg-sheet th { background:#e8eaf0; color:#555; font-size:8px; font-weight:800; }
+body:not(.light):not(.tiffany) .cg-sheet th { background:var(--bg3); color:var(--txt3); }
+.cg-sheet td { background:var(--bg2); }
+.cg-rownum { background:var(--bg3) !important; color:var(--txt3); font-weight:700; width:22px; }
+.cg-rownum-hl { color:var(--acc); }
+.cg-cell-hl { background:var(--acc-bg) !important; color:var(--acc) !important; font-weight:700; box-shadow:inset 0 0 0 2px var(--acc); }
 .conv-note { margin-top:12px; border-left:3px solid #f5a623; background:rgba(245,166,35,.08); border-radius:8px; padding:10px 12px; font-size:12px; line-height:1.5; color:var(--txt2); }
 @media (max-width:640px) {
   .conv-mapping { grid-template-columns:1fr; gap:4px 0; }

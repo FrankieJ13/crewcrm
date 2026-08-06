@@ -8433,18 +8433,104 @@ function renderConverterTab() {
 
       <div class="instr-block" id="conv-guide">
         <div class="instr-hdr" onclick="toggleInstr('conv-guide')"><h3>КАК ПОЛЬЗОВАТЬСЯ</h3><div class="instr-toggle">+</div></div>
-        <div class="instr-body" style="padding:12px 14px">
-          <ol class="conv-steps">
-            <li>Экспортируйте сделки или визиты из amoCRM в формате <b>CSV</b>.</li>
-            <li>Перетащите CSV-файл в окно ниже (или нажмите, чтобы выбрать файл).</li>
-            <li>Проверьте автоматически выбранное соответствие столбцов amoCRM и Google Таблицы.</li>
-            <li>При необходимости вручную поменяйте источник для нужного столбца (левое поле) или задайте постоянное значение (правое поле).</li>
-            <li>Нажмите <b>«Сформировать визиты»</b>.</li>
-            <li>Проверьте предпросмотр: дата, ФИО, телефон, город, источник, категория, способ покупки, менеджер.</li>
-            <li>Убедитесь, что телефоны в формате <b>7XXXXXXXXXX</b>, а даты — <b>дд.мм.гггг</b> (проблемные ячейки подсвечены).</li>
-            <li>Нажмите <b>«Копировать»</b>.</li>
-            <li>Встаньте на первую пустую строку в столбце <b>«ДАТА»</b> Google Таблицы и вставьте через <kbd>Ctrl</kbd>+<kbd>V</kbd> (на Mac — <kbd>⌘</kbd>+<kbd>V</kbd>). Значения выпадающих списков совпадут автоматически.</li>
-          </ol>
+        <div class="instr-body" style="padding:14px">
+          <div class="cg-list">
+
+            <div class="cg-step">
+              <div class="cg-step-row"><span class="cg-num">1</span><div class="cg-txt">В доке снизу открой <b>FAQ</b> и выбери подраздел <b>«Конвертер»</b>.</div></div>
+              <div class="cg-fig">
+                <div class="cg-dock">
+                  <div class="cg-dock-item"><span class="cg-dot" style="background:#3b82f6"></span>ИНСТРУКЦИИ</div>
+                  <div class="cg-dock-item"><span class="cg-dot" style="background:#3b82f6"></span>РЕГЛАМЕНТ</div>
+                  <div class="cg-dock-item"><span class="cg-dot" style="background:#ff6b35"></span>MANGO</div>
+                  <div class="cg-dock-item"><span class="cg-dot" style="background:#2ed573"></span>САЙТЫ CM</div>
+                  <div class="cg-dock-item"><span class="cg-dot" style="background:#3d7cff"></span>ЧАТ AUTO.RU</div>
+                  <div class="cg-dock-item"><span class="cg-dot" style="background:#ec4899"></span>ТРАФИК ПОИСК</div>
+                  <div class="cg-dock-item cg-hl"><span class="cg-dot" style="background:#f5a623"></span>КОНВЕРТЕР<span class="cg-arrow">◄</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="cg-step">
+              <div class="cg-step-row"><span class="cg-num">2</span><div class="cg-txt">В amoCRM выгрузи нужные сделки или визиты в формате <b>CSV</b>.</div></div>
+            </div>
+
+            <div class="cg-step">
+              <div class="cg-step-row"><span class="cg-num">3</span><div class="cg-txt">Перетащи CSV-файл в окно загрузки (или нажми, чтобы выбрать файл).</div></div>
+              <div class="cg-fig">
+                <div class="cg-drop">
+                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+                  <div class="cg-drop-t">Перетащите CSV сюда</div>
+                  <div class="cg-drop-h">или нажмите, чтобы выбрать файл</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="cg-step">
+              <div class="cg-step-row"><span class="cg-num">4</span><div class="cg-txt">Проверь авто-сопоставление столбцов amoCRM → Google Таблица. При необходимости поменяй <b>источник</b> для столбца (левое поле) или задай <b>постоянное значение</b> (правое поле).</div></div>
+              <div class="cg-fig">
+                <div class="cg-map">
+                  <div class="cg-map-heads"><span>Столбец Google</span><span>Столбец amoCRM</span><span>Пост. значение</span></div>
+                  <div class="cg-map-row"><span class="cg-map-lbl">ДАТА</span><span class="cg-field">Дата визита ▾</span><span class="cg-field cg-field-ph">необязательно</span></div>
+                  <div class="cg-map-row"><span class="cg-map-lbl">ТЕЛЕФОН</span><span class="cg-field">Рабочий телефон ▾</span><span class="cg-field cg-field-ph">необязательно</span></div>
+                  <div class="cg-map-row"><span class="cg-map-lbl">МЕНЕДЖЕР</span><span class="cg-field">Ответственный ▾</span><span class="cg-field cg-field-ph">необязательно</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="cg-step">
+              <div class="cg-step-row"><span class="cg-num">5</span><div class="cg-txt">Нажми <b>«Сформировать визиты»</b>.</div></div>
+              <div class="cg-fig">
+                <div class="cg-panel">
+                  <div class="cg-status-ok">amocrm_export.csv: 10 строк, 139 столбцов</div>
+                  <div class="cg-btns"><span class="cg-btn cg-btn-primary cg-hl">Сформировать визиты<span class="cg-arrow">◄</span></span><span class="cg-btn cg-btn-ghost">Автонастройка</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="cg-step">
+              <div class="cg-step-row"><span class="cg-num">6</span><div class="cg-txt">Проверь предпросмотр. Телефоны должны быть в формате <b>7XXXXXXXXXX</b>, даты — <b>дд.мм.гггг</b>. Проблемные ячейки подсвечены оранжевым.</div></div>
+              <div class="cg-fig">
+                <div class="cg-tbl-wrap">
+                  <table class="cg-tbl">
+                    <thead><tr><th>ДАТА</th><th>ФИО</th><th>ТЕЛЕФОН</th><th>ГОРОД</th></tr></thead>
+                    <tbody>
+                      <tr><td>12.07.2026</td><td>Сергей</td><td>79135909945</td><td>Красноярск</td></tr>
+                      <tr><td>12.07.2026</td><td>Игорь</td><td class="cg-bad">89130</td><td>Барнаул</td></tr>
+                      <tr><td>12.07.2026</td><td>Кристина</td><td>79233112233</td><td>Красноярск</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="cg-step">
+              <div class="cg-step-row"><span class="cg-num">7</span><div class="cg-txt">Нажми <b>«Копировать»</b> — данные лягут в буфер обмена.</div></div>
+              <div class="cg-fig">
+                <div class="cg-panel">
+                  <div class="cg-btns"><span class="cg-btn cg-btn-primary cg-hl">Копировать<span class="cg-arrow">◄</span></span><span class="cg-btn cg-btn-sec">Скачать TSV</span></div>
+                  <div class="cg-status-ok" style="margin-top:8px">Данные готовы к копированию.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="cg-step">
+              <div class="cg-step-row"><span class="cg-num">8</span><div class="cg-txt">В Google Таблице встань на первую пустую строку в столбце <b>«ДАТА»</b> и вставь через <kbd>Ctrl</kbd>+<kbd>V</kbd> (на Mac — <kbd>⌘</kbd>+<kbd>V</kbd>). Значения выпадающих списков подставятся автоматически.</div></div>
+              <div class="cg-fig">
+                <div class="cg-sheet-wrap">
+                  <table class="cg-sheet">
+                    <thead><tr><th></th><th>A · ДАТА</th><th>B · ФИО</th><th>C · ТЕЛЕФОН</th><th>D · ГОРОД</th></tr></thead>
+                    <tbody>
+                      <tr><td class="cg-rownum">1</td><td>12.07.2026</td><td>Сергей</td><td>7913…</td><td>Красноярск</td></tr>
+                      <tr><td class="cg-rownum">2</td><td>12.07.2026</td><td>Игорь</td><td>7913…</td><td>Барнаул</td></tr>
+                      <tr><td class="cg-rownum cg-rownum-hl">3</td><td class="cg-cell-hl">вставьте сюда ▸</td><td></td><td></td><td></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
 

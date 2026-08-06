@@ -2990,6 +2990,12 @@ body.light .instr-table tr:hover td { background:rgba(0,0,0,.02) }
 .conv-table td { color:var(--txt2); background:var(--bg2); }
 .conv-table td.issue { background:rgba(245,166,35,.18); color:var(--txt); }
 .conv-table td.conv-cell-wrap { white-space:normal; overflow-wrap:break-word; word-break:break-word; max-width:160px; text-overflow:clip; }
+/* Инструкция «Как пользоваться» в конвертере */
+.conv-steps { margin:0; padding:0; list-style:none; counter-reset:cs; display:flex; flex-direction:column; gap:10px; }
+.conv-steps li { position:relative; padding-left:30px; font-size:12.5px; line-height:1.55; color:var(--txt2); counter-increment:cs; }
+.conv-steps li::before { content:counter(cs); position:absolute; left:0; top:-1px; width:21px; height:21px; border-radius:50%; background:var(--acc-bg); border:1px solid var(--acc-bdr); color:var(--acc); font-size:10px; font-weight:800; display:flex; align-items:center; justify-content:center; font-family:'Unbounded',sans-serif; }
+.conv-steps b { color:var(--txt); font-weight:700; }
+.conv-steps kbd { font-family:inherit; font-size:11px; font-weight:700; background:var(--bg3); border:1px solid var(--line); border-radius:5px; padding:1px 5px; color:var(--txt); }
 .conv-note { margin-top:12px; border-left:3px solid #f5a623; background:rgba(245,166,35,.08); border-radius:8px; padding:10px 12px; font-size:12px; line-height:1.5; color:var(--txt2); }
 @media (max-width:640px) {
   .conv-mapping { grid-template-columns:1fr; gap:4px 0; }

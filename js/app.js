@@ -8431,6 +8431,23 @@ function renderConverterTab() {
     <div class="conv-wrap">
       <div class="conv-lead">Загрузите CSV из amoCRM, проверьте соответствие полей и скопируйте готовые строки в Google Таблицу.</div>
 
+      <div class="instr-block" id="conv-guide">
+        <div class="instr-hdr" onclick="toggleInstr('conv-guide')"><h3>КАК ПОЛЬЗОВАТЬСЯ</h3><div class="instr-toggle">+</div></div>
+        <div class="instr-body" style="padding:12px 14px">
+          <ol class="conv-steps">
+            <li>Экспортируйте сделки или визиты из amoCRM в формате <b>CSV</b>.</li>
+            <li>Перетащите CSV-файл в окно ниже (или нажмите, чтобы выбрать файл).</li>
+            <li>Проверьте автоматически выбранное соответствие столбцов amoCRM и Google Таблицы.</li>
+            <li>При необходимости вручную поменяйте источник для нужного столбца (левое поле) или задайте постоянное значение (правое поле).</li>
+            <li>Нажмите <b>«Сформировать визиты»</b>.</li>
+            <li>Проверьте предпросмотр: дата, ФИО, телефон, город, источник, категория, способ покупки, менеджер.</li>
+            <li>Убедитесь, что телефоны в формате <b>7XXXXXXXXXX</b>, а даты — <b>дд.мм.гггг</b> (проблемные ячейки подсвечены).</li>
+            <li>Нажмите <b>«Копировать»</b>.</li>
+            <li>Встаньте на первую пустую строку в столбце <b>«ДАТА»</b> Google Таблицы и вставьте через <kbd>Ctrl</kbd>+<kbd>V</kbd> (на Mac — <kbd>⌘</kbd>+<kbd>V</kbd>). Значения выпадающих списков совпадут автоматически.</li>
+          </ol>
+        </div>
+      </div>
+
       <div class="conv-card">
         <div class="conv-drop" id="conv-drop">
           <input id="conv-file" type="file" accept=".csv,text/csv" hidden>
@@ -13191,12 +13208,16 @@ function renderCeoDashboard() {
   // Суммируем визиты так же, как модалка «Хронология» (getVisitsByDayAll) —
   // все строки с валидной датой и сверкой, без фильтра по принадлежности
   // менеджера к ПЛАН. Это устраняет расхождение карточек с хронологией.
-  const _sumChrono = (rows) => {
+  // «Пеший трафик» у Дожима НЕ считается в общий итог визитов (правило для CEO/ROP-домашней).
+  // Источник — колонка F (индекс 5) листа Д_ВИЗИТЫ.
+  const isDozhimPeshiy = (r) => String(r && r[5] || '').trim().toLowerCase().startsWith('пеший трафик');
+  const _sumChrono = (rows, skipFn) => {
     if (!Array.isArray(rows)) return 0;
     let n = 0;
     for (let i = 1; i < rows.length; i++) {
       const r = rows[i]; if (!r) continue;
       if (!isSverkaRow(r)) continue;
+      if (skipFn && skipFn(r)) continue;
       const d = parseInt(String(r[0]||'').trim().split('.')[0]);
       if (!d || d < 1) continue;
       n++;
@@ -13204,7 +13225,7 @@ function renderCeoDashboard() {
     return n;
   };
   const crmFact    = _sumChrono(vizData);
-  const dozhimFact = _sumChrono(dvData);
+  const dozhimFact = _sumChrono(dvData, isDozhimPeshiy);
   const crmPlanSum = crmMgrs.reduce((s,m) => s + m.plan, 0);
   const dozhimPlanSum = dozhimMgrs.reduce((s,m) => s + m.plan, 0);
   const crmProg    = computeProgPct(crmFact,    crmPlanSum,    sfx);
@@ -13278,10 +13299,12 @@ function renderCeoDashboard() {
   function countVisitsOnDay(dayStr) {
     let n = 0;
     [vizData, dvData].forEach(rows => {
+      const isDoz = rows === dvData;
       for (let i = 1; i < rows.length; i++) {
         const r = rows[i];
         if (!r || !r[0]) continue;
         if (!isSverkaRow(r)) continue;
+        if (isDoz && isDozhimPeshiy(r)) continue;   // Пеший трафик Дожима не в счёт
         const d = String(r[0]).trim().split('.')[0].padStart(2,'0');
         if (d === dayStr) n++;
       }
@@ -13329,10 +13352,12 @@ function renderCeoDashboard() {
     const arr = new Array(dayNum).fill(0);
     const lists = scope === 'crm' ? [vizData] : scope === 'dozhim' ? [dvData] : [vizData, dvData];
     lists.forEach(rows => {
+      const isDoz = rows === dvData;
       for (let i = 1; i < rows.length; i++) {
         const r = rows[i];
         if (!r || !r[0]) continue;
         if (!isSverkaRow(r)) continue;
+        if (isDoz && isDozhimPeshiy(r)) continue;   // Пеший трафик Дожима не в счёт
         const d = parseInt(String(r[0]).trim().split('.')[0]);
         if (d >= 1 && d <= dayNum) arr[d-1]++;
       }
@@ -13567,11 +13592,11 @@ function renderCeoDashboard() {
       </details>` : ''}
 
       <!-- ТЕКУЩИЙ KPI -->
-      <div class="sec-title">Текущий KPI <span style="font-size:9px;color:var(--txt3);font-weight:600;letter-spacing:0.04em">· CRM</span></div>
+      <div class="sec-title">Текущий KPI <span style="font-size:9px;color:var(--txt3);font-weight:600;letter-spacing:0.04em">· CRM + Дожим</span></div>
       ${(() => {
-        const _fact = crmFact;
-        const _plan = crmPlanSum;
-        const _prog = crmProg;
+        const _fact = totalFact;   // суммарный факт CRM + Дожим (Дожим без «Пеший трафик»)
+        const _plan = totalPlan;
+        const _prog = companyProg;
         const _progColor = _prog >= 100 ? 'var(--grn)' : _prog >= 85 ? '#ffd60a' : 'var(--red)';
         return `
       <div class="kpi-income-panel ceo-forecast-panel" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">

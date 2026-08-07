@@ -4527,6 +4527,7 @@ function buildDozhimStats(dVizData, opts = {}) {
   const BUY_KOM    = 'комиссия';
   const CAT800     = 'кат 800';
   const CAT1000    = 'кат 1000';
+  const CAT1200    = 'кат 1200';   // Дожим: новая категория. Ставки как у кат 1000, визит = 1200₽.
 
   for (let i = 1; i < dVizData.length; i++) {
     const row = dVizData[i];
@@ -4542,9 +4543,10 @@ function buildDozhimStats(dVizData, opts = {}) {
       mgrs[mgrL] = {
         name: mgr,
         vis:0,             // общее число строк менеджера — для единообразия с хронологией
-        vis800:0, vis1000:0,
+        vis800:0, vis1000:0, vis1200:0,
         kred800:0, nal800:0, obmen800:0, vykup800:0, kom800:0,
         kred1000:0, nal1000:0, obmen1000:0, vykup1000:0, kom1000:0,
+        kred1200:0, nal1200:0, obmen1200:0, vykup1200:0, kom1200:0,
         zadatok:0,
       };
     }
@@ -4553,9 +4555,10 @@ function buildDozhimStats(dVizData, opts = {}) {
     const statuses = parseVizStatuses(row[4]);                    // col E — combo через «+»
     const zadSum = parseFloat(String(row[9]||'0').replace(/[^\d.]/g,'')) || 0; // col J
 
-    // m.vis считаем только для валидных Дожим-категорий → m.vis ≡ vis800 + vis1000
+    // m.vis считаем только для валидных Дожим-категорий → m.vis ≡ vis800 + vis1000 + vis1200
     if (cat === CAT800)  { m.vis++; m.vis800++; }
     if (cat === CAT1000) { m.vis++; m.vis1000++; }
+    if (cat === CAT1200) { m.vis++; m.vis1200++; }
 
     statuses.forEach(st => {
       if (cat === CAT800) {
@@ -4571,6 +4574,13 @@ function buildDozhimStats(dVizData, opts = {}) {
         if (st === BUY_OBMEN)  m.obmen1000++;
         if (st === BUY_VYKUP)  m.vykup1000++;
         if (st === BUY_KOM)    m.kom1000++;
+      }
+      if (cat === CAT1200) {
+        if (st === BUY_KREDIT) m.kred1200++;
+        if (st === BUY_NAL)    m.nal1200++;
+        if (st === BUY_OBMEN)  m.obmen1200++;
+        if (st === BUY_VYKUP)  m.vykup1200++;
+        if (st === BUY_KOM)    m.kom1200++;
       }
     });
     if (zadSum >= 1000) m.zadatok++;
@@ -4594,6 +4604,8 @@ const DOZHIM_RATES_FALLBACK = {
   baseOklad: 15000,
   r800Vis: 800, r800Kred: 3000, r800Nal: 2000, r800Obmen: 2000, r800Kom: 2000,
   r1000Vis: 2000, r1000Kred: 7000, r1000Nal: 7000, r1000Obmen: 7000, r1000Kom: 2000,
+  // кат 1200 — как кат 1000, но визит 1200₽
+  r1200Vis: 1200, r1200Kred: 7000, r1200Nal: 7000, r1200Obmen: 7000, r1200Kom: 2000,
   rZadatok: 1000,
   rVykup: 2000,
 };
@@ -4637,9 +4649,15 @@ function getDozhimRates(suffix = currentSuffix) {
   const d  = m.dozhim;
   const c8 = d.cat800  || {};
   const c10= d.cat1000 || {};
-  // Vykup общий для обоих катов — берём из 800 (если есть), иначе из 1000
+  const c12= d.cat1200 || {};   // кат 1200 (Дожим): опциональный блок; иначе derive из cat1000
+  // Vykup общий для катов — берём из 800 (если есть), иначе из 1000
   const sharedVykup = c8.vykup || c10.vykup || 0;
   // 0/пусто в ячейке = fallback (кроме vykup — там 0 намеренно отключает)
+  const r1000Vis   = c10.vis   || FB.r1000Vis;
+  const r1000Kred  = c10.kred  || FB.r1000Kred;
+  const r1000Nal   = c10.nal   || FB.r1000Nal;
+  const r1000Obmen = c10.obmen || FB.r1000Obmen;
+  const r1000Kom   = c10.kom   || FB.r1000Kom;
   return {
     r800Vis:   c8.vis   || FB.r800Vis,
     r800Kred:  c8.kred  || FB.r800Kred,
@@ -4647,11 +4665,13 @@ function getDozhimRates(suffix = currentSuffix) {
     r800Obmen: c8.obmen || FB.r800Obmen,
     r800Kom:   c8.kom   || FB.r800Kom,
     rZadatok:  d.zadatok || FB.rZadatok,
-    r1000Vis:  c10.vis   || FB.r1000Vis,
-    r1000Kred: c10.kred  || FB.r1000Kred,
-    r1000Nal:  c10.nal   || FB.r1000Nal,
-    r1000Obmen:c10.obmen || FB.r1000Obmen,
-    r1000Kom:  c10.kom   || FB.r1000Kom,
+    r1000Vis, r1000Kred, r1000Nal, r1000Obmen, r1000Kom,
+    // кат 1200 = кат 1000, но визит 1200₽ (либо явные значения из cat1200, если заданы)
+    r1200Vis:   c12.vis   || FB.r1200Vis,
+    r1200Kred:  c12.kred  || r1000Kred,
+    r1200Nal:   c12.nal   || r1000Nal,
+    r1200Obmen: c12.obmen || r1000Obmen,
+    r1200Kom:   c12.kom   || r1000Kom,
     baseOklad: d.oklad   || FB.baseOklad,
     rVykup:    sharedVykup,
   };
@@ -4705,9 +4725,11 @@ function calcSalaryDozhimFromVizity(nameLow) {
 
   const ch800 = { vis: mgrStat.vis800, kred: mgrStat.kred800, nal: mgrStat.nal800, obmen: mgrStat.obmen800, vykup: mgrStat.vykup800||0, kom: mgrStat.kom800, zadatok: mgrStat.zadatok };
   const ch1000 = { vis: mgrStat.vis1000, kred: mgrStat.kred1000, nal: mgrStat.nal1000, obmen: mgrStat.obmen1000||0, vykup: mgrStat.vykup1000||0, kom: mgrStat.kom1000 };
+  const ch1200 = { vis: mgrStat.vis1200||0, kred: mgrStat.kred1200||0, nal: mgrStat.nal1200||0, obmen: mgrStat.obmen1200||0, vykup: mgrStat.vykup1200||0, kom: mgrStat.kom1200||0 };
 
   const pure800  = Math.max(0, ch800.vis  - ch800.kred  - ch800.nal  - ch800.obmen - ch800.vykup - ch800.kom);
   const pure1000 = Math.max(0, ch1000.vis - ch1000.kred - ch1000.nal - ch1000.obmen - ch1000.vykup - ch1000.kom);
+  const pure1200 = Math.max(0, ch1200.vis - ch1200.kred - ch1200.nal - ch1200.obmen - ch1200.vykup - ch1200.kom);
 
   // Если у типа сделки нет ставки (0/пусто) — оплачивается как визит КАТ.
   const dealRate = (rDeal, rVisitFallback) => (rDeal > 0 ? rDeal : rVisitFallback);
@@ -4724,17 +4746,25 @@ function calcSalaryDozhimFromVizity(nameLow) {
                  + ch1000.obmen * dealRate(R.r1000Obmen,R.r1000Vis)
                  + ch1000.vykup * dealRate(rVykup,      R.r1000Vis)
                  + ch1000.kom   * dealRate(R.r1000Kom,  R.r1000Vis);
+  const earn1200 = pure1200*R.r1200Vis
+                 + ch1200.kred  * dealRate(R.r1200Kred, R.r1200Vis)
+                 + ch1200.nal   * dealRate(R.r1200Nal,  R.r1200Vis)
+                 + ch1200.obmen * dealRate(R.r1200Obmen,R.r1200Vis)
+                 + ch1200.vykup * dealRate(rVykup,      R.r1200Vis)
+                 + ch1200.kom   * dealRate(R.r1200Kom,  R.r1200Vis);
 
   // Котёл — суммируем тех кто не в ПЛАН (dozhim-менеджеры)
   const planM = getPlanMap(S.data.plan || []);
   const planNamesLow = new Set(Object.keys(planM).filter(nl => getRoleByName(nl) === 'dozhim'));
-  let kotelEarn800 = 0, kotelEarn1000 = 0;
+  let kotelEarn800 = 0, kotelEarn1000 = 0, kotelEarn1200 = 0;
   Object.values(allStats).forEach(s => {
     if (!planNamesLow.has(s.name.toLowerCase())) {
       const sv800  = s.vykup800  || 0;
       const sv1000 = s.vykup1000 || 0;
+      const sv1200 = s.vykup1200 || 0;
       const p8  = Math.max(0, s.vis800  - s.kred800  - s.nal800  - s.obmen800 - sv800  - s.kom800);
       const p10 = Math.max(0, s.vis1000 - s.kred1000 - s.nal1000 - (s.obmen1000 || 0) - sv1000 - s.kom1000);
+      const p12 = Math.max(0, (s.vis1200||0) - (s.kred1200||0) - (s.nal1200||0) - (s.obmen1200||0) - sv1200 - (s.kom1200||0));
       kotelEarn800  += p8*R.r800Vis
                      + s.kred800  * dealRate(R.r800Kred,  R.r800Vis)
                      + s.nal800   * dealRate(R.r800Nal,   R.r800Vis)
@@ -4748,18 +4778,24 @@ function calcSalaryDozhimFromVizity(nameLow) {
                      + (s.obmen1000 || 0) * dealRate(R.r1000Obmen, R.r1000Vis)
                      + sv1000      * dealRate(rVykup,      R.r1000Vis)
                      + s.kom1000   * dealRate(R.r1000Kom,  R.r1000Vis);
+      kotelEarn1200 += p12*R.r1200Vis
+                     + (s.kred1200||0)  * dealRate(R.r1200Kred, R.r1200Vis)
+                     + (s.nal1200||0)   * dealRate(R.r1200Nal,  R.r1200Vis)
+                     + (s.obmen1200||0) * dealRate(R.r1200Obmen, R.r1200Vis)
+                     + sv1200           * dealRate(rVykup,      R.r1200Vis)
+                     + (s.kom1200||0)   * dealRate(R.r1200Kom,  R.r1200Vis);
     }
   });
-  const kotelTotal = kotelEarn800 + kotelEarn1000;
+  const kotelTotal = kotelEarn800 + kotelEarn1000 + kotelEarn1200;
   const fundCount  = getFundCount('dozhim');
   const inFund     = isInFund(nameLow, 'dozhim');
   const kotelShare = (inFund && fundCount > 0) ? kotelTotal / fundCount : 0;
 
-  const premium   = earn800 + earn1000 + kotelShare;
+  const premium   = earn800 + earn1000 + earn1200 + kotelShare;
   const totalFact = oklad + premium;  // без коэффициента
 
   const planVal = planM[nameLow] || 0;
-  const allVis  = ch800.vis + ch1000.vis;
+  const allVis  = ch800.vis + ch1000.vis + ch1200.vis;
   const pctFact = computeFactPct(allVis, planVal || 1);
   const pctProg = computeProgPct(allVis, planVal || 1, currentSuffix);
 
@@ -4771,7 +4807,7 @@ function calcSalaryDozhimFromVizity(nameLow) {
       workedR: schedInfo ? schedInfo.workedR : null,
       totalR:  schedInfo ? schedInfo.totalR  : null,
       inFund, premium, kotel: kotelShare, kotelTotal, fundCount,
-      ch800, ch1000, earn800, earn1000,
+      ch800, ch1000, ch1200, earn800, earn1000, earn1200,
     },
   };
 }
@@ -5213,13 +5249,13 @@ function renderOtchet() {
     // и число не совпадало с CEO dashboard где chronology total.
     const dAllVis = (typeof getVisitsByDayAll === 'function')
       ? getVisitsByDayAll(true).reduce((a, b) => a + b, 0)
-      : dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.vis800||0)+(st.vis1000||0);},0);
+      : dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.vis800||0)+(st.vis1000||0)+(st.vis1200||0);},0);
     const dPlan     = dNamesEff.reduce((s,n)=>{const v=dPlanM[n.toLowerCase()]||0; return s+v;},0);
     const dSalesPl  = dNamesEff.reduce((s,n)=>{const v=dSalesM2[n.toLowerCase()]||0; return s+v;},0);
-    const dSalesFact= dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.kred800||0)+(st.nal800||0)+(st.obmen800||0)+(st.kred1000||0)+(st.nal1000||0)+(st.obmen1000||0);},0);
-    const dKred     = dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.kred800||0)+(st.kred1000||0);},0);
-    const dNal      = dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.nal800||0)+(st.nal1000||0)+(st.obmen800||0)+(st.obmen1000||0);},0);
-    const dKom      = dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.kom800||0)+(st.kom1000||0);},0);
+    const dSalesFact= dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.kred800||0)+(st.nal800||0)+(st.obmen800||0)+(st.kred1000||0)+(st.nal1000||0)+(st.obmen1000||0)+(st.kred1200||0)+(st.nal1200||0)+(st.obmen1200||0);},0);
+    const dKred     = dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.kred800||0)+(st.kred1000||0)+(st.kred1200||0);},0);
+    const dNal      = dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.nal800||0)+(st.nal1000||0)+(st.obmen800||0)+(st.obmen1000||0)+(st.nal1200||0)+(st.obmen1200||0);},0);
+    const dKom      = dNamesEff.reduce((s,n)=>{const st=dStats[n.toLowerCase()]||{};return s+(st.kom800||0)+(st.kom1000||0)+(st.kom1200||0);},0);
     let dProgNum = 0;
     let dProg = '—';
     if (dp && dPlan > 0) { dProgNum = Math.round(dAllVis / (dPlan / dim * dp) * 100); dProg = dProgNum + '%'; }
@@ -5488,7 +5524,7 @@ function renderDozhimCards(opts = {}) {
   const withProg = dozhimNames.map(name => {
     const nl     = name.toLowerCase();
     const s      = dStats[nl] || {};
-    const allVis = (s.vis800||0) + (s.vis1000||0);
+    const allVis = (s.vis800||0) + (s.vis1000||0) + (s.vis1200||0);
     const plan   = planM[nl] || 1;
     return { name, nl, s, allVis, plan, progNum: computeProgPct(allVis, plan, currentSuffix), factNum: computeFactPct(allVis, plan) };
   });
@@ -5500,15 +5536,16 @@ function renderDozhimCards(opts = {}) {
     const ost     = Math.max(0, plan - allVis);
     const daily   = computeDailyPlan(plan, allVis, progNum, currentSuffix, name);
     const sPlan   = dSalesM[nl] || 0;
-    const sFact   = (s.kred800||0)+(s.nal800||0)+(s.obmen800||0)+(s.kred1000||0)+(s.nal1000||0)+(s.obmen1000||0);
+    const sFact   = (s.kred800||0)+(s.nal800||0)+(s.obmen800||0)+(s.kred1000||0)+(s.nal1000||0)+(s.obmen1000||0)+(s.kred1200||0)+(s.nal1200||0)+(s.obmen1200||0);
     const sOst    = Math.max(0, sPlan - sFact);
     const sProg   = sPlan ? computeProgPct(sFact, sPlan, currentSuffix) : 0;
     const modalData = JSON.stringify({
       type:'dozhim', name: name.toUpperCase(), nameLow: nl,
-      v800: s.vis800||0, v1000: s.vis1000||0,
+      v800: s.vis800||0, v1000: s.vis1000||0, v1200: s.vis1200||0,
       rplan: plan, ost, prc: factNum+'%', prog: progNum+'%', allV: allVis,
       kred800:s.kred800||0, nal800:s.nal800||0, obmen800:s.obmen800||0, kom800:s.kom800||0,
-      kred1000:s.kred1000||0, nal1000:s.nal1000||0, obmen1000:s.obmen1000||0, kom1000:s.kom1000||0, zadatok:s.zadatok||0,
+      kred1000:s.kred1000||0, nal1000:s.nal1000||0, obmen1000:s.obmen1000||0, kom1000:s.kom1000||0,
+      kred1200:s.kred1200||0, nal1200:s.nal1200||0, obmen1200:s.obmen1200||0, kom1200:s.kom1200||0, zadatok:s.zadatok||0,
       sPlan, sFact, sOst, sProg,
       rs, idx: idx+1,
     }).replace(/'/g,"&#39;");
@@ -5536,7 +5573,7 @@ function openDozhimModal(dataStr) {
   const rs = d.rs;
   document.getElementById('mop-modal-title').innerHTML = `<span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${d.idx}</span><span style="font-family:'Unbounded',sans-serif">${d.name}</span>`;
   const sp = d.sProg || 0;
-  document.getElementById('mop-modal-body').innerHTML = `<div class="mop-grid4"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div></div>${d.sPlan ? `<div class="mop-grid4" style="margin-top:6px"><div class="m4"><div class="ml">Продажи</div><div class="mv" style="color:${pctClr(sp)}">${d.sFact}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.sPlan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.sOst}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(sp)}">${sp}%</div></div></div>` : ''}<div class="prog-row"><span class="prog-l" style="color:${pctClr(p)}">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${pctClr(p)}"></div></div><span class="prog-r">100%</span></div><div class="modal-sec"><div class="modal-sec-title">КАТ 800</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Обмен</div><div class="mc-v">${d.obmen800||0}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">КАТ 1000</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1000}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1000}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1000}</div></div><div class="modal-cell"><div class="mc-l">Обмен</div><div class="mc-v">${d.obmen1000||0}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1000}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div></div></div>`;
+  document.getElementById('mop-modal-body').innerHTML = `<div class="mop-grid4"><div class="m4"><div class="ml">Визиты</div><div class="mv">${d.allV}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.rplan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.ost}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(p)}">${d.prog}</div></div></div>${d.sPlan ? `<div class="mop-grid4" style="margin-top:6px"><div class="m4"><div class="ml">Продажи</div><div class="mv" style="color:${pctClr(sp)}">${d.sFact}</div></div><div class="m4"><div class="ml">План</div><div class="mv">${d.sPlan}</div></div><div class="m4"><div class="ml">Остаток</div><div class="mv">${d.sOst}</div></div><div class="m4"><div class="ml">Прогноз</div><div class="mv" style="color:${pctClr(sp)}">${sp}%</div></div></div>` : ''}<div class="prog-row"><span class="prog-l" style="color:${pctClr(p)}">${d.prc}</span><div class="prog-track"><div class="prog-fill" style="width:${Math.min(p,100)}%;background:${pctClr(p)}"></div></div><span class="prog-r">100%</span></div><div class="modal-sec"><div class="modal-sec-title">КАТ 800</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v800}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred800}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal800}</div></div><div class="modal-cell"><div class="mc-l">Обмен</div><div class="mc-v">${d.obmen800||0}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div></div></div><div class="modal-sec"><div class="modal-sec-title">КАТ 1000</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1000}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1000}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1000}</div></div><div class="modal-cell"><div class="mc-l">Обмен</div><div class="mc-v">${d.obmen1000||0}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1000}</div></div><div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div></div></div>${(d.v1200||d.kred1200||d.nal1200||d.obmen1200||d.kom1200) ? `<div class="modal-sec"><div class="modal-sec-title">КАТ 1200</div><div class="modal-grid"><div class="modal-cell"><div class="mc-l">Визиты</div><div class="mc-v">${d.v1200}</div></div><div class="modal-cell"><div class="mc-l">Кредиты</div><div class="mc-v">${d.kred1200}</div></div><div class="modal-cell"><div class="mc-l">Наличка</div><div class="mc-v">${d.nal1200}</div></div><div class="modal-cell"><div class="mc-l">Обмен</div><div class="mc-v">${d.obmen1200||0}</div></div><div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1200}</div></div></div></div>` : ''}`;
   document.getElementById('mop-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -5645,8 +5682,8 @@ function renderDohod() {
       premium: sal.detail.premium, kotel: sal.detail.kotel,
       kotelTotal: sal.detail.kotelTotal, fundCount: sal.detail.fundCount,
       inFund: sal.detail.inFund,
-      ch800: sal.detail.ch800, ch1000: sal.detail.ch1000,
-      earn800: sal.detail.earn800, earn1000: sal.detail.earn1000,
+      ch800: sal.detail.ch800, ch1000: sal.detail.ch1000, ch1200: sal.detail.ch1200,
+      earn800: sal.detail.earn800, earn1000: sal.detail.earn1000, earn1200: sal.detail.earn1200,
       fact: sal.fact, prognoz: sal.prognoz,
     };
     setLiveHTML(el, `
@@ -5970,8 +6007,8 @@ function renderDohodDozhim(el) {
         premium: item.sal.detail.premium, kotel: item.sal.detail.kotel,
         kotelTotal: item.sal.detail.kotelTotal, fundCount: item.sal.detail.fundCount,
         inFund: item.sal.detail.inFund,
-        ch800: item.sal.detail.ch800, ch1000: item.sal.detail.ch1000,
-        earn800: item.sal.detail.earn800, earn1000: item.sal.detail.earn1000,
+        ch800: item.sal.detail.ch800, ch1000: item.sal.detail.ch1000, ch1200: item.sal.detail.ch1200,
+        earn800: item.sal.detail.earn800, earn1000: item.sal.detail.earn1000, earn1200: item.sal.detail.earn1200,
         fact: item.sal.fact, prognoz: item.sal.prognoz,
       };
       detailBtn = `<button class="mop-info-btn" style="position:absolute;top:10px;right:10px" onclick="openDozhimIncomeModal(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="">i</button>`;
@@ -10142,6 +10179,7 @@ function renderPersonal(matched) {
 
   let mgrRow = null;
   let salObj = null;
+  let dozRaw = null;   // сырой стат дожима (для per-категория разбивки в модалке, вкл. кат 1200)
 
   let dSalesPlanNum = 0;
   if (isDozhim) {
@@ -10151,17 +10189,20 @@ function renderPersonal(matched) {
     const s      = dStats[nameLow] || {};
     const planVal = planM[nameLow] || 0;
     dSalesPlanNum = dSalesM[nameLow] || 0;
-    const allVis  = (typeof s.vis === 'number') ? s.vis : ((s.vis800||0) + (s.vis1000||0));
+    const allVis  = (typeof s.vis === 'number') ? s.vis : ((s.vis800||0) + (s.vis1000||0) + (s.vis1200||0));
     const synRow  = new Array(20).fill('');
     synRow[0] = name;
-    synRow[1] = s.vis800||0;  synRow[2] = s.vis1000||0;
+    // Во второй слот сворачиваем кат 1000 + кат 1200 — по нему считаются итоги (кред/нал/продажи).
+    // Пер-категория разбивка (кат 1000 vs кат 1200) идёт в модалку из dozRaw.
+    synRow[1] = s.vis800||0;  synRow[2] = (s.vis1000||0) + (s.vis1200||0);
     synRow[3] = planVal;      synRow[4] = Math.max(0, planVal - allVis);
     synRow[7] = allVis;
     synRow[8] = s.kred800||0; synRow[9] = s.nal800||0;
     synRow[10]= s.obmen800||0; synRow[11]= s.kom800||0;
-    synRow[12]= s.kred1000||0; synRow[13]= s.nal1000||0;
-    synRow[14]= s.obmen1000||0; synRow[15]= s.zadatok||0;
+    synRow[12]= (s.kred1000||0) + (s.kred1200||0); synRow[13]= (s.nal1000||0) + (s.nal1200||0);
+    synRow[14]= (s.obmen1000||0) + (s.obmen1200||0); synRow[15]= s.zadatok||0;
     mgrRow = synRow;
+    dozRaw = s;
     salObj = calcSalaryDozhimFromVizity(nameLow);
   } else {
     // Строим mgrRow из ВИЗИТЫ + ПЛАН
@@ -10260,11 +10301,12 @@ function renderPersonal(matched) {
   const _pmd = isDozhim
     ? JSON.stringify({
         type:'dozhim', name: name.toUpperCase(), nameLow,
-        v800: mgrRow[1], v1000: mgrRow[2],
+        v800: (dozRaw&&dozRaw.vis800)||0, v1000: (dozRaw&&dozRaw.vis1000)||0, v1200: (dozRaw&&dozRaw.vis1200)||0,
         rplan: mgrRow[3]||'0', ost: mgrRow[4]||'0',
         prc, prog, allV: factN,
-        kred800: mgrRow[8], nal800: mgrRow[9], obmen800: mgrRow[10], kom800: mgrRow[11],
-        kred1000: mgrRow[12], nal1000: mgrRow[13], obmen1000: mgrRow[14], kom1000: 0, zadatok: mgrRow[15],
+        kred800: (dozRaw&&dozRaw.kred800)||0, nal800: (dozRaw&&dozRaw.nal800)||0, obmen800: (dozRaw&&dozRaw.obmen800)||0, kom800: (dozRaw&&dozRaw.kom800)||0,
+        kred1000: (dozRaw&&dozRaw.kred1000)||0, nal1000: (dozRaw&&dozRaw.nal1000)||0, obmen1000: (dozRaw&&dozRaw.obmen1000)||0, kom1000: 0,
+        kred1200: (dozRaw&&dozRaw.kred1200)||0, nal1200: (dozRaw&&dozRaw.nal1200)||0, obmen1200: (dozRaw&&dozRaw.obmen1200)||0, kom1200: 0, zadatok: (dozRaw&&dozRaw.zadatok)||0,
         sPlan: dSalesPlanNum, sFact: salesFactN, sOst: salesOst, sProg: salesProgNum,
         rs: rsP, idx: 1,
       })
@@ -10313,8 +10355,8 @@ function renderPersonal(matched) {
         premium: dSal.detail.premium, kotel: dSal.detail.kotel,
         kotelTotal: dSal.detail.kotelTotal, fundCount: dSal.detail.fundCount,
         inFund: dSal.detail.inFund,
-        ch800: dSal.detail.ch800, ch1000: dSal.detail.ch1000,
-        earn800: dSal.detail.earn800, earn1000: dSal.detail.earn1000,
+        ch800: dSal.detail.ch800, ch1000: dSal.detail.ch1000, ch1200: dSal.detail.ch1200,
+        earn800: dSal.detail.earn800, earn1000: dSal.detail.earn1000, earn1200: dSal.detail.earn1200,
         fact: dSal.fact, prognoz: dSal.prognoz,
       };
       incomePanelAttr = `style="position:relative;cursor:pointer" onclick="openDozhimIncomeModal(this)" data-income='${JSON.stringify(incomeDetail).replace(/'/g,"&#39;")}' data-total=""`;
@@ -11130,6 +11172,28 @@ function openDozhimIncomeModal(btn) {
                                 + n(ch10.obmen)* dealRate(R.r1000Obmen,R.r1000Vis)
                                 + v10          * dealRate(rVykup,      R.r1000Vis)
                                 + n(ch10.kom)  * dealRate(R.r1000Kom,  R.r1000Vis));
+  // КАТ 1200 (Дожим) — ставки как у 1000, визит 1200₽
+  const ch12 = d.ch1200 || {};
+  const v12  = n(ch12.vykup||0);
+  const p12  = Math.max(0, n(ch12.vis) - n(ch12.kred) - n(ch12.nal) - n(ch12.obmen) - v12 - n(ch12.kom));
+  const earn12 = n(d.earn1200) || (p12*R.r1200Vis
+                                + n(ch12.kred) * dealRate(R.r1200Kred, R.r1200Vis)
+                                + n(ch12.nal)  * dealRate(R.r1200Nal,  R.r1200Vis)
+                                + n(ch12.obmen)* dealRate(R.r1200Obmen,R.r1200Vis)
+                                + v12          * dealRate(rVykup,      R.r1200Vis)
+                                + n(ch12.kom)  * dealRate(R.r1200Kom,  R.r1200Vis));
+  const has12 = n(ch12.vis) > 0 || earn12 > 0;
+  const cat1200Section = has12 ? `
+    <div class="income-sec-title">КАТ 1200</div>
+    <div class="dz-badges">
+      ${dzBadge('Визиты',   p12,             Math.round(p12*R.r1200Vis))}
+      ${dzBadge('Кредит',   n(ch12.kred),    Math.round(n(ch12.kred) * dealRate(R.r1200Kred, R.r1200Vis)))}
+      ${dzBadge('Наличка',  n(ch12.nal),     Math.round(n(ch12.nal) * dealRate(R.r1200Nal, R.r1200Vis)))}
+      ${dzBadge('Обмен',    n(ch12.obmen),   Math.round(n(ch12.obmen) * dealRate(R.r1200Obmen, R.r1200Vis)))}
+      ${dzBadge('Комиссия', n(ch12.kom),     Math.round(n(ch12.kom) * dealRate(R.r1200Kom, R.r1200Vis)))}
+      ${v12 > 0 ? dzBadge('Выкуп', v12, Math.round(v12 * dealRate(rVykup, R.r1200Vis))) : ''}
+    </div>
+    ${subtotal('Итого КАТ 1200', Math.round(earn12))}` : '';
 
   const okladLbl = d.workedR != null ? `Оклад (${d.workedR}/${d.totalR} дн.)` : 'Оклад';
 
@@ -11168,10 +11232,11 @@ function openDozhimIncomeModal(btn) {
       ${v10 > 0 ? dzBadge('Выкуп', v10, Math.round(v10 * dealRate(rVykup, R.r1000Vis))) : ''}
     </div>
     ${subtotal('Итого КАТ 1000', Math.round(earn10))}
+    ${cat1200Section}
     ${kotelRow}
     <div class="income-sec-title">Итого</div>
     ${subtotal('Фактический доход', Math.round(n(d.fact?.total)))}
-    ${buildDayCalendar(d.nameLow||'', S.data.d_vizity||[], { ...R, r800Vykup: rVykup, r1000Vykup: rVykup }, true)}
+    ${buildDayCalendar(d.nameLow||'', S.data.d_vizity||[], { ...R, r800Vykup: rVykup, r1000Vykup: rVykup, r1200Vykup: rVykup }, true)}
   `;
   document.getElementById('income-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -11882,6 +11947,7 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
         ? {
             ch800:  { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0, zadatok:0 },
             ch1000: { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0 },
+            ch1200: { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0 },
           }
         : {
             cat400: { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0 },
@@ -11942,6 +12008,7 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
       } else {
         const is800  = cat === 'кат 800';
         const is1000 = cat === 'кат 1000';
+        const is1200 = cat === 'кат 1200';
         const stat = ensureDayStats(day);
         if (is800) {
           stat.ch800.vis++;
@@ -11950,6 +12017,9 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
         } else if (is1000) {
           stat.ch1000.vis++;
           addDealCounters(stat.ch1000, deals);
+        } else if (is1200) {
+          stat.ch1200.vis++;
+          addDealCounters(stat.ch1200, deals);
         }
       }
     }
@@ -11987,6 +12057,8 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
     } else {
       const pure800  = Math.max(0, stat.ch800.vis  - stat.ch800.kred  - stat.ch800.nal  - stat.ch800.obmen  - (stat.ch800.vykup||0)  - stat.ch800.kom);
       const pure1000 = Math.max(0, stat.ch1000.vis - stat.ch1000.kred - stat.ch1000.nal - stat.ch1000.obmen - (stat.ch1000.vykup||0) - stat.ch1000.kom);
+      const c12 = stat.ch1200 || { vis:0, kred:0, nal:0, obmen:0, vykup:0, kom:0 };
+      const pure1200 = Math.max(0, c12.vis - c12.kred - c12.nal - c12.obmen - (c12.vykup||0) - c12.kom);
       earn =
         pure800 * (R.r800Vis || 0) +
         stat.ch800.kred  * dr(R.r800Kred,  R.r800Vis) +
@@ -12000,7 +12072,13 @@ function buildDayCalendar(nameLow, vizData, ratesObj, isDozhim) {
         stat.ch1000.nal   * dr(R.r1000Nal,  R.r1000Vis) +
         stat.ch1000.obmen * dr(R.r1000Obmen, R.r1000Vis) +
         (stat.ch1000.vykup || 0) * dr(R.r1000Vykup, R.r1000Vis) +
-        stat.ch1000.kom * dr(R.r1000Kom, R.r1000Vis);
+        stat.ch1000.kom * dr(R.r1000Kom, R.r1000Vis) +
+        pure1200 * (R.r1200Vis || 0) +
+        c12.kred  * dr(R.r1200Kred, R.r1200Vis) +
+        c12.nal   * dr(R.r1200Nal,  R.r1200Vis) +
+        c12.obmen * dr(R.r1200Obmen, R.r1200Vis) +
+        (c12.vykup || 0) * dr(R.r1200Vykup, R.r1200Vis) +
+        c12.kom * dr(R.r1200Kom, R.r1200Vis);
     }
     if (earn > 0) dayMap[day] = earn;
   });
@@ -12099,9 +12177,20 @@ function openDayIncomeDetail(cellEl) {
       row('Выкуп',         s10.vykup,  R.rVykup,    R.r1000Vis),
       row('Комиссия',      s10.kom,    R.r1000Kom,  R.r1000Vis),
     ].filter(Boolean).join('');
+    const s12 = stat.ch1200 || {};
+    const pure1200 = Math.max(0, (s12.vis||0) - (s12.kred||0) - (s12.nal||0) - (s12.obmen||0) - (s12.vykup||0) - (s12.kom||0));
+    const rows1200 = [
+      row('Чистые визиты', pure1200,   R.r1200Vis,  R.r1200Vis),
+      row('Кредит',        s12.kred,   R.r1200Kred, R.r1200Vis),
+      row('Наличка',       s12.nal,    R.r1200Nal,  R.r1200Vis),
+      row('Обмен',         s12.obmen,  R.r1200Obmen,R.r1200Vis),
+      row('Выкуп',         s12.vykup,  R.rVykup,    R.r1200Vis),
+      row('Комиссия',      s12.kom,    R.r1200Kom,  R.r1200Vis),
+    ].filter(Boolean).join('');
 
     if (rows800)  sectionsHtml += `<div class="day-det-sec">КАТ 800</div>${rows800}`;
     if (rows1000) sectionsHtml += `<div class="day-det-sec">КАТ 1000</div>${rows1000}`;
+    if (rows1200) sectionsHtml += `<div class="day-det-sec">КАТ 1200</div>${rows1200}`;
   } else {
     const c4 = stat.cat400 || {};
     const sc = stat.crm    || {};
@@ -12220,6 +12309,14 @@ async function openSalInfo(roleHint) {
       siRow('Комиссия', R.r1000Kom),
       siRow('Выкуп',    R.rVykup),
     ].filter(Boolean).join('');
+    const cat1200Rows = [
+      siRow('Визит',    R.r1200Vis),
+      siRow('Кредит',   R.r1200Kred),
+      siRow('Наличка',  R.r1200Nal),
+      siRow('Обмен',    R.r1200Obmen),
+      siRow('Комиссия', R.r1200Kom),
+      siRow('Выкуп',    R.rVykup),
+    ].filter(Boolean).join('');
 
     bodyHtml = `
       <div class="si-sec">Формула</div>
@@ -12236,6 +12333,9 @@ async function openSalInfo(roleHint) {
       <div class="si-sec">Ставки — КАТ 1000</div>
       ${cat1000Rows}
 
+      <div class="si-sec">Ставки — КАТ 1200</div>
+      ${cat1200Rows}
+
       ${fallbackNote}
 
       <div class="si-sec">Котёл</div>
@@ -12243,7 +12343,7 @@ async function openSalInfo(roleHint) {
       <div class="si-row"><span class="si-key">Доля</span><span class="si-val">Котёл ÷ кол-во участников</span></div>
 
       <div class="si-sec">Итого</div>
-      <div class="si-formula">Оклад + Премия КАТ800 + Премия КАТ1000 + Доля котла</div>
+      <div class="si-formula">Оклад + Премия КАТ800 + КАТ1000 + КАТ1200 + Доля котла</div>
     `;
   } else {
     // Ставки CRM из rates.json (раньше — лист СТАВКИ)
@@ -13111,7 +13211,7 @@ function _openCeoDozhimModal(name) {
   const dStats = buildDozhimStats(S.data.d_vizity || []);
   const nl = name.toLowerCase();
   const s = dStats[nl] || {};
-  const allVis = (s.vis800||0) + (s.vis1000||0);
+  const allVis = (s.vis800||0) + (s.vis1000||0) + (s.vis1200||0);
   const plan = planM[nl] || 1;
   const ost = Math.max(0, plan - allVis);
   const sfx = currentSuffix;
@@ -13119,16 +13219,17 @@ function _openCeoDozhimModal(name) {
   const factNum = computeFactPct(allVis, plan);
   const daily = computeDailyPlan(plan, allVis, progNum, sfx, name);
   const sPlan = dSalesM[nl] || 0;
-  const sFact = (s.kred800||0)+(s.nal800||0)+(s.obmen800||0)+(s.kred1000||0)+(s.nal1000||0)+(s.obmen1000||0);
+  const sFact = (s.kred800||0)+(s.nal800||0)+(s.obmen800||0)+(s.kred1000||0)+(s.nal1000||0)+(s.obmen1000||0)+(s.kred1200||0)+(s.nal1200||0)+(s.obmen1200||0);
   const sOst = Math.max(0, sPlan - sFact);
   const sProg = sPlan ? computeProgPct(sFact, sPlan, sfx) : 0;
   const rs = rankStyles(0, 1);
   const data = {
     type: 'dozhim', name: name.toUpperCase(), nameLow: nl,
-    v800: s.vis800||0, v1000: s.vis1000||0,
+    v800: s.vis800||0, v1000: s.vis1000||0, v1200: s.vis1200||0,
     rplan: plan, ost, prc: factNum+'%', prog: progNum+'%', allV: allVis,
     kred800: s.kred800||0, nal800: s.nal800||0, obmen800: s.obmen800||0, kom800: s.kom800||0,
-    kred1000: s.kred1000||0, nal1000: s.nal1000||0, obmen1000: s.obmen1000||0, kom1000: s.kom1000||0, zadatok: s.zadatok||0,
+    kred1000: s.kred1000||0, nal1000: s.nal1000||0, obmen1000: s.obmen1000||0, kom1000: s.kom1000||0,
+    kred1200: s.kred1200||0, nal1200: s.nal1200||0, obmen1200: s.obmen1200||0, kom1200: s.kom1200||0, zadatok: s.zadatok||0,
     sPlan, sFact, sOst, sProg,
     rs, idx: 1
   };
@@ -13359,11 +13460,11 @@ function renderCeoDashboard() {
     return n;
   }
   const kreditCrm = sumCrm('kred800', 'kred1200');
-  const kreditDoz = sumDoz('kred800', 'kred1000');
+  const kreditDoz = sumDoz('kred800', 'kred1000', 'kred1200');
   const nalObmCrm = sumCrm('nal800', 'nal1200', 'obmen800', 'obmen1200');
-  const nalObmDoz = sumDoz('nal800', 'nal1000', 'obmen800', 'obmen1000');
+  const nalObmDoz = sumDoz('nal800', 'nal1000', 'obmen800', 'obmen1000', 'nal1200', 'obmen1200');
   const komisCrm  = sumCrm('kom800', 'kom1200');
-  const komisDoz  = sumDoz('kom800', 'kom1000');
+  const komisDoz  = sumDoz('kom800', 'kom1000', 'kom1200');
   const totalKredit = kreditCrm + kreditDoz;
   const totalNalObm = nalObmCrm + nalObmDoz;
   const totalKomis  = komisCrm + komisDoz;
@@ -13968,11 +14069,11 @@ function renderRating() {
         const name = String(r[0]).trim();
         const nl   = name.toLowerCase();
         const s    = dStats[nl] || {};
-        const vis  = (s.vis800||0) + (s.vis1000||0);
+        const vis  = (s.vis800||0) + (s.vis1000||0) + (s.vis1200||0);
         const plan = planM[nl] || 0;
-        const kred = (s.kred800||0) + (s.kred1000||0);
-        const nal  = (s.nal800||0)  + (s.nal1000||0) + (s.obmen800||0) + (s.obmen1000||0);
-        const kom  = (s.kom800||0)  + (s.kom1000||0);
+        const kred = (s.kred800||0) + (s.kred1000||0) + (s.kred1200||0);
+        const nal  = (s.nal800||0)  + (s.nal1000||0) + (s.obmen800||0) + (s.obmen1000||0) + (s.nal1200||0) + (s.obmen1200||0);
+        const kom  = (s.kom800||0)  + (s.kom1000||0) + (s.kom1200||0);
         return { name, vis, plan, kred, nal, kom,
           progNum: computeProgPct(vis, plan||1, currentSuffix),
           factNum: computeFactPct(vis, plan||1) };
@@ -17581,12 +17682,13 @@ const EXP_CAT_CRM = 'кат 800';
 const EXP_CAT_TL  = 'кат 1200';
 
 // Применяет инкременты статуса к объекту stat. catA/catB задаются
-// при вызове (для CRM: 800/1200; для Дожим: 800/1000).
-function exp_applyRow(stat, cat, st, catA, catB) {
+// при вызове (для CRM: 800/1200; для Дожим: 800/1000). catC — доп. категория
+// второго столбца (Дожим: кат 1200 считается вместе с кат 1000 в visTl).
+function exp_applyRow(stat, cat, st, catA, catB, catC) {
   catA = catA || EXP_CAT_CRM;
   catB = catB || EXP_CAT_TL;
   if (cat === catA) stat.visCrm++;
-  if (cat === catB) stat.visTl++;
+  if (cat === catB || (catC && cat === catC)) stat.visTl++;
   stat.visTotal++;
   if (st === EXP_STATUS.KREDIT) stat.kredit++;
   else if (st === EXP_STATUS.NAL)   stat.nal++;
@@ -17604,6 +17706,7 @@ function exp_applyRow(stat, cat, st, catA, catB) {
 function exp_aggregate(vizData, crmNamesList, opts = {}) {
   const catA = opts.catA || EXP_CAT_CRM;
   const catB = opts.catB || EXP_CAT_TL;
+  const catC = opts.catC || null;   // Дожим: 'кат 1200' — суммируется во второй столбец с кат 1000
   const allowed = new Set(crmNamesList.map(n => n.toLowerCase()));
   const managers = {};
   const byCity   = {}; // city → { _total: stat, mgrs: { nameLow: stat } }
@@ -17632,12 +17735,12 @@ function exp_aggregate(vizData, crmNamesList, opts = {}) {
     const st   = String(row[4]||'').trim().toLowerCase();
     const city = String(row[3]||'').trim() || '—';
 
-    exp_applyRow(managers[mgrL], cat, st, catA, catB);
+    exp_applyRow(managers[mgrL], cat, st, catA, catB, catC);
 
     if (!byCity[city]) byCity[city] = { _total: exp_emptyMgr('Город: ' + city), mgrs: {} };
     if (!byCity[city].mgrs[mgrL]) byCity[city].mgrs[mgrL] = exp_emptyMgr(mgr);
-    exp_applyRow(byCity[city].mgrs[mgrL], cat, st, catA, catB);
-    exp_applyRow(byCity[city]._total, cat, st, catA, catB);
+    exp_applyRow(byCity[city].mgrs[mgrL], cat, st, catA, catB, catC);
+    exp_applyRow(byCity[city]._total, cat, st, catA, catB, catC);
 
     const d = exp_parseDate(row[0]);
     if (d) {
@@ -17678,7 +17781,7 @@ function exp_aggregate(vizData, crmNamesList, opts = {}) {
     dailyByMgrArr[nl] = { name: m.name, perDay: arr, total: m.visTotal };
   }
 
-  return { managers: mgrsArr, total, byCity, daily: dailyArr, dailyByMgr: dailyByMgrArr, catA, catB };
+  return { managers: mgrsArr, total, byCity, daily: dailyArr, dailyByMgr: dailyByMgrArr, catA, catB, catC };
 }
 
 // Рисуем chart: столбики по 31 дню → возвращает base64 PNG
@@ -18042,7 +18145,7 @@ async function exp_buildWorkbook(opts) {
     r++; // пустая строка-разделитель
     const dCols = cols.map(c => {
       if (c.key === 'visCrm') return { ...c, label: 'КАТ 800' };
-      if (c.key === 'visTl')  return { ...c, label: 'КАТ 1000' };
+      if (c.key === 'visTl')  return { ...c, label: 'КАТ 1000/1200' };
       return c;
     });
     r = renderSummaryBlock(r, 'СВОДНАЯ ПО МЕНЕДЖЕРАМ — ДОЖИМ', aggDozhim, dCols);
@@ -18396,7 +18499,7 @@ async function exp_run() {
     const dozhimMgrs = exp_getDozhimManagers();
     const agg        = exp_aggregate(vizData, crmMgrs);
     const aggDozhim  = (dVizData && dVizData.length && dozhimMgrs.length)
-      ? exp_aggregate(dVizData, dozhimMgrs, { catA: 'кат 800', catB: 'кат 1000' })
+      ? exp_aggregate(dVizData, dozhimMgrs, { catA: 'кат 800', catB: 'кат 1000', catC: 'кат 1200' })
       : null;
     const plans      = exp_getPlanMap(planData);
 

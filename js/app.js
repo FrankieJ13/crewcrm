@@ -4604,9 +4604,8 @@ const DOZHIM_RATES_FALLBACK = {
   baseOklad: 15000,
   r800Vis: 800, r800Kred: 3000, r800Nal: 2000, r800Obmen: 2000, r800Kom: 2000,
   r1000Vis: 2000, r1000Kred: 7000, r1000Nal: 7000, r1000Obmen: 7000, r1000Kom: 2000,
-  // кат 1200 — как кат 1000, но визит 1200₽. Ставка сделки ВКЛЮЧАЕТ визит, поэтому
-  // сделки дороже на разницу визита (1200−1000 = 200): 7000→7200, 2000→2200.
-  r1200Vis: 1200, r1200Kred: 7200, r1200Nal: 7200, r1200Obmen: 7200, r1200Kom: 2200,
+  // кат 1200 у Дожима считается как «Тёплые лиды» CRM — те же ставки (см. CRM_RATES_FALLBACK.rWarm*)
+  r1200Vis: 1200, r1200Kred: 3000, r1200Nal: 2000, r1200Obmen: 2000, r1200Kom: 2000, r1200Vykup: 0,
   rZadatok: 1000,
   rVykup: 2000,
 };
@@ -4650,8 +4649,7 @@ function getDozhimRates(suffix = currentSuffix) {
   const d  = m.dozhim;
   const c8 = d.cat800  || {};
   const c10= d.cat1000 || {};
-  const c12= d.cat1200 || {};   // кат 1200 (Дожим): опциональный блок; иначе derive из cat1000
-  // Vykup общий для катов — берём из 800 (если есть), иначе из 1000
+  // Vykup общий для катов 800/1000 — берём из 800 (если есть), иначе из 1000
   const sharedVykup = c8.vykup || c10.vykup || 0;
   // 0/пусто в ячейке = fallback (кроме vykup — там 0 намеренно отключает)
   const r1000Vis   = c10.vis   || FB.r1000Vis;
@@ -4659,10 +4657,9 @@ function getDozhimRates(suffix = currentSuffix) {
   const r1000Nal   = c10.nal   || FB.r1000Nal;
   const r1000Obmen = c10.obmen || FB.r1000Obmen;
   const r1000Kom   = c10.kom   || FB.r1000Kom;
-  const r1200Vis   = c12.vis   || FB.r1200Vis;
-  // Награда за сделку ВКЛЮЧАЕТ визит. У кат 1200 визит на (r1200Vis−r1000Vis) больше,
-  // поэтому и каждая сделка дороже на эту же разницу (7000→7200, 2000→2200).
-  const visDelta   = r1200Vis - r1000Vis;
+  // кат 1200 у Дожима вознаграждается ТОЧНО как «Тёплые лиды» CRM — берём ставки
+  // из getCrmRates (rWarm*), чтобы они всегда совпадали с CRM (в т.ч. при смене ставок).
+  const CR = getCrmRates(suffix);
   return {
     r800Vis:   c8.vis   || FB.r800Vis,
     r800Kred:  c8.kred  || FB.r800Kred,
@@ -4671,12 +4668,12 @@ function getDozhimRates(suffix = currentSuffix) {
     r800Kom:   c8.kom   || FB.r800Kom,
     rZadatok:  d.zadatok || FB.rZadatok,
     r1000Vis, r1000Kred, r1000Nal, r1000Obmen, r1000Kom,
-    // кат 1200 = кат 1000, визит 1200₽, сделки +разница визита (либо явно из cat1200)
-    r1200Vis,
-    r1200Kred:  c12.kred  || (r1000Kred  + visDelta),
-    r1200Nal:   c12.nal   || (r1000Nal   + visDelta),
-    r1200Obmen: c12.obmen || (r1000Obmen + visDelta),
-    r1200Kom:   c12.kom   || (r1000Kom   + visDelta),
+    r1200Vis:   CR.rWarmVis,
+    r1200Kred:  CR.rWarmKred,
+    r1200Nal:   CR.rWarmNal,
+    r1200Obmen: CR.rWarmObmen,
+    r1200Kom:   CR.rWarmKom,
+    r1200Vykup: CR.rWarmVykup,
     baseOklad: d.oklad   || FB.baseOklad,
     rVykup:    sharedVykup,
   };
@@ -4755,7 +4752,7 @@ function calcSalaryDozhimFromVizity(nameLow) {
                  + ch1200.kred  * dealRate(R.r1200Kred, R.r1200Vis)
                  + ch1200.nal   * dealRate(R.r1200Nal,  R.r1200Vis)
                  + ch1200.obmen * dealRate(R.r1200Obmen,R.r1200Vis)
-                 + ch1200.vykup * dealRate(rVykup,      R.r1200Vis)
+                 + ch1200.vykup * dealRate(R.r1200Vykup, R.r1200Vis)
                  + ch1200.kom   * dealRate(R.r1200Kom,  R.r1200Vis);
 
   // Котёл — суммируем тех кто не в ПЛАН (dozhim-менеджеры)
@@ -4787,7 +4784,7 @@ function calcSalaryDozhimFromVizity(nameLow) {
                      + (s.kred1200||0)  * dealRate(R.r1200Kred, R.r1200Vis)
                      + (s.nal1200||0)   * dealRate(R.r1200Nal,  R.r1200Vis)
                      + (s.obmen1200||0) * dealRate(R.r1200Obmen, R.r1200Vis)
-                     + sv1200           * dealRate(rVykup,      R.r1200Vis)
+                     + sv1200           * dealRate(R.r1200Vykup, R.r1200Vis)
                      + (s.kom1200||0)   * dealRate(R.r1200Kom,  R.r1200Vis);
     }
   });
@@ -11185,7 +11182,7 @@ function openDozhimIncomeModal(btn) {
                                 + n(ch12.kred) * dealRate(R.r1200Kred, R.r1200Vis)
                                 + n(ch12.nal)  * dealRate(R.r1200Nal,  R.r1200Vis)
                                 + n(ch12.obmen)* dealRate(R.r1200Obmen,R.r1200Vis)
-                                + v12          * dealRate(rVykup,      R.r1200Vis)
+                                + v12          * dealRate(R.r1200Vykup, R.r1200Vis)
                                 + n(ch12.kom)  * dealRate(R.r1200Kom,  R.r1200Vis));
   const has12 = n(ch12.vis) > 0 || earn12 > 0;
   const cat1200Section = has12 ? `
@@ -11196,7 +11193,7 @@ function openDozhimIncomeModal(btn) {
       ${dzBadge('Наличка',  n(ch12.nal),     Math.round(n(ch12.nal) * dealRate(R.r1200Nal, R.r1200Vis)))}
       ${dzBadge('Обмен',    n(ch12.obmen),   Math.round(n(ch12.obmen) * dealRate(R.r1200Obmen, R.r1200Vis)))}
       ${dzBadge('Комиссия', n(ch12.kom),     Math.round(n(ch12.kom) * dealRate(R.r1200Kom, R.r1200Vis)))}
-      ${v12 > 0 ? dzBadge('Выкуп', v12, Math.round(v12 * dealRate(rVykup, R.r1200Vis))) : ''}
+      ${v12 > 0 ? dzBadge('Выкуп', v12, Math.round(v12 * dealRate(R.r1200Vykup, R.r1200Vis))) : ''}
     </div>
     ${subtotal('Итого КАТ 1200', Math.round(earn12))}` : '';
 
@@ -11241,7 +11238,7 @@ function openDozhimIncomeModal(btn) {
     ${kotelRow}
     <div class="income-sec-title">Итого</div>
     ${subtotal('Фактический доход', Math.round(n(d.fact?.total)))}
-    ${buildDayCalendar(d.nameLow||'', S.data.d_vizity||[], { ...R, r800Vykup: rVykup, r1000Vykup: rVykup, r1200Vykup: rVykup }, true)}
+    ${buildDayCalendar(d.nameLow||'', S.data.d_vizity||[], { ...R, r800Vykup: rVykup, r1000Vykup: rVykup, r1200Vykup: R.r1200Vykup }, true)}
   `;
   document.getElementById('income-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -12189,7 +12186,7 @@ function openDayIncomeDetail(cellEl) {
       row('Кредит',        s12.kred,   R.r1200Kred, R.r1200Vis),
       row('Наличка',       s12.nal,    R.r1200Nal,  R.r1200Vis),
       row('Обмен',         s12.obmen,  R.r1200Obmen,R.r1200Vis),
-      row('Выкуп',         s12.vykup,  R.rVykup,    R.r1200Vis),
+      row('Выкуп',         s12.vykup,  R.r1200Vykup, R.r1200Vis),
       row('Комиссия',      s12.kom,    R.r1200Kom,  R.r1200Vis),
     ].filter(Boolean).join('');
 
@@ -12320,7 +12317,7 @@ async function openSalInfo(roleHint) {
       siRow('Наличка',  R.r1200Nal),
       siRow('Обмен',    R.r1200Obmen),
       siRow('Комиссия', R.r1200Kom),
-      siRow('Выкуп',    R.rVykup),
+      siRow('Выкуп',    R.r1200Vykup),
     ].filter(Boolean).join('');
 
     bodyHtml = `

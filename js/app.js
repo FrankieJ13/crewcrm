@@ -4604,8 +4604,9 @@ const DOZHIM_RATES_FALLBACK = {
   baseOklad: 15000,
   r800Vis: 800, r800Kred: 3000, r800Nal: 2000, r800Obmen: 2000, r800Kom: 2000,
   r1000Vis: 2000, r1000Kred: 7000, r1000Nal: 7000, r1000Obmen: 7000, r1000Kom: 2000,
-  // кат 1200 — как кат 1000, но визит 1200₽
-  r1200Vis: 1200, r1200Kred: 7000, r1200Nal: 7000, r1200Obmen: 7000, r1200Kom: 2000,
+  // кат 1200 — как кат 1000, но визит 1200₽. Ставка сделки ВКЛЮЧАЕТ визит, поэтому
+  // сделки дороже на разницу визита (1200−1000 = 200): 7000→7200, 2000→2200.
+  r1200Vis: 1200, r1200Kred: 7200, r1200Nal: 7200, r1200Obmen: 7200, r1200Kom: 2200,
   rZadatok: 1000,
   rVykup: 2000,
 };
@@ -4658,6 +4659,10 @@ function getDozhimRates(suffix = currentSuffix) {
   const r1000Nal   = c10.nal   || FB.r1000Nal;
   const r1000Obmen = c10.obmen || FB.r1000Obmen;
   const r1000Kom   = c10.kom   || FB.r1000Kom;
+  const r1200Vis   = c12.vis   || FB.r1200Vis;
+  // Награда за сделку ВКЛЮЧАЕТ визит. У кат 1200 визит на (r1200Vis−r1000Vis) больше,
+  // поэтому и каждая сделка дороже на эту же разницу (7000→7200, 2000→2200).
+  const visDelta   = r1200Vis - r1000Vis;
   return {
     r800Vis:   c8.vis   || FB.r800Vis,
     r800Kred:  c8.kred  || FB.r800Kred,
@@ -4666,12 +4671,12 @@ function getDozhimRates(suffix = currentSuffix) {
     r800Kom:   c8.kom   || FB.r800Kom,
     rZadatok:  d.zadatok || FB.rZadatok,
     r1000Vis, r1000Kred, r1000Nal, r1000Obmen, r1000Kom,
-    // кат 1200 = кат 1000, но визит 1200₽ (либо явные значения из cat1200, если заданы)
-    r1200Vis:   c12.vis   || FB.r1200Vis,
-    r1200Kred:  c12.kred  || r1000Kred,
-    r1200Nal:   c12.nal   || r1000Nal,
-    r1200Obmen: c12.obmen || r1000Obmen,
-    r1200Kom:   c12.kom   || r1000Kom,
+    // кат 1200 = кат 1000, визит 1200₽, сделки +разница визита (либо явно из cat1200)
+    r1200Vis,
+    r1200Kred:  c12.kred  || (r1000Kred  + visDelta),
+    r1200Nal:   c12.nal   || (r1000Nal   + visDelta),
+    r1200Obmen: c12.obmen || (r1000Obmen + visDelta),
+    r1200Kom:   c12.kom   || (r1000Kom   + visDelta),
     baseOklad: d.oklad   || FB.baseOklad,
     rVykup:    sharedVykup,
   };

@@ -13471,7 +13471,18 @@ async function loadCeoDashboard() {
 async function _loadCeoDashboard(token) {
   const el = document.getElementById('c-ceo');
   if (!el) return;
-  const cacheRendered = (!S.data.vizity || !S.data.d_vizity || !S.data.plan) && applyStartupDataCache();
+  // Что реально загружено СЕЙЧАС (ДО применения стартового снапшота) — только по
+  // этому решаем, что до-фетчить. Иначе applyStartupDataCache() заполняет S.data,
+  // need*=false → свежий фетч пропускается; а ручное «Обновить» (обнуляет S.data)
+  // снова перекрывается снапшотом → данные не обновляются без очистки кэша.
+  const needVizity  = !S.data.vizity;
+  const needDVizity = !S.data.d_vizity;
+  const needPlan    = !S.data.plan;
+  const needCnvrs   = !S.data.cnvrs;
+  const needGrafik  = !S.data.grafik;
+  const needRates   = !_ratesJson;
+  // Стартовый снапшот — ТОЛЬКО для мгновенной отрисовки, не отменяет до-фетч ниже.
+  const cacheRendered = (needVizity || needDVizity || needPlan) && applyStartupDataCache();
   if (cacheRendered && isScreenTokenActive('ceo', token)) {
     S.silentRefresh = true;
     try { renderCeoDashboard(); }
@@ -13480,12 +13491,6 @@ async function _loadCeoDashboard(token) {
     el.innerHTML = loader();
   }
   try {
-    const needVizity  = !S.data.vizity;
-    const needDVizity = !S.data.d_vizity;
-    const needPlan    = !S.data.plan;
-    const needCnvrs   = !S.data.cnvrs;
-    const needGrafik  = !S.data.grafik;
-    const needRates   = !_ratesJson;
     if (needVizity || needDVizity || needPlan || needCnvrs || needGrafik || needRates) {
       const [vd, dv, pd, cv, gr] = await Promise.all([
         needVizity  ? api(SHEETS.vizity,   'A:N').catch(() => [])      : Promise.resolve(S.data.vizity),

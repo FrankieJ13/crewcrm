@@ -360,6 +360,10 @@ const S = {
   user:null,
   usersData:null,
   data:{ otchet:null, dohod:null, grafik:null, grafikFmt:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null, vizityFmt:null, d_vizityFmt:null },
+  // Корректировки дохода (премирование/депремирование) активного месяца.
+  // suffix = месяц, all = все строки месяца (вкл. CANCELLED, для журнала CEO/ROP),
+  // byCrmId = индекс только ACTIVE по ID CRM (для расчёта дохода и панели менеджера).
+  adjustments:{ suffix:null, all:[], byCrmId:{} },
   reportTab: 'dept',
   dohodTab: 'crm',
   faqTab: 'instr',
@@ -3473,6 +3477,7 @@ async function setCurrentMonth(newSuffix) {
   SHEETS = getSheetNames(currentSuffix);
   S.data = { otchet:null, dohod:null, grafik:null, grafikFmt:null, instruktsii:null, d_otchet:null, d_dohod:null, cnvrs:null, stavki:null, d_stavki:null, vizity:null, plan:null, d_vizity:null, vizityFmt:null, d_vizityFmt:null };
   apiCacheInvalidate(); // сбрасываем кеш при смене месяца
+  S.adjustments = { suffix:null, all:[], byCrmId:{} }; // корректировки перечитаются под новый месяц
   _schedWeek = null;
   // Если выбран будущий месяц — сначала создаём недостающие листы, ПОТОМ грузим вкладку
   // (иначе loadTab уйдёт за несуществующим листом и поймает 400).
@@ -4801,9 +4806,16 @@ function calcSalaryDozhimFromVizity(nameLow) {
   const pctFact = computeFactPct(allVis, planVal || 1);
   const pctProg = computeProgPct(allVis, planVal || 1, currentSuffix);
 
+  // Корректировки дохода (премия/депремия) — единый источник итога (ТЗ §11):
+  // final = max(0, base + Σ ACTIVE). base сохраняем в adj для разбивки в модалке.
+  const _crmId = getCrmIdByName(nameLow);
+  const _adj   = adjustmentsFor(_crmId);
+  const _factF = Math.max(0, totalFact + _adj.total);
+
   return {
-    fact:    { total: totalFact, koef: null, pct: pctFact, premium },
-    prognoz: { total: totalFact, koef: null, pct: pctProg, premium }, // прогноз = факт (нет коэфа)
+    fact:    { total: _factF, koef: null, pct: pctFact, premium },
+    prognoz: { total: _factF, koef: null, pct: pctProg, premium }, // прогноз = факт (нет коэфа)
+    adj:     { crmId: _crmId, total: _adj.total, bonus: _adj.bonus, penalty: _adj.penalty, list: _adj.list, baseFact: totalFact, baseProg: totalFact },
     detail: {
       oklad, baseOklad: R.baseOklad,
       workedR: schedInfo ? schedInfo.workedR : null,
@@ -5639,6 +5651,7 @@ function goHome() {
 // ==================== RENDER DOHOD ====================
 function renderDohod() {
   try { window.DIAG?.push('info', 'render', ['renderDohod']); } catch(_){}
+  ensureAdjustmentsLoaded();
   const el = document.getElementById('c-dohod');
   const floating = document.getElementById('floating-dohod-subtabs');
   const matched = findUserInSheet();
@@ -5686,7 +5699,7 @@ function renderDohod() {
       inFund: sal.detail.inFund,
       ch800: sal.detail.ch800, ch1000: sal.detail.ch1000, ch1200: sal.detail.ch1200,
       earn800: sal.detail.earn800, earn1000: sal.detail.earn1000, earn1200: sal.detail.earn1200,
-      fact: sal.fact, prognoz: sal.prognoz,
+      fact: sal.fact, prognoz: sal.prognoz, nameLow,
     };
     setLiveHTML(el, `
       <div class="w" style="padding-top:16px">
@@ -8933,6 +8946,292 @@ function convDownload() {
 
 // ==================== PLAN EDITOR (CEO) ====================
 
+/* ═══════════════════════════════════════════════════════════════════════════
+ * КОРРЕКТИРОВКИ — UI: панель менеджера, детали/отмена, админка, запись.
+ * Запись — no-cors POST на Apps Script + подтверждение перечитыванием листа.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+function _adjEsc(s) { return (typeof escapeHtml === 'function') ? escapeHtml(s) : String(s == null ? '' : s); }
+function _realCurrentSuffix() {
+  const now = new Date();
+  return String(now.getMonth() + 1).padStart(2, '0') + String(now.getFullYear()).slice(-2);
+}
+function _adjSignFmt(v) { return (v > 0 ? '+' : v < 0 ? '−' : '') + fmtRub(Math.abs(v)); }
+
+// Панель «Корректировки» для модалки дохода менеджера (только ACTIVE; иначе '').
+function _adjPanelHtml(nameLow) {
+  const a = adjustmentsFor(getCrmIdByName(nameLow));
+  if (!a.list.length) return '';
+  const rows = a.list.map(x => `
+    <div class="adj-line" onclick="openAdjDetail('${x.id}')">
+      <span class="adj-line-amt ${x.type === 'PENALTY' ? 'neg' : 'pos'}">${x.type === 'PENALTY' ? '−' : '+'}${fmtRub(x.amount)}</span>
+      <span class="adj-line-cat">${_adjEsc(x.category)}</span>
+      <span class="adj-line-chev">›</span>
+    </div>`).join('');
+  const netCls = a.total < 0 ? 'neg' : (a.total > 0 ? 'pos' : '');
+  return `
+    <div class="income-sec-title">Корректировки</div>
+    <div class="adj-panel">
+      ${rows}
+      <div class="adj-line adj-line-total"><span class="adj-line-amt ${netCls}">${_adjSignFmt(a.total)}</span><span class="adj-line-cat">итого корректировок</span></div>
+    </div>`;
+}
+
+// Общая модалка деталей одной корректировки (read-only; для CEO/ROP — отмена).
+function openAdjDetail(id) {
+  const a = ((S.adjustments && S.adjustments.all) || []).find(x => x.id === id);
+  if (!a) { toast('Корректировка не найдена', 'e'); return; }
+  const me = (typeof findUserInSheet === 'function') ? findUserInSheet() : null;
+  const isAdmin = !!(me && isCeoLike(me.role));
+  const typeLbl = a.type === 'PENALTY' ? 'Депремирование' : 'Премирование';
+  const amtCls = a.type === 'PENALTY' ? 'neg' : 'pos';
+  const amtStr = (a.type === 'PENALTY' ? '−' : '+') + fmtRub(a.amount);
+  const dirLbl = a.direction === 'dozhim' ? 'ДОЖИМ' : (a.direction === 'crm' ? 'CRM' : _adjEsc(a.direction));
+  const cancelledBlock = a.status === 'CANCELLED' ? `
+    <div class="adj-d-cancelled">
+      <div class="adj-d-badge-cancel">ОТМЕНЕНО</div>
+      <div class="adj-d-row"><span>Отменил</span><b>${_adjEsc(a.cancelledByName || '—')}</b></div>
+      <div class="adj-d-row"><span>Когда</span><b>${_adjEsc(a.cancelledAt || '—')}</b></div>
+      <div class="adj-d-row"><span>Причина</span><b>${_adjEsc(a.cancelComment || '—')}</b></div>
+    </div>` : '';
+  const idRow = isAdmin ? `<div class="adj-d-row adj-d-id"><span>ID CRM</span><b>${_adjEsc(a.crmId)}</b></div>` : '';
+  const adminCancelUi = (isAdmin && a.status === 'ACTIVE') ? `
+    <div class="adj-d-cancel-ui">
+      <textarea class="adj-input adj-cancel-reason" placeholder="Причина отмены (обязательно)" rows="2"></textarea>
+      <button class="adj-btn adj-btn-danger adj-cancel-go">Отменить корректировку</button>
+    </div>` : '';
+  const ov = document.createElement('div');
+  ov.className = 'adj-overlay';
+  ov.innerHTML = `<div class="adj-modal adj-detail-modal">
+    <div class="adj-modal-hdr"><span class="adj-modal-title">Корректировка</span><button class="adj-modal-close" aria-label="Закрыть">×</button></div>
+    <div class="adj-modal-body">
+      <div class="adj-d-amount ${amtCls}">${amtStr}</div>
+      <div class="adj-d-type">${typeLbl}</div>
+      <div class="adj-d-rows">
+        <div class="adj-d-row"><span>Менеджер</span><b>${_adjEsc(a.managerName || '—')}</b></div>
+        <div class="adj-d-row"><span>Направление</span><b>${dirLbl}</b></div>
+        ${idRow}
+        <div class="adj-d-row"><span>Категория</span><b>${_adjEsc(a.category || '—')}</b></div>
+        <div class="adj-d-row adj-d-comment"><span>Комментарий</span><b>${_adjEsc(a.comment || '—')}</b></div>
+        <div class="adj-d-row"><span>Создано</span><b>${_adjEsc(a.createdAt || '—')}</b></div>
+        <div class="adj-d-row"><span>Автор</span><b>${_adjEsc(a.createdByName || '—')}</b></div>
+      </div>
+      ${cancelledBlock}
+      ${adminCancelUi}
+    </div>
+  </div>`;
+  const close = () => ov.remove();
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  ov.querySelector('.adj-modal-close').addEventListener('click', close);
+  const goBtn = ov.querySelector('.adj-cancel-go');
+  if (goBtn) {
+    goBtn.addEventListener('click', async () => {
+      const reason = (ov.querySelector('.adj-cancel-reason').value || '').trim();
+      if (!reason) { toast('Укажите причину отмены', 'e'); return; }
+      goBtn.disabled = true; goBtn.textContent = 'Отмена…';
+      const res = await adjCancel(a.id, reason);
+      if (res.ok) { toast('Корректировка отменена', 'i'); close(); _adjAfterWrite(); }
+      else { goBtn.disabled = false; goBtn.textContent = 'Отменить корректировку'; toast('Не удалось подтвердить отмену — обновите', 'e'); _adjAfterWrite(); }
+    });
+  }
+  document.body.appendChild(ov);
+}
+
+function _adjAfterWrite() {
+  try { if (document.getElementById('pe-adj-body')) renderAdjAdmin(); } catch (_) {}
+  try { _reRenderActiveIncome(); } catch (_) {}
+}
+
+// ── Запись (server-side через Apps Script). no-cors ответ не читается —
+//    подтверждаем перечитыванием листа adjustments (источник истины). ──
+async function _adjPollUntil(pred, timeoutMs = 9000, intervalMs = 1500) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    await new Promise(r => setTimeout(r, intervalMs));
+    await loadAdjustments(currentSuffix);
+    try { if (pred(S.adjustments)) return true; } catch (_) {}
+  }
+  return false;
+}
+async function adjAdd(p) {
+  if (!S.token) { toast('Нет авторизации', 'e'); return { ok: false }; }
+  if (!CFG.AUDIT_WEBAPP_URL) { toast('Endpoint не настроен', 'e'); return { ok: false }; }
+  const before = new Set(((S.adjustments && S.adjustments.all) || []).map(a => a.id));
+  const amount = Math.round(Number(p.amount));
+  try {
+    await fetch(CFG.AUDIT_WEBAPP_URL, {
+      method: 'POST', mode: 'no-cors', credentials: 'omit',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        type: 'adjustment_add', token: S.token,
+        targetCrmId: p.targetCrmId, op: p.op, category: p.category,
+        amount, comment: p.comment, month: currentSuffix,
+      }),
+    });
+  } catch (e) { toast('Сеть недоступна', 'e'); return { ok: false, error: 'network' }; }
+  const ok = await _adjPollUntil(st => ((st && st.all) || []).some(a =>
+    !before.has(a.id) && a.crmId === p.targetCrmId && a.status === 'ACTIVE'
+    && a.amount === amount && a.type === p.op));
+  return { ok };
+}
+async function adjCancel(id, cancelComment) {
+  if (!S.token) { toast('Нет авторизации', 'e'); return { ok: false }; }
+  if (!CFG.AUDIT_WEBAPP_URL) { toast('Endpoint не настроен', 'e'); return { ok: false }; }
+  try {
+    await fetch(CFG.AUDIT_WEBAPP_URL, {
+      method: 'POST', mode: 'no-cors', credentials: 'omit',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ type: 'adjustment_cancel', token: S.token, id, cancelComment }),
+    });
+  } catch (e) { toast('Сеть недоступна', 'e'); return { ok: false, error: 'network' }; }
+  const ok = await _adjPollUntil(st => ((st && st.all) || []).some(a => a.id === id && a.status === 'CANCELLED'));
+  return { ok };
+}
+
+// ── Админка (CEO/ROP): форма + журнал в спойлере «Премирование/депремирование». ──
+let _adjAdminType = 'PENALTY';
+let _adjAdminFilter = 'ALL';
+let _adjAdminShowCancelled = false;
+let _adjAdminSearch = '';
+
+function renderAdjAdmin() {
+  const body = document.getElementById('pe-adj-body');
+  if (!body) return;
+  const me = (typeof findUserInSheet === 'function') ? findUserInSheet() : null;
+  if (!me || !isCeoLike(me.role)) { body.innerHTML = '<div class="cfg-placeholder">Доступно только CEO / ROP</div>'; return; }
+  ensureAdjustmentsLoaded();
+  const monthName = getMonthName(currentSuffix);
+  const realCur = _realCurrentSuffix();
+  const canCreate = currentSuffix === realCur;
+  const managers = getAdjustableManagers();
+  const cats = ADJ_CATEGORIES[_adjAdminType] || [];
+  const mgrOpts = managers.map(m => `<option value="${_adjEsc(m.crmId)}">${_adjEsc(m.name)} · ${m.role === 'dozhim' ? 'ДОЖИМ' : 'CRM'}</option>`).join('');
+  const catOpts = cats.map(c => `<option value="${_adjEsc(c)}">${_adjEsc(c)}</option>`).join('');
+  const formHtml = canCreate ? `
+    <div class="adj-form">
+      <label class="adj-fld"><span>Менеджер</span>
+        <select class="adj-input" id="adj-mgr">${mgrOpts || '<option value="">— нет менеджеров CRM/ДОЖИМ —</option>'}</select></label>
+      <div class="adj-fld"><span>Тип операции</span>
+        <div class="adj-type-toggle">
+          <button type="button" class="adj-type-btn ${_adjAdminType === 'PENALTY' ? 'on neg' : ''}" data-op="PENALTY" onclick="adjAdminSetType('PENALTY')">Депремирование</button>
+          <button type="button" class="adj-type-btn ${_adjAdminType === 'BONUS' ? 'on pos' : ''}" data-op="BONUS" onclick="adjAdminSetType('BONUS')">Премирование</button>
+        </div></div>
+      <label class="adj-fld"><span>Категория</span>
+        <select class="adj-input" id="adj-cat">${catOpts}</select></label>
+      <label class="adj-fld"><span>Сумма, ₽</span>
+        <input class="adj-input" id="adj-amt" type="number" min="1" step="1" inputmode="numeric" placeholder="0"></label>
+      <label class="adj-fld"><span>Комментарий</span>
+        <textarea class="adj-input" id="adj-comment" rows="2" placeholder="Причина (обязательно)"></textarea></label>
+      <button class="adj-btn adj-btn-primary" id="adj-submit" onclick="adjAdminSubmit()">Применить</button>
+    </div>` : `
+    <div class="adj-note-block">Создание доступно только в текущем месяце (${getMonthName(realCur)}). Ниже — журнал за ${monthName}.</div>`;
+
+  body.innerHTML = `
+    <div class="adj-admin">
+      <div class="adj-admin-hdr">Премирование / Депремирование · ${monthName}</div>
+      ${formHtml}
+      <div class="adj-journal-controls">
+        <input class="adj-input adj-search" id="adj-search" placeholder="Поиск по менеджеру" value="${_adjEsc(_adjAdminSearch)}" oninput="adjAdminSearchInput(this.value)">
+        <div class="adj-filter-row">
+          <button class="adj-chip ${_adjAdminFilter === 'ALL' ? 'on' : ''}" onclick="adjAdminSetFilter('ALL')">Все</button>
+          <button class="adj-chip ${_adjAdminFilter === 'BONUS' ? 'on' : ''}" onclick="adjAdminSetFilter('BONUS')">Премии</button>
+          <button class="adj-chip ${_adjAdminFilter === 'PENALTY' ? 'on' : ''}" onclick="adjAdminSetFilter('PENALTY')">Штрафы</button>
+          <label class="adj-showcancel"><input type="checkbox" ${_adjAdminShowCancelled ? 'checked' : ''} onchange="adjAdminToggleCancelled(this.checked)"> отменённые</label>
+        </div>
+      </div>
+      <div class="adj-journal" id="adj-journal"></div>
+    </div>`;
+  adjAdminRenderJournal();
+}
+
+function adjAdminSetType(t) {
+  _adjAdminType = t;
+  const catSel = document.getElementById('adj-cat');
+  if (catSel) catSel.innerHTML = (ADJ_CATEGORIES[t] || []).map(c => `<option value="${_adjEsc(c)}">${_adjEsc(c)}</option>`).join('');
+  document.querySelectorAll('.adj-type-btn').forEach(b => {
+    const on = b.dataset.op === t;
+    b.classList.toggle('on', on);
+    b.classList.toggle('neg', on && t === 'PENALTY');
+    b.classList.toggle('pos', on && t === 'BONUS');
+  });
+}
+function adjAdminSetFilter(f) { _adjAdminFilter = f; renderAdjAdmin(); }
+function adjAdminToggleCancelled(b) { _adjAdminShowCancelled = !!b; renderAdjAdmin(); }
+function adjAdminSearchInput(v) { _adjAdminSearch = v; adjAdminRenderJournal(); }
+
+function adjAdminRenderJournal() {
+  const box = document.getElementById('adj-journal');
+  if (!box) return;
+  let list = ((S.adjustments && S.adjustments.all) || []).slice();
+  list.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  if (!_adjAdminShowCancelled) list = list.filter(a => a.status !== 'CANCELLED');
+  if (_adjAdminFilter === 'BONUS') list = list.filter(a => a.type === 'BONUS');
+  else if (_adjAdminFilter === 'PENALTY') list = list.filter(a => a.type === 'PENALTY');
+  const q = _adjAdminSearch.trim().toLowerCase();
+  if (q) list = list.filter(a => (a.managerName || '').toLowerCase().includes(q));
+  if (!list.length) { box.innerHTML = '<div class="adj-empty">Нет корректировок за месяц</div>'; return; }
+  box.innerHTML = list.map(a => {
+    const cancelled = a.status === 'CANCELLED';
+    const amtCls = a.type === 'PENALTY' ? 'neg' : 'pos';
+    const amtStr = (a.type === 'PENALTY' ? '−' : '+') + fmtRub(a.amount);
+    const dir = a.direction === 'dozhim' ? 'ДОЖИМ' : 'CRM';
+    return `<div class="adj-jrow ${cancelled ? 'cancelled' : ''}" onclick="openAdjDetail('${a.id}')">
+      <div class="adj-jrow-main">
+        <div class="adj-jrow-name">${_adjEsc(a.managerName || '—')} <span class="adj-jrow-dir">${dir}</span></div>
+        <div class="adj-jrow-cat">${_adjEsc(a.category || '')}${cancelled ? ' <span class="adj-badge-cancel">ОТМЕНЕНО</span>' : ''}</div>
+      </div>
+      <div class="adj-jrow-amt ${amtCls} ${cancelled ? 'adj-strike' : ''}">${amtStr}</div>
+    </div>`;
+  }).join('');
+}
+
+async function adjAdminSubmit() {
+  const btn = document.getElementById('adj-submit');
+  if (!btn || btn.disabled) return;
+  const crmId = (document.getElementById('adj-mgr') || {}).value || '';
+  const category = (document.getElementById('adj-cat') || {}).value || '';
+  const amount = Math.round(Number((document.getElementById('adj-amt') || {}).value || 0));
+  const comment = ((document.getElementById('adj-comment') || {}).value || '').trim();
+  const op = _adjAdminType;
+  if (!crmId) { toast('Выберите менеджера', 'e'); return; }
+  if (!(amount > 0)) { toast('Сумма должна быть больше 0', 'e'); return; }
+  if (!comment) { toast('Заполните комментарий', 'e'); return; }
+  const mgr = getUserByCrmId(crmId);
+  const summary = `${mgr ? mgr.name : crmId} · ${op === 'PENALTY' ? 'Депремирование −' : 'Премирование +'}${fmtRub(amount)} · ${category}`;
+  if (!(await _adjConfirm('Применить корректировку?', summary))) return;
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Отправка…';
+  const res = await adjAdd({ targetCrmId: crmId, op, category, amount, comment });
+  if (res.ok) {
+    toast('Корректировка добавлена', 'i');
+    renderAdjAdmin();
+    _reRenderActiveIncome();
+  } else {
+    btn.disabled = false; btn.textContent = orig;
+    toast('Отправлено, но подтверждение не получено. Обновите журнал.', 'e');
+  }
+}
+
+function _adjConfirm(title, text) {
+  return new Promise(resolve => {
+    const ov = document.createElement('div');
+    ov.className = 'adj-overlay';
+    ov.innerHTML = `<div class="adj-modal adj-confirm-modal">
+      <div class="adj-modal-hdr"><span class="adj-modal-title">${_adjEsc(title)}</span></div>
+      <div class="adj-modal-body">
+        <div class="adj-confirm-text">${_adjEsc(text)}</div>
+        <div class="adj-confirm-actions">
+          <button class="adj-btn adj-btn-ghost adj-c-no">Отмена</button>
+          <button class="adj-btn adj-btn-primary adj-c-yes">Подтвердить</button>
+        </div>
+      </div></div>`;
+    const done = v => { ov.remove(); resolve(v); };
+    ov.addEventListener('click', e => { if (e.target === ov) done(false); });
+    ov.querySelector('.adj-c-no').addEventListener('click', () => done(false));
+    ov.querySelector('.adj-c-yes').addEventListener('click', () => done(true));
+    document.body.appendChild(ov);
+  });
+}
+
 function openPlanEditor() {
   const planData = S.data.plan || [];
   const body = document.getElementById('pe-plans-body') || document.getElementById('pe-body');
@@ -9624,6 +9923,145 @@ function findUserInSheet() {
   return null;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+ * КОРРЕКТИРОВКИ ДОХОДА — премирование / депремирование (доменный слой).
+ * Единый источник итога: base → final = max(0, base + Σ ACTIVE-корректировок).
+ * Загрузка — чтение всего листа `adjustments` и локальная индексация (ТЗ §13);
+ * запись — только server-side (adjAdd/adjCancel → Apps Script).
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+// Категории — белые списки; ДОЛЖНЫ совпадать с ADJ_CATEGORIES в crm-audit-logs.gs.
+const ADJ_CATEGORIES = {
+  PENALTY: ['Опоздание', 'Дисциплина', 'Нарушение регламента', 'Ошибка при работе с клиентом', 'Качество работы', 'Прочее'],
+  BONUS:   ['Особый результат', 'Дополнительное премирование', 'Инициатива', 'Качество работы', 'Прочее'],
+};
+
+// Имя (lowercase «Фамилия Имя») → ID CRM (USERS col G / row[6]).
+function getCrmIdByName(nameLow) {
+  if (!S.usersData || !nameLow) return '';
+  for (let i = 1; i < S.usersData.length; i++) {
+    const row = S.usersData[i];
+    if ((row[1] || '').toLowerCase().trim() === nameLow) return String(row[6] || '').trim();
+  }
+  return '';
+}
+// ID CRM → { name, role, crmId } из USERS.
+function getUserByCrmId(crmId) {
+  const target = String(crmId || '').trim();
+  if (!S.usersData || !target) return null;
+  for (let i = 1; i < S.usersData.length; i++) {
+    const row = S.usersData[i];
+    if (String(row[6] || '').trim() === target) {
+      return { name: (row[1] || '').trim(), role: (row[2] || '').toLowerCase().trim(), crmId: target };
+    }
+  }
+  return null;
+}
+// Список менеджеров CRM/DOZHIM (с ID CRM) для селекта в админке.
+function getAdjustableManagers() {
+  if (!S.usersData) return [];
+  const out = [];
+  for (let i = 1; i < S.usersData.length; i++) {
+    const row = S.usersData[i];
+    const role = (row[2] || '').toLowerCase().trim();
+    const crmId = String(row[6] || '').trim();
+    const name = (row[1] || '').trim();
+    if ((role === 'crm' || role === 'dozhim') && crmId && name) out.push({ name, role, crmId });
+  }
+  out.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+  return out;
+}
+
+// Сырая строка листа adjustments (A..Q) → объект.
+function _adjRowToObj(r) {
+  if (!r || !r.length) return null;
+  const id = String(r[0] || '').trim();
+  if (!id) return null;
+  const type = String(r[5] || '').trim().toUpperCase();
+  const amount = Math.abs(Math.round(Number(r[7]) || 0));
+  const status = String(r[12] || 'ACTIVE').trim().toUpperCase();
+  const signed = status === 'CANCELLED' ? 0 : (type === 'PENALTY' ? -amount : amount);
+  return {
+    id,
+    month: String(r[1] || '').trim(),
+    crmId: String(r[2] || '').trim(),
+    managerName: String(r[3] || '').trim(),
+    direction: String(r[4] || '').trim().toLowerCase(),
+    type,
+    category: String(r[6] || '').trim(),
+    amount,
+    comment: String(r[8] || '').trim(),
+    createdAt: String(r[9] || '').trim(),
+    createdByCrmId: String(r[10] || '').trim(),
+    createdByName: String(r[11] || '').trim(),
+    status,
+    cancelledAt: String(r[13] || '').trim(),
+    cancelledByCrmId: String(r[14] || '').trim(),
+    cancelledByName: String(r[15] || '').trim(),
+    cancelComment: String(r[16] || '').trim(),
+    signed,
+  };
+}
+
+function _indexAdjustments(rows, suffix) {
+  const all = [];
+  const byCrmId = {};
+  (rows || []).forEach(r => {
+    const o = _adjRowToObj(r);
+    if (!o || o.month !== suffix) return;
+    all.push(o);
+    if (o.status === 'ACTIVE' && o.crmId) (byCrmId[o.crmId] = byCrmId[o.crmId] || []).push(o);
+  });
+  S.adjustments = { suffix, all, byCrmId };
+}
+
+let _adjInflight = null;
+// Читаем весь лист adjustments и индексируем локально (ТЗ §13). Лист может не
+// существовать до деплоя бэкенда — тогда трактуем как пусто (без поломок UI).
+async function loadAdjustments(suffix) {
+  try {
+    const rows = await apiFresh('adjustments', 'A2:Q1000', { silent: true, priority: 1 });
+    _indexAdjustments(rows || [], suffix);
+  } catch (e) {
+    _indexAdjustments([], suffix);
+    try { console.warn('loadAdjustments: лист пуст/недоступен —', e && e.message); } catch (_) {}
+  }
+}
+// Ленивая догрузка под текущий месяц + ре-рендер активного экрана дохода.
+// Идемпотентно: если уже загружено под currentSuffix — no-op (циклов нет).
+function ensureAdjustmentsLoaded() {
+  if (S.adjustments && S.adjustments.suffix === currentSuffix) return;
+  if (_adjInflight) return;
+  const suffix = currentSuffix;
+  _adjInflight = loadAdjustments(suffix).finally(() => { _adjInflight = null; });
+  _adjInflight.then(() => { if (suffix === currentSuffix) _reRenderActiveIncome(); });
+}
+function _reRenderActiveIncome() {
+  const on = id => document.getElementById('scr-' + id)?.classList.contains('on');
+  try {
+    if (on('personal')) { if (typeof goPersonal === 'function') goPersonal(); return; }
+    if (on('ceo'))      { if (typeof renderCeoDashboard === 'function') renderCeoDashboard(); return; }
+    if (on('rating'))   { if (typeof loadRating === 'function') loadRating(); return; }
+    if (on('dohod'))    { if (typeof renderDohod === 'function') renderDohod(); return; }
+    if (on('otchet'))   { if (typeof renderOtchet === 'function') renderOtchet(); return; }
+  } catch (_) {}
+}
+
+// ── Расчётный слой (единый источник итога, ТЗ §11) ──
+// ACTIVE-корректировки менеджера за активный месяц по ID CRM.
+function adjustmentsFor(crmId) {
+  const list = (crmId && S.adjustments && S.adjustments.byCrmId[crmId]) || [];
+  let bonus = 0, penalty = 0;
+  list.forEach(a => { if (a.type === 'PENALTY') penalty += a.amount; else bonus += a.amount; });
+  return { list, bonus, penalty, total: bonus - penalty };
+}
+// base → { base, bonus, penalty, adjustments, final }. final = max(0, base + Σ).
+function applyAdjustments(base, crmId) {
+  const a = adjustmentsFor(crmId);
+  const b = Number(base) || 0;
+  return { base: b, bonus: a.bonus, penalty: a.penalty, adjustments: a.total, final: Math.max(0, b + a.total) };
+}
+
 function showAccessDenied(reason = 'Почта не найдена в USERS') {
   hideStartupLoader();
   const email = normalizeEmail(S.user?.email) || 'email не получен';
@@ -10173,6 +10611,7 @@ async function loadPersonal(matched) {
 
 function renderPersonal(matched) {
   try { window.DIAG?.push('info', 'render', ['renderPersonal']); } catch(_){}
+  ensureAdjustmentsLoaded();
   const el = document.getElementById('c-personal');
   if (!el) return;
   const isDozhim = matched.role === 'dozhim';
@@ -10996,9 +11435,17 @@ function calcSalary(nameLow) {
   // (или > 0 ставка визита). Иначе она не нужна в деталях.
   const hasCat400 = cat400.vis > 0 || rCat400Vis > 0;
 
+  // Корректировки дохода (премия/депремия) — единый источник итога (ТЗ §11):
+  // final = max(0, base + Σ ACTIVE). Применяется и к факту, и к прогнозу.
+  const _crmId = getCrmIdByName(nameLow);
+  const _adj   = adjustmentsFor(_crmId);
+  const _factF = Math.max(0, totalFact + _adj.total);
+  const _progF = Math.max(0, totalProg + _adj.total);
+
   return {
-    fact:   { total: totalFact, koef: koefFact, pct: pctFact, premium },
-    prognoz:{ total: totalProg, koef: koefProg, pct: pctProg, premium },
+    fact:   { total: _factF, koef: koefFact, pct: pctFact, premium },
+    prognoz:{ total: _progF, koef: koefProg, pct: pctProg, premium },
+    adj:    { crmId: _crmId, total: _adj.total, bonus: _adj.bonus, penalty: _adj.penalty, list: _adj.list, baseFact: totalFact, baseProg: totalProg },
     detail: {
       oklad,
       baseOklad,
@@ -11236,6 +11683,7 @@ function openDozhimIncomeModal(btn) {
     ${subtotal('Итого КАТ 1000', Math.round(earn10))}
     ${cat1200Section}
     ${kotelRow}
+    ${_adjPanelHtml(d.nameLow || '')}
     <div class="income-sec-title">Итого</div>
     ${subtotal('Фактический доход', Math.round(n(d.fact?.total)))}
     ${buildDayCalendar(d.nameLow||'', S.data.d_vizity||[], { ...R, r800Vykup: rVykup, r1000Vykup: rVykup, r1200Vykup: R.r1200Vykup }, true)}
@@ -11321,6 +11769,7 @@ function openIncomeDetail(btn) {
   mc.removeAttribute('data-modal');
   mc.innerHTML = `
     ${koefRow}
+    ${_adjPanelHtml(d.nameLow || '')}
     ${okladRow}
     ${cat400 ? `
     <div class="income-sec-title">КАТ 400</div>
@@ -12853,6 +13302,7 @@ function openPlanEditorWithSverka() {
   openPlanEditor();
   initSverkaToggle();
   if (typeof window.initProfilesSettings === 'function') window.initProfilesSettings();
+  try { renderAdjAdmin(); } catch (_) {}
 }
 
 function closePlanEditorFull() {
@@ -13305,6 +13755,7 @@ function _ceoComputeLeaders() {
 
 function renderCeoDashboard() {
   try { window.DIAG?.push('info', 'render', ['renderCeoDashboard']); } catch(_){}
+  ensureAdjustmentsLoaded();
   const el = document.getElementById('c-ceo');
   if (!el) return;
 
@@ -14000,6 +14451,7 @@ document.addEventListener('click', (e) => {
 
 // ==================== RATING SCREEN ====================
 async function loadRating() {
+  ensureAdjustmentsLoaded();
   const token = screenToken();
   const stillHere = () => isScreenTokenActive('rating', token);
   const el = document.getElementById('c-rating');

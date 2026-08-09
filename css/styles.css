@@ -6389,6 +6389,8 @@ body.fluent .export-go-btn,
 body.fluent .pl-btn,
 body.fluent .vt-add-btn,
 body.fluent .vt-undo-btn,
+body.fluent .adj-btn-primary,
+body.fluent .adj-chip.on,
 body.fluent button[style*="background:var(--acc)"],
 body.fluent button[style*="background: var(--acc)"],
 body.fluent .btn-acc {
@@ -10023,3 +10025,103 @@ body .rating-card.is-birthday .rating-rank-num::after {
 #btn-refresh.refreshing svg,
 #btn-refresh.refreshing img.app-icon,
 #btn-refresh.refreshing .app-icon { animation: refresh-spin .8s linear infinite; transform-origin: 50% 50%; }
+
+/* ══════════════════ КОРРЕКТИРОВКИ (премия/депремия) ══════════════════ */
+.adj-pos, .adj-line-amt.pos, .adj-jrow-amt.pos, .adj-d-amount.pos { color:#22c55e; }
+.adj-line-amt.neg, .adj-jrow-amt.neg, .adj-d-amount.neg { color:var(--red); }
+.adj-strike { text-decoration:line-through; opacity:.6; }
+
+/* Панель «Корректировки» в модалке дохода менеджера */
+.adj-panel { display:flex; flex-direction:column; gap:2px; margin-bottom:8px; }
+.adj-line { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px;
+  background:var(--bg3); cursor:pointer; transition:background .15s; }
+.adj-line:hover { background:var(--line2); }
+.adj-line-amt { font-family:'Unbounded',sans-serif; font-size:12px; font-weight:800; min-width:74px; }
+.adj-line-cat { flex:1; font-size:12px; color:var(--txt2); }
+.adj-line-chev { color:var(--txt3); font-size:16px; }
+.adj-line-total { background:transparent; cursor:default; padding-top:6px; }
+.adj-line-total:hover { background:transparent; }
+.adj-line-total .adj-line-cat { font-size:10px; text-transform:uppercase; letter-spacing:.04em; color:var(--txt3); }
+
+/* Общий оверлей/модалка корректировок (детали, подтверждение) */
+.adj-overlay { position:fixed; inset:0; z-index:13000; display:flex; align-items:center; justify-content:center;
+  padding:calc(52px + 12px) 16px calc(88px + env(safe-area-inset-bottom,0px) + 16px);
+  background:rgba(0,0,0,.6); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+.adj-modal { background:var(--bg2); border:1px solid var(--line2); border-radius:var(--r2);
+  width:100%; max-width:440px; max-height:100%; display:flex; flex-direction:column; overflow:hidden;
+  box-shadow:0 24px 60px rgba(0,0,0,.5); }
+.adj-modal-hdr { display:flex; align-items:center; justify-content:space-between; padding:14px 16px;
+  border-bottom:1px solid var(--line2); }
+.adj-modal-title { font-family:'Unbounded',sans-serif; font-size:13px; font-weight:800; color:var(--txt); }
+.adj-modal-close { background:none; border:none; color:var(--txt2); font-size:24px; line-height:1; cursor:pointer; padding:0 4px; }
+.adj-modal-body { padding:16px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+
+/* Детали одной корректировки */
+.adj-d-amount { font-family:'Unbounded',sans-serif; font-size:26px; font-weight:800; text-align:center; }
+.adj-d-type { text-align:center; font-size:12px; color:var(--txt2); margin:2px 0 14px; }
+.adj-d-rows { display:flex; flex-direction:column; gap:1px; }
+.adj-d-row { display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid var(--line2); font-size:12px; }
+.adj-d-row span { color:var(--txt3); flex-shrink:0; }
+.adj-d-row b { color:var(--txt); font-weight:600; text-align:right; }
+.adj-d-comment b { font-weight:500; }
+.adj-d-id b { font-size:10px; color:var(--txt3); font-family:monospace; }
+.adj-d-cancelled { margin-top:12px; padding:12px; border-radius:10px; background:var(--bg3); }
+.adj-d-badge-cancel { display:inline-block; font-size:9px; font-weight:800; letter-spacing:.06em; color:var(--red);
+  border:1px solid var(--red); border-radius:6px; padding:2px 6px; margin-bottom:8px; }
+.adj-d-cancel-ui { margin-top:16px; display:flex; flex-direction:column; gap:8px; }
+
+/* Инпуты/кнопки корректировок */
+.adj-input { width:100%; background:var(--bg3); border:1px solid var(--line2); border-radius:10px;
+  padding:9px 11px; font-size:13px; color:var(--txt); font-family:inherit; box-sizing:border-box; }
+.adj-input:focus { outline:none; border-color:var(--acc); }
+textarea.adj-input { resize:vertical; min-height:40px; }
+.adj-btn { border:none; border-radius:10px; padding:11px 14px; font-size:13px; font-weight:700; cursor:pointer;
+  font-family:inherit; transition:opacity .15s, filter .15s; }
+.adj-btn:disabled { opacity:.5; cursor:default; }
+.adj-btn-primary { background:var(--acc); color:var(--acc-txt, #000); }
+.adj-btn-danger { background:var(--red); color:#fff; }
+.adj-btn-ghost { background:var(--bg3); color:var(--txt2); }
+/* Тёмный акцент (светлые темы) — белый текст на кнопках/чипах, как у .pe-save */
+body.light .adj-btn-primary, body.tiffany .adj-btn-primary,
+body.light .adj-chip.on, body.tiffany .adj-chip.on { color:#fff; }
+
+/* Админка: форма */
+.adj-admin { display:flex; flex-direction:column; gap:12px; }
+.adj-admin-hdr { font-family:'Unbounded',sans-serif; font-size:12px; font-weight:800; color:var(--acc); letter-spacing:.02em; }
+.adj-form { display:flex; flex-direction:column; gap:10px; }
+.adj-fld { display:flex; flex-direction:column; gap:5px; }
+.adj-fld > span { font-size:11px; color:var(--txt3); }
+.adj-type-toggle { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.adj-type-btn { background:var(--bg3); border:1px solid var(--line2); border-radius:10px; padding:9px; font-size:12px;
+  font-weight:600; color:var(--txt2); cursor:pointer; font-family:inherit; transition:.15s; }
+.adj-type-btn.on { border-color:currentColor; color:var(--txt); }
+.adj-type-btn.on.neg { color:var(--red); border-color:var(--red); background:rgba(255,71,87,.1); }
+.adj-type-btn.on.pos { color:#22c55e; border-color:#22c55e; background:rgba(34,197,94,.1); }
+.adj-note-block { font-size:11px; color:var(--txt3); line-height:1.6; padding:10px 12px; border-radius:10px;
+  background:var(--bg3); border:1px dashed var(--line2); }
+
+/* Админка: журнал */
+.adj-journal-controls { display:flex; flex-direction:column; gap:8px; padding-top:8px; border-top:1px solid var(--line2); }
+.adj-filter-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.adj-chip { background:var(--bg3); border:1px solid var(--line2); border-radius:20px; padding:5px 11px; font-size:11px;
+  color:var(--txt2); cursor:pointer; font-family:inherit; }
+.adj-chip.on { background:var(--acc); color:var(--acc-txt,#000); border-color:var(--acc); }
+.adj-showcancel { display:flex; align-items:center; gap:4px; font-size:11px; color:var(--txt3); margin-left:auto; cursor:pointer; }
+.adj-journal { display:flex; flex-direction:column; gap:5px; }
+.adj-jrow { display:flex; align-items:center; gap:10px; padding:9px 11px; border-radius:10px; background:var(--bg3);
+  cursor:pointer; transition:background .15s; }
+.adj-jrow:hover { background:var(--line2); }
+.adj-jrow.cancelled { opacity:.55; }
+.adj-jrow-main { flex:1; min-width:0; }
+.adj-jrow-name { font-size:12px; font-weight:600; color:var(--txt); }
+.adj-jrow-dir { font-size:9px; font-weight:700; color:var(--txt3); letter-spacing:.04em; }
+.adj-jrow-cat { font-size:10px; color:var(--txt3); margin-top:1px; }
+.adj-jrow-amt { font-family:'Unbounded',sans-serif; font-size:12px; font-weight:800; flex-shrink:0; }
+.adj-badge-cancel { font-size:8px; font-weight:800; letter-spacing:.05em; color:var(--red);
+  border:1px solid var(--red); border-radius:5px; padding:1px 4px; margin-left:4px; }
+.adj-empty { font-size:12px; color:var(--txt3); text-align:center; padding:16px; }
+
+/* Подтверждение */
+.adj-confirm-modal { max-width:360px; }
+.adj-confirm-text { font-size:13px; color:var(--txt); line-height:1.5; margin-bottom:16px; }
+.adj-confirm-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }

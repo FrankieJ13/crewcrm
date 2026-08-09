@@ -5798,6 +5798,7 @@ function renderDohod() {
           ${subtotal('Итого Тёплые лиды', warmSum)}
           ${kotelRow}
           ${noKoefRow}
+          ${_adjPanelHtml(nameLow)}
           ${buildDayCalendar(nameLow, S.data.vizity||[], getCrmRates(currentSuffix), false)}
         </div>
       </div>`);
@@ -9983,7 +9984,9 @@ function _adjRowToObj(r) {
   const signed = status === 'CANCELLED' ? 0 : (type === 'PENALTY' ? -amount : amount);
   return {
     id,
-    month: String(r[1] || '').trim(),
+    // Google Sheets срезает ведущий ноль у MMYY ("0826" → число 826). Возвращаем
+    // канонический 4-значный вид, иначе фильтр по месяцу отбрасывает строку.
+    month: String(r[1] || '').trim().padStart(4, '0'),
     crmId: String(r[2] || '').trim(),
     managerName: String(r[3] || '').trim(),
     direction: String(r[4] || '').trim().toLowerCase(),
@@ -11769,7 +11772,6 @@ function openIncomeDetail(btn) {
   mc.removeAttribute('data-modal');
   mc.innerHTML = `
     ${koefRow}
-    ${_adjPanelHtml(d.nameLow || '')}
     ${okladRow}
     ${cat400 ? `
     <div class="income-sec-title">КАТ 400</div>
@@ -11808,6 +11810,7 @@ function openIncomeDetail(btn) {
     ${subtotal('Итого Тёплые лиды', warmSum)}
     ${kotelRow}
     ${noKoefRow}
+    ${_adjPanelHtml(d.nameLow || '')}
     ${buildDayCalendar(d.nameLow||'', S.data.vizity||[], getCrmRates(currentSuffix), false)}
   `;
   document.getElementById('income-overlay').classList.add('open');

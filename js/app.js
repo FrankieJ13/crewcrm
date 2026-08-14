@@ -5795,15 +5795,6 @@ function renderDohod() {
             ${badge('Комиссия', cat400.kom, cat400.cnt?.kom)}${badge('Выкуп', cat400.vykup||0, cat400.cnt?.vykup||0)}
           </div>
           ${subtotal('Итого КАТ 400', cat400Sum)}` : ''}
-          ${cat0 ? `
-          <div class="income-sec-title">КАТ 0 <span style="font-weight:400;font-size:9px;color:var(--txt3);text-transform:none;letter-spacing:0">· без вознаграждения</span></div>
-          <div class="income-badges">
-            ${badge('Визиты', cat0.vis, cat0.cnt?.vis)}${badge('Кредит', cat0.kred, cat0.cnt?.kred)}${badge('Нал+Обмен', n(cat0.nal)+n(cat0.obmen), (cat0.cnt?.nal||0)+(cat0.cnt?.obmen||0))}
-          </div>
-          <div class="income-badges" style="grid-template-columns:repeat(2,1fr)">
-            ${badge('Комиссия', cat0.kom, cat0.cnt?.kom)}${badge('Выкуп', cat0.vykup||0, cat0.cnt?.vykup||0)}
-          </div>
-          ${subtotal('Итого КАТ 0', 0)}` : ''}
           <div class="income-sec-title">CRM</div>
           <div class="income-badges">
             ${badge('Визиты', d.detail.crm.vis, d.detail.crm.cnt?.vis)}${badge('Кредит', d.detail.crm.kred, d.detail.crm.cnt?.kred)}${badge('Нал+Обмен', n(d.detail.crm.nal)+n(d.detail.crm.obmen), (d.detail.crm.cnt?.nal||0)+(d.detail.crm.cnt?.obmen||0))}
@@ -5820,6 +5811,15 @@ function renderDohod() {
             ${badge('Комиссия', d.detail.warm.kom, d.detail.warm.cnt?.kom)}${badge('Выкуп', d.detail.warm.vykup||0, d.detail.warm.cnt?.vykup||0)}
           </div>
           ${subtotal('Итого Тёплые лиды', warmSum)}
+          ${cat0 ? `
+          <div class="income-sec-title">КАТ 0 <span style="font-weight:400;font-size:9px;color:var(--txt3);text-transform:none;letter-spacing:0">· без вознаграждения</span></div>
+          <div class="income-badges">
+            ${badge('Визиты', cat0.vis, cat0.cnt?.vis)}${badge('Кредит', cat0.kred, cat0.cnt?.kred)}${badge('Нал+Обмен', n(cat0.nal)+n(cat0.obmen), (cat0.cnt?.nal||0)+(cat0.cnt?.obmen||0))}
+          </div>
+          <div class="income-badges" style="grid-template-columns:repeat(2,1fr)">
+            ${badge('Комиссия', cat0.kom, cat0.cnt?.kom)}${badge('Выкуп', cat0.vykup||0, cat0.cnt?.vykup||0)}
+          </div>
+          ${subtotal('Итого КАТ 0', 0)}` : ''}
           ${kotelRow}
           ${noKoefRow}
           ${_adjPanelHtml(nameLow)}
@@ -11829,18 +11829,6 @@ function openIncomeDetail(btn) {
       ${badge('Выкуп',     cat400.vykup || 0,                   cat400.cnt?.vykup || 0)}
     </div>
     ${subtotal('Итого КАТ 400', cat400Sum)}` : ''}
-    ${cat0 ? `
-    <div class="income-sec-title">КАТ 0 <span style="font-weight:400;font-size:9px;color:var(--txt3);text-transform:none;letter-spacing:0">· без вознаграждения</span></div>
-    <div class="income-badges">
-      ${badge('Визиты',    cat0.vis,                        cat0.cnt?.vis)}
-      ${badge('Кредит',    cat0.kred,                       cat0.cnt?.kred)}
-      ${badge('Нал+Обмен', n(cat0.nal) + n(cat0.obmen),     (cat0.cnt?.nal || 0) + (cat0.cnt?.obmen || 0))}
-    </div>
-    <div class="income-badges" style="grid-template-columns:repeat(2,1fr)">
-      ${badge('Комиссия',  cat0.kom,                        cat0.cnt?.kom)}
-      ${badge('Выкуп',     cat0.vykup || 0,                 cat0.cnt?.vykup || 0)}
-    </div>
-    ${subtotal('Итого КАТ 0', 0)}` : ''}
     <div class="income-sec-title">CRM</div>
     <div class="income-badges">
       ${badge('Визиты',     d.crm.vis,                          d.crm.cnt?.vis)}
@@ -11864,6 +11852,18 @@ function openIncomeDetail(btn) {
       ${badge('Выкуп',      d.warm.vykup || 0,                  d.warm.cnt?.vykup || 0)}
     </div>
     ${subtotal('Итого Тёплые лиды', warmSum)}
+    ${cat0 ? `
+    <div class="income-sec-title">КАТ 0 <span style="font-weight:400;font-size:9px;color:var(--txt3);text-transform:none;letter-spacing:0">· без вознаграждения</span></div>
+    <div class="income-badges">
+      ${badge('Визиты',    cat0.vis,                        cat0.cnt?.vis)}
+      ${badge('Кредит',    cat0.kred,                       cat0.cnt?.kred)}
+      ${badge('Нал+Обмен', n(cat0.nal) + n(cat0.obmen),     (cat0.cnt?.nal || 0) + (cat0.cnt?.obmen || 0))}
+    </div>
+    <div class="income-badges" style="grid-template-columns:repeat(2,1fr)">
+      ${badge('Комиссия',  cat0.kom,                        cat0.cnt?.kom)}
+      ${badge('Выкуп',     cat0.vykup || 0,                 cat0.cnt?.vykup || 0)}
+    </div>
+    ${subtotal('Итого КАТ 0', 0)}` : ''}
     ${kotelRow}
     ${noKoefRow}
     ${_adjPanelHtml(d.nameLow || '')}

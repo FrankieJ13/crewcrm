@@ -4412,6 +4412,7 @@ function buildCrmStats(vizData, opts = {}) {
   const ST_FSSП     = 'фссп не подаем';
   const ST_OTKAZ    = 'отказ';
   const ST_ODOB_NK  = 'одобрено банком, но не купил';
+  const CAT0        = 'кат 0';
   const CAT400      = 'кат 400';
   const CAT800      = 'кат 800';
   const CAT1200     = 'кат 1200';
@@ -4439,6 +4440,7 @@ function buildCrmStats(vizData, opts = {}) {
       mgrs[mgrL] = {
         name: mgr,
         vis:0,             // общее число всех строк менеджера — соответствует хронологии
+        vis0:0,            // КАТ 0 — считается в кол-ве (для плана), но без вознаграждений
         vis400:0, vis800:0, vis1200:0,
         kred400:0, nal400:0, obmen400:0, vykup400:0, kom400:0,
         kred800:0, nal800:0, obmen800:0, vykup800:0, kom800:0,
@@ -4459,19 +4461,24 @@ function buildCrmStats(vizData, opts = {}) {
     // КРИТИЧНО: m.vis считаем только для строк с валидной CRM-категорией.
     // Иначе m.vis > vis400+vis800+vis1200 (если в листе попалась «кат 1000»),
     // и разные экраны показывают разные числа.
-    // m.vis ≡ vis400 + vis800 + vis1200.
+    // m.vis ≡ vis0 + vis400 + vis800 + vis1200.
     // КАТ 400 — историческая категория (август 2025 — март 2026), потом убрана.
+    // КАТ 0 — визит идёт в кол-во (факт/план → коэффициент), но НЕ платится:
+    //   нет своего платного бакета, статусы сделок не обрабатываем.
+    if (cat === CAT0)    { m.vis++; m.vis0++; }
     if (cat === CAT400)  { m.vis++; m.vis400++; }
     if (cat === CAT800)  { m.vis++; m.vis800++; }
     if (cat === CAT1200) { m.vis++; m.vis1200++; }
 
-    if (!m.byCity[city] && (cat === CAT400 || cat === CAT800 || cat === CAT1200)) {
+    if (!m.byCity[city] && (cat === CAT0 || cat === CAT400 || cat === CAT800 || cat === CAT1200)) {
       m.byCity[city] = emptyCity(city);
     }
     const cityBucket = m.byCity[city];
     if (cityBucket) cityBucket.vis++;
 
-    statuses.forEach(st => {
+    // КАТ 0 — только визит (учтён выше). Сделки/статусы/задаток НЕ обрабатываем:
+    // категория не приносит денег (задаток тоже платный → его нельзя считать).
+    if (cat !== CAT0) statuses.forEach(st => {
       if (cat === CAT400) {
         if (st === BUY_KREDIT) m.kred400++;
         if (st === BUY_NAL)    m.nal400++;
@@ -4510,7 +4517,7 @@ function buildCrmStats(vizData, opts = {}) {
         else if (st === ST_ODOB_NK) cityBucket.odobNeKupil++;
       }
     });
-    if (zadSum > 1000) m.zadatok++;
+    if (zadSum > 1000 && cat !== CAT0) m.zadatok++;
   }
   return mgrs;
 }
@@ -18149,6 +18156,8 @@ const EXP_CAT_TL  = 'кат 1200';
 function exp_applyRow(stat, cat, st, catA, catB, catC) {
   catA = catA || EXP_CAT_CRM;
   catB = catB || EXP_CAT_TL;
+  // КАТ 0 — только визит в общий счётчик, без сделок (нет вознаграждений).
+  if (cat === 'кат 0') { stat.visTotal++; return; }
   if (cat === catA) stat.visCrm++;
   if (cat === catB || (catC && cat === catC)) stat.visTl++;
   stat.visTotal++;

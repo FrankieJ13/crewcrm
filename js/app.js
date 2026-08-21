@@ -5362,16 +5362,16 @@ function renderOtchet() {
     })
     .map(r => {
     const mName = (r[0]||'—').trim();
-    const genRow = getCnvrsRow(mName, 'general');
-    const convStr = (genRow[6]||'0%').replace('%','').replace(',','.');
     const allV = num(r[7]);
     const plan = num(r[3]) || 1;
+    // Центр спидометра — конверсия «К кредит» = кредиты(кат800+1200) ÷ визиты × 100%.
+    const convKred = allV > 0 ? Math.round((num(r[8]) + num(r[12])) / allV * 100) : 0;
     return {
       name:     mName.toUpperCase(),
       visits:   allV,
       plan,
       progNum:  computeProgPct(allV, plan, currentSuffix),
-      convPct:  parseFloat(convStr) || 0,
+      convPct:  convKred,
       isKotel:  isKotel(r[0]),
     };
   });

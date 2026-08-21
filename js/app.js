@@ -11259,25 +11259,21 @@ function getKoef(pct) {
 }
 
 // ── Конверсия «Визит → Кредит» может поднять коэффициент на одну ступень (ТЗ). ──
-// Конфиг — rates.json.convBoost (from/minVisits/maxKoef/steps). Прошлые месяцы
-// (< from) НЕ затрагиваются: если фичи не было — коэффициент считается по-старому.
-function _monthKey(mmYY) {
-  const s = String(mmYY || '');
-  const mm = parseInt(s.slice(0, 2), 10) || 0;
-  const yy = parseInt(s.slice(2, 4), 10) || 0;
-  return (2000 + yy) * 100 + mm;
-}
-function getConvBoostCfg() {
-  const c = _ratesJson && _ratesJson.convBoost;
-  return (c && c.from && Array.isArray(c.steps)) ? c : null;
+// Конфиг — ПОМЕСЯЧНО: rates.json.convBoostByMonth[MMYY] {minVisits,maxKoef,steps}.
+// У месяца есть блок → повышение работает; нет блока (в т.ч. ВСЕ прошлые месяцы) →
+// коэффициент считается по-старому. Пороги меняются точечно в нужном месяце;
+// в новые месяцы блок дублируется вручную.
+function getConvBoostCfg(suffix = currentSuffix) {
+  const m = _ratesJson && _ratesJson.convBoostByMonth;
+  const c = m && m[suffix];
+  return (c && Array.isArray(c.steps)) ? c : null;
 }
 // baseKoef + конверсия(%) → итоговый коэффициент + подробности для показа.
-// active — фича включена для месяца; enough — визитов ≥ minVisits; boosted — было повышение.
+// active — у месяца есть конфиг; enough — визитов ≥ minVisits; boosted — было повышение.
 function applyConvKoefBoost(baseKoef, convPct, visits, suffix = currentSuffix) {
   const res = { koef: baseKoef, base: baseKoef, conv: convPct, boosted: false, thr: null, enough: true, active: false, minVisits: 10 };
-  const cfg = getConvBoostCfg();
-  if (!cfg) return res;
-  if (_monthKey(suffix) < _monthKey(cfg.from)) return res;   // прошлые месяцы — без изменений
+  const cfg = getConvBoostCfg(suffix);
+  if (!cfg) return res;   // месяц без конфига (в т.ч. все прошлые) — коэффициент по-старому
   res.active = true;
   res.minVisits = cfg.minVisits || 10;
   const step = cfg.steps.find(s => Math.abs(Number(s.base) - baseKoef) < 1e-6);

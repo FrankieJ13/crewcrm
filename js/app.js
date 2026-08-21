@@ -5162,6 +5162,8 @@ function renderOtchet() {
   }
 
   const deptKred = mgrRows.reduce((s,r) => s + num(r[8])  + num(r[12]), 0) + num(kot[8])  + num(kot[12]);
+  const kred800sum  = mgrRows.reduce((s,r) => s + num(r[8]),  0) + num(kot[8]);
+  const kred1200sum = mgrRows.reduce((s,r) => s + num(r[12]), 0) + num(kot[12]);
   const deptNal  = mgrRows.reduce((s,r) => s + num(r[9])  + num(r[13]), 0) + num(kot[9])  + num(kot[13]);
   const deptKom  = mgrRows.reduce((s,r) => s + num(r[11]) + num(r[15]), 0) + num(kot[11]) + num(kot[15]);
 
@@ -5236,19 +5238,19 @@ function renderOtchet() {
         <div class="dept-sec-lbl" style="font-size:7px;color:var(--txt2);margin:4px 0 6px"><b><i>К</i></b> общая</div>
         <div class="dept-row3">
           <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> визиты</div><div class="dc-val">${cnvrsTotGen[6]||'—'}</div></div>
-          <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> кредиты</div><div class="dc-val">${cnvrsTotGen[7]||'—'}</div></div>
+          <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> кредиты</div><div class="dc-val">${convKredPct(deptKred, allVis)}</div></div>
           <div class="dept-cell"><div class="dc-lbl">% нецелевых</div><div class="dc-val">${cnvrsTotGen[9]||'—'}</div></div>
         </div>
         <div class="dept-sec-lbl" style="font-size:7px;color:var(--txt2);margin:10px 0 6px"><b><i>К</i></b> CRM</div>
         <div class="dept-row3">
           <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> визиты</div><div class="dc-val">${cnvrsTotCrm[6]||'—'}</div></div>
-          <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> кредиты</div><div class="dc-val">${cnvrsTotCrm[7]||'—'}</div></div>
+          <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> кредиты</div><div class="dc-val">${convKredPct(kred800sum, vis800sum)}</div></div>
           <div class="dept-cell"><div class="dc-lbl">% нецелевых</div><div class="dc-val">${cnvrsTotCrm[9]||'—'}</div></div>
         </div>
         <div class="dept-sec-lbl" style="font-size:7px;color:var(--txt2);margin:10px 0 6px"><b><i>К</i></b> тёплые лиды</div>
         <div class="dept-row3">
           <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> визиты</div><div class="dc-val">${cnvrsTotWarm[6]||'—'}</div></div>
-          <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> кредиты</div><div class="dc-val">${cnvrsTotWarm[7]||'—'}</div></div>
+          <div class="dept-cell"><div class="dc-lbl"><b><i>К</i></b> кредиты</div><div class="dc-val">${convKredPct(kred1200sum, vis1200sum)}</div></div>
           <div class="dept-cell"><div class="dc-lbl">% нецелевых</div><div class="dc-val">${cnvrsTotWarm[9]||'—'}</div></div>
         </div>
       </div>
@@ -8086,6 +8088,14 @@ function burstConfetti(el, idx) {
   if (isGold) setTimeout(() => burstConfetti(el, 99), 140);
 }
 
+// Конверсия «из визита в кредит» = кредитные продажи ÷ состоявшиеся визиты × 100%.
+// Считаем локально из фактических счётчиков (раньше «К кредит» брали из листа CNVRS).
+function convKredPct(kred, viz) {
+  const k = parseFloat(String(kred).replace(/[^\d.-]/g, '')) || 0;
+  const v = parseFloat(String(viz).replace(/[^\d.-]/g, '')) || 0;
+  return v > 0 ? Math.round(k / v * 100) + '%' : '0%';
+}
+
 function openMopModal(dataStr) {
   let d;
   try { d = JSON.parse(dataStr.replace(/&#39;/g,"'").replace(/&quot;/g,'"')); }
@@ -8141,7 +8151,7 @@ function openMopModal(dataStr) {
   // Конверсии (общий)
   const convHtml = `
     <div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.genConVis}</div></div>
-    <div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.genConKred}</div></div>
+    <div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${convKredPct(tKred, d.allV)}</div></div>
     <div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.genDolya}</div></div>
     <div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.genKoef}</div></div>`;
 
@@ -8155,7 +8165,7 @@ function openMopModal(dataStr) {
     <div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom800}</div></div>
     <div class="modal-cell"><div class="mc-l">Задаток</div><div class="mc-v">${d.zadatok}</div></div>
     <div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.crmConVis}</div></div>
-    <div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.crmConKred}</div></div>
+    <div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${convKredPct(d.kred800, d.v800)}</div></div>
     <div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.crmDolya}</div></div>
     <div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.crmKoef}</div></div>`;
 
@@ -8168,7 +8178,7 @@ function openMopModal(dataStr) {
     <div class="modal-cell"><div class="mc-l">Выкуп</div><div class="mc-v">${d.vykup1200||0}</div></div>
     <div class="modal-cell"><div class="mc-l">Комиссия</div><div class="mc-v">${d.kom1200}</div></div>
     <div class="modal-cell"><div class="mc-l"><b><i>К</i></b> визиты</div><div class="mc-v">${d.warmConVis}</div></div>
-    <div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${d.warmConKred}</div></div>
+    <div class="modal-cell"><div class="mc-l"><b><i>К</i></b> кредит</div><div class="mc-v">${convKredPct(d.kred1200, d.v1200)}</div></div>
     <div class="modal-cell"><div class="mc-l">% целевых</div><div class="mc-v">${d.warmDolya}</div></div>
     <div class="modal-cell"><div class="mc-l">Kоэфф.</div><div class="mc-v">${d.warmKoef}</div></div>`;
 
@@ -10744,7 +10754,8 @@ function renderPersonal(matched) {
     vsaloneN = (num(mgrRow[19]) + num((buildDozhimStats(S.data.d_vizity || [])[nameLow] || {}).vsalone)) || 0;
     const genRow = getCnvrsRowGlobal(name, 'general');
     convVis   = genRow[6]||'—';
-    convKred  = genRow[7]||'—';
+    convKred  = convKredPct(num(mgrRow[8]) + num(mgrRow[12]), factN); // кредиты(кат800+1200) ÷ визиты
+
     pctTarget = genRow[8]||'—';
     koeff     = genRow[12]||'—';
   }

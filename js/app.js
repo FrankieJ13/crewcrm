@@ -5746,6 +5746,12 @@ function renderDohod() {
     }
     const cat400 = d.detail.cat400 || null;
     const cat0   = d.detail.cat0 || null;
+    const cbI = d.detail.convBoost || null;
+    const cbRow = (cbI && cbI.active) ? `<div class="conv-boost">
+      <div class="cb-row"><span>Визиты</span><b>${Math.round(d.fact.pct)}% плана → ×${(+cbI.baseFact).toFixed(1)}</b></div>
+      <div class="cb-row"><span>Визит → Кредит</span><b>${cbI.conv}% · ${cbI.boostedFact ? '<span class="cb-up">повышение +1 ступень</span>' : !cbI.enough ? `<span class="cb-mut">мало визитов (${cbI.visits} &lt; ${cbI.minVisits})</span>` : cbI.thrFact != null ? `<span class="cb-mut">порог ≥${cbI.thrFact}% не достигнут</span>` : '<span class="cb-mut">максимум</span>'}</b></div>
+      <div class="cb-row cb-total"><span>Итоговый коэффициент</span><b class="${koefClass(cbI.koefFact)}">×${(+cbI.koefFact).toFixed(1)}</b></div>
+    </div>` : '';
     const cat400Sum = cat400 ? (n(cat400.vis)+n(cat400.kred)+n(cat400.nal)+n(cat400.obmen)+n(cat400.vykup||0)+n(cat400.kom)) : 0;
     const crmSum  = n(d.detail.crm.vis)+n(d.detail.crm.kred)+n(d.detail.crm.nal)+n(d.detail.crm.obmen)+n(d.detail.crm.vykup||0)+n(d.detail.crm.kom)+n(d.detail.crm.zadatok);
     const warmSum = n(d.detail.warm.vis)+n(d.detail.warm.kred)+n(d.detail.warm.nal)+n(d.detail.warm.obmen)+n(d.detail.warm.vykup||0)+n(d.detail.warm.kom);
@@ -5787,6 +5793,7 @@ function renderDohod() {
           <div class="kpi-bare-text" style="font-size:10px;margin-bottom:8px;line-height:1.5">
             Оклад + (Премия × К) = Итог<br>${okladFormula}
           </div>
+          ${cbRow}
           ${okladRow}
           ${cat400 ? `
           <div class="income-sec-title">КАТ 400</div>
@@ -5880,6 +5887,7 @@ function renderDohodCrm(el) {
         nameLow:  item.nameLow,
         cat400:   item.sal.detail.cat400 || null,
         cat0:     item.sal.detail.cat0 || null,
+        convBoost: item.sal.detail.convBoost || null,
         crm:      item.sal.detail.crm,
         warm:     item.sal.detail.warm,
         oklad:    item.sal.detail.oklad,
@@ -10851,6 +10859,7 @@ function renderPersonal(matched) {
     const incomeDetail = {
       cat400:   salObj.detail.cat400 || null,
       cat0:     salObj.detail.cat0 || null,
+      convBoost: salObj.detail.convBoost || null,
       crm:      salObj.detail.crm,
       warm:     salObj.detail.warm,
       oklad:    salObj.detail.oklad,
@@ -11248,6 +11257,39 @@ function getKoef(pct) {
   if (pct <= 150) return 1.1;
   return 1.2;
 }
+
+// ── Конверсия «Визит → Кредит» может поднять коэффициент на одну ступень (ТЗ). ──
+// Конфиг — rates.json.convBoost (from/minVisits/maxKoef/steps). Прошлые месяцы
+// (< from) НЕ затрагиваются: если фичи не было — коэффициент считается по-старому.
+function _monthKey(mmYY) {
+  const s = String(mmYY || '');
+  const mm = parseInt(s.slice(0, 2), 10) || 0;
+  const yy = parseInt(s.slice(2, 4), 10) || 0;
+  return (2000 + yy) * 100 + mm;
+}
+function getConvBoostCfg() {
+  const c = _ratesJson && _ratesJson.convBoost;
+  return (c && c.from && Array.isArray(c.steps)) ? c : null;
+}
+// baseKoef + конверсия(%) → итоговый коэффициент + подробности для показа.
+// active — фича включена для месяца; enough — визитов ≥ minVisits; boosted — было повышение.
+function applyConvKoefBoost(baseKoef, convPct, visits, suffix = currentSuffix) {
+  const res = { koef: baseKoef, base: baseKoef, conv: convPct, boosted: false, thr: null, enough: true, active: false, minVisits: 10 };
+  const cfg = getConvBoostCfg();
+  if (!cfg) return res;
+  if (_monthKey(suffix) < _monthKey(cfg.from)) return res;   // прошлые месяцы — без изменений
+  res.active = true;
+  res.minVisits = cfg.minVisits || 10;
+  const step = cfg.steps.find(s => Math.abs(Number(s.base) - baseKoef) < 1e-6);
+  if (!step) return res;                                     // базовый = максимум (ступени нет)
+  res.thr = step.minConv;
+  if (visits < res.minVisits) { res.enough = false; return res; } // маленькая выборка — не повышаем
+  if (convPct >= step.minConv) {
+    res.koef = Math.min(Number(step.to), Number(cfg.maxKoef || 1.2));
+    res.boosted = res.koef > baseKoef;
+  }
+  return res;
+}
 function koefClass(k) {
   if (k <= 0.8) return 'k08';
   if (k <= 0.9) return 'k09';
@@ -11446,8 +11488,16 @@ function calcSalary(nameLow) {
   // Rang: rookie — без коэффициентов (всегда ×1.0)
   const mgrRang = getRangByName(nameLow);
   const isRookie = mgrRang === 'rookie';
-  const koefFact = isRookie ? 1.0 : getKoef(pctFact);
-  const koefProg = isRookie ? 1.0 : getKoef(pctProg);
+  const baseKoefFact = isRookie ? 1.0 : getKoef(pctFact);
+  const baseKoefProg = isRookie ? 1.0 : getKoef(pctProg);
+  // Конверсия «Визит → Кредит» = кредиты(кат800+1200) ÷ состоявшиеся визиты × 100%.
+  // Может поднять коэффициент на одну ступень (ТЗ). Для rookie — без изменений.
+  const _noBoost = () => ({ koef: 1.0, base: 1.0, conv: 0, boosted: false, thr: null, enough: true, active: false, minVisits: 10 });
+  const convKredVal = mgrAllVis > 0 ? Math.round((crm.kred + warm.kred) / mgrAllVis * 100) : 0;
+  const boostFact = isRookie ? _noBoost() : applyConvKoefBoost(baseKoefFact, convKredVal, mgrAllVis);
+  const boostProg = isRookie ? _noBoost() : applyConvKoefBoost(baseKoefProg, convKredVal, mgrAllVis);
+  const koefFact = boostFact.koef;
+  const koefProg = boostProg.koef;
 
   const totalFact = oklad + premium * koefFact;
   const totalProg = baseOklad + premium * koefProg;
@@ -11515,6 +11565,12 @@ function calcSalary(nameLow) {
       warm:     detailWarm,
       kotel:    kotelShare,
       fundCount,
+      convBoost: {
+        active: boostFact.active, conv: convKredVal, visits: mgrAllVis,
+        minVisits: boostFact.minVisits, enough: boostFact.enough,
+        baseFact: baseKoefFact, koefFact, boostedFact: boostFact.boosted, thrFact: boostFact.thr,
+        baseProg: baseKoefProg, koefProg, boostedProg: boostProg.boosted, thrProg: boostProg.thr,
+      },
     }
   };
 }
@@ -11801,6 +11857,13 @@ function openIncomeDetail(btn) {
   const okladFormula = d.workedR != null
     ? `(${fmtRub(d.baseOklad)}÷${d.totalR}×${d.workedR}) + (${fmtRub(Math.round(premium))} × ${factKoef ? factKoef.toFixed(1) : '—'}) = ${fmtRub(Math.round(d.fact ? d.fact.total : 0))}`
     : `${fmtRub(oklad)} + (${fmtRub(Math.round(premium))} × ${factKoef ? factKoef.toFixed(1) : '—'}) = ${fmtRub(Math.round(d.fact ? d.fact.total : 0))}`;
+  const cb = d.convBoost || null;
+  const convBoostRow = (cb && cb.active) ? `
+    <div class="conv-boost">
+      <div class="cb-row"><span>Визиты</span><b>${Math.round(d.fact.pct)}% плана → ×${(+cb.baseFact).toFixed(1)}</b></div>
+      <div class="cb-row"><span>Визит → Кредит</span><b>${cb.conv}% · ${cb.boostedFact ? '<span class="cb-up">повышение +1 ступень</span>' : !cb.enough ? `<span class="cb-mut">мало визитов (${cb.visits} &lt; ${cb.minVisits})</span>` : cb.thrFact != null ? `<span class="cb-mut">порог ≥${cb.thrFact}% не достигнут</span>` : '<span class="cb-mut">максимум</span>'}</b></div>
+      <div class="cb-row cb-total"><span>Итоговый коэффициент</span><b class="${koefClass(cb.koefFact)}">×${(+cb.koefFact).toFixed(1)}</b></div>
+    </div>` : '';
   const koefRow = (factKoef !== null) ? `
     <div class="income-sec-title">Коэффициент</div>
     <div class="income-cols" style="margin-bottom:8px">
@@ -11815,6 +11878,7 @@ function openIncomeDetail(btn) {
         <div class="ic-val" style="color:${pctClr(d.prognoz.pct)}">${fmtRub(Math.round(d.prognoz.total))}</div>
       </div>
     </div>
+    ${convBoostRow}
     <div style="font-size:10px;color:var(--txt2);margin-bottom:4px;line-height:1.5">
       Оклад + (Премия × К) = Итог<br>
       ${okladFormula}

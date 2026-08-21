@@ -10125,3 +10125,12 @@ body.light .adj-chip.on, body.tiffany .adj-chip.on { color:#fff; }
 .adj-confirm-modal { max-width:360px; }
 .adj-confirm-text { font-size:13px; color:var(--txt); line-height:1.5; margin-bottom:16px; }
 .adj-confirm-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+
+/* ══ Конверсия Визит→Кредит — повышение коэффициента ══ */
+.conv-boost { background:var(--bg3); border:1px solid var(--line2); border-radius:10px; padding:8px 10px; margin:2px 0 10px; display:flex; flex-direction:column; gap:3px; }
+.conv-boost .cb-row { display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:11px; color:var(--txt2); }
+.conv-boost .cb-row b { color:var(--txt); font-weight:600; text-align:right; }
+.conv-boost .cb-total { border-top:1px solid var(--line2); padding-top:5px; margin-top:2px; }
+.conv-boost .cb-total b { font-family:'Unbounded',sans-serif; font-weight:800; }
+.conv-boost .cb-up { color:#22c55e; font-weight:700; }
+.conv-boost .cb-mut { color:var(--txt3); }

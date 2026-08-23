@@ -1024,4 +1024,212 @@
     try { const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done(); } catch (_) {}
   }
 
+  /* ══════════════════════════════════════════════════════════════════════
+     FAQ · СВЕРКА GS × CRM — обратная сверка (для ВСЕХ ролей)
+     Ищет визиты из выгрузки amoCRM (CSV), которые НЕ внесены в лист GS.
+     Права: CRM-менеджер сверяет свои визиты (CSV «Ответственный» = он) с
+     листом ВИЗИТЫ; ДОЖИМ-менеджер (CSV «ДОЖИМ Ответственный» = он) — с
+     Д_ВИЗИТЫ; CEO/ROP — весь отдел по обоим листам.
+     «Найден» = телефон визита есть среди телефонов листа за месяц.
+     Переиспользует parseCSV/normPhone/extractPhones/parseDMY/extractVisits/…
+     ══════════════════════════════════════════════════════════════════════ */
+  const GS = { fileName: '', report: null, detailed: false };
+
+  function gsRole() {
+    const me = typeof window.findUserInSheet === 'function' ? window.findUserInSheet() : null;
+    const isCeo = !!(me && typeof window.isCeoLike === 'function' && window.isCeoLike(me.role));
+    return { me, name: (me && me.name) || '', role: (me && me.role) || 'crm', isCeo };
+  }
+
+  // CSV → записи визитов с тегом отдела (crm/dozhim). Строка может дать обе.
+  function gsExtractRecords(rows) {
+    if (!rows || rows.length < 2) return [];
+    const header = rows[0];
+    const H = buildHeaderIndex(header);
+    const phoneIdx = header.map((h, i) => ({ h: String(h || ''), i }))
+      .filter(o => /телефон|phone/i.test(o.h) && !/линия|mango|факс|fax/i.test(o.h)).map(o => o.i);
+    const iId = (H['ID'] || [])[0];
+    const iResp = (H['Ответственный'] || [])[0];
+    const iVisit = (H['Дата визита'] || [])[0];
+    const iDVisit = (H['Повторная дата визита (ДОЖИМ)'] || [])[0];
+    const iDResp = (H['ДОЖИМ Ответственный'] || [])[0];
+    const iName = (H['Полное имя контакта'] || [])[0];
+    const iCity = (H['Город'] || [])[0];
+    const out = [];
+    for (let r = 1; r < rows.length; r++) {
+      const row = rows[r]; if (!row || !row.length) continue;
+      const phones = new Set(); phoneIdx.forEach(i => extractPhones(row[i]).forEach(p => phones.add(p)));
+      const ph = [...phones];
+      const id = iId != null ? String(row[iId] || '').trim() : '';
+      const name = iName != null ? String(row[iName] || '').trim() : '';
+      const city = iCity != null ? String(row[iCity] || '').trim() : '';
+      const vRaw = iVisit != null ? String(row[iVisit] || '').trim() : '';
+      if (vRaw) out.push({ dept: 'crm', id, responsible: iResp != null ? String(row[iResp] || '').trim() : '', dateRaw: vRaw, date: parseDMY(vRaw), phones: ph, name, city });
+      const dvRaw = iDVisit != null ? String(row[iDVisit] || '').trim() : '';
+      const dResp = iDResp != null ? String(row[iDResp] || '').trim() : '';
+      if (dvRaw && dResp) out.push({ dept: 'dozhim', id, responsible: dResp, dateRaw: dvRaw, date: parseDMY(dvRaw), phones: ph, name, city });
+    }
+    return out;
+  }
+
+  function gsRecSuffix(rec) { return rec.date ? String(rec.date.m).padStart(2, '0') + String(rec.date.y).slice(-2) : ''; }
+  function gsDominantSuffix(recs) {
+    const cnt = {}; recs.forEach(r => { const k = gsRecSuffix(r); if (k) cnt[k] = (cnt[k] || 0) + 1; });
+    let best = '', bc = 0; for (const k in cnt) if (cnt[k] > bc) { bc = cnt[k]; best = k; } return best;
+  }
+
+  async function gsReconcile(recs) {
+    const role = gsRole();
+    let scoped;
+    if (role.isCeo) scoped = recs;
+    else if (role.role === 'dozhim') scoped = recs.filter(r => r.dept === 'dozhim' && surname(r.responsible) === surname(role.name));
+    else scoped = recs.filter(r => r.dept === 'crm' && surname(r.responsible) === surname(role.name));
+    if (!scoped.length) return { empty: true, role };
+    const suffix = gsDominantSuffix(scoped);
+    if (!suffix) return { empty: true, role, noMonth: true };
+    const offMonth = scoped.filter(r => gsRecSuffix(r) !== suffix).length;
+    scoped = scoped.filter(r => gsRecSuffix(r) === suffix);
+    const depts = [...new Set(scoped.map(r => r.dept))];
+    const gsIdx = {};
+    for (const dept of depts) {
+      const sheet = (dept === 'dozhim' ? 'Д_ВИЗИТЫ' : 'ВИЗИТЫ') + suffix;
+      let data = null, err = '';
+      try { data = await window.api(sheet, 'A:N', { force: true }); }
+      catch (e) { err = (e && e.message === 'NOT_FOUND') ? 'лист не найден' : 'ошибка загрузки'; }
+      const visits = extractVisits(data || []);
+      const set = new Set(); visits.forEach(v => v.phones.forEach(p => set.add(p)));
+      gsIdx[dept] = { sheet, visits, set, err };
+    }
+    const results = scoped.map(rec => {
+      const idx = gsIdx[rec.dept];
+      if (!rec.phones.length) return { rec, status: 'nophone' };
+      const found = rec.phones.some(p => idx.set.has(p));
+      return { rec, status: found ? 'found' : 'missing' };
+    });
+    return {
+      role, suffix, monthLabel: monthName(suffix), depts, offMonth, gsIdx, results,
+      stats: {
+        total: results.length,
+        found: results.filter(r => r.status === 'found').length,
+        missing: results.filter(r => r.status === 'missing').length,
+        nophone: results.filter(r => r.status === 'nophone').length,
+      },
+    };
+  }
+
+  function gsRowHtml(res, showStatus) {
+    const rec = res.rec;
+    const dt = rec.date ? String(rec.date.d).padStart(2, '0') + '.' + String(rec.date.m).padStart(2, '0') : (rec.dateRaw || '—');
+    const ph = rec.phones.length ? fmtPhone(rec.phones[0]) : '—';
+    const dep = rec.dept === 'dozhim' ? 'Дожим' : 'CRM';
+    const badge = showStatus
+      ? (res.status === 'found' ? '<span class="gs-b ok">в GS</span>' : res.status === 'missing' ? '<span class="gs-b miss">нет в GS</span>' : '<span class="gs-b na">нет тел.</span>')
+      : '';
+    return `<div class="gs-row ${res.status}">
+      <div class="gs-row-main">
+        <div class="gs-row-name">${esc(rec.name || '—')}${rec.id ? ` <span class="gs-id">#${esc(rec.id)}</span>` : ''}</div>
+        <div class="gs-row-meta">${dt} · ${esc(ph)} · ${esc(rec.responsible || '—')} · ${dep}</div>
+      </div>${badge}</div>`;
+  }
+
+  function gsReportHtml(r) {
+    if (!r) return '';
+    if (r.empty) {
+      const role = r.role || gsRole();
+      if (r.noMonth) return '<div class="gs-empty">Не удалось определить месяц по датам визитов в файле.</div>';
+      const who = role.isCeo ? 'по отделу' : 'по вам';
+      return `<div class="gs-empty">В файле нет визитов ${who} с проставленной «Датой визита»${role.role === 'dozhim' ? ' (ДОЖИМ)' : ''}.</div>`;
+    }
+    const s = r.stats;
+    const missing = r.results.filter(x => x.status === 'missing');
+    const nophone = r.results.filter(x => x.status === 'nophone');
+    const detailed = GS.detailed;
+    const sheetErr = r.depts.filter(d => r.gsIdx[d].err).map(d => `${r.gsIdx[d].sheet}: ${r.gsIdx[d].err}`);
+    const groupByDept = arr => {
+      if (r.depts.length < 2) return arr.map(x => gsRowHtml(x, detailed)).join('') || '<div class="gs-none">— пусто —</div>';
+      return ['crm', 'dozhim'].map(dep => {
+        const items = arr.filter(x => x.rec.dept === dep);
+        if (!items.length) return '';
+        return `<div class="gs-dep-lbl">${dep === 'dozhim' ? 'Дожим' : 'CRM'}</div>` + items.map(x => gsRowHtml(x, detailed)).join('');
+      }).join('');
+    };
+    return `
+      <div class="gs-summary">
+        <div class="gs-chip"><span class="gs-chip-n">${s.total}</span>в файле</div>
+        <div class="gs-chip miss"><span class="gs-chip-n">${s.missing}</span>нет в GS</div>
+        <div class="gs-chip ok"><span class="gs-chip-n">${s.found}</span>внесены</div>
+        ${s.nophone ? `<div class="gs-chip na"><span class="gs-chip-n">${s.nophone}</span>без тел.</div>` : ''}
+      </div>
+      <div class="gs-meta2">${esc(r.monthLabel)} · ${r.depts.map(d => esc(r.gsIdx[d].sheet)).join(' + ')}${r.offMonth ? ` · ${r.offMonth} из др. месяцев пропущено` : ''}</div>
+      ${sheetErr.length ? `<div class="gs-err">${sheetErr.map(esc).join('; ')}</div>` : ''}
+      <label class="gs-toggle"><input type="checkbox" id="gs-detailed" ${detailed ? 'checked' : ''}> Детальная сверка — показать все визиты</label>
+      ${!detailed ? `
+        <div class="gs-sec-title miss">Не внесены в GS <span class="gs-cnt">${missing.length}</span></div>
+        <div class="gs-list">${missing.length ? groupByDept(missing) : '<div class="gs-none">Все визиты с телефоном есть в таблице 👍</div>'}</div>
+        ${nophone.length ? `<div class="gs-sec-title na">Проверить вручную · нет телефона <span class="gs-cnt">${nophone.length}</span></div><div class="gs-list">${groupByDept(nophone)}</div>` : ''}
+      ` : `
+        <div class="gs-sec-title">Все визиты <span class="gs-cnt">${r.results.length}</span></div>
+        <div class="gs-list">${groupByDept(r.results)}</div>
+      `}`;
+  }
+
+  function gsBindReport() {
+    const cb = document.getElementById('gs-detailed');
+    if (cb && !cb._gsBound) {
+      cb._gsBound = true;
+      cb.addEventListener('change', () => {
+        GS.detailed = cb.checked;
+        const box = document.getElementById('gs-report');
+        if (box && GS.report) { box.innerHTML = gsReportHtml(GS.report); gsBindReport(); }
+      });
+    }
+  }
+
+  window.renderGsSverkaTab = function renderGsSverkaTab() {
+    const role = gsRole();
+    let scopeNote = '';
+    if (role.me) {
+      scopeNote = role.isCeo
+        ? 'Вы <b>CEO / ROP</b> — сверяется весь отдел (CRM + Дожим), по обоим листам.'
+        : `Сверяются <b>только ваши</b> визиты · ${esc(role.name)} · ${role.role === 'dozhim' ? 'Дожим (Д_ВИЗИТЫ)' : 'CRM (ВИЗИТЫ)'}.`;
+    }
+    return `
+      <div class="gs-sverka">
+        <div class="gs-head">
+          <div class="gs-title">Сверка GS × CRM</div>
+          <div class="gs-sub">Загрузите выгрузку сделок из amoCRM (CSV). Найдём визиты, которых <b>нет в Google-таблице</b>, и подсветим их. Матч по телефону (нормализация в обе стороны).</div>
+          ${scopeNote ? `<div class="gs-scope">${scopeNote}</div>` : ''}
+        </div>
+        <label class="gs-drop" id="gs-drop">
+          <input type="file" accept=".csv,text/csv" id="gs-file" hidden>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span class="gs-drop-lbl">${GS.fileName ? esc(GS.fileName) : 'Выбрать CSV-файл'}</span>
+        </label>
+        <div id="gs-report">${GS.report ? gsReportHtml(GS.report) : ''}</div>
+      </div>`;
+  };
+
+  window.initGsSverkaTab = function initGsSverkaTab() {
+    const inp = document.getElementById('gs-file');
+    if (inp && !inp._gsBound) {
+      inp._gsBound = true;
+      inp.addEventListener('change', async e => {
+        const file = e.target.files && e.target.files[0]; if (!file) return;
+        GS.fileName = file.name;
+        const lbl = document.querySelector('#gs-drop .gs-drop-lbl'); if (lbl) lbl.textContent = file.name;
+        const box = document.getElementById('gs-report');
+        if (box) box.innerHTML = '<div class="gs-loading">Сверяю…</div>';
+        try {
+          const text = await (file.text ? file.text() : new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(fr.error); fr.readAsText(file); }));
+          const report = await gsReconcile(gsExtractRecords(parseCSV(text)));
+          GS.report = report;
+          if (box) { box.innerHTML = gsReportHtml(report); gsBindReport(); }
+        } catch (err) {
+          if (box) box.innerHTML = `<div class="gs-err">Ошибка: ${esc((err && err.message) || err)}</div>`;
+        }
+      });
+    }
+    if (GS.report) gsBindReport();
+  };
+
 })();

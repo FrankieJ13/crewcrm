@@ -1012,7 +1012,7 @@ function logoSectionName(id) {
     case 'instruktsii': {                                 // FAQ — много подразделов, имя по S.faqTab
       const f = { instr: 'инструкции', reglament: 'регламент', mango: 'mango',
                   links: 'сайты см', autopodbor: 'чат см.ru', autoru: 'чат auto.ru',
-                  'dozhim-search': 'трафик поиск', converter: 'конвертер' };
+                  'dozhim-search': 'трафик поиск', converter: 'конвертер', 'gs-sverka': 'сверка gs' };
       return f[S.faqTab] || 'faq';
     }
     case 'trophies': return 'трофеи';
@@ -1555,6 +1555,7 @@ function getPresencePageLabel() {
               : S.faqTab === 'autopodbor' ? 'Чат CM.ru'
               : S.faqTab === 'dozhim-search' ? 'Трафик поиск'
               : S.faqTab === 'converter' ? 'Конвертер'
+              : S.faqTab === 'gs-sverka' ? 'Сверка GS×CRM'
               : S.faqTab === 'autoru' ? sub
               : 'Инструкции';
     return faq;
@@ -7274,6 +7275,7 @@ function renderInstruktsii() {
   if (S.faqTab === 'autoru')     { el.innerHTML = renderAutoruTab();     initAutoruTab();     return; }
   if (S.faqTab === 'dozhim-search') { el.innerHTML = renderDozhimSearchTab(); initDozhimSearchTab(); return; }
   if (S.faqTab === 'converter') { el.innerHTML = renderConverterTab(); initConverterTab(); return; }
+  if (S.faqTab === 'gs-sverka') { el.innerHTML = (typeof renderGsSverkaTab === 'function' ? renderGsSverkaTab() : ''); if (typeof initGsSverkaTab === 'function') initGsSverkaTab(); return; }
   // Офлайн-данные (js/instr-data.js) — раздел больше НЕ читается с Google-листа
   const D = window.INSTR_DATA;
   if (!D || !D.statusGroups) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }

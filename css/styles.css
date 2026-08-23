@@ -10170,7 +10170,8 @@ body.light .adj-chip.on, body.tiffany .adj-chip.on { color:#fff; }
 .gs-row.nophone { border-color:var(--line2); border-style:dashed; }
 .gs-row-main { min-width:0; flex:1; }
 .gs-row-name { font-size:12px; font-weight:600; color:var(--txt); }
-.gs-id { font-size:10px; color:var(--txt3); font-family:monospace; font-weight:400; }
+.gs-id { font-size:10px; color:var(--acc); font-family:monospace; font-weight:400; text-decoration:none; cursor:pointer; }
+.gs-id:hover { text-decoration:underline; }
 .gs-row-meta { font-size:10px; color:var(--txt3); margin-top:1px; }
 .gs-b { font-size:9px; font-weight:800; letter-spacing:.03em; border-radius:6px; padding:2px 6px; flex-shrink:0; }
 .gs-b.miss { color:var(--red); border:1px solid var(--red); }

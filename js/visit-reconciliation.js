@@ -1127,7 +1127,7 @@
       : '';
     return `<div class="gs-row ${res.status}">
       <div class="gs-row-main">
-        <div class="gs-row-name">${esc(rec.name || '—')}${rec.id ? ` <span class="gs-id">#${esc(rec.id)}</span>` : ''}</div>
+        <div class="gs-row-name">${esc(rec.name || '—')}${rec.id ? ` <a class="gs-id" href="${LEAD_URL}${encodeURIComponent(rec.id)}" target="_blank" rel="noopener">#${esc(rec.id)}</a>` : ''}</div>
         <div class="gs-row-meta">${dt} · ${esc(ph)} · ${esc(rec.responsible || '—')} · ${dep}</div>
       </div>${badge}</div>`;
   }

@@ -1055,19 +1055,27 @@
     const iDResp = (H['ДОЖИМ Ответственный'] || [])[0];
     const iName = (H['Полное имя контакта'] || [])[0];
     const iCity = (H['Город'] || [])[0];
+    const iComment = (H['Комментарий'] || [])[0];
+    const iStage = (H['Этап сделки'] || [])[0];
+    const iPay = (H['Вид оплаты'] || [])[0];
+    // Источник обращения — колонка BW(74) в текущей выгрузке (как в extractDeals)
+    const srcCols = H['Источник обращения'] || [];
+    const iSrc = String(header[74] || '').trim() === 'Источник обращения' ? 74 : (srcCols[0] != null ? srcCols[0] : null);
+    const cell = (row, i) => i != null ? String(row[i] || '').trim() : '';
     const out = [];
     for (let r = 1; r < rows.length; r++) {
       const row = rows[r]; if (!row || !row.length) continue;
       const phones = new Set(); phoneIdx.forEach(i => extractPhones(row[i]).forEach(p => phones.add(p)));
-      const ph = [...phones];
-      const id = iId != null ? String(row[iId] || '').trim() : '';
-      const name = iName != null ? String(row[iName] || '').trim() : '';
-      const city = iCity != null ? String(row[iCity] || '').trim() : '';
-      const vRaw = iVisit != null ? String(row[iVisit] || '').trim() : '';
-      if (vRaw) out.push({ dept: 'crm', id, responsible: iResp != null ? String(row[iResp] || '').trim() : '', dateRaw: vRaw, date: parseDMY(vRaw), phones: ph, name, city });
-      const dvRaw = iDVisit != null ? String(row[iDVisit] || '').trim() : '';
-      const dResp = iDResp != null ? String(row[iDResp] || '').trim() : '';
-      if (dvRaw && dResp) out.push({ dept: 'dozhim', id, responsible: dResp, dateRaw: dvRaw, date: parseDMY(dvRaw), phones: ph, name, city });
+      const base = {
+        id: cell(row, iId), name: cell(row, iName), city: cell(row, iCity),
+        source: cell(row, iSrc), comment: cell(row, iComment), stage: cell(row, iStage), pay: cell(row, iPay),
+        phones: [...phones],
+      };
+      const vRaw = cell(row, iVisit);
+      if (vRaw) out.push({ ...base, dept: 'crm', responsible: cell(row, iResp), dateRaw: vRaw, date: parseDMY(vRaw) });
+      const dvRaw = cell(row, iDVisit);
+      const dResp = cell(row, iDResp);
+      if (dvRaw && dResp) out.push({ ...base, dept: 'dozhim', responsible: dResp, dateRaw: dvRaw, date: parseDMY(dvRaw) });
     }
     return out;
   }
@@ -1096,15 +1104,22 @@
       let data = null, err = '';
       try { data = await window.api(sheet, 'A:N', { force: true }); }
       catch (e) { err = (e && e.message === 'NOT_FOUND') ? 'лист не найден' : 'ошибка загрузки'; }
-      const visits = extractVisits(data || []);
-      const set = new Set(); visits.forEach(v => v.phones.forEach(p => set.add(p)));
-      gsIdx[dept] = { sheet, visits, set, err };
+      const raw = data || [];
+      const visits = extractVisits(raw);
+      const byPhone = new Map();
+      visits.forEach(v => v.phones.forEach(p => { if (!byPhone.has(p)) byPhone.set(p, v); }));
+      gsIdx[dept] = { sheet, visits, byPhone, raw, err };
     }
     const results = scoped.map(rec => {
       const idx = gsIdx[rec.dept];
       if (!rec.phones.length) return { rec, status: 'nophone' };
-      const found = rec.phones.some(p => idx.set.has(p));
-      return { rec, status: found ? 'found' : 'missing' };
+      let match = null;
+      for (const p of rec.phones) { if (idx.byPhone.has(p)) { match = idx.byPhone.get(p); break; } }
+      if (match) {
+        const sverka = String((idx.raw[match.rowNo - 1] || [])[13] || '');
+        return { rec, status: 'found', gsRow: match.rowNo, sverka, gsVisit: match };
+      }
+      return { rec, status: 'missing' };
     });
     return {
       role, suffix, monthLabel: monthName(suffix), depts, offMonth, gsIdx, results,
@@ -1117,7 +1132,7 @@
     };
   }
 
-  function gsRowHtml(res, showStatus) {
+  function gsRowHtml(res, showStatus, ctx) {
     const rec = res.rec;
     const dt = rec.date ? String(rec.date.d).padStart(2, '0') + '.' + String(rec.date.m).padStart(2, '0') : (rec.dateRaw || '—');
     const ph = rec.phones.length ? fmtPhone(rec.phones[0]) : '—';
@@ -1125,11 +1140,45 @@
     const badge = showStatus
       ? (res.status === 'found' ? '<span class="gs-b ok">в GS</span>' : res.status === 'missing' ? '<span class="gs-b miss">нет в GS</span>' : '<span class="gs-b na">нет тел.</span>')
       : '';
+    // Кнопка сверки (CEO/ROP) — только у найденных визитов (есть строка в GS) и когда
+    // месяц отчёта = активный месяц приложения (иначе saveSverkaValue тронет не тот кеш).
+    const svBtn = (ctx && ctx.isCeo && ctx.sameMonth && res.status === 'found' && res.gsRow)
+      ? `<span class="vt-sverka-clickable gs-sv" data-sheet-row="${res.gsRow}" data-dept="${rec.dept}" title="Отметить сверку"
+           onclick="event.stopPropagation();openSverkaPopup(event,'${rec.dept}',${res.gsRow},${JSON.stringify(String(res.sverka || '')).replace(/"/g, '&quot;')},'${ctx.suffix}')">${window.getVizSverkaMark ? window.getVizSverkaMark(res.sverka) : '●'}</span>`
+      : '';
+    const link = rec.id ? `<a class="gs-id" href="${LEAD_URL}${encodeURIComponent(rec.id)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">#${esc(rec.id)}</a>` : '';
     return `<div class="gs-row ${res.status}">
-      <div class="gs-row-main">
-        <div class="gs-row-name">${esc(rec.name || '—')}${rec.id ? ` <a class="gs-id" href="${LEAD_URL}${encodeURIComponent(rec.id)}" target="_blank" rel="noopener">#${esc(rec.id)}</a>` : ''}</div>
-        <div class="gs-row-meta">${dt} · ${esc(ph)} · ${esc(rec.responsible || '—')} · ${dep}</div>
-      </div>${badge}</div>`;
+      <div class="gs-row-head" role="button" tabindex="0">
+        <div class="gs-row-main">
+          <div class="gs-row-name">${esc(rec.name || '—')}${link}</div>
+          <div class="gs-row-meta">${dt} · ${esc(ph)} · ${esc(rec.responsible || '—')} · ${dep}</div>
+        </div>
+        ${svBtn}${badge}
+        <span class="gs-caret"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+      </div>
+      ${gsDetailHtml(res)}
+    </div>`;
+  }
+
+  function gsDetailHtml(res) {
+    const rec = res.rec;
+    const dRow = (lbl, val) => { const v = String(val == null ? '' : val).trim(); return v ? `<div class="gs-d"><span>${lbl}</span><b>${esc(v)}</b></div>` : ''; };
+    const phones = rec.phones.length ? rec.phones.map(fmtPhone).join(', ') : '';
+    const statusTxt = res.status === 'found' ? `есть в GS · строка ${res.gsRow}${res.sverka ? ' · сверка: ' + esc(res.sverka) : ''}`
+      : res.status === 'missing' ? 'НЕ внесён в GS' : 'нет телефона — проверить вручную';
+    return `<div class="gs-row-detail">
+      ${dRow('Дата визита', rec.dateRaw)}
+      ${dRow('ФИО', rec.name)}
+      ${dRow('Телефон', phones)}
+      ${dRow('Менеджер', rec.responsible)}
+      ${dRow('Отдел', rec.dept === 'dozhim' ? 'Дожим' : 'CRM')}
+      ${dRow('Город', rec.city)}
+      ${dRow('Источник', rec.source)}
+      ${dRow('Вид оплаты', rec.pay)}
+      ${dRow('Этап сделки', rec.stage)}
+      ${dRow('Комментарий', rec.comment)}
+      <div class="gs-d gs-d-status ${res.status}"><span>Статус</span><b>${statusTxt}</b></div>
+    </div>`;
   }
 
   function gsReportHtml(r) {
@@ -1145,12 +1194,14 @@
     const nophone = r.results.filter(x => x.status === 'nophone');
     const detailed = GS.detailed;
     const sheetErr = r.depts.filter(d => r.gsIdx[d].err).map(d => `${r.gsIdx[d].sheet}: ${r.gsIdx[d].err}`);
+    const appSfx = (typeof window.currentSuffix === 'string') ? window.currentSuffix : (typeof currentSuffix !== 'undefined' ? String(currentSuffix) : '');
+    const ctx = { isCeo: (r.role || gsRole()).isCeo, suffix: r.suffix, sameMonth: !!appSfx && String(r.suffix) === appSfx };
     const groupByDept = arr => {
-      if (r.depts.length < 2) return arr.map(x => gsRowHtml(x, detailed)).join('') || '<div class="gs-none">— пусто —</div>';
+      if (r.depts.length < 2) return arr.map(x => gsRowHtml(x, detailed, ctx)).join('') || '<div class="gs-none">— пусто —</div>';
       return ['crm', 'dozhim'].map(dep => {
         const items = arr.filter(x => x.rec.dept === dep);
         if (!items.length) return '';
-        return `<div class="gs-dep-lbl">${dep === 'dozhim' ? 'Дожим' : 'CRM'}</div>` + items.map(x => gsRowHtml(x, detailed)).join('');
+        return `<div class="gs-dep-lbl">${dep === 'dozhim' ? 'Дожим' : 'CRM'}</div>` + items.map(x => gsRowHtml(x, detailed, ctx)).join('');
       }).join('');
     };
     return `
@@ -1181,6 +1232,16 @@
         GS.detailed = cb.checked;
         const box = document.getElementById('gs-report');
         if (box && GS.report) { box.innerHTML = gsReportHtml(GS.report); gsBindReport(); }
+      });
+    }
+    // Клик по строке — раскрыть/свернуть детали (кроме сверки и ссылки на сделку).
+    const box = document.getElementById('gs-report');
+    if (box && !box._gsExpandBound) {
+      box._gsExpandBound = true;
+      box.addEventListener('click', e => {
+        if (e.target.closest('.gs-sv, .gs-id')) return;
+        const head = e.target.closest('.gs-row-head');
+        if (head && head.parentElement) head.parentElement.classList.toggle('expanded');
       });
     }
   }

@@ -15917,10 +15917,10 @@ let _sverkaPopover = null;
 function closeSverkaPopup() {
   if (_sverkaPopover) { _sverkaPopover.remove(); _sverkaPopover = null; }
 }
-function openSverkaPopup(e, dept, sheetRow, currentVal) {
+function openSverkaPopup(e, dept, sheetRow, currentVal, sfxOverride) {
   e.preventDefault(); e.stopPropagation();
   closeSverkaPopup();
-  const sfx = currentSuffix;
+  const sfx = sfxOverride || currentSuffix;
   const sheetName = dept === 'dozhim' ? ('Д_ВИЗИТЫ' + sfx) : ('ВИЗИТЫ' + sfx);
   const target = e.currentTarget;
   const rect = target.getBoundingClientRect();
@@ -16004,7 +16004,7 @@ async function saveSverkaValue(sheetName, sheetRow, value) {
       document.querySelectorAll(`.vt-sverka-clickable[data-sheet-row="${sheetRow}"][data-dept="${dept}"]`).forEach(el => {
         el.innerHTML = newMark;
         el.setAttribute('onclick',
-          `event.stopPropagation();openSverkaPopup(event, '${dept}', ${sheetRow}, ${escapedVal})`);
+          `event.stopPropagation();openSverkaPopup(event, '${dept}', ${sheetRow}, ${escapedVal}, '${sheetName.slice(-4)}')`);
         const card = el.closest('.vt-row-card');
         if (card) {
           card.classList.remove('vt-sverka-yes', 'vt-sverka-no', 'vt-sverka-empty');

@@ -10164,15 +10164,29 @@ body.light .adj-chip.on, body.tiffany .adj-chip.on { color:#fff; }
 .gs-cnt { font-size:10px; font-weight:700; color:var(--txt3); background:var(--bg3); border-radius:10px; padding:1px 7px; }
 .gs-list { display:flex; flex-direction:column; gap:5px; }
 .gs-dep-lbl { font-size:9px; font-weight:800; letter-spacing:.06em; color:var(--txt3); text-transform:uppercase; margin:6px 0 2px; }
-.gs-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 11px; border-radius:10px;
-  background:var(--bg3); border:1px solid transparent; }
+.gs-row { border-radius:10px; background:var(--bg3); border:1px solid transparent; overflow:hidden; }
 .gs-row.missing { border-color:var(--red); background:rgba(255,71,87,.07); }
 .gs-row.nophone { border-color:var(--line2); border-style:dashed; }
+.gs-row-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 11px; cursor:pointer; }
 .gs-row-main { min-width:0; flex:1; }
 .gs-row-name { font-size:12px; font-weight:600; color:var(--txt); }
 .gs-id { font-size:10px; color:var(--acc); font-family:monospace; font-weight:400; text-decoration:none; cursor:pointer; }
 .gs-id:hover { text-decoration:underline; }
 .gs-row-meta { font-size:10px; color:var(--txt3); margin-top:1px; }
+.gs-caret { color:var(--txt3); display:flex; flex-shrink:0; transition:transform .18s; }
+.gs-caret svg { width:16px; height:16px; }
+.gs-row.expanded .gs-caret { transform:rotate(180deg); }
+.gs-row-detail { display:none; padding:2px 11px 10px; }
+.gs-row.expanded .gs-row-detail { display:block; }
+.gs-d { display:flex; justify-content:space-between; gap:12px; padding:5px 0; border-bottom:1px solid var(--line2); font-size:11px; }
+.gs-d:last-child { border-bottom:none; }
+.gs-d span { color:var(--txt3); flex-shrink:0; }
+.gs-d b { color:var(--txt); font-weight:500; text-align:right; word-break:break-word; }
+.gs-d-status b { font-weight:700; }
+.gs-d-status.missing b { color:var(--red); }
+.gs-d-status.found b { color:#22c55e; }
+.gs-sv { display:flex; align-items:center; flex-shrink:0; cursor:pointer; }
+.gs-sv img, .gs-sv svg { width:18px; height:18px; }
 .gs-b { font-size:9px; font-weight:800; letter-spacing:.03em; border-radius:6px; padding:2px 6px; flex-shrink:0; }
 .gs-b.miss { color:var(--red); border:1px solid var(--red); }
 .gs-b.ok { color:#22c55e; border:1px solid #22c55e; }

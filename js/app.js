@@ -5365,8 +5365,20 @@ function renderOtchet() {
     const mName = (r[0]||'—').trim();
     const allV = num(r[7]);
     const plan = num(r[3]) || 1;
-    // Центр спидометра — конверсия «К кредит» = кредиты(кат800+1200) ÷ визиты × 100%.
-    const convKred = allV > 0 ? Math.round((num(r[8]) + num(r[12])) / allV * 100) : 0;
+    // Центр спидометра — конверсия «Визит → Кредит».
+    // ЕДИНЫЙ ИСТОЧНИК = calcSalary (та же цифра, что в «Детализации дохода»):
+    //   кредиты(кат800+1200) ÷ визиты, С УЧЁТОМ режима сверки. Здесь r[*] — сырые
+    //   данные (buildCrmStats без sverkaOnly), а зарплата считается по сверенным,
+    //   поэтому спидометр и карточка дохода расходились на 1–2 п.п. Берём цифру
+    //   из calcSalary, чтобы расчёт был один и не «разъезжался».
+    let convKred = allV > 0 ? Math.round((num(r[8]) + num(r[12])) / allV * 100) : 0;
+    if (!isKotel(r[0]) && typeof calcSalary === 'function') {
+      try {
+        const _sal = calcSalary(mName.toLowerCase());
+        const _cb  = _sal && _sal.detail && _sal.detail.convBoost;
+        if (_cb && typeof _cb.conv === 'number') convKred = _cb.conv;
+      } catch (_) { /* fallback на сырой расчёт (котёл / нет сверенных визитов) */ }
+    }
     return {
       name:     mName.toUpperCase(),
       visits:   allV,

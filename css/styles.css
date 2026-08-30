@@ -2527,6 +2527,13 @@ body.cosmic .sched-nav-icon {
   padding:10px 14px 8px;
   border-bottom:1px solid var(--line); color:var(--txt);
 }
+/* Метрики в шапке графика (прижаты вправо): выходной / отпуск / больничный
+   (иконка в цвет типа дня, только если >0) + отработано (акцент). */
+.sched-metrics { margin-left:auto; display:inline-flex; align-items:center; gap:10px; flex-shrink:0; }
+.sched-metric  { display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:700; line-height:1; white-space:nowrap; }
+.sched-metric svg { width:14px; height:14px; display:block; flex-shrink:0; }
+.sched-worked { color:var(--acc); }
+.sched-worked .sm-sep { color:var(--txt3); font-weight:500; margin-left:2px; }
 .sched-cells {
   display:grid; grid-template-columns:repeat(7,1fr);
   gap:4px; padding:8px;

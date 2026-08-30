@@ -6576,12 +6576,12 @@ function renderGrafik() {
           : '';
         return `<div class="sched-cell ${cls}${canEdit?' editable':''}${isToday(dayNum)?' today-col':''}" data-sched-cell="${entry ? entry.sheetRow + '-' + colIdx : ''}"${editAttrs}${extraStyle}>${norm||'·'}</div>`;
       }).join('');
-      const sched = getWorkedAndTotalR(p.name.toLowerCase().trim());
-      const workedBadge = sched
-        ? `<span style="font-family:'Unbounded',sans-serif;font-size:10px;font-weight:700;color:var(--acc);margin-left:auto">отработано ${sched.workedR}<span style="color:var(--txt3);font-weight:500"> / ${sched.totalR}</span></span>`
-        : '';
+      const _nm = p.name.toLowerCase().trim();
+      const sched  = getWorkedAndTotalR(_nm);
+      const counts = getSchedDayTypeCounts(_nm);
+      const metricsHtml = buildSchedMetrics(counts, sched);
       const missing = !p.found ? `<span style="font-size:10px;color:var(--txt3);margin-left:auto">нет в графике</span>` : '';
-      return `<div class="sched-person"><div class="sched-person-name" style="display:flex;align-items:center;gap:8px"><span>${p.name}</span>${getMgrMessengerHtml(p.name)}${workedBadge}${missing}</div><div class="sched-cells">${cells}</div></div>`;
+      return `<div class="sched-person"><div class="sched-person-name" style="display:flex;align-items:center;gap:8px"><span>${p.name}</span>${getMgrMessengerHtml(p.name)}${metricsHtml}${missing}</div><div class="sched-cells">${cells}</div></div>`;
     }).join('');
   }
 
@@ -11393,6 +11393,51 @@ function getWorkedAndTotalR(nameLow) {
     }
   }
   return { totalR, workedR };
+}
+
+// Считает нерабочие дни менеджера за месяц графика (лист ГРАФИКИ{суффикс}):
+// v = выходные (В/В*), o = отпуск (О), b = больничный (Б). Для шапки графика.
+function getSchedDayTypeCounts(nameLow) {
+  const raw = S.data.grafik;
+  if (!raw || raw.length < 3) return null;
+  const entry = buildSchedIndex(raw)[nameLow];
+  if (!entry) return null;
+  const { row: mgrRow, daysRow } = entry;
+  let v = 0, o = 0, b = 0;
+  for (let c = 1; c < daysRow.length; c++) {
+    const dayNum = parseInt(daysRow[c]);
+    if (!dayNum || dayNum < 1 || dayNum > 31) continue;
+    const nv = normalizeSchedVal(mgrRow[c]);
+    if (nv === 'В') v++;
+    else if (nv === 'О') o++;
+    else if (nv === 'Б') b++;
+  }
+  return { v, o, b };
+}
+
+// SVG-иконки метрик в шапке графика (currentColor, размер задаётся в CSS).
+const SCHED_ICO_WORKED  = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M.99 2.68a2.65 2.65 0 1 0 5.3 0a2.65 2.65 0 1 0-5.3 0m10.38 6.84H6.88l-3.3-2.63A1.62 1.62 0 0 0 .94 8.12L.19 16a1.62 1.62 0 0 0 1.25 1.74L7.19 19l.39 3.54a1.62 1.62 0 0 0 3.22-.36l-.52-4.68A1.6 1.6 0 0 0 9 16.1l-5.45-1.25l.34-3.55l1.4 1.13a1.65 1.65 0 0 0 1 .36h5.06a1.62 1.62 0 0 0 0-3.24Zm8.28-1.66a.74.74 0 0 0-.86.63l-.64 4.22h-3.27a.76.76 0 0 0-.74.76a.75.75 0 0 0 .75.74h3.91a.74.74 0 0 0 .73-.63l.74-4.86a.74.74 0 0 0-.62-.86m3.61 7.76h-10.2a.56.56 0 0 0-.56.56v1a.56.56 0 0 0 .56.56h1.3l-.44 5.35a.75.75 0 0 0 .69.81h.06a.76.76 0 0 0 .75-.69l.45-5.48h4.58l.46 5.48a.75.75 0 0 0 .74.69h.07a.74.74 0 0 0 .68-.81l-.4-5.37h1.3a.56.56 0 0 0 .56-.56v-1a.56.56 0 0 0-.6-.54"/></svg>`;
+const SCHED_ICO_VYHOD   = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M18 17.35L3.38 2.73L2.11 4L6 7.89v12.78A1.34 1.34 0 0 0 7.33 22h9.34A1.34 1.34 0 0 0 18 20.67v-.78l2.84 2.84l1.27-1.27M16 20H8V9.89l8 8M16 6v6.8l2 2V5.33A1.34 1.34 0 0 0 16.67 4H15V2H9v2H7.21l2 2Z"/></svg>`;
+const SCHED_ICO_OTPUSK  = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path stroke-dasharray="34" d="M12 7c2.76 0 5 2.24 5 5c0 2.76 -2.24 5 -5 5c-2.76 0 -5 -2.24 -5 -5c0 -2.76 2.24 -5 5 -5Z"><animate fill="freeze" attributeName="stroke-dashoffset" dur="0.4s" values="34;0"/></path><path d="M12 21v1M21 12h1M12 3v-1M3 12h-1" opacity="0"><animateTransform attributeName="transform" dur="30s" repeatCount="indefinite" type="rotate" values="0 12 12;360 12 12"/><set fill="freeze" attributeName="opacity" begin="0.5s" to="1"/><animate fill="freeze" attributeName="d" begin="0.5s" dur="0.2s" values="M12 19v1M19 12h1M12 5v-1M5 12h-1;M12 21v1M21 12h1M12 3v-1M3 12h-1"/></path><path d="M18.5 18.5l0.5 0.5M18.5 5.5l0.5 -0.5M5.5 5.5l-0.5 -0.5M5.5 18.5l-0.5 0.5" opacity="0"><animateTransform attributeName="transform" dur="30s" repeatCount="indefinite" type="rotate" values="0 12 12;360 12 12"/><set fill="freeze" attributeName="opacity" begin="0.7s" to="1"/><animate fill="freeze" attributeName="d" begin="0.7s" dur="0.2s" values="M17 17l0.5 0.5M17 7l0.5 -0.5M7 7l-0.5 -0.5M7 17l-0.5 0.5;M18.5 18.5l0.5 0.5M18.5 5.5l0.5 -0.5M5.5 5.5l-0.5 -0.5M5.5 18.5l-0.5 0.5"/></path></g></svg>`;
+const SCHED_ICO_BOLNICH = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" fill-rule="evenodd"><path fill="currentColor" d="m17.303 3.161l3.536 3.536a1 1 0 0 1-1.414 1.414L18.01 9.525l1.767 1.768a1 1 0 1 1-1.414 1.414L17.657 12L12 17.657a3 3 0 0 1-4.242 0l-3.122 3.121a1 1 0 0 1-1.414-1.414l3.121-3.121a3 3 0 0 1 0-4.243L12 6.343l-.707-.707a1 1 0 1 1 1.414-1.414l1.768 1.767l1.414-1.414a1 1 0 1 1 1.414-1.414m-3.889 4.596L12 9.172l.707.706a1 1 0 0 1-1.414 1.415l-.707-.707l-.707.707l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707l-.707.707a1 1 0 0 0 0 1.415l1.414 1.414a1 1 0 0 0 1.414 0l5.657-5.657zm3.89-1.768l-1.415 1.415l.707.707l1.415-1.414z"/></g></svg>`;
+
+// Один чип-метрика: иконка + число, с цветом типа дня.
+function schedMetricChip(svg, n, color, title) {
+  return `<span class="sched-metric" title="${title}" style="color:${color}">${svg}<b>${n}</b></span>`;
+}
+
+// Правый кластер метрик шапки графика: [В][О][Б] (только >0) + «отработано».
+function buildSchedMetrics(counts, sched) {
+  const chips = [];
+  if (counts) {
+    if (counts.v > 0) chips.push(schedMetricChip(SCHED_ICO_VYHOD,   counts.v, '#f50e02', 'Выходные'));
+    if (counts.o > 0) chips.push(schedMetricChip(SCHED_ICO_OTPUSK,  counts.o, '#ff9500', 'Отпуск'));
+    if (counts.b > 0) chips.push(schedMetricChip(SCHED_ICO_BOLNICH, counts.b, '#9b59b6', 'Больничный'));
+  }
+  if (sched) {
+    chips.push(`<span class="sched-metric sched-worked" title="Отработано / рабочих дней">${SCHED_ICO_WORKED}<b>${sched.workedR}</b><span class="sm-sep">/ ${sched.totalR}</span></span>`);
+  }
+  return chips.length ? `<span class="sched-metrics">${chips.join('')}</span>` : '';
 }
 
 function calcSalary(nameLow) {

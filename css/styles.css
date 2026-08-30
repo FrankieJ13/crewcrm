@@ -3266,24 +3266,36 @@ body.light .income-modal-body { background:rgba(255,255,255,0.6); }
   font-family:'Unbounded',sans-serif;
 }
 .income-modal-info-btn:hover { border-color:var(--acc); color:var(--acc) }
-/* Индикатор сверки в шапке фонда: «сверено / всего визитов». Оба отдела (CRM +
-   Дожим). В потоке под суммой фонда, по центру — чтобы не перекрывать сумму
-   (она бывает широкой) и кнопку (i) в правом углу. */
-.fund-sverka {
+/* Индикатор сверки «✓ сверено / всего визитов». Используется в трёх местах:
+   шапка фонда (оба отдела), карточка менеджера в топе (для CEO/ROP) и карточка
+   дохода на перс. странице. */
+.sverka-chip {
   display:inline-flex; align-items:center; gap:3px;
-  margin-top:8px; padding:3px 10px; border-radius:14px;
+  padding:3px 10px; border-radius:14px;
   border:1px solid var(--line2); background:var(--bg3);
   color:var(--txt2); font-size:12px; font-weight:700; line-height:1;
   letter-spacing:-.01em; white-space:nowrap; font-variant-numeric:tabular-nums;
+  vertical-align:middle;
 }
-.fund-sverka .fs-ic  { opacity:.55; }
-.fund-sverka .fs-cur { color:var(--txt); }
-.fund-sverka .fs-sep { opacity:.4; margin:0 1px; font-weight:600; }
-.fund-sverka .fs-tot { color:var(--txt2); }
-.fund-sverka.all-ok           { border-color:rgba(34,197,94,.45); color:#22c55e; }
-.fund-sverka.all-ok .fs-ic    { opacity:.9; }
-.fund-sverka.all-ok .fs-cur   { color:#22c55e; }
-.fund-sverka.all-ok .fs-tot   { color:#22c55e; opacity:.65; }
+.sverka-chip .fs-ic  { opacity:.55; }
+.sverka-chip .fs-cur { color:var(--txt); }
+.sverka-chip .fs-sep { opacity:.4; margin:0 1px; font-weight:600; }
+.sverka-chip .fs-tot { color:var(--txt2); }
+.sverka-chip.all-ok           { border-color:rgba(34,197,94,.45); color:#22c55e; }
+.sverka-chip.all-ok .fs-ic    { opacity:.9; }
+.sverka-chip.all-ok .fs-cur   { color:#22c55e; }
+.sverka-chip.all-ok .fs-tot   { color:#22c55e; opacity:.65; }
+/* На своей строке по центру (шапка фонда + карточка дохода перс. страницы).
+   Блочная обёртка → всегда новая строка, даже пока сумма (.zv) на время
+   count-up анимации имеет display:inline-block. */
+.sverka-line { margin-top:8px; text-align:center; line-height:0; }
+/* В строке имени менеджера (топ по доходу, CEO/ROP): прижать вправо, оставив
+   место справа под абсолютную кнопку (i). Чуть компактнее. */
+.sverka-chip.in-row {
+  margin-left:auto; margin-right:30px;
+  padding:2px 8px; font-size:11px;
+}
+.sverka-chip.in-row .fs-ic { width:11px; height:11px; }
 .income-modal-hdr-btns { display:flex; align-items:center; gap:0; }
 /* Salary info overlay */
 #sal-info-overlay {

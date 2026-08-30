@@ -4612,17 +4612,20 @@ function buildDozhimStats(dVizData, opts = {}) {
 const SVERKA_CATS_CRM    = new Set(['кат 0', 'кат 400', 'кат 800', 'кат 1200']);
 const SVERKA_CATS_DOZHIM = new Set(['кат 800', 'кат 1000', 'кат 1200']);
 
-// Считает (сверено, всего) визитов по листу — для индикатора качества сверки в
-// шапке фонда. «Всего» = завершённые строки (A..I заполнены) с валидной категорией
-// отдела — та же логика, что buildCrmStats/buildDozhimStats. «Сверено» = из них те,
-// у кого проставлена валидная отметка сверки (кол N, idx 13) — НЕЗАВИСИМО от режима
-// сверки (S.sverkaMode), т.к. это индикатор данных, а не фильтр начислений.
-function countSverkaVisits(vizData, validCats) {
+// Считает (сверено, всего) визитов по листу — для индикатора качества сверки.
+// «Всего» = завершённые строки (A..I заполнены) с валидной категорией отдела —
+// та же логика, что buildCrmStats/buildDozhimStats. «Сверено» = из них те, у кого
+// проставлена валидная отметка сверки (кол N, idx 13) — НЕЗАВИСИМО от режима сверки
+// (S.sverkaMode), т.к. это индикатор данных, а не фильтр начислений.
+// nameLow (опц.) — считать только по одному менеджеру (кол I, idx 8).
+function countSverkaVisits(vizData, validCats, nameLow) {
   let total = 0, sver = 0;
   if (!vizData || vizData.length < 2) return { total, sver };
+  const flt = nameLow ? String(nameLow).trim().toLowerCase() : null;
   for (let i = 1; i < vizData.length; i++) {
     const row = vizData[i];
     if (!row || !row[8]) continue;
+    if (flt && String(row[8]).trim().toLowerCase() !== flt) continue;
     if (!isCompleteVizRow(row)) continue;
     const cat = String(row[6] || '').trim().toLowerCase();   // col G
     if (!validCats.has(cat)) continue;
@@ -4634,14 +4637,25 @@ function countSverkaVisits(vizData, validCats) {
   return { total, sver };
 }
 
-// HTML-чип «сверено / всего» для шапки фонда (оба отдела). Пусто, если визитов нет.
-function fundSverkaChipHtml(vizData, validCats) {
-  const c = countSverkaVisits(vizData, validCats);
-  if (!c.total) return '';
-  const ok = c.sver === c.total;
-  return `<div class="fund-sverka${ok ? ' all-ok' : ''}" title="Сверено визитов / всего за месяц">`
+// Низкоуровневый чип-пилюля «✓ сверено / всего». Пусто, если визитов нет.
+// extraCls — доп. класс для позиционирования в конкретном контексте (напр. in-row).
+function sverkaChipHtml(sver, total, extraCls) {
+  if (!total) return '';
+  const ok = sver === total;
+  return `<span class="sverka-chip${ok ? ' all-ok' : ''}${extraCls ? ' ' + extraCls : ''}" title="Сверено визитов / всего за месяц">`
     + `<svg class="fs-ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`
-    + `<span class="fs-cur">${c.sver}</span><span class="fs-sep">/</span><span class="fs-tot">${c.total}</span></div>`;
+    + `<span class="fs-cur">${sver}</span><span class="fs-sep">/</span><span class="fs-tot">${total}</span></span>`;
+}
+
+// Чип сверки на своей строке (по центру) — для шапки фонда и карточки дохода на
+// перс. странице. Блочная обёртка .sverka-line гарантирует НОВУЮ строку даже когда
+// сумма (.zv) на время count-up анимации становится inline-block (иначе чип
+// «прыгал» на одну строку с суммой во время анимации). nameLow (опц.) — по одному
+// менеджеру; без него — по всему отделу.
+function fundSverkaChipHtml(vizData, validCats, nameLow) {
+  const c = countSverkaVisits(vizData, validCats, nameLow);
+  const pill = sverkaChipHtml(c.sver, c.total);
+  return pill ? `<div class="sverka-line">${pill}</div>` : '';
 }
 
 // ==================== DOZHIM SALARY FROM Д_ВИЗИТЫ ====================
@@ -5926,6 +5940,10 @@ function renderDohodCrm(el) {
   const isLight = (document.body.classList.contains('light')||document.body.classList.contains('tiffany'));
   const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
 
+  // Чип сверки у каждого менеджера в карточке — только CEO/ROP (видят весь отдел).
+  const _meDohod = (typeof findUserInSheet === 'function') ? findUserInSheet() : null;
+  const viewerIsCeo = _meDohod && (typeof isCeoLike === 'function') && isCeoLike(_meDohod.role);
+
   const rows = parsed.map((item, idx) => {
     const rs = rankStyles(idx, total);
     const progTotal = item.sal ? Math.round(item.sal.prognoz.total) : 0;
@@ -5966,7 +5984,9 @@ function renderDohodCrm(el) {
         </div>
       </div>` : `<div style="text-align:right"><span class="zp-a" style="color:${rs.color}">—</span></div>`;
 
-    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span>${getMgrMessengerHtml(item.name)}</div>${incomeCols}</div>`;
+    const _sc = viewerIsCeo ? countSverkaVisits(S.data.vizity, SVERKA_CATS_CRM, item.nameLow) : null;
+    const sverkaSlot = _sc ? sverkaChipHtml(_sc.sver, _sc.total, 'in-row') : '';
+    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span>${getMgrMessengerHtml(item.name)}${sverkaSlot}</div>${incomeCols}</div>`;
   }).join('');
 
   // Кнопка «Копировать всю ЗП» — только CEO/ROP. Копирует ЗП по обоим
@@ -6094,6 +6114,10 @@ function renderDohodDozhim(el) {
   const isLight = (document.body.classList.contains('light')||document.body.classList.contains('tiffany'));
   const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
 
+  // Чип сверки у каждого менеджера в карточке — только CEO/ROP (видят весь отдел).
+  const _meDohod = (typeof findUserInSheet === 'function') ? findUserInSheet() : null;
+  const viewerIsCeo = _meDohod && (typeof isCeoLike === 'function') && isCeoLike(_meDohod.role);
+
   const rows = parsed.map((item, idx) => {
     const rs = rankStyles(idx, total);
     const factTotal = item.sal ? Math.round(item.sal.fact.total) : 0;
@@ -6116,7 +6140,9 @@ function renderDohodDozhim(el) {
     const incomeCols = item.sal
       ? `<div style="text-align:right;margin:6px 0 4px"><span class="zp-a" style="color:${rs.color}">${fmtRub(factTotal)}</span></div>`
       : `<div style="text-align:right;margin:6px 0 4px"><span class="zp-a" style="color:var(--acc)">—</span></div>`;
-    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span>${getMgrMessengerHtml(item.name)}</div>${incomeCols}</div>`;
+    const _sc = viewerIsCeo ? countSverkaVisits(S.data.d_vizity, SVERKA_CATS_DOZHIM, item.nameLow) : null;
+    const sverkaSlot = _sc ? sverkaChipHtml(_sc.sver, _sc.total, 'in-row') : '';
+    return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span>${getMgrMessengerHtml(item.name)}${sverkaSlot}</div>${incomeCols}</div>`;
   }).join('');
 
   // Тумблер CRM↔ДОЖИМ для CEO/ROP — над zp-banner справа
@@ -10901,6 +10927,7 @@ function renderPersonal(matched) {
       incomePanelContent = `
         <div class="zl">Доход за месяц</div>
         <div class="zv">${fmtRub(Math.round(dSal.fact.total))}</div>
+        ${fundSverkaChipHtml(S.data.d_vizity, SVERKA_CATS_DOZHIM, nameLow)}
       `;
     } else {
       incomePanelContent = `<div class="zl">Доход за месяц</div><div class="zv">—</div>`;
@@ -10928,6 +10955,7 @@ function renderPersonal(matched) {
     incomePanelContent = `
       <div class="zl">Доход за месяц</div>
       <div class="zv">${fmtRub(Math.round(salObj.fact.total))}</div>
+      ${fundSverkaChipHtml(S.data.vizity, SVERKA_CATS_CRM, nameLow)}
     `;
   } else {
     incomePanelContent = `<div class="zl">Доход за месяц</div><div class="zv">—</div>`;

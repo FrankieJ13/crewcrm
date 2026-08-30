@@ -4608,6 +4608,42 @@ function buildDozhimStats(dVizData, opts = {}) {
   return mgrs;
 }
 
+// Валидные категории отделов — для подсчёта визитов (как в buildCrmStats/buildDozhimStats).
+const SVERKA_CATS_CRM    = new Set(['кат 0', 'кат 400', 'кат 800', 'кат 1200']);
+const SVERKA_CATS_DOZHIM = new Set(['кат 800', 'кат 1000', 'кат 1200']);
+
+// Считает (сверено, всего) визитов по листу — для индикатора качества сверки в
+// шапке фонда. «Всего» = завершённые строки (A..I заполнены) с валидной категорией
+// отдела — та же логика, что buildCrmStats/buildDozhimStats. «Сверено» = из них те,
+// у кого проставлена валидная отметка сверки (кол N, idx 13) — НЕЗАВИСИМО от режима
+// сверки (S.sverkaMode), т.к. это индикатор данных, а не фильтр начислений.
+function countSverkaVisits(vizData, validCats) {
+  let total = 0, sver = 0;
+  if (!vizData || vizData.length < 2) return { total, sver };
+  for (let i = 1; i < vizData.length; i++) {
+    const row = vizData[i];
+    if (!row || !row[8]) continue;
+    if (!isCompleteVizRow(row)) continue;
+    const cat = String(row[6] || '').trim().toLowerCase();   // col G
+    if (!validCats.has(cat)) continue;
+    total++;
+    // Та же нормализация, что и в isSverkaRow (пробелы + NBSP → '', lower).
+    const mark = String(row[13] || '').replace(/[\s ]/g, '').toLowerCase();
+    if (mark && !SVERKA_NEGATIVES.has(mark)) sver++;
+  }
+  return { total, sver };
+}
+
+// HTML-чип «сверено / всего» для шапки фонда (оба отдела). Пусто, если визитов нет.
+function fundSverkaChipHtml(vizData, validCats) {
+  const c = countSverkaVisits(vizData, validCats);
+  if (!c.total) return '';
+  const ok = c.sver === c.total;
+  return `<div class="fund-sverka${ok ? ' all-ok' : ''}" title="Сверено визитов / всего за месяц">`
+    + `<svg class="fs-ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`
+    + `<span class="fs-cur">${c.sver}</span><span class="fs-sep">/</span><span class="fs-tot">${c.total}</span></div>`;
+}
+
 // ==================== DOZHIM SALARY FROM Д_ВИЗИТЫ ====================
 // ════════════════════ СТАВКИ ИЗ data/rates.json ════════════════════
 // Ставки CRM и Дожим больше НЕ читаются из листов Sheets (СТАВКИ/Д_СТАВКИ).
@@ -5948,7 +5984,7 @@ function renderDohodCrm(el) {
   const deptToggleHdr = _isCeo
     ? `<div class="dohod-dept-hdr">${_deptTogglePillHtml('crm', 'switchDohodDept')}</div>`
     : '';
-  setLiveHTML(el, `${deptToggleHdr}<div class="rating-slide-wrap"><div class="rating-slide-inner" id="dohod-slide-inner"><div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">${copyBtn}<div class="zl">Прогноз фонда отдела</div><div class="zv">${fmtRub(totalFund)}</div><button class="income-modal-info-btn" onclick="openSalInfo('crm')" title="Как считается зарплата" style="position:absolute;top:10px;right:10px">i</button></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div></div></div>`);
+  setLiveHTML(el, `${deptToggleHdr}<div class="rating-slide-wrap"><div class="rating-slide-inner" id="dohod-slide-inner"><div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15);position:relative">${copyBtn}<div class="zl">Прогноз фонда отдела</div><div class="zv">${fmtRub(totalFund)}</div>${fundSverkaChipHtml(S.data.vizity, SVERKA_CATS_CRM)}<button class="income-modal-info-btn" onclick="openSalInfo('crm')" title="Как считается зарплата" style="position:absolute;top:10px;right:10px">i</button></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div></div></div>`);
 }
 
 // Копирует список ФИО → ЗП по факту за выбранный месяц в буфер обмена.
@@ -6089,7 +6125,7 @@ function renderDohodDozhim(el) {
   const deptToggleHdr = _isCeoView
     ? `<div class="dohod-dept-hdr">${_deptTogglePillHtml('dozhim', 'switchDohodDept')}</div>`
     : '';
-  setLiveHTML(el, `${deptToggleHdr}<div class="rating-slide-wrap"><div class="rating-slide-inner" id="dohod-slide-inner"><div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15);position:relative"><div class="zl">Фонд дожима (факт)</div><div class="zv">${fmtRub(totalFund)}</div><button class="income-modal-info-btn" onclick="openSalInfo('dozhim')" title="Как считается зарплата" style="position:absolute;top:10px;right:10px">i</button></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div></div></div>`);
+  setLiveHTML(el, `${deptToggleHdr}<div class="rating-slide-wrap"><div class="rating-slide-inner" id="dohod-slide-inner"><div class="zp-banner" style="background:rgba(${accR},${accG},${accB},0.15);position:relative"><div class="zl">Фонд дожима (факт)</div><div class="zv">${fmtRub(totalFund)}</div>${fundSverkaChipHtml(S.data.d_vizity, SVERKA_CATS_DOZHIM)}<button class="income-modal-info-btn" onclick="openSalInfo('dozhim')" title="Как считается зарплата" style="position:absolute;top:10px;right:10px">i</button></div><div class="sec-title">Топ по доходу</div><div class="zp-list">${rows}</div></div></div>`);
 }
 
 function setDohodTab(tab) {

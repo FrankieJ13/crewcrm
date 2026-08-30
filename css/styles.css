@@ -3266,6 +3266,24 @@ body.light .income-modal-body { background:rgba(255,255,255,0.6); }
   font-family:'Unbounded',sans-serif;
 }
 .income-modal-info-btn:hover { border-color:var(--acc); color:var(--acc) }
+/* Индикатор сверки в шапке фонда: «сверено / всего визитов». Оба отдела (CRM +
+   Дожим). В потоке под суммой фонда, по центру — чтобы не перекрывать сумму
+   (она бывает широкой) и кнопку (i) в правом углу. */
+.fund-sverka {
+  display:inline-flex; align-items:center; gap:3px;
+  margin-top:8px; padding:3px 10px; border-radius:14px;
+  border:1px solid var(--line2); background:var(--bg3);
+  color:var(--txt2); font-size:12px; font-weight:700; line-height:1;
+  letter-spacing:-.01em; white-space:nowrap; font-variant-numeric:tabular-nums;
+}
+.fund-sverka .fs-ic  { opacity:.55; }
+.fund-sverka .fs-cur { color:var(--txt); }
+.fund-sverka .fs-sep { opacity:.4; margin:0 1px; font-weight:600; }
+.fund-sverka .fs-tot { color:var(--txt2); }
+.fund-sverka.all-ok           { border-color:rgba(34,197,94,.45); color:#22c55e; }
+.fund-sverka.all-ok .fs-ic    { opacity:.9; }
+.fund-sverka.all-ok .fs-cur   { color:#22c55e; }
+.fund-sverka.all-ok .fs-tot   { color:#22c55e; opacity:.65; }
 .income-modal-hdr-btns { display:flex; align-items:center; gap:0; }
 /* Salary info overlay */
 #sal-info-overlay {

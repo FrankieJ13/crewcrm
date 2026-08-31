@@ -1043,7 +1043,7 @@
      «Найден» = телефон визита есть среди телефонов листа за месяц.
      Переиспользует parseCSV/normPhone/extractPhones/parseDMY/extractVisits/…
      ══════════════════════════════════════════════════════════════════════ */
-  const GS = { fileName: '', report: null, detailed: false };
+  const GS = { fileName: '', report: null, detailed: false, dozhimOnly: false, recs: null };
 
   function gsRole() {
     const me = typeof window.findUserInSheet === 'function' ? window.findUserInSheet() : null;
@@ -1134,12 +1134,14 @@
     let scoped;
     // ДОЖИМ — матчим по «ДОЖИМ Ответственный» (rec.responsible у dozhim-записей = это поле),
     // CRM — по «Ответственный». Матч менеджера по фамилии (+имя при однофамильцах).
-    if (role.isCeo) scoped = recs;
+    // CEO/ROP видят весь отдел; галка «Только Дожим» ограничивает сверку дожим-листом
+    // (тогда поле «Ответственный» не участвует — только «ДОЖИМ Ответственный»).
+    if (role.isCeo) scoped = GS.dozhimOnly ? recs.filter(r => r.dept === 'dozhim') : recs;
     else if (role.role === 'dozhim') scoped = recs.filter(r => r.dept === 'dozhim' && gsNameMatch(r.responsible, role.name, roster.dozhim));
     else scoped = recs.filter(r => r.dept === 'crm' && gsNameMatch(r.responsible, role.name, roster.crm));
-    if (!scoped.length) return { empty: true, role };
+    if (!scoped.length) return { empty: true, role, dozhimOnly: GS.dozhimOnly };
     const suffix = gsDominantSuffix(scoped);
-    if (!suffix) return { empty: true, role, noMonth: true };
+    if (!suffix) return { empty: true, role, noMonth: true, dozhimOnly: GS.dozhimOnly };
     const offMonth = scoped.filter(r => gsRecSuffix(r) !== suffix).length;
     scoped = scoped.filter(r => gsRecSuffix(r) === suffix);
     const depts = [...new Set(scoped.map(r => r.dept))];
@@ -1167,7 +1169,7 @@
       return { rec, status: 'missing' };
     });
     return {
-      role, suffix, monthLabel: monthName(suffix), depts, offMonth, gsIdx, results,
+      role, suffix, monthLabel: monthName(suffix), depts, offMonth, gsIdx, results, dozhimOnly: GS.dozhimOnly,
       stats: {
         total: results.length,
         found: results.filter(r => r.status === 'found').length,
@@ -1228,11 +1230,17 @@
 
   function gsReportHtml(r) {
     if (!r) return '';
+    const role = r.role || gsRole();
+    // Галка «Только Дожим» — только для CEO/ROP. Показываем и в пустом состоянии,
+    // чтобы можно было снять галку, если по дожиму ничего не нашлось.
+    const dozhimToggle = role.isCeo
+      ? `<label class="gs-toggle gs-toggle-dozhim"><input type="checkbox" id="gs-dozhim-only" ${GS.dozhimOnly ? 'checked' : ''}> Только Дожим (Д_ВИЗИТЫ) — не учитывать поле «Ответственный»</label>`
+      : '';
     if (r.empty) {
-      const role = r.role || gsRole();
-      if (r.noMonth) return '<div class="gs-empty">Не удалось определить месяц по датам визитов в файле.</div>';
+      if (r.noMonth) return dozhimToggle + '<div class="gs-empty">Не удалось определить месяц по датам визитов в файле.</div>';
+      const dz = (r.dozhimOnly || role.role === 'dozhim');
       const who = role.isCeo ? 'по отделу' : 'по вам';
-      return `<div class="gs-empty">В файле нет визитов ${who} с проставленной «Датой визита»${role.role === 'dozhim' ? ' (ДОЖИМ)' : ''}.</div>`;
+      return dozhimToggle + `<div class="gs-empty">В файле нет ${dz ? 'дожим-визитов' : 'визитов'} ${who} с проставленной «${dz ? 'Повторной датой визита (ДОЖИМ)' : 'Датой визита'}».</div>`;
     }
     const s = r.stats;
     const missing = r.results.filter(x => x.status === 'missing');
@@ -1240,7 +1248,7 @@
     const detailed = GS.detailed;
     const sheetErr = r.depts.filter(d => r.gsIdx[d].err).map(d => `${r.gsIdx[d].sheet}: ${r.gsIdx[d].err}`);
     const appSfx = (typeof window.currentSuffix === 'string') ? window.currentSuffix : (typeof currentSuffix !== 'undefined' ? String(currentSuffix) : '');
-    const ctx = { isCeo: (r.role || gsRole()).isCeo, suffix: r.suffix, sameMonth: !!appSfx && String(r.suffix) === appSfx };
+    const ctx = { isCeo: role.isCeo, suffix: r.suffix, sameMonth: !!appSfx && String(r.suffix) === appSfx };
     const groupByDept = arr => {
       if (r.depts.length < 2) return arr.map(x => gsRowHtml(x, detailed, ctx)).join('') || '<div class="gs-none">— пусто —</div>';
       return ['crm', 'dozhim'].map(dep => {
@@ -1258,6 +1266,7 @@
       </div>
       <div class="gs-meta2">${esc(r.monthLabel)} · ${r.depts.map(d => esc(r.gsIdx[d].sheet)).join(' + ')}${r.offMonth ? ` · ${r.offMonth} из др. месяцев пропущено` : ''}</div>
       ${sheetErr.length ? `<div class="gs-err">${sheetErr.map(esc).join('; ')}</div>` : ''}
+      ${dozhimToggle}
       <label class="gs-toggle"><input type="checkbox" id="gs-detailed" ${detailed ? 'checked' : ''}> Детальная сверка — показать все визиты</label>
       ${!detailed ? `
         <div class="gs-sec-title miss">Не внесены в GS <span class="gs-cnt">${missing.length}</span></div>
@@ -1277,6 +1286,24 @@
         GS.detailed = cb.checked;
         const box = document.getElementById('gs-report');
         if (box && GS.report) { box.innerHTML = gsReportHtml(GS.report); gsBindReport(); }
+      });
+    }
+    // «Только Дожим» (CEO/ROP) — меняет объём сверки, поэтому пере-сверяем из
+    // сохранённых записей (заново определяет месяц/лист/статистику).
+    const dz = document.getElementById('gs-dozhim-only');
+    if (dz && !dz._gsBound) {
+      dz._gsBound = true;
+      dz.addEventListener('change', async () => {
+        GS.dozhimOnly = dz.checked;
+        const box = document.getElementById('gs-report');
+        if (!box || !GS.recs) return;
+        box.innerHTML = '<div class="gs-loading">Сверяю…</div>';
+        try {
+          GS.report = await gsReconcile(GS.recs);
+          box.innerHTML = gsReportHtml(GS.report); gsBindReport();
+        } catch (err) {
+          box.innerHTML = `<div class="gs-err">Ошибка: ${esc((err && err.message) || err)}</div>`;
+        }
       });
     }
     // Клик по строке — раскрыть/свернуть детали (кроме сверки и ссылки на сделку).
@@ -1327,7 +1354,8 @@
         if (box) box.innerHTML = '<div class="gs-loading">Сверяю…</div>';
         try {
           const text = await (file.text ? file.text() : new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(fr.error); fr.readAsText(file); }));
-          const report = await gsReconcile(gsExtractRecords(parseCSV(text)));
+          GS.recs = gsExtractRecords(parseCSV(text));    // сохраняем для пере-сверки при смене галки «Только Дожим»
+          const report = await gsReconcile(GS.recs);
           GS.report = report;
           if (box) { box.innerHTML = gsReportHtml(report); gsBindReport(); }
         } catch (err) {

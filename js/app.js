@@ -10021,6 +10021,11 @@ function isCeoLike(role) {
   return r === 'ceo' || r === 'rop' || r === 'роп';
 }
 
+// Сырые строки USERS (A..P): row[1]=«Фамилия Имя», row[2]=роль. Экспонируется на
+// window (top-level function), чтобы visit-reconciliation.js мог строить ростер
+// менеджеров (для определения однофамильцев). S — const, на window не попадает.
+function getUsersData() { return S.usersData || []; }
+
 function getRoleByName(nameLow) {
   if (!S.usersData) return null;
   for (let i = 1; i < S.usersData.length; i++) {

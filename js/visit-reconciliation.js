@@ -32,6 +32,16 @@
   }
   function normText(s) { return String(s == null ? '' : s).trim().toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' '); }
   function surname(s) { const p = normText(s).split(' ').filter(Boolean); return p[0] || ''; }
+  // Имя (2-й токен): «Иванов Пётр Сергеевич» / «Иванов Пётр» → «пётр»; «Иванов» → ''.
+  function firstName(s) { const p = normText(s).split(' ').filter(Boolean); return p[1] || ''; }
+  // Совпадение имён с учётом инициалов: «пётр»↔«пётр» ok; «п.»↔«пётр» ok (по 1-й букве).
+  function firstNameMatch(a, b) {
+    a = String(a || '').replace(/\.+$/, ''); b = String(b || '').replace(/\.+$/, '');
+    if (!a || !b) return false;
+    if (a === b) return true;
+    if (a.length === 1 || b.length === 1) return a.charAt(0) === b.charAt(0);
+    return false;
+  }
   // Телефон → 10-значное «ядро» (без кода страны). Из любого формата amoCRM.
   function normPhone(s) {
     let d = String(s == null ? '' : s).replace(/\D/g, '');
@@ -1041,18 +1051,50 @@
     return { me, name: (me && me.name) || '', role: (me && me.role) || 'crm', isCeo };
   }
 
+  // Ростер менеджеров по отделам из USERS: {crm:[имена], dozhim:[имена]}.
+  // Нужен, чтобы определить однофамильцев внутри отдела.
+  function gsRoster() {
+    const U = (typeof window.getUsersData === 'function' ? window.getUsersData() : []) || [];
+    const r = { crm: [], dozhim: [] };
+    for (let i = 1; i < U.length; i++) {
+      const row = U[i] || [];
+      const nm = String(row[1] || '').trim();
+      if (!nm) continue;
+      const role = String(row[2] || '').toLowerCase().trim();
+      if (role === 'crm') r.crm.push(nm);
+      else if (role === 'dozhim') r.dozhim.push(nm);
+    }
+    return r;
+  }
+
+  // Матч ответственного из CSV (ФИО/ФИ, в любом виде) с менеджером приложения.
+  // Правило: по ФАМИЛИИ (устойчиво к «ФИО» vs «ФИ»). Если в отделе есть
+  // однофамильцы — дополнительно сверяем ИМЯ (с учётом инициалов «П.» = «Пётр»).
+  // rosterNames — имена менеджеров того же отдела в формате «Фамилия Имя».
+  function gsNameMatch(csvResp, targetName, rosterNames) {
+    const cs = surname(csvResp), ts = surname(targetName);
+    if (!cs || !ts || cs !== ts) return false;
+    const namesakes = (rosterNames || []).filter(n => surname(n) === ts).length;
+    if (namesakes <= 1) return true;                       // фамилия уникальна → достаточно
+    return firstNameMatch(firstName(csvResp), firstName(targetName));
+  }
+
   // CSV → записи визитов с тегом отдела (crm/dozhim). Строка может дать обе.
   function gsExtractRecords(rows) {
     if (!rows || rows.length < 2) return [];
     const header = rows[0];
     const H = buildHeaderIndex(header);
+    // Регистронезависимый резерв для ключевых колонок: заголовки amoCRM могут
+    // прийти в другом регистре / со сдвоенными пробелами — иначе ДОЖИМ молча пуст.
+    const lcH = {}; header.forEach((h, i) => { const k = normText(h); if (k && !(k in lcH)) lcH[k] = i; });
+    const pickCol = (exact, low) => { const v = (H[exact] || [])[0]; return v != null ? v : (lcH[low] != null ? lcH[low] : null); };
     const phoneIdx = header.map((h, i) => ({ h: String(h || ''), i }))
       .filter(o => /телефон|phone/i.test(o.h) && !/линия|mango|факс|fax/i.test(o.h)).map(o => o.i);
     const iId = (H['ID'] || [])[0];
-    const iResp = (H['Ответственный'] || [])[0];
-    const iVisit = (H['Дата визита'] || [])[0];
-    const iDVisit = (H['Повторная дата визита (ДОЖИМ)'] || [])[0];
-    const iDResp = (H['ДОЖИМ Ответственный'] || [])[0];
+    const iResp = pickCol('Ответственный', 'ответственный');
+    const iVisit = pickCol('Дата визита', 'дата визита');
+    const iDVisit = pickCol('Повторная дата визита (ДОЖИМ)', 'повторная дата визита (дожим)');
+    const iDResp = pickCol('ДОЖИМ Ответственный', 'дожим ответственный');
     const iName = (H['Полное имя контакта'] || [])[0];
     const iCity = (H['Город'] || [])[0];
     const iComment = (H['Комментарий'] || [])[0];
@@ -1088,10 +1130,13 @@
 
   async function gsReconcile(recs) {
     const role = gsRole();
+    const roster = gsRoster();
     let scoped;
+    // ДОЖИМ — матчим по «ДОЖИМ Ответственный» (rec.responsible у dozhim-записей = это поле),
+    // CRM — по «Ответственный». Матч менеджера по фамилии (+имя при однофамильцах).
     if (role.isCeo) scoped = recs;
-    else if (role.role === 'dozhim') scoped = recs.filter(r => r.dept === 'dozhim' && surname(r.responsible) === surname(role.name));
-    else scoped = recs.filter(r => r.dept === 'crm' && surname(r.responsible) === surname(role.name));
+    else if (role.role === 'dozhim') scoped = recs.filter(r => r.dept === 'dozhim' && gsNameMatch(r.responsible, role.name, roster.dozhim));
+    else scoped = recs.filter(r => r.dept === 'crm' && gsNameMatch(r.responsible, role.name, roster.crm));
     if (!scoped.length) return { empty: true, role };
     const suffix = gsDominantSuffix(scoped);
     if (!suffix) return { empty: true, role, noMonth: true };

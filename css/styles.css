@@ -2565,7 +2565,7 @@ body.cosmic .sched-nav-icon {
 .sched-cell.dvs { background:rgba(130,130,130,.1); color:var(--txt3) }
 .sched-cell.dr-star { background:#4386f5; color:#fff }
 .sched-cell.dv-star { background:#ffff00; color:#222 }
-.sched-cell.empty { color:var(--txt3); opacity:.4 }
+.sched-cell.sched-empty { color:var(--txt3); opacity:.4 }
 .sched-cell.today-col { outline:2px solid var(--acc); outline-offset:-2px; border-radius:6px; }
 .sched-edit-pop {
   position:fixed;

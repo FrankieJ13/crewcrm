@@ -1432,6 +1432,13 @@ function _presenceShortName(full) {
   return `${firstName} ${initial}.`;
 }
 
+// «Липатников Николай» → «Липатников Н.» (Фамилия + инициал имени). Для графика.
+function surnameInitialName(full) {
+  const parts = String(full || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return `${parts[0]} ${parts[1].charAt(0).toUpperCase()}.`;
+  return parts[0] || '';
+}
+
 // Точное определение клиента ТЕКУЩЕГО устройства (пишется в presence-запись как `client`,
 // чтобы другие видели именно тип клиента, а не угадывали по userAgent).
 // WPF-клиент на Windows = WebView2: единственный, у кого есть window.chrome.webview
@@ -6564,7 +6571,7 @@ function renderGrafik() {
         else if (raw === 'О')  { cls = 'do-vac';  extraStyle = schedCellAppStyle('О'); }
         else if (raw === 'Б')  { cls = 'db';      extraStyle = schedCellAppStyle('Б'); } // больничный — нерабочий
         else {
-          cls = norm==='Р'?'dr':norm==='В'?'dv':norm==='ВС'?'dvs':val?'':'empty';
+          cls = norm==='Р'?'dr':norm==='В'?'dv':norm==='ВС'?'dvs':val?'':'sched-empty';
           extraStyle = schedCellAppStyle(raw); // для В — inline #f50e02
         }
         const entry = p.entry;
@@ -6581,7 +6588,7 @@ function renderGrafik() {
       const counts = getSchedDayTypeCounts(_nm);
       const metricsHtml = buildSchedMetrics(counts, sched);
       const missing = !p.found ? `<span style="font-size:10px;color:var(--txt3);margin-left:auto">нет в графике</span>` : '';
-      return `<div class="sched-person"><div class="sched-person-name" style="display:flex;align-items:center;gap:8px"><span>${p.name}</span>${getMgrMessengerHtml(p.name)}${metricsHtml}${missing}</div><div class="sched-cells">${cells}</div></div>`;
+      return `<div class="sched-person"><div class="sched-person-name" style="display:flex;align-items:center;gap:8px"><span>${surnameInitialName(p.name)}</span>${getMgrMessengerHtml(p.name)}${metricsHtml}${missing}</div><div class="sched-cells">${cells}</div></div>`;
     }).join('');
   }
 

@@ -10198,6 +10198,38 @@ body.light .adj-chip.on, body.tiffany .adj-chip.on { color:#fff; }
 /* «Только Дожим» — переключатель объёма сверки (CEO/ROP), выделяем акцентом. */
 .gs-toggle-dozhim { color:var(--txt); font-weight:700; }
 .gs-toggle-dozhim input { accent-color:#14b8a6; }
+/* ── Fake visits (аналитика дублей/повторов) ── */
+.fv-page { padding:4px 0 12px; }
+.fv-head { margin-bottom:12px; }
+.fv-kicker { font-family:'Unbounded',sans-serif; font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--txt3); margin:0 0 2px; }
+.fv-title { font-family:'Unbounded',sans-serif; font-size:24px; font-weight:900; color:var(--txt); margin:0 0 6px; }
+.fv-sub { font-size:12px; color:var(--txt2); line-height:1.5; margin:0 0 8px; max-width:640px; }
+.fv-month { font-size:12px; color:var(--txt2); } .fv-month b { color:var(--acc); }
+.fv-summary { display:flex; gap:8px; margin:6px 0; flex-wrap:wrap; }
+.fv-chip { font-size:12px; font-weight:700; color:var(--txt2); background:var(--bg3); border:1px solid var(--line2); border-radius:14px; padding:4px 12px; }
+.fv-chip b { color:var(--txt); font-family:'Unbounded',sans-serif; }
+.fv-meta { font-size:11px; color:var(--txt3); margin:2px 0 10px; }
+.fv-list { display:flex; flex-direction:column; gap:10px; }
+.fv-card { border:1px solid var(--line2); border-radius:14px; background:var(--bg2); padding:12px 14px; }
+.fv-card-head { display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+.fv-num { width:22px; height:22px; border-radius:50%; background:#14b8a6; color:#fff; font-family:'Unbounded',sans-serif; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.fv-src { font-size:12px; font-weight:700; color:var(--txt); }
+.fv-badge { font-size:10px; font-weight:700; color:var(--txt2); background:var(--bg3); border:1px solid var(--line2); border-radius:10px; padding:2px 8px; margin-left:auto; }
+.fv-badge.warn { color:#b45309; background:rgba(245,158,11,.14); border-color:rgba(245,158,11,.5); margin-left:0; }
+.fv-row { display:flex; gap:10px; font-size:12px; padding:3px 0; }
+.fv-k { flex:0 0 68px; color:var(--txt3); }
+.fv-v { color:var(--txt); min-width:0; }
+.fv-tags { display:flex; flex-wrap:wrap; gap:5px; }
+.fv-tag { font-size:11px; font-weight:600; color:var(--txt2); background:var(--bg3); border:1px solid var(--line2); border-radius:8px; padding:1px 7px; font-variant-numeric:tabular-nums; }
+.fv-deal { font-size:11px; font-weight:700; color:var(--acc); text-decoration:none; background:rgba(20,184,166,.1); border:1px solid rgba(20,184,166,.4); border-radius:8px; padding:1px 7px; }
+.fv-deal:hover { background:rgba(20,184,166,.2); }
+.fv-muted { color:var(--txt3); }
+.fv-visits { display:flex; flex-direction:column; gap:6px; margin-top:8px; padding-top:8px; border-top:1px dashed var(--line2); }
+.fv-visit-top { display:flex; align-items:center; gap:8px; }
+.fv-vdate { font-family:'Unbounded',sans-serif; font-size:11px; font-weight:700; color:var(--txt); font-variant-numeric:tabular-nums; }
+.fv-vmgr { font-size:12px; font-weight:600; color:var(--txt2); }
+.fv-vdep { font-size:9px; font-weight:700; color:var(--txt3); border:1px solid var(--line2); border-radius:6px; padding:0 5px; margin-left:auto; }
+.fv-visit-meta { font-size:11px; color:var(--txt3); margin-top:1px; }
 .gs-sec-title { font-family:'Unbounded',sans-serif; font-size:11px; font-weight:800; color:var(--txt); letter-spacing:.03em;
   display:flex; align-items:center; gap:8px; margin-top:6px; }
 .gs-sec-title.miss { color:var(--red); } .gs-sec-title.na { color:var(--txt3); }

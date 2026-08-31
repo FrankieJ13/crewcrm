@@ -1009,6 +1009,7 @@ function logoSectionName(id) {
     case 'analiz':   return 'маркетинг';
     case 'export':   return 'экспорт отчёта';
     case 'repeats':  return 'поиск повторов';
+    case 'fakevisits': return 'fake visits';
     case 'instruktsii': {                                 // FAQ — много подразделов, имя по S.faqTab
       const f = { instr: 'инструкции', reglament: 'регламент', mango: 'mango',
                   links: 'сайты см', autopodbor: 'чат см.ru', autoru: 'чат auto.ru',
@@ -1031,7 +1032,7 @@ function showScr(id) {
     if (typeof _apReturnToBody === 'function') _apReturnToBody();
     if (typeof _arReturnToBody === 'function') _arReturnToBody();
   }
-  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','sverka','timeline','vizity','ceo','analiz','trophies','profile'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','fakevisits','sverka','timeline','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const el = document.getElementById('scr-'+t);
     if (el) el.classList.remove('on');
   });
@@ -1066,7 +1067,7 @@ function isScreenTokenActive(id, token) {
 
 function showStartupLoader(text = 'Синхронизация профиля…') {
   hideStartupLoader();
-  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','sverka','timeline','vizity','ceo','analiz','trophies','profile'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','fakevisits','sverka','timeline','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const el = document.getElementById('scr-'+t);
     if (el) el.classList.remove('on');
   });
@@ -2737,7 +2738,7 @@ function onLogout() {
   if (hdrGreeting2) { hdrGreeting2.style.display = 'none'; hdrGreeting2.classList.remove('aurora'); }
   closeHamburger();
   // Сбрасываем ВСЕ экраны
-  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','sverka','timeline','vizity','ceo','analiz','trophies','profile'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','fakevisits','sverka','timeline','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const s = document.getElementById('scr-'+t);
     if (s) { s.classList.remove('on'); s.style.display = ''; }
   });
@@ -10224,7 +10225,7 @@ function showAccessDenied(reason = 'Почта не найдена в USERS') {
   const hmbT = document.getElementById('hmb-trophies'); if (hmbT) hmbT.style.display = 'none';
   const hmbG = document.getElementById('hmb-guide-btn'); if (hmbG) hmbG.style.display = 'none';
   const hmbA = document.getElementById('hmb-about-btn'); if (hmbA) hmbA.style.display = 'none';
-  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','sverka','timeline','vizity','ceo','analiz','trophies','profile'].forEach(t => {
+  ['otchet','dohod','grafik','instruktsii','personal','rating','traffic','export','repeats','fakevisits','sverka','timeline','vizity','ceo','analiz','trophies','profile'].forEach(t => {
     const s = document.getElementById('scr-'+t);
     if (s) { s.classList.remove('on'); s.style.display = ''; }
   });
@@ -13656,6 +13657,7 @@ function _highlightActiveDockPopupItem(popupId) {
       if (screenOn('analiz')) return m[1] === 'analiz';
       if (screenOn('export')) return m[1] === 'export';
       if (screenOn('repeats')) return m[1] === 'repeats';
+      if (screenOn('fakevisits')) return m[1] === 'fakevisits';
       return false;
     },
     'dock-vizity-popup': (btn) => {

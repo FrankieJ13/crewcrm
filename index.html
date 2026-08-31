@@ -27,7 +27,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Golos+Text:wght@400;500;600&family=Exo+2:wght@200;300;700&family=JetBrains+Mono:wght@300;400&family=Oswald:wght@400;700&family=Source+Code+Pro:wght@400;500;600&display=swap" rel="stylesheet"/>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<link rel="stylesheet" href="./css/styles.css?v=367"/>
+<link rel="stylesheet" href="./css/styles.css?v=368"/>
 <link rel="stylesheet" href="./css/autopodbor.css?v=323"/>
 <link rel="stylesheet" href="./css/traffic-analytics.css?v=354"/>
 <link rel="stylesheet" href="./css/visit-reconciliation.css?v=348"/>
@@ -750,6 +750,11 @@
         <div id="c-repeats"></div>
       </div>
     </div>
+    <div id="scr-fakevisits" class="scr">
+      <div class="w">
+        <div id="c-fakevisits"></div>
+      </div>
+    </div>
     <div id="scr-sverka" class="scr">
       <div class="w">
         <div id="c-sverka"></div>
@@ -1005,6 +1010,9 @@
         <button class="dock-popup-btn" onclick="dockAnalytics('repeats')">
           <span class="dock-popup-dot" style="background:#ffb020"></span>ПОИСК ПОВТОРОВ
         </button>
+        <button class="dock-popup-btn" onclick="dockAnalytics('fakevisits')">
+          <span class="dock-popup-dot" style="background:#14b8a6"></span>FAKE VISITS
+        </button>
       </div>
     </div>
 
@@ -1252,10 +1260,10 @@
   </defs>
 </svg>
 <script src="./js/instr-data.js?v=1"></script>
-<script src="./js/app.js?v=379"></script>
+<script src="./js/app.js?v=380"></script>
 <script src="./js/profile-settings.js?v=1"></script>
-<script src="./js/traffic-analytics.js?v=355"></script>
-<script src="./js/visit-reconciliation.js?v=363"></script>
+<script src="./js/traffic-analytics.js?v=356"></script>
+<script src="./js/visit-reconciliation.js?v=364"></script>
 <script src="./js/timeline-leads.js?v=2"></script>
 <script src="./js/liquid-glass-dock.js?v=8"></script>
 <!-- Затемнение фона при открытом popup напоминаний -->

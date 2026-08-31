@@ -1366,4 +1366,205 @@
     if (GS.report) gsBindReport();
   };
 
+  /* ══════════════════════════════════════════════════════════════════════
+     FAKE VISITS — поиск дублей/повторных визитов одного фактического клиента
+     за АКТИВНЫЙ месяц: GS (ВИЗИТЫ+Д_ВИЗИТЫ) × выгрузка amoCRM (CSV).
+     Связь — по ПЕРЕСЕЧЕНИЮ множеств телефонов; мультиконтактная сделка amoCRM
+     «мостит» разные номера в одну группу (union-find). Показываем группы, где
+     ≥2 GS-визита (клиент записан несколько раз за месяц). Разные ФИО/менеджеры
+     НЕ разделяют группу, если она связана телефонами/сделкой.
+     ══════════════════════════════════════════════════════════════════════ */
+  const FV = { fileName: '', report: null };
+
+  function fvSuffix() {
+    if (typeof currentSuffix !== 'undefined' && currentSuffix) return String(currentSuffix);
+    if (typeof window.currentSuffix === 'string' && window.currentSuffix) return window.currentSuffix;
+    return '';
+  }
+  // Только валидные РФ-мобильные (ядро 9XXXXXXXXX) — чтобы ID/даты/UTM/числа из
+  // URL не принять за телефон.
+  function fvPhones(cell) { return extractPhones(cell).filter(c => c.charAt(0) === '9'); }
+  function fvInMonth(dmy, suffix) { return !!dmy && (String(dmy.m).padStart(2, '0') + String(dmy.y).slice(-2)) === suffix; }
+  function fvDateVal(d) { return d ? d.y * 10000 + d.m * 100 + d.d : 0; }
+  function fvFmtDate(d, raw) { return d ? String(d.d).padStart(2, '0') + '.' + String(d.m).padStart(2, '0') : (raw || '—'); }
+
+  // GS-лист → узлы визитов (только с валидными телефонами). Лист уже за месяц.
+  function fvGsNodes(vizData, dept) {
+    return extractVisits(vizData).map(v => ({
+      src: 'gs', dept, phones: fvPhones(v.phoneRaw),
+      manager: v.manager, dateRaw: v.dateRaw, date: v.date, comment: v.comment, city: v.city,
+    })).filter(n => n.phones.length);
+  }
+
+  // CSV amoCRM → узлы сделок за активный месяц. Телефоны из ВСЕХ телефонных колонок
+  // (несколько номеров в ячейке — все), ФИО, ID, ответственные, дата визита.
+  function fvCsvNodes(rows, suffix) {
+    if (!rows || rows.length < 2) return [];
+    const header = rows[0];
+    const H = buildHeaderIndex(header);
+    const lcH = {}; header.forEach((h, i) => { const k = normText(h); if (k && !(k in lcH)) lcH[k] = i; });
+    const pick = (ex, lo) => { const v = (H[ex] || [])[0]; return v != null ? v : (lcH[lo] != null ? lcH[lo] : null); };
+    const phoneIdx = header.map((h, i) => ({ h: String(h || ''), i }))
+      .filter(o => /телефон|phone/i.test(o.h) && !/линия|mango|факс|fax/i.test(o.h)).map(o => o.i);
+    const iId = (H['ID'] || [])[0];
+    const iName = pick('Полное имя контакта', 'полное имя контакта');
+    const iResp = pick('Ответственный', 'ответственный');
+    const iDResp = pick('ДОЖИМ Ответственный', 'дожим ответственный');
+    const iVisit = pick('Дата визита', 'дата визита');
+    const iDVisit = pick('Повторная дата визита (ДОЖИМ)', 'повторная дата визита (дожим)');
+    const iComment = pick('Комментарий', 'комментарий');
+    const cell = (row, i) => i != null ? String(row[i] || '').trim() : '';
+    const out = [];
+    for (let r = 1; r < rows.length; r++) {
+      const row = rows[r]; if (!row || !row.length) continue;
+      const vd = parseDMY(cell(row, iVisit)), dvd = parseDMY(cell(row, iDVisit));
+      if (!fvInMonth(vd, suffix) && !fvInMonth(dvd, suffix)) continue;   // только активный месяц
+      const ph = new Set(); phoneIdx.forEach(i => fvPhones(row[i]).forEach(p => ph.add(p)));
+      if (!ph.size) continue;
+      out.push({
+        src: 'csv', id: cell(row, iId), name: cell(row, iName),
+        responsible: cell(row, iResp), dozhimResp: cell(row, iDResp), comment: cell(row, iComment),
+        phones: [...ph], dateRaw: cell(row, iVisit) || cell(row, iDVisit), date: vd || dvd,
+      });
+    }
+    return out;
+  }
+
+  // Union-find по телефонам: узел объединяет все свои номера; мультиконтактная
+  // сделка «мостит» разные номера. Группа = компонента связности.
+  function fvGroup(nodes) {
+    const parent = new Map();
+    const find = x => { while (parent.get(x) !== x) { parent.set(x, parent.get(parent.get(x))); x = parent.get(x); } return x; };
+    const add = x => { if (!parent.has(x)) parent.set(x, x); };
+    const uni = (a, b) => { parent.set(find(a), find(b)); };
+    nodes.forEach(n => { n.phones.forEach(add); for (let i = 1; i < n.phones.length; i++) uni(n.phones[0], n.phones[i]); });
+    const groups = new Map();
+    nodes.forEach(n => {
+      if (!n.phones.length) return;
+      const root = find(n.phones[0]);
+      if (!groups.has(root)) groups.set(root, { gs: [], csv: [], phones: new Set() });
+      const g = groups.get(root);
+      n.phones.forEach(p => g.phones.add(p));
+      (n.src === 'gs' ? g.gs : g.csv).push(n);
+    });
+    return [...groups.values()];
+  }
+
+  async function fvAnalyze(csvRows) {
+    const suffix = fvSuffix();
+    if (!suffix) return { error: 'Не выбран активный месяц.' };
+    const sheets = [['ВИЗИТЫ' + suffix, 'crm'], ['Д_ВИЗИТЫ' + suffix, 'dozhim']];
+    const gsNodes = []; const sheetErr = [];
+    for (const [sheet, dept] of sheets) {
+      try { const data = await window.api(sheet, 'A:N', { force: true }); fvGsNodes(data || [], dept).forEach(n => gsNodes.push(n)); }
+      catch (e) { sheetErr.push(sheet + ': ' + ((e && e.message === 'NOT_FOUND') ? 'нет листа' : 'ошибка')); }
+    }
+    const csvNodes = fvCsvNodes(csvRows, suffix);
+    const groups = fvGroup([...gsNodes, ...csvNodes])
+      .filter(g => g.gs.length >= 2)                          // клиент записан ≥2 раза за месяц
+      .map(g => {
+        const phones = [...g.phones];
+        const names = [...new Set(g.csv.map(c => c.name).filter(Boolean))];
+        const deals = [...new Set(g.csv.map(c => c.id).filter(Boolean))];
+        const gsSets = g.gs.map(v => new Set(v.phones));
+        const common = [...gsSets[0]].filter(p => gsSets.every(s => s.has(p)));
+        const source = common.length ? ('Общий телефон' + (common.length > 1 ? ' (несколько)' : ''))
+                     : g.csv.length ? 'Связь через сделку amoCRM' : 'Пересекающиеся телефоны';
+        const visits = g.gs.slice().sort((a, b) => fvDateVal(a.date) - fvDateVal(b.date));
+        return { phones, names, deals, source, visits, ambiguous: deals.length > 1 };
+      })
+      .sort((a, b) => b.visits.length - a.visits.length);
+    return { suffix, monthLabel: monthName(suffix), groups, sheetErr, gsCount: gsNodes.length, csvCount: csvNodes.length };
+  }
+
+  function fvCardHtml(g, idx) {
+    const phones = g.phones.map(p => `<span class="fv-tag">${fmtPhone(p)}</span>`).join('');
+    const names = g.names.length ? g.names.map(esc).join(', ') : '<span class="fv-muted">— нет в CSV —</span>';
+    const deals = g.deals.length
+      ? g.deals.map(id => `<a class="fv-deal" href="${LEAD_URL}${encodeURIComponent(id)}" target="_blank" rel="noopener">#${esc(id)}</a>`).join('')
+      : '<span class="fv-muted">—</span>';
+    const visits = g.visits.map(v => `
+      <div class="fv-visit">
+        <div class="fv-visit-top"><span class="fv-vdate">${fvFmtDate(v.date, v.dateRaw)}</span><span class="fv-vmgr">${esc(v.manager || '—')}</span><span class="fv-vdep">${v.dept === 'dozhim' ? 'Дожим' : 'CRM'}</span></div>
+        <div class="fv-visit-meta">${fmtPhone(v.phones[0])}${v.comment ? ' · ' + esc(v.comment) : ''}</div>
+      </div>`).join('');
+    return `
+      <div class="fv-card">
+        <div class="fv-card-head">
+          <span class="fv-num">${idx + 1}</span>
+          <span class="fv-src">${esc(g.source)}</span>
+          <span class="fv-badge">${g.visits.length} виз.</span>
+          ${g.ambiguous ? '<span class="fv-badge warn">неск. сделок — проверить</span>' : ''}
+        </div>
+        <div class="fv-row"><span class="fv-k">Клиент</span><span class="fv-v">${names}</span></div>
+        <div class="fv-row"><span class="fv-k">Телефоны</span><span class="fv-v fv-tags">${phones}</span></div>
+        <div class="fv-row"><span class="fv-k">Сделки</span><span class="fv-v fv-tags">${deals}</span></div>
+        <div class="fv-visits">${visits}</div>
+      </div>`;
+  }
+
+  function fvReportHtml(r) {
+    if (!r) return '';
+    if (r.error) return `<div class="gs-empty">${esc(r.error)}</div>`;
+    const errHtml = r.sheetErr && r.sheetErr.length ? `<div class="gs-err">${r.sheetErr.map(esc).join('; ')}</div>` : '';
+    const meta = `<div class="fv-meta">${esc(r.monthLabel)} · GS-визитов: ${r.gsCount} · CSV-сделок за месяц: ${r.csvCount}</div>`;
+    if (!r.groups.length) return `${errHtml}${meta}<div class="gs-empty">Дублей/повторов за месяц не найдено 👍</div>`;
+    return `${errHtml}
+      <div class="fv-summary"><span class="fv-chip"><b>${r.groups.length}</b> групп</span>
+        <span class="fv-chip"><b>${r.groups.reduce((s, g) => s + g.visits.length, 0)}</b> визитов</span></div>
+      ${meta}
+      <div class="fv-list">${r.groups.map((g, i) => fvCardHtml(g, i)).join('')}</div>`;
+  }
+
+  window.renderFakeVisitsTab = function renderFakeVisitsTab() {
+    const suffix = fvSuffix();
+    return `
+      <section class="fv-page">
+        <div class="fv-head">
+          <p class="fv-kicker">Аналитика</p>
+          <h1 class="fv-title">Fake visits</h1>
+          <p class="fv-sub">Находит дубли и повторные визиты одного клиента за активный месяц: данные Google-таблицы × выгрузка amoCRM (CSV). Связь — по пересечению телефонов и общей сделке (не по имени).</p>
+          <div class="fv-month">Месяц: <b>${esc(monthName(suffix) || '—')}</b></div>
+        </div>
+        <label class="gs-drop" id="fv-drop">
+          <input type="file" accept=".csv,text/csv" id="fv-file" hidden>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span class="gs-drop-lbl">${FV.fileName ? esc(FV.fileName) : 'Выбрать CSV-файл amoCRM'}</span>
+        </label>
+        <div id="fv-report">${FV.report ? fvReportHtml(FV.report) : ''}</div>
+      </section>`;
+  };
+
+  window.initFakeVisitsTab = function initFakeVisitsTab() {
+    const inp = document.getElementById('fv-file');
+    if (inp && !inp._fvBound) {
+      inp._fvBound = true;
+      inp.addEventListener('change', async e => {
+        const file = e.target.files && e.target.files[0]; if (!file) return;
+        FV.fileName = file.name;
+        const lbl = document.querySelector('#fv-drop .gs-drop-lbl'); if (lbl) lbl.textContent = file.name;
+        const box = document.getElementById('fv-report');
+        if (box) box.innerHTML = '<div class="gs-loading">Анализирую…</div>';
+        try {
+          const text = await (file.text ? file.text() : new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(fr.error); fr.readAsText(file); }));
+          FV.report = await fvAnalyze(parseCSV(text));
+          if (box) box.innerHTML = fvReportHtml(FV.report);
+        } catch (err) {
+          if (box) box.innerHTML = `<div class="gs-err">Ошибка: ${esc((err && err.message) || err)}</div>`;
+        }
+      });
+    }
+  };
+
+  window.openFakeVisitsPage = function openFakeVisitsPage() {
+    if (typeof window.closeAllDockPopups === 'function') window.closeAllDockPopups();
+    const me = typeof window.findUserInSheet === 'function' ? window.findUserInSheet() : null;
+    if (!me || (typeof window.isCeoLike === 'function' && !window.isCeoLike(me.role))) return;
+    if (typeof window.showScr === 'function') window.showScr('fakevisits');
+    if (typeof window.dockSetActive === 'function') window.dockSetActive('analytics');
+    const root = document.getElementById('c-fakevisits');
+    if (root) { root.innerHTML = window.renderFakeVisitsTab(); window.initFakeVisitsTab(); }
+    if (typeof window.updateFirebasePage === 'function') window.updateFirebasePage();
+  };
+
 })();

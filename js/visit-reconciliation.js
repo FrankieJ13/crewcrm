@@ -1374,7 +1374,7 @@
      ≥2 GS-визита (клиент записан несколько раз за месяц). Разные ФИО/менеджеры
      НЕ разделяют группу, если она связана телефонами/сделкой.
      ══════════════════════════════════════════════════════════════════════ */
-  const FV = { fileName: '', report: null };
+  const FV = { fileName: '', report: null, csvRows: null, noDozhim: false };
 
   function fvSuffix() {
     if (typeof currentSuffix !== 'undefined' && currentSuffix) return String(currentSuffix);
@@ -1398,7 +1398,7 @@
 
   // CSV amoCRM → узлы сделок за активный месяц. Телефоны из ВСЕХ телефонных колонок
   // (несколько номеров в ячейке — все), ФИО, ID, ответственные, дата визита.
-  function fvCsvNodes(rows, suffix) {
+  function fvCsvNodes(rows, suffix, noDozhim) {
     if (!rows || rows.length < 2) return [];
     const header = rows[0];
     const H = buildHeaderIndex(header);
@@ -1418,7 +1418,9 @@
     for (let r = 1; r < rows.length; r++) {
       const row = rows[r]; if (!row || !row.length) continue;
       const vd = parseDMY(cell(row, iVisit)), dvd = parseDMY(cell(row, iDVisit));
-      if (!fvInMonth(vd, suffix) && !fvInMonth(dvd, suffix)) continue;   // только активный месяц
+      // «Без дожима» — не учитываем дожим-дату визита для попадания в месяц.
+      const inMon = fvInMonth(vd, suffix) || (!noDozhim && fvInMonth(dvd, suffix));
+      if (!inMon) continue;   // только активный месяц
       const ph = new Set(); phoneIdx.forEach(i => fvPhones(row[i]).forEach(p => ph.add(p)));
       if (!ph.size) continue;
       out.push({
@@ -1453,13 +1455,15 @@
   async function fvAnalyze(csvRows) {
     const suffix = fvSuffix();
     if (!suffix) return { error: 'Не выбран активный месяц.' };
-    const sheets = [['ВИЗИТЫ' + suffix, 'crm'], ['Д_ВИЗИТЫ' + suffix, 'dozhim']];
+    const noDozhim = !!FV.noDozhim;
+    // «Без дожима» — не грузим Д_ВИЗИТЫ и не матчим дожим-часть CSV.
+    const sheets = noDozhim ? [['ВИЗИТЫ' + suffix, 'crm']] : [['ВИЗИТЫ' + suffix, 'crm'], ['Д_ВИЗИТЫ' + suffix, 'dozhim']];
     const gsNodes = []; const sheetErr = [];
     for (const [sheet, dept] of sheets) {
       try { const data = await window.api(sheet, 'A:N', { force: true }); fvGsNodes(data || [], dept).forEach(n => gsNodes.push(n)); }
       catch (e) { sheetErr.push(sheet + ': ' + ((e && e.message === 'NOT_FOUND') ? 'нет листа' : 'ошибка')); }
     }
-    const csvNodes = fvCsvNodes(csvRows, suffix);
+    const csvNodes = fvCsvNodes(csvRows, suffix, noDozhim);
     const groups = fvGroup([...gsNodes, ...csvNodes])
       .filter(g => g.gs.length >= 2)                          // клиент записан ≥2 раза за месяц
       .map(g => {
@@ -1531,6 +1535,7 @@
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           <span class="gs-drop-lbl">${FV.fileName ? esc(FV.fileName) : 'Выбрать CSV-файл amoCRM'}</span>
         </label>
+        <label class="gs-toggle gs-toggle-dozhim"><input type="checkbox" id="fv-no-dozhim" ${FV.noDozhim ? 'checked' : ''}> Без дожима — не матчить Д_ВИЗИТЫ и дожим-визиты CSV</label>
         <div id="fv-report">${FV.report ? fvReportHtml(FV.report) : ''}</div>
       </section>`;
   };
@@ -1547,7 +1552,25 @@
         if (box) box.innerHTML = '<div class="gs-loading">Анализирую…</div>';
         try {
           const text = await (file.text ? file.text() : new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(fr.error); fr.readAsText(file); }));
-          FV.report = await fvAnalyze(parseCSV(text));
+          FV.csvRows = parseCSV(text);       // сохраняем для пере-анализа при смене галки «Без дожима»
+          FV.report = await fvAnalyze(FV.csvRows);
+          if (box) box.innerHTML = fvReportHtml(FV.report);
+        } catch (err) {
+          if (box) box.innerHTML = `<div class="gs-err">Ошибка: ${esc((err && err.message) || err)}</div>`;
+        }
+      });
+    }
+    // «Без дожима» — пере-анализ из сохранённого CSV (без повторной загрузки файла).
+    const nd = document.getElementById('fv-no-dozhim');
+    if (nd && !nd._fvBound) {
+      nd._fvBound = true;
+      nd.addEventListener('change', async () => {
+        FV.noDozhim = nd.checked;
+        if (!FV.csvRows) return;              // файла ещё нет — применится при загрузке
+        const box = document.getElementById('fv-report');
+        if (box) box.innerHTML = '<div class="gs-loading">Анализирую…</div>';
+        try {
+          FV.report = await fvAnalyze(FV.csvRows);
           if (box) box.innerHTML = fvReportHtml(FV.report);
         } catch (err) {
           if (box) box.innerHTML = `<div class="gs-err">Ошибка: ${esc((err && err.message) || err)}</div>`;

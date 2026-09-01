@@ -10792,6 +10792,7 @@ function renderPersonal(matched) {
     synRow[3] = planVal; synRow[4] = Math.max(0, planVal - allVis);
     synRow[7] = allVis;
     synRow[28] = s.vis400||0; // КАТ 400 — историческая категория для subtext-разбивки
+    synRow[29] = s.vis0||0;   // КАТ 0 — в разбивке визитов идёт в CRM (кат относится к CRM)
     synRow[8] = s.kred800||0; synRow[9] = s.nal800||0;
     synRow[10]= s.obmen800||0; synRow[11]= s.kom800||0;
     synRow[12]= s.kred1200||0; synRow[13]= s.nal1200||0;
@@ -11215,9 +11216,11 @@ function renderPersonal(matched) {
           // показываем колонку «?» (черновики / нераспознанные категории),
           // чтобы итог 400+800+1200+? = factN.
           const v400 = num(mgrRow[28]);
-          const v800 = num(mgrRow[1]);
+          const v0    = num(mgrRow[29]);          // кат 0 → относится к CRM
+          const kat800 = num(mgrRow[1]);
+          const v800 = kat800 + v0;               // CRM = кат 800 + кат 0
           const v1200 = num(mgrRow[2]);
-          const orphan = Math.max(0, num(factN) - v400 - v800 - v1200);
+          const orphan = Math.max(0, num(factN) - v400 - kat800 - v0 - v1200);
           const parts = [];
           if (v400 > 0)   parts.push({ lbl: 'К400', val: v400 });
           parts.push({ lbl: 'CRM', val: v800 });

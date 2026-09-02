@@ -1600,116 +1600,82 @@
      ══════════════════════════════════════════════════════════════════════ */
   // filters.found по умолчанию 'found' — показываем только НАЙДЕННЫЕ совпадения
   // (смысл инструмента). Пешие без CRM/на проверку — по фильтру категории.
-  const PD = { fileName: '', rows: null, report: null, period: { from: '', to: '' },
+  const PD = { fileName: '', rows: null, report: null, period: { from: '', to: '' }, colMap: null,
+    header: null, worker: null, workerInit: false, hasLoaded: false,
     filters: { city: '', found: 'found', q: '', crmResp: '', minDays: '', minCrm: '' } };
-  const PD_CITIES = ['пермь','челябинск','барнаул','новосибирск','тюмень','омск','томск','красноярск','оренбург','кемерово','новокузнецк','сургут'];
-  const PD_CITY_SET = new Set(PD_CITIES);
 
-  function pdDetectDelim(line) { return (String(line).split(';').length > String(line).split(',').length) ? ';' : ','; }
-  function pdParseCSV(text) {
-    text = String(text || '').replace(/^﻿/, '');
-    const delim = pdDetectDelim((text.split(/\r?\n/)[0] || ''));
-    const rows = []; let row = [], fld = '', i = 0, q = false; const n = text.length;
-    while (i < n) {
-      const c = text[i];
-      if (q) { if (c === '"') { if (text[i + 1] === '"') { fld += '"'; i += 2; continue; } q = false; i++; continue; } fld += c; i++; continue; }
-      if (c === '"') { q = true; i++; continue; }
-      if (c === delim) { row.push(fld); fld = ''; i++; continue; }
-      if (c === '\r') { i++; continue; }
-      if (c === '\n') { row.push(fld); rows.push(row); row = []; fld = ''; i++; continue; }
-      fld += c; i++;
-    }
-    if (fld.length || row.length) { row.push(fld); rows.push(row); }
-    return rows;
-  }
+  function pdParseCSV(text) { return (window.PDLib && window.PDLib.parseCSV(text)) || []; }
 
-  function pdToJs(d) { return d ? new Date(d.y, d.m - 1, d.d) : null; }
-  function pdMinusMonthsMs(d, n) { return new Date(d.y, d.m - 1 - n, d.d).getTime(); }   // 4 календ. месяца
-  function pdDays(visit, closed) { return Math.round((pdToJs(visit) - pdToJs(closed)) / 86400000); }
   function pdFmt(d, raw) { return d ? String(d.d).padStart(2, '0') + '.' + String(d.m).padStart(2, '0') + '.' + d.y : (raw || '—'); }
-  function pdInPeriod(v, from, to) { if (!v) return false; const t = pdToJs(v).getTime(); if (from && t < pdToJs(from).getTime()) return false; if (to && t > pdToJs(to).getTime()) return false; return true; }
   function pdMonthBounds(dt) { const y = dt.getFullYear(), m = dt.getMonth(), last = new Date(y, m + 1, 0).getDate(), p = x => String(x).padStart(2, '0'); return { from: `01.${p(m + 1)}.${y}`, to: `${p(last)}.${p(m + 1)}.${y}` }; }
   function pdIso(s) { const m = parseDMY(s); return m ? `${m.y}-${String(m.m).padStart(2, '0')}-${String(m.d).padStart(2, '0')}` : ''; }
   function pdDmy(iso) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? `${m[3]}.${m[2]}.${m[1]}` : ''; }
 
-  // Определение колонок (устойчиво к регистру; не по позиции).
-  function pdCols(header) {
-    const H = buildHeaderIndex(header); const lc = {}; header.forEach((h, i) => { const k = normText(h); if (k && !(k in lc)) lc[k] = i; });
-    const pick = (...names) => { for (const nm of names) { const v = (H[nm] || [])[0]; if (v != null) return v; const k = normText(nm); if (lc[k] != null) return lc[k]; } return null; };
-    const phoneIdx = header.map((h, i) => ({ h: String(h || ''), i })).filter(o => /телефон|phone/i.test(o.h) && !/линия|mango|факс|fax/i.test(o.h)).map(o => o.i);
-    return {
-      id: pick('ID'), name: pick('Название сделки'), resp: pick('Ответственный'),
-      closed: pick('Дата закрытия'), stage: pick('Этап сделки'), visit: pick('Дата визита'),
-      reason: pick('Причина закрытия карточки'), success: pick('Успешное закрытие карточки'),
-      cityVyd: pick('Город Выдачи'), crmResp: pick('CRM Ответственный'), phoneIdx,
-    };
-  }
-  function pdExtractDeals(rows) {
-    const C = pdCols(rows[0]); const cell = (r, i) => i != null ? String(r[i] || '').trim() : '';
-    const deals = [];
-    for (let r = 1; r < rows.length; r++) {
-      const row = rows[r]; if (!row || !row.length) continue;
-      const ph = new Set(); C.phoneIdx.forEach(i => extractPhones(row[i]).forEach(p => ph.add(p)));
-      deals.push({
-        id: cell(row, C.id), name: cell(row, C.name), resp: cell(row, C.resp),
-        closedRaw: cell(row, C.closed), closed: parseDMY(cell(row, C.closed)),   // «не закрыта» → null
-        stage: cell(row, C.stage), visitRaw: cell(row, C.visit), visit: parseDMY(cell(row, C.visit)),
-        reason: cell(row, C.reason), success: cell(row, C.success),
-        cityVyd: cell(row, C.cityVyd), crmResp: cell(row, C.crmResp), phones: [...ph],
-      });
-    }
-    return deals;
-  }
+  const PD_COL_LABELS = { id: 'ID сделки', resp: 'Ответственный', closed: 'Дата закрытия', visit: 'Дата визита', phone: 'Телефон', name: 'Название сделки', stage: 'Этап сделки', reason: 'Причина закрытия карточки', success: 'Успешное закрытие карточки', cityVyd: 'Город Выдачи', crmResp: 'CRM Ответственный' };
 
-  function pdAnalyze(rows, period) {
-    if (!rows || rows.length < 2) return { error: 'Пустой файл.' };
-    const C = pdCols(rows[0]); const hn = i => i != null ? String(rows[0][i] || '') : '';
-    const colSummary = {
-      'ID': hn(C.id), 'Название': hn(C.name), 'Ответственный': hn(C.resp), 'Дата закрытия': hn(C.closed),
-      'Дата визита': hn(C.visit), 'Причина закрытия': hn(C.reason), 'Город Выдачи': hn(C.cityVyd), 'Телефонных колонок': C.phoneIdx.length,
-    };
-    const deals = pdExtractDeals(rows);
-    const byPhone = new Map();                                    // индекс: телефон → сделки
-    deals.forEach(d => d.phones.forEach(p => { if (!byPhone.has(p)) byPhone.set(p, []); byPhone.get(p).push(d); }));
-    const from = period.from ? parseDMY(period.from) : null, to = period.to ? parseDMY(period.to) : null;
-    const results = [];
-    deals.forEach(ped => {
-      if (!PD_CITY_SET.has(normText(ped.resp))) return;           // пешая: Ответственный = город
-      if (!ped.visitRaw) return;
-      if (!ped.visit) { results.push({ ped, status: 'check', reason: 'дата визита не распознана', crm: [], inPeriod: false }); return; }
-      if (!pdInPeriod(ped.visit, from, to)) return;               // вне периода
-      if (!ped.phones.length) { results.push({ ped, status: 'check', reason: 'нет валидного телефона', crm: [], inPeriod: true }); return; }
-      const visitMs = pdToJs(ped.visit).getTime(), winStart = pdMinusMonthsMs(ped.visit, 4);
-      const cand = new Map(); ped.phones.forEach(p => (byPhone.get(p) || []).forEach(c => { if (!cand.has(c.id)) cand.set(c.id, c); }));
-      const crm = [...cand.values()].filter(c =>
-        c.id !== ped.id && c.closed && !c.visitRaw &&
-        !c.success &&                                            // не успешная сделка (была продажа)
-        !/дубль|хоз/i.test(c.reason) &&                          // не ХОЗ / ДУБЛЬ (тех. закрытие)
-        pdToJs(c.closed).getTime() <= visitMs && pdToJs(c.closed).getTime() >= winStart &&
-        c.phones.some(p => ped.phones.includes(p))
-      ).map(c => ({ ...c, matchPhone: c.phones.find(p => ped.phones.includes(p)), days: pdDays(ped.visit, c.closed) }))
-       .sort((a, b) => pdToJs(b.closed) - pdToJs(a.closed));       // ближайшая к визиту — основная
-      results.push({ ped, status: crm.length ? 'found' : 'none', crm, inPeriod: true });
-    });
-    results.sort((a, b) => {
-      const av = a.ped.visit ? pdToJs(a.ped.visit).getTime() : 0, bv = b.ped.visit ? pdToJs(b.ped.visit).getTime() : 0;
+  // Агрегация UI-отчёта (KPI/города/предупреждения/сортировка) из результатов
+  // PDLib.analyze. Используется и на главном потоке, и с воркером.
+  function pdBuildReport(results, diag, cm, period) {
+    const PDLib = window.PDLib;
+    results = results.slice().sort((a, b) => {
+      const av = a.ped.visit ? PDLib.toMs(a.ped.visit) : 0, bv = b.ped.visit ? PDLib.toMs(b.ped.visit) : 0;
       if (bv !== av) return bv - av;                              // визит desc
-      return String(a.ped.cityVyd || a.ped.resp).localeCompare(String(b.ped.cityVyd || b.ped.resp), 'ru');
+      return String(a.ped.cityVyd || a.ped.respCity || a.ped.resp).localeCompare(String(b.ped.cityVyd || b.ped.respCity || b.ped.resp), 'ru');
     });
     const found = results.filter(r => r.status === 'found'), none = results.filter(r => r.status === 'none');
     const withPhone = found.length + none.length;
     const clients = new Set([...found, ...none].map(r => [...r.ped.phones].sort().join(','))).size;
     const cityMap = {};
-    [...found, ...none].forEach(r => { const c = r.ped.cityVyd || r.ped.resp || '—'; (cityMap[c] || (cityMap[c] = { city: c, total: 0, found: 0 })).total++; if (r.status === 'found') cityMap[c].found++; });
+    [...found, ...none].forEach(r => { const c = r.ped.cityVyd || r.ped.respCity || r.ped.resp || '—'; (cityMap[c] || (cityMap[c] = { city: c, total: 0, found: 0 })).total++; if (r.status === 'found') cityMap[c].found++; });
     const byCity = Object.values(cityMap).map(c => ({ ...c, pct: c.total ? Math.round(c.found / c.total * 100) : 0 })).sort((a, b) => b.total - a.total);
+    const warn = [];
+    if (cm.reason == null || cm.reason < 0) warn.push('Нет колонки «Причина закрытия карточки» — ДУБЛЬ/ХОЗ нельзя надёжно исключить.');
+    if (cm.success == null || cm.success < 0) warn.push('Нет колонки «Успешное закрытие карточки» — успешные продажи нельзя надёжно исключить.');
     return {
-      results, byCity, period, cols: colSummary,
-      kpi: {
-        totalRows: rows.length - 1, pedestrian: results.filter(r => r.inPeriod).length, withPhone,
-        found: found.length, none: none.length, pct: withPhone ? Math.round(found.length / withPhone * 100) : 0,
-        clients, multi: found.filter(r => r.crm.length > 1).length,
-      },
+      results, byCity, diag, period, cm, warn,
+      kpi: { totalRows: diag.totalRows, pedestrian: results.filter(r => r.inPeriod).length, withPhone, found: found.length, none: none.length, pct: withPhone ? Math.round(found.length / withPhone * 100) : 0, clients, multi: found.filter(r => r.crm.length > 1).length },
     };
+  }
+  // Fallback без воркера (parse уже сделан → rows).
+  function pdAnalyzeMain(rows, period, colMap) {
+    const PDLib = window.PDLib;
+    if (!PDLib) return { error: 'Модуль pedestrian-deals.js не загружен.' };
+    if (!rows || rows.length < 2) return { error: 'Пустой файл.' };
+    const cm = colMap || PDLib.detectColumns(rows[0]);
+    const val = PDLib.validateColumns(cm);
+    if (!val.ok) return { error: 'Не найдены обязательные колонки: ' + val.missing.map(k => PD_COL_LABELS[k] || k).join(', ') + '. Задайте их в «Маппинг колонок» ниже.', missing: val.missing, cm };
+    const out = PDLib.analyze(PDLib.buildDeals(rows, cm), period, { phoneCols: cm.phoneIdx.length });
+    return pdBuildReport(out.results, out.diag, cm, period);
+  }
+  // Сообщение от воркера {type:'report', ...} → готовый объект отчёта.
+  function pdWorkerReport(m) {
+    if (m.error === 'MISSING') return { error: 'Не найдены обязательные колонки: ' + (m.missing || []).map(k => PD_COL_LABELS[k] || k).join(', ') + '. Задайте их в «Маппинг колонок» ниже.', missing: m.missing, cm: m.cm };
+    if (m.error) return { error: m.error };
+    return pdBuildReport(m.results, m.diag, m.cm, PD.period);
+  }
+  // Ленивое создание воркера (один раз). null → работаем на главном потоке.
+  function pdWorker() {
+    if (!PD.workerInit) {
+      PD.workerInit = true;
+      try {
+        PD.worker = new Worker('js/pedestrian-worker.js?v=3');
+        PD.worker.onmessage = pdOnWorkerMsg;
+        PD.worker.onerror = () => { PD.worker = null; };            // → fallback на главный поток
+      } catch (e) { PD.worker = null; }
+    }
+    return PD.worker;
+  }
+  function pdOnWorkerMsg(e) {
+    const m = e.data || {}; const box = document.getElementById('pd-report');
+    if (m.type === 'loaded') {
+      PD.header = m.header || []; PD.hasLoaded = true;
+      PD.colMap = window.PDLib ? window.PDLib.detectColumns(PD.header) : PD.colMap;
+      if (box) box.innerHTML = '<div class="gs-loading">Анализирую…</div>';
+      if (PD.worker) PD.worker.postMessage({ cmd: 'analyze', period: PD.period, colMap: PD.colMap });
+      return;
+    }
+    if (m.type === 'report') { PD.report = pdWorkerReport(m); if (box) { box.innerHTML = pdReportHtml(PD.report); pdBindReport(); } return; }
+    if (m.type === 'error') { if (box) box.innerHTML = `<div class="gs-err">Ошибка: ${esc(m.error)}</div>`; }
   }
 
   function pdCardHtml(r, idx) {
@@ -1734,7 +1700,7 @@
     return `<div class="fv-card pd-card ${r.status}">
       <div class="fv-card-head" role="button" tabindex="0">
         <span class="fv-num">${idx + 1}</span>
-        <span class="fv-src">${esc(ped.cityVyd || ped.resp || '—')} · ${pdFmt(ped.visit, ped.visitRaw)}</span>
+        <span class="fv-src">${esc(ped.cityVyd || ped.respCity || ped.resp || '—')} · ${pdFmt(ped.visit, ped.visitRaw)}</span>
         ${badge}<span class="gs-caret"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </div>
       <div class="pd-body">
@@ -1753,7 +1719,7 @@
       return r.crm.some(c => (!f.crmResp || (c.crmResp || c.resp) === f.crmResp) && (!f.minDays || c.days >= +f.minDays));
     };
     const list = rep.results.filter(r => {
-      if (f.city && (r.ped.cityVyd || r.ped.resp) !== f.city) return false;
+      if (f.city && (r.ped.cityVyd || r.ped.respCity || r.ped.resp) !== f.city) return false;
       if (f.found && r.status !== f.found) return false;
       if (f.q) { const qd = f.q.replace(/\D/g, ''); const idHit = String(r.ped.id).includes(f.q.trim()); const phHit = qd.length >= 3 && r.ped.phones.some(p => p.includes(qd)); if (!idHit && !phHit) return false; }
       if (!crmOk(r)) return false;
@@ -1765,23 +1731,52 @@
     return '<div class="gs-empty">Ничего не найдено по фильтрам.</div>';
   }
 
+  // Ручной маппинг колонок CSV (§5). needsAttention=true → раскрыт (нет обяз. колонок).
+  function pdMappingHtml(header, needsAttention) {
+    const cm = PD.colMap || {};
+    const opt = sel => ['<option value="-1">— не задано —</option>'].concat(header.map((h, i) => `<option value="${i}"${(sel === i) ? ' selected' : ''}>${esc(String(h || '') || ('колонка ' + i))}</option>`)).join('');
+    const fields = [['id', 'ID сделки *'], ['resp', 'Ответственный *'], ['closed', 'Дата закрытия *'], ['visit', 'Дата визита *'], ['name', 'Название'], ['stage', 'Этап'], ['reason', 'Причина закрытия'], ['success', 'Успешное закрытие'], ['cityVyd', 'Город Выдачи'], ['crmResp', 'CRM Ответственный']];
+    const rowsHtml = fields.map(([k, l]) => `<label class="pd-map-row"><span>${l}</span><select data-pdmap="${k}">${opt(cm[k])}</select></label>`).join('');
+    const phoneChecks = header.map((h, i) => { const hh = String(h || ''); if (!/телефон|phone/i.test(hh)) return ''; const on = (cm.phoneIdx || []).includes(i); return `<label class="pd-map-ph"><input type="checkbox" data-pdphone="${i}"${on ? ' checked' : ''}> ${esc(hh)}</label>`; }).join('');
+    return `<details class="pd-map"${needsAttention ? ' open' : ''}><summary>Маппинг колонок${needsAttention ? ' — задайте обязательные (*)' : ''}</summary>
+      <div class="pd-map-grid">${rowsHtml}</div>
+      <div class="pd-map-phlbl">Телефонные колонки (можно несколько):</div>
+      <div class="pd-map-phs">${phoneChecks || '<i>телефонных колонок не найдено</i>'}</div>
+      <button class="pd-map-apply" type="button">Пересчитать</button>
+    </details>`;
+  }
+  // Диагностика качества данных (§6), отдельно от бизнес-KPI.
+  function pdDiagHtml(d) {
+    if (!d) return '';
+    const cell = (n, l) => `<div class="pd-diag-c"><span class="pd-diag-n">${n}</span><span class="pd-diag-l">${l}</span></div>`;
+    const unk = (d.unknownResp || []).slice(0, 15).map(u => `${esc(u.v)}${u.like ? ' ⚠' : ''} (${u.c})`).join(', ');
+    const ex = Object.entries(d.exReasons || {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${esc(k)}: ${v}`).join(' · ');
+    return `<details class="pd-diag"><summary>Диагностика качества данных</summary>
+      <div class="pd-diag-grid">${cell(d.totalRows, 'строк')}${cell(d.noId, 'без ID')}${cell(d.badVisit, 'битая дата визита')}${cell(d.badClose, 'битая дата закрытия')}${cell(d.noPhone, 'пеших без тел.')}${cell(d.phoneCols, 'тел. колонок')}${cell(d.excludedQuality, 'искл. по качеству')}</div>
+      ${unk ? `<div class="pd-diag-sub"><b>Ответственные с визитом, не распознаны как город:</b> ${unk}<span class="pd-diag-hint"> (⚠ похоже на город — проверьте)</span></div>` : ''}
+      ${ex ? `<div class="pd-diag-sub"><b>Причины отсева старых сделок:</b> ${ex}</div>` : ''}
+    </details>`;
+  }
+
   function pdReportHtml(rep) {
     if (!rep) return '';
-    if (rep.error) return `<div class="gs-empty">${esc(rep.error)}</div>`;
+    if (rep.error) return `<div class="gs-err">${esc(rep.error)}</div>` + (PD.header ? pdMappingHtml(PD.header, true) : '');
     const k = rep.kpi, chip = (n, l) => `<div class="pd-kpi"><div class="pd-kpi-n">${n}</div><div class="pd-kpi-l">${l}</div></div>`;
     const cityRows = rep.byCity.map(c => `<tr><td>${esc(c.city)}</td><td>${c.total}</td><td>${c.found}</td><td>${c.pct}%</td></tr>`).join('');
-    const cities = [...new Set(rep.results.map(r => r.ped.cityVyd || r.ped.resp).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru'));
+    const cities = [...new Set(rep.results.map(r => r.ped.cityVyd || r.ped.respCity || r.ped.resp).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru'));
     const cityOpts = ['<option value="">Все города</option>'].concat(cities.map(c => `<option value="${esc(c)}"${PD.filters.city === c ? ' selected' : ''}>${esc(c)}</option>`)).join('');
     const crmResps = [...new Set(rep.results.flatMap(r => r.crm.map(c => c.crmResp || c.resp)).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru'));
     const crmRespOpts = ['<option value="">Все CRM-менеджеры</option>'].concat(crmResps.map(c => `<option value="${esc(c)}"${PD.filters.crmResp === c ? ' selected' : ''}>${esc(c)}</option>`)).join('');
-    const colSummary = rep.cols ? `<details class="pd-cols"><summary>Определённые колонки</summary><div class="pd-cols-body">${Object.entries(rep.cols).map(([k, v]) => `<span><b>${esc(k)}:</b> ${v ? esc(String(v)) : '<i>не найдено</i>'}</span>`).join('')}</div></details>` : '';
+    const warnHtml = (rep.warn && rep.warn.length) ? `<div class="pd-warn">⚠ ${rep.warn.map(esc).join('<br>⚠ ')}</div>` : '';
     return `
       <div class="pd-kpis">
         ${chip(k.totalRows, 'строк в CSV')}${chip(k.pedestrian, 'пеших за период')}${chip(k.withPhone, 'с валид. тел.')}
         ${chip(k.found, 'найдено CRM')}${chip(k.none, 'без CRM')}${chip(k.pct + '%', 'доля с CRM')}
         ${chip(k.clients, 'уник. клиентов')}${chip(k.multi, 'неск. CRM')}
       </div>
-      ${colSummary}
+      ${warnHtml}
+      ${PD.header ? pdMappingHtml(PD.header, false) : ''}
+      ${pdDiagHtml(rep.diag)}
       ${cityRows ? `<details class="pd-city-det"><summary class="pd-city-title">По городам</summary><div class="pd-city-wrap"><table class="pd-city"><thead><tr><th>Город</th><th>Пеших</th><th>Найдено</th><th>%</th></tr></thead><tbody>${cityRows}</tbody></table></div></details>` : ''}
       <div class="pd-filters">
         <select id="pd-f-found">
@@ -1805,7 +1800,7 @@
     const out = [head];
     results.filter(r => r.status !== 'check').forEach(r => {
       const p = r.crm[0];
-      out.push([r.ped.id, pdFmt(r.ped.visit, r.ped.visitRaw), r.ped.cityVyd || r.ped.resp, r.ped.phones.map(fmtPhone).join(' '),
+      out.push([r.ped.id, pdFmt(r.ped.visit, r.ped.visitRaw), r.ped.cityVyd || r.ped.respCity || r.ped.resp, r.ped.phones.map(fmtPhone).join(' '),
         p ? p.id : '', p ? (p.crmResp || p.resp) : '', p ? pdFmt(p.closed, p.closedRaw) : '', p ? fmtPhone(p.matchPhone) : '', p ? p.days : '', r.crm.length]);
     });
     const csv = out.map(row => row.map(c => { const s = String(c == null ? '' : c); return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(',')).join('\r\n');
@@ -1816,10 +1811,16 @@
   }
 
   function pdReanalyze() {
-    const box = document.getElementById('pd-report'); if (!PD.rows || !box) return;
+    const box = document.getElementById('pd-report'); if (!box) return;
+    if (PD.worker && PD.hasLoaded) {                              // воркер: пере-анализ из кеша строк
+      box.innerHTML = '<div class="gs-loading">Анализирую…</div>';
+      PD.worker.postMessage({ cmd: 'analyze', period: PD.period, colMap: PD.colMap });
+      return;
+    }
+    if (!PD.rows) return;                                         // fallback главный поток
     box.innerHTML = '<div class="gs-loading">Анализирую…</div>';
     setTimeout(() => {
-      try { PD.report = pdAnalyze(PD.rows, PD.period); box.innerHTML = pdReportHtml(PD.report); pdBindReport(); }
+      try { PD.report = pdAnalyzeMain(PD.rows, PD.period, PD.colMap); box.innerHTML = pdReportHtml(PD.report); pdBindReport(); }
       catch (e) { box.innerHTML = `<div class="gs-err">Ошибка: ${esc((e && e.message) || e)}</div>`; }
     }, 30);
   }
@@ -1843,7 +1844,18 @@
     if (md && !md._pdb) { md._pdb = 1; md.addEventListener('input', () => { PD.filters.minDays = md.value; pdRerenderList(); }); }
     if (mc && !mc._pdb) { mc._pdb = 1; mc.addEventListener('input', () => { PD.filters.minCrm = mc.value; pdRerenderList(); }); }
     if (exp && !exp._pdb) { exp._pdb = 1; exp.addEventListener('click', () => pdExportCsv(PD.report ? PD.report.results : [])); }
-    if (box && !box._pdExpand) { box._pdExpand = 1; box.addEventListener('click', e => { if (e.target.closest('.fv-deal, a, button, select, input')) return; const h = e.target.closest('.fv-card-head'); if (h && h.parentElement) h.parentElement.classList.toggle('expanded'); }); }
+    // Маппинг колонок → «Пересчитать»: собираем colMap из селектов/чекбоксов и пере-анализируем.
+    const apply = document.querySelector('.pd-map-apply');
+    if (apply && !apply._pdb) {
+      apply._pdb = 1;
+      apply.addEventListener('click', () => {
+        const cm = { phoneIdx: [] };
+        document.querySelectorAll('[data-pdmap]').forEach(s => { const v = +s.value; cm[s.dataset.pdmap] = (v >= 0) ? v : -1; });
+        document.querySelectorAll('[data-pdphone]:checked').forEach(c => cm.phoneIdx.push(+c.dataset.pdphone));
+        PD.colMap = cm; pdReanalyze();
+      });
+    }
+    if (box && !box._pdExpand) { box._pdExpand = 1; box.addEventListener('click', e => { if (e.target.closest('.fv-deal, a, button, select, input, summary, .pd-map, .pd-diag')) return; const h = e.target.closest('.fv-card-head'); if (h && h.parentElement) h.parentElement.classList.toggle('expanded'); }); }
   }
 
   window.renderPedestrianTab = function renderPedestrianTab() {
@@ -1882,10 +1894,20 @@
         const file = e.target.files && e.target.files[0]; if (!file) return;
         PD.fileName = file.name;
         const lbl = document.querySelector('#pd-drop .gs-drop-lbl'); if (lbl) lbl.textContent = file.name;
-        const box = document.getElementById('pd-report'); if (box) box.innerHTML = '<div class="gs-loading">Читаю файл…</div>';
+        const box = document.getElementById('pd-report'); if (box) box.innerHTML = '<div class="gs-loading">Читаю и анализирую файл…</div>';
         try {
-          const text = await (file.text ? file.text() : new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(fr.error); fr.readAsText(file); }));
-          PD.rows = pdParseCSV(text); pdReanalyze();
+          const w = pdWorker();
+          if (w) {                                               // Читаем в ArrayBuffer (async, ~20мс) и отдаём
+            PD.rows = null; PD.hasLoaded = false; PD.colMap = null; // воркеру zero-copy (transfer). Декод+парсинг
+            const buf = await file.arrayBuffer();                //  40+ МБ идут в воркере → главный поток не виснет.
+            w.postMessage({ cmd: 'load', buffer: buf }, [buf]);
+          } else {                                               // fallback: главный поток
+            const text = await (file.text ? file.text() : new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(fr.error); fr.readAsText(file); }));
+            PD.rows = pdParseCSV(text);
+            PD.header = (PD.rows && PD.rows.length) ? PD.rows[0] : null;
+            PD.colMap = (PD.header && window.PDLib) ? window.PDLib.detectColumns(PD.header) : null;
+            pdReanalyze();
+          }
         } catch (err) { if (box) box.innerHTML = `<div class="gs-err">Ошибка: ${esc((err && err.message) || err)}</div>`; }
       });
     }

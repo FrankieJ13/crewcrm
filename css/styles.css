@@ -10279,6 +10279,25 @@ body.light .adj-chip.on, body.tiffany .adj-chip.on { color:#fff; }
 .pd-crm-meta { font-size:11px; color:var(--txt2); margin-top:2px; }
 .pd-why { font-size:11px; color:var(--txt3); margin-top:3px; line-height:1.4; }
 .pd-empty2 { font-size:12px; color:var(--txt3); padding:2px 0; }
+/* Маппинг колонок / диагностика / предупреждения */
+.pd-warn { font-size:11px; color:#b45309; background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.4); border-radius:10px; padding:7px 10px; margin:6px 0; line-height:1.5; }
+.pd-map, .pd-diag { font-size:11px; margin:6px 0; border:1px solid var(--line2); border-radius:10px; padding:6px 10px; background:var(--bg2); color:var(--txt3); }
+.pd-map > summary, .pd-diag > summary { cursor:pointer; font-weight:700; color:var(--txt2); }
+.pd-map-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:6px 12px; margin-top:8px; }
+.pd-map-row { display:flex; align-items:center; gap:6px; justify-content:space-between; }
+.pd-map-row > span { color:var(--txt2); white-space:nowrap; }
+.pd-map-row select { flex:1; min-width:0; font-size:11px; padding:3px 5px; border:1px solid var(--line2); border-radius:6px; background:var(--bg3); color:var(--txt); }
+.pd-map-phlbl { color:var(--txt2); font-weight:700; margin:8px 0 4px; }
+.pd-map-phs { display:flex; flex-wrap:wrap; gap:4px 14px; }
+.pd-map-ph { display:inline-flex; align-items:center; gap:4px; color:var(--txt); }
+.pd-map-apply { margin-top:8px; font-size:11px; font-weight:700; color:#fff; background:#f97316; border:none; border-radius:8px; padding:6px 14px; cursor:pointer; }
+.pd-diag-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(88px,1fr)); gap:6px; margin-top:8px; }
+.pd-diag-c { text-align:center; border:1px solid var(--line2); border-radius:8px; padding:5px; background:var(--bg3); }
+.pd-diag-n { display:block; font-family:'Unbounded',sans-serif; font-size:15px; font-weight:800; color:var(--txt); }
+.pd-diag-l { font-size:9px; color:var(--txt3); }
+.pd-diag-sub { margin-top:8px; color:var(--txt2); line-height:1.5; }
+.pd-diag-sub b { color:var(--txt); }
+.pd-diag-hint { color:var(--txt3); }
 .gs-sec-title { font-family:'Unbounded',sans-serif; font-size:11px; font-weight:800; color:var(--txt); letter-spacing:.03em;
   display:flex; align-items:center; gap:8px; margin-top:6px; }
 .gs-sec-title.miss { color:var(--red); } .gs-sec-title.na { color:var(--txt3); }

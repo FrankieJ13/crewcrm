@@ -344,7 +344,7 @@ function toggleHmbMonth(e) {
     const btn = document.createElement('button');
     btn.className = 'hmb-item hmb-sub-item';
     const isActive = suffix === currentSuffix;
-    btn.innerHTML = `<span style="font-family:'Unbounded',sans-serif;font-size:11px;font-weight:800;min-width:20px;${isActive?'color:var(--acc)':''}">${mm}</span><span style="${isActive?'color:var(--acc)':''}">${getMonthName(suffix)}</span>${isActive?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>':''}`;
+    btn.innerHTML = `<span style="${isActive?'color:var(--acc)':''}">${getMonthName(suffix)}</span>${isActive?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>':''}`;
     btn.onclick = () => { setCurrentMonth(suffix); closeHamburger(); };
     sub.appendChild(btn);
   });
@@ -9965,7 +9965,7 @@ function showMonthDropdown() {
   months.forEach(m => {
     const btn = document.createElement('button');
     const isActive = m.suffix === currentSuffix;
-    btn.innerHTML = `<span style="font-family:'Unbounded',sans-serif;font-size:12px;font-weight:800;min-width:22px;text-align:center;${isActive?'color:var(--acc)':''}">${m.num}</span><span style="flex:1;${isActive?'color:var(--acc)':''}">${m.name}</span>${isActive?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>':''}`;
+    btn.innerHTML = `<span style="flex:1;${isActive?'color:var(--acc)':''}">${m.name}</span>${isActive?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>':''}`;
     btn.style.cssText = 'display:flex;align-items:center;gap:8px;';
     btn.onclick = () => { setCurrentMonth(m.suffix); dropdown.remove(); };
     dropdown.appendChild(btn);

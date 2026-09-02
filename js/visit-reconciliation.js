@@ -1598,7 +1598,10 @@
      не раньше визита и не позже, и не раньше чем визит−4 календарных месяца.
      Город для отображения/разбивки — «Город Выдачи». Индекс по телефону (O(n)).
      ══════════════════════════════════════════════════════════════════════ */
-  const PD = { fileName: '', rows: null, report: null, period: { from: '', to: '' }, filters: { city: '', found: '', q: '' } };
+  // filters.found по умолчанию 'found' — показываем только НАЙДЕННЫЕ совпадения
+  // (смысл инструмента). Пешие без CRM/на проверку — по фильтру категории.
+  const PD = { fileName: '', rows: null, report: null, period: { from: '', to: '' },
+    filters: { city: '', found: 'found', q: '', crmResp: '', minDays: '', minCrm: '' } };
   const PD_CITIES = ['пермь','челябинск','барнаул','новосибирск','тюмень','омск','томск','красноярск','оренбург','кемерово','новокузнецк','сургут'];
   const PD_CITY_SET = new Set(PD_CITIES);
 
@@ -1658,6 +1661,11 @@
 
   function pdAnalyze(rows, period) {
     if (!rows || rows.length < 2) return { error: 'Пустой файл.' };
+    const C = pdCols(rows[0]); const hn = i => i != null ? String(rows[0][i] || '') : '';
+    const colSummary = {
+      'ID': hn(C.id), 'Название': hn(C.name), 'Ответственный': hn(C.resp), 'Дата закрытия': hn(C.closed),
+      'Дата визита': hn(C.visit), 'Город Выдачи': hn(C.cityVyd), 'Телефонных колонок': C.phoneIdx.length,
+    };
     const deals = pdExtractDeals(rows);
     const byPhone = new Map();                                    // индекс: телефон → сделки
     deals.forEach(d => d.phones.forEach(p => { if (!byPhone.has(p)) byPhone.set(p, []); byPhone.get(p).push(d); }));
@@ -1691,7 +1699,7 @@
     [...found, ...none].forEach(r => { const c = r.ped.cityVyd || r.ped.resp || '—'; (cityMap[c] || (cityMap[c] = { city: c, total: 0, found: 0 })).total++; if (r.status === 'found') cityMap[c].found++; });
     const byCity = Object.values(cityMap).map(c => ({ ...c, pct: c.total ? Math.round(c.found / c.total * 100) : 0 })).sort((a, b) => b.total - a.total);
     return {
-      results, byCity, period,
+      results, byCity, period, cols: colSummary,
       kpi: {
         totalRows: rows.length - 1, pedestrian: results.filter(r => r.inPeriod).length, withPhone,
         found: found.length, none: none.length, pct: withPhone ? Math.round(found.length / withPhone * 100) : 0,
@@ -1735,13 +1743,22 @@
 
   function pdListHtml(rep) {
     const f = PD.filters;
+    const crmOk = r => {
+      if (!f.crmResp && !f.minDays && !f.minCrm) return true;   // CRM-фильтры не заданы
+      if (f.minCrm && r.crm.length < +f.minCrm) return false;
+      return r.crm.some(c => (!f.crmResp || (c.crmResp || c.resp) === f.crmResp) && (!f.minDays || c.days >= +f.minDays));
+    };
     const list = rep.results.filter(r => {
       if (f.city && (r.ped.cityVyd || r.ped.resp) !== f.city) return false;
       if (f.found && r.status !== f.found) return false;
       if (f.q) { const qd = f.q.replace(/\D/g, ''); const idHit = String(r.ped.id).includes(f.q.trim()); const phHit = qd.length >= 3 && r.ped.phones.some(p => p.includes(qd)); if (!idHit && !phHit) return false; }
+      if (!crmOk(r)) return false;
       return true;
     });
-    return list.length ? list.map((r, i) => pdCardHtml(r, i)).join('') : '<div class="gs-empty">Ничего не найдено по фильтрам.</div>';
+    if (list.length) return list.map((r, i) => pdCardHtml(r, i)).join('');
+    if (f.found === 'found' && !f.city && !f.q && !f.crmResp && !f.minDays && !f.minCrm)
+      return `<div class="gs-empty">За период нет пеших с предыдущей закрытой CRM-сделкой. Всего пеших: <b>${rep.kpi.pedestrian}</b>. Выберите «Все категории» / «Без CRM», чтобы посмотреть остальные.</div>`;
+    return '<div class="gs-empty">Ничего не найдено по фильтрам.</div>';
   }
 
   function pdReportHtml(rep) {
@@ -1751,21 +1768,28 @@
     const cityRows = rep.byCity.map(c => `<tr><td>${esc(c.city)}</td><td>${c.total}</td><td>${c.found}</td><td>${c.pct}%</td></tr>`).join('');
     const cities = [...new Set(rep.results.map(r => r.ped.cityVyd || r.ped.resp).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru'));
     const cityOpts = ['<option value="">Все города</option>'].concat(cities.map(c => `<option value="${esc(c)}"${PD.filters.city === c ? ' selected' : ''}>${esc(c)}</option>`)).join('');
+    const crmResps = [...new Set(rep.results.flatMap(r => r.crm.map(c => c.crmResp || c.resp)).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru'));
+    const crmRespOpts = ['<option value="">Все CRM-менеджеры</option>'].concat(crmResps.map(c => `<option value="${esc(c)}"${PD.filters.crmResp === c ? ' selected' : ''}>${esc(c)}</option>`)).join('');
+    const colSummary = rep.cols ? `<details class="pd-cols"><summary>Определённые колонки</summary><div class="pd-cols-body">${Object.entries(rep.cols).map(([k, v]) => `<span><b>${esc(k)}:</b> ${v ? esc(String(v)) : '<i>не найдено</i>'}</span>`).join('')}</div></details>` : '';
     return `
       <div class="pd-kpis">
         ${chip(k.totalRows, 'строк в CSV')}${chip(k.pedestrian, 'пеших за период')}${chip(k.withPhone, 'с валид. тел.')}
         ${chip(k.found, 'найдено CRM')}${chip(k.none, 'без CRM')}${chip(k.pct + '%', 'доля с CRM')}
         ${chip(k.clients, 'уник. клиентов')}${chip(k.multi, 'неск. CRM')}
       </div>
+      ${colSummary}
       ${cityRows ? `<div class="pd-city-title">По городам</div><div class="pd-city-wrap"><table class="pd-city"><thead><tr><th>Город</th><th>Пеших</th><th>Найдено</th><th>%</th></tr></thead><tbody>${cityRows}</tbody></table></div>` : ''}
       <div class="pd-filters">
-        <select id="pd-f-city">${cityOpts}</select>
         <select id="pd-f-found">
           <option value="">Все категории</option>
           <option value="found"${PD.filters.found === 'found' ? ' selected' : ''}>Найдено CRM</option>
           <option value="none"${PD.filters.found === 'none' ? ' selected' : ''}>Без CRM</option>
           <option value="check"${PD.filters.found === 'check' ? ' selected' : ''}>Проверить</option>
         </select>
+        <select id="pd-f-city">${cityOpts}</select>
+        <select id="pd-f-crmresp">${crmRespOpts}</select>
+        <input id="pd-f-mindays" class="pd-num" type="number" min="0" placeholder="Дней ≥" value="${esc(PD.filters.minDays || '')}">
+        <input id="pd-f-mincrm" class="pd-num" type="number" min="1" placeholder="CRM ≥" value="${esc(PD.filters.minCrm || '')}">
         <input id="pd-f-q" type="search" placeholder="Телефон или ID" value="${esc(PD.filters.q || '')}">
         <button id="pd-export" class="pd-export-btn" type="button">Экспорт CSV</button>
       </div>
@@ -1810,6 +1834,10 @@
     if (city && !city._pdb) { city._pdb = 1; city.addEventListener('change', () => { PD.filters.city = city.value; pdRerenderList(); }); }
     if (found && !found._pdb) { found._pdb = 1; found.addEventListener('change', () => { PD.filters.found = found.value; pdRerenderList(); }); }
     if (q && !q._pdb) { q._pdb = 1; q.addEventListener('input', () => { PD.filters.q = q.value; pdRerenderList(); }); }
+    const cr = document.getElementById('pd-f-crmresp'), md = document.getElementById('pd-f-mindays'), mc = document.getElementById('pd-f-mincrm');
+    if (cr && !cr._pdb) { cr._pdb = 1; cr.addEventListener('change', () => { PD.filters.crmResp = cr.value; pdRerenderList(); }); }
+    if (md && !md._pdb) { md._pdb = 1; md.addEventListener('input', () => { PD.filters.minDays = md.value; pdRerenderList(); }); }
+    if (mc && !mc._pdb) { mc._pdb = 1; mc.addEventListener('input', () => { PD.filters.minCrm = mc.value; pdRerenderList(); }); }
     if (exp && !exp._pdb) { exp._pdb = 1; exp.addEventListener('click', () => pdExportCsv(PD.report ? PD.report.results : [])); }
     if (box && !box._pdExpand) { box._pdExpand = 1; box.addEventListener('click', e => { if (e.target.closest('.fv-deal, a, button, select, input')) return; const h = e.target.closest('.fv-card-head'); if (h && h.parentElement) h.parentElement.classList.toggle('expanded'); }); }
   }

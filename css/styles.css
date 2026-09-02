@@ -10252,6 +10252,12 @@ body.light .adj-chip.on, body.tiffany .adj-chip.on { color:#fff; }
 .pd-filters #pd-f-q { flex:1; min-width:120px; }
 .pd-export-btn { font-size:12px; font-weight:700; color:#fff; background:#f97316; border:none; border-radius:8px; padding:7px 14px; cursor:pointer; margin-left:auto; }
 .pd-export-btn:hover { filter:brightness(1.08); }
+.pd-num { width:82px; flex:0 0 auto; }
+.pd-cols { font-size:11px; margin:6px 0 2px; color:var(--txt3); border:1px solid var(--line2); border-radius:10px; padding:6px 10px; background:var(--bg2); }
+.pd-cols summary { cursor:pointer; font-weight:700; color:var(--txt2); }
+.pd-cols-body { display:flex; flex-wrap:wrap; gap:4px 16px; margin-top:6px; }
+.pd-cols-body b { color:var(--txt2); font-weight:700; }
+.pd-cols-body i { color:var(--red); font-style:normal; }
 .pd-card .fv-num { background:#f97316; }
 .pd-badge { font-size:10px; font-weight:700; border-radius:10px; padding:2px 8px; margin-left:auto; }
 .pd-badge.ok { color:#059669; background:rgba(16,185,129,.14); border:1px solid rgba(16,185,129,.5); }

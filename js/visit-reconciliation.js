@@ -1640,6 +1640,7 @@
     return {
       id: pick('ID'), name: pick('Название сделки'), resp: pick('Ответственный'),
       closed: pick('Дата закрытия'), stage: pick('Этап сделки'), visit: pick('Дата визита'),
+      reason: pick('Причина закрытия карточки'), success: pick('Успешное закрытие карточки'),
       cityVyd: pick('Город Выдачи'), crmResp: pick('CRM Ответственный'), phoneIdx,
     };
   }
@@ -1653,6 +1654,7 @@
         id: cell(row, C.id), name: cell(row, C.name), resp: cell(row, C.resp),
         closedRaw: cell(row, C.closed), closed: parseDMY(cell(row, C.closed)),   // «не закрыта» → null
         stage: cell(row, C.stage), visitRaw: cell(row, C.visit), visit: parseDMY(cell(row, C.visit)),
+        reason: cell(row, C.reason), success: cell(row, C.success),
         cityVyd: cell(row, C.cityVyd), crmResp: cell(row, C.crmResp), phones: [...ph],
       });
     }
@@ -1664,7 +1666,7 @@
     const C = pdCols(rows[0]); const hn = i => i != null ? String(rows[0][i] || '') : '';
     const colSummary = {
       'ID': hn(C.id), 'Название': hn(C.name), 'Ответственный': hn(C.resp), 'Дата закрытия': hn(C.closed),
-      'Дата визита': hn(C.visit), 'Город Выдачи': hn(C.cityVyd), 'Телефонных колонок': C.phoneIdx.length,
+      'Дата визита': hn(C.visit), 'Причина закрытия': hn(C.reason), 'Город Выдачи': hn(C.cityVyd), 'Телефонных колонок': C.phoneIdx.length,
     };
     const deals = pdExtractDeals(rows);
     const byPhone = new Map();                                    // индекс: телефон → сделки
@@ -1681,6 +1683,8 @@
       const cand = new Map(); ped.phones.forEach(p => (byPhone.get(p) || []).forEach(c => { if (!cand.has(c.id)) cand.set(c.id, c); }));
       const crm = [...cand.values()].filter(c =>
         c.id !== ped.id && c.closed && !c.visitRaw &&
+        !c.success &&                                            // не успешная сделка (была продажа)
+        !/дубль|хоз/i.test(c.reason) &&                          // не ХОЗ / ДУБЛЬ (тех. закрытие)
         pdToJs(c.closed).getTime() <= visitMs && pdToJs(c.closed).getTime() >= winStart &&
         c.phones.some(p => ped.phones.includes(p))
       ).map(c => ({ ...c, matchPhone: c.phones.find(p => ped.phones.includes(p)), days: pdDays(ped.visit, c.closed) }))
@@ -1719,8 +1723,8 @@
       crmHtml = `<div class="pd-crm-lbl">Старые CRM-сделки (${r.crm.length})</div>` + r.crm.map((c, i) => `
         <div class="pd-crm${i === 0 ? ' primary' : ''}">
           <div class="pd-crm-top">${link(c.id)}${i === 0 ? '<span class="pd-main">основное</span>' : ''}<span class="pd-days">${c.days} дн.</span></div>
-          <div class="pd-crm-meta">Закрыта ${pdFmt(c.closed, c.closedRaw)} · ${esc(c.crmResp || c.resp || '—')}${c.stage ? ' · ' + esc(c.stage) : ''}</div>
-          <div class="pd-why">Совпадение по ${fmtPhone(c.matchPhone)}. Закрыта ${pdFmt(c.closed)} без визита, клиент приехал ${pdFmt(ped.visit)} — ${c.days} дн., в окне 4 мес.</div>
+          <div class="pd-crm-meta">Закрыта ${pdFmt(c.closed, c.closedRaw)} · ${esc(c.crmResp || c.resp || '—')}${c.reason ? ' · ' + esc(c.reason) : (c.stage ? ' · ' + esc(c.stage) : '')}</div>
+          <div class="pd-why">Совпадение по ${fmtPhone(c.matchPhone)}. Эта CRM-сделка закрыта ${pdFmt(c.closed)} без визита; позже клиент пришёл сам — пешая #${esc(ped.id)} от ${pdFmt(ped.visit)}, через ${c.days} дн. (в окне 4 мес.).</div>
         </div>`).join('');
     } else if (r.status === 'none') {
       crmHtml = '<div class="pd-empty2">За 4 месяца до визита нет закрытых CRM-сделок с этим телефоном.</div>';
@@ -1778,7 +1782,7 @@
         ${chip(k.clients, 'уник. клиентов')}${chip(k.multi, 'неск. CRM')}
       </div>
       ${colSummary}
-      ${cityRows ? `<div class="pd-city-title">По городам</div><div class="pd-city-wrap"><table class="pd-city"><thead><tr><th>Город</th><th>Пеших</th><th>Найдено</th><th>%</th></tr></thead><tbody>${cityRows}</tbody></table></div>` : ''}
+      ${cityRows ? `<details class="pd-city-det"><summary class="pd-city-title">По городам</summary><div class="pd-city-wrap"><table class="pd-city"><thead><tr><th>Город</th><th>Пеших</th><th>Найдено</th><th>%</th></tr></thead><tbody>${cityRows}</tbody></table></div></details>` : ''}
       <div class="pd-filters">
         <select id="pd-f-found">
           <option value="">Все категории</option>

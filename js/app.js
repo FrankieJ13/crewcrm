@@ -1519,6 +1519,8 @@ function getPresencePageLabel() {
   const effectiveDohodDept = isCeo ? S.dohodTab : roleDept;
   if (document.getElementById('scr-export')?.classList.contains('on') || isVisible('export-modal-overlay')) return 'Экспорт отчёта';
   if (document.getElementById('scr-repeats')?.classList.contains('on') || isVisible('repeats-overlay')) return 'Поиск повторов';
+  if (document.getElementById('scr-fakevisits')?.classList.contains('on')) return 'Fake visits';
+  if (document.getElementById('scr-pedestrian')?.classList.contains('on')) return 'Пешие сделки';
   if (document.getElementById('scr-sverka')?.classList.contains('on')) return 'Сверка визитов';
   if (document.getElementById('scr-timeline')?.classList.contains('on')) return 'Timeline Leads';
   if (isVisible('guide-overlay')) return 'Гайд по проекту';

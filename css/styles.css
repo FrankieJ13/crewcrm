@@ -10243,6 +10243,8 @@ body.light .adj-chip.on, body.tiffany .adj-chip.on { color:#fff; }
 .pd-kpi-n { font-family:'Unbounded',sans-serif; font-size:18px; font-weight:800; color:var(--txt); }
 .pd-kpi-l { font-size:10px; color:var(--txt3); margin-top:2px; line-height:1.2; }
 .pd-city-title { font-family:'Unbounded',sans-serif; font-size:11px; font-weight:800; color:var(--txt); margin:10px 0 4px; }
+.pd-city-det > summary { cursor:pointer; margin:10px 0 4px; }
+.pd-city-det > summary .pd-city-title, .pd-city-det > summary.pd-city-title { margin:0; display:inline; }
 .pd-city-wrap { overflow-x:auto; }
 .pd-city { width:100%; border-collapse:collapse; font-size:12px; }
 .pd-city th { text-align:left; color:var(--txt3); font-weight:700; padding:4px 8px; border-bottom:1px solid var(--line2); font-size:10px; text-transform:uppercase; letter-spacing:.04em; }

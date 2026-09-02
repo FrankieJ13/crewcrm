@@ -1590,4 +1590,288 @@
     if (typeof window.updateFirebasePage === 'function') window.updateFirebasePage();
   };
 
+  /* ══════════════════════════════════════════════════════════════════════
+     ПОИСК ПЕШИХ СДЕЛОК — по одному CSV amoCRM (полностью локально в браузере).
+     Пешая = «Ответственный» ∈ {12 городов} (карточку создал город) + есть «Дата
+     визита» в периоде + валидный телефон. Ищем СТАРУЮ CRM-сделку того же клиента
+     (по телефону): «Дата закрытия» — реальная дата, «Дата визита» пустая, закрыта
+     не раньше визита и не позже, и не раньше чем визит−4 календарных месяца.
+     Город для отображения/разбивки — «Город Выдачи». Индекс по телефону (O(n)).
+     ══════════════════════════════════════════════════════════════════════ */
+  const PD = { fileName: '', rows: null, report: null, period: { from: '', to: '' }, filters: { city: '', found: '', q: '' } };
+  const PD_CITIES = ['пермь','челябинск','барнаул','новосибирск','тюмень','омск','томск','красноярск','оренбург','кемерово','новокузнецк','сургут'];
+  const PD_CITY_SET = new Set(PD_CITIES);
+
+  function pdDetectDelim(line) { return (String(line).split(';').length > String(line).split(',').length) ? ';' : ','; }
+  function pdParseCSV(text) {
+    text = String(text || '').replace(/^﻿/, '');
+    const delim = pdDetectDelim((text.split(/\r?\n/)[0] || ''));
+    const rows = []; let row = [], fld = '', i = 0, q = false; const n = text.length;
+    while (i < n) {
+      const c = text[i];
+      if (q) { if (c === '"') { if (text[i + 1] === '"') { fld += '"'; i += 2; continue; } q = false; i++; continue; } fld += c; i++; continue; }
+      if (c === '"') { q = true; i++; continue; }
+      if (c === delim) { row.push(fld); fld = ''; i++; continue; }
+      if (c === '\r') { i++; continue; }
+      if (c === '\n') { row.push(fld); rows.push(row); row = []; fld = ''; i++; continue; }
+      fld += c; i++;
+    }
+    if (fld.length || row.length) { row.push(fld); rows.push(row); }
+    return rows;
+  }
+
+  function pdToJs(d) { return d ? new Date(d.y, d.m - 1, d.d) : null; }
+  function pdMinusMonthsMs(d, n) { return new Date(d.y, d.m - 1 - n, d.d).getTime(); }   // 4 календ. месяца
+  function pdDays(visit, closed) { return Math.round((pdToJs(visit) - pdToJs(closed)) / 86400000); }
+  function pdFmt(d, raw) { return d ? String(d.d).padStart(2, '0') + '.' + String(d.m).padStart(2, '0') + '.' + d.y : (raw || '—'); }
+  function pdInPeriod(v, from, to) { if (!v) return false; const t = pdToJs(v).getTime(); if (from && t < pdToJs(from).getTime()) return false; if (to && t > pdToJs(to).getTime()) return false; return true; }
+  function pdMonthBounds(dt) { const y = dt.getFullYear(), m = dt.getMonth(), last = new Date(y, m + 1, 0).getDate(), p = x => String(x).padStart(2, '0'); return { from: `01.${p(m + 1)}.${y}`, to: `${p(last)}.${p(m + 1)}.${y}` }; }
+  function pdIso(s) { const m = parseDMY(s); return m ? `${m.y}-${String(m.m).padStart(2, '0')}-${String(m.d).padStart(2, '0')}` : ''; }
+  function pdDmy(iso) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? `${m[3]}.${m[2]}.${m[1]}` : ''; }
+
+  // Определение колонок (устойчиво к регистру; не по позиции).
+  function pdCols(header) {
+    const H = buildHeaderIndex(header); const lc = {}; header.forEach((h, i) => { const k = normText(h); if (k && !(k in lc)) lc[k] = i; });
+    const pick = (...names) => { for (const nm of names) { const v = (H[nm] || [])[0]; if (v != null) return v; const k = normText(nm); if (lc[k] != null) return lc[k]; } return null; };
+    const phoneIdx = header.map((h, i) => ({ h: String(h || ''), i })).filter(o => /телефон|phone/i.test(o.h) && !/линия|mango|факс|fax/i.test(o.h)).map(o => o.i);
+    return {
+      id: pick('ID'), name: pick('Название сделки'), resp: pick('Ответственный'),
+      closed: pick('Дата закрытия'), stage: pick('Этап сделки'), visit: pick('Дата визита'),
+      cityVyd: pick('Город Выдачи'), crmResp: pick('CRM Ответственный'), phoneIdx,
+    };
+  }
+  function pdExtractDeals(rows) {
+    const C = pdCols(rows[0]); const cell = (r, i) => i != null ? String(r[i] || '').trim() : '';
+    const deals = [];
+    for (let r = 1; r < rows.length; r++) {
+      const row = rows[r]; if (!row || !row.length) continue;
+      const ph = new Set(); C.phoneIdx.forEach(i => extractPhones(row[i]).forEach(p => ph.add(p)));
+      deals.push({
+        id: cell(row, C.id), name: cell(row, C.name), resp: cell(row, C.resp),
+        closedRaw: cell(row, C.closed), closed: parseDMY(cell(row, C.closed)),   // «не закрыта» → null
+        stage: cell(row, C.stage), visitRaw: cell(row, C.visit), visit: parseDMY(cell(row, C.visit)),
+        cityVyd: cell(row, C.cityVyd), crmResp: cell(row, C.crmResp), phones: [...ph],
+      });
+    }
+    return deals;
+  }
+
+  function pdAnalyze(rows, period) {
+    if (!rows || rows.length < 2) return { error: 'Пустой файл.' };
+    const deals = pdExtractDeals(rows);
+    const byPhone = new Map();                                    // индекс: телефон → сделки
+    deals.forEach(d => d.phones.forEach(p => { if (!byPhone.has(p)) byPhone.set(p, []); byPhone.get(p).push(d); }));
+    const from = period.from ? parseDMY(period.from) : null, to = period.to ? parseDMY(period.to) : null;
+    const results = [];
+    deals.forEach(ped => {
+      if (!PD_CITY_SET.has(normText(ped.resp))) return;           // пешая: Ответственный = город
+      if (!ped.visitRaw) return;
+      if (!ped.visit) { results.push({ ped, status: 'check', reason: 'дата визита не распознана', crm: [], inPeriod: false }); return; }
+      if (!pdInPeriod(ped.visit, from, to)) return;               // вне периода
+      if (!ped.phones.length) { results.push({ ped, status: 'check', reason: 'нет валидного телефона', crm: [], inPeriod: true }); return; }
+      const visitMs = pdToJs(ped.visit).getTime(), winStart = pdMinusMonthsMs(ped.visit, 4);
+      const cand = new Map(); ped.phones.forEach(p => (byPhone.get(p) || []).forEach(c => { if (!cand.has(c.id)) cand.set(c.id, c); }));
+      const crm = [...cand.values()].filter(c =>
+        c.id !== ped.id && c.closed && !c.visitRaw &&
+        pdToJs(c.closed).getTime() <= visitMs && pdToJs(c.closed).getTime() >= winStart &&
+        c.phones.some(p => ped.phones.includes(p))
+      ).map(c => ({ ...c, matchPhone: c.phones.find(p => ped.phones.includes(p)), days: pdDays(ped.visit, c.closed) }))
+       .sort((a, b) => pdToJs(b.closed) - pdToJs(a.closed));       // ближайшая к визиту — основная
+      results.push({ ped, status: crm.length ? 'found' : 'none', crm, inPeriod: true });
+    });
+    results.sort((a, b) => {
+      const av = a.ped.visit ? pdToJs(a.ped.visit).getTime() : 0, bv = b.ped.visit ? pdToJs(b.ped.visit).getTime() : 0;
+      if (bv !== av) return bv - av;                              // визит desc
+      return String(a.ped.cityVyd || a.ped.resp).localeCompare(String(b.ped.cityVyd || b.ped.resp), 'ru');
+    });
+    const found = results.filter(r => r.status === 'found'), none = results.filter(r => r.status === 'none');
+    const withPhone = found.length + none.length;
+    const clients = new Set([...found, ...none].map(r => [...r.ped.phones].sort().join(','))).size;
+    const cityMap = {};
+    [...found, ...none].forEach(r => { const c = r.ped.cityVyd || r.ped.resp || '—'; (cityMap[c] || (cityMap[c] = { city: c, total: 0, found: 0 })).total++; if (r.status === 'found') cityMap[c].found++; });
+    const byCity = Object.values(cityMap).map(c => ({ ...c, pct: c.total ? Math.round(c.found / c.total * 100) : 0 })).sort((a, b) => b.total - a.total);
+    return {
+      results, byCity, period,
+      kpi: {
+        totalRows: rows.length - 1, pedestrian: results.filter(r => r.inPeriod).length, withPhone,
+        found: found.length, none: none.length, pct: withPhone ? Math.round(found.length / withPhone * 100) : 0,
+        clients, multi: found.filter(r => r.crm.length > 1).length,
+      },
+    };
+  }
+
+  function pdCardHtml(r, idx) {
+    const ped = r.ped;
+    const badge = r.status === 'found' ? `<span class="pd-badge ok">CRM: ${r.crm.length}</span>`
+      : r.status === 'none' ? '<span class="pd-badge miss">нет CRM</span>' : '<span class="pd-badge warn">проверить</span>';
+    const link = id => id ? `<a class="fv-deal" href="${LEAD_URL}${encodeURIComponent(id)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">#${esc(id)}</a>` : '';
+    const phones = ped.phones.length ? ped.phones.map(p => `<span class="fv-tag">${fmtPhone(p)}</span>`).join('') : '<span class="fv-muted">—</span>';
+    let crmHtml;
+    if (r.status === 'found') {
+      crmHtml = `<div class="pd-crm-lbl">Старые CRM-сделки (${r.crm.length})</div>` + r.crm.map((c, i) => `
+        <div class="pd-crm${i === 0 ? ' primary' : ''}">
+          <div class="pd-crm-top">${link(c.id)}${i === 0 ? '<span class="pd-main">основное</span>' : ''}<span class="pd-days">${c.days} дн.</span></div>
+          <div class="pd-crm-meta">Закрыта ${pdFmt(c.closed, c.closedRaw)} · ${esc(c.crmResp || c.resp || '—')}${c.stage ? ' · ' + esc(c.stage) : ''}</div>
+          <div class="pd-why">Совпадение по ${fmtPhone(c.matchPhone)}. Закрыта ${pdFmt(c.closed)} без визита, клиент приехал ${pdFmt(ped.visit)} — ${c.days} дн., в окне 4 мес.</div>
+        </div>`).join('');
+    } else if (r.status === 'none') {
+      crmHtml = '<div class="pd-empty2">За 4 месяца до визита нет закрытых CRM-сделок с этим телефоном.</div>';
+    } else {
+      crmHtml = `<div class="pd-empty2">Требует проверки: ${esc(r.reason || '')}.</div>`;
+    }
+    return `<div class="fv-card pd-card ${r.status}">
+      <div class="fv-card-head" role="button" tabindex="0">
+        <span class="fv-num">${idx + 1}</span>
+        <span class="fv-src">${esc(ped.cityVyd || ped.resp || '—')} · ${pdFmt(ped.visit, ped.visitRaw)}</span>
+        ${badge}<span class="gs-caret"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+      </div>
+      <div class="pd-body">
+        <div class="fv-row"><span class="fv-k">Пешая</span><span class="fv-v">${esc(ped.name || '—')} ${link(ped.id)}</span></div>
+        <div class="fv-row"><span class="fv-k">Телефоны</span><span class="fv-v fv-tags">${phones}</span></div>
+        <div class="pd-crm-wrap">${crmHtml}</div>
+      </div>
+    </div>`;
+  }
+
+  function pdListHtml(rep) {
+    const f = PD.filters;
+    const list = rep.results.filter(r => {
+      if (f.city && (r.ped.cityVyd || r.ped.resp) !== f.city) return false;
+      if (f.found && r.status !== f.found) return false;
+      if (f.q) { const qd = f.q.replace(/\D/g, ''); const idHit = String(r.ped.id).includes(f.q.trim()); const phHit = qd.length >= 3 && r.ped.phones.some(p => p.includes(qd)); if (!idHit && !phHit) return false; }
+      return true;
+    });
+    return list.length ? list.map((r, i) => pdCardHtml(r, i)).join('') : '<div class="gs-empty">Ничего не найдено по фильтрам.</div>';
+  }
+
+  function pdReportHtml(rep) {
+    if (!rep) return '';
+    if (rep.error) return `<div class="gs-empty">${esc(rep.error)}</div>`;
+    const k = rep.kpi, chip = (n, l) => `<div class="pd-kpi"><div class="pd-kpi-n">${n}</div><div class="pd-kpi-l">${l}</div></div>`;
+    const cityRows = rep.byCity.map(c => `<tr><td>${esc(c.city)}</td><td>${c.total}</td><td>${c.found}</td><td>${c.pct}%</td></tr>`).join('');
+    const cities = [...new Set(rep.results.map(r => r.ped.cityVyd || r.ped.resp).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru'));
+    const cityOpts = ['<option value="">Все города</option>'].concat(cities.map(c => `<option value="${esc(c)}"${PD.filters.city === c ? ' selected' : ''}>${esc(c)}</option>`)).join('');
+    return `
+      <div class="pd-kpis">
+        ${chip(k.totalRows, 'строк в CSV')}${chip(k.pedestrian, 'пеших за период')}${chip(k.withPhone, 'с валид. тел.')}
+        ${chip(k.found, 'найдено CRM')}${chip(k.none, 'без CRM')}${chip(k.pct + '%', 'доля с CRM')}
+        ${chip(k.clients, 'уник. клиентов')}${chip(k.multi, 'неск. CRM')}
+      </div>
+      ${cityRows ? `<div class="pd-city-title">По городам</div><div class="pd-city-wrap"><table class="pd-city"><thead><tr><th>Город</th><th>Пеших</th><th>Найдено</th><th>%</th></tr></thead><tbody>${cityRows}</tbody></table></div>` : ''}
+      <div class="pd-filters">
+        <select id="pd-f-city">${cityOpts}</select>
+        <select id="pd-f-found">
+          <option value="">Все категории</option>
+          <option value="found"${PD.filters.found === 'found' ? ' selected' : ''}>Найдено CRM</option>
+          <option value="none"${PD.filters.found === 'none' ? ' selected' : ''}>Без CRM</option>
+          <option value="check"${PD.filters.found === 'check' ? ' selected' : ''}>Проверить</option>
+        </select>
+        <input id="pd-f-q" type="search" placeholder="Телефон или ID" value="${esc(PD.filters.q || '')}">
+        <button id="pd-export" class="pd-export-btn" type="button">Экспорт CSV</button>
+      </div>
+      <div id="pd-list" class="fv-list">${pdListHtml(rep)}</div>`;
+  }
+
+  function pdExportCsv(results) {
+    const head = ['ID пешей', 'Дата визита', 'Город', 'Телефоны', 'ID CRM', 'CRM ответственный', 'Дата закрытия', 'Совпавший телефон', 'Дней', 'Кол-во CRM'];
+    const out = [head];
+    results.filter(r => r.status !== 'check').forEach(r => {
+      const p = r.crm[0];
+      out.push([r.ped.id, pdFmt(r.ped.visit, r.ped.visitRaw), r.ped.cityVyd || r.ped.resp, r.ped.phones.map(fmtPhone).join(' '),
+        p ? p.id : '', p ? (p.crmResp || p.resp) : '', p ? pdFmt(p.closed, p.closedRaw) : '', p ? fmtPhone(p.matchPhone) : '', p ? p.days : '', r.crm.length]);
+    });
+    const csv = out.map(row => row.map(c => { const s = String(c == null ? '' : c); return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(',')).join('\r\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob); const a = document.createElement('a');
+    a.href = url; a.download = 'пешие_сделки.csv'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
+
+  function pdReanalyze() {
+    const box = document.getElementById('pd-report'); if (!PD.rows || !box) return;
+    box.innerHTML = '<div class="gs-loading">Анализирую…</div>';
+    setTimeout(() => {
+      try { PD.report = pdAnalyze(PD.rows, PD.period); box.innerHTML = pdReportHtml(PD.report); pdBindReport(); }
+      catch (e) { box.innerHTML = `<div class="gs-err">Ошибка: ${esc((e && e.message) || e)}</div>`; }
+    }, 30);
+  }
+  function pdRerenderList() { const l = document.getElementById('pd-list'); if (l && PD.report && !PD.report.error) l.innerHTML = pdListHtml(PD.report); }
+  function pdApplyPreset(p) {
+    const now = new Date();
+    if (p === 'cur') { const b = pdMonthBounds(now); PD.period = b; }
+    else if (p === 'prev') { const b = pdMonthBounds(new Date(now.getFullYear(), now.getMonth() - 1, 1)); PD.period = b; }
+    else if (p === '30') { const to = now, from = new Date(now.getTime() - 29 * 86400000); const f = d => `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`; PD.period = { from: f(from), to: f(to) }; }
+    const fi = document.getElementById('pd-from'), ti = document.getElementById('pd-to');
+    if (fi) fi.value = pdIso(PD.period.from); if (ti) ti.value = pdIso(PD.period.to);
+    pdReanalyze();
+  }
+  function pdBindReport() {
+    const city = document.getElementById('pd-f-city'), found = document.getElementById('pd-f-found'), q = document.getElementById('pd-f-q'), exp = document.getElementById('pd-export'), box = document.getElementById('pd-report');
+    if (city && !city._pdb) { city._pdb = 1; city.addEventListener('change', () => { PD.filters.city = city.value; pdRerenderList(); }); }
+    if (found && !found._pdb) { found._pdb = 1; found.addEventListener('change', () => { PD.filters.found = found.value; pdRerenderList(); }); }
+    if (q && !q._pdb) { q._pdb = 1; q.addEventListener('input', () => { PD.filters.q = q.value; pdRerenderList(); }); }
+    if (exp && !exp._pdb) { exp._pdb = 1; exp.addEventListener('click', () => pdExportCsv(PD.report ? PD.report.results : [])); }
+    if (box && !box._pdExpand) { box._pdExpand = 1; box.addEventListener('click', e => { if (e.target.closest('.fv-deal, a, button, select, input')) return; const h = e.target.closest('.fv-card-head'); if (h && h.parentElement) h.parentElement.classList.toggle('expanded'); }); }
+  }
+
+  window.renderPedestrianTab = function renderPedestrianTab() {
+    if (!PD.period.from) PD.period = pdMonthBounds(new Date());
+    return `
+      <section class="fv-page pd-page">
+        <div class="fv-head">
+          <p class="fv-kicker">Аналитика</p>
+          <h1 class="fv-title">Поиск пеших сделок</h1>
+          <p class="fv-sub">Клиент был закрыт CRM без визита, а в течение 4 месяцев сам приехал в город и создал новую сделку. Матч по телефону, внутри одного CSV amoCRM.</p>
+          <p class="pd-local">🔒 Файл обрабатывается локально в браузере и никуда не загружается.</p>
+        </div>
+        <div class="pd-period">
+          <div class="pd-presets">
+            <button class="pd-preset" type="button" data-preset="cur">Текущий месяц</button>
+            <button class="pd-preset" type="button" data-preset="prev">Предыдущий</button>
+            <button class="pd-preset" type="button" data-preset="30">30 дней</button>
+          </div>
+          <label class="pd-date">Визит с<input type="date" id="pd-from" value="${pdIso(PD.period.from)}"></label>
+          <label class="pd-date">по<input type="date" id="pd-to" value="${pdIso(PD.period.to)}"></label>
+        </div>
+        <label class="gs-drop" id="pd-drop">
+          <input type="file" accept=".csv,text/csv" id="pd-file" hidden>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span class="gs-drop-lbl">${PD.fileName ? esc(PD.fileName) : 'Выбрать CSV-файл amoCRM'}</span>
+        </label>
+        <div id="pd-report">${PD.report ? pdReportHtml(PD.report) : ''}</div>
+      </section>`;
+  };
+
+  window.initPedestrianTab = function initPedestrianTab() {
+    const inp = document.getElementById('pd-file');
+    if (inp && !inp._pdBound) {
+      inp._pdBound = true;
+      inp.addEventListener('change', async e => {
+        const file = e.target.files && e.target.files[0]; if (!file) return;
+        PD.fileName = file.name;
+        const lbl = document.querySelector('#pd-drop .gs-drop-lbl'); if (lbl) lbl.textContent = file.name;
+        const box = document.getElementById('pd-report'); if (box) box.innerHTML = '<div class="gs-loading">Читаю файл…</div>';
+        try {
+          const text = await (file.text ? file.text() : new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(fr.error); fr.readAsText(file); }));
+          PD.rows = pdParseCSV(text); pdReanalyze();
+        } catch (err) { if (box) box.innerHTML = `<div class="gs-err">Ошибка: ${esc((err && err.message) || err)}</div>`; }
+      });
+    }
+    document.querySelectorAll('.pd-preset').forEach(b => { if (b._pdBound) return; b._pdBound = true; b.addEventListener('click', () => pdApplyPreset(b.dataset.preset)); });
+    const fi = document.getElementById('pd-from'), ti = document.getElementById('pd-to');
+    [fi, ti].forEach(el => { if (el && !el._pdBound) { el._pdBound = true; el.addEventListener('change', () => { if (fi.value) PD.period.from = pdDmy(fi.value); if (ti.value) PD.period.to = pdDmy(ti.value); pdReanalyze(); }); } });
+    pdBindReport();
+  };
+
+  window.openPedestrianPage = function openPedestrianPage() {
+    if (typeof window.closeAllDockPopups === 'function') window.closeAllDockPopups();
+    const me = typeof window.findUserInSheet === 'function' ? window.findUserInSheet() : null;
+    if (!me || (typeof window.isCeoLike === 'function' && !window.isCeoLike(me.role))) return;
+    if (typeof window.showScr === 'function') window.showScr('pedestrian');
+    if (typeof window.dockSetActive === 'function') window.dockSetActive('analytics');
+    const root = document.getElementById('c-pedestrian');
+    if (root) { root.innerHTML = window.renderPedestrianTab(); window.initPedestrianTab(); }
+    if (typeof window.updateFirebasePage === 'function') window.updateFirebasePage();
+  };
+
 })();

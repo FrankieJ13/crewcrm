@@ -190,6 +190,7 @@
     if (tab === 'export' && typeof openExportPage === 'function') return openExportPage();
     if (tab === 'repeats' && typeof openRepeatSearchPage === 'function') return openRepeatSearchPage();
     if (tab === 'fakevisits' && typeof openFakeVisitsPage === 'function') return openFakeVisitsPage();
+    if (tab === 'pedestrian' && typeof openPedestrianPage === 'function') return openPedestrianPage();
     if (tab === 'sverka' && typeof openVisitReconciliation === 'function') return openVisitReconciliation();
     if (tab === 'timeline' && typeof openTimelineLeads === 'function') return openTimelineLeads();
   };

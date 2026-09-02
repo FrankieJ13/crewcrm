@@ -2,3 +2,7 @@
 node_modules/
 .claude/
 ceo-dashboard/
+# Локальный образец amoCRM CSV — НЕ пушить (реальные телефоны клиентов)
+csv на github не заливать это!/
+*.csv
+!instr.csv

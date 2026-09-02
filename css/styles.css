@@ -10230,6 +10230,47 @@ body.light .adj-chip.on, body.tiffany .adj-chip.on { color:#fff; }
 .fv-vmgr { font-size:12px; font-weight:600; color:var(--txt2); }
 .fv-vdep { font-size:9px; font-weight:700; color:var(--txt3); border:1px solid var(--line2); border-radius:6px; padding:0 5px; margin-left:auto; }
 .fv-visit-meta { font-size:11px; color:var(--txt3); margin-top:1px; }
+/* ── Поиск пеших сделок ── */
+.pd-local { font-size:11px; color:var(--txt3); margin:4px 0 0; }
+.pd-period { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:10px 0; }
+.pd-presets { display:flex; gap:6px; }
+.pd-preset { font-size:11px; font-weight:700; color:var(--txt2); background:var(--bg3); border:1px solid var(--line2); border-radius:12px; padding:5px 11px; cursor:pointer; }
+.pd-preset:hover { border-color:#f97316; color:var(--txt); }
+.pd-date { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--txt2); }
+.pd-date input { font-size:12px; padding:4px 6px; border:1px solid var(--line2); border-radius:8px; background:var(--bg3); color:var(--txt); }
+.pd-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(92px,1fr)); gap:8px; margin:8px 0; }
+.pd-kpi { border:1px solid var(--line2); background:var(--bg2); border-radius:12px; padding:8px 10px; text-align:center; }
+.pd-kpi-n { font-family:'Unbounded',sans-serif; font-size:18px; font-weight:800; color:var(--txt); }
+.pd-kpi-l { font-size:10px; color:var(--txt3); margin-top:2px; line-height:1.2; }
+.pd-city-title { font-family:'Unbounded',sans-serif; font-size:11px; font-weight:800; color:var(--txt); margin:10px 0 4px; }
+.pd-city-wrap { overflow-x:auto; }
+.pd-city { width:100%; border-collapse:collapse; font-size:12px; }
+.pd-city th { text-align:left; color:var(--txt3); font-weight:700; padding:4px 8px; border-bottom:1px solid var(--line2); font-size:10px; text-transform:uppercase; letter-spacing:.04em; }
+.pd-city td { padding:4px 8px; border-bottom:1px solid var(--line); color:var(--txt); }
+.pd-filters { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 10px; align-items:center; }
+.pd-filters select, .pd-filters input { font-size:12px; padding:6px 8px; border:1px solid var(--line2); border-radius:8px; background:var(--bg3); color:var(--txt); }
+.pd-filters #pd-f-q { flex:1; min-width:120px; }
+.pd-export-btn { font-size:12px; font-weight:700; color:#fff; background:#f97316; border:none; border-radius:8px; padding:7px 14px; cursor:pointer; margin-left:auto; }
+.pd-export-btn:hover { filter:brightness(1.08); }
+.pd-card .fv-num { background:#f97316; }
+.pd-badge { font-size:10px; font-weight:700; border-radius:10px; padding:2px 8px; margin-left:auto; }
+.pd-badge.ok { color:#059669; background:rgba(16,185,129,.14); border:1px solid rgba(16,185,129,.5); }
+.pd-badge.miss { color:var(--txt3); background:var(--bg3); border:1px solid var(--line2); }
+.pd-badge.warn { color:#b45309; background:rgba(245,158,11,.14); border:1px solid rgba(245,158,11,.5); }
+.pd-body { display:none; }
+.fv-card.expanded .pd-body { display:block; }
+.fv-card.expanded .gs-caret { transform:rotate(180deg); }
+.gs-caret { transition:transform .15s; display:inline-flex; }
+.pd-crm-wrap { margin-top:8px; padding-top:8px; border-top:1px dashed var(--line2); }
+.pd-crm-lbl { font-size:10px; font-weight:700; color:var(--txt3); text-transform:uppercase; letter-spacing:.04em; margin-bottom:5px; }
+.pd-crm { padding:6px 8px; border-radius:8px; background:var(--bg3); margin-bottom:6px; }
+.pd-crm.primary { border-left:3px solid #f97316; }
+.pd-crm-top { display:flex; align-items:center; gap:8px; }
+.pd-main { font-size:9px; font-weight:700; color:#f97316; border:1px solid rgba(249,115,22,.5); border-radius:6px; padding:0 5px; }
+.pd-days { font-size:11px; font-weight:700; color:var(--txt2); margin-left:auto; }
+.pd-crm-meta { font-size:11px; color:var(--txt2); margin-top:2px; }
+.pd-why { font-size:11px; color:var(--txt3); margin-top:3px; line-height:1.4; }
+.pd-empty2 { font-size:12px; color:var(--txt3); padding:2px 0; }
 .gs-sec-title { font-family:'Unbounded',sans-serif; font-size:11px; font-weight:800; color:var(--txt); letter-spacing:.03em;
   display:flex; align-items:center; gap:8px; margin-top:6px; }
 .gs-sec-title.miss { color:var(--red); } .gs-sec-title.na { color:var(--txt3); }

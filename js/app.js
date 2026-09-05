@@ -5783,6 +5783,58 @@ function renderDohod() {
   const isLight = (document.body.classList.contains('light')||document.body.classList.contains('tiffany'));
   const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
 
+  // МЕСЯЦ ПЕРЕВОДА: менеджер работал в обоих отделах → суммарный доход (CRM + ДОЖИМ).
+  // Оклад уже разнесён по сменам, корректировки — один раз (в текущем отделе),
+  // поэтому totC + totD не задваивают ни оклад, ни премию/депремию.
+  const _both = (function(){ try { const s = deptSetForMonth(nameLow, currentSuffix); return s.crm && s.dozhim; } catch(_) { return false; } })();
+  if (_both) {
+    if (!S.data.vizity || !S.data.d_vizity || !S.data.plan || !_ratesJson) {
+      if (!S.silentRefresh) el.innerHTML = loader();
+      if (!_ratesJson) loadRatesJson().then(() => renderDohod()).catch(()=>{});
+      if (!S.data.d_vizity) apiFreshOrNull(SHEETS.d_vizity, 'A:N').then(d => { if (d) { S.data.d_vizity = d; renderDohod(); } }).catch(()=>{});
+      if (!S.data.vizity)   apiFreshOrNull(SHEETS.vizity,   'A:N').then(d => { if (d) { S.data.vizity   = d; renderDohod(); } }).catch(()=>{});
+      if (!S.data.plan)     apiFreshOrNull(SHEETS.plan,     'A:D').then(d => { if (d) { S.data.plan     = d; renderDohod(); } }).catch(()=>{});
+      return;
+    }
+    const salC = calcSalary(nameLow);
+    const salD = calcSalaryDozhimFromVizity(nameLow);
+    const totC = salC ? Math.round(salC.fact.total) : 0;
+    const totD = salD ? Math.round(salD.fact.total) : 0;
+    const grand = totC + totD;
+    // Панель отдела не показываем, если в нём ничего: 0 ₽ и 0 отработанных смен.
+    const emptyDept = sal => !sal || (Math.round(sal.fact.total) === 0 && !(sal.detail && sal.detail.workedR));
+    const detC = salC ? {
+      nameLow, cat400: salC.detail.cat400 || null, cat0: salC.detail.cat0 || null,
+      convBoost: salC.detail.convBoost || null, crm: salC.detail.crm, warm: salC.detail.warm,
+      oklad: salC.detail.oklad, baseOklad: salC.detail.baseOklad, workedR: salC.detail.workedR,
+      totalR: salC.detail.totalR, premium: salC.detail.premium, kotel: salC.detail.kotel,
+      fundCount: salC.detail.fundCount, inFund: salC.detail.inFund, fact: salC.fact, prognoz: salC.prognoz,
+    } : null;
+    const detD = salD ? {
+      nameLow, oklad: salD.detail.oklad, baseOklad: salD.detail.baseOklad, workedR: salD.detail.workedR,
+      totalR: salD.detail.totalR, premium: salD.detail.premium, kotel: salD.detail.kotel,
+      kotelTotal: salD.detail.kotelTotal, fundCount: salD.detail.fundCount, inFund: salD.detail.inFund,
+      ch800: salD.detail.ch800, ch1000: salD.detail.ch1000, ch1200: salD.detail.ch1200,
+      earn800: salD.detail.earn800, earn1000: salD.detail.earn1000, earn1200: salD.detail.earn1200,
+      fact: salD.fact, prognoz: salD.prognoz,
+    } : null;
+    const okladDaysHint = sal => (sal && sal.detail && sal.detail.workedR != null)
+      ? `Оклад ${sal.detail.workedR}/${sal.detail.totalR} дн. · нажмите для деталей` : 'Нажмите для деталей';
+    const panelC = emptyDept(salC) ? '' : `<div class="kpi-income-panel" style="position:relative;cursor:pointer;background:rgba(${accR},${accG},${accB},0.15);margin-top:10px" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(detC).replace(/'/g,"&#39;")}' data-total=""><div class="zl">Доход CRM</div><div class="zv">${fmtRub(totC)}</div><div class="kpi-bare-text" style="font-size:10px;margin-top:4px">${okladDaysHint(salC)}</div></div>`;
+    const panelD = emptyDept(salD) ? '' : `<div class="kpi-income-panel" style="position:relative;cursor:pointer;background:rgba(${accR},${accG},${accB},0.15);margin-top:10px" onclick="openDozhimIncomeModal(this)" data-income='${JSON.stringify(detD).replace(/'/g,"&#39;")}' data-total=""><div class="zl">Доход ДОЖИМ</div><div class="zv">${fmtRub(totD)}</div><div class="kpi-bare-text" style="font-size:10px;margin-top:4px">${okladDaysHint(salD)}</div></div>`;
+    setLiveHTML(el, `
+      <div class="w" style="padding-top:16px">
+        <div class="kpi-subtitle">Доход за месяц · перевод CRM ⇄ ДОЖИМ</div>
+        <div class="kpi-income-panel" style="text-align:center;background:rgba(${accR},${accG},${accB},0.22)">
+          <div class="zl">Суммарный фактический доход</div>
+          <div class="zv">${fmtRub(grand)}</div>
+          <div class="kpi-bare-text" style="font-size:11px;margin-top:6px">CRM ${fmtRub(totC)} + ДОЖИМ ${fmtRub(totD)}</div>
+        </div>
+        ${panelC}${panelD}
+      </div>`);
+    return;
+  }
+
   if (isDozhim) {
     // rates.json критичен — без него calcSalaryDozhimFromVizity использует
     // fallback-ставки → earn800/1000 кешируется в dataset.income с неверными

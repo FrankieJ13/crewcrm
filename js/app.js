@@ -364,6 +364,10 @@ const S = {
   // suffix = месяц, all = все строки месяца (вкл. CANCELLED, для журнала CEO/ROP),
   // byCrmId = индекс только ACTIVE по ID CRM (для расчёта дохода и панели менеджера).
   adjustments:{ suffix:null, all:[], byCrmId:{} },
+  // История переводов CRM ⇄ ДОЖИМ (лист USER_DEPARTMENT_HISTORY, глобальный —
+  // НЕ помесячный). byId = Map<ID CRM, переводы[]>; загружается один раз вместе
+  // с USERS. Пусто/нет листа → менеджеры без переводов ведут себя как раньше.
+  deptHistory:{ loaded:false, byId:null },
   reportTab: 'dept',
   dohodTab: 'crm',
   faqTab: 'instr',
@@ -4214,6 +4218,12 @@ async function _refreshVisibleDataLive() {
         if (cn) S.data.cnvrs = cn;
         if (gr) S.data.grafik = gr;
       }
+      // Переведённый менеджер (история CRM⇄ДОЖИМ): догрузим и «второй» лист,
+      // чтобы за старый месяц личная страница показала правильный отдел, а не пустой.
+      if (matched && mgrHasDeptTransfers(matched.name.toLowerCase().trim())) {
+        if (role === 'dozhim') { const _v = await apiFreshOrNull(SHEETS.vizity, 'A:N'); if (_v) S.data.vizity = _v; }
+        else { const _dv = await apiFreshOrNull(SHEETS.d_vizity, 'A:N'); if (_dv) S.data.d_vizity = _dv; }
+      }
       // Ставки — из rates.json (раньше из листа СТАВКИ)
       if (!_ratesJson) { try { await loadRatesJson(); } catch(_){} }
       if (!isScreenTokenActive('personal', token)) return;
@@ -4256,6 +4266,12 @@ async function _refreshVisibleDataLive() {
         if (vd) S.data.vizity = vd;
         if (pd) S.data.plan = pd;
         if (gr) S.data.grafik = gr;
+      }
+      // Переведённый менеджер (история CRM⇄ДОЖИМ): догрузим «второй» лист (не для CEO),
+      // чтобы renderDohodCrm/Dozhim за старый месяц имели данные нужного отдела.
+      if (!isCeo && matched && mgrHasDeptTransfers(matched.name.toLowerCase().trim())) {
+        if (role === 'dozhim') { const _v = await apiFreshOrNull(SHEETS.vizity, 'A:N'); if (_v) S.data.vizity = _v; }
+        else { const _dv = await apiFreshOrNull(SHEETS.d_vizity, 'A:N'); if (_dv) S.data.d_vizity = _dv; }
       }
       // Ставки — rates.json
       if (!_ratesJson) { try { await loadRatesJson(); } catch(_){} }
@@ -4838,7 +4854,7 @@ function calcSalaryDozhimFromVizity(nameLow) {
 
   // Котёл — суммируем тех кто не в ПЛАН (dozhim-менеджеры)
   const planM = getPlanMap(S.data.plan || []);
-  const planNamesLow = new Set(Object.keys(planM).filter(nl => getRoleByName(nl) === 'dozhim'));
+  const planNamesLow = new Set(Object.keys(planM).filter(nl => isDozhimForMonth(nl))); // ДОЖИМ за месяц (учёт переводов)
   let kotelEarn800 = 0, kotelEarn1000 = 0, kotelEarn1200 = 0;
   Object.values(allStats).forEach(s => {
     if (!planNamesLow.has(s.name.toLowerCase())) {
@@ -5117,10 +5133,7 @@ function renderOtchet() {
   const planNames = (planData || []).slice(1)
     .filter(r => r && r[0])
     .map(r => String(r[0]).trim())
-    .filter(name => {
-      const role = getRoleByName(name.toLowerCase().trim());
-      return role === 'crm' || role === '';  // только CRM (не dozhim, не ceo)
-    });
+    .filter(name => isCrmForMonth(name.toLowerCase().trim())); // CRM за месяц (учёт переводов CRM⇄ДОЖИМ)
 
   if (!planNames.length) {
     if (floating) floating.innerHTML = '';
@@ -5329,11 +5342,7 @@ function renderOtchet() {
     const dNames = (S.data.plan||[]).slice(1)
       .filter(r => r && r[0])
       .map(r => String(r[0]).trim())
-      .filter(n => {
-        const nl = n.toLowerCase();
-        const role = getRoleByName(nl);
-        return role === 'dozhim';
-      });
+      .filter(n => isDozhimForMonth(n.toLowerCase())); // ДОЖИМ за месяц (учёт переводов)
     // Если dNames пустой — берём всех у кого есть визиты в d_vizity
     const dNamesEff = dNames.length > 0 ? dNames : Object.keys(dStats).map(nl => dStats[nl].name);
     // Итог визитов — chronology (включая котёл и не-плановых). Раньше
@@ -5419,8 +5428,7 @@ function renderOtchet() {
   const managerStats = mgrRows
     .filter(r => {
       if (isKotel(r[0])) return true; // котёл показываем
-      const role = getRoleByName(r[0].toLowerCase().trim());
-      return role === 'crm' || role === '';
+      return isCrmForMonth(r[0].toLowerCase().trim()); // CRM за месяц (учёт переводов)
     })
     .map(r => {
     const mName = (r[0]||'—').trim();
@@ -5483,8 +5491,7 @@ function renderOtchet() {
   // Фильтруем: в CRM-рейтинге только менеджеры с role=crm
   const rankRows  = mgrRows.filter(r => {
     if (isKotel(r[0])) return false;
-    const role = getRoleByName(r[0].toLowerCase().trim());
-    return role === 'crm' || role === '';
+    return isCrmForMonth(r[0].toLowerCase().trim()); // CRM-рейтинг за месяц (учёт переводов)
   });
   const kotelRows = mgrRows.filter(r => isKotel(r[0]));
 
@@ -5621,7 +5628,7 @@ function renderDozhimCards(opts = {}) {
   const dozhimNames = planData.slice(1)
     .filter(r => r && r[0])
     .map(r => String(r[0]).trim())
-    .filter(name => getRoleByName(name.toLowerCase().trim()) === 'dozhim');
+    .filter(name => isDozhimForMonth(name.toLowerCase().trim())); // ДОЖИМ-рейтинг за месяц (учёт переводов)
 
   if (!dozhimNames.length) return '<div class="empty">Нет данных по дожиму</div>';
 
@@ -5765,7 +5772,14 @@ function renderDohod() {
   }
 
   const nameLow = matched.name.toLowerCase().trim();
-  const isDozhim = role === 'dozhim';
+  let isDozhim = role === 'dozhim';
+  // Переведённый менеджер: личная страница показывает отдел, актуальный для
+  // выбранного месяца (иначе за старый месяц открылся бы «пустой» новый отдел).
+  // Без истории переводов deptSetForMonth возвращает ровно текущую роль → без изменений.
+  try {
+    const _st = deptSetForMonth(nameLow, currentSuffix);
+    if (_st.crm !== _st.dozhim) isDozhim = _st.dozhim; // однозначный месяц (не оба отдела)
+  } catch (_) {}
   const isLight = (document.body.classList.contains('light')||document.body.classList.contains('tiffany'));
   const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
 
@@ -5925,10 +5939,7 @@ function renderDohodCrm(el) {
   const planNames = planData.slice(1)
     .filter(r => r && r[0])
     .map(r => String(r[0]).trim())
-    .filter(name => {
-      const role = getRoleByName(name.toLowerCase().trim());
-      return role === 'crm' || role === '';
-    });
+    .filter(name => isCrmForMonth(name.toLowerCase().trim())); // CRM за месяц (учёт переводов)
   if (!planNames.length) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
 
   const mgrRows = planNames.map(name => name);
@@ -6104,7 +6115,7 @@ function renderDohodDozhim(el) {
   const dozhimNames = planData.slice(1)
     .filter(r => r && r[0])
     .map(r => String(r[0]).trim())
-    .filter(name => getRoleByName(name.toLowerCase().trim()) === 'dozhim');
+    .filter(name => isDozhimForMonth(name.toLowerCase().trim())); // ДОЖИМ за месяц (учёт переводов)
 
   if (!dozhimNames.length) { el.innerHTML = '<div class="empty">Нет данных по дожиму</div>'; return; }
 
@@ -10093,6 +10104,86 @@ function getUserByCrmId(crmId) {
   }
   return null;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * ИСТОРИЯ ОТДЕЛОВ — членство менеджера в CRM/ДОЖИМ, зависящее от периода.
+ * Отдел в приложении = роль в USERS (одна на все месяцы). При переводе роль
+ * меняют — и прошлые месяцы начинают классифицироваться по НОВОМУ отделу
+ * (менеджер пропадает из отчёта старого отдела). Лист USER_DEPARTMENT_HISTORY
+ * (журнал переводов) позволяет резолвить отдел НА МЕСЯЦ. Чистая логика — в
+ * js/dept-history.js (window.DeptHistory), здесь — загрузка листа и склейка с
+ * ролью/данными. Менеджеры без переводов ведут себя ровно как раньше.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+const DEPT_HISTORY_SHEET = 'USER_DEPARTMENT_HISTORY'; // глобальный лист (без суффикса месяца)
+
+// Загрузка журнала переводов (один раз). Листа может не быть → пустая история,
+// приложение работает по старой логике (текущая роль). Не блокирует старт.
+async function loadDeptHistory(force = false) {
+  if (S.deptHistory.loaded && !force) return S.deptHistory;
+  if (typeof window.DeptHistory === 'undefined') { S.deptHistory = { loaded: true, byId: new Map() }; return S.deptHistory; }
+  let rows = null;
+  try { rows = await api(DEPT_HISTORY_SHEET, 'A2:E2000'); }
+  catch (_) { rows = null; } // нет листа / нет прав / оффлайн → пустая история
+  const known = id => !!getUserByCrmId(id); // валидация: ID должен быть в USERS
+  const warn = msg => { try { window.DIAG?.push('warn', 'dept-history', [msg]); } catch (_) {} };
+  const byId = window.DeptHistory.parseHistory(rows, known, warn);
+  S.deptHistory = { loaded: true, byId };
+  return S.deptHistory;
+}
+// Ленивая догрузка + ре-рендер активного экрана (паттерн как у USERS/adjustments).
+function ensureDeptHistoryLoaded() {
+  if (S.deptHistory.loaded) return;
+  S.deptHistory.loaded = true; // помечаем сразу, чтобы не дёргать повторно
+  loadDeptHistory(true).then(() => { try { _reRenderActiveIncome(); } catch (_) {} }).catch(() => {});
+}
+
+// Есть ли у менеджера хоть одна строка визита (col I = row[8]) в загруженном листе месяца.
+// Страховка гибрида: не «теряем» менеджера с реальными данными, даже если строку
+// истории забыли внести.
+function _mgrHasVisitRows(nameLow, sheet) {
+  if (!Array.isArray(sheet) || sheet.length < 2 || !nameLow) return false;
+  for (let i = 1; i < sheet.length; i++) {
+    const r = sheet[i];
+    if (r && String(r[8] || '').toLowerCase().trim() === nameLow) return true;
+  }
+  return false;
+}
+
+// Ядро: в каких отделах менеджер числится за месяц `suffix`. → { crm, dozhim }.
+// Нет истории по этому ID → возвращаем ровно текущую роль (обратная совместимость).
+// Есть история → отделы за месяц по журналу + страховка «есть данные в листе».
+function deptSetForMonth(nameLow, suffix = currentSuffix) {
+  const role = (typeof getRoleByName === 'function') ? getRoleByName(nameLow) : null;
+  const baseCrm = role === 'crm' || role === '';
+  const baseDozhim = role === 'dozhim';
+  const H = S.deptHistory && S.deptHistory.byId;
+  const id = (H && typeof getCrmIdByName === 'function') ? getCrmIdByName(nameLow) : '';
+  const transfers = (H && id) ? H.get(id) : null;
+  if (!transfers || !transfers.length || typeof window.DeptHistory === 'undefined') {
+    return { crm: baseCrm, dozhim: baseDozhim }; // без истории — как раньше
+  }
+  const currentDept = baseDozhim ? 'dozhim' : (baseCrm ? 'crm' : null);
+  const set = window.DeptHistory.deptsForMonth(transfers, currentDept, suffix);
+  const res = { crm: !!set.crm, dozhim: !!set.dozhim };
+  // Гибрид: реальные визиты в листе текущего месяца → показываем в этом отделе.
+  if (suffix === currentSuffix) {
+    if (!res.crm && _mgrHasVisitRows(nameLow, S.data.vizity)) res.crm = true;
+    if (!res.dozhim && _mgrHasVisitRows(nameLow, S.data.d_vizity)) res.dozhim = true;
+  }
+  return res;
+}
+// Членство менеджера в отделе за активный месяц (drop-in замена role-фильтров).
+function isCrmForMonth(nameLow, suffix = currentSuffix) { return deptSetForMonth(nameLow, suffix).crm; }
+function isDozhimForMonth(nameLow, suffix = currentSuffix) { return deptSetForMonth(nameLow, suffix).dozhim; }
+// Есть ли у менеджера записи переводов (для точечной догрузки «второго» листа).
+function mgrHasDeptTransfers(nameLow) {
+  const H = S.deptHistory && S.deptHistory.byId;
+  if (!H || !nameLow || typeof getCrmIdByName !== 'function') return false;
+  const id = getCrmIdByName(nameLow);
+  const t = id ? H.get(id) : null;
+  return !!(t && t.length);
+}
+
 // Список менеджеров CRM/DOZHIM (с ID CRM) для селекта в админке.
 function getAdjustableManagers() {
   if (!S.usersData) return [];
@@ -10346,6 +10437,7 @@ async function loadUsersAndStart(coldRetry = 0) {
 // так и из обычной (после await api).
 function _runPostUsersFlow() {
   const matched = findUserInSheet();
+  ensureDeptHistoryLoaded(); // журнал переводов CRM⇄ДОЖИМ (глобальный, один раз; ре-рендер по готовности)
   refreshFirebaseProfile();
   // Перерисуем имя/аватар в гамбургере, когда USERS уже загружен
   try { if (typeof renderUser === 'function') renderUser(); } catch(_) {}
@@ -14002,8 +14094,8 @@ function _ceoComputeLeaders() {
     const vis = (typeof s.vis === 'number') ? s.vis : ((s.vis800 || 0) + (s.vis1200 || 0) + (s.vis1000 || 0));
     return { name, firstName: name.split(' ').slice(-1)[0] || name, progPct: computeProgPct(vis, plan, sfx) };
   }
-  const crmNames = allPlanNames.filter(n => { const r = getRoleByName(n.toLowerCase().trim()); return r === 'crm' || r === ''; });
-  const dozhimNames = allPlanNames.filter(n => getRoleByName(n.toLowerCase().trim()) === 'dozhim');
+  const crmNames = allPlanNames.filter(n => isCrmForMonth(n.toLowerCase().trim()));       // CRM за месяц (учёт переводов)
+  const dozhimNames = allPlanNames.filter(n => isDozhimForMonth(n.toLowerCase().trim())); // ДОЖИМ за месяц
   const crmMgrs = crmNames.map(n => buildMgr(n, crmStats));
   const dozhimMgrs = dozhimNames.map(n => buildMgr(n, dozhimStats));
   const dept = S.ceoLeadersDept || 'crm';
@@ -14090,14 +14182,8 @@ function renderCeoDashboard() {
 
   // Имена менеджеров из ПЛАН, фильтр по ролям
   const allPlanNames = (planData || []).slice(1).filter(r => r && r[0]).map(r => String(r[0]).trim());
-  const crmNames = allPlanNames.filter(n => {
-    const role = getRoleByName(n.toLowerCase().trim());
-    return role === 'crm' || role === '';
-  });
-  const dozhimNames = allPlanNames.filter(n => {
-    const role = getRoleByName(n.toLowerCase().trim());
-    return role === 'dozhim';
-  });
+  const crmNames = allPlanNames.filter(n => isCrmForMonth(n.toLowerCase().trim()));       // CRM за месяц (учёт переводов)
+  const dozhimNames = allPlanNames.filter(n => isDozhimForMonth(n.toLowerCase().trim())); // ДОЖИМ за месяц (учёт переводов)
 
   function buildMgr(name, stats, suffix, isDozhim) {
     const nl = name.toLowerCase();
@@ -14797,7 +14883,7 @@ function renderRating() {
   if (dept === 'dozhim') {
     const dStats = buildDozhimStats(S.data.d_vizity || []);
     managers = planData.slice(1)
-      .filter(r => r && r[0] && getRoleByName(String(r[0]).trim().toLowerCase()) === 'dozhim')
+      .filter(r => r && r[0] && isDozhimForMonth(String(r[0]).trim().toLowerCase())) // ДОЖИМ за месяц (учёт переводов)
       .map(r => {
         const name = String(r[0]).trim();
         const nl   = name.toLowerCase();
@@ -14814,7 +14900,7 @@ function renderRating() {
   } else {
     const crmStats = buildCrmStats(S.data.vizity || []);
     managers = planData.slice(1)
-      .filter(r => r && r[0] && (getRoleByName(String(r[0]).trim().toLowerCase()) === 'crm' || getRoleByName(String(r[0]).trim().toLowerCase()) === ''))
+      .filter(r => r && r[0] && isCrmForMonth(String(r[0]).trim().toLowerCase())) // CRM за месяц (учёт переводов)
       .map(r => {
         const name = String(r[0]).trim();
         const nl   = name.toLowerCase();

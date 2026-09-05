@@ -5783,9 +5783,9 @@ function renderDohod() {
   const isLight = (document.body.classList.contains('light')||document.body.classList.contains('tiffany'));
   const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
 
-  // МЕСЯЦ ПЕРЕВОДА: менеджер работал в обоих отделах → суммарный доход (CRM + ДОЖИМ).
-  // Оклад уже разнесён по сменам, корректировки — один раз (в текущем отделе),
-  // поэтому totC + totD не задваивают ни оклад, ни премию/депремию.
+  // МЕСЯЦ ПЕРЕВОДА: работал в обоих отделах → ИТОГ по двум отделам.
+  // Модель: оклад ОДИН (по всем сменам) + премия по отделам (суммируется) +
+  // корректировки ОДИН раз (фикс на человека). Порог max(0,…) — раз к итогу.
   const _both = (function(){ try { const s = deptSetForMonth(nameLow, currentSuffix); return s.crm && s.dozhim; } catch(_) { return false; } })();
   if (_both) {
     if (!S.data.vizity || !S.data.d_vizity || !S.data.plan || !_ratesJson) {
@@ -5796,41 +5796,36 @@ function renderDohod() {
       if (!S.data.plan)     apiFreshOrNull(SHEETS.plan,     'A:D').then(d => { if (d) { S.data.plan     = d; renderDohod(); } }).catch(()=>{});
       return;
     }
-    const salC = calcSalary(nameLow);
-    const salD = calcSalaryDozhimFromVizity(nameLow);
-    const totC = salC ? Math.round(salC.fact.total) : 0;
-    const totD = salD ? Math.round(salD.fact.total) : 0;
-    const grand = totC + totD;
-    // Панель отдела не показываем, если в нём ничего: 0 ₽ и 0 отработанных смен.
-    const emptyDept = sal => !sal || (Math.round(sal.fact.total) === 0 && !(sal.detail && sal.detail.workedR));
-    const detC = salC ? {
-      nameLow, cat400: salC.detail.cat400 || null, cat0: salC.detail.cat0 || null,
-      convBoost: salC.detail.convBoost || null, crm: salC.detail.crm, warm: salC.detail.warm,
-      oklad: salC.detail.oklad, baseOklad: salC.detail.baseOklad, workedR: salC.detail.workedR,
-      totalR: salC.detail.totalR, premium: salC.detail.premium, kotel: salC.detail.kotel,
-      fundCount: salC.detail.fundCount, inFund: salC.detail.inFund, fact: salC.fact, prognoz: salC.prognoz,
-    } : null;
-    const detD = salD ? {
-      nameLow, oklad: salD.detail.oklad, baseOklad: salD.detail.baseOklad, workedR: salD.detail.workedR,
-      totalR: salD.detail.totalR, premium: salD.detail.premium, kotel: salD.detail.kotel,
-      kotelTotal: salD.detail.kotelTotal, fundCount: salD.detail.fundCount, inFund: salD.detail.inFund,
-      ch800: salD.detail.ch800, ch1000: salD.detail.ch1000, ch1200: salD.detail.ch1200,
-      earn800: salD.detail.earn800, earn1000: salD.detail.earn1000, earn1200: salD.detail.earn1200,
-      fact: salD.fact, prognoz: salD.prognoz,
-    } : null;
-    const okladDaysHint = sal => (sal && sal.detail && sal.detail.workedR != null)
-      ? `Оклад ${sal.detail.workedR}/${sal.detail.totalR} дн. · нажмите для деталей` : 'Нажмите для деталей';
-    const panelC = emptyDept(salC) ? '' : `<div class="kpi-income-panel" style="position:relative;cursor:pointer;background:rgba(${accR},${accG},${accB},0.15);margin-top:10px" onclick="openIncomeDetail(this)" data-income='${JSON.stringify(detC).replace(/'/g,"&#39;")}' data-total=""><div class="zl">Доход CRM</div><div class="zv">${fmtRub(totC)}</div><div class="kpi-bare-text" style="font-size:10px;margin-top:4px">${okladDaysHint(salC)}</div></div>`;
-    const panelD = emptyDept(salD) ? '' : `<div class="kpi-income-panel" style="position:relative;cursor:pointer;background:rgba(${accR},${accG},${accB},0.15);margin-top:10px" onclick="openDozhimIncomeModal(this)" data-income='${JSON.stringify(detD).replace(/'/g,"&#39;")}' data-total=""><div class="zl">Доход ДОЖИМ</div><div class="zv">${fmtRub(totD)}</div><div class="kpi-bare-text" style="font-size:10px;margin-top:4px">${okladDaysHint(salD)}</div></div>`;
+    const mt = calcSalaryMonthTotal(nameLow);
+    const salC = mt.salC, salD = mt.salD;
+    const subtotal = (lbl, sum) => `<div class="income-subtotal"><span class="ist-lbl">${lbl}</span><span class="ist-val">${fmtRub(Math.round(sum))}</span></div>`;
+    // Клик по премии отдела → детальная модалка этого отдела (разбивка по визитам).
+    const detC = salC ? { nameLow, cat400: salC.detail.cat400||null, cat0: salC.detail.cat0||null, convBoost: salC.detail.convBoost||null, crm: salC.detail.crm, warm: salC.detail.warm, oklad: salC.detail.oklad, baseOklad: salC.detail.baseOklad, workedR: salC.detail.workedR, totalR: salC.detail.totalR, premium: salC.detail.premium, kotel: salC.detail.kotel, fundCount: salC.detail.fundCount, inFund: salC.detail.inFund, fact: salC.fact, prognoz: salC.prognoz } : null;
+    const detD = salD ? { nameLow, oklad: salD.detail.oklad, baseOklad: salD.detail.baseOklad, workedR: salD.detail.workedR, totalR: salD.detail.totalR, premium: salD.detail.premium, kotel: salD.detail.kotel, kotelTotal: salD.detail.kotelTotal, fundCount: salD.detail.fundCount, inFund: salD.detail.inFund, ch800: salD.detail.ch800, ch1000: salD.detail.ch1000, ch1200: salD.detail.ch1200, earn800: salD.detail.earn800, earn1000: salD.detail.earn1000, earn1200: salD.detail.earn1200, fact: salD.fact, prognoz: salD.prognoz } : null;
+    const premRow = (lbl, val, det, opener) => det
+      ? `<div class="income-subtotal" style="cursor:pointer" onclick="${opener}(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total=""><span class="ist-lbl">${lbl} <span style="opacity:.45">ⓘ детали</span></span><span class="ist-val">${fmtRub(Math.round(val))}</span></div>`
+      : '';
+    const corrRow = mt.corrections ? `<div class="income-sec-title">Корректировки (на человека, вне отделов)</div>${subtotal(mt.corrections > 0 ? 'Премирование' : 'Депремирование', mt.corrections)}` : '';
+    const okladLbl = (mt.workedR != null && mt.totalR != null) ? `Оклад (${mt.workedR}/${mt.totalR} дн.)` : 'Оклад';
     setLiveHTML(el, `
       <div class="w" style="padding-top:16px">
         <div class="kpi-subtitle">Доход за месяц · перевод CRM ⇄ ДОЖИМ</div>
         <div class="kpi-income-panel" style="text-align:center;background:rgba(${accR},${accG},${accB},0.22)">
-          <div class="zl">Суммарный фактический доход</div>
-          <div class="zv">${fmtRub(grand)}</div>
-          <div class="kpi-bare-text" style="font-size:11px;margin-top:6px">CRM ${fmtRub(totC)} + ДОЖИМ ${fmtRub(totD)}</div>
+          <div class="zl">Суммарный доход</div>
+          <div class="zv">${fmtRub(Math.round(mt.total))}</div>
+          <div class="kpi-bare-text" style="font-size:11px;margin-top:6px">оклад один · премия по отделам · корректировки один раз</div>
         </div>
-        ${panelC}${panelD}
+        <div class="kpi-subtitle" style="margin-top:16px">Из чего складывается</div>
+        <div style="padding-bottom:16px">
+          <div class="income-sec-title">Оклад (по всем сменам месяца)</div>
+          ${subtotal(okladLbl, mt.oklad)}
+          <div class="income-sec-title">Премия по отделам</div>
+          ${premRow('Премия CRM', mt.premCrm, detC, 'openIncomeDetail')}
+          ${premRow('Премия ДОЖИМ', mt.premDoz, detD, 'openDozhimIncomeModal')}
+          ${corrRow}
+          <div class="income-sec-title">Итог</div>
+          ${subtotal('Итого к выплате', mt.total)}
+        </div>
       </div>`);
     return;
   }
@@ -10349,6 +10344,43 @@ function adjustmentsForDept(nameLow, dept) {
   }
   return adjustmentsFor(crmId);
 }
+
+// ИТОГОВАЯ ЗП менеджера за активный месяц с учётом ОБОИХ отделов (для переведённых).
+// Модель: оклад — ОДИН (по всем отработанным сменам), премия — по отделам и
+// суммируется, корректировки (премирование/депремирование) — ОДИН раз (фикс на
+// человека, вне отделов). Порог max(0,…) применяется один раз к итогу человека.
+// Не переведён / один отдел → просто fact.total этого отдела (как раньше).
+// Возвращает { combined, total, prognozTotal, salC, salD, oklad, premCrm, premCrmProg,
+//   premDoz, corrections, workedR, totalR }.
+function calcSalaryMonthTotal(nameLow) {
+  const st = (typeof deptSetForMonth === 'function') ? deptSetForMonth(nameLow, currentSuffix) : null;
+  const role = (typeof getRoleByName === 'function') ? getRoleByName(nameLow) : '';
+  const inCrm = st ? st.crm : (role !== 'dozhim');
+  const inDoz = st ? st.dozhim : (role === 'dozhim');
+  const salC = inCrm ? calcSalary(nameLow) : null;
+  const salD = inDoz ? calcSalaryDozhimFromVizity(nameLow) : null;
+  if (!(inCrm && inDoz)) {
+    const sal = salC || salD;
+    return { combined: false, salC, salD,
+      total: sal ? sal.fact.total : 0, prognozTotal: sal ? sal.prognoz.total : 0 };
+  }
+  // Оба отдела. baseFact/baseProg в sal.adj — это (оклад + премия) ДО корректировок,
+  // поэтому «премия» = baseFact − оклад (без оклада и без корректировок).
+  const okladCrm = salC ? (salC.detail.oklad || 0) : 0;
+  const okladDoz = salD ? (salD.detail.oklad || 0) : 0;
+  const oklad    = okladCrm + okladDoz;                         // полный оклад по всем сменам
+  const premCrm     = salC ? (salC.adj.baseFact - okladCrm) : 0; // премия CRM × K (факт)
+  const premCrmProg = salC ? (salC.adj.baseProg - okladCrm) : 0; // премия CRM × K (прогноз)
+  const premDoz     = salD ? (salD.adj.baseFact - okladDoz) : 0; // премия ДОЖИМ (+котёл); прогноз=факт
+  const corrections = adjustmentsFor(getCrmIdByName(nameLow)).total; // фикс на человека, один раз
+  const total        = Math.max(0, oklad + premCrm + premDoz + corrections);
+  const prognozTotal = Math.max(0, oklad + premCrmProg + premDoz + corrections);
+  return {
+    combined: true, salC, salD, total, prognozTotal, oklad, premCrm, premCrmProg, premDoz, corrections,
+    workedR: (salC ? (salC.detail.workedR || 0) : 0) + (salD ? (salD.detail.workedR || 0) : 0),
+    totalR:  salC ? salC.detail.totalR : (salD ? salD.detail.totalR : null),
+  };
+}
 // base → { base, bonus, penalty, adjustments, final }. final = max(0, base + Σ).
 function applyAdjustments(base, crmId) {
   const a = adjustmentsFor(crmId);
@@ -11082,8 +11114,18 @@ function renderPersonal(matched) {
 
   let incomePanelContent = '';
   let incomePanelAttr = 'style="position:relative"';
+  // Переведён в этом месяце (работал в обоих отделах) — на главной показываем ИТОГ
+  // по двум отделам (оклад один + премия CRM + премия ДОЖИМ + корректировки один раз).
+  const _mt = (typeof calcSalaryMonthTotal === 'function') ? calcSalaryMonthTotal(nameLow) : null;
 
-  if (isDozhim) {
+  if (_mt && _mt.combined) {
+    incomePanelAttr = `style="position:relative;text-align:center;cursor:pointer" onclick="goTab('dohod')"`;
+    incomePanelContent = `
+      <div class="zl">Доход за месяц</div>
+      <div class="zv">${fmtRub(Math.round(_mt.total))}</div>
+      <div class="kpi-bare-text" style="font-size:10px;margin-top:2px">CRM + ДОЖИМ · нажмите для деталей</div>
+    `;
+  } else if (isDozhim) {
     const dSal = calcSalaryDozhimFromVizity(nameLow);
     if (dSal) {
       const incomeDetail = {

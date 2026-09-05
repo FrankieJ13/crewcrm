@@ -4817,7 +4817,7 @@ function calcSalaryDozhimFromVizity(nameLow) {
 
   const R = getDozhimRates();
   const rVykup = R.rVykup;
-  const schedInfo = getWorkedAndTotalR(nameLow);
+  const schedInfo = getWorkedAndTotalR(nameLow, 'dozhim'); // оклад по сменам в ДОЖИМ (учёт перевода)
   const oklad = (schedInfo && schedInfo.totalR > 0)
     ? Math.round(R.baseOklad / schedInfo.totalR * schedInfo.workedR)
     : R.baseOklad;
@@ -4901,7 +4901,7 @@ function calcSalaryDozhimFromVizity(nameLow) {
   // Корректировки дохода (премия/депремия) — единый источник итога (ТЗ §11):
   // final = max(0, base + Σ ACTIVE). base сохраняем в adj для разбивки в модалке.
   const _crmId = getCrmIdByName(nameLow);
-  const _adj   = adjustmentsFor(_crmId);
+  const _adj   = adjustmentsForDept(nameLow, 'dozhim'); // корректировки только в текущем отделе (не задваивать при переводе)
   const _factF = Math.max(0, totalFact + _adj.total);
 
   return {
@@ -6160,8 +6160,8 @@ function renderDohodDozhim(el) {
       detailBtn = `<button class="mop-info-btn" style="position:absolute;top:10px;right:10px" onclick="openDozhimIncomeModal(this)" data-income='${JSON.stringify(det).replace(/'/g,"&#39;")}' data-total="">i</button>`;
     }
     const incomeCols = item.sal
-      ? `<div style="text-align:right;margin:6px 0 4px"><span class="zp-a" style="color:${rs.color}">${fmtRub(factTotal)}</span></div>`
-      : `<div style="text-align:right;margin:6px 0 4px"><span class="zp-a" style="color:var(--acc)">—</span></div>`;
+      ? `<div style="text-align:right;margin:6px 0 4px"><span class="zp-a" style="color:var(--txt)">${fmtRub(factTotal)}</span></div>` // сумма — одним нейтральным цветом (без зелёно/красной по месту)
+      : `<div style="text-align:right;margin:6px 0 4px"><span class="zp-a" style="color:var(--txt)">—</span></div>`;
     const _sc = viewerIsCeo ? countSverkaVisits(S.data.d_vizity, SVERKA_CATS_DOZHIM, item.nameLow) : null;
     const sverkaSlot = _sc ? sverkaChipHtml(_sc.sver, _sc.total, 'in-row') : '';
     return `<div class="zp-row" style="--rank-r:${rs.r};--rank-g:${rs.g};--rank-b:${rs.b};border-color:${rs.border}">${detailBtn}<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="rank-badge" style="background:${rs.badgeBg};color:${rs.color}">${idx+1}</span><span class="zp-n" style="color:var(--txt)">${item.name}</span>${getMgrMessengerHtml(item.name)}${sverkaSlot}</div>${incomeCols}</div>`;
@@ -10284,6 +10284,19 @@ function adjustmentsFor(crmId) {
   list.forEach(a => { if (a.type === 'PENALTY') penalty += a.amount; else bonus += a.amount; });
   return { list, bonus, penalty, total: bonus - penalty };
 }
+// Корректировки менеджера для КОНКРЕТНОГО отдела. У переведённого в этом месяце
+// менеджера корректировки (премия/депремия — помесячные, на человека) начисляются
+// только в его ТЕКУЩЕМ отделе, чтобы не задвоиться при показе в обоих отчётах.
+// Без истории переводов — как раньше (корректировки в его единственном отделе).
+function adjustmentsForDept(nameLow, dept) {
+  const crmId = getCrmIdByName(nameLow);
+  if (dept && typeof mgrHasDeptTransfers === 'function' && mgrHasDeptTransfers(nameLow)
+      && typeof window.DeptHistory !== 'undefined') {
+    const home = window.DeptHistory.deptFromRole(getRoleByName(nameLow)); // текущий отдел
+    if (home && home !== dept) return { list: [], bonus: 0, penalty: 0, total: 0 };
+  }
+  return adjustmentsFor(crmId);
+}
 // base → { base, bonus, penalty, adjustments, final }. final = max(0, base + Σ).
 function applyAdjustments(base, crmId) {
   const a = adjustmentsFor(crmId);
@@ -11482,7 +11495,13 @@ function koefClass(k) {
   if (k <= 1.1) return 'k11';
   return 'k12';
 }
-function getWorkedAndTotalR(nameLow) {
+// Отработанные / всего рабочих смен (Р) по графику за активный месяц.
+// `dept` (опц., 'crm'|'dozhim') — для ПЕРЕВЕДЁННЫХ в этом месяце менеджеров разносит
+// оклад по отделам: знаменатель (totalR = все Р месяца) НЕ делим, а числитель
+// (workedR) считаем только по сменам, попавшим в период работы в `dept` (по дате
+// перевода). Так oklad_crm + oklad_dozhim = полный оклад (не задваивается). Без
+// истории переводов dept игнорируется — поведение прежнее.
+function getWorkedAndTotalR(nameLow, dept) {
   const raw = S.data.grafik;
   if (!raw || raw.length < 3) return null;
   const mo = parseInt(currentSuffix.slice(0, 2));
@@ -11494,13 +11513,26 @@ function getWorkedAndTotalR(nameLow) {
   const entry = idx[nameLow];
   if (!entry) return null;
   const { row: mgrRow, daysRow } = entry;
+  // Разнесение смен по отделам — только если менеджер переведён в этом месяце.
+  let transfers = null;
+  if (dept && typeof window.DeptHistory !== 'undefined' && typeof mgrHasDeptTransfers === 'function'
+      && mgrHasDeptTransfers(nameLow)) {
+    const id = getCrmIdByName(nameLow);
+    transfers = (S.deptHistory.byId && id) ? (S.deptHistory.byId.get(id) || null) : null;
+  }
   let totalR = 0, workedR = 0;
   for (let c = 1; c < daysRow.length; c++) {
     const dayNum = parseInt(daysRow[c]);
     if (!dayNum || dayNum < 1 || dayNum > 31) continue;
     if (normalizeSchedVal(mgrRow[c]) === 'Р') {
-      totalR++;
-      if (dayNum <= today) workedR++;
+      totalR++; // знаменатель — весь месяц (не делим между отделами)
+      if (dayNum <= today) {
+        if (transfers && transfers.length) {
+          const dayDept = window.DeptHistory.deptAtDate(transfers, null, Date.UTC(yr, mo - 1, dayNum));
+          if (dayDept !== dept) continue; // смена в другом отделе → в оклад этого не идёт
+        }
+        workedR++;
+      }
     }
   }
   return { totalR, workedR };
@@ -11556,7 +11588,7 @@ function calcSalary(nameLow) {
   // Ставки CRM теперь читаются из data/rates.json (раньше — лист СТАВКИ{сфкс})
   const CR = getCrmRates(currentSuffix);
   const baseOklad   = CR.baseOklad;
-  const schedInfo   = getWorkedAndTotalR(nameLow);
+  const schedInfo   = getWorkedAndTotalR(nameLow, 'crm'); // оклад по сменам в CRM (учёт перевода)
   const oklad       = (schedInfo && schedInfo.totalR > 0)
     ? Math.round(baseOklad / schedInfo.totalR * schedInfo.workedR)
     : baseOklad;
@@ -11774,7 +11806,7 @@ function calcSalary(nameLow) {
   // Корректировки дохода (премия/депремия) — единый источник итога (ТЗ §11):
   // final = max(0, base + Σ ACTIVE). Применяется и к факту, и к прогнозу.
   const _crmId = getCrmIdByName(nameLow);
-  const _adj   = adjustmentsFor(_crmId);
+  const _adj   = adjustmentsForDept(nameLow, 'crm'); // корректировки только в текущем отделе (не задваивать при переводе)
   const _factF = Math.max(0, totalFact + _adj.total);
   const _progF = Math.max(0, totalProg + _adj.total);
 

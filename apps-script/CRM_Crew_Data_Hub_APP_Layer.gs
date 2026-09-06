@@ -626,6 +626,20 @@ function APP_ymd_(v) {
   try { const nd = normalizeDate_(s); if (nd) return nd; } catch (_) {} // DD.MM.YYYY и т.п.
   return '';
 }
+// Дата → мс (для сортировки таймлайна с учётом времени). Date-объект сохраняет часы.
+function APP_ms_(v) {
+  if (v == null || v === '') return 0;
+  if (Object.prototype.toString.call(v) === '[object Date]') return isNaN(v.getTime()) ? 0 : v.getTime();
+  const ymd = APP_ymd_(v); if (!ymd) return 0;
+  const p = ymd.split('-'); return Date.UTC(+p[0], +p[1] - 1, +p[2]);
+}
+// Дата → ISO (с временем, если это Date). Для event_at (фронт покажет время события).
+function APP_iso_(v) {
+  if (Object.prototype.toString.call(v) === '[object Date]') return isNaN(v.getTime()) ? '' : v.toISOString();
+  return APP_ymd_(v);
+}
+// 'YYYY-MM-DD' → 'DD.MM.YYYY' для читаемого вывода.
+function APP_dmy_(ymd) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(ymd || '')); return m ? m[3] + '.' + m[2] + '.' + m[1] : String(ymd || ''); }
 
 function APP_dateQuality_(visitDate, minYear, maxYear) {
   if (!visitDate) return 'MISSING';
@@ -886,44 +900,69 @@ function APP_apiClientGet_(payload) {
     if (g('op_manager')) lines.push('Менеджер: ' + g('op_manager'));
     const cm = String(g('result_comment') || '').replace(/\s+/g, ' ').trim(); if (cm) lines.push(cm.length > 120 ? cm.slice(0, 117) + '…' : cm);
     events.push({
-      event_type: isCall ? 'CALL' : 'TRAFFIC_VISIT', event_date: vd, sort: vd || '0000-00-00',
+      event_type: isCall ? 'CALL' : 'TRAFFIC_VISIT', event_date: vd, sort: vd || '0000-00-00', sortMs: APP_ms_(g('visit_date')),
       title: title, visit_type: vt, lines: lines,
       traffic_record_key: String(g('record_key') || ''),
       is_archived: (q === 'VALID' && Number(vd.slice(0, 4)) < nowY),
     });
   });
 
-  // Сделки amoCRM (AMO_DEALS) + продажи.
+  // Сделки amoCRM (AMO_DEALS) + продажи. Исключаем технические закрытия
+  // (1_ДУБЛЬ / 1_ХОЗ) и схлопываем «дубли» — сделки, созданные в пределах 7 дней
+  // друг от друга (оставляем одну: приоритет продаже, затем свежести).
   const leadPrefix = (typeof AMO_CONFIG !== 'undefined' && AMO_CONFIG.LEAD_URL_PREFIX) || 'https://ksocm66.amocrm.ru/leads/detail/';
+  const TECH_CLOSE = /1[_\s]*дубль|1[_\s]*хоз/i;
+  const SEVEN_DAYS = 7 * 24 * 3600 * 1000;
+  let deals = [];
   aRows.forEach(row => {
     const g = row.g;
     if (!clientName && g('contact_fio')) clientName = String(g('contact_fio'));
-    const dealId = String(g('deal_id') || '');
-    const url = String(g('deal_url') || '') || (dealId ? leadPrefix + dealId : '');
+    if (TECH_CLOSE.test(String(g('close_reason') || ''))) return; // 1_ДУБЛЬ / 1_ХОЗ — не показываем
     const created = APP_ymd_(g('created_at')) || APP_ymd_(g('visit_date'));
-    if (created) { const y = Number(created.slice(0, 4)); if (y >= APP_CONFIG.MIN_YEAR && y <= nowY + 1) years.push(y); }
-    const stage = String(g('stage') || '');
+    deals.push({
+      g: g, dealId: String(g('deal_id') || ''),
+      created: created, createdMs: APP_ms_(g('created_at')) || APP_ms_(g('visit_date')),
+      createdIso: APP_iso_(g('created_at')), updatedMs: APP_ms_(g('updated_at')),
+      stage: String(g('stage') || ''),
+      url: String(g('deal_url') || '') || (g('deal_id') ? leadPrefix + g('deal_id') : ''),
+      visitDate: APP_ymd_(g('visit_date')), saleDate: APP_ymd_(g('sale_date')),
+    });
+  });
+  // Дедуп по 7-дневным кластерам создания.
+  deals.sort((a, b) => a.createdMs - b.createdMs);
+  const kept = [];
+  const dealScore = d => (d.saleDate ? 2 : 1);
+  deals.forEach(d => {
+    const last = kept.length ? kept[kept.length - 1] : null;
+    if (last && d.createdMs && last.createdMs && Math.abs(d.createdMs - last.createdMs) < SEVEN_DAYS) {
+      if (dealScore(d) > dealScore(last) || (dealScore(d) === dealScore(last) && (d.updatedMs || 0) > (last.updatedMs || 0))) kept[kept.length - 1] = d;
+    } else kept.push(d);
+  });
+
+  kept.forEach(d => {
+    const g = d.g;
+    if (d.created) { const y = Number(d.created.slice(0, 4)); if (y >= APP_CONFIG.MIN_YEAR && y <= nowY + 1) years.push(y); }
     const dLines = [];
-    if (dealId) dLines.push('Сделка #' + dealId);
+    if (d.dealId) dLines.push('Сделка #' + d.dealId);
     if (g('responsible_raw')) dLines.push('Ответственный: ' + g('responsible_raw'));
     if (g('source')) dLines.push('Источник: ' + g('source'));
+    if (d.visitDate) dLines.push('Дата визита: ' + APP_dmy_(d.visitDate)); // показываем дату визита сделки
     events.push({
-      event_type: 'AMO_DEAL', event_date: created, sort: created || '0000-00-00',
-      title: 'amoCRM' + (stage ? ' · ' + stage : ''), deal_id: dealId, deal_url: url, lines: dLines,
+      event_type: 'AMO_DEAL', event_date: d.created, event_at: d.createdIso, sortMs: d.createdMs, sort: d.created || '0000-00-00',
+      title: 'amoCRM' + (d.stage ? ' · ' + d.stage : ''), deal_id: d.dealId, deal_url: d.url, lines: dLines,
     });
-    const saleDate = APP_ymd_(g('sale_date'));
-    if (saleDate) {
+    if (d.saleDate) {
       const car = String(g('car') || g('sold_car') || '');
-      events.push({ event_type: 'SALE', event_date: saleDate, sort: saleDate, title: 'Продажа', deal_id: dealId, deal_url: url, lines: car ? [car] : [] });
+      events.push({ event_type: 'SALE', event_date: d.saleDate, sortMs: APP_ms_(g('sale_date')), sort: d.saleDate, title: 'Продажа', deal_id: d.dealId, deal_url: d.url, lines: car ? [car] : [] });
     }
   });
 
-  events.sort((a, b) => (b.sort < a.sort ? -1 : b.sort > a.sort ? 1 : 0)); // DESC по дате
+  events.sort((a, b) => ((b.sortMs || 0) - (a.sortMs || 0)) || (b.sort < a.sort ? -1 : b.sort > a.sort ? 1 : 0)); // DESC по времени
   years = years.filter(y => y);
   return {
     summary: {
       client_key: core, client_name: clientName || '', phones: [core],
-      traffic_count: tRows.length, deal_count: aRows.length,
+      traffic_count: tRows.length, deal_count: kept.length,
       first_year: years.length ? Math.min.apply(null, years) : null,
     },
     timeline: events.slice(0, 300),
@@ -1089,7 +1128,12 @@ function APP_rowMatchesFilters_(r, c, f) {
   if (!inArr(f.source, r[c.source])) return false;
   if (!inArr(f.opManager, r[c.op_manager])) return false;
   if (!inArr(f.shortStatus, r[c.short_status])) return false;
-  if (!inArr(f.matchStatus, r[c.match_status])) return false;
+  // Статус связи: WAITING_AMO_SYNC / NO_PHONE — это ui_status (match_status может
+  // быть NO_MATCH), поэтому матчим выбранный статус против match_status ИЛИ ui_status (аудит #1).
+  if (f.matchStatus.length) {
+    const ms = String(r[c.match_status] || '').trim(), us = String(r[c.ui_status] || '').trim();
+    if (f.matchStatus.indexOf(ms) < 0 && f.matchStatus.indexOf(us) < 0) return false;
+  }
   if (f.role.length) {
     const role = String(r[c.matched_employee_role] || '').toLowerCase();
     if (f.role.map(x => x.toLowerCase()).indexOf(role) < 0) return false;

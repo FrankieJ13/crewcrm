@@ -39,7 +39,7 @@
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
   function toast(m, t) { try { if (typeof window.toast === 'function') window.toast(m, t); } catch (_) {} }
-  function copy(text) { try { navigator.clipboard.writeText(String(text || '')); toast('Скопировано', 's'); } catch (_) {} }
+  async function copy(text) { try { await navigator.clipboard.writeText(String(text || '')); toast('Скопировано', 's'); } catch (_) { toast('Не удалось скопировать', 'e'); } }
   function getScroller() {
     let el = KT.el;
     while (el && el !== document.body) {
@@ -58,9 +58,13 @@
     const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{2}):(\d{2}))?/.exec(s);
     if (iso) { y = +iso[1]; mo = +iso[2]; d = +iso[3]; if (iso[4] != null) { hh = +iso[4]; mm = +iso[5]; } }
     else { const dt = new Date(s); if (isNaN(dt.getTime())) return null; y = dt.getFullYear(); mo = dt.getMonth() + 1; d = dt.getDate(); hh = dt.getHours(); mm = dt.getMinutes(); }
-    const bad = !(y >= 2015 && y <= new Date().getFullYear() + 1 && mo >= 1 && mo <= 12 && d >= 1 && d <= 31);
+    // Порог года совпадает с backend APP_CONFIG.MIN_YEAR (2024) — чтобы фронт и
+    // Data Hub не расходились в определении «Некорректная дата»/архивности (аудит #3).
+    const bad = !(y >= 2024 && y <= new Date().getFullYear() + 1 && mo >= 1 && mo <= 12 && d >= 1 && d <= 31);
     return { y, mo, d, hh, mm, bad };
   }
+  // Архивность: доверяем backend is_archived, если он есть; иначе выводим по дате (те же правила).
+  function isArchived(it, dt) { return it && it.is_archived === true ? true : isArch(dt); }
   function isArch(dt) { return !!(dt && !dt.bad && dt.y < new Date().getFullYear()); }
   function fmtFull(dt) { return dt && !dt.bad ? `${dt.d} ${MON_FULL[dt.mo - 1]} ${dt.y}` + (dt.hh != null && (dt.hh || dt.mm) ? `, ${('0' + dt.hh).slice(-2)}:${('0' + dt.mm).slice(-2)}` : '') : 'ДАТА?'; }
   function shortTs(v) { const dt = parseDT(v); if (!dt || dt.bad) return ''; const p = n => ('0' + n).slice(-2); return `${p(dt.d)}.${p(dt.mo)}` + (dt.hh != null ? ` ${p(dt.hh)}:${p(dt.mm)}` : ''); }
@@ -236,8 +240,9 @@
   }
   function appendCards(items) {
     const l = document.getElementById('kt-list'); if (!l) return;
+    // Не режем «первые 400» (это ломало scroll-restore и рассинхронило DOM/KT.items,
+    // аудит #7). Держим DOM = KT.items; при росте — cursor-догрузка ограничена спросом.
     l.insertAdjacentHTML('beforeend', items.map(cardHtml).join(''));
-    while (l.children.length > 400) l.removeChild(l.firstElementChild);
     l.querySelectorAll('.kt-card:not([data-b])').forEach(c => { c.setAttribute('data-b', '1'); c.addEventListener('click', () => openVisit(c.getAttribute('data-key'))); });
   }
   function cardHtml(it) {
@@ -259,7 +264,7 @@
       <div class="kt-cr">
         <span class="kt-badge kt-badge-${mc.cls}">${esc(mc.txt)}</span>
         ${mc.sub ? `<span class="kt-cr-sub">${esc(mc.sub)}</span>` : ''}
-        ${isArch(dt) ? '<span class="kt-tag kt-tag-arch">АРХИВНЫЙ</span>' : ''}
+        ${isArchived(it, dt) ? '<span class="kt-tag kt-tag-arch">АРХИВНЫЙ</span>' : ''}
         <span class="kt-chev">${I.chev}</span>
       </div>
     </div>`;
@@ -273,11 +278,18 @@
     if (typeof f === 'function') { try { f(); } catch (_) {} return; }
     KT.view = 'list'; KT.currentVisit = null; KT.currentClient = null; renderArchive();
   }
+  // Замыкание, восстанавливающее ТЕКУЩИЙ экран (не хардкод «в архив», аудит #2):
+  // из истории клиента визит вернётся в клиента, из архива — в архив.
+  function captureReturn() {
+    const view = KT.view, vis = KT.currentVisit, cli = KT.currentClient, scroll = getScroller().scrollTop || 0;
+    if (view === 'client' && cli) return () => { KT.view = 'client'; KT.currentClient = cli; renderClient(cli); };
+    if (view === 'detail' && vis) return () => { KT.view = 'detail'; KT.currentVisit = vis; renderVisit(vis); };
+    return () => { KT.view = 'list'; KT.currentVisit = null; renderArchive(); const sc = getScroller(); if (sc) sc.scrollTop = scroll; };
+  }
 
   /* ── КАРТОЧКА ВИЗИТА (inline) ── */
   async function openVisit(key) {
-    const scrollBack = getScroller().scrollTop || 0;
-    KT.history.push(() => { KT.view = 'list'; KT.currentVisit = null; renderArchive(); const sc = getScroller(); if (sc) sc.scrollTop = scrollBack; });
+    KT.history.push(captureReturn());
     KT.view = 'detail';
     showBody(backBtn('К списку') + '<div class="kt-empty">Загрузка…</div>');
     getScroller().scrollTop = 0;
@@ -330,7 +342,7 @@
     showBody(`
       <button class="kt-back" onclick="Kartoteka.back()">${I.back}К списку</button>
       <div class="kt-vsum">
-        <div class="kt-vtop"><span class="kt-vdate">${esc(fmtFull(dt))}</span><span class="kt-badge kt-badge-${mc.cls}">${esc(mc.txt)}</span>${isArch(dt) ? '<span class="kt-tag kt-tag-arch">АРХИВНЫЙ</span>' : ''}${badDate ? '<span class="kt-tag kt-tag-bad">Некорректная дата</span>' : ''}</div>
+        <div class="kt-vtop"><span class="kt-vdate">${esc(fmtFull(dt))}</span><span class="kt-badge kt-badge-${mc.cls}">${esc(mc.txt)}</span>${isArchived(v, dt) ? '<span class="kt-tag kt-tag-arch">АРХИВНЫЙ</span>' : ''}${badDate ? '<span class="kt-tag kt-tag-bad">Некорректная дата</span>' : ''}</div>
         <div class="kt-vid">ID: ${esc(v.traffic_record_key)}<button class="kt-copy" data-copy="${esc(String(v.traffic_record_key))}" title="Копировать">${I.copy}</button></div>
         <div class="kt-vchips">${chips}</div>
       </div>
@@ -338,7 +350,6 @@
       <div class="kt-sec"><div class="kt-sec-h">${I.user}<span class="kt-sec-t">Клиент</span></div>
         ${row('ФИО', v.client_name)}
         ${row('Телефон', v.phone_display, { copy: true, link: true })}
-        ${full.result_comment ? `<div class="kt-longtext">${esc(full.result_comment)}</div>` : ''}
       </div>
 
       <div class="kt-sec"><div class="kt-sec-h">${I.salon}<span class="kt-sec-t">ОП (салон)</span></div>
@@ -348,6 +359,7 @@
         ${row('Город', v.city)}
         ${row('Автомобиль', full.car_reference || v.car_reference)}
         ${row('VIN', full.vin || v.vin)}
+        ${full.result_comment ? `<div class="kt-sec-sub">Итог / комментарий</div><div class="kt-longtext">${esc(full.result_comment)}</div>` : ''}
       </div>
 
       ${(full.followup_comment || followup) ? `<div class="kt-sec"><div class="kt-sec-h">${I.dozhim}<span class="kt-sec-t">ДОЖИМ</span></div>
@@ -384,8 +396,7 @@
 
   function openClientOf(phone) {
     if (!phone) { toast('У визита нет телефона', 'i'); return; }
-    const v = KT.currentVisit;
-    KT.history.push(() => { KT.view = 'detail'; KT.currentVisit = v; renderVisit(v); });
+    KT.history.push(captureReturn()); // вернёмся в текущий визит
     openClientByPhone(phone);
   }
   async function openClientByPhone(phone) {
@@ -416,7 +427,7 @@
     return { color: 'green', icon: I.car };
   }
   function tlItem(e) {
-    const dt = parseDT(e.event_date);
+    const dt = parseDT(e.event_at || e.event_date); // event_at несёт время (#6)
     const dstr = (dt && !dt.bad) ? `${('0' + dt.d).slice(-2)} ${MON[dt.mo - 1]} ${dt.y}` : 'ДАТА?';
     const time = (dt && dt.hh != null && (dt.hh || dt.mm)) ? `${('0' + dt.hh).slice(-2)}:${('0' + dt.mm).slice(-2)}` : '';
     const k = tlKind(e);

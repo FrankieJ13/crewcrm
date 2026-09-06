@@ -77,6 +77,8 @@ const CFG = {
   SHEET_ID:  '1DeUsHB_O1SbIMR4p5yd64o_R0yllWvtnyNhjxjhipn8',
   AUDIT_WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbz3PL0QdR8giSx9ye6mycGQYNHU8Iejb3smqBXgtWopB7S98_LY1S3wSlXKvNp7lJ-eFA/exec',
   AUDIT_DIRECT_FALLBACK: false,
+  // «Картотека» (Traffic) — read-only Web App поверх Data Hub APP-слоя.
+  TRAFFIC_WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbx2a6NkeE4M9iMhhPTSKHMK59lxo103RrszRURJJCx31SQhB2QCRXcgziCy9BcBLEZe/exec',
   FIREBASE: {
     apiKey: 'AIzaSyAmXoyZdIuxmbWyFHTKfdYRbYLcKxgVbWE',
     authDomain: 'crm-crew.firebaseapp.com',
@@ -1018,7 +1020,7 @@ function logoSectionName(id) {
     case 'instruktsii': {                                 // FAQ — много подразделов, имя по S.faqTab
       const f = { instr: 'инструкции', reglament: 'регламент', mango: 'mango',
                   links: 'сайты см', autopodbor: 'чат см.ru', autoru: 'чат auto.ru',
-                  'dozhim-search': 'трафик поиск', converter: 'конвертер', 'gs-sverka': 'сверка gs' };
+                  'dozhim-search': 'трафик поиск', converter: 'конвертер', 'gs-sverka': 'сверка gs', kartoteka: 'картотека' };
       return f[S.faqTab] || 'faq';
     }
     case 'trophies': return 'трофеи';
@@ -1571,6 +1573,7 @@ function getPresencePageLabel() {
               : S.faqTab === 'dozhim-search' ? 'Трафик поиск'
               : S.faqTab === 'converter' ? 'Конвертер'
               : S.faqTab === 'gs-sverka' ? 'Сверка GS×CRM'
+              : S.faqTab === 'kartoteka' ? 'Картотека'
               : S.faqTab === 'autoru' ? sub
               : 'Инструкции';
     return faq;
@@ -7419,6 +7422,7 @@ function renderInstruktsii() {
   if (S.faqTab === 'dozhim-search') { el.innerHTML = renderDozhimSearchTab(); initDozhimSearchTab(); return; }
   if (S.faqTab === 'converter') { el.innerHTML = renderConverterTab(); initConverterTab(); return; }
   if (S.faqTab === 'gs-sverka') { el.innerHTML = (typeof renderGsSverkaTab === 'function' ? renderGsSverkaTab() : ''); if (typeof initGsSverkaTab === 'function') initGsSverkaTab(); return; }
+  if (S.faqTab === 'kartoteka') { if (window.Kartoteka) window.Kartoteka.render(el); else el.innerHTML = '<div class="empty">Модуль «Картотека» не загружен</div>'; return; }
   // Офлайн-данные (js/instr-data.js) — раздел больше НЕ читается с Google-листа
   const D = window.INSTR_DATA;
   if (!D || !D.statusGroups) { el.innerHTML = '<div class="empty">Нет инструкций</div>'; return; }

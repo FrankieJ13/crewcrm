@@ -281,7 +281,10 @@
     if (value == null || value === '') return '';
     opts = opts || {};
     const cls = opts.link ? ' link' : '';
-    const cp = opts.copy ? `<button class="kt-copy" onclick="event.stopPropagation();Kartoteka.copy('${esc(String(value)).replace(/'/g, '&#39;')}')">${I.copy}</button>` : '';
+    // Кнопка копирования — через data-атрибут + addEventListener (bindVisitActions),
+    // НЕ inline onclick со строковой интерполяцией (иначе XSS: HTML-энтити в
+    // атрибуте декодируются до выполнения JS, и кавычка в данных ломает строку).
+    const cp = opts.copy ? `<button class="kt-copy" data-copy="${esc(String(value))}" title="Копировать">${I.copy}</button>` : '';
     return `<div class="kt-r"><span class="kt-rl">${esc(label)}</span><span class="kt-rv${cls}">${esc(value)}${cp}</span></div>`;
   }
   function renderVisit(v) {
@@ -320,7 +323,7 @@
       <button class="kt-back" onclick="Kartoteka.back()">${I.back}К списку</button>
       <div class="kt-vsum">
         <div class="kt-vtop"><span class="kt-vdate">${esc(fmtFull(dt))}</span><span class="kt-badge kt-badge-${mc.cls}">${esc(mc.txt)}</span>${isArch(dt) ? '<span class="kt-tag kt-tag-arch">АРХИВНЫЙ</span>' : ''}${badDate ? '<span class="kt-tag kt-tag-bad">Некорректная дата</span>' : ''}</div>
-        <div class="kt-vid">ID: ${esc(v.traffic_record_key)}<button class="kt-copy" onclick="Kartoteka.copy('${esc(String(v.traffic_record_key))}')">${I.copy}</button></div>
+        <div class="kt-vid">ID: ${esc(v.traffic_record_key)}<button class="kt-copy" data-copy="${esc(String(v.traffic_record_key))}" title="Копировать">${I.copy}</button></div>
         <div class="kt-vchips">${chips}</div>
       </div>
 
@@ -350,13 +353,22 @@
         ${amo}
       </div>
 
-      <button class="kt-cta" onclick="Kartoteka.openClientOf('${esc(String(v.phone_core || v.phone_display || ''))}')">${I.user}Открыть карточку клиента</button>
+      <button class="kt-cta" data-client="${esc(String(v.phone_core || v.phone_display || ''))}">${I.user}Открыть карточку клиента</button>
       ${fresh ? `<div class="kt-empty" style="padding:12px 0 0;font-size:11px">${esc(fresh)}</div>` : ''}
     `);
+    bindVisitActions();
     getScroller().scrollTop = 0;
   }
+  // Навешиваем обработчики после innerHTML (без inline onclick — защита от XSS).
+  function bindVisitActions() {
+    const body = KT.el && KT.el.querySelector('#kt-body');
+    if (!body) return;
+    body.querySelectorAll('.kt-copy[data-copy]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); copy(b.getAttribute('data-copy')); }));
+    const cta = body.querySelector('.kt-cta[data-client]');
+    if (cta) cta.addEventListener('click', () => openClientOf(cta.getAttribute('data-client')));
+  }
   function shortTsFull(v) { const dt = parseDT(v); return dt && !dt.bad ? fmtFull(dt) : (v ? '' : ''); }
-  function amoBtn(url) { return `<a class="kt-amo-btn" href="${esc(url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${I.ext}Открыть в amoCRM</a>`; }
+  function amoBtn(url) { const u = String(url || ''); if (!/^https?:\/\//i.test(u)) return ''; return `<a class="kt-amo-btn" href="${esc(u)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${I.ext}Открыть в amoCRM</a>`; }
 
   function openClientOf() { toast('История клиента — скоро (готовим backend)', 'i'); }
 

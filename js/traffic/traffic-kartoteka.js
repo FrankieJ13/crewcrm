@@ -22,7 +22,9 @@
   function toast(m, t) { try { if (typeof window.toast === 'function') window.toast(m, t); } catch (_) {} }
 
   function fmtDateParts(ymd) {
-    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
+    // visit_date может прийти как 'YYYY-MM-DD' или ISO-datetime (если Sheets
+    // сохранил дату как Date) — берём первые 10 символов.
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(ymd || '').slice(0, 10));
     if (!m) return null;
     return { d: m[3], mon: MON[+m[2] - 1] || '', monFull: MON_FULL[+m[2] - 1] || '', y: m[1] };
   }
@@ -66,8 +68,6 @@
     el.innerHTML = `
       <div id="kt-app">
         <div class="kt-head">
-          <div class="kt-eyebrow">FAQ</div>
-          <div class="kt-title">Картотека</div>
           <div class="kt-subtitle">Архив визитов и связи с amoCRM</div>
           <div class="kt-tabs">
             <button class="kt-tab ${KT.sub === 'archive' ? 'on' : ''}" data-kt-tab="archive">Архив</button>
@@ -88,7 +88,8 @@
   function showBody(html) { const b = KT.el && KT.el.querySelector('#kt-body'); if (b) b.innerHTML = html; }
   function errBox(err) {
     const msg = window.TrafficAPI ? window.TrafficAPI.parseApiError(err) : 'Ошибка';
-    return `<div class="kt-empty">${esc(msg)}<div><button class="kt-btn" onclick="Kartoteka.reload()">Повторить</button></div></div>`;
+    const code = err && err.code ? ` (${err.code})` : '';
+    return `<div class="kt-empty">${esc(msg)}<span class="kt-muted">${esc(code)}</span><div><button class="kt-btn" onclick="Kartoteka.reload()">Повторить</button></div></div>`;
   }
 
   async function ensureBoot() {
@@ -127,7 +128,7 @@
           <input type="search" class="kt-search" id="kt-q" placeholder="Поиск по телефону, ФИО или комментарию…" value="${esc(KT.filters.query)}">
           <button class="kt-btn kt-more" id="kt-more-btn">${KT.showMore ? 'Скрыть' : 'Ещё'}</button>
         </div>
-        <div class="kt-more-box" ${KT.showMore ? '' : 'hidden'}>
+        <div class="kt-more-box" style="${KT.showMore ? '' : 'display:none'}">
           <label class="kt-check"><input type="checkbox" id="kt-arch-archived" ${KT.filters.archiveMode === 'archived' ? 'checked' : ''}> Только архивные (прошлые годы)</label>
           <label class="kt-check"><input type="checkbox" id="kt-arch-current" ${KT.filters.archiveMode === 'current' ? 'checked' : ''}> Только текущий год</label>
           <label class="kt-check"><input type="checkbox" id="kt-arch-bad" ${KT.filters.archiveMode === 'bad_date' ? 'checked' : ''}> С ошибкой в дате</label>
@@ -157,10 +158,28 @@
     });
     KT.el.querySelectorAll('[data-kt-status]').forEach(b => b.onclick = () => { KT.filters.matchStatus = b.getAttribute('data-kt-status'); applyFilters(); });
 
-    loadFirst();
+    // Идемпотентность: если уже загружали в этой сессии — рендерим из кэша (без
+    // повторного 4-5-сек запроса), иначе первый запрос. Это защищает от «пусто»,
+    // когда FAQ перерисовывается во время висящего запроса.
+    if (KT.loadedOnce && KT.items.length) { renderCachedList(); }
+    else if (KT.loading) { const l = document.getElementById('kt-list'); if (l) l.innerHTML = ktSkeleton(); setupObserver(); } // запрос уже идёт — не орфаним
+    else { loadFirst(); }
   }
 
-  function applyFilters() { loadFirst(); }
+  function renderCachedList() {
+    const list = document.getElementById('kt-list');
+    if (list) { list.innerHTML = ''; appendCards(KT.items); }
+    setSummary();
+    setupObserver();
+  }
+  function setSummary(extra) {
+    const sum = document.getElementById('kt-summary');
+    if (!sum) return;
+    const total = (KT.lastTotal != null) ? ('Найдено: ' + KT.lastTotal + ' визитов') : ('Показано: ' + KT.items.length);
+    sum.textContent = total + (extra ? ' · ' + extra : '');
+  }
+
+  function applyFilters() { KT.loadedOnce = false; loadFirst(); }
 
   function payloadFromFilters() {
     const f = KT.filters, p = { limit: 40 };
@@ -174,7 +193,10 @@
   }
 
   function loadFirst() {
-    KT.items = []; KT.cursor = null; KT.hasMore = true; KT.reqSeq++;
+    KT.reqSeq++;
+    if (KT.ac) { try { KT.ac.abort(); } catch (_) {} KT.ac = null; }
+    KT.loading = false;                 // сбрасываем (иначе висящий запрос мог застрять)
+    KT.items = []; KT.cursor = null; KT.hasMore = true; KT.lastTotal = null;
     const list = document.getElementById('kt-list');
     if (list) list.innerHTML = '';
     const sum = document.getElementById('kt-summary');
@@ -187,31 +209,36 @@
     if (KT.loading || !KT.hasMore) return;
     KT.loading = true;
     const seq = KT.reqSeq;
-    if (KT.ac) { try { KT.ac.abort(); } catch (_) {} }
     KT.ac = (typeof AbortController !== 'undefined') ? new AbortController() : null;
 
-    const list = document.getElementById('kt-list');
     const skeleton = KT.items.length === 0;
-    if (skeleton && list) list.innerHTML = ktSkeleton();
+    { const l0 = document.getElementById('kt-list'); if (skeleton && l0) l0.innerHTML = ktSkeleton(); }
 
     const p = payloadFromFilters();
     if (KT.cursor) p.cursor = KT.cursor;
     try {
       const data = await window.TrafficAPI.archiveList(p, KT.ac ? KT.ac.signal : undefined);
       if (seq !== KT.reqSeq) return; // устарело
+      const items = (data && data.items) || [];
+      try { console.log('[Kartoteka] archive.list →', items.length, 'items · total', data && data.totalApprox); } catch (_) {}
+      const list = document.getElementById('kt-list');
       if (skeleton && list) list.innerHTML = '';
-      KT.items = KT.items.concat(data.items || []);
-      KT.cursor = data.nextCursor || null;
-      KT.hasMore = !!data.hasMore;
-      appendCards(data.items || []);
-      const sum = document.getElementById('kt-summary');
-      if (sum) sum.textContent = data.totalApprox != null ? ('Найдено: ' + data.totalApprox + ' визитов') : ('Показано: ' + KT.items.length);
+      KT.items = KT.items.concat(items);
+      KT.cursor = (data && data.nextCursor) || null;
+      KT.hasMore = !!(data && data.hasMore);
+      if (data && data.totalApprox != null) KT.lastTotal = data.totalApprox;
+      KT.loadedOnce = true;
+      appendCards(items);
+      setSummary();
       if (!KT.items.length && list) list.innerHTML = '<div class="kt-empty">За выбранный период визитов нет</div>';
     } catch (err) {
       if (err && err.name === 'AbortError') return;
       if (seq !== KT.reqSeq) return;
-      if (skeleton && list) list.innerHTML = errBox(err);
-      else toast(window.TrafficAPI.parseApiError(err), 'e');
+      try { console.warn('[Kartoteka] archive.list error', err && err.code, err && err.message); } catch (_) {}
+      const list = document.getElementById('kt-list');
+      if (skeleton) { if (list) list.innerHTML = errBox(err); else showBody(errBox(err)); }
+      else toast(window.TrafficAPI.parseApiError(err) + (err && err.code ? ' (' + err.code + ')' : ''), 'e');
+      setSummary('ошибка' + (err && err.code ? ' ' + err.code : ''));
     } finally {
       if (seq === KT.reqSeq) KT.loading = false;
     }
@@ -411,7 +438,11 @@
       </div>`);
   }
 
-  function reload() { KT.booted = false; if (window.TrafficAPI) window.TrafficAPI.clearCache(); render(KT.el); }
+  function reload() {
+    KT.booted = false; KT.loadedOnce = false; KT.items = []; KT.cursor = null; KT.hasMore = true; KT.lastTotal = null;
+    if (window.TrafficAPI) window.TrafficAPI.clearCache();
+    render(KT.el);
+  }
 
   window.Kartoteka = { render, reload, closeVisit, openVisit };
 })();

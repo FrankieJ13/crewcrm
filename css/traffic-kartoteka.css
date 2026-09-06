@@ -131,3 +131,36 @@
 .kt-empty { text-align: center; color: var(--txt3); padding: 30px 16px; font-size: 14px; }
 .kt-empty .kt-btn { margin-top: 12px; }
 .kt-sentinel { height: 20px; }
+
+/* ── История клиента (экран 3) ── */
+.kt-chead { display: flex; gap: 12px; align-items: center; background: var(--card); border: 1px solid var(--line2); border-radius: 16px; padding: 14px 15px; margin-bottom: 12px; }
+.kt-avatar { flex-shrink: 0; width: 52px; height: 52px; border-radius: 50%; background: var(--line2); display: flex; align-items: center; justify-content: center; color: var(--txt3); }
+.kt-avatar svg { width: 30px; height: 30px; }
+.kt-chead-r { min-width: 0; }
+.kt-cname { font-size: 18px; font-weight: 800; color: var(--txt); }
+.kt-cphone { font-size: 14px; color: var(--acc); font-weight: 700; display: flex; align-items: center; gap: 4px; margin: 2px 0 6px; }
+.kt-cmeta { display: flex; gap: 6px; flex-wrap: wrap; }
+.kt-cchip { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--line2); color: var(--txt); }
+
+.kt-tl { position: relative; padding: 2px 0; }
+.kt-tl-item { display: grid; grid-template-columns: 62px 34px 1fr; gap: 4px; align-items: flex-start; padding-bottom: 14px; }
+.kt-tl-item.tap { cursor: pointer; }
+.kt-tl-date { text-align: right; padding-top: 5px; }
+.kt-tl-date b { display: block; font-size: 11px; font-weight: 700; color: var(--txt); line-height: 1.25; }
+.kt-tl-date span { font-size: 10px; color: var(--txt3); }
+.kt-tl-rail { position: relative; display: flex; justify-content: center; }
+.kt-tl-rail::before { content: ''; position: absolute; top: 32px; bottom: -14px; left: 50%; width: 2px; margin-left: -1px; background: var(--line2); }
+.kt-tl-item:last-child .kt-tl-rail::before { display: none; }
+.kt-tl-ic { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 1; }
+.kt-tl-ic svg { width: 16px; height: 16px; }
+.kt-tl-green  { color: #16a34a; } .kt-tl-ic.kt-tl-green  { background: rgba(34,197,94,.16); }
+.kt-tl-blue   { color: #2563eb; } .kt-tl-ic.kt-tl-blue   { background: rgba(59,130,246,.16); }
+.kt-tl-orange { color: #ea7317; } .kt-tl-ic.kt-tl-orange { background: rgba(234,115,23,.16); }
+.kt-tl-grey   { color: var(--txt3); } .kt-tl-ic.kt-tl-grey { background: rgba(120,120,120,.16); }
+.kt-tl-body { background: var(--card); border: 1px solid var(--line2); border-radius: 12px; padding: 9px 26px 9px 11px; position: relative; min-width: 0; }
+.kt-tl-t { font-size: 13px; font-weight: 700; color: var(--txt); margin-bottom: 2px; }
+.kt-tl-l { font-size: 12px; color: var(--txt3); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.kt-tl-chev { position: absolute; right: 7px; top: 50%; transform: translateY(-50%); color: var(--txt3); display: flex; }
+.kt-tl-chev svg { width: 15px; height: 15px; }
+.kt-infoblock { display: flex; gap: 8px; align-items: flex-start; background: var(--line2); border-radius: 12px; padding: 12px 14px; margin-top: 6px; font-size: 12px; color: var(--txt3); line-height: 1.4; }
+.kt-infoblock svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--acc); margin-top: 1px; }

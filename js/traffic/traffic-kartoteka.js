@@ -24,12 +24,15 @@
     info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
     ext: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4h6v6"/><path d="M20 4l-8 8"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
     phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3l3 5-2 2a12 12 0 0 0 5 5l2-2 5 3-1 3a2 2 0 0 1-2 1A16 16 0 0 1 3 6a2 2 0 0 1 1-2z"/></svg>',
+    avatar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="9" r="3.2"/><path d="M5.5 20c.6-3.4 3.3-5 6.5-5s5.9 1.6 6.5 5"/></svg>',
+    deal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+    sale: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>',
   };
 
   const KT = {
     el: null, sub: 'archive', view: 'list', booted: false, opts: null, meta: null,
     items: [], cursor: null, hasMore: true, loading: false, loadedOnce: false, lastTotal: null,
-    reqSeq: 0, ac: null, io: null, savedScroll: 0, currentVisit: null,
+    reqSeq: 0, ac: null, io: null, savedScroll: 0, currentVisit: null, currentClient: null, history: [],
     filters: { dateFrom: '', dateTo: '', city: '', opManager: '', visitType: '', matchStatus: '', archiveMode: '', query: '' },
     search: { phone: '', result: null, loading: false, error: '' },
   };
@@ -94,10 +97,7 @@
     el.innerHTML = `
       <div class="kt-app">
         <div class="kt-head">
-          <div class="kt-head-row">
-            <div class="kt-subtitle">Архив визитов и связи с amoCRM</div>
-            <button class="kt-about" data-kt-tab="help">${I.info}О разделе</button>
-          </div>
+          <div class="kt-subtitle">Архив визитов и связи с amoCRM</div>
           <div class="kt-tabs">
             <button class="kt-tab ${KT.sub === 'archive' ? 'on' : ''}" data-kt-tab="archive">Архив</button>
             <button class="kt-tab ${KT.sub === 'search' ? 'on' : ''}" data-kt-tab="search">Поиск клиента</button>
@@ -266,16 +266,24 @@
   }
   function skeleton() { let s = ''; for (let i = 0; i < 6; i++) s += '<div class="kt-card kt-skel"><div class="kt-cd"></div><div class="kt-cm"><div class="kt-sk-line"></div><div class="kt-sk-line short"></div></div><div></div></div>'; return s; }
 
+  /* ── НАВИГАЦИЯ (стек истории: список ↔ визит ↔ клиент) ── */
+  const backBtn = (label) => `<button class="kt-back" onclick="Kartoteka.back()">${I.back}${esc(label || 'Назад')}</button>`;
+  function back() {
+    const f = KT.history.pop();
+    if (typeof f === 'function') { try { f(); } catch (_) {} return; }
+    KT.view = 'list'; KT.currentVisit = null; KT.currentClient = null; renderArchive();
+  }
+
   /* ── КАРТОЧКА ВИЗИТА (inline) ── */
   async function openVisit(key) {
-    KT.savedScroll = getScroller().scrollTop || 0;
+    const scrollBack = getScroller().scrollTop || 0;
+    KT.history.push(() => { KT.view = 'list'; KT.currentVisit = null; renderArchive(); const sc = getScroller(); if (sc) sc.scrollTop = scrollBack; });
     KT.view = 'detail';
-    showBody(`<button class="kt-back" onclick="Kartoteka.back()">${I.back}К списку</button><div class="kt-empty">Загрузка…</div>`);
+    showBody(backBtn('К списку') + '<div class="kt-empty">Загрузка…</div>');
     getScroller().scrollTop = 0;
     try { const data = await window.TrafficAPI.visitGet(key); KT.currentVisit = data.visit; renderVisit(data.visit); }
-    catch (err) { showBody(`<button class="kt-back" onclick="Kartoteka.back()">${I.back}К списку</button>${errBox(err)}`); }
+    catch (err) { showBody(backBtn('К списку') + errBox(err)); }
   }
-  function back() { KT.view = 'list'; KT.currentVisit = null; renderArchive(); }
 
   function row(label, value, opts) {
     if (value == null || value === '') return '';
@@ -370,7 +378,89 @@
   function shortTsFull(v) { const dt = parseDT(v); return dt && !dt.bad ? fmtFull(dt) : (v ? '' : ''); }
   function amoBtn(url) { const u = String(url || ''); if (!/^https?:\/\//i.test(u)) return ''; return `<a class="kt-amo-btn" href="${esc(u)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${I.ext}Открыть в amoCRM</a>`; }
 
-  function openClientOf() { toast('История клиента — скоро (готовим backend)', 'i'); }
+  /* ── ИСТОРИЯ КЛИЕНТА (досье, экран 3) ── */
+  function fmtPhone(core) { const c = String(core || '').replace(/\D/g, ''); if (c.length !== 10) return String(core || ''); return '+7 ' + c.slice(0, 3) + ' ' + c.slice(3, 6) + '-' + c.slice(6, 8) + '-' + c.slice(8, 10); }
+  function plural(n, one, few, many) { n = Math.abs(n) % 100; const n1 = n % 10; if (n > 10 && n < 20) return many; if (n1 > 1 && n1 < 5) return few; if (n1 === 1) return one; return many; }
+
+  function openClientOf(phone) {
+    if (!phone) { toast('У визита нет телефона', 'i'); return; }
+    const v = KT.currentVisit;
+    KT.history.push(() => { KT.view = 'detail'; KT.currentVisit = v; renderVisit(v); });
+    openClientByPhone(phone);
+  }
+  async function openClientByPhone(phone) {
+    KT.view = 'client';
+    showBody(backBtn('Назад') + '<div class="kt-empty">Загрузка…</div>');
+    getScroller().scrollTop = 0;
+    try {
+      const look = await window.TrafficAPI.clientLookup(phone);
+      if (!look || !look.found || !look.client_key) { showBody(backBtn('Назад') + '<div class="kt-empty">Клиент с таким телефоном не найден в Картотеке.</div>'); return; }
+      const data = await window.TrafficAPI.clientGet(look.client_key);
+      KT.currentClient = data; renderClient(data);
+    } catch (err) {
+      const code = err && err.code;
+      const msg = code === 'UNKNOWN_ACTION' ? 'История клиента скоро подключится (готовим backend Data Hub).'
+        : code === 'INVALID_PHONE_INPUT' ? 'Проверьте номер телефона.'
+        : window.TrafficAPI.parseApiError(err) + (code ? ' (' + code + ')' : '');
+      showBody(backBtn('Назад') + `<div class="kt-empty">${esc(msg)}</div>`);
+    }
+  }
+
+  function tlKind(e) {
+    const t = String(e.event_type || '').toUpperCase();
+    const vt = String(e.visit_type || '').toLowerCase();
+    if (t === 'AMO_DEAL') return { color: 'blue', icon: I.deal };
+    if (t === 'SALE') return { color: 'green', icon: I.sale };
+    if (t === 'CALL' || vt.indexOf('звон') >= 0) return { color: 'grey', icon: I.phone };
+    if (vt.indexOf('повтор') >= 0) return { color: 'orange', icon: I.car };
+    return { color: 'green', icon: I.car };
+  }
+  function tlItem(e) {
+    const dt = parseDT(e.event_date);
+    const dstr = (dt && !dt.bad) ? `${('0' + dt.d).slice(-2)} ${MON[dt.mo - 1]} ${dt.y}` : 'ДАТА?';
+    const time = (dt && dt.hh != null && (dt.hh || dt.mm)) ? `${('0' + dt.hh).slice(-2)}:${('0' + dt.mm).slice(-2)}` : '';
+    const k = tlKind(e);
+    const lines = (e.lines || []).filter(Boolean).map(l => `<div class="kt-tl-l">${esc(l)}</div>`).join('');
+    const tap = e.traffic_record_key ? ` data-visit="${esc(e.traffic_record_key)}"` : (/^https?:/i.test(String(e.deal_url || '')) ? ` data-url="${esc(e.deal_url)}"` : '');
+    const arch = e.is_archived ? '<span class="kt-tag kt-tag-arch">АРХИВНЫЙ</span>' : '';
+    return `<div class="kt-tl-item${tap ? ' tap' : ''}"${tap}>
+      <div class="kt-tl-date"><b>${esc(dstr)}</b>${time ? `<span>${esc(time)}</span>` : ''}</div>
+      <div class="kt-tl-rail"><span class="kt-tl-ic kt-tl-${k.color}">${k.icon}</span></div>
+      <div class="kt-tl-body">
+        <div class="kt-tl-t">${esc(e.title || '')} ${arch}</div>${lines}
+        ${tap ? `<span class="kt-tl-chev">${I.chev}</span>` : ''}
+      </div>
+    </div>`;
+  }
+  function renderClient(d) {
+    const s = (d && d.summary) || {}, tl = (d && d.timeline) || [];
+    const phone = (s.phones && s.phones[0]) ? fmtPhone(s.phones[0]) : '';
+    const chips = [
+      s.first_year ? 'Клиент с ' + s.first_year + ' года' : '',
+      (s.traffic_count != null) ? s.traffic_count + ' ' + plural(s.traffic_count, 'визит', 'визита', 'визитов') : '',
+      (s.deal_count != null) ? s.deal_count + ' ' + plural(s.deal_count, 'сделка', 'сделки', 'сделок') + ' в amoCRM' : '',
+    ].filter(Boolean).map(c => `<span class="kt-cchip">${esc(c)}</span>`).join('');
+    showBody(`
+      ${backBtn('Назад')}
+      <div class="kt-chead">
+        <div class="kt-avatar">${I.avatar}</div>
+        <div class="kt-chead-r">
+          <div class="kt-cname">${esc(s.client_name || 'Клиент')}</div>
+          ${phone ? `<div class="kt-cphone">${esc(phone)}<button class="kt-copy" data-copy="${esc(phone)}" title="Копировать">${I.copy}</button></div>` : ''}
+          ${chips ? `<div class="kt-cmeta">${chips}</div>` : ''}
+        </div>
+      </div>
+      ${tl.length ? `<div class="kt-tl">${tl.map(tlItem).join('')}</div>` : '<div class="kt-empty">История клиента пока пуста.</div>'}
+      <div class="kt-infoblock">${I.info}<span>Здесь показана полная история клиента: все визиты, звонки и сделки из amoCRM. Архивные события помечаются по дате.</span></div>
+    `);
+    const body = KT.el && KT.el.querySelector('#kt-body');
+    if (body) {
+      body.querySelectorAll('.kt-copy[data-copy]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); copy(b.getAttribute('data-copy')); }));
+      body.querySelectorAll('.kt-tl-item[data-visit]').forEach(el => el.addEventListener('click', () => openVisit(el.getAttribute('data-visit'))));
+      body.querySelectorAll('.kt-tl-item[data-url]').forEach(el => el.addEventListener('click', () => { const u = el.getAttribute('data-url'); if (/^https?:/i.test(u)) window.open(u, '_blank', 'noopener'); }));
+    }
+    getScroller().scrollTop = 0;
+  }
 
   /* ── ПОИСК КЛИЕНТА ── */
   function renderSearch() {
@@ -388,21 +478,12 @@
     const inp = document.getElementById('kt-ph'); if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') run(); });
     if (!KT.search.phone) document.getElementById('kt-search-out').innerHTML = '<div class="kt-empty">Введите телефон клиента</div>';
   }
-  async function doClientLookup(phone) {
+  function doClientLookup(phone) {
     KT.search.phone = phone;
-    const out = document.getElementById('kt-search-out');
-    if (!phone) { if (out) out.innerHTML = '<div class="kt-empty">Введите телефон клиента</div>'; return; }
-    if (out) out.innerHTML = '<div class="kt-empty">Поиск…</div>';
-    try {
-      const data = await window.TrafficAPI.clientLookup(phone);
-      // client dossier — следующий инкремент; пока показываем итог lookup.
-      if (out) out.innerHTML = data ? `<div class="kt-empty">Найдено. История клиента — в подготовке.</div>` : '<div class="kt-empty">Клиент с таким телефоном не найден в Картотеке.</div>';
-    } catch (err) {
-      const msg = (err && err.code === 'UNKNOWN_ACTION') ? 'Поиск клиента скоро подключим (готовим backend).'
-        : (err && err.code === 'INVALID_PHONE_INPUT') ? 'Проверьте номер телефона.'
-        : window.TrafficAPI.parseApiError(err);
-      if (out) out.innerHTML = `<div class="kt-empty">${esc(msg)}</div>`;
-    }
+    if (!phone) { const out = document.getElementById('kt-search-out'); if (out) out.innerHTML = '<div class="kt-empty">Введите телефон клиента</div>'; return; }
+    // Возврат из досье — обратно на экран поиска.
+    KT.history.push(() => { KT.sub = 'search'; if (KT.el) KT.el.querySelectorAll('.kt-tab').forEach(b => b.classList.toggle('on', b.getAttribute('data-kt-tab') === 'search')); renderSearch(); });
+    openClientByPhone(phone);
   }
 
   /* ── СПРАВКА (accordion) ── */

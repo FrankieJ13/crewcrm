@@ -18,7 +18,8 @@
  *
  * API — read-only Web App (doPost), авторизация server-side:
  *   Google token -> userinfo -> email -> allowlist USERS в CRM-таблице.
- *   Actions: bootstrap, archive.list, visit.get, filters.get.
+ *   Actions: bootstrap, archive.list, visit.get, filters.get,
+ *            client.lookup, client.get (история клиента, on-the-fly по телефону).
  ***************************************************************/
 
 
@@ -726,7 +727,8 @@ function doPost(e) {
       case 'archive.list':   data = APP_apiArchiveList_(payload); break;
       case 'visit.get':      data = APP_apiVisitGet_(payload); break;
       case 'filters.get':    data = APP_apiFiltersGet_(); break;
-      // client.lookup / client.get — следующий инкремент (CLIENT_INDEX/EVENTS).
+      case 'client.lookup':  data = APP_apiClientLookup_(payload); break;
+      case 'client.get':     data = APP_apiClientGet_(payload); break;
       default: return APP_err_(requestId, 'UNKNOWN_ACTION', 'Неизвестное действие: ' + action);
     }
 
@@ -808,7 +810,7 @@ function APP_apiBootstrap_(profile) {
       ui_status: APP_safeJson_(meta.ui_status_counts),
     },
     filters: APP_safeJson_(meta.filters_json),
-    features: { archive: true, search: false, analytics: false }, // search/analytics — следующие инкременты
+    features: { archive: true, search: true, analytics: false }, // search/analytics — следующие инкременты
     defaultPeriodDays: 90,
   };
 }
@@ -816,6 +818,116 @@ function APP_apiBootstrap_(profile) {
 function APP_apiFiltersGet_() {
   const meta = APP_readMeta_(getHubSpreadsheet_()) || {};
   return APP_safeJson_(meta.filters_json) || {};
+}
+
+/* ── ИСТОРИЯ КЛИЕНТА (досье) ──
+ * V1: client_key = нормализованный 10-значный телефон (без union-find по
+ * связанным телефонам — можно добавить позже). client.get строит таймлайн на
+ * лету через TextFinder.findAll по колонке телефонов (§14 «читаем только
+ * найденные строки»), без отдельного APP_CLIENT_EVENTS-листа. */
+function APP_normPhone_(raw) {
+  try { const cores = extractPhoneCores_(raw); return (cores && cores[0]) || ''; } catch (_) { return ''; }
+}
+function APP_apiClientLookup_(payload) {
+  const core = APP_normPhone_(payload && payload.phone);
+  if (!core) throw APP_error_('INVALID_PHONE_INPUT', 'Некорректный телефон');
+  const hub = getHubSpreadsheet_();
+  const inTraffic = APP_phoneExists_(hub, APP_CONFIG.TRAFFIC_SHEET, 'phone_cores', core);
+  const inAmo = inTraffic ? true : APP_phoneExists_(hub, APP_CONFIG.AMO_SHEET, 'phone_cores', core);
+  return { found: !!(inTraffic || inAmo), client_key: core };
+}
+function APP_phoneExists_(hub, sheetName, colName, core) {
+  const s = APP_openIndexed_(hub, sheetName);
+  if (s.col[colName] == null || s.sheet.getLastRow() < 2) return false;
+  const found = s.sheet.getRange(2, s.col[colName] + 1, s.sheet.getLastRow() - 1, 1)
+    .createTextFinder(core).matchEntireCell(false).findNext();
+  return !!found;
+}
+// Все строки листа, где колонка `colName` содержит `core`. Возвращает массив строк-объектов геттеров.
+function APP_rowsByPhone_(hub, sheetName, colName, core, cap) {
+  const s = APP_openIndexed_(hub, sheetName);
+  const out = [];
+  if (s.col[colName] == null || s.sheet.getLastRow() < 2) return out;
+  const matches = s.sheet.getRange(2, s.col[colName] + 1, s.sheet.getLastRow() - 1, 1)
+    .createTextFinder(core).matchEntireCell(false).findAll();
+  for (let i = 0; i < matches.length && out.length < (cap || 200); i++) {
+    const rowIdx = matches[i].getRow();
+    const r = s.sheet.getRange(rowIdx, 1, 1, s.width).getValues()[0];
+    out.push({ g: name => (s.col[name] == null ? '' : r[s.col[name]]) });
+  }
+  return out;
+}
+function APP_apiClientGet_(payload) {
+  const core = APP_normPhone_(payload && payload.client_key);
+  if (!core) throw APP_error_('INVALID_PHONE_INPUT', 'Некорректный ключ клиента');
+  const hub = getHubSpreadsheet_();
+  const nowY = new Date().getFullYear();
+
+  const tRows = APP_rowsByPhone_(hub, APP_CONFIG.TRAFFIC_SHEET, 'phone_cores', core, 200);
+  const aRows = APP_rowsByPhone_(hub, APP_CONFIG.AMO_SHEET, 'phone_cores', core, 200);
+
+  const events = [];
+  let clientName = '';
+  let years = [];
+
+  // Салонные визиты / звонки (TRAFFIC_VISITS).
+  tRows.forEach(row => {
+    const g = row.g;
+    if (!clientName && g('client_name')) clientName = String(g('client_name'));
+    const vd = APP_ymd_(g('visit_date'));
+    const q = APP_dateQuality_(vd, APP_CONFIG.MIN_YEAR, nowY + 1);
+    if (q === 'VALID') years.push(Number(vd.slice(0, 4)));
+    const vt = String(g('visit_type') || '');
+    const vtl = vt.toLowerCase();
+    const isCall = vtl.indexOf('звон') >= 0;
+    const title = isCall ? 'Звонок' : (vtl.indexOf('повтор') >= 0 ? 'Повторный визит' : 'Визит в салон');
+    const lines = [];
+    const cityType = [g('city'), vt].filter(Boolean).join(' · '); if (cityType) lines.push(cityType);
+    if (g('op_manager')) lines.push('Менеджер: ' + g('op_manager'));
+    const cm = String(g('result_comment') || '').replace(/\s+/g, ' ').trim(); if (cm) lines.push(cm.length > 120 ? cm.slice(0, 117) + '…' : cm);
+    events.push({
+      event_type: isCall ? 'CALL' : 'TRAFFIC_VISIT', event_date: vd, sort: vd || '0000-00-00',
+      title: title, visit_type: vt, lines: lines,
+      traffic_record_key: String(g('record_key') || ''),
+      is_archived: (q === 'VALID' && Number(vd.slice(0, 4)) < nowY),
+    });
+  });
+
+  // Сделки amoCRM (AMO_DEALS) + продажи.
+  const leadPrefix = (typeof AMO_CONFIG !== 'undefined' && AMO_CONFIG.LEAD_URL_PREFIX) || 'https://ksocm66.amocrm.ru/leads/detail/';
+  aRows.forEach(row => {
+    const g = row.g;
+    if (!clientName && g('contact_fio')) clientName = String(g('contact_fio'));
+    const dealId = String(g('deal_id') || '');
+    const url = String(g('deal_url') || '') || (dealId ? leadPrefix + dealId : '');
+    const created = APP_ymd_(g('created_at')) || APP_ymd_(g('visit_date'));
+    if (created) { const y = Number(created.slice(0, 4)); if (y >= APP_CONFIG.MIN_YEAR && y <= nowY + 1) years.push(y); }
+    const stage = String(g('stage') || '');
+    const dLines = [];
+    if (dealId) dLines.push('Сделка #' + dealId);
+    if (g('responsible_raw')) dLines.push('Ответственный: ' + g('responsible_raw'));
+    if (g('source')) dLines.push('Источник: ' + g('source'));
+    events.push({
+      event_type: 'AMO_DEAL', event_date: created, sort: created || '0000-00-00',
+      title: 'amoCRM' + (stage ? ' · ' + stage : ''), deal_id: dealId, deal_url: url, lines: dLines,
+    });
+    const saleDate = APP_ymd_(g('sale_date'));
+    if (saleDate) {
+      const car = String(g('car') || g('sold_car') || '');
+      events.push({ event_type: 'SALE', event_date: saleDate, sort: saleDate, title: 'Продажа', deal_id: dealId, deal_url: url, lines: car ? [car] : [] });
+    }
+  });
+
+  events.sort((a, b) => (b.sort < a.sort ? -1 : b.sort > a.sort ? 1 : 0)); // DESC по дате
+  years = years.filter(y => y);
+  return {
+    summary: {
+      client_key: core, client_name: clientName || '', phones: [core],
+      traffic_count: tRows.length, deal_count: aRows.length,
+      first_year: years.length ? Math.min.apply(null, years) : null,
+    },
+    timeline: events.slice(0, 300),
+  };
 }
 
 function APP_apiArchiveList_(payload) {

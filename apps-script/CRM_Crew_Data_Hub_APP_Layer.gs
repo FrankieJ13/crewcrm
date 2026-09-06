@@ -292,7 +292,7 @@ function continueAppRebuild() {
         if (!recordKey) continue;
 
         const d = detailByKey[recordKey] || null;
-        const visitDate = String(r[mc.traffic_visit_date] || '').trim();
+        const visitDate = APP_ymd_(r[mc.traffic_visit_date]); // Date/строка → 'YYYY-MM-DD'
         const quality = APP_dateQuality_(visitDate, APP_CONFIG.MIN_YEAR, maxYear);
         const isArchived = APP_isArchived_(visitDate, quality, currentYear);
         const year = quality === 'VALID' ? Number(visitDate.slice(0, 4)) : '';
@@ -347,7 +347,7 @@ function continueAppRebuild() {
           String(r[mc.matched_deal_state] || ''),
           String(r[mc.matched_stage] || ''),
           String(r[mc.matched_event_type] || ''),
-          String(r[mc.matched_event_date] || ''),
+          APP_ymd_(r[mc.matched_event_date]),
           r[mc.date_distance_days] === '' ? '' : r[mc.date_distance_days],
           String(r[mc.city_match] || ''),
           String(r[mc.matched_employee_raw] || ''),
@@ -356,7 +356,7 @@ function continueAppRebuild() {
           String(r[mc.matched_dozhim_responsible_raw] || ''),
           String(r[mc.matched_close_reason] || ''),
           String(r[mc.matched_qualification] || ''),
-          String(r[mc.matched_sale_date] || ''),
+          APP_ymd_(r[mc.matched_sale_date]),
           String(r[mc.matched_source] || ''),
 
           String(r[mc.evidence_code] || ''),
@@ -607,6 +607,23 @@ function APP_positionalFollowupSheets_(hub) {
     if (code === 'POSITIONAL_FALLBACK' && sheetName) out[sheetName] = true;
   });
   return out;
+}
+
+// Дата → строка 'YYYY-MM-DD'. Sheets часто отдаёт дату как Date-объект —
+// его надо форматировать, а не String() (иначе получаем 'Wed May 27 2026 …').
+function APP_ymd_(v) {
+  if (v == null || v === '') return '';
+  if (Object.prototype.toString.call(v) === '[object Date]') {
+    if (isNaN(v.getTime())) return '';
+    return ('' + v.getFullYear()).padStart(4, '0') + '-' +
+           ('' + (v.getMonth() + 1)).padStart(2, '0') + '-' +
+           ('' + v.getDate()).padStart(2, '0');
+  }
+  const s = String(v).trim();
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);
+  if (m) return m[1] + '-' + ('' + m[2]).padStart(2, '0') + '-' + ('' + m[3]).padStart(2, '0');
+  try { const nd = normalizeDate_(s); if (nd) return nd; } catch (_) {} // DD.MM.YYYY и т.п.
+  return '';
 }
 
 function APP_dateQuality_(visitDate, minYear, maxYear) {

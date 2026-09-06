@@ -77,9 +77,11 @@
     CACHE.filters = d || {};
     return CACHE.filters;
   }
+  async function clientLookup(phone, signal) { return (await _call('client.lookup', { phone }, { signal })).data; }
+  async function clientGet(clientKey, signal) { return (await _call('client.get', { client_key: clientKey }, { signal })).data; }
 
   function isConfigured() { return !!_url(); }
   function clearCache() { CACHE.bootstrap = null; CACHE.filters = null; }
 
-  window.TrafficAPI = { bootstrap, archiveList, visitGet, filtersGet, parseApiError, isConfigured, clearCache };
+  window.TrafficAPI = { bootstrap, archiveList, visitGet, filtersGet, clientLookup, clientGet, parseApiError, isConfigured, clearCache };
 })();

@@ -10200,6 +10200,8 @@ body.light .adj-chip.on, body.tiffany .adj-chip.on { color:#fff; }
 /* «Только Дожим» — переключатель объёма сверки (CEO/ROP), выделяем акцентом. */
 .gs-toggle-dozhim { color:var(--txt); font-weight:700; }
 .gs-toggle-dozhim input { accent-color:#14b8a6; }
+.gs-toggle-crm { color:var(--txt); font-weight:700; }
+.gs-toggle-crm input { accent-color:#3b82f6; }
 /* ── Fake visits (аналитика дублей/повторов) ── */
 .fv-page { padding:4px 0 12px; }
 .fv-head { margin-bottom:12px; }

@@ -1043,7 +1043,7 @@
      «Найден» = телефон визита есть среди телефонов листа за месяц.
      Переиспользует parseCSV/normPhone/extractPhones/parseDMY/extractVisits/…
      ══════════════════════════════════════════════════════════════════════ */
-  const GS = { fileName: '', report: null, detailed: false, dozhimOnly: false, recs: null };
+  const GS = { fileName: '', report: null, detailed: false, dozhimOnly: false, crmOnly: false, showReverse: true, recs: null };
 
   function gsRole() {
     const me = typeof window.findUserInSheet === 'function' ? window.findUserInSheet() : null;
@@ -1134,14 +1134,18 @@
     let scoped;
     // ДОЖИМ — матчим по «ДОЖИМ Ответственный» (rec.responsible у dozhim-записей = это поле),
     // CRM — по «Ответственный». Матч менеджера по фамилии (+имя при однофамильцах).
-    // CEO/ROP видят весь отдел; галка «Только Дожим» ограничивает сверку дожим-листом
-    // (тогда поле «Ответственный» не участвует — только «ДОЖИМ Ответственный»).
-    if (role.isCeo) scoped = GS.dozhimOnly ? recs.filter(r => r.dept === 'dozhim') : recs;
+    // CEO/ROP видят весь отдел; галки «Только Дожим» / «Только CRM» ограничивают сверку
+    // одним листом (Д_ВИЗИТЫ либо ВИЗИТЫ). Взаимоисключающие (обе выкл → оба отдела).
+    if (role.isCeo) {
+      if (GS.dozhimOnly) scoped = recs.filter(r => r.dept === 'dozhim');
+      else if (GS.crmOnly) scoped = recs.filter(r => r.dept === 'crm');
+      else scoped = recs;
+    }
     else if (role.role === 'dozhim') scoped = recs.filter(r => r.dept === 'dozhim' && gsNameMatch(r.responsible, role.name, roster.dozhim));
     else scoped = recs.filter(r => r.dept === 'crm' && gsNameMatch(r.responsible, role.name, roster.crm));
-    if (!scoped.length) return { empty: true, role, dozhimOnly: GS.dozhimOnly };
+    if (!scoped.length) return { empty: true, role, dozhimOnly: GS.dozhimOnly, crmOnly: GS.crmOnly };
     const suffix = gsDominantSuffix(scoped);
-    if (!suffix) return { empty: true, role, noMonth: true, dozhimOnly: GS.dozhimOnly };
+    if (!suffix) return { empty: true, role, noMonth: true, dozhimOnly: GS.dozhimOnly, crmOnly: GS.crmOnly };
     const offMonth = scoped.filter(r => gsRecSuffix(r) !== suffix).length;
     scoped = scoped.filter(r => gsRecSuffix(r) === suffix);
     const depts = [...new Set(scoped.map(r => r.dept))];
@@ -1192,7 +1196,7 @@
     }
 
     return {
-      role, suffix, monthLabel: monthName(suffix), depts, offMonth, gsIdx, results, revResults, dozhimOnly: GS.dozhimOnly,
+      role, suffix, monthLabel: monthName(suffix), depts, offMonth, gsIdx, results, revResults, dozhimOnly: GS.dozhimOnly, crmOnly: GS.crmOnly,
       stats: {
         total: results.length,
         found: results.filter(r => r.status === 'found').length,
@@ -1305,14 +1309,22 @@
     const role = r.role || gsRole();
     // Галка «Только Дожим» — только для CEO/ROP. Показываем и в пустом состоянии,
     // чтобы можно было снять галку, если по дожиму ничего не нашлось.
+    // Скоуп-галки «Только Дожим» / «Только CRM» — только CEO/ROP, взаимоисключающие.
+    // Показываем и в пустом состоянии, чтобы можно было переключить лист.
     const dozhimToggle = role.isCeo
       ? `<label class="gs-toggle gs-toggle-dozhim"><input type="checkbox" id="gs-dozhim-only" ${GS.dozhimOnly ? 'checked' : ''}> Только Дожим (Д_ВИЗИТЫ) — не учитывать поле «Ответственный»</label>`
       : '';
+    const crmToggle = role.isCeo
+      ? `<label class="gs-toggle gs-toggle-crm"><input type="checkbox" id="gs-crm-only" ${GS.crmOnly ? 'checked' : ''}> Только CRM (ВИЗИТЫ) — не учитывать поле «ДОЖИМ Ответственный»</label>`
+      : '';
+    const scopeToggles = dozhimToggle + crmToggle;
     if (r.empty) {
-      if (r.noMonth) return dozhimToggle + '<div class="gs-empty">Не удалось определить месяц по датам визитов в файле.</div>';
+      if (r.noMonth) return scopeToggles + '<div class="gs-empty">Не удалось определить месяц по датам визитов в файле.</div>';
       const dz = (r.dozhimOnly || role.role === 'dozhim');
+      const cr = r.crmOnly;
       const who = role.isCeo ? 'по отделу' : 'по вам';
-      return dozhimToggle + `<div class="gs-empty">В файле нет ${dz ? 'дожим-визитов' : 'визитов'} ${who} с проставленной «${dz ? 'Повторной датой визита (ДОЖИМ)' : 'Датой визита'}».</div>`;
+      const kind = dz ? 'дожим-визитов' : cr ? 'CRM-визитов' : 'визитов';
+      return scopeToggles + `<div class="gs-empty">В файле нет ${kind} ${who} с проставленной «${dz ? 'Повторной датой визита (ДОЖИМ)' : 'Датой визита'}».</div>`;
     }
     const s = r.stats;
     const missing = r.results.filter(x => x.status === 'missing');
@@ -1342,6 +1354,23 @@
         return `<div class="gs-dep-lbl">${dep === 'dozhim' ? 'Дожим' : 'CRM'}</div>` + items.map(x => gsRevRowHtml(x, show)).join('');
       }).join('');
     };
+    // Секция «Не в amoCRM» — вкл/выкл (GS.showReverse). Выкл → обратной стороны не видно вовсе.
+    const showRev = GS.showReverse;
+    const revSummaryHtml = showRev ? `
+      <div class="gs-summary gs-summary-rev">
+        <div class="gs-chip"><span class="gs-chip-n">${rv.total}</span>визитов в GS</div>
+        <div class="gs-chip miss"><span class="gs-chip-n">${rv.missing}</span>нет в amo</div>
+        <div class="gs-chip ok"><span class="gs-chip-n">${rv.inAmo}</span>есть в amo</div>
+        ${rv.nophone ? `<div class="gs-chip na"><span class="gs-chip-n">${rv.nophone}</span>без тел.</div>` : ''}
+      </div>` : '';
+    const revSectionHtml = showRev ? `
+        <div class="gs-sec-title miss">Не в amoCRM <span class="gs-cnt">${revMissing.length}</span></div>
+        <div class="gs-list">${revMissing.length ? groupByDeptRev(revMissing, false) : '<div class="gs-none">Все визиты из GS есть в выгрузке 👍</div>'}</div>` : '';
+    const revAllHtml = showRev ? `
+        <div class="gs-sec-title">Все GS-визиты <span class="gs-cnt">${revResults.length}</span></div>
+        <div class="gs-list">${revResults.length ? groupByDeptRev(revResults, true) : '<div class="gs-none">— пусто —</div>'}</div>` : '';
+    const revNophoneItems = showRev && revNophone.length ? groupByDeptRev(revNophone, true) : '';
+    const revNophoneCnt = showRev ? revNophone.length : 0;
     return `
       <div class="gs-summary">
         <div class="gs-chip"><span class="gs-chip-n">${s.total}</span>в файле</div>
@@ -1349,27 +1378,21 @@
         <div class="gs-chip ok"><span class="gs-chip-n">${s.found}</span>внесены</div>
         ${s.nophone ? `<div class="gs-chip na"><span class="gs-chip-n">${s.nophone}</span>без тел.</div>` : ''}
       </div>
-      <div class="gs-summary gs-summary-rev">
-        <div class="gs-chip"><span class="gs-chip-n">${rv.total}</span>визитов в GS</div>
-        <div class="gs-chip miss"><span class="gs-chip-n">${rv.missing}</span>нет в amo</div>
-        <div class="gs-chip ok"><span class="gs-chip-n">${rv.inAmo}</span>есть в amo</div>
-        ${rv.nophone ? `<div class="gs-chip na"><span class="gs-chip-n">${rv.nophone}</span>без тел.</div>` : ''}
-      </div>
+      ${revSummaryHtml}
       <div class="gs-meta2">${esc(r.monthLabel)} · ${r.depts.map(d => esc(r.gsIdx[d].sheet)).join(' + ')}${r.offMonth ? ` · ${r.offMonth} из др. месяцев пропущено` : ''}</div>
       ${sheetErr.length ? `<div class="gs-err">${sheetErr.map(esc).join('; ')}</div>` : ''}
-      ${dozhimToggle}
+      ${scopeToggles}
+      <label class="gs-toggle"><input type="checkbox" id="gs-show-rev" ${showRev ? 'checked' : ''}> Показывать «Не в amoCRM» (визиты из GS без сделки)</label>
       <label class="gs-toggle"><input type="checkbox" id="gs-detailed" ${detailed ? 'checked' : ''}> Детальная сверка — показать все визиты</label>
       ${!detailed ? `
         <div class="gs-sec-title miss">Не внесены в GS <span class="gs-cnt">${missing.length}</span></div>
         <div class="gs-list">${missing.length ? groupByDept(missing) : '<div class="gs-none">Все визиты из файла есть в GS 👍</div>'}</div>
-        <div class="gs-sec-title miss">Не в amoCRM <span class="gs-cnt">${revMissing.length}</span></div>
-        <div class="gs-list">${revMissing.length ? groupByDeptRev(revMissing, false) : '<div class="gs-none">Все визиты из GS есть в выгрузке 👍</div>'}</div>
-        ${(nophone.length || revNophone.length) ? `<div class="gs-sec-title na">Проверить вручную · нет телефона <span class="gs-cnt">${nophone.length + revNophone.length}</span></div><div class="gs-list">${nophone.length ? groupByDept(nophone) : ''}${revNophone.length ? groupByDeptRev(revNophone, true) : ''}</div>` : ''}
+        ${revSectionHtml}
+        ${(nophone.length || revNophoneCnt) ? `<div class="gs-sec-title na">Проверить вручную · нет телефона <span class="gs-cnt">${nophone.length + revNophoneCnt}</span></div><div class="gs-list">${nophone.length ? groupByDept(nophone) : ''}${revNophoneItems}</div>` : ''}
       ` : `
         <div class="gs-sec-title">Все визиты (файл) <span class="gs-cnt">${r.results.length}</span></div>
         <div class="gs-list">${groupByDept(r.results)}</div>
-        <div class="gs-sec-title">Все GS-визиты <span class="gs-cnt">${revResults.length}</span></div>
-        <div class="gs-list">${revResults.length ? groupByDeptRev(revResults, true) : '<div class="gs-none">— пусто —</div>'}</div>
+        ${revAllHtml}
       `}`;
   }
 
@@ -1383,22 +1406,37 @@
         if (box && GS.report) { box.innerHTML = gsReportHtml(GS.report); gsBindReport(); }
       });
     }
-    // «Только Дожим» (CEO/ROP) — меняет объём сверки, поэтому пере-сверяем из
-    // сохранённых записей (заново определяет месяц/лист/статистику).
+    // «Только Дожим» / «Только CRM» (CEO/ROP) — меняют объём сверки → пере-сверяем из
+    // сохранённых записей. Взаимоисключающие: включение одной снимает другую.
+    async function gsRerun() {
+      const box = document.getElementById('gs-report');
+      if (!box || !GS.recs) return;
+      box.innerHTML = '<div class="gs-loading">Сверяю…</div>';
+      try {
+        GS.report = await gsReconcile(GS.recs);
+        box.innerHTML = gsReportHtml(GS.report); gsBindReport();
+      } catch (err) {
+        box.innerHTML = `<div class="gs-err">Ошибка: ${esc((err && err.message) || err)}</div>`;
+      }
+    }
     const dz = document.getElementById('gs-dozhim-only');
     if (dz && !dz._gsBound) {
       dz._gsBound = true;
-      dz.addEventListener('change', async () => {
-        GS.dozhimOnly = dz.checked;
+      dz.addEventListener('change', () => { GS.dozhimOnly = dz.checked; if (dz.checked) GS.crmOnly = false; gsRerun(); });
+    }
+    const cr = document.getElementById('gs-crm-only');
+    if (cr && !cr._gsBound) {
+      cr._gsBound = true;
+      cr.addEventListener('change', () => { GS.crmOnly = cr.checked; if (cr.checked) GS.dozhimOnly = false; gsRerun(); });
+    }
+    // «Показывать Не в amoCRM» — чистое отображение, пере-сверка не нужна (как «Детальная»).
+    const sr = document.getElementById('gs-show-rev');
+    if (sr && !sr._gsBound) {
+      sr._gsBound = true;
+      sr.addEventListener('change', () => {
+        GS.showReverse = sr.checked;
         const box = document.getElementById('gs-report');
-        if (!box || !GS.recs) return;
-        box.innerHTML = '<div class="gs-loading">Сверяю…</div>';
-        try {
-          GS.report = await gsReconcile(GS.recs);
-          box.innerHTML = gsReportHtml(GS.report); gsBindReport();
-        } catch (err) {
-          box.innerHTML = `<div class="gs-err">Ошибка: ${esc((err && err.message) || err)}</div>`;
-        }
+        if (box && GS.report) { box.innerHTML = gsReportHtml(GS.report); gsBindReport(); }
       });
     }
     // Клик по строке — раскрыть/свернуть детали (кроме сверки и ссылки на сделку).

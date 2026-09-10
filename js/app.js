@@ -10223,9 +10223,32 @@ function deptSetForMonth(nameLow, suffix = currentSuffix) {
   }
   return res;
 }
+// ЧЛЕНСТВО в отделе за месяц — ЕДИНСТВЕННЫЙ отдел, актуальный на КОНЕЦ месяца
+// (deptAtDate по журналу переводов). Это «участник отдела»: рейтинг, KPI, планы,
+// дашборд. Переведённый в ДОЖИМ менеджер здесь числится ТОЛЬКО в ДОЖИМ — даже если
+// у него остались CRM-наработки (реальные CRM-визиты). Наработки идут в его ЛИЧНЫЙ
+// доход (deptSetForMonth — с гибридом), но участником CRM-рейтинга он НЕ становится:
+// он независимая единица нового отдела, место в старом отделе на него не выделяется.
+// Без истории переводов → текущая роль (полная обратная совместимость).
+function deptMembershipForMonth(nameLow, suffix = currentSuffix) {
+  const role = (typeof getRoleByName === 'function') ? getRoleByName(nameLow) : null;
+  const baseCrm = role === 'crm' || role === '';
+  const baseDozhim = role === 'dozhim';
+  const H = S.deptHistory && S.deptHistory.byId;
+  const id = (H && typeof getCrmIdByName === 'function') ? getCrmIdByName(nameLow) : '';
+  const transfers = (H && id) ? H.get(id) : null;
+  if (!transfers || !transfers.length || typeof window.DeptHistory === 'undefined') {
+    return { crm: baseCrm, dozhim: baseDozhim };
+  }
+  const currentDept = baseDozhim ? 'dozhim' : (baseCrm ? 'crm' : null);
+  const mr = window.DeptHistory.monthRange(suffix);
+  const dept = mr ? window.DeptHistory.deptAtDate(transfers, currentDept, mr.endMs) : currentDept;
+  return { crm: dept === 'crm', dozhim: dept === 'dozhim' };
+}
 // Членство менеджера в отделе за активный месяц (drop-in замена role-фильтров).
-function isCrmForMonth(nameLow, suffix = currentSuffix) { return deptSetForMonth(nameLow, suffix).crm; }
-function isDozhimForMonth(nameLow, suffix = currentSuffix) { return deptSetForMonth(nameLow, suffix).dozhim; }
+// РЕЙТИНГ/KPI/ПЛАНЫ → по журналу (единственный отдел на месяц), НЕ по наработкам.
+function isCrmForMonth(nameLow, suffix = currentSuffix) { return deptMembershipForMonth(nameLow, suffix).crm; }
+function isDozhimForMonth(nameLow, suffix = currentSuffix) { return deptMembershipForMonth(nameLow, suffix).dozhim; }
 // Есть ли у менеджера записи переводов (для точечной догрузки «второго» листа).
 function mgrHasDeptTransfers(nameLow) {
   const H = S.deptHistory && S.deptHistory.byId;

@@ -124,6 +124,39 @@ function hubReclaimCells() {
   return msg;
 }
 
+// ── ОСВОБОДИТЬ МЕСТО ПОД ПЕРЕСБОРКУ: удалить ПРОИЗВОДНЫЕ листы ─────────────────
+// MATCHES и APP_TRAFFIC_ARCHIVE регенерируются пересборкой из TRAFFIC_VISITS+AMO_DEALS.
+// Удаляем их (и их __STAGING/__BACKUP__/__OLD/__FAILED__), чтобы освободить ~5-6M
+// ячеек — тогда пересборка (уже с фильтром 2025+/без пешего) влезет в лимит.
+// ⚠️ Картотека-API вернёт пусто, пока APP-стадия не пересоберёт архив — запускай
+//    пересборку сразу после. Отказывает, если пересборка идёт.
+function hubDropDerivedSheets() {
+  const busy = HUB_anyRebuildRunning_();
+  if (busy) { const m = 'Пересборка идёт (' + busy + '=RUNNING). Останови/дождись и повтори.'; try { SpreadsheetApp.getUi().alert(m); } catch (_) {} return m; }
+
+  const ss = getHubSpreadsheet_();
+  const before = HUB_totalCells_(ss);
+  const targets = ['MATCHES', 'APP_TRAFFIC_ARCHIVE'];  // производные — пересобираются
+  const killed = [];
+  ss.getSheets().forEach(sh => {
+    const n = sh.getName();
+    const hit = targets.some(t => n === t || n.indexOf(t + '__') === 0);  // сам лист + его __STAGING/__BACKUP__/…
+    if (hit) { try { ss.deleteSheet(sh); killed.push(n); } catch (e) {} }
+  });
+
+  const after = HUB_totalCells_(ss);
+  const msg =
+    'Удалены производные листы (пересоберутся): ' + killed.length +
+    (killed.length ? '\n • ' + killed.join('\n • ') : '') + '\n\n' +
+    'Освобождено ' + HUB_num_(before - after) + ' ячеек. Стало ' + HUB_num_(after) +
+    ' / 10 000 000 (свободно ' + HUB_num_(10000000 - after) + ').\n\n' +
+    'Дальше: «AUTO: запустить сейчас» — цепочка пересоберёт TRAFFIC_VISITS ' +
+    '(уже с фильтром 2025+/без пешего) → MATCHES → APP.';
+  Logger.log(msg);
+  try { SpreadsheetApp.getUi().alert(msg); } catch (_) {}
+  return msg;
+}
+
 // Идёт ли пересборка любой стадии (по Script Property статусам стадий).
 // typeof по необъявленному идентификатору в JS не бросает — безопасно.
 function HUB_anyRebuildRunning_() {

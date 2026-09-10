@@ -10187,6 +10187,8 @@ body.light .adj-chip.on, body.tiffany .adj-chip.on { color:#fff; }
 .gs-loading, .gs-empty, .gs-none { font-size:12px; color:var(--txt3); text-align:center; padding:18px; }
 .gs-err { font-size:12px; color:var(--red); background:rgba(255,71,87,.08); border:1px solid var(--red); border-radius:10px; padding:8px 10px; margin:6px 0; }
 .gs-summary { display:flex; flex-wrap:wrap; gap:8px; }
+.gs-summary-rev { margin-top:6px; padding-top:8px; border-top:1px dashed var(--line2); }
+.gs-rowno { color:var(--txt3); font-weight:500; }
 .gs-chip { display:flex; align-items:baseline; gap:5px; font-size:11px; color:var(--txt2);
   background:var(--bg3); border:1px solid var(--line2); border-radius:20px; padding:5px 12px; }
 .gs-chip-n { font-family:'Unbounded',sans-serif; font-weight:800; font-size:13px; color:var(--txt); }

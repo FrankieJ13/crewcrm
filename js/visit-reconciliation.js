@@ -1168,13 +1168,42 @@
       }
       return { rec, status: 'missing' };
     });
+
+    // ── ОБРАТНАЯ СВЕРКА: GS → amo ─────────────────────────────────────────────
+    // Визиты, внесённые в лист (ВИЗИТЫ/Д_ВИЗИТЫ), но которых НЕТ в выгрузке amoCRM
+    // (менеджер не отметил визит / не завёл сделку в amo, но записал в Google).
+    // Обе стороны уже в памяти: gsIdx[dept].visits (лист) × телефоны scoped-записей (CSV).
+    const csvPhonesByDept = {};
+    for (const dept of depts) csvPhonesByDept[dept] = new Set();
+    scoped.forEach(rec => { const set = csvPhonesByDept[rec.dept]; if (set) rec.phones.forEach(p => set.add(p)); });
+    const revResults = [];
+    for (const dept of depts) {
+      const idx = gsIdx[dept];
+      const csvSet = csvPhonesByDept[dept] || new Set();
+      const rn = dept === 'dozhim' ? roster.dozhim : roster.crm;
+      idx.visits.forEach(v => {
+        // Не-CEO сверяет только СВОИ визиты листа (менеджер = колонка I); CEO/ROP — все.
+        if (!role.isCeo && !gsNameMatch(v.manager, role.name, rn)) return;
+        if (!v.phones.length) { revResults.push({ v, dept, status: 'nophone' }); return; }
+        let inAmo = false;
+        for (const p of v.phones) { if (csvSet.has(p)) { inAmo = true; break; } }
+        revResults.push({ v, dept, status: inAmo ? 'found' : 'missing' });
+      });
+    }
+
     return {
-      role, suffix, monthLabel: monthName(suffix), depts, offMonth, gsIdx, results, dozhimOnly: GS.dozhimOnly,
+      role, suffix, monthLabel: monthName(suffix), depts, offMonth, gsIdx, results, revResults, dozhimOnly: GS.dozhimOnly,
       stats: {
         total: results.length,
         found: results.filter(r => r.status === 'found').length,
         missing: results.filter(r => r.status === 'missing').length,
         nophone: results.filter(r => r.status === 'nophone').length,
+      },
+      revStats: {
+        total: revResults.length,
+        inAmo: revResults.filter(r => r.status === 'found').length,
+        missing: revResults.filter(r => r.status === 'missing').length,
+        nophone: revResults.filter(r => r.status === 'nophone').length,
       },
     };
   }
@@ -1228,6 +1257,49 @@
     </div>`;
   }
 
+  // Строка ОБРАТНОЙ сверки (GS-визит). У визита из листа нет id сделки (в этом и суть),
+  // поэтому идентификатор — телефон + номер строки листа.
+  function gsRevRowHtml(res, showStatus) {
+    const v = res.v;
+    const dt = v.date ? String(v.date.d).padStart(2, '0') + '.' + String(v.date.m).padStart(2, '0') : (v.dateRaw || '—');
+    const ph = v.phones.length ? fmtPhone(v.phones[0]) : '—';
+    const dep = res.dept === 'dozhim' ? 'Дожим' : 'CRM';
+    const badge = showStatus
+      ? (res.status === 'found' ? '<span class="gs-b ok">в amo</span>' : res.status === 'missing' ? '<span class="gs-b miss">нет в amo</span>' : '<span class="gs-b na">нет тел.</span>')
+      : '';
+    return `<div class="gs-row ${res.status}">
+      <div class="gs-row-head" role="button" tabindex="0">
+        <div class="gs-row-main">
+          <div class="gs-row-name">${esc(ph)} <span class="gs-rowno">· стр ${v.rowNo}</span></div>
+          <div class="gs-row-meta">${dt} · ${esc(v.manager || '—')} · ${dep}${v.city ? ' · ' + esc(v.city) : ''}</div>
+        </div>
+        ${badge}
+        <span class="gs-caret"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+      </div>
+      ${gsRevDetailHtml(res)}
+    </div>`;
+  }
+
+  function gsRevDetailHtml(res) {
+    const v = res.v;
+    const dRow = (lbl, val) => { const s = String(val == null ? '' : val).trim(); return s ? `<div class="gs-d"><span>${lbl}</span><b>${esc(s)}</b></div>` : ''; };
+    const phones = v.phones.length ? v.phones.map(fmtPhone).join(', ') : '';
+    const statusTxt = res.status === 'found' ? 'есть в выгрузке amoCRM'
+      : res.status === 'missing' ? 'НЕ найдено в выгрузке amoCRM' : 'нет телефона — проверить вручную';
+    return `<div class="gs-row-detail">
+      ${dRow('Дата визита', v.dateRaw)}
+      ${dRow('Телефон', phones)}
+      ${dRow('Менеджер', v.manager)}
+      ${dRow('Отдел', res.dept === 'dozhim' ? 'Дожим' : 'CRM')}
+      ${dRow('Город', v.city)}
+      ${dRow('Источник', v.source)}
+      ${dRow('Категория', v.category)}
+      ${dRow('Комментарий', v.comment)}
+      ${dRow('Строка в GS', v.rowNo)}
+      <div class="gs-d gs-d-status ${res.status}"><span>Статус</span><b>${statusTxt}</b></div>
+    </div>`;
+  }
+
   function gsReportHtml(r) {
     if (!r) return '';
     const role = r.role || gsRole();
@@ -1257,6 +1329,19 @@
         return `<div class="gs-dep-lbl">${dep === 'dozhim' ? 'Дожим' : 'CRM'}</div>` + items.map(x => gsRowHtml(x, detailed, ctx)).join('');
       }).join('');
     };
+    // Обратная сторона (GS → amo).
+    const revResults = r.revResults || [];
+    const rv = r.revStats || { total: 0, inAmo: 0, missing: 0, nophone: 0 };
+    const revMissing = revResults.filter(x => x.status === 'missing');
+    const revNophone = revResults.filter(x => x.status === 'nophone');
+    const groupByDeptRev = (arr, show) => {
+      if (r.depts.length < 2) return arr.map(x => gsRevRowHtml(x, show)).join('') || '<div class="gs-none">— пусто —</div>';
+      return ['crm', 'dozhim'].map(dep => {
+        const items = arr.filter(x => x.dept === dep);
+        if (!items.length) return '';
+        return `<div class="gs-dep-lbl">${dep === 'dozhim' ? 'Дожим' : 'CRM'}</div>` + items.map(x => gsRevRowHtml(x, show)).join('');
+      }).join('');
+    };
     return `
       <div class="gs-summary">
         <div class="gs-chip"><span class="gs-chip-n">${s.total}</span>в файле</div>
@@ -1264,17 +1349,27 @@
         <div class="gs-chip ok"><span class="gs-chip-n">${s.found}</span>внесены</div>
         ${s.nophone ? `<div class="gs-chip na"><span class="gs-chip-n">${s.nophone}</span>без тел.</div>` : ''}
       </div>
+      <div class="gs-summary gs-summary-rev">
+        <div class="gs-chip"><span class="gs-chip-n">${rv.total}</span>визитов в GS</div>
+        <div class="gs-chip miss"><span class="gs-chip-n">${rv.missing}</span>нет в amo</div>
+        <div class="gs-chip ok"><span class="gs-chip-n">${rv.inAmo}</span>есть в amo</div>
+        ${rv.nophone ? `<div class="gs-chip na"><span class="gs-chip-n">${rv.nophone}</span>без тел.</div>` : ''}
+      </div>
       <div class="gs-meta2">${esc(r.monthLabel)} · ${r.depts.map(d => esc(r.gsIdx[d].sheet)).join(' + ')}${r.offMonth ? ` · ${r.offMonth} из др. месяцев пропущено` : ''}</div>
       ${sheetErr.length ? `<div class="gs-err">${sheetErr.map(esc).join('; ')}</div>` : ''}
       ${dozhimToggle}
       <label class="gs-toggle"><input type="checkbox" id="gs-detailed" ${detailed ? 'checked' : ''}> Детальная сверка — показать все визиты</label>
       ${!detailed ? `
         <div class="gs-sec-title miss">Не внесены в GS <span class="gs-cnt">${missing.length}</span></div>
-        <div class="gs-list">${missing.length ? groupByDept(missing) : '<div class="gs-none">Все визиты с телефоном есть в таблице 👍</div>'}</div>
-        ${nophone.length ? `<div class="gs-sec-title na">Проверить вручную · нет телефона <span class="gs-cnt">${nophone.length}</span></div><div class="gs-list">${groupByDept(nophone)}</div>` : ''}
+        <div class="gs-list">${missing.length ? groupByDept(missing) : '<div class="gs-none">Все визиты из файла есть в GS 👍</div>'}</div>
+        <div class="gs-sec-title miss">Не в amoCRM <span class="gs-cnt">${revMissing.length}</span></div>
+        <div class="gs-list">${revMissing.length ? groupByDeptRev(revMissing, false) : '<div class="gs-none">Все визиты из GS есть в выгрузке 👍</div>'}</div>
+        ${(nophone.length || revNophone.length) ? `<div class="gs-sec-title na">Проверить вручную · нет телефона <span class="gs-cnt">${nophone.length + revNophone.length}</span></div><div class="gs-list">${nophone.length ? groupByDept(nophone) : ''}${revNophone.length ? groupByDeptRev(revNophone, true) : ''}</div>` : ''}
       ` : `
-        <div class="gs-sec-title">Все визиты <span class="gs-cnt">${r.results.length}</span></div>
+        <div class="gs-sec-title">Все визиты (файл) <span class="gs-cnt">${r.results.length}</span></div>
         <div class="gs-list">${groupByDept(r.results)}</div>
+        <div class="gs-sec-title">Все GS-визиты <span class="gs-cnt">${revResults.length}</span></div>
+        <div class="gs-list">${revResults.length ? groupByDeptRev(revResults, true) : '<div class="gs-none">— пусто —</div>'}</div>
       `}`;
   }
 
@@ -1330,7 +1425,7 @@
       <div class="gs-sverka">
         <div class="gs-head">
           <div class="gs-title">Сверка GS × CRM</div>
-          <div class="gs-sub">Загрузите выгрузку сделок из amoCRM (CSV). Найдём визиты, которых <b>нет в Google-таблице</b>, и подсветим их. Матч по телефону (нормализация в обе стороны).</div>
+          <div class="gs-sub">Загрузите выгрузку сделок из amoCRM (CSV). Сверим в <b>обе стороны</b>: визиты из amoCRM, которых <b>нет в GS</b>, и визиты из GS, которых <b>нет в amoCRM</b> (записал в Google, но не отметил в amo). Матч по телефону.</div>
           ${scopeNote ? `<div class="gs-scope">${scopeNote}</div>` : ''}
         </div>
         <label class="gs-drop" id="gs-drop">

@@ -4705,6 +4705,15 @@ body.neo-dark .income-col .ic-lbl {
   transition: border-color .15s;
   position: relative;
 }
+/* Аномалии (переведённые с наработками): вне ранга, в конце списка. */
+.mop-anomaly-sep, .rating-anomaly-sep {
+  font-family: 'Unbounded', sans-serif; font-size: 9px; font-weight: 800;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--txt3);
+  margin: 14px 4px 6px; opacity: .85;
+}
+.mop-anomaly-tag, .rating-card-anomaly-tag { font-size: 9px; font-weight: 700; color: var(--txt3); margin-top: 2px; }
+.rating-card-anomaly { opacity: .6; border-style: dashed; }
+.mop-anomaly { border: 1px dashed var(--line); }
 .rating-card:hover { border-color: var(--line2); }
 .rating-card.rank-1 { border-color: rgba(255,215,0,.4); }
 .rating-card.rank-2 { border-color: rgba(192,192,192,.3); }

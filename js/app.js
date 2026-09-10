@@ -5568,7 +5568,23 @@ function renderOtchet() {
     </div>`;
   }).join('');
 
-  const mops_html = ranked + kotelHTML;
+  // Аномалии CRM (переведённые с наработками) — в конце списка, вне ранга.
+  const _anomalyMgrs = (typeof crmAnomalyManagers === 'function') ? crmAnomalyManagers() : [];
+  const anomalyHTML = _anomalyMgrs.length ? (
+    `<div class="mop-anomaly-sep">Вне рейтинга · наработки (входят в ИТОГ отдела)</div>` +
+    _anomalyMgrs.map(m => `<div class="mop mop-anomaly" style="opacity:.62">
+        <div class="mop-strip" style="width:100%;background:var(--txt3)"></div>
+        <div class="mop-head"><div class="mop-head-left"><span class="rank-badge" style="background:rgba(128,128,128,.15);color:var(--txt3)" title="Вне рейтинга CRM — переведён в ДОЖИМ, но есть CRM-наработки">≠</span><span class="mop-name">${m.name.toUpperCase()}</span></div><div class="mop-head-right"><span class="mop-anomaly-tag">наработки · без плана CRM</span></div></div>
+        <div class="mop-mini">
+          <div class="mm"><div class="ml">Визиты</div><div class="mv">${m.vis}</div></div>
+          <div class="mm"><div class="ml">Кредит</div><div class="mv">${m.kred}</div></div>
+          <div class="mm"><div class="ml">Наличка</div><div class="mv">${m.nal}</div></div>
+          <div class="mm"><div class="ml">Комиссия</div><div class="mv">${m.kom}</div></div>
+        </div>
+      </div>`).join('')
+  ) : '';
+
+  const mops_html = ranked + anomalyHTML + kotelHTML;
 
   const subtabs = ``; // верхние вкладки убраны — управление через Dock
   if (floating) floating.innerHTML = '';
@@ -10249,6 +10265,34 @@ function deptMembershipForMonth(nameLow, suffix = currentSuffix) {
 // РЕЙТИНГ/KPI/ПЛАНЫ → по журналу (единственный отдел на месяц), НЕ по наработкам.
 function isCrmForMonth(nameLow, suffix = currentSuffix) { return deptMembershipForMonth(nameLow, suffix).crm; }
 function isDozhimForMonth(nameLow, suffix = currentSuffix) { return deptMembershipForMonth(nameLow, suffix).dozhim; }
+
+// АНОМАЛИИ CRM: менеджеры с реальными CRM-визитами (наработками), которые по журналу
+// НЕ участники CRM в этом месяце (переведены в ДОЖИМ). Их клиенты/визиты уже входят в
+// ИТОГ отдела (котёл-суммы + getVisitsByDayAll), но в рейтинге/KPI/чарте они НЕ
+// ранжируются (плана CRM нет) — показываем отдельными строками в конце «как аномалию».
+// Пусто, если переводов/наработок нет (полная обратная совместимость).
+function crmAnomalyManagers() {
+  if (!S.data || !S.data.vizity || typeof buildCrmStats !== 'function') return [];
+  let stats; try { stats = buildCrmStats(S.data.vizity); } catch (_) { return []; }
+  const KOT = new Set(['котел', 'котёл', 'kotel']);
+  const out = [];
+  Object.values(stats).forEach(s => {
+    const nl = String(s.name || '').toLowerCase().trim();
+    if (!nl || KOT.has(nl)) return;
+    if (isCrmForMonth(nl)) return;                 // участник CRM по журналу — не аномалия
+    const vis = (typeof getVisitsByDay === 'function')
+      ? getVisitsByDay(nl, false).reduce((a, b) => a + b, 0) : (s.vis || 0);
+    if (vis <= 0) return;                          // нет CRM-наработок
+    out.push({
+      name: s.name, nameLow: nl, vis,
+      kred: (s.kred400 || 0) + (s.kred800 || 0) + (s.kred1200 || 0),
+      nal:  (s.nal400 || 0) + (s.nal800 || 0) + (s.nal1200 || 0),
+      kom:  (s.kom400 || 0) + (s.kom800 || 0) + (s.kom1200 || 0),
+    });
+  });
+  out.sort((a, b) => b.vis - a.vis);
+  return out;
+}
 // Есть ли у менеджера записи переводов (для точечной догрузки «второго» листа).
 function mgrHasDeptTransfers(nameLow) {
   const H = S.deptHistory && S.deptHistory.byId;
@@ -15310,11 +15354,29 @@ function renderRating() {
       </div>`;
   }).join('');
 
+  // Аномалии CRM (переведённые с наработками) — карточки в конце списка, вне ранга.
+  const _ratingAnomaly = (dept === 'crm' && typeof crmAnomalyManagers === 'function') ? crmAnomalyManagers() : [];
+  const anomalyCardsHTML = _ratingAnomaly.length ? (
+    `<div class="rating-anomaly-sep">Вне рейтинга · наработки (входят в ИТОГ отдела)</div>` +
+    _ratingAnomaly.map(m => `<div class="rating-card rating-card-anomaly">
+        <div class="rating-card-top">
+          <div class="rating-rank-num" style="background:rgba(128,128,128,.15);color:var(--txt3);font-size:10px" title="Вне рейтинга — переведён в ДОЖИМ, но есть CRM-наработки">≠</div>
+          <div class="rating-card-name"><div class="rating-card-name-text">${m.name.toUpperCase()}</div><div class="rating-card-anomaly-tag">наработки · без плана CRM</div></div>
+        </div>
+        <div class="rating-card-stats">
+          <div class="rating-card-stat highlight"><span>Виз.</span><b>${m.vis}</b></div>
+          ${m.kred ? `<div class="rating-card-stat"><span>Кред.</span><b>${m.kred}</b></div>` : ''}
+          ${m.nal  ? `<div class="rating-card-stat"><span>Нал.</span><b>${m.nal}</b></div>` : ''}
+          ${m.kom  ? `<div class="rating-card-stat"><span>Ком.</span><b>${m.kom}</b></div>` : ''}
+        </div>
+      </div>`).join('')
+  ) : '';
+
   setLiveHTML(el, `
     <div class="rating-header">
       ${deptToggle}
     </div>
-    <div class="rating-slide-wrap"><div class="rating-slide-inner" id="rating-slide-inner">${podiumHTML}<div class="rating-chart">${cardsHTML || '<div class="empty">Нет данных</div>'}</div></div></div>
+    <div class="rating-slide-wrap"><div class="rating-slide-inner" id="rating-slide-inner">${podiumHTML}<div class="rating-chart">${cardsHTML || '<div class="empty">Нет данных</div>'}${anomalyCardsHTML}</div></div></div>
   `);
 
   // Анимируем бары

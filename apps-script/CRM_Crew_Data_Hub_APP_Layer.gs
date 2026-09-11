@@ -1120,7 +1120,11 @@ function APP_hasFilters_(f) {
 }
 function APP_rowMatchesFilters_(r, c, f) {
   const inArr = (arr, val) => !arr.length || arr.indexOf(String(val || '').trim()) >= 0;
-  const date = String(r[c.visit_date] || '');
+  // ВАЖНО: visit_date читается из листа как Date-объект (Google Sheets авто-конвертит
+  // 'YYYY-MM-DD' в дату при записи). String(Date) = 'Thu Sep 10 2026…' лексически >
+  // любого '2026-…', и сравнение периода отсекало ВСЕ строки → архив пустой. Нормализуем
+  // тем же APP_ymd_, которым дата и строилась, → чистое 'YYYY-MM-DD' для сравнения.
+  const date = APP_ymd_(r[c.visit_date]);
   if (f.dateFrom && (!date || date < f.dateFrom)) return false;
   if (f.dateTo && (!date || date > f.dateTo)) return false;
   if (!inArr(f.city, r[c.city])) return false;

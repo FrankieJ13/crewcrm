@@ -11915,14 +11915,19 @@ function calcSalary(nameLow) {
   // Rang: rookie — без коэффициентов (всегда ×1.0)
   const mgrRang = getRangByName(nameLow);
   const isRookie = mgrRang === 'rookie';
-  const baseKoefFact = isRookie ? 1.0 : getKoef(pctFact);
-  const baseKoefProg = isRookie ? 1.0 : getKoef(pctProg);
+  // НЕТ ПЛАНА CRM (переведён в ДОЖИМ / план не выставлен) → коэффициента НЕТ (×1.0).
+  // Иначе pctFact = визиты / (mgrPlan||1) даёт огромный % (нет плана → делим на 1),
+  // getKoef возвращает макс (×1.3) и незаслуженно раздувает премию по CRM-наработкам.
+  // Ведём себя как для rookie: платим наработки по базе, без план-коэфа и конв-буста.
+  const noKoef = isRookie || mgrPlan <= 0;
+  const baseKoefFact = noKoef ? 1.0 : getKoef(pctFact);
+  const baseKoefProg = noKoef ? 1.0 : getKoef(pctProg);
   // Конверсия «Визит → Кредит» = кредиты(кат800+1200) ÷ состоявшиеся визиты × 100%.
-  // Может поднять коэффициент на одну ступень (ТЗ). Для rookie — без изменений.
+  // Может поднять коэффициент на одну ступень (ТЗ). Для rookie / без плана — без изменений.
   const _noBoost = () => ({ koef: 1.0, base: 1.0, conv: 0, boosted: false, thr: null, enough: true, active: false, minVisits: 10 });
   const convKredVal = mgrAllVis > 0 ? Math.round((crm.kred + warm.kred) / mgrAllVis * 100) : 0;
-  const boostFact = isRookie ? _noBoost() : applyConvKoefBoost(baseKoefFact, convKredVal, mgrAllVis);
-  const boostProg = isRookie ? _noBoost() : applyConvKoefBoost(baseKoefProg, convKredVal, mgrAllVis);
+  const boostFact = noKoef ? _noBoost() : applyConvKoefBoost(baseKoefFact, convKredVal, mgrAllVis);
+  const boostProg = noKoef ? _noBoost() : applyConvKoefBoost(baseKoefProg, convKredVal, mgrAllVis);
   const koefFact = boostFact.koef;
   const koefProg = boostProg.koef;
 

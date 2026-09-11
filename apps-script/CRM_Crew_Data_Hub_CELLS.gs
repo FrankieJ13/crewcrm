@@ -216,3 +216,35 @@ function appDateSample() {
   try { SpreadsheetApp.getUi().alert(msg); } catch (_) {}
   return msg;
 }
+
+// Локализуем 40% пустых дат: пустые visit_date в TRAFFIC_VISITS по source_sheet.
+// Если пусто кучкуется в конкретных листах → у них не распознан заголовок даты
+// (добавим алиас в ETL). Если размазано равномерно → даты реально пустые в источнике.
+function appDatelessBySheet() {
+  const hub = getHubSpreadsheet_();
+  const sh = hub.getSheetByName('TRAFFIC_VISITS');
+  if (!sh) { const m = 'нет TRAFFIC_VISITS'; try { SpreadsheetApp.getUi().alert(m); } catch (_) {} return m; }
+  const last = sh.getLastRow(), lastCol = sh.getLastColumn();
+  const H = sh.getRange(1, 1, 1, lastCol).getValues()[0];
+  const iDate = H.indexOf('visit_date');
+  const iSheet = H.indexOf('source_sheet');
+  if (iDate < 0 || iSheet < 0) { const m = 'нет колонок visit_date/source_sheet'; try { SpreadsheetApp.getUi().alert(m); } catch (_) {} return m; }
+
+  const vals = sh.getRange(2, 1, last - 1, lastCol).getValues();
+  const by = {};
+  for (let i = 0; i < vals.length; i++) {
+    const r = vals[i];
+    const ymd = (typeof APP_ymd_ === 'function') ? APP_ymd_(r[iDate]) : String(r[iDate] || '').slice(0, 10);
+    const key = String(r[iSheet] || '(пусто)').trim() || '(пусто)';
+    if (!by[key]) by[key] = { empty: 0, total: 0 };
+    by[key].total++;
+    if (!ymd) by[key].empty++;
+  }
+  const rows = Object.keys(by).map(k => ({ sheet: k, empty: by[k].empty, total: by[k].total, pct: Math.round(by[k].empty / by[k].total * 100) }))
+    .sort((a, b) => b.empty - a.empty);
+  const lines = rows.map(x => x.sheet + ': пустых ' + x.empty + '/' + x.total + ' (' + x.pct + '%)');
+  const msg = 'Пустые visit_date по source_sheet (TRAFFIC_VISITS):\n\n' + lines.join('\n');
+  Logger.log(msg);
+  try { SpreadsheetApp.getUi().alert(msg); } catch (_) {}
+  return msg;
+}

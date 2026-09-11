@@ -167,3 +167,52 @@ function HUB_anyRebuildRunning_() {
   if (typeof APP_readState_    !== 'undefined' && running(APP_readState_))     return 'APP';
   return '';
 }
+
+// ── ДИАГНОСТИКА ДАТ ───────────────────────────────────────────────────────────
+// «Архив» показывает 0 за период → проверяем, что реально лежит в visit_date
+// у APP_TRAFFIC_ARCHIVE (и в traffic_visit_date у MATCHES). Считает пустые/битые
+// даты, распределение по месяцам и печатает примеры (сырое значение + тип + APP_ymd_).
+function appDateSample() {
+  const hub = getHubSpreadsheet_();
+  const out = [];
+
+  function scan(sheetName, dateHeader) {
+    const sh = hub.getSheetByName(sheetName);
+    if (!sh) { out.push(sheetName + ': лист не найден'); return; }
+    const last = sh.getLastRow(), lastCol = sh.getLastColumn();
+    if (last < 2) { out.push(sheetName + ': пусто'); return; }
+    const headers = sh.getRange(1, 1, 1, lastCol).getValues()[0];
+    const idx = headers.indexOf(dateHeader);
+    if (idx < 0) { out.push(sheetName + ': нет колонки ' + dateHeader); return; }
+
+    // Вся колонка даты за один проход.
+    const col = sh.getRange(2, idx + 1, last - 1, 1).getValues();
+    let empty = 0; const byYm = {};
+    for (let i = 0; i < col.length; i++) {
+      const ymd = (typeof APP_ymd_ === 'function') ? APP_ymd_(col[i][0]) : String(col[i][0] || '').slice(0, 10);
+      if (!ymd) { empty++; continue; }
+      const ym = ymd.slice(0, 7); byYm[ym] = (byYm[ym] || 0) + 1;
+    }
+    const dist = Object.keys(byYm).sort().map(k => '   ' + k + ': ' + byYm[k]).join('\n') || '   (нет валидных дат)';
+
+    // Примеры: первые 4 строки — сырое значение + тип + нормализация.
+    const smp = sh.getRange(2, idx + 1, Math.min(4, last - 1), 1).getValues();
+    const ex = smp.map((r, i) => {
+      const v = r[0], t = Object.prototype.toString.call(v);
+      const ymd = (typeof APP_ymd_ === 'function') ? APP_ymd_(v) : '';
+      return '   стр' + (i + 2) + ': [' + v + '] ' + t + ' → APP_ymd_=[' + ymd + ']';
+    }).join('\n');
+
+    out.push(sheetName + '.' + dateHeader + ': строк ' + (last - 1) + ', пустых/битых дат ' + empty +
+      '\n  по месяцам:\n' + dist + '\n  примеры:\n' + ex);
+  }
+
+  scan('APP_TRAFFIC_ARCHIVE', 'visit_date');
+  scan('MATCHES', 'traffic_visit_date');
+  scan('TRAFFIC_VISITS', 'visit_date');
+
+  const msg = out.join('\n\n──────────\n\n');
+  Logger.log(msg);
+  try { SpreadsheetApp.getUi().alert(msg); } catch (_) {}
+  return msg;
+}

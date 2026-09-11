@@ -6188,16 +6188,17 @@ function renderDohodDozhim(el) {
   const parsed = dozhimNames.map(name => {
     const nameLow = name.toLowerCase().trim();
     const sal = calcSalaryDozhimFromVizity(nameLow);
-    return { name: name.toUpperCase(), nameLow, sal };
+    // Переведённый (работал в обоих отделах) → суммарный итог по двум отделам,
+    // как на его личной странице; обычный дожим → его единственный отдел.
+    const mt = (typeof calcSalaryMonthTotal === 'function') ? calcSalaryMonthTotal(nameLow) : null;
+    const combined = !!(mt && mt.combined);
+    const factTotal = combined ? Math.round(mt.total) : (sal ? Math.round(sal.fact.total) : 0);
+    return { name: name.toUpperCase(), nameLow, sal, combined, factTotal };
   });
-  parsed.sort((a, b) => {
-    const aT = a.sal ? a.sal.fact.total : 0;
-    const bT = b.sal ? b.sal.fact.total : 0;
-    return bT - aT;
-  });
+  parsed.sort((a, b) => b.factTotal - a.factTotal);
 
-  const totalFund = parsed.reduce((s, p) => s + (p.sal ? Math.round(p.sal.fact.total) : 0), 0);
-  const maxAmt = parsed[0]?.sal ? Math.round(parsed[0].sal.fact.total) : 0;
+  const totalFund = parsed.reduce((s, p) => s + (p.factTotal || 0), 0);
+  const maxAmt = parsed[0] ? parsed[0].factTotal : 0;
   const total  = parsed.length;
   const isLight = (document.body.classList.contains('light')||document.body.classList.contains('tiffany'));
   const accR = isLight ? 81 : 232, accG = isLight ? 55 : 255, accB = isLight ? 221 : 71;
@@ -6208,10 +6209,13 @@ function renderDohodDozhim(el) {
 
   const rows = parsed.map((item, idx) => {
     const rs = rankStyles(idx, total);
-    const factTotal = item.sal ? Math.round(item.sal.fact.total) : 0;
+    const factTotal = item.factTotal;
     const w = maxAmt ? Math.round(factTotal / maxAmt * 100) : 0;
     let detailBtn = '';
-    if (item.sal) {
+    if (item.combined) {
+      // Переведённый — детализация combined (оклад + премия CRM + премия ДОЖИМ + корректировки).
+      detailBtn = `<button class="mop-info-btn" style="position:absolute;top:10px;right:10px" onclick="openCombinedIncomeModal('${item.nameLow.replace(/'/g, "\\'")}')">i</button>`;
+    } else if (item.sal) {
       const det = {
         nameLow: item.nameLow,
         oklad: item.sal.detail.oklad, baseOklad: item.sal.detail.baseOklad,
@@ -12121,6 +12125,35 @@ function calcSalaryDozhim(nameLow) {
 }
 
 // ==================== DOZHIM INCOME MODAL ====================
+// Комбинированная детализация дохода переведённого менеджера (CEO/ROP видит то же,
+// что менеджер на личной странице): суммарный итог по двум отделам. Единый источник —
+// calcSalaryMonthTotal. Роутим сюда только у combined (переведён и работал в обоих).
+function _combinedIncomeBodyHtml(mt) {
+  const subtotal = (lbl, sum) => `<div class="income-subtotal"><span class="ist-lbl">${lbl}</span><span class="ist-val">${fmtRub(Math.round(sum))}</span></div>`;
+  const okladLbl = (mt.workedR != null && mt.totalR != null) ? `Оклад (${mt.workedR}/${mt.totalR} дн.)` : 'Оклад';
+  const corrRow = mt.corrections ? `<div class="income-sec-title">Корректировки (на человека, вне отделов)</div>${subtotal(mt.corrections > 0 ? 'Премирование' : 'Депремирование', mt.corrections)}` : '';
+  return `
+    <div class="income-sec-title">Суммарный доход · перевод CRM ⇄ ДОЖИМ</div>
+    ${subtotal('Итого к выплате', mt.total)}
+    <div class="income-sec-title">Оклад (по всем сменам месяца)</div>
+    ${subtotal(okladLbl, mt.oklad)}
+    <div class="income-sec-title">Премия по отделам</div>
+    ${subtotal('Премия CRM', mt.premCrm)}
+    ${subtotal('Премия ДОЖИМ', mt.premDoz)}
+    ${corrRow}`;
+}
+function openCombinedIncomeModal(nameLow) {
+  const mt = (typeof calcSalaryMonthTotal === 'function') ? calcSalaryMonthTotal(String(nameLow || '').toLowerCase()) : null;
+  if (!mt) { toast('Нет данных по доходу', 'e'); return; }
+  const mc = document.getElementById('income-modal-content');
+  if (!mc) return;
+  document.getElementById('income-overlay')?.classList.remove('visits-mode');
+  const title = document.querySelector('#income-overlay .income-modal-title');
+  if (title) title.innerHTML = 'Детализация дохода';
+  mc.setAttribute('data-modal', 'combined');
+  mc.innerHTML = _combinedIncomeBodyHtml(mt);
+  document.getElementById('income-overlay').classList.add('open');
+}
 function openDozhimIncomeModal(btn) {
   let d;
   try { d = JSON.parse(btn.dataset.income.replace(/&#39;/g,"'")); }
@@ -15144,13 +15177,11 @@ function renderRating() {
   // Доход менеджера (CRM only — dozhim calcSalaryDozhimFromVizity)
   function getMgrSalary(nameLow) {
     try {
-      let sal;
-      if (dept === 'dozhim') {
-        sal = calcSalaryDozhimFromVizity(nameLow);
-        return sal ? Math.round(sal.fact.total) : null;
-      }
-      sal = calcSalary(nameLow);
-      return sal ? Math.round(sal.fact.total) : null;
+      // Единый итог: у переведённого — суммарно по двум отделам (как на личной
+      // странице, 79 619), у обычного — его единственный отдел. calcSalaryMonthTotal
+      // сам определяет отделы; dept-ветвление больше не нужно.
+      const mt = (typeof calcSalaryMonthTotal === 'function') ? calcSalaryMonthTotal(nameLow) : null;
+      return mt ? Math.round(mt.total) : null;
     } catch(e) { return null; }
   }
 

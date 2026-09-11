@@ -297,7 +297,14 @@ function continueAppRebuild() {
         const quality = APP_dateQuality_(visitDate, APP_CONFIG.MIN_YEAR, maxYear);
         const isArchived = APP_isArchived_(visitDate, quality, currentYear);
         const year = quality === 'VALID' ? Number(visitDate.slice(0, 4)) : '';
-        const sortKey = quality === 'VALID' ? visitDate : '0000-00-00';
+        // ЧИСЛОВОЙ ключ сортировки YYYYMMDD (битые/пустые → 0). Раньше был строкой
+        // ('YYYY-MM-DD' / '0000-00-00'): валидные Google Sheets конвертил в Date, а
+        // '0000-00-00' оставался ТЕКСТОМ, и при DESC-сортировке текст встаёт ВЫШЕ дат —
+        // 12k пустых визитов оказывались в начале архива и топили свежие. Число решает:
+        // колонка однородно числовая → valid (крупные) сверху, 0 (битые) снизу.
+        const sortKey = quality === 'VALID'
+          ? Number(visitDate.slice(0, 4) + visitDate.slice(5, 7) + visitDate.slice(8, 10))
+          : 0;
 
         const sourceSheet = String(r[mc.traffic_source_sheet] || '').trim();
         const followupRaw = d ? d.followup_manager_raw : '';

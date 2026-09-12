@@ -81,7 +81,7 @@
       "rating": "on",
       "trophies": "on",
       "income": "on",
-      "adjustments": "off",
+      "adjustments": "false",
       "export": "off",
       "reconciliation": "on",
       "kartoteka": "off",

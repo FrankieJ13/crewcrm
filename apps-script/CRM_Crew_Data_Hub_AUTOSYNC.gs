@@ -124,6 +124,46 @@ function AUTOSYNC_anyStageRunning_() {
   });
 }
 
+// AMO FLOOR-GUARD (см. CRM_Crew_Data_Hub_AMO_GUARD.gs): перед стартом AMO
+// спрашиваем guard, не усечена ли выгрузка amoCRM. Возвращает true, если
+// guard ПЕРЕХВАТИЛ старт (пропуск импорта или стоп цепочки) и уже перевёл
+// состояние — тогда вызывающий обязан сделать return. false = можно
+// стартовать AMO как обычно (o.amoPreCount проставлен для подъёма планки).
+function AUTOSYNC_amoGate_(o, now) {
+  // Guard-модуль опционален: если его нет в проекте — старая логика (пускаем).
+  if (typeof AMO_GUARD_gate_ !== 'function') { o.amoPreCount = null; return false; }
+
+  let ev = null;
+  try { ev = AMO_GUARD_gate_(); } catch (_) { ev = null; }
+
+  if (ev && ev.allow === false) {
+    const mode = (typeof AMO_GUARD_CONFIG === 'object' && AMO_GUARD_CONFIG.ON_TRUNCATED) || 'SKIP_AMO';
+    if (mode === 'ABORT_CHAIN') {
+      o.status = 'ERROR';
+      o.error = 'AMO_TRUNCATED: ' + ev.reason;
+      o.lastRunFinishedAt = now;
+      o.lastRunOk = false;
+      AUTOSYNC_log_('ERROR', 'AMO', 'усечённая выгрузка → цепочка остановлена: ' + ev.reason);
+      return true;
+    }
+    // SKIP_AMO: не импортируем, идём дальше на прошлой (полной) базе AMO_DEALS.
+    const after = AUTOSYNC_nextStage_('AMO'); // MATCHES
+    AUTOSYNC_log_('WARN', 'AMO',
+      'усечённая выгрузка → импорт пропущен, дальше на прошлой базе: ' + ev.reason);
+    o.stage = after;
+    o.stageStartedAt = now;
+    o.lastFingerprint = '';
+    o.lastProgressAt = now;
+    o.lastNudgeAt = now;
+    AUTOSYNC_startStage_(after);
+    return true;
+  }
+
+  // Импорт разрешён — запомним размер источника, чтобы поднять планку на DONE.
+  o.amoPreCount = (ev && typeof ev.srcRows === 'number') ? ev.srcRows : null;
+  return false;
+}
+
 
 /* ============================================================
  * СОСТОЯНИЕ ОРКЕСТРАТОРА (Script Property, отдельно от стадий)
@@ -142,6 +182,7 @@ function AUTOSYNC_defaultState_() {
     lastNudgeAt: 0,
     lastRunFinishedAt: 0,    // когда завершилась прошлая цепочка (ok/err)
     lastRunOk: null,
+    amoPreCount: null,       // размер источника amo на входе → планка guard на DONE
     error: '',
     tickAt: 0,
   };
@@ -224,6 +265,8 @@ function AUTOSYNC_tickRunning_(o, now) {
 
   // Состояние стадии потерялось / не создалось → (пере)стартуем один раз.
   if (!st) {
+    // Рестарт AMO тоже проходит через floor-guard (вдруг источник усечён).
+    if (stage === 'AMO' && AUTOSYNC_amoGate_(o, now)) return;
     AUTOSYNC_log_('WARN', stage, 'нет состояния стадии → (пере)старт');
     o.stageStartedAt = now;
     o.lastFingerprint = '';
@@ -254,8 +297,17 @@ function AUTOSYNC_tickRunning_(o, now) {
   }
 
   if (status === 'DONE') {
+    // AMO завершилась успешно → поднимаем планку floor-guard до принятого размера.
+    if (stage === 'AMO' && typeof AMO_GUARD_commitGood_ === 'function') {
+      try { AMO_GUARD_commitGood_(o.amoPreCount != null ? o.amoPreCount : null); } catch (_) {}
+      o.amoPreCount = null;
+    }
+
     const next = AUTOSYNC_nextStage_(stage);
     if (next) {
+      // Перед импортом AMO — floor-guard против усечённой выгрузки amoCRM.
+      if (next === 'AMO' && AUTOSYNC_amoGate_(o, now)) return;
+
       AUTOSYNC_log_('INFO', stage, 'DONE → старт ' + next);
       o.stage = next;
       o.stageStartedAt = now;
@@ -483,6 +535,9 @@ function autoSyncBuildMenu_() {
     .createMenu('Картотека AUTO')
     .addItem('AUTO: запустить сейчас', 'autoSyncRunNow')
     .addItem('AUTO: статус', 'autoSyncStatus')
+    .addSeparator()
+    .addItem('AMO-guard: статус выгрузки', 'amoGuardStatus')
+    .addItem('AMO-guard: принять текущий размер', 'amoGuardAcceptCurrent')
     .addSeparator()
     .addItem('AUTO: установить авто-триггер', 'installAutoSyncTrigger')
     .addItem('AUTO: снять авто-триггер', 'removeAutoSyncTrigger')

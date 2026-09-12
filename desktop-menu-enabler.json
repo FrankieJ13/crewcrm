@@ -106,7 +106,7 @@
       "adjustments": "off",
       "export": "off",
       "reconciliation": "on",
-      "kartoteka": "off",
+      "kartoteka": "on",
       "knowledge": "on",
       "tools": "on",
       "profile": "on",

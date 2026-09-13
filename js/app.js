@@ -11752,7 +11752,10 @@ function buildSchedMetrics(counts, sched) {
   return chips.length ? `<span class="sched-metrics">${chips.join('')}</span>` : '';
 }
 
-function calcSalary(nameLow) {
+function calcSalary(nameLow, opts) {
+  // ignoreSverka=true → считаем ВСЕ внесённые визиты, минуя фильтр режима сверки
+  // (для строки «ЗП по факту без учёта режима сверки»). По умолчанию — как раньше.
+  const ignoreSverka = !!(opts && opts.ignoreSverka);
   const vizData = S.data.vizity || [];
   // Ставки CRM теперь читаются из data/rates.json (раньше — лист СТАВКИ{сфкс})
   const CR = getCrmRates(currentSuffix);
@@ -11783,7 +11786,7 @@ function calcSalary(nameLow) {
   const rZadatok     = CR.rZadatok;
 
   // Агрегируем данные менеджера из ВИЗИТЫ
-  const allStats = buildCrmStats(vizData, { sverkaOnly: true });
+  const allStats = buildCrmStats(vizData, { sverkaOnly: !ignoreSverka });
   const mgrStat  = allStats[nameLow];
   if (!mgrStat) return null;
 
@@ -12318,7 +12321,24 @@ function openIncomeDetail(btn) {
   const deltaRowsHtml = (factKoef != null || progKoef != null) ? `
     ${koefDeltaRow('Коэфф. ФАКТ', factKoef)}
     ${koefDeltaRow('Коэфф. ПРОГНОЗ', progKoef)}` : '';
-  const noKoefRow = `<div class="income-sec-title">Без коэффициентов</div>${subtotal('Оклад 100% + Премия + Котёл', noKoefTotal)}${deltaRowsHtml}`;
+  // ЗП по факту без учёта режима сверки: премию/котёл пересчитываем по ВСЕМ
+  // визитам (сверка off), коэффициент оставляем ТЕКУЩИЙ фактический. Когда режим
+  // сверки выключен — равно факту; когда включён — «полная» ЗП без сверочного среза.
+  const factKoefCur  = (d.fact && isFinite(d.fact.koef)) ? d.fact.koef : 1;
+  const factTotalCur = Math.round(n(d.fact?.total));
+  let zpNoSverka = factTotalCur;
+  if (S && S.sverkaMode && d.nameLow && typeof calcSalary === 'function') {
+    try {
+      const sf = calcSalary(d.nameLow, { ignoreSverka: true });
+      if (sf && sf.detail) {
+        zpNoSverka = Math.max(0, Math.round(n(sf.detail.oklad) + n(sf.detail.premium) * factKoefCur + (sf.adj ? n(sf.adj.total) : 0)));
+      }
+    } catch (_) {}
+  }
+  const zpDiff  = zpNoSverka - factTotalCur;
+  const zpLabel = (S && S.sverkaMode && zpDiff !== 0) ? 'ЗП по факту (без сверки)' : 'ЗП по факту';
+  const zpFactRow = `<div class="income-subtotal income-zp-final"><span class="ist-lbl">${zpLabel}</span><span class="ist-val">${fmtRub(zpNoSverka)}</span></div>`;
+  const noKoefRow = `<div class="income-sec-title">Без коэффициентов</div>${subtotal('Оклад 100% + Премия + Котёл', noKoefTotal)}${deltaRowsHtml}${zpFactRow}`;
   const okladFormula = d.workedR != null
     ? `(${fmtRub(d.baseOklad)}÷${d.totalR}×${d.workedR}) + (${fmtRub(Math.round(premium))} × ${factKoef ? factKoef.toFixed(1) : '—'}) = ${fmtRub(Math.round(d.fact ? d.fact.total : 0))}`
     : `${fmtRub(oklad)} + (${fmtRub(Math.round(premium))} × ${factKoef ? factKoef.toFixed(1) : '—'}) = ${fmtRub(Math.round(d.fact ? d.fact.total : 0))}`;

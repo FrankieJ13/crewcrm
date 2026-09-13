@@ -3689,6 +3689,10 @@ body.light .income-badge { background:rgba(0,0,0,0.03); }
 .income-subtotal.income-delta-pos .ist-val { color: var(--grn); }
 .income-subtotal.income-delta-neg { background: rgba(255,71,87,0.12);  border-color: rgba(255,71,87,0.35);  margin-top:4px; }
 .income-subtotal.income-delta-neg .ist-val { color: var(--red); }
+/* Итоговая «ЗП по факту (без учёта режима сверки)» — акцентная строка-результат */
+.income-subtotal.income-zp-final { margin-top:8px; border-width:1.5px; border-color:var(--acc); }
+.income-subtotal.income-zp-final .ist-lbl { color:var(--acc); font-weight:700; }
+.income-subtotal.income-zp-final .ist-val { font-size:15px; }
 /* Day breakdown calendar */
 .inc-day-panel {
   margin-top:12px;

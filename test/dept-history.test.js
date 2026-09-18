@@ -128,5 +128,31 @@ const t10 = H([
 eq('один user_id (не дублируется по отделам)', t10.size, 1);
 eq('обе записи под одним id', t10.get('127').length, 2);
 
+console.log('— TEST 11: статусы жизненного цикла (увольнение, кол. F/G) —');
+// строки листа: [id, name, old, new, transfer_date, status, status_date]
+const St = rows => D.parseStatuses(rows, null, null);
+const jrnl = St([
+  ['13127310', 'Синошин Кирилл',    'CRM', 'ДОЖИМ', '2026-09-05', '', ''],       // перевод, без статуса
+  ['9489954',  'Джафаров Табриз',   '', '', '', 'уволен', '01.07.2026'],         // уволен с июля
+  ['12723926', 'Свистун Анастасия', '', '', '', 'уволен', '01.05.2026'],         // уволен с мая
+  ['', '', '', '', '', '', ''],                                                   // пустая
+]);
+eq('в статусах только 2 уволенных', jrnl.size, 2);
+eq('перевод (Синошин) не попал в статусы', jrnl.has('13127310'), false);
+const dzhaf = jrnl.get('9489954'), svist = jrnl.get('12723926');
+eq('Джафаров июнь 0626 → работает', D.isFiredForMonth(dzhaf, '0626'), false);
+eq('Джафаров июль 0726 → уволен',   D.isFiredForMonth(dzhaf, '0726'), true);
+eq('Джафаров сент 0926 → уволен',   D.isFiredForMonth(dzhaf, '0926'), true);
+eq('Свистун апрель 0426 → работает', D.isFiredForMonth(svist, '0426'), false);
+eq('Свистун май 0526 → уволен',      D.isFiredForMonth(svist, '0526'), true);
+eq('нет событий → не уволен', D.isFiredForMonth(undefined, '0926'), false);
+eq('нераспознанный статус игнорируется', St([['1','X','','','','в отпуске','01.01.2026']]).size, 0);
+eq('битая дата статуса → строка пропущена', St([['1','X','','','','уволен','2026-02-31']]).size, 0);
+// ре-найм: fired → hired (снова активен по последнему событию)
+const reh = St([['555','T','','','','уволен','01.03.2026'], ['555','T','','','','трудоустроен','01.08.2026']]).get('555');
+eq('ре-найм: март уволен', D.isFiredForMonth(reh, '0326'), true);
+eq('ре-найм: август снова активен', D.isFiredForMonth(reh, '0826'), false);
+eq('statusAtDate до событий → active', D.statusAtDate(dzhaf, ms('2026-01-01')), 'active');
+
 console.log(`\n${pass}/${pass + fail} passed` + (fail ? `, ${fail} FAILED` : ' — OK'));
 process.exit(fail ? 1 : 0);

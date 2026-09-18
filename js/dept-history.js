@@ -138,9 +138,67 @@
     return deptsInRange(transfers, currentDept, mr.startMs, mr.endMs);
   }
 
+  // ── Статус жизненного цикла (увольнение / трудоустройство) ───────────────────
+  // Колонки листа: F = status (idx 5), G = status_date (idx 6). Строки-статусы
+  // могут НЕ иметь данных перевода (old/new/transfer_date пустые) — это норм:
+  // событие увольнения самостоятельное, отдельное от перевода.
+  const FIRED = 'fired', HIRED = 'hired';
+  function normStatus(s) {
+    const t = String(s == null ? '' : s).trim().toLowerCase();
+    if (!t) return null;
+    if (t.indexOf('увол') >= 0 || t.indexOf('fire') >= 0) return FIRED;             // «уволен», fired
+    if (t.indexOf('труд') >= 0 || t.indexOf('прин') >= 0 || t.indexOf('нанят') >= 0 || t.indexOf('hire') >= 0) return HIRED; // трудоустроен/принят/hired
+    return null; // неизвестный статус — игнорируем (не роняем строку)
+  }
+
+  // rows: строки листа [id, name, old, new, transfer_date, status, status_date].
+  // Возвращает Map<id, events[]>, event = { id, name, status, ms, dateRaw }, asc по дате.
+  // Строки без распознанного статуса молча пропускаются (в т.ч. чистые переводы).
+  function parseStatuses(rows, isKnownId, warn) {
+    const byId = new Map();
+    const log = typeof warn === 'function' ? warn : function () {};
+    if (!Array.isArray(rows)) return byId;
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i] || [];
+      const id = String(r[0] == null ? '' : r[0]).trim();
+      const name = String(r[1] == null ? '' : r[1]).trim();
+      const status = normStatus(r[5]);
+      const rawDate = r[6];
+      if (!status) continue; // не статус-строка
+      if (!id) { log('dept-history/status: строка ' + (i + 1) + ' — нет user_id'); continue; }
+      if (isKnownId && !isKnownId(id)) { log('dept-history/status: строка ' + (i + 1) + ' — user_id «' + id + '» не в USERS'); continue; }
+      const ms = parseDate(rawDate);
+      if (ms == null) { log('dept-history/status: строка ' + (i + 1) + ' — неверная дата (' + rawDate + ')'); continue; }
+      if (!byId.has(id)) byId.set(id, []);
+      byId.get(id).push({ id, name, status, ms, dateRaw: String(rawDate).trim() });
+    }
+    byId.forEach(list => list.sort((a, b) => a.ms - b.ms));
+    return byId;
+  }
+
+  // Актуальный статус на дату (мс): последнее событие с ms <= targetMs.
+  // Нет событий (или все позже) → 'active'. Ре-найм после увольнения возвращает
+  // 'hired' (снова активен) — берётся ХРОНОЛОГИЧЕСКИ последнее событие.
+  function statusAtDate(events, targetMs) {
+    let st = 'active';
+    if (events) for (let i = 0; i < events.length; i++) {
+      if (events[i].ms <= targetMs) st = events[i].status; else break;
+    }
+    return st;
+  }
+  function isFiredAtDate(events, targetMs) { return statusAtDate(events, targetMs) === FIRED; }
+  // Уволен ли на активный месяц. Точка отсчёта — НАЧАЛО месяца: уволен 01.07 →
+  // выпадает начиная с июля (в июне ещё участник). Нераспознанный суффикс → false.
+  function isFiredForMonth(events, suffix) {
+    const mr = monthRange(suffix);
+    if (!mr) return false;
+    return isFiredAtDate(events, mr.startMs);
+  }
+
   return {
-    CRM, DOZHIM,
+    CRM, DOZHIM, FIRED, HIRED,
     normDept, deptFromRole, parseDate, monthRange,
     parseHistory, deptAtDate, deptsInRange, deptsForMonth,
+    normStatus, parseStatuses, statusAtDate, isFiredAtDate, isFiredForMonth,
   };
 });

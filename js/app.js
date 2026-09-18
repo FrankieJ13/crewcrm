@@ -367,9 +367,10 @@ const S = {
   // byCrmId = индекс только ACTIVE по ID CRM (для расчёта дохода и панели менеджера).
   adjustments:{ suffix:null, all:[], byCrmId:{} },
   // История переводов CRM ⇄ ДОЖИМ (лист USER_DEPARTMENT_HISTORY, глобальный —
-  // НЕ помесячный). byId = Map<ID CRM, переводы[]>; загружается один раз вместе
-  // с USERS. Пусто/нет листа → менеджеры без переводов ведут себя как раньше.
-  deptHistory:{ loaded:false, byId:null },
+  // НЕ помесячный). byId = Map<ID CRM, переводы[]>; statusById = Map<ID, статус-
+  // события[]> (увольнения, кол. F/G). Загружается один раз вместе с USERS.
+  // Пусто/нет листа → менеджеры без переводов/статусов ведут себя как раньше.
+  deptHistory:{ loaded:false, byId:null, statusById:null },
   reportTab: 'dept',
   dohodTab: 'crm',
   faqTab: 'instr',
@@ -10191,14 +10192,17 @@ const DEPT_HISTORY_SHEET = 'USER_DEPARTMENT_HISTORY'; // глобальный л
 // приложение работает по старой логике (текущая роль). Не блокирует старт.
 async function loadDeptHistory(force = false) {
   if (S.deptHistory.loaded && !force) return S.deptHistory;
-  if (typeof window.DeptHistory === 'undefined') { S.deptHistory = { loaded: true, byId: new Map() }; return S.deptHistory; }
+  if (typeof window.DeptHistory === 'undefined') { S.deptHistory = { loaded: true, byId: new Map(), statusById: new Map() }; return S.deptHistory; }
   let rows = null;
-  try { rows = await api(DEPT_HISTORY_SHEET, 'A2:E2000'); }
+  // A..G: A-E переводы, F=status (увольнение), G=status_date.
+  try { rows = await api(DEPT_HISTORY_SHEET, 'A2:G2000'); }
   catch (_) { rows = null; } // нет листа / нет прав / оффлайн → пустая история
   const known = id => !!getUserByCrmId(id); // валидация: ID должен быть в USERS
   const warn = msg => { try { window.DIAG?.push('warn', 'dept-history', [msg]); } catch (_) {} };
   const byId = window.DeptHistory.parseHistory(rows, known, warn);
-  S.deptHistory = { loaded: true, byId };
+  const statusById = (typeof window.DeptHistory.parseStatuses === 'function')
+    ? window.DeptHistory.parseStatuses(rows, known, warn) : new Map();
+  S.deptHistory = { loaded: true, byId, statusById };
   return S.deptHistory;
 }
 // Ленивая догрузка + ре-рендер активного экрана (паттерн как у USERS/adjustments).
@@ -10269,6 +10273,21 @@ function deptMembershipForMonth(nameLow, suffix = currentSuffix) {
 // РЕЙТИНГ/KPI/ПЛАНЫ → по журналу (единственный отдел на месяц), НЕ по наработкам.
 function isCrmForMonth(nameLow, suffix = currentSuffix) { return deptMembershipForMonth(nameLow, suffix).crm; }
 function isDozhimForMonth(nameLow, suffix = currentSuffix) { return deptMembershipForMonth(nameLow, suffix).dozhim; }
+
+// Уволен ли менеджер на активный месяц (лист USER_DEPARTMENT_HISTORY, кол. F/G).
+// Точка отсчёта — начало месяца: уволен 01.07 → выпадает начиная с июля (в июне
+// ещё участник). Нет статус-события / нет журнала → false (обратная совместимость).
+// Используется, чтобы уволенные не попадали в котёл (getFundCount/isInFund).
+function isFiredForMonth(nameLow, suffix = currentSuffix) {
+  const H = S.deptHistory && S.deptHistory.statusById;
+  if (!H || !nameLow || typeof window.DeptHistory === 'undefined'
+      || typeof window.DeptHistory.isFiredForMonth !== 'function'
+      || typeof getCrmIdByName !== 'function') return false;
+  const id = getCrmIdByName(nameLow);
+  const events = id ? H.get(id) : null;
+  if (!events || !events.length) return false;
+  return window.DeptHistory.isFiredForMonth(events, suffix);
+}
 
 // АНОМАЛИИ CRM: менеджеры с реальными CRM-визитами (наработками), которые по журналу
 // НЕ участники CRM в этом месяце (переведены в ДОЖИМ). Их клиенты/визиты уже входят в
@@ -11596,6 +11615,8 @@ function renderPersonal(matched) {
 // type: 'crm' | 'dozhim'. Обратная совместимость: 'да' трактуется как 'crm'
 function isInFund(nameLow, type = 'crm') {
   if (!S.usersData || S.usersData.length < 2) return true;
+  // Уволен на этот месяц → не участник котла (даже если в USERS ещё помечен fund).
+  if (isFiredForMonth(nameLow)) return false;
   for (let i = 1; i < S.usersData.length; i++) {
     const row = S.usersData[i];
     if ((row[1]||'').toLowerCase().trim() === nameLow) {
@@ -11613,8 +11634,11 @@ function getFundCount(type = 'crm') {
     const row = S.usersData[i];
     if (!row[1]) continue;
     const val = (row[3]||'').toLowerCase().trim();
-    if (type === 'crm' && (val === 'crm' || val === 'да')) count++;
-    else if (type !== 'crm' && val === type) count++;
+    const isMember = (type === 'crm') ? (val === 'crm' || val === 'да') : (val === type);
+    if (!isMember) continue;
+    // Уволенные (лист USER_DEPARTMENT_HISTORY, статус на месяц) не делят котёл.
+    if (isFiredForMonth((row[1]||'').toLowerCase().trim())) continue;
+    count++;
   }
   return count > 0 ? count : 1;
 }

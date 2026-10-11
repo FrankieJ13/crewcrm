@@ -2061,11 +2061,36 @@ function startFirebasePresence(user) {
   p.connectionsRef.on('value', p.connectionsHandler);
 }
 
+/* Firebase восстанавливает сохранённую сессию АСИНХРОННО: сразу после загрузки
+   страницы auth.currentUser ещё null, хотя аккаунт уже лежит в IndexedDB. Без
+   ожидания каждая загрузка плодила новую анонимную учётку (а прежняя оставалась
+   сиротой → сотни мусорных аккаунтов в день). Ждём первый onAuthStateChanged
+   (= восстановление завершено) или таймаут: при проблемах с IndexedDB (приватное
+   окно, заблокированные данные сайта) вход не виснет, а падает в старое поведение. */
+function waitForFirebaseUser(auth, timeoutMs = 3000) {
+  return new Promise(resolve => {
+    if (auth.currentUser) { resolve(auth.currentUser); return; }
+    let settled = false, off = null, t = null;
+    const finish = u => {
+      if (settled) return;
+      settled = true;
+      if (t) clearTimeout(t);
+      if (off) off();
+      resolve(u || null);
+    };
+    t = setTimeout(() => finish(auth.currentUser), timeoutMs);
+    off = auth.onAuthStateChanged(u => { if (u) finish(u); });
+    if (settled && off) off(); // страховка, если колбэк отработал синхронно
+  });
+}
+
 async function syncFirebaseAuth(accessToken) {
   const p = initFirebasePresence();
   if (!p || !accessToken) return null;
   try {
-    const current = p.auth.currentUser;
+    // Дождаться восстановления сессии: есть пользователь (анонимный ИЛИ Google) —
+    // переиспользуем, без лишней Google-попытки и без новой учётки.
+    const current = await waitForFirebaseUser(p.auth);
     if (current) {
       startFirebasePresence(current);
       return current;
@@ -2094,9 +2119,12 @@ async function signInFirebaseAnonymously() {
   const p = initFirebasePresence();
   if (!p) return null;
   try {
-    if (p.auth.currentUser) {
-      startFirebasePresence(p.auth.currentUser);
-      return p.auth.currentUser;
+    // Та же защита от гонки восстановления: уже есть аккаунт → переиспользуем,
+    // новую анонимную учётку не создаём.
+    const existing = await waitForFirebaseUser(p.auth);
+    if (existing) {
+      startFirebasePresence(existing);
+      return existing;
     }
     const result = await p.auth.signInAnonymously();
     p.error = '';

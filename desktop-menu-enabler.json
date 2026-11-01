@@ -60,7 +60,7 @@
     "crm": {
       "dashboard": "on",
       "kpi": "on",
-      "analytics": "on",
+      "analytics": "true",
       "marketing": "off",
       "timeline": "off",
       "visits": "on",

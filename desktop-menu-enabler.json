@@ -60,7 +60,7 @@
     "crm": {
       "dashboard": "on",
       "kpi": "on",
-      "analytics": "off",
+      "analytics": "on",
       "marketing": "off",
       "timeline": "off",
       "visits": "on",
@@ -86,7 +86,7 @@
     "dozhim": {
       "dashboard": "on",
       "kpi": "on",
-      "analytics": "off",
+      "analytics": "on",
       "marketing": "off",
       "timeline": "off",
       "visits": "on",
@@ -112,7 +112,7 @@
     "default": {
       "dashboard": "on",
       "kpi": "on",
-      "analytics": "off",
+      "analytics": "on",
       "marketing": "off",
       "timeline": "off",
       "visits": "on",

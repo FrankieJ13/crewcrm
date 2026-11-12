@@ -60,7 +60,7 @@
     "crm": {
       "dashboard": "on",
       "kpi": "on",
-      "analytics": "true",
+      "analytics": "off",
       "marketing": "off",
       "timeline": "off",
       "visits": "on",
@@ -86,7 +86,7 @@
     "dozhim": {
       "dashboard": "on",
       "kpi": "on",
-      "analytics": "on",
+      "analytics": "off",
       "marketing": "off",
       "timeline": "off",
       "visits": "on",
